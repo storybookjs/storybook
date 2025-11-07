@@ -43,7 +43,7 @@ jobs:
       - run:
           name: Generate config
           command: |
-            node ./scripts/ci/generate.js
+            jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
 
       # https://circleci.com/developer/orbs/orb/circleci/continuation
       - continuation/continue:

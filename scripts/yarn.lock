@@ -824,6 +824,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ndelangen/circleci-config-parser@https://pkg.pr.new/ndelangen/circleci-config-parser-ts/@ndelangen/circleci-config-parser@1":
+  version: 0.0.0
+  resolution: "@ndelangen/circleci-config-parser@https://pkg.pr.new/ndelangen/circleci-config-parser-ts/@ndelangen/circleci-config-parser@1"
+  dependencies:
+    ajv: "npm:^8.17.1"
+  peerDependencies:
+    "@ndelangen/circleci-config-sdk": "*"
+    yaml: ^2.8.1
+  checksum: 10c0/119ed6907dca17835f2f91c77bcead1562001d2d8d5524c4f251ad0b7be99d7191fc01e73ce2fd8ee8b2ddf172656d01c72ee3a18f44c00fe614f03ee64bdf97
+  languageName: node
+  linkType: hard
+
+"@ndelangen/circleci-config-sdk@https://pkg.pr.new/ndelangen/circleci-config-sdk-ts/@ndelangen/circleci-config-sdk@1":
+  version: 0.0.0
+  resolution: "@ndelangen/circleci-config-sdk@https://pkg.pr.new/ndelangen/circleci-config-sdk-ts/@ndelangen/circleci-config-sdk@1"
+  dependencies:
+    browser-or-node: "npm:^3.0.0"
+    yaml: "npm:^2.8.1"
+  checksum: 10c0/9ce4be4b12c271402f8956a4ab0644daad86e30da00ec821829997d154af82affa0d1533c28deeb7343a2788e28828f45e96b71e4e9704aa701da613d3796b84
+  languageName: node
+  linkType: hard
+
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -1579,6 +1601,8 @@ __metadata:
     "@actions/core": "npm:^1.11.1"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@google-cloud/bigquery": "npm:^6.2.1"
+    "@ndelangen/circleci-config-parser": "https://pkg.pr.new/ndelangen/circleci-config-parser-ts/@ndelangen/circleci-config-parser@1"
+    "@ndelangen/circleci-config-sdk": "https://pkg.pr.new/ndelangen/circleci-config-sdk-ts/@ndelangen/circleci-config-sdk@1"
     "@octokit/graphql": "npm:^5.0.6"
     "@octokit/request": "npm:^8.4.1"
     "@polka/parse": "npm:^1.0.0-next.28"
@@ -2857,7 +2881,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ajv@npm:^8.2.0":
+"ajv@npm:^8.17.1, ajv@npm:^8.2.0":
   version: 8.17.1
   resolution: "ajv@npm:8.17.1"
   dependencies:
@@ -3470,6 +3494,13 @@ __metadata:
   dependencies:
     fill-range: "npm:^7.1.1"
   checksum: 10c0/7c6dfd30c338d2997ba77500539227b9d1f85e388a5f43220865201e407e076783d0881f2d297b9f80951b4c957fcf0b51c1d2d24227631643c3f7c284b0aa04
+  languageName: node
+  linkType: hard
+
+"browser-or-node@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "browser-or-node@npm:3.0.0"
+  checksum: 10c0/05db930e0a21bfffef74dbc4a27eaa12113e7f43a95f3b80a925f624212d701b86034cdfb5c422bdee061c4ae8442d294feee8996e6ae2555a8e46ea0b830b52
   languageName: node
   linkType: hard
 
@@ -13235,6 +13266,15 @@ __metadata:
   bin:
     yaml: bin.mjs
   checksum: 10c0/886a7d2abbd70704b79f1d2d05fe9fb0aa63aefb86e1cb9991837dced65193d300f5554747a872b4b10ae9a12bc5d5327e4d04205f70336e863e35e89d8f4ea9
+  languageName: node
+  linkType: hard
+
+"yaml@npm:^2.8.1":
+  version: 2.8.1
+  resolution: "yaml@npm:2.8.1"
+  bin:
+    yaml: bin.mjs
+  checksum: 10c0/7c587be00d9303d2ae1566e03bc5bc7fe978ba0d9bf39cc418c3139d37929dfcb93a230d9749f2cb578b6aa5d9ebebc322415e4b653cb83acd8bc0bc321707f3
   languageName: node
   linkType: hard
 

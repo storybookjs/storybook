@@ -65,6 +65,8 @@
     "@actions/core": "^1.11.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
     "@google-cloud/bigquery": "^6.2.1",
+    "@ndelangen/circleci-config-parser": "https://pkg.pr.new/ndelangen/circleci-config-parser-ts/@ndelangen/circleci-config-parser@1",
+    "@ndelangen/circleci-config-sdk": "https://pkg.pr.new/ndelangen/circleci-config-sdk-ts/@ndelangen/circleci-config-sdk@1",
     "@octokit/graphql": "^5.0.6",
     "@octokit/request": "^8.4.1",
     "@polka/parse": "^1.0.0-next.28",

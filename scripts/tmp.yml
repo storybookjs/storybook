@@ -1,0 +1,367 @@
+version: 2.1
+description: |
+    Provides git shallow clone instead of full clone. Supporting trigger for tag, pull_request and push, works on Alpine, Debian, Ubuntu, and macOS.
+    What's shallow clone? - see https://git-scm.com/docs/git-clone#Documentation/git-clone.txt---depthltdepthgt Provied commands: - checkout - checkout_advanced
+    requirement: git
+display:
+    source_url: https://github.com/guitarrapc/git-shallow-clone-orb
+commands:
+    checkout:
+        description: |
+            Provides git shallow clone instead of full clone. This command is for simple usage when you don't need options for clone, fetch and tag fetch.
+        parameters:
+            depth:
+                default: 1
+                description: |
+                    Limit fetch depth to the specified number of commit from a remote branch history. Refer git fetch documentation for more information.
+                type: integer
+            fetch_depth:
+                default: 10
+                description: |
+                    Addtional fetch depth to the specified number of commit from a remote branch history. Pass more number then depth when you want to check futher commit history.
+                type: integer
+            keyscan_bitbucket:
+                default: false
+                description: |
+                    Pass `true` to dynamically get ssh-rsa from `bitbucket.org`.
+                type: boolean
+            keyscan_github:
+                default: false
+                description: |
+                    Pass `true` to dynamically get ssh-rsa from `github.com`.
+                type: boolean
+            no_tags:
+                default: false
+                description: |
+                    true to add '--no-tags' when fetching. As git not offer tag depth, we only able to control fetch all tags or not. This enable you to stop fetch tags when you have vast numbers of tags during specified fetch depth. In other word, if you need tag then fetch specified tags manually when use 'without_tag: true'.
+                type: boolean
+            path:
+                default: .
+                description: |
+                    Checkout directory (default: job working_directory)
+                type: string
+        steps:
+            - run:
+                command: |
+                    #!/bin/sh
+                    set -ex
+
+                    # Workaround old docker images with incorrect $HOME
+                    # check https://github.com/docker/docker/issues/2968 for details
+                    if [ "${HOME}" = "/" ]; then
+                      export HOME=$(getent passwd $(id -un) | cut -d: -f6)
+                    fi
+
+                    # known_hosts / id_rsa
+                    export SSH_CONFIG_DIR=${SSH_CONFIG_DIR:-"${HOME}/.ssh"}
+                    echo "Using SSH Config Dir '$SSH_CONFIG_DIR'"
+                    git --version
+
+                    mkdir -p "$SSH_CONFIG_DIR"
+                    chmod 0700 "$SSH_CONFIG_DIR"
+
+                    if [ -x "$(command -v ssh-keyscan)" ] && ([ "<< parameters.keyscan_github >>" == "true" ] || [ "<< parameters.keyscan_bitbucket >>" == "true" ]); then
+                      if [ "<< parameters.keyscan_github >>" == "true" ]; then
+                        ssh-keyscan -H github.com >> "$SSH_CONFIG_DIR/known_hosts"
+                      fi
+                      if [ "<< parameters.keyscan_bitbucket >>" == "true" ]; then
+                        ssh-keyscan -H bitbucket.org >> "$SSH_CONFIG_DIR/known_hosts"
+                      fi
+                    fi
+
+                    # see: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
+                    if [ "<< parameters.keyscan_github >>" != "true" ]; then
+                      echo 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+                      github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+                      github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
+                    ' >> "$SSH_CONFIG_DIR/known_hosts"
+                    fi
+
+                    # see: https://bitbucket.org/blog/ssh-host-key-changes
+                    if [ "<< parameters.keyscan_bitbucket >>" != "true" ]; then
+                      echo 'bitbucket.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPIQmuzMBuKdWeF4+a2sjSSpBK0iqitSQ+5BM9KhpexuGt20JpTVM7u5BDZngncgrqDMbWdxMWWOGtZ9UgbqgZE=
+                      bitbucket.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIazEu89wgQZ4bqs3d63QSMzYVa0MuJ2e2gKTKqu+UUO
+                      bitbucket.org ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDQeJzhupRu0u0cdegZIa8e86EG2qOCsIsD1Xw0xSeiPDlCr7kq97NLmMbpKTX6Esc30NuoqEEHCuc7yWtwp8dI76EEEB1VqY9QJq6vk+aySyboD5QF61I/1WeTwu+deCbgKMGbUijeXhtfbxSxm6JwGrXrhBdofTsbKRUsrN1WoNgUa8uqN1Vx6WAJw1JHPhglEGGHea6QICwJOAr/6mrui/oB7pkaWKHj3z7d1IC4KWLtY47elvjbaTlkN04Kc/5LFEirorGYVbt15kAUlqGM65pk6ZBxtaO3+30LVlORZkxOh+LKL/BvbZ/iRNhItLqNyieoQj/uh/7Iv4uyH/cV/0b4WDSd3DptigWq84lJubb9t/DnZlrJazxyDCulTmKdOR7vs9gMTo+uoIrPSb8ScTtvw65+odKAlBj59dhnVp9zd7QUojOpXlL62Aw56U4oO+FALuevvMjiWeavKhJqlR7i5n9srYcrNV7ttmDw7kf/97P5zauIhxcjX+xHv4M=
+                    ' >> "$SSH_CONFIG_DIR/known_hosts"
+                    fi
+
+                    echo 'gitlab.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFSMqzJeV9rUzU4kWitGjeR4PWSa29SPqJ1fVkhtj3Hw9xjLVXVYrU9QlYWrOLXBpQ6KWjbjTDTdDkoohFzgbEY=
+                    ' >> "$SSH_CONFIG_DIR/known_hosts"
+                    chmod 0600 "$SSH_CONFIG_DIR/known_hosts"
+
+                    rm -f "$SSH_CONFIG_DIR/id_rsa"
+                    (umask 077; touch "$SSH_CONFIG_DIR/id_rsa")
+                    printf "%s" "$CHECKOUT_KEY" > "$SSH_CONFIG_DIR/id_rsa"
+                    chmod 0600 "$SSH_CONFIG_DIR/id_rsa"
+                    if (: "${CHECKOUT_KEY_PUBLIC?}") 2>/dev/null; then
+                      rm -f "$SSH_CONFIG_DIR/id_rsa.pub"
+                      printf "%s" "$CHECKOUT_KEY_PUBLIC" > "$SSH_CONFIG_DIR/id_rsa.pub"
+                    fi
+
+                    export GIT_SSH_COMMAND='ssh -i "$SSH_CONFIG_DIR/id_rsa" -o UserKnownHostsFile="$SSH_CONFIG_DIR/known_hosts"'
+
+                    # use git+ssh instead of https
+                    git config --global url."ssh://git@github.com".insteadOf "https://github.com" || true
+                    git config --global gc.auto 0 || true
+
+                    # Define Tag args
+                    if [ -n "$CIRCLE_TAG" ]; then
+                      # only tags operation have default --tags. others will no tag options
+                      clone_tag_args=
+                      fetch_tag_args="--tags"
+                    fi
+                    if [ '<< parameters.no_tags >>' == 'true' ]; then
+                      clone_tag_args="--no-tags"
+                      fetch_tag_args="--no-tags"
+                    fi
+
+                    # Checkout. SourceCaching? or not.
+                    if [ -e "$HOME/project/<< parameters.path >>/.git" ]; then
+                      echo 'Fetching into existing repository'
+                      existing_repo='true'
+                      cd "$HOME/project/<< parameters.path >>"
+                      git remote set-url origin "$CIRCLE_REPOSITORY_URL" || true
+                    else
+                      echo 'Cloning git repository'
+                      existing_repo='false'
+                      mkdir -p "$HOME/project/<< parameters.path >>"
+                      cd "$HOME/project/<< parameters.path >>"
+                      git clone ${clone_tag_args} --depth << parameters.depth >> $CIRCLE_REPOSITORY_URL .
+                    fi
+
+                    # NOTE: Original checkout fetch only if SourceCaching, but we fetch always for depth selection.
+                    echo 'Fetching from remote repository'
+                    if [ -n "$CIRCLE_TAG" ]; then
+                      git fetch ${fetch_tag_args} --depth << parameters.fetch_depth >> --force --tags origin "+refs/tags/${CIRCLE_TAG}:refs/tags/${CIRCLE_TAG}"
+                    elif echo $CIRCLE_BRANCH | grep -E ^pull\/[0-9]+/head$ > /dev/null; then
+                      # pull request called from api. Input should be `pull/123/head` see detail for https://github.com/guitarrapc/git-shallow-clone-orb/issues/34
+                      git fetch ${fetch_tag_args} --depth << parameters.fetch_depth >> --force origin "+refs/${CIRCLE_BRANCH}:remotes/origin/${CIRCLE_BRANCH}"
+                    else
+                      git fetch ${fetch_tag_args} --depth << parameters.fetch_depth >> --force origin +refs/heads/${CIRCLE_BRANCH}:refs/remotes/origin/${CIRCLE_BRANCH}
+                    fi
+
+                    # Check the commit ID of the checked out code
+                    if [ -n "$CIRCLE_TAG" ]; then
+                      echo 'Checking out tag'
+                      git checkout --force "$CIRCLE_TAG"
+                      git reset --hard "$CIRCLE_SHA1" # move to triggered SHA
+                    elif [ -n "$CIRCLE_BRANCH" ] && [ "$CIRCLE_BRANCH" != 'HEAD' ]; then
+                      echo 'Checking out branch'
+                      git checkout --force -B "$CIRCLE_BRANCH"
+                      git reset --hard "$CIRCLE_SHA1" # move to triggered SHA
+                      git --no-pager log --no-color -n 1 --format='HEAD is now at %h %s'
+                    fi
+                name: Checkout code shallow
+    checkout_advanced:
+        description: |
+            Provides git shallow clone instead of full clone. This command is for advaned usage when you need options for clone, fetch and tag fetch.
+        parameters:
+            clone_options:
+                default: --depth 1
+                description: |
+                    git clone options you want to add such as '--depth 1 --verbose' and '--depth 1 --shallow-since "5 days ago"'
+                type: string
+            fetch_options:
+                default: --depth 10
+                description: |
+                    git fetch options you want to add such as '--depth 1 --verbose' and '--depth 1 --shallow-since "5 days ago"' you don't need set '--force' option as it already set by default. in case of tag, add '--no-tags' on this option and tag_fetch_options.
+                type: string
+            keyscan_bitbucket:
+                default: false
+                description: |
+                    Pass `true` to dynamically get ssh-rsa from `bitbucket.org`.
+                type: boolean
+            keyscan_github:
+                default: false
+                description: |
+                    Pass `true` to dynamically get ssh-rsa from `github.com`.
+                type: boolean
+            path:
+                default: .
+                description: |
+                    Checkout directory (default: job working_directory)
+                type: string
+            tag_fetch_options:
+                default: --tags
+                description: |
+                    This option apply when git operation is tag. Use 'fetch_options' instead if pr and other git operation. Additional git fetch options you want to add specifically for tags such as '--tags' or '--no-tags'. Default value is '--tags'
+                type: string
+        steps:
+            - run:
+                command: |
+                    #!/bin/sh
+                    set -ex
+
+                    # Workaround old docker images with incorrect $HOME
+                    # check https://github.com/docker/docker/issues/2968 for details
+                    if [ "${HOME}" = "/" ]; then
+                      export HOME=$(getent passwd $(id -un) | cut -d: -f6)
+                    fi
+
+                    # known_hosts / id_rsa
+                    export SSH_CONFIG_DIR=${SSH_CONFIG_DIR:-"${HOME}/.ssh"}
+                    echo "Using SSH Config Dir '$SSH_CONFIG_DIR'"
+                    git --version
+
+                    mkdir -p "$SSH_CONFIG_DIR"
+                    chmod 0700 "$SSH_CONFIG_DIR"
+
+                    if [ -x "$(command -v ssh-keyscan)" ] && ([ "<< parameters.keyscan_github >>" == "true" ] || [ "<< parameters.keyscan_bitbucket >>" == "true" ]); then
+                      if [ "<< parameters.keyscan_github >>" == "true" ]; then
+                        ssh-keyscan -H github.com >> "$SSH_CONFIG_DIR/known_hosts"
+                      fi
+                      if [ "<< parameters.keyscan_bitbucket >>" == "true" ]; then
+                        ssh-keyscan -H bitbucket.org >> "$SSH_CONFIG_DIR/known_hosts"
+                      fi
+                    fi
+
+                    # see: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
+                    if [ "<< parameters.keyscan_github >>" != "true" ]; then
+                      echo 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+                      github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+                      github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
+                    ' >> "$SSH_CONFIG_DIR/known_hosts"
+                    fi
+
+                    # see: https://bitbucket.org/blog/ssh-host-key-changes
+                    if [ "<< parameters.keyscan_bitbucket >>" != "true" ]; then
+                      echo 'bitbucket.org ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPIQmuzMBuKdWeF4+a2sjSSpBK0iqitSQ+5BM9KhpexuGt20JpTVM7u5BDZngncgrqDMbWdxMWWOGtZ9UgbqgZE=
+                      bitbucket.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIazEu89wgQZ4bqs3d63QSMzYVa0MuJ2e2gKTKqu+UUO
+                      bitbucket.org ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDQeJzhupRu0u0cdegZIa8e86EG2qOCsIsD1Xw0xSeiPDlCr7kq97NLmMbpKTX6Esc30NuoqEEHCuc7yWtwp8dI76EEEB1VqY9QJq6vk+aySyboD5QF61I/1WeTwu+deCbgKMGbUijeXhtfbxSxm6JwGrXrhBdofTsbKRUsrN1WoNgUa8uqN1Vx6WAJw1JHPhglEGGHea6QICwJOAr/6mrui/oB7pkaWKHj3z7d1IC4KWLtY47elvjbaTlkN04Kc/5LFEirorGYVbt15kAUlqGM65pk6ZBxtaO3+30LVlORZkxOh+LKL/BvbZ/iRNhItLqNyieoQj/uh/7Iv4uyH/cV/0b4WDSd3DptigWq84lJubb9t/DnZlrJazxyDCulTmKdOR7vs9gMTo+uoIrPSb8ScTtvw65+odKAlBj59dhnVp9zd7QUojOpXlL62Aw56U4oO+FALuevvMjiWeavKhJqlR7i5n9srYcrNV7ttmDw7kf/97P5zauIhxcjX+xHv4M=
+                    ' >> "$SSH_CONFIG_DIR/known_hosts"
+                    fi
+
+                    echo 'gitlab.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFSMqzJeV9rUzU4kWitGjeR4PWSa29SPqJ1fVkhtj3Hw9xjLVXVYrU9QlYWrOLXBpQ6KWjbjTDTdDkoohFzgbEY=
+                    ' >> "$SSH_CONFIG_DIR/known_hosts"
+                    chmod 0600 "$SSH_CONFIG_DIR/known_hosts"
+
+                    rm -f "$SSH_CONFIG_DIR/id_rsa"
+                    (umask 077; touch "$SSH_CONFIG_DIR/id_rsa")
+                    printf "%s" "$CHECKOUT_KEY" > "$SSH_CONFIG_DIR/id_rsa"
+                    chmod 0600 "$SSH_CONFIG_DIR/id_rsa"
+                    if (: "${CHECKOUT_KEY_PUBLIC?}") 2>/dev/null; then
+                      rm -f "$SSH_CONFIG_DIR/id_rsa.pub"
+                      printf "%s" "$CHECKOUT_KEY_PUBLIC" > "$SSH_CONFIG_DIR/id_rsa.pub"
+                    fi
+
+                    # use git+ssh instead of https
+                    git config --global url."ssh://git@github.com".insteadOf "https://github.com" || true
+                    git config --global gc.auto 0 || true
+
+                    # Checkout. SourceCaching? or not.
+                    if [ -e "$HOME/project/<< parameters.path >>/.git" ]; then
+                      echo 'Fetching into existing repository'
+                      existing_repo='true'
+                      cd "$HOME/project/<< parameters.path >>"
+                      git remote set-url origin "$CIRCLE_REPOSITORY_URL" || true
+                    else
+                      echo 'Cloning git repository'
+                      existing_repo='false'
+                      mkdir -p "$HOME/project/<< parameters.path >>"
+                      cd "$HOME/project/<< parameters.path >>"
+                      git clone << parameters.clone_options >> $CIRCLE_REPOSITORY_URL .
+                    fi
+
+                    # NOTE: Original checkout fetch only if SourceCaching, but we fetch always for depth selection.
+                    echo 'Fetching from remote repository'
+                    if [ -n "$CIRCLE_TAG" ]; then
+                      git fetch << parameters.tag_fetch_options >> << parameters.fetch_options >> --force --tags origin "+refs/tags/${CIRCLE_TAG}:refs/tags/${CIRCLE_TAG}"
+                    elif echo $CIRCLE_BRANCH | grep -E ^pull\/[0-9]+/head$ > /dev/null; then
+                      # pull request called from api. Input should be `pull/123/head` see detail for https://github.com/guitarrapc/git-shallow-clone-orb/issues/34
+                      git fetch << parameters.tag_fetch_options >> << parameters.fetch_options >> --force origin "+refs/${CIRCLE_BRANCH}:remotes/origin/${CIRCLE_BRANCH}"
+                    else
+                      git fetch << parameters.fetch_options >> --force origin +refs/heads/${CIRCLE_BRANCH}:refs/remotes/origin/${CIRCLE_BRANCH}
+                    fi
+
+                    # Check the commit ID of the checked out code
+                    if [ -n "$CIRCLE_TAG" ]; then
+                      echo 'Checking out tag'
+                      git checkout --force "$CIRCLE_TAG"
+                      git reset --hard "$CIRCLE_SHA1" # move to triggered SHA
+                    elif [ -n "$CIRCLE_BRANCH" ] && [ "$CIRCLE_BRANCH" != 'HEAD' ]; then
+                      echo 'Checking out branch'
+                      git checkout --force -B "$CIRCLE_BRANCH"
+                      git reset --hard "$CIRCLE_SHA1" # move to triggered SHA
+                      git --no-pager log --no-color -n 1 --format='HEAD is now at %h %s'
+                    fi
+                name: Checkout code shallow
+examples:
+    checkout:
+        description: |
+            Simple git shallow clone instead of checkout.
+            You can change depth and fetch_depth, but I do recommend set fetch_depth larger than 1.
+            If you set fetch_depth 1, you will find build failed when new commit was pushed.
+            Default value of `fetch_depth` is 10 to cover re-build after several commit.
+
+            # No options will clone depth 1 and fetch depth 10.
+            - git-shallow-clone/checkout
+            # Clone the repository to specific path `src`.
+            - git-shallow-clone/checkout:
+                path: src
+            # Set fetch_depth: 1 to minimize fetch time.
+            - git-shallow-clone/checkout:
+                fetch_depth: 1
+            # Change depth:5 for some reason.
+            - git-shallow-clone/checkout:
+                depth: 5
+                fetch_depth: 5
+            # Enable ssh key scan for github.com and bitbucket.org. Omit this parameter use embedded known ssh key by default.
+            - git-shallow-clone/checkout:
+                keyscan_github: true
+                keyscan_bitbucket: true
+            # Skip tag fetch.
+            - git-shallow-clone/checkout:
+                no_tags: true
+            # Shallow clone then update submodules.
+            - git-shallow-clone/checkout
+            - run: git submodule update --init --recursive
+        usage:
+            version: "2.1"
+            orbs:
+                git-shallow-clone: guitarrapc/git-shallow-clone@x.y.z
+            workflows:
+                build:
+                    jobs:
+                        - git-shallow-clone/checkout
+    checkout_advanced:
+        description: |
+            Advanced git shallow clone instead of checkout with clone_options and fetch_options.
+            Make sure some options is exclusive each other, you should follow to official git documentation.
+            e.g. `--depth N` cannot use with `--shallow-since`.
+
+            # No options will clone depth 1 and fetch depth 10.
+            - git-shallow-clone/checkout_advanced
+            # Clone the repository to specific path `src`.
+            - git-shallow-clone/checkout_advanced
+                path: src
+            # See verbose log on clone.
+            - git-shallow-clone/checkout_advanced
+                clone_options: '--depth 1 --verbose'.
+            # Use --shallow-since for clone timing, but not for fetch timing.
+            - git-shallow-clone/checkout_advanced
+                clone_options: '--shallow-since "5 days ago"'
+            # Use --shallow-since for fetch timing, but not for clone timing.
+            - git-shallow-clone/checkout_advanced
+                fetch_options: '--shallow-since "5 days ago"'
+            # Use --no-tags to skip tag fetch.
+            - git-shallow-clone/checkout_advanced
+                fetch_options: '--depth 10 --no-tags'
+            # Skip tag fetch.
+            - git-shallow-clone/checkout_advanced
+                fetch_options: '--depth 10 --no-tags'
+                tag_fetch_options: '--no-tags'
+            # Shallow clone then update submodules.
+            - git-shallow-clone/checkout_advanced
+            - run: git submodule update --init --recursive
+        usage:
+            version: "2.1"
+            orbs:
+                git-shallow-clone: guitarrapc/git-shallow-clone@x.y.z
+            workflows:
+                build:
+                    jobs:
+                        - git-shallow-clone/checkout_advanced:
+                            clone_options: --shallow-since "5 days ago"
+                            fetch_options: --shallow-since "5 days ago"
+
+

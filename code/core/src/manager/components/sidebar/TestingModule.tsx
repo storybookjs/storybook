@@ -19,15 +19,14 @@ import { useDynamicFavicon } from './useDynamicFavicon';
 
 const DEFAULT_HEIGHT = 500;
 
-const HoverCard = styled(Card)(({ theme }) => ({
+const HoverCard = styled(Card)({
   display: 'flex',
   flexDirection: 'column-reverse',
-  '--card-box-shadow': `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app}`,
 
   '&:hover #testing-module-collapse-toggle': {
     opacity: 1,
   },
-}));
+});
 
 const Collapsible = styled.div(({ theme }) => ({
   overflow: 'hidden',

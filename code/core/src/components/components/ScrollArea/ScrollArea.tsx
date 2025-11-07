@@ -62,6 +62,7 @@ const ScrollAreaThumb = styled(ScrollAreaPrimitive.Thumb)(({ theme }) => ({
   borderRadius: `var(--scrollbar-size)`,
   position: 'relative',
   transition: 'opacity 0.2s ease-out',
+  zIndex: 1,
 
   '&:hover': { opacity: 0.8 },
 

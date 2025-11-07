@@ -162,6 +162,24 @@ export const TableWrapper = styled.table<{
               borderBottomRightRadius: theme.appBorderRadius,
             },
           }),
+          
+        '@media (forced-colors: active)': {
+          '> tr > *': {
+            borderColor: 'CanvasText',
+          },
+          '> tr:first-of-type > *': {
+            borderColor: 'CanvasText',
+          },
+          '> tr:last-of-type > *': {
+            borderColor: 'CanvasText',
+          },
+          '> tr > *:first-of-type': {
+            borderColor: 'CanvasText',
+          },
+          '> tr > *:last-of-type': {
+            borderColor: 'CanvasText',
+          },
+        },
     },
     // End awesome table styling
   },

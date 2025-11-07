@@ -143,7 +143,7 @@ export class AddonVitestService {
             }),
           {
             id: 'playwright-installation',
-            intro: 'Installing Playwright browser binaries',
+            intro: 'Installing Playwright browser binaries (Press "c" to abort)',
             error: `An error occurred while installing Playwright browser binaries. Please run the following command later: npx ${playwrightCommand.join(' ')}`,
             success: 'Playwright browser binaries installed successfully',
             abortable: true,

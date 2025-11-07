@@ -65,7 +65,6 @@ export const executeTask = async (
   let cleanup: (() => void) | undefined;
 
   if (abortable) {
-    log('Press "c" to abort');
     const result = setupAbortController();
     abortController = result.abortController;
     cleanup = result.cleanup;
@@ -123,7 +122,6 @@ export const executeTaskWithSpinner = async (
   let cleanup: (() => void) | undefined;
 
   if (abortable) {
-    log('Press "c" to abort');
     const result = setupAbortController();
     abortController = result.abortController;
     cleanup = result.cleanup;

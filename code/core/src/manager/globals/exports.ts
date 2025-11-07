@@ -548,6 +548,7 @@ export default {
     'TooltipLinkList',
     'TooltipMessage',
     'TooltipNote',
+    'TourGuide',
     'UL',
     'WithTooltip',
     'WithTooltipPure',

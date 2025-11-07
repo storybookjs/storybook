@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { Link, SyntaxHighlighter } from 'storybook/internal/components';
+import { Link, SyntaxHighlighter, TourGuide } from 'storybook/internal/components';
 import {
   STORY_ARGS_UPDATED,
   STORY_FINISHED,
@@ -18,8 +18,6 @@ import type {
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
-import { Tour } from './Tour';
-
 let root: ReturnType<typeof createRoot> | null = null;
 
 const renderTestingTour = () => {
@@ -32,7 +30,34 @@ const renderTestingTour = () => {
   root = root ?? createRoot(container);
   root.render(
     <ThemeProvider theme={convert(themes.light)}>
-      <Tour
+      <TourGuide
+        steps={[
+          {
+            title: 'Testing widget',
+            content: 'Run tests right from your Storybook sidebar using the testing widget.',
+            placement: 'right-end',
+            target: '#storybook-testing-module',
+            highlight: '#sidebar-bottom-wrapper > :last-child',
+            onNextButtonClick: ({ next }: { next: () => void }) => {
+              const toggle = document.getElementById('testing-module-collapse-toggle');
+              if (toggle?.getAttribute('aria-label') === 'Expand testing module') {
+                toggle.click();
+                setTimeout(next, 300);
+              } else {
+                next();
+              }
+            },
+          },
+          {
+            title: 'Start a test run',
+            content: 'Start a test run at the click of a button using Vitest.',
+            placement: 'right',
+            target:
+              '[data-module-id="storybook/test/test-provider"] button[aria-label="Start test run"]',
+            highlight: `[data-module-id="storybook/test/test-provider"] button[aria-label="Start test run"]`,
+            hideNextButton: true,
+          },
+        ]}
         onClose={() => {
           root?.render(null);
           root = null;
@@ -371,6 +396,10 @@ export default {
             internal_universalTestProviderStore.onStateChange(
               (state) => state['storybook/test'] === 'test-provider-state:succeeded' && done()
             ),
+          action: {
+            label: 'Start',
+            onClick: () => renderTestingTour(),
+          },
           content: () => (
             <>
               <p>

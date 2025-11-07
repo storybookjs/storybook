@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import type { API_IndexHash } from 'storybook/internal/types';
 
 import {
   internal_checklistStore as checklistStore,
   internal_universalChecklistStore as universalChecklistStore,
 } from '#manager-stores';
+import { throttle } from 'es-toolkit/function';
 import {
   experimental_useUniversalStore,
   useStorybookApi,
@@ -17,9 +20,20 @@ type ChecklistItem = ChecklistData['sections'][number]['items'][number];
 
 const subscriptions = new Map<string, void | (() => void)>();
 
+const useStoryIndex = () => {
+  const state = useStorybookState();
+  const [index, setIndex] = useState<API_IndexHash | undefined>(() => state.index);
+  const updateIndex = useMemo(() => throttle(setIndex, 500), []);
+
+  useEffect(() => updateIndex(state.index), [state.index, updateIndex]);
+  useEffect(() => () => updateIndex.cancel?.(), [updateIndex]);
+
+  return index;
+};
+
 export const useChecklist = () => {
   const api = useStorybookApi();
-  const { index } = useStorybookState();
+  const index = useStoryIndex();
   const [checklistState] = experimental_useUniversalStore(universalChecklistStore);
   const { loaded, muted, accepted, done, skipped } = checklistState;
 

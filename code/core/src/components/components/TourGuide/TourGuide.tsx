@@ -1,8 +1,11 @@
+import type { ComponentProps } from 'react';
 import React, { useState } from 'react';
+import { createRoot } from 'react-dom/client';
 
 import type { CallBackProps } from 'react-joyride';
 import Joyride, { ACTIONS, type Step } from 'react-joyride';
 import { useTheme } from 'storybook/theming';
+import { ThemeProvider, convert, themes } from 'storybook/theming';
 
 import { HighlightElement } from './HighlightElement';
 import { Tooltip } from './Tooltip';
@@ -17,7 +20,7 @@ export const TourGuide = ({
     highlight?: string;
     onNextButtonClick?: ({ setStepIndex }: { setStepIndex: (index: number) => void }) => void;
   })[];
-  onClose: () => void;
+  onClose?: () => void;
 }) => {
   const [stepIndex, setStepIndex] = useState(0);
   const theme = useTheme();
@@ -48,7 +51,7 @@ export const TourGuide = ({
       disableCloseOnEsc
       disableOverlayClose
       disableScrolling
-      callback={(data: CallBackProps) => data.action === ACTIONS.CLOSE && onClose()}
+      callback={(data: CallBackProps) => data.action === ACTIONS.CLOSE && onClose?.()}
       tooltipComponent={Tooltip}
       floaterProps={{
         disableAnimation: true,
@@ -87,5 +90,29 @@ export const TourGuide = ({
         },
       }}
     />
+  );
+};
+
+let root: ReturnType<typeof createRoot> | null = null;
+
+TourGuide.render = (props: ComponentProps<typeof TourGuide>) => {
+  let container = document.getElementById('storybook-tour');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'storybook-tour';
+    document.body.appendChild(container);
+  }
+  root = root ?? createRoot(container);
+  root.render(
+    <ThemeProvider theme={convert(themes.light)}>
+      <TourGuide
+        {...props}
+        onClose={() => {
+          props.onClose?.();
+          root?.render(null);
+          root = null;
+        }}
+      />
+    </ThemeProvider>
   );
 };

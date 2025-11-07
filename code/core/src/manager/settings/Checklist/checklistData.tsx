@@ -1,6 +1,5 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
-import { createRoot } from 'react-dom/client';
 
 import { Link, SyntaxHighlighter, TourGuide } from 'storybook/internal/components';
 import {
@@ -17,55 +16,6 @@ import type {
 
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
-
-let root: ReturnType<typeof createRoot> | null = null;
-
-const renderTestingTour = () => {
-  let container = document.getElementById('storybook-checklist-tour');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'storybook-checklist-tour';
-    document.body.appendChild(container);
-  }
-  root = root ?? createRoot(container);
-  root.render(
-    <ThemeProvider theme={convert(themes.light)}>
-      <TourGuide
-        steps={[
-          {
-            title: 'Testing widget',
-            content: 'Run tests right from your Storybook sidebar using the testing widget.',
-            placement: 'right-end',
-            target: '#storybook-testing-module',
-            highlight: '#sidebar-bottom-wrapper > :last-child',
-            onNextButtonClick: ({ next }: { next: () => void }) => {
-              const toggle = document.getElementById('testing-module-collapse-toggle');
-              if (toggle?.getAttribute('aria-label') === 'Expand testing module') {
-                toggle.click();
-                setTimeout(next, 300);
-              } else {
-                next();
-              }
-            },
-          },
-          {
-            title: 'Start a test run',
-            content: 'Start a test run at the click of a button using Vitest.',
-            placement: 'right',
-            target:
-              '[data-module-id="storybook/test/test-provider"] button[aria-label="Start test run"]',
-            highlight: `[data-module-id="storybook/test/test-provider"] button[aria-label="Start test run"]`,
-            hideNextButton: true,
-          },
-        ]}
-        onClose={() => {
-          root?.render(null);
-          root = null;
-        }}
-      />
-    </ThemeProvider>
-  );
-};
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',
@@ -398,7 +348,37 @@ export default {
             ),
           action: {
             label: 'Start',
-            onClick: () => renderTestingTour(),
+            onClick: () =>
+              TourGuide.render({
+                steps: [
+                  {
+                    title: 'Testing widget',
+                    content:
+                      'Run tests right from your Storybook sidebar using the testing widget.',
+                    placement: 'right-end',
+                    target: '#storybook-testing-module',
+                    highlight: '#sidebar-bottom-wrapper > :last-child',
+                    onNextButtonClick: ({ next }: { next: () => void }) => {
+                      const toggle = document.getElementById('testing-module-collapse-toggle');
+                      if (toggle?.getAttribute('aria-label') === 'Expand testing module') {
+                        toggle.click();
+                        setTimeout(next, 300);
+                      } else {
+                        next();
+                      }
+                    },
+                  },
+                  {
+                    title: 'Start a test run',
+                    content: 'Start a test run at the click of a button using Vitest.',
+                    placement: 'right',
+                    target:
+                      '[data-module-id="storybook/test/test-provider"] button[aria-label="Start test run"]',
+                    highlight: `[data-module-id="storybook/test/test-provider"] button[aria-label="Start test run"]`,
+                    hideNextButton: true,
+                  },
+                ],
+              }),
           },
           content: () => (
             <>

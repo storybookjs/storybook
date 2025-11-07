@@ -155,7 +155,7 @@ export const Sidebar = React.memo(function Sidebar({
 
   return (
     <Container className="container sidebar-container" aria-label="Global">
-      <ScrollArea vertical offset={3} scrollbarSize={6}>
+      <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
         <Top row={1.6}>
           <Heading
             className="sidebar-header"

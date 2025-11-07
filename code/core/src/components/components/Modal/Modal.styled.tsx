@@ -54,22 +54,22 @@ const zoomOut = keyframes({
 const slideFromBottom = keyframes({
   from: {
     opacity: 0,
-    transform: 'translate(0, 100%)',
+    maxHeight: '0px',
   },
   to: {
     opacity: 1,
-    transform: 'translate(0, 0)',
+    maxHeight: '80vh',
   },
 });
 
 const slideToBottom = keyframes({
   from: {
     opacity: 1,
-    transform: 'translate(0, 0)',
+    maxHeight: '80vh',
   },
   to: {
     opacity: 0,
-    transform: 'translate(0, 100%)',
+    maxHeight: '0px',
   },
 });
 
@@ -77,7 +77,8 @@ export const Overlay = styled.div<{
   $status?: TransitionStatus;
   $transitionDuration?: number;
 }>(({ $status, $transitionDuration }) => ({
-  backdropFilter: 'blur(24px)',
+  backdropFilter: 'blur(4px)',
+  background: 'rgba(0, 0, 0, 0.4)',
   position: 'absolute',
   inset: 0,
   width: '100%',
@@ -139,16 +140,14 @@ export const Container = styled.div<{
           right: '0',
           width: width ?? '100%',
           height: height ?? '80%',
+          interpolateSize: 'allow-keywords',
           maxWidth: '100%',
-          maxHeight: '80vh',
           '@media (prefers-reduced-motion: no-preference)': {
-            animationTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
+            animationTimingFunction: 'cubic-bezier(.9,.16,.77,.64)',
             animation:
               $status === 'exiting' || $status === 'preExit'
                 ? `${slideToBottom} ${$transitionDuration}ms`
-                : $status === 'entering' || $status === 'preEnter'
-                  ? `${slideFromBottom} ${$transitionDuration}ms`
-                  : 'none',
+                : `${slideFromBottom} ${$transitionDuration}ms`,
             animationFillMode: 'forwards !important',
           },
         }

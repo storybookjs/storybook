@@ -1011,7 +1011,7 @@ workflows:
                 requires:
                     - create-sandboxes
             - vitest-integration:
-                parallelism: 11
+                parallelism: 13
                 requires:
                     - create-sandboxes
             - test-portable-stories:
@@ -1106,7 +1106,7 @@ workflows:
                 requires:
                     - create-sandboxes
             - vitest-integration:
-                parallelism: 6
+                parallelism: 7
                 requires:
                     - create-sandboxes
             - test-portable-stories:

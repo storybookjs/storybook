@@ -77,7 +77,7 @@ export const Overlay = styled.div<{
   $status?: TransitionStatus;
   $transitionDuration?: number;
 }>(({ $status, $transitionDuration }) => ({
-  backdropFilter: 'blur(4px)',
+  backdropFilter: 'blur(24px)',
   background: 'rgba(0, 0, 0, 0.4)',
   position: 'absolute',
   inset: 0,

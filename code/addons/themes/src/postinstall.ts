@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawnSync } from 'child_process';
 
 const PACKAGE_MANAGER_TO_COMMAND = {
   npm: 'npx',
@@ -12,9 +12,10 @@ const selectPackageManagerCommand = (packageManager: string) =>
   PACKAGE_MANAGER_TO_COMMAND[packageManager as keyof typeof PACKAGE_MANAGER_TO_COMMAND];
 
 export default async function postinstall({ packageManager = 'npm' }) {
-  const command = selectPackageManagerCommand(packageManager);
+  const commandString = selectPackageManagerCommand(packageManager);
+  const [command, ...commandArgs] = commandString.split(' ');
 
-  spawn(`${command} @storybook/auto-config themes`, {
+  spawnSync(command, [...commandArgs, '@storybook/auto-config', 'themes'], {
     stdio: 'inherit',
     cwd: process.cwd(),
   });

@@ -119,18 +119,9 @@ export const Toolbar: FC<ToolbarProps> = ({
             padding="small"
             variant="ghost"
             key="opener"
-            onClick={(e: SyntheticEvent) => {
-              e.preventDefault();
-              resetZoom();
-            }}
             ariaLabel="Open canvas in new tab"
           >
-            <a
-              href={getStoryHref(baseUrl, storyId)}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Open canvas in new tab"
-            >
+            <a href={getStoryHref(baseUrl, storyId)} target="_blank" rel="noopener noreferrer">
               <ShareAltIcon />
             </a>
           </Button>

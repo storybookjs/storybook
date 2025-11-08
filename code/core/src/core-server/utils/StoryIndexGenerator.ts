@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
+import path, { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { commonGlobOptions, getProjectRoot, normalizeStoryPath } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
@@ -160,16 +160,19 @@ export class StoryIndexGenerator {
 
     const pathToSubIndex = {} as SpecifierStoriesCache;
 
-    const fullGlob = slash(join(specifier.directory, specifier.files));
+    // Calculate a new CWD for each glob to handle paths that go above the workingDir.
+    const globCwd = path.resolve(workingDir, specifier.directory);
+    const globPattern = specifier.files;
 
     // Dynamically import globby because it is a pure ESM module
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
-    const files = await globby(fullGlob, {
+    // Execute globby within the new CWD to ensure `ignore` patterns work correctly.
+    const files = await globby(globPattern, {
       absolute: true,
-      cwd: workingDir,
-      ...commonGlobOptions(fullGlob),
+      cwd: globCwd,
+      ...commonGlobOptions(globPattern),
     });
 
     if (files.length === 0 && !ignoreWarnings) {

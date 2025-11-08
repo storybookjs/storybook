@@ -32,6 +32,7 @@ async function run() {
         resolve: true,
         emitDtsOnly: true,
         tsconfig: join(process.cwd(), 'tsconfig.json'),
+        resolver: 'tsc',
         compilerOptions: {
           esModuleInterop: true,
           baseUrl: '.',

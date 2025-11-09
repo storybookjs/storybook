@@ -1,7 +1,7 @@
 ```js filename="src/components/Button.js" renderer="react" language="js"
 // This import will work in Storybook
 import styles from './Button.module.css';
-// Sass/Scss is also supported
+// Sass/Scss modules are also supported
 // import styles from './Button.module.scss'
 // import styles from './Button.module.sass'
 
@@ -17,7 +17,7 @@ export function Button() {
 ```ts filename="src/components/Button.ts" renderer="react" language="ts"
 // This import will work in Storybook
 import styles from './Button.module.css';
-// Sass/Scss is also supported
+// Sass/Scss modules are also supported
 // import styles from './Button.module.scss'
 // import styles from './Button.module.sass'
 

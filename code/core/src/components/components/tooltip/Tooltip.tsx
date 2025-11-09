@@ -96,6 +96,7 @@ const Wrapper = styled.div<WrapperProps>(
   ({ hidden }) => ({
     display: hidden ? 'none' : 'inline-block',
     zIndex: 2147483647,
+    colorScheme: 'light dark',
   }),
   ({ theme, color, hasChrome }) =>
     hasChrome

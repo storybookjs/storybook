@@ -288,10 +288,31 @@ Configure options for the [framework's builder](../../api/main-config/main-confi
 
 #### `docgen`
 
-Type: `'vue-docgen-api' | 'vue-component-meta'`
+Type: `'vue-docgen-api' | 'vue-component-meta' | boolean`
 
 Default: `'vue-docgen-api'`
 
 Since: `8.0`
 
 Choose which docgen tool to use when generating controls for your components. See [Using `vue-component-meta`](#using-vue-component-meta) for more information.
+
+Set to `false` to disable docgen processing entirely for improved build performance.
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/vue3-vite';
+
+const config: StorybookConfig = {
+  framework: {
+    name: '@storybook/vue3-vite',
+    options: {
+      docgen: false, // Disable docgen for better performance
+    },
+  },
+};
+
+export default config;
+```
+
+##### When to disable docgen
+
+Disabling docgen can improve build performance for large projects, but [argTypes won't be inferred automatically](../../api/arg-types.mdx#automatic-argtype-inference), which will prevent features like [Controls](../../essentials/controls.mdx) and [docs](../../writing-docs/autodocs.mdx) from working as expected. To use those features, you will need to [define `argTypes` manually](../../api/arg-types.mdx#manually-specifying-argtypes).

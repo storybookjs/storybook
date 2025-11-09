@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { storeOptions } from '../constants';
 import { GlobalErrorContext, GlobalErrorModal } from './GlobalErrorModal';

@@ -1,8 +1,14 @@
 <script lang="ts">
-  export let decoratorArg2: string;
+  import type { Snippet } from "svelte";
+
+  interface Props {
+    children: Snippet;
+    decoratorArg2: string;
+  }
+  let { children, decoratorArg2 }: Props = $props();
 </script>
 
 <div>
   Decorator: {decoratorArg2}
-  <slot />
+  {@render children()}
 </div>

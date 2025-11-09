@@ -218,7 +218,7 @@ export class MissingAngularJsonError extends StorybookError {
     super({
       category: Category.CLI_INIT,
       code: 2,
-      documentation: 'https://storybook.js.org/docs/faq#error-no-angularjson-file-found',
+      documentation: 'https://storybook.js.org/docs/faq#error-no-angularjson-file-found?ref=error',
       message: dedent`
         An angular.json file was not found in the current working directory: ${data.path}
         Storybook needs it to work properly, so please rerun the command at the root of your project, where the angular.json file is located.`,
@@ -350,61 +350,19 @@ export class NoMatchingExportError extends StorybookError {
   }
 }
 
-export class MainFileESMOnlyImportError extends StorybookError {
-  constructor(
-    public data: { location: string; line: string | undefined; num: number | undefined }
-  ) {
-    const message = [
-      `Storybook failed to load ${data.location}`,
-      '',
-      `It looks like the file tried to load/import an ESM only module.`,
-      `Support for this is currently limited in ${data.location}`,
-      `You can import ESM modules in your main file, but only as dynamic import.`,
-      '',
-    ];
-    if (data.line) {
-      message.push(
-        picocolors.white(
-          `In your ${picocolors.yellow(data.location)} file, line ${picocolors.bold(
-            picocolors.cyan(data.num)
-          )} threw an error:`
-        ),
-        picocolors.gray(data.line)
-      );
-    }
-
-    message.push(
-      '',
-      picocolors.white(
-        `Convert the static import to a dynamic import ${picocolors.underline('where they are used')}.`
-      ),
-      picocolors.white(`Example:`) + ' ' + picocolors.gray(`await import(<your ESM only module>);`),
-      ''
-    );
-
-    super({
-      category: Category.CORE_SERVER,
-      code: 5,
-      documentation:
-        'https://github.com/storybookjs/storybook/issues/23972#issuecomment-1948534058',
-      message: message.join('\n'),
-    });
-  }
-}
-
 export class MainFileMissingError extends StorybookError {
   constructor(public data: { location: string; source?: 'storybook' | 'vitest' }) {
     const map = {
       storybook: {
         helperMessage:
           'You can pass a --config-dir flag to tell Storybook, where your main.js file is located at.',
-        documentation: 'https://storybook.js.org/docs/configure',
+        documentation: 'https://storybook.js.org/docs/configure?ref=error',
       },
       vitest: {
         helperMessage:
           'You can pass a configDir plugin option to tell where your main.js file is located at.',
         // TODO: add proper docs once available
-        documentation: 'https://storybook.js.org/docs/configure',
+        documentation: 'https://storybook.js.org/docs/configure?ref=error',
       },
     };
     const { documentation, helperMessage } = map[data.source || 'storybook'];
@@ -575,6 +533,22 @@ export class SavingGlobalSettingsFileError extends StorybookError {
       message: dedent`
         Unable to save global settings file to ${data.filePath}
         ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}
+
+export class CommonJsConfigNotSupportedError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.CLI_AUTOMIGRATE,
+      code: 1,
+      documentation: 'https://storybook.js.org/docs/configure/overview?ref=error#es-modules',
+      message: dedent`
+        Support for CommonJS Storybook config files has been removed in Storybook 10.0.0.
+        Please migrate your config to a valid ESM file.
+        
+        CommonJS files (ending in .cjs, .cts, .cjsx, .ctsx) or files containing 'module.exports' are no longer supported.
+        Please convert your config to use ES modules (import/export syntax).`,
     });
   }
 }

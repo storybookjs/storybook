@@ -18,6 +18,6 @@ test.describe('navigating', () => {
       window.document.location.href.match('/docs/example-button--docs')
     );
 
-    await expect(sbPage.page.url()).toContain('/docs/example-button--docs');
+    expect(sbPage.page.url()).toContain('/docs/example-button--docs');
   });
 });

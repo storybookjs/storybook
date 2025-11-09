@@ -2,7 +2,7 @@ import type * as React from 'react';
 
 import type { Addon_DecoratorFunction, LoaderFunction } from 'storybook/internal/types';
 
-import type { ReactRenderer, StoryFn } from '@storybook/react';
+import type { ReactRenderer } from '@storybook/react';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
@@ -13,7 +13,6 @@ import { createRouter } from '@storybook/nextjs-vite/router.mock';
 
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
 
-import './config/preview';
 import { HeadManagerDecorator } from './head-manager/decorator';
 import { ImageDecorator } from './images/decorator';
 import { RouterDecorator } from './routing/decorator';

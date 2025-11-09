@@ -1,9 +1,23 @@
 {
   "name": "storybook",
-  "version": "9.1.0-alpha.6",
-  "description": "Storybook framework-agnostic API",
+  "version": "10.1.0-alpha.7",
+  "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "component",
+    "components",
+    "design-systems",
+    "component-testing",
+    "react",
+    "next",
+    "next.js",
+    "react-native",
+    "react-native-web",
+    "vue",
+    "angular",
+    "svelte",
+    "sveltekit",
+    "web-components"
   ],
   "homepage": "https://storybook.js.org",
   "bugs": {
@@ -32,416 +46,163 @@
     }
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./internal/node-logger": {
-      "types": "./dist/node-logger/index.d.ts",
-      "import": "./dist/node-logger/index.js",
-      "require": "./dist/node-logger/index.cjs"
-    },
-    "./internal/client-logger": {
-      "types": "./dist/client-logger/index.d.ts",
-      "import": "./dist/client-logger/index.js",
-      "require": "./dist/client-logger/index.cjs"
-    },
-    "./internal/theming": {
-      "types": "./dist/theming/index.d.ts",
-      "import": "./dist/theming/index.js",
-      "require": "./dist/theming/index.cjs"
-    },
-    "./theming": {
-      "types": "./dist/theming/index.d.ts",
-      "import": "./dist/theming/index.js",
-      "require": "./dist/theming/index.cjs"
-    },
-    "./internal/theming/create": {
-      "types": "./dist/theming/create.d.ts",
-      "import": "./dist/theming/create.js",
-      "require": "./dist/theming/create.cjs"
-    },
-    "./theming/create": {
-      "types": "./dist/theming/create.d.ts",
-      "import": "./dist/theming/create.js",
-      "require": "./dist/theming/create.cjs"
-    },
-    "./internal/core-server": {
-      "types": "./dist/core-server/index.d.ts",
-      "import": "./dist/core-server/index.js",
-      "require": "./dist/core-server/index.cjs"
-    },
-    "./internal/core-server/presets/common-preset": {
-      "import": "./dist/core-server/presets/common-preset.js",
-      "require": "./dist/core-server/presets/common-preset.cjs"
-    },
-    "./internal/core-server/presets/common-manager": {
-      "import": "./dist/core-server/presets/common-manager.js"
-    },
-    "./internal/core-server/presets/common-override-preset": {
-      "import": "./dist/core-server/presets/common-override-preset.js",
-      "require": "./dist/core-server/presets/common-override-preset.cjs"
-    },
-    "./internal/highlight": {
-      "types": "./dist/highlight/index.d.ts",
-      "import": "./dist/highlight/index.js",
-      "require": "./dist/highlight/index.cjs"
-    },
-    "./highlight": {
-      "types": "./dist/highlight/index.d.ts",
-      "import": "./dist/highlight/index.js",
-      "require": "./dist/highlight/index.cjs"
-    },
-    "./internal/actions": {
-      "types": "./dist/actions/index.d.ts",
-      "import": "./dist/actions/index.js",
-      "require": "./dist/actions/index.cjs"
-    },
     "./actions": {
       "types": "./dist/actions/index.d.ts",
-      "import": "./dist/actions/index.js",
-      "require": "./dist/actions/index.cjs"
-    },
-    "./internal/actions/decorator": {
-      "types": "./dist/actions/decorator.d.ts",
-      "import": "./dist/actions/decorator.js"
+      "default": "./dist/actions/index.js"
     },
     "./actions/decorator": {
       "types": "./dist/actions/decorator.d.ts",
-      "import": "./dist/actions/decorator.js"
+      "default": "./dist/actions/decorator.js"
     },
-    "./internal/viewport": {
-      "types": "./dist/viewport/index.d.ts",
-      "import": "./dist/viewport/index.js",
-      "require": "./dist/viewport/index.cjs"
-    },
-    "./viewport": {
-      "types": "./dist/viewport/index.d.ts",
-      "import": "./dist/viewport/index.js",
-      "require": "./dist/viewport/index.cjs"
-    },
-    "./internal/controls": {
-      "types": "./dist/controls/index.d.ts",
-      "import": "./dist/controls/index.js",
-      "require": "./dist/controls/index.cjs"
-    },
-    "./internal/controls/decorator": {
-      "types": "./dist/controls/decorator.d.ts",
-      "import": "./dist/controls/decorator.js"
-    },
-    "./internal/core-events": {
-      "types": "./dist/core-events/index.d.ts",
-      "import": "./dist/core-events/index.js",
-      "require": "./dist/core-events/index.cjs"
-    },
-    "./internal/manager-errors": {
-      "types": "./dist/manager-errors.d.ts",
-      "import": "./dist/manager-errors.js"
-    },
-    "./internal/preview-errors": {
-      "types": "./dist/preview-errors.d.ts",
-      "import": "./dist/preview-errors.js",
-      "require": "./dist/preview-errors.cjs"
-    },
-    "./internal/server-errors": {
-      "types": "./dist/server-errors.d.ts",
-      "import": "./dist/server-errors.js",
-      "require": "./dist/server-errors.cjs"
-    },
-    "./internal/channels": {
-      "types": "./dist/channels/index.d.ts",
-      "import": "./dist/channels/index.js",
-      "require": "./dist/channels/index.cjs"
-    },
-    "./internal/types": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js",
-      "require": "./dist/types/index.cjs"
-    },
-    "./internal/csf-tools": {
-      "types": "./dist/csf-tools/index.d.ts",
-      "import": "./dist/csf-tools/index.js",
-      "require": "./dist/csf-tools/index.cjs"
-    },
-    "./internal/csf": {
-      "types": "./dist/csf/index.d.ts",
-      "import": "./dist/csf/index.js",
-      "require": "./dist/csf/index.cjs"
-    },
-    "./internal/common": {
-      "types": "./dist/common/index.d.ts",
-      "import": "./dist/common/index.js",
-      "require": "./dist/common/index.cjs"
-    },
-    "./internal/builder-manager": {
-      "types": "./dist/builder-manager/index.d.ts",
-      "import": "./dist/builder-manager/index.js",
-      "require": "./dist/builder-manager/index.cjs"
-    },
-    "./internal/telemetry": {
-      "types": "./dist/telemetry/index.d.ts",
-      "import": "./dist/telemetry/index.js",
-      "require": "./dist/telemetry/index.cjs"
-    },
-    "./internal/preview-api": {
-      "types": "./dist/preview-api/index.d.ts",
-      "import": "./dist/preview-api/index.js",
-      "require": "./dist/preview-api/index.cjs"
-    },
-    "./preview-api": {
-      "types": "./dist/preview-api/index.d.ts",
-      "import": "./dist/preview-api/index.js",
-      "require": "./dist/preview-api/index.cjs"
-    },
-    "./internal/manager-api": {
-      "types": "./dist/manager-api/index.d.ts",
-      "import": "./dist/manager-api/index.js",
-      "require": "./dist/manager-api/index.cjs"
-    },
-    "./manager-api": {
-      "types": "./dist/manager-api/index.d.ts",
-      "import": "./dist/manager-api/index.js",
-      "require": "./dist/manager-api/index.cjs"
-    },
-    "./internal/router": {
-      "types": "./dist/router/index.d.ts",
-      "import": "./dist/router/index.js",
-      "require": "./dist/router/index.cjs"
-    },
-    "./internal/components": {
-      "types": "./dist/components/index.d.ts",
-      "import": "./dist/components/index.js",
-      "require": "./dist/components/index.cjs"
-    },
-    "./internal/docs-tools": {
-      "types": "./dist/docs-tools/index.d.ts",
-      "import": "./dist/docs-tools/index.js",
-      "require": "./dist/docs-tools/index.cjs"
-    },
-    "./internal/manager/globals-module-info": {
-      "types": "./dist/manager/globals-module-info.d.ts",
-      "import": "./dist/manager/globals-module-info.js",
-      "require": "./dist/manager/globals-module-info.cjs"
-    },
-    "./internal/manager/globals": {
-      "types": "./dist/manager/globals.d.ts",
-      "import": "./dist/manager/globals.js",
-      "require": "./dist/manager/globals.cjs"
-    },
-    "./internal/preview/globals": {
-      "types": "./dist/preview/globals.d.ts",
-      "import": "./dist/preview/globals.js",
-      "require": "./dist/preview/globals.cjs"
-    },
-    "./internal/cli": {
-      "types": "./dist/cli/index.d.ts",
-      "import": "./dist/cli/index.js",
-      "require": "./dist/cli/index.cjs"
+    "./highlight": {
+      "types": "./dist/highlight/index.d.ts",
+      "default": "./dist/highlight/index.js"
     },
     "./internal/babel": {
       "types": "./dist/babel/index.d.ts",
-      "import": "./dist/babel/index.js",
-      "require": "./dist/babel/index.cjs"
+      "default": "./dist/babel/index.js"
     },
-    "./internal/cli/bin": {
-      "types": "./dist/cli/bin/index.d.ts",
-      "import": "./dist/cli/bin/index.js",
-      "require": "./dist/cli/bin/index.cjs"
+    "./internal/bin/dispatcher": "./dist/bin/dispatcher.js",
+    "./internal/bin/loader": "./dist/bin/loader.js",
+    "./internal/channels": {
+      "types": "./dist/channels/index.d.ts",
+      "default": "./dist/channels/index.js"
     },
-    "./internal/bin": {
-      "import": "./dist/bin/index.js",
-      "require": "./dist/bin/index.cjs"
+    "./internal/cli": {
+      "types": "./dist/cli/index.d.ts",
+      "default": "./dist/cli/index.js"
+    },
+    "./internal/client-logger": {
+      "types": "./dist/client-logger/index.d.ts",
+      "default": "./dist/client-logger/index.js"
+    },
+    "./internal/common": {
+      "types": "./dist/common/index.d.ts",
+      "default": "./dist/common/index.js"
+    },
+    "./internal/components": {
+      "types": "./dist/components/index.d.ts",
+      "default": "./dist/components/index.js"
+    },
+    "./internal/core-events": {
+      "types": "./dist/core-events/index.d.ts",
+      "default": "./dist/core-events/index.js"
+    },
+    "./internal/core-server": {
+      "types": "./dist/core-server/index.d.ts",
+      "default": "./dist/core-server/index.js"
+    },
+    "./internal/core-server/presets/common-override-preset": "./dist/core-server/presets/common-override-preset.js",
+    "./internal/csf": {
+      "types": "./dist/csf/index.d.ts",
+      "default": "./dist/csf/index.js"
+    },
+    "./internal/csf-tools": {
+      "types": "./dist/csf-tools/index.d.ts",
+      "default": "./dist/csf-tools/index.js"
+    },
+    "./internal/docs-tools": {
+      "types": "./dist/docs-tools/index.d.ts",
+      "default": "./dist/docs-tools/index.js"
     },
     "./internal/instrumenter": {
       "types": "./dist/instrumenter/index.d.ts",
-      "import": "./dist/instrumenter/index.js",
-      "require": "./dist/instrumenter/index.cjs"
+      "default": "./dist/instrumenter/index.js"
     },
-    "./internal/test": {
-      "types": "./dist/test/index.d.ts",
-      "import": "./dist/test/index.js",
-      "require": "./dist/test/index.cjs"
+    "./internal/manager-errors": {
+      "types": "./dist/manager-errors.d.ts",
+      "default": "./dist/manager-errors.js"
+    },
+    "./internal/manager/globals": {
+      "types": "./dist/manager/globals.d.ts",
+      "default": "./dist/manager/globals.js"
+    },
+    "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
+    "./internal/node-logger": {
+      "types": "./dist/node-logger/index.d.ts",
+      "default": "./dist/node-logger/index.js"
+    },
+    "./internal/preview-api": {
+      "types": "./dist/preview-api/index.d.ts",
+      "default": "./dist/preview-api/index.js"
+    },
+    "./internal/preview-errors": {
+      "types": "./dist/preview-errors.d.ts",
+      "default": "./dist/preview-errors.js"
+    },
+    "./internal/preview/globals": {
+      "types": "./dist/preview/globals.d.ts",
+      "default": "./dist/preview/globals.js"
+    },
+    "./internal/preview/runtime": "./dist/preview/runtime.js",
+    "./internal/router": {
+      "types": "./dist/router/index.d.ts",
+      "default": "./dist/router/index.js"
+    },
+    "./internal/server-errors": {
+      "types": "./dist/server-errors.d.ts",
+      "default": "./dist/server-errors.js"
+    },
+    "./internal/telemetry": {
+      "types": "./dist/telemetry/index.d.ts",
+      "default": "./dist/telemetry/index.js"
+    },
+    "./internal/types": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/types/index.js"
+    },
+    "./manager-api": {
+      "types": "./dist/manager-api/index.d.ts",
+      "default": "./dist/manager-api/index.js"
+    },
+    "./package.json": "./package.json",
+    "./preview-api": {
+      "types": "./dist/preview-api/index.d.ts",
+      "default": "./dist/preview-api/index.js"
     },
     "./test": {
       "types": "./dist/test/index.d.ts",
-      "import": "./dist/test/index.js",
-      "require": "./dist/test/index.cjs"
+      "default": "./dist/test/index.js"
     },
-    "./internal/preview/runtime": {
-      "import": "./dist/preview/runtime.js"
+    "./theming": {
+      "types": "./dist/theming/index.d.ts",
+      "default": "./dist/theming/index.js"
     },
-    "./internal/manager/globals-runtime": {
-      "import": "./dist/manager/globals-runtime.js"
+    "./theming/create": {
+      "types": "./dist/theming/create.d.ts",
+      "default": "./dist/theming/create.js"
     },
-    "./package.json": "./package.json",
-    "./internal/package.json": "./package.json"
+    "./viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "default": "./dist/viewport/index.js"
+    },
+    "./webpack/loaders/storybook-mock-transform-loader": "./dist/core-server/presets/webpack/loaders/storybook-mock-transform-loader.js",
+    "./webpack/loaders/webpack-automock-loader": "./dist/core-server/presets/webpack/loaders/webpack-automock-loader.js"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "./dist/index.d.ts"
-      ],
-      "internal/node-logger": [
-        "./dist/node-logger/index.d.ts"
-      ],
-      "internal/client-logger": [
-        "./dist/client-logger/index.d.ts"
-      ],
-      "internal/theming": [
-        "./dist/theming/index.d.ts"
-      ],
-      "theming": [
-        "./dist/theming/index.d.ts"
-      ],
-      "internal/theming/create": [
-        "./dist/theming/create.d.ts"
-      ],
-      "theming/create": [
-        "./dist/theming/create.d.ts"
-      ],
-      "internal/core-server": [
-        "./dist/core-server/index.d.ts"
-      ],
-      "internal/highlight": [
-        "./dist/highlight/index.d.ts"
-      ],
-      "highlight": [
-        "./dist/highlight/index.d.ts"
-      ],
-      "internal/actions": [
-        "./dist/actions/index.d.ts"
-      ],
-      "actions": [
-        "./dist/actions/index.d.ts"
-      ],
-      "internal/actions/decorator": [
-        "./dist/actions/decorator.d.ts"
-      ],
-      "actions/decorator": [
-        "./dist/actions/decorator.d.ts"
-      ],
-      "internal/viewport": [
-        "./dist/viewport/index.d.ts"
-      ],
-      "viewport": [
-        "./dist/viewport/index.d.ts"
-      ],
-      "internal/controls": [
-        "./dist/controls/index.d.ts"
-      ],
-      "internal/controls/decorator": [
-        "./dist/controls/decorator.d.ts"
-      ],
-      "internal/core-events": [
-        "./dist/core-events/index.d.ts"
-      ],
-      "internal/manager-errors": [
-        "./dist/manager-errors.d.ts"
-      ],
-      "internal/preview-errors": [
-        "./dist/preview-errors.d.ts"
-      ],
-      "internal/server-errors": [
-        "./dist/server-errors.d.ts"
-      ],
-      "internal/channels": [
-        "./dist/channels/index.d.ts"
-      ],
-      "internal/types": [
-        "./dist/types/index.d.ts"
-      ],
-      "internal/csf-tools": [
-        "./dist/csf-tools/index.d.ts"
-      ],
-      "internal/csf": [
-        "./dist/csf/index.d.ts"
-      ],
-      "internal/common": [
-        "./dist/common/index.d.ts"
-      ],
-      "internal/builder-manager": [
-        "./dist/builder-manager/index.d.ts"
-      ],
-      "internal/telemetry": [
-        "./dist/telemetry/index.d.ts"
-      ],
-      "internal/preview-api": [
-        "./dist/preview-api/index.d.ts"
-      ],
-      "preview-api": [
-        "./dist/preview-api/index.d.ts"
-      ],
-      "internal/manager-api": [
-        "./dist/manager-api/index.d.ts"
-      ],
-      "manager-api": [
-        "./dist/manager-api/index.d.ts"
-      ],
-      "internal/router": [
-        "./dist/router/index.d.ts"
-      ],
-      "internal/components": [
-        "./dist/components/index.d.ts"
-      ],
-      "internal/docs-tools": [
-        "./dist/docs-tools/index.d.ts"
-      ],
-      "internal/manager/globals-module-info": [
-        "./dist/manager/globals-module-info.d.ts"
-      ],
-      "internal/manager/globals": [
-        "./dist/manager/globals.d.ts"
-      ],
-      "internal/preview/globals": [
-        "./dist/preview/globals.d.ts"
-      ],
-      "internal/cli": [
-        "./dist/cli/index.d.ts"
-      ],
-      "internal/babel": [
-        "./dist/babel/index.d.ts"
-      ],
-      "internal/cli/bin": [
-        "./dist/cli/bin/index.d.ts"
-      ],
-      "internal/instrumenter": [
-        "./dist/instrumenter/index.d.ts"
-      ],
-      "internal/test": [
-        "./dist/test/index.d.ts"
-      ],
-      "test": [
-        "./dist/test/index.d.ts"
-      ]
-    }
-  },
-  "bin": "./bin/index.cjs",
+  "bin": "./dist/bin/dispatcher.js",
   "files": [
+    "bin/**/*",
     "dist/**/*",
     "assets/**/*",
     "README.md",
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ./scripts/check.ts",
-    "prep": "jiti ./scripts/prep.ts"
+    "check": "jiti ../../scripts/check/check-package.ts",
+    "prep": "jiti ../../scripts/build/build-package.ts"
   },
   "resolutions": {
     "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/../.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
+    "@storybook/icons": "^1.6.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "3.2.4",
+    "@vitest/mocker": "3.2.4",
     "@vitest/spy": "3.2.4",
-    "better-opn": "^3.0.2",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
-    "esbuild-register": "^3.5.0",
     "recast": "^0.23.5",
     "semver": "^7.6.2",
     "ws": "^8.18.0"
@@ -461,22 +222,21 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
-    "@ndelangen/get-tarball": "^3.0.7",
+    "@happy-dom/global-registrator": "^18.0.1",
     "@ngard/tiny-isequal": "^1.1.0",
     "@polka/compression": "^1.0.0-next.28",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
+    "@rolldown/pluginutils": "1.0.0-beta.18",
     "@storybook/docs-mdx": "4.0.0-next.1",
-    "@storybook/icons": "^1.4.0",
     "@tanstack/react-virtual": "^3.3.0",
-    "@testing-library/dom": "10.4.0",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^14.0.0",
     "@types/cross-spawn": "^6.0.6",
     "@types/detect-port": "^1.3.0",
     "@types/diff": "^5.0.9",
     "@types/ejs": "^3.1.1",
-    "@types/find-cache-dir": "^5.0.0",
     "@types/js-yaml": "^4.0.5",
     "@types/node": "^22.0.0",
     "@types/npmlog": "^7.0.0",
@@ -493,13 +253,13 @@
     "@yarnpkg/fslib": "2.10.3",
     "@yarnpkg/libzip": "2.3.0",
     "ansi-to-html": "^0.7.2",
-    "boxen": "^7.1.1",
+    "boxen": "^8.0.1",
     "browser-dtector": "^3.4.0",
     "bundle-require": "^5.1.0",
     "camelcase": "^8.0.0",
     "chai": "^5.1.1",
     "cli-table3": "^0.6.1",
-    "commander": "^12.1.0",
+    "commander": "^14.0.1",
     "comment-parser": "^1.4.1",
     "copy-to-clipboard": "^3.3.1",
     "cross-spawn": "^7.0.6",
@@ -510,28 +270,29 @@
     "diff": "^5.2.0",
     "downshift": "^9.0.4",
     "ejs": "^3.1.10",
+    "empathic": "^2.0.0",
     "es-toolkit": "^1.36.0",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
     "execa": "^8.0.1",
-    "fd-package-json": "^1.2.0",
+    "exsolve": "^1.0.7",
     "fetch-retry": "^6.0.0",
-    "find-cache-dir": "^5.0.0",
-    "find-up": "^7.0.0",
     "flush-promises": "^1.0.2",
     "fuse.js": "^3.6.1",
     "get-npm-tarball-url": "^2.0.3",
     "glob": "^10.0.0",
     "globby": "^14.0.1",
-    "jiti": "^1.21.6",
+    "jiti": "^2.4.2",
     "js-yaml": "^4.1.0",
     "jsdoc-type-pratt-parser": "^4.0.0",
+    "launch-editor": "^2.11.1",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
+    "modern-tar": "^0.5.5",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
-    "open": "^8.4.0",
+    "open": "^10.2.0",
     "p-limit": "^6.2.0",
     "package-manager-detector": "^1.1.0",
     "picocolors": "^1.1.0",
@@ -542,6 +303,7 @@
     "prettier": "^3.5.3",
     "pretty-hrtime": "^1.0.3",
     "prompts": "^2.4.0",
+    "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet-async": "^1.3.0",
@@ -552,7 +314,8 @@
     "react-textarea-autosize": "^8.3.0",
     "react-transition-group": "^4.4.5",
     "require-from-string": "^2.0.2",
-    "resolve-from": "^5.0.0",
+    "resolve": "^1.22.11",
+    "resolve.exports": "^2.0.3",
     "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "source-map": "^0.7.4",
@@ -564,7 +327,6 @@
     "tinyspy": "^3.0.2",
     "ts-dedent": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
-    "tsup": "^6.7.0",
     "type-fest": "^4.18.1",
     "typescript": "^5.8.3",
     "unique-string": "^3.0.0",
@@ -583,5 +345,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
 }

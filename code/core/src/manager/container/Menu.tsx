@@ -32,13 +32,14 @@ const Key = styled.span(({ theme }) => ({
   padding: '0 6px',
 }));
 
-const KeyChild = styled.code({
+const KeyChild = styled.code(({ theme }) => ({
   padding: 0,
+  fontFamily: theme.typography.fonts.base,
   verticalAlign: 'middle',
   '& + &': {
     marginLeft: 6,
   },
-});
+}));
 
 export const Shortcut: FC<{ keys: string[] }> = ({ keys }) => (
   <Key>

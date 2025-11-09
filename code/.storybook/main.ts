@@ -16,7 +16,7 @@ const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-co
 
 const config = defineMain({
   stories: [
-    './*.stories.@(js|jsx|ts|tsx)',
+    './bench/*.stories.@(js|jsx|ts|tsx)',
     {
       directory: '../core/template/stories',
       titlePrefix: 'core',
@@ -93,6 +93,11 @@ const config = defineMain({
       directory: '../addons/vitest/template/stories',
       titlePrefix: 'addons/vitest',
     },
+    {
+      directory: '../addons/vitest/src',
+      titlePrefix: 'addons/vitest',
+      files: 'stories.tsx',
+    },
   ],
   addons: [
     '@storybook/addon-themes',
@@ -131,7 +136,10 @@ const config = defineMain({
   },
   features: {
     developmentModeForBuild: true,
+    experimentalTestSyntax: true,
+    experimentalComponentsManifest: true,
   },
+  staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
   viteFinal: async (viteConfig, { configType }) => {
     const { mergeConfig } = await import('vite');
 

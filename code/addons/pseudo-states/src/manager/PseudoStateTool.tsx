@@ -1,11 +1,11 @@
 import React, { type ComponentProps, useCallback } from 'react';
 
-import { Checkbox, IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import { color, styled } from 'storybook/internal/theming';
+import { Form, IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 
 import { ButtonIcon, RefreshIcon } from '@storybook/icons';
 
 import { useGlobals } from 'storybook/manager-api';
+import { color, styled } from 'storybook/theming';
 
 import { PARAM_KEY, PSEUDO_STATES } from '../constants';
 
@@ -50,7 +50,7 @@ export const PseudoStateTool = () => {
     return {
       id: option,
       title: <LinkTitle active={active}>:{PSEUDO_STATES[option]}</LinkTitle>,
-      input: <Checkbox checked={active} onChange={toggleOption(option)} />,
+      input: <Form.Checkbox checked={active} onChange={toggleOption(option)} />,
       active,
     };
   });

@@ -1,10 +1,10 @@
-import { join } from 'node:path';
-
 import {
   CouldNotEvaluateFrameworkError,
   InvalidFrameworkNameError,
   MissingFrameworkFieldError,
 } from 'storybook/internal/server-errors';
+
+import { resolveModulePath } from 'exsolve';
 
 import { frameworkPackages } from './get-storybook-info';
 
@@ -33,7 +33,10 @@ export function validateFrameworkName(
 
   // If it's not a known framework, we need to validate that it's a valid package at least
   try {
-    require.resolve(join(frameworkName, 'preset'));
+    resolveModulePath(`${frameworkName}/preset`, {
+      extensions: ['.mjs', '.js', '.cjs'],
+      conditions: ['node', 'import', 'require'],
+    });
   } catch (err) {
     throw new CouldNotEvaluateFrameworkError({ frameworkName });
   }

@@ -95,7 +95,7 @@ Update your Storybook configuration file (i.e., `.storybook/main.js|ts`) to enab
 
 ### Configure
 
-By default, the Svelte [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) addon offers zero-config support for Storybook's Svelte framework. However, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts`) and provide additional addon options. Listed below are the available options and examples of how to use them.
+By default, the Svelte [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) offers zero-config support for Storybook's Svelte framework. However, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts`) and provide additional addon options. Listed below are the available options and examples of how to use them.
 
 {/* prettier-ignore-start */}
 
@@ -194,3 +194,21 @@ The available options are:
 Type: `Record<string, any>`
 
 Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
+
+#### `docgen`
+
+Type: `boolean`
+
+Default: `true`
+
+Enables or disables automatic documentation generation for component properties. When disabled, Storybook will skip the docgen processing step during build, which can improve build performance.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="svelte-framework-options-docgen.md" />
+
+{/* prettier-ignore-end */}
+
+#### When to disable docgen
+
+Disabling docgen can improve build performance for large projects, but [argTypes won't be inferred automatically](../../api/arg-types.mdx#automatic-argtype-inference), which will prevent features like [Controls](../../essentials/controls.mdx) and [docs](../../writing-docs/autodocs.mdx) from working as expected. To use those features, you will need to [define `argTypes` manually](../../api/arg-types.mdx#manually-specifying-argtypes).

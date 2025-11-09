@@ -1,14 +1,26 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "9.1.0-alpha.6",
-  "description": "Document component usage and properties in Markdown",
+  "version": "10.1.0-alpha.7",
+  "description": "Storybook Docs: Document UI components automatically with stories and MDX",
   "keywords": [
-    "addon",
-    "notes",
+    "docs",
     "documentation",
     "storybook",
+    "storybook-addon",
     "essentials",
-    "organize"
+    "organize",
+    "MDX",
+    "markdown",
+    "autodocs",
+    "styleguide",
+    "style guide",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/docs",
   "bugs": {
@@ -24,95 +36,56 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+    "./angular": {
+      "types": "./dist/angular/index.d.ts",
+      "default": "./dist/angular/index.js"
     },
-    "./preset": "./dist/preset.js",
     "./blocks": {
       "types": "./dist/blocks.d.ts",
-      "import": "./dist/blocks.mjs",
-      "require": "./dist/blocks.js"
+      "default": "./dist/blocks.js"
     },
-    "./dist/preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+    "./ember": {
+      "types": "./dist/ember/index.d.ts",
+      "default": "./dist/ember/index.js"
     },
-    "./dist/preset": "./dist/preset.js",
-    "./dist/shims/mdx-react-shim": {
-      "types": "./dist/shims/mdx-react-shim.d.ts",
-      "import": "./dist/shims/mdx-react-shim.mjs",
-      "require": "./dist/shims/mdx-react-shim.js"
-    },
-    "./mdx-react-shim": {
-      "types": "./dist/shims/mdx-react-shim.d.ts",
-      "import": "./dist/shims/mdx-react-shim.mjs",
-      "require": "./dist/shims/mdx-react-shim.js"
-    },
+    "./manager": "./dist/manager.js",
     "./mdx-loader": "./dist/mdx-loader.js",
-    "./svelte/HOC.svelte": "./svelte/HOC.svelte",
-    "./ember": "./ember/index.js",
-    "./ember/index.js": "./ember/index.js",
-    "./angular": "./angular/index.js",
-    "./angular/index.js": "./angular/index.js",
-    "./web-components/index.js": "./web-components/index.js",
+    "./mdx-react-shim": {
+      "types": "./dist/mdx-react-shim.d.ts",
+      "default": "./dist/mdx-react-shim.js"
+    },
     "./package.json": "./package.json",
-    "./manager": "./dist/manager.js"
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "angular": [
-        "angular/index.d.ts"
-      ],
-      "blocks": [
-        "dist/blocks.d.ts"
-      ],
-      "ember": [
-        "ember/index.d.ts"
-      ],
-      "preview": [
-        "dist/preview.d.ts"
-      ]
+    "./preset": "./dist/preset.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    },
+    "./web-components": {
+      "types": "./dist/web-components/index.d.ts",
+      "default": "./dist/web-components/index.js"
     }
   },
   "files": [
     "dist/**/*",
-    "angular/**/*",
-    "common/**/*",
-    "ember/**/*",
-    "html/**/*",
-    "svelte/**/*",
-    "react/**/*",
-    "vue/**/*",
-    "web-components/**/*",
-    "lit/**/*",
     "README.md",
     "*.js",
     "*.d.ts",
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@mdx-js/react": "^3.0.0",
     "@storybook/csf-plugin": "workspace:*",
-    "@storybook/icons": "^1.2.12",
+    "@storybook/icons": "^1.6.0",
     "@storybook/react-dom-shim": "workspace:*",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
@@ -137,7 +110,7 @@
     "telejson": "8.0.0",
     "tocbot": "^4.20.1",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5"
+    "vite": "^7.0.4"
   },
   "peerDependencies": {
     "storybook": "workspace:^"
@@ -145,24 +118,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "previewEntries": [
-      "./src/preview.ts"
-    ],
-    "exportEntries": [
-      "./src/index.ts",
-      "./src/blocks.ts",
-      "./src/shims/mdx-react-shim.ts"
-    ],
-    "nodeEntries": [
-      "./src/mdx-loader.ts",
-      "./src/preset.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.tsx"
-    ]
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16",
   "storybook": {
     "displayName": "Docs",
     "icon": "https://user-images.githubusercontent.com/263385/101991672-48355c80-3c7c-11eb-82d9-95fa12438f64.png",

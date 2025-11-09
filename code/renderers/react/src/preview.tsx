@@ -40,6 +40,10 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
     const defineStory = meta.story.bind(meta);
     meta.story = (__input: any) => {
       const story = defineStory(__input);
+      // TODO: [test-syntax] Are we sure we want this? the Component construct was for
+      // compatibility with raw portable stories. We don't actually use this in vitest.
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore this is a private property used only here
       story.Component = story.__compose();
       return story;
     };
@@ -48,7 +52,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   return preview;
 }
 
-// @ts-expect-error We cannot implement the meta faithfully here, but that is okay.
+/** @ts-expect-error We cannot implement the meta faithfully here, but that is okay. */
 export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes & T> {
   meta<
     TArgs extends Args,
@@ -80,8 +84,8 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
 >;
 
-interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
-  // @ts-expect-error hard
+export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
+/** @ts-expect-error hard */
   extends Meta<T, MetaInput> {
   // Required args don't need to be provided when the user uses an empty render
   story<
@@ -105,7 +109,7 @@ interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations
     >,
   >(
     story?: TInput
-    // @ts-expect-error hard
+    /** @ts-expect-error hard */
   ): ReactStory<T, TInput>;
 }
 

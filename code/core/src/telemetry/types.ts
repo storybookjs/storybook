@@ -24,12 +24,16 @@ export type EventType =
   | 'save-story'
   | 'create-new-story-file'
   | 'create-new-story-file-search'
+  | 'open-in-editor'
   | 'testing-module-watch-mode'
   | 'testing-module-completed-report'
   | 'testing-module-crash-report'
   | 'addon-test'
-  | 'test-run';
-
+  | 'test-run'
+  | 'addon-onboarding'
+  | 'onboarding-survey'
+  | 'mocking'
+  | 'preview-first-load';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;
@@ -56,6 +60,7 @@ export type StorybookMetadata = {
     type: DetectResult['name'];
     version: DetectResult['version'];
     agent: DetectResult['agent'];
+    nodeLinker: 'node_modules' | 'pnp' | 'pnpm' | 'isolated' | 'hoisted';
   };
   typescriptOptions?: Partial<TypescriptOptions>;
   addons?: Record<string, StorybookAddon>;
@@ -84,6 +89,10 @@ export interface Payload {
   [key: string]: any;
 }
 
+export interface Context {
+  [key: string]: any;
+}
+
 export interface Options {
   retryDelay: number;
   immediate: boolean;
@@ -97,4 +106,18 @@ export interface TelemetryData {
   eventType: EventType;
   payload: Payload;
   metadata?: StorybookMetadata;
+}
+
+export interface TelemetryEvent extends TelemetryData {
+  eventId: string;
+  sessionId: string;
+  context: Context;
+}
+
+export interface InitPayload {
+  projectType: string;
+  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean };
+  newUser: boolean;
+  versionSpecifier: string | undefined;
+  cliIntegration: string | undefined;
 }

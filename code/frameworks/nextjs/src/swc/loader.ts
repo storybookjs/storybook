@@ -6,7 +6,8 @@ import type { Options } from 'storybook/internal/types';
 import { getVirtualModules } from '@storybook/builder-webpack5';
 
 import type { NextConfig } from 'next';
-import loadJsConfig from 'next/dist/build/load-jsconfig';
+import nextJSLoadConfigModule from 'next/dist/build/load-jsconfig.js';
+import { getSupportedBrowsers } from 'next/dist/build/utils.js';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { getNodeModulesExcludeRegex } from '../utils';
@@ -20,6 +21,7 @@ export const configureSWCLoader = async (
 
   const { virtualModules } = await getVirtualModules(options);
   const projectRoot = getProjectRoot();
+  const loadJsConfig = (nextJSLoadConfigModule as any).default ?? nextJSLoadConfigModule;
 
   const { jsConfig } = await loadJsConfig(projectRoot, nextConfig as any);
 
@@ -40,7 +42,7 @@ export const configureSWCLoader = async (
     use: {
       // we use our own patch because we need to remove tracing from the original code
       // which is not possible otherwise
-      loader: require.resolve('./swc/next-swc-loader-patch.js'),
+      loader: '@storybook/nextjs/next-swc-loader-patch',
       options: {
         isServer: false,
         rootDir: projectRoot,
@@ -49,10 +51,7 @@ export const configureSWCLoader = async (
         hasReactRefresh: isDevelopment,
         jsConfig,
         nextConfig,
-        supportedBrowsers: require('next/dist/build/utils').getSupportedBrowsers(
-          projectRoot,
-          isDevelopment
-        ),
+        supportedBrowsers: getSupportedBrowsers(projectRoot, isDevelopment),
         swcCacheDir: join(projectRoot, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
         bundleTarget: 'default',
       },

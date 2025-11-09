@@ -21,8 +21,11 @@ import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { processAutoblockerResults } from './autoblock/utils';
-import { type AutomigrationCheckResult, runAutomigrations } from './automigrate/multi-project';
-import type { FixId } from './automigrate/types';
+import {
+  type AutomigrationCheckResult,
+  type AutomigrationResult,
+  runAutomigrations,
+} from './automigrate/multi-project';
 import { FixStatus } from './automigrate/types';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types';
@@ -73,9 +76,7 @@ const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
 export const checkVersionConsistency = () => {
-  const lines = spawnSync('npm', ['ls'], { stdio: 'pipe', shell: true })
-    .output.toString()
-    .split('\n');
+  const lines = spawnSync('npm ls', { stdio: 'pipe', shell: true }).output.toString().split('\n');
   const storybookPackages = lines
     .map(getStorybookVersion)
     .filter((item): item is NonNullable<typeof item> => !!item)
@@ -127,22 +128,24 @@ export type UpgradeOptions = {
 };
 
 function getUpgradeResults(
-  projectResults: Record<string, Record<FixId, FixStatus>>,
+  projectResults: Record<string, AutomigrationResult>,
   doctorResults: Record<string, ProjectDoctorResults>
 ) {
   const successfulProjects: string[] = [];
   const failedProjects: string[] = [];
   const projectsWithNoFixes: string[] = [];
 
-  const allProjects = Object.entries(projectResults).map(([configDir, fixResults]) => {
-    const automigrationResults = Object.entries(fixResults).map(([fixId, status]) => {
-      const succeeded = status === FixStatus.SUCCEEDED || status === FixStatus.MANUAL_SUCCEEDED;
-      return {
-        fixId,
-        status,
-        succeeded,
-      };
-    });
+  const allProjects = Object.entries(projectResults).map(([configDir, resultData]) => {
+    const automigrationResults = Object.entries(resultData.automigrationStatuses).map(
+      ([fixId, status]) => {
+        const succeeded = status === FixStatus.SUCCEEDED || status === FixStatus.MANUAL_SUCCEEDED;
+        return {
+          fixId,
+          status,
+          succeeded,
+        };
+      }
+    );
 
     const hasFailures = automigrationResults.some(
       (fix) => fix.status === FixStatus.FAILED || fix.status === FixStatus.CHECK_FAILED
@@ -150,7 +153,7 @@ function getUpgradeResults(
     const hasSuccessfulFixes = automigrationResults.some(
       (fix) => fix.status === FixStatus.SUCCEEDED || fix.status === FixStatus.MANUAL_SUCCEEDED
     );
-    const noFixesNeeded = Object.keys(fixResults).length === 0;
+    const noFixesNeeded = Object.keys(resultData.automigrationStatuses).length === 0;
 
     // Determine if migration was successful (has successful fixes and no failures)
     const migratedSuccessfully = hasSuccessfulFixes && !hasFailures;
@@ -196,7 +199,7 @@ function getUpgradeResults(
 
 /** Logs the results of the upgrade process, including project categorization and diagnostic messages */
 function logUpgradeResults(
-  projectResults: Record<string, Record<FixId, FixStatus>>,
+  projectResults: Record<string, AutomigrationResult>,
   detectedAutomigrations: AutomigrationCheckResult[],
   doctorResults: Record<string, ProjectDoctorResults>
 ) {
@@ -242,10 +245,10 @@ function logUpgradeResults(
   const automigrationLinks = detectedAutomigrations
     .filter((am) =>
       Object.entries(projectResults).some(
-        ([_, fixResults]) =>
-          fixResults[am.fix.id] === FixStatus.FAILED ||
-          fixResults[am.fix.id] === FixStatus.SUCCEEDED ||
-          fixResults[am.fix.id] === FixStatus.CHECK_FAILED
+        ([_, resultData]) =>
+          resultData.automigrationStatuses[am.fix.id] === FixStatus.FAILED ||
+          resultData.automigrationStatuses[am.fix.id] === FixStatus.SUCCEEDED ||
+          resultData.automigrationStatuses[am.fix.id] === FixStatus.CHECK_FAILED
       )
     )
     .map((am) => `• ${createHyperlink(am.fix.id, am.fix.link!)}`);
@@ -260,14 +263,14 @@ function logUpgradeResults(
   }
 
   logger.log(
-    `For a full list of changes, please check our migration guide: ${CLI_COLORS.cta('https://storybook.js.org/docs/migration-guide')}`
+    `For a full list of changes, please check our migration guide: ${CLI_COLORS.cta('https://storybook.js.org/docs/releases/migration-guide?ref=upgrade')}`
   );
 }
 
 interface MultiUpgradeTelemetryOptions {
   allProjects: CollectProjectsSuccessResult[];
   selectedProjects: CollectProjectsSuccessResult[];
-  projectResults: Record<string, Record<FixId, FixStatus>>;
+  projectResults: Record<string, AutomigrationResult>;
   doctorResults: Record<string, ProjectDoctorResults>;
   hasUserInterrupted?: boolean;
 }
@@ -339,7 +342,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         );
       }
 
-      const automigrationResults: Record<string, Record<FixId, FixStatus>> = {};
+      const automigrationResults: Record<string, AutomigrationResult> = {};
       let doctorResults: Record<string, ProjectDoctorResults> = {};
 
       // Set up signal handling for interruptions
@@ -481,7 +484,10 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         // TELEMETRY
         if (!options.disableTelemetry) {
           for (const project of storybookProjects) {
-            const fixResults = automigrationResults[project.configDir] || {};
+            const resultData = automigrationResults[project.configDir] || {
+              automigrationStatuses: {},
+              automigrationErrors: {},
+            };
             let doctorFailureCount = 0;
             let doctorErrorCount = 0;
             Object.values(doctorResults[project.configDir]?.diagnostics || {}).forEach((status) => {
@@ -493,9 +499,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
                 doctorErrorCount++;
               }
             });
-            const automigrationFailureCount = Object.values(fixResults).filter(
-              (status) => status === 'failed'
-            ).length;
+            const automigrationFailureCount = Object.keys(resultData.automigrationErrors).length;
             const automigrationPreCheckFailure =
               project.autoblockerCheckResults && project.autoblockerCheckResults.length > 0
                 ? project.autoblockerCheckResults
@@ -510,7 +514,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             await telemetry('upgrade', {
               beforeVersion: project.beforeVersion,
               afterVersion: project.currentCLIVersion,
-              automigrationResults: fixResults,
+              automigrationResults: resultData.automigrationStatuses,
+              automigrationErrors: resultData.automigrationErrors,
               automigrationFailureCount,
               automigrationPreCheckFailure,
               doctorResults: doctorResults[project.configDir]?.diagnostics || {},

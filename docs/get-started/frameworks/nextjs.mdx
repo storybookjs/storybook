@@ -252,7 +252,7 @@ module.exports = {
 
 ## Next.js routing
 
-[Next.js's router](https://nextjs.org/docs/pages/building-your-application/routing) is automatically stubbed for you so that when the router is interacted with, all of its interactions are automatically logged to the Actions panel if you have the [Storybook actions addon](../../essentials/actions.mdx).
+[Next.js's router](https://nextjs.org/docs/pages/building-your-application/routing) is automatically stubbed for you so that when the router is interacted with, all of its interactions are automatically logged to the [Actions panel](../../essentials/actions.mdx).
 
 <Callout>
   You should only use `next/router` in the `pages` directory. In the `app` directory, it is necessary to use `next/navigation`.
@@ -471,7 +471,7 @@ import * as path from 'path';
 export default {
   // Any options here are included in Sass compilation for your stories
   sassOptions: {
-    includePaths: [path.join(__dirname, 'styles')],
+    includePaths: [path.join(process.cwd(), 'styles')],
   },
 };
 ```
@@ -657,39 +657,7 @@ This framework provides mocks for many of Next.js' internal modules:
 
 ### Mocking other modules
 
-How you mock other modules in Storybook depends on how you import the module into your component.
-
-With either approach, the first step is to [create a mock file](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#mock-files). Here's an example of a mock file for a module named `session`:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-test-mock-file-example.md" />
-
-{/* prettier-ignore-end */}
-
-#### With subpath imports
-
-If you're using [subpath imports](#subpath-imports), you can adjust your configuration to apply [conditions](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#subpath-imports) so that the mocked module is used inside Storybook. The example below configures subpath imports for four internal modules, which are then mocked in Storybook:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="subpath-imports-config.md" />
-
-{/* prettier-ignore-end */}
-
-<Callout variant="info">
-  Each subpath must begin with `#`, to differentiate it from a regular module path. The `#*` entry is a catch-all that maps all subpaths to the root directory.
-</Callout>
-
-#### With module aliases
-
-If you're using [module aliases](#module-aliases), you can add a Webpack alias to your Storybook configuration to point to the mock file.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="module-aliases-config.md" />
-
-{/* prettier-ignore-end */}
+To mock other modules, use [automocking](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#automocking) or one of the [alternative methods](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#alternative-methods) documented in the mocking modules guide.
 
 ## Runtime config
 
@@ -1002,7 +970,7 @@ export default {
       image: {
         loading: 'eager',
       },
-      nextConfigPath: path.resolve(__dirname, '../next.config.js'),
+      nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
     },
   },
 };

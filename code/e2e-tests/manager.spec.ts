@@ -5,6 +5,7 @@ import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME;
+const type = process.env.STORYBOOK_TYPE || 'dev';
 
 test.describe('Manager UI', () => {
   test.beforeEach(async ({ page }) => {
@@ -15,6 +16,23 @@ test.describe('Manager UI', () => {
 
   test.describe('Desktop', () => {
     // TODO: test dragging and resizing
+
+    test('Settings tooltip', async ({ page }) => {
+      await page.locator('[aria-label="Settings"]').click();
+
+      // should only hide if pressing Escape, and not other keyboard inputs
+      await expect(page.getByTestId('tooltip')).toBeVisible();
+      await page.keyboard.press('A');
+      await expect(page.getByTestId('tooltip')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.getByTestId('tooltip')).toBeHidden();
+
+      // should also hide if clicking anywhere outside the tooltip
+      await page.locator('[aria-label="Settings"]').click();
+      await expect(page.getByTestId('tooltip')).toBeVisible();
+      await page.click('body');
+      await expect(page.getByTestId('tooltip')).toBeHidden();
+    });
 
     test('Sidebar toggling', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
@@ -28,13 +46,84 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
       // toggle with menu item
-      await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+      await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-S').click();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
       // toggle with "show sidebar" button
       await sbPage.page.locator('[aria-label="Show sidebar"]').click();
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
+    });
+
+    test('Story context menu actions', async ({ page }) => {
+      test.skip(type !== 'dev', 'These actions are only applicable in dev mode');
+      const sbPage = new SbPage(page, expect);
+      await sbPage.navigateToStory('example/button', 'docs');
+
+      // Context menu should contain open in editor for component node
+      await page.locator('[data-item-id="example-button"]').hover();
+      await page
+        .locator('[data-item-id="example-button"] div[data-testid="context-menu"] button')
+        .click();
+      const sidebarContextMenu = page.getByTestId('tooltip');
+      await expect(
+        sidebarContextMenu.getByRole('button', { name: /open in editor/i })
+      ).toBeVisible();
+      await page.click('body');
+
+      // Context menu should contain open in editor for docs node
+      await page.locator('[data-item-id="example-button--docs"]').hover();
+      await page
+        .locator('[data-item-id="example-button--docs"] div[data-testid="context-menu"] button')
+        .click();
+      await expect(
+        page.getByTestId('tooltip').getByRole('button', { name: /open in editor/i })
+      ).toBeVisible();
+      await page.click('body');
+
+      // Context menu should contain open in editor and copy story name for story node
+      await page.locator('[data-item-id="example-button--primary"]').hover();
+      await page
+        .locator('[data-item-id="example-button--primary"] div[data-testid="context-menu"] button')
+        .click();
+      await expect(
+        page.getByTestId('tooltip').getByRole('button', { name: /open in editor/i })
+      ).toBeVisible();
+      await page
+        .getByTestId('tooltip')
+        .getByRole('button', { name: /copy story name/i })
+        .click();
+
+      await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toContain(
+        'Primary'
+      );
+    });
+
+    test('Story share actions (dev)', async ({ page }) => {
+      test.skip(type !== 'dev', 'These actions are only applicable in dev mode');
+      const sbPage = new SbPage(page, expect);
+      await sbPage.navigateToStory('example/button', 'primary');
+      await expect(page.getByRole('button', { name: 'Open in editor' })).toBeVisible();
+      await page.getByRole('button', { name: 'Share' }).click();
+      await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
+      await page.getByRole('button', { name: /copy story link/i }).click();
+
+      await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toContain(
+        `${storybookUrl}/?path=/story/example-button--primary`
+      );
+    });
+
+    test('Story share actions (build)', async ({ page }) => {
+      test.skip(type !== 'build', 'These actions are only applicable in build mode');
+      const sbPage = new SbPage(page, expect);
+      await sbPage.navigateToStory('example/button', 'primary');
+      await page.getByRole('button', { name: 'Share' }).click();
+      await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
+      await page.getByRole('button', { name: /copy story link/i }).click();
+
+      await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toContain(
+        `${storybookUrl}/?path=/story/example-button--primary`
+      );
     });
 
     test('Toolbar toggling', async ({ page }) => {
@@ -58,10 +147,10 @@ test.describe('Manager UI', () => {
       await expectToolbarVisibility(true);
 
       // toggle with menu item
-      await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+      await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-T').click();
       await expectToolbarVisibility(false);
-      await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+      await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-T').click();
       await expectToolbarVisibility(true);
     });
@@ -97,7 +186,7 @@ test.describe('Manager UI', () => {
         await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
 
         // toggle with menu item
-        await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+        await sbPage.page.locator('[aria-label="Settings"]').click();
         await sbPage.page.locator('#list-item-A').click();
         await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
@@ -148,7 +237,7 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
       // toggle with menu item
-      await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+      await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-F').click();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
@@ -177,15 +266,15 @@ test.describe('Manager UI', () => {
 
     test('Settings page', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
-      await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+      await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-about').click();
 
-      await expect(sbPage.page.url()).toContain('/settings/about');
+      expect(sbPage.page.url()).toContain('/settings/about');
 
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
       await sbPage.page.locator('[title="Close settings page"]').click();
-      await expect(sbPage.page.url()).not.toContain('/settings/about');
+      expect(sbPage.page.url()).not.toContain('/settings/about');
     });
   });
 
@@ -202,8 +291,8 @@ test.describe('Manager UI', () => {
     test('Navigate to story', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
 
-      const closeNavigationButton = sbPage.page.locator('[title="Close navigation menu"]');
-      const mobileNavigationHeading = sbPage.page.locator('[title="Open navigation menu"]');
+      const closeNavigationButton = sbPage.page.locator('[aria-label="Close navigation menu"]');
+      const mobileNavigationHeading = sbPage.page.locator('[aria-label="Open navigation menu"]');
 
       // navigation menu is closed
       await expect(closeNavigationButton).toBeHidden();
@@ -217,7 +306,7 @@ test.describe('Manager UI', () => {
       // navigation menu is still open
       await expect(sbPage.page.locator('#storybook-explorer-menu')).toBeVisible();
       // story has not changed
-      await expect(sbPage.page.url()).toContain('configure-your-project');
+      expect(sbPage.page.url()).toContain('configure-your-project');
 
       await sbPage.navigateToStory('Example/Button', 'Secondary');
 
@@ -225,13 +314,13 @@ test.describe('Manager UI', () => {
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
       await expect(sbPage.page.locator('#storybook-explorer-menu')).toBeHidden();
       // story has changed
-      await expect(sbPage.page.url()).toContain('example-button--secondary');
+      expect(sbPage.page.url()).toContain('example-button--secondary');
     });
 
     test('Open and close addon panel', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
 
-      const mobileNavigationHeading = sbPage.page.locator('[title="Open navigation menu"]');
+      const mobileNavigationHeading = sbPage.page.locator('[aria-label="Open navigation menu"]');
       await mobileNavigationHeading.click();
       await sbPage.navigateToStory('Example/Button', 'Secondary');
 
@@ -240,13 +329,13 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeHidden();
 
       // open panel
-      await sbPage.page.locator('[title="Open addon panel"]').click();
+      await sbPage.page.locator('[aria-label="Open addon panel"]').click();
 
       // panel is open
       await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeVisible();
 
       // close panel
-      await sbPage.page.locator('[title="Close addon panel"]').click();
+      await sbPage.page.locator('[aria-label="Close addon panel"]').click();
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');

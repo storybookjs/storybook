@@ -1,9 +1,14 @@
 {
   "name": "@storybook/html-vite",
-  "version": "9.1.0-alpha.6",
-  "description": "Storybook for HTML and Vite: Develop HTML in isolation with Hot Reloading.",
+  "version": "10.1.0-alpha.7",
+  "description": "Storybook for HTML and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-framework",
+    "html",
+    "vite",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/html-vite",
   "bugs": {
@@ -19,28 +24,19 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./preset": {
-      "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
+      "default": "./dist/index.js"
     },
     "./node": {
       "types": "./dist/node/index.d.ts",
-      "node": "./dist/node/index.js",
-      "import": "./dist/node/index.mjs",
-      "require": "./dist/node/index.js"
+      "default": "./dist/node/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "template/cli/**/*",
@@ -50,8 +46,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
@@ -64,19 +60,8 @@
   "peerDependencies": {
     "storybook": "workspace:^"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/preset.ts",
-      "./src/node/index.ts"
-    ],
-    "platform": "node"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
 }

@@ -2,7 +2,7 @@ import { formatFileContent, getAddonNames } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import * as jscodeshift from 'jscodeshift';
+import jscodeshift from 'jscodeshift';
 import path from 'path';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';

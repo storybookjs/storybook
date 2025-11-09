@@ -34,11 +34,7 @@
           "args": "--reset --optimized"
         }
       },
-      "inputs": [
-        "production",
-        "^production",
-        "{workspaceRoot}/../scripts/prepare/{bundle,addon-bundle,esm-bundle}.ts"
-      ],
+      "inputs": ["production", "^production"],
       "dependsOn": ["^build"],
       "outputs": ["{projectRoot}/dist", "{workspaceRoot}/bench/esbuild-metafiles/{projectName}"],
       "cache": true

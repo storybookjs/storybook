@@ -39,13 +39,6 @@ const propKey = (p: t.ObjectProperty) => {
   return null;
 };
 
-const unwrap = (node: t.Node | undefined | null): any => {
-  if (t.isTSAsExpression(node) || t.isTSSatisfiesExpression(node)) {
-    return unwrap(node.expression);
-  }
-  return node;
-};
-
 const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
   if (path.length === 0) {
     return node;
@@ -175,14 +168,32 @@ export class ConfigFile {
     (exportsObject.properties as t.ObjectProperty[]).forEach((p) => {
       const exportName = propKey(p);
       if (exportName) {
-        let exportVal = p.value;
-        if (t.isIdentifier(exportVal)) {
-          exportVal = _findVarInitialization(exportVal.name, this._ast.program) as any;
-        }
+        const exportVal = this._resolveDeclaration(p.value as t.Node);
         this._exports[exportName] = exportVal as t.Expression;
       }
     });
   }
+
+  /** Unwraps TS assertions/satisfies from a node, to get the underlying node. */
+  _unwrap = (node: t.Node | undefined | null): any => {
+    if (t.isTSAsExpression(node) || t.isTSSatisfiesExpression(node)) {
+      return this._unwrap(node.expression);
+    }
+    return node;
+  };
+
+  /**
+   * Resolve a declaration node by unwrapping TS assertions/satisfies and following identifiers to
+   * resolve the correct node in case it's an identifier.
+   */
+  _resolveDeclaration = (node: t.Node, parent: t.Node = this._ast.program) => {
+    const decl = this._unwrap(node);
+    if (t.isIdentifier(decl) && t.isProgram(parent)) {
+      const initialization = _findVarInitialization(decl.name, parent);
+      return initialization ? this._unwrap(initialization) : decl;
+    }
+    return decl;
+  };
 
   parse() {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -191,12 +202,7 @@ export class ConfigFile {
       ExportDefaultDeclaration: {
         enter({ node, parent }) {
           self.hasDefaultExport = true;
-          let decl =
-            t.isIdentifier(node.declaration) && t.isProgram(parent)
-              ? _findVarInitialization(node.declaration.name, parent)
-              : node.declaration;
-
-          decl = unwrap(decl);
+          let decl = self._resolveDeclaration(node.declaration as t.Node, parent);
 
           // csf factory
           if (t.isCallExpression(decl) && t.isObjectExpression(decl.arguments[0])) {
@@ -223,10 +229,7 @@ export class ConfigFile {
             node.declaration.declarations.forEach((decl) => {
               if (t.isVariableDeclarator(decl) && t.isIdentifier(decl.id)) {
                 const { name: exportName } = decl.id;
-                let exportVal = decl.init as t.Expression;
-                if (t.isIdentifier(exportVal)) {
-                  exportVal = _findVarInitialization(exportVal.name, parent as t.Program) as any;
-                }
+                const exportVal = self._resolveDeclaration(decl.init as t.Node, parent);
                 self._exports[exportName] = exportVal;
                 self._exportDecls[exportName] = decl;
               }
@@ -252,7 +255,7 @@ export class ConfigFile {
                 const decl = _findVarDeclarator(localName, parent as t.Program) as any;
                 // decl can be empty in case X from `import { X } from ....` because it is not handled in _findVarDeclarator
                 if (decl) {
-                  self._exports[exportName] = decl.init;
+                  self._exports[exportName] = self._resolveDeclaration(decl.init, parent);
                   self._exportDecls[exportName] = decl;
                 }
               }
@@ -280,24 +283,14 @@ export class ConfigFile {
               left.property.name === 'exports'
             ) {
               let exportObject = right;
-              if (t.isIdentifier(right)) {
-                exportObject = _findVarInitialization(right.name, parent as t.Program) as any;
-              }
-
-              exportObject = unwrap(exportObject);
+              exportObject = self._resolveDeclaration(exportObject as t.Node, parent);
 
               if (t.isObjectExpression(exportObject)) {
                 self._exportsObject = exportObject;
                 (exportObject.properties as t.ObjectProperty[]).forEach((p) => {
                   const exportName = propKey(p);
                   if (exportName) {
-                    let exportVal = p.value as t.Expression;
-                    if (t.isIdentifier(exportVal)) {
-                      exportVal = _findVarInitialization(
-                        exportVal.name,
-                        parent as t.Program
-                      ) as any;
-                    }
+                    const exportVal = self._resolveDeclaration(p.value as t.Node, parent);
                     self._exports[exportName] = exportVal as t.Expression;
                   }
                 });
@@ -564,14 +557,9 @@ export class ConfigFile {
         }
         // default export
         if (t.isExportDefaultDeclaration(node)) {
-          let decl: t.Expression | undefined | null = node.declaration as t.Expression;
-          if (t.isIdentifier(decl)) {
-            decl = _findVarInitialization(decl.name, this._ast.program);
-          }
-
-          decl = unwrap(decl);
-          if (t.isObjectExpression(decl)) {
-            const properties = decl.properties as t.ObjectProperty[];
+          const resolved = this._resolveDeclaration(node.declaration as t.Node);
+          if (t.isObjectExpression(resolved)) {
+            const properties = resolved.properties as t.ObjectProperty[];
             removeProperty(properties, path[0]);
             removedRootProperty = true;
           }
@@ -977,6 +965,185 @@ export class ConfigFile {
         );
       }
     }
+  }
+
+  _removeRequireImport(
+    importSpecifier: string[] | string | { namespace: string } | null,
+    fromImport: string
+  ) {
+    // Find require declaration first.
+    const requireDeclarationIndex = this._ast.program.body.findIndex((node) => {
+      const hasDeclaration =
+        t.isVariableDeclaration(node) &&
+        node.declarations.length === 1 &&
+        t.isVariableDeclarator(node.declarations[0]) &&
+        t.isCallExpression(node.declarations[0].init) &&
+        t.isIdentifier(node.declarations[0].init.callee) &&
+        node.declarations[0].init.callee.name === 'require' &&
+        t.isStringLiteral(node.declarations[0].init.arguments[0]) &&
+        (node.declarations[0].init.arguments[0].value === fromImport ||
+          node.declarations[0].init.arguments[0].value === fromImport.split('node:')[1]);
+
+      return hasDeclaration;
+    });
+
+    if (requireDeclarationIndex === -1) {
+      return;
+    }
+
+    const requireDeclaration = this._ast.program.body[
+      requireDeclarationIndex
+    ] as t.VariableDeclaration;
+    const declarator = requireDeclaration.declarations[0];
+
+    // Handle side-effect requires - require() statements don't have side-effect only versions like imports
+    // so we skip this case for require statements
+    if (importSpecifier === null) {
+      return;
+    }
+
+    // Handle default requires e.g. const foo = require('bar')
+    if (typeof importSpecifier === 'string') {
+      // For default requires, if the identifier matches, remove the entire declaration
+      if (t.isIdentifier(declarator.id) && declarator.id.name === importSpecifier) {
+        this._ast.program.body.splice(requireDeclarationIndex, 1);
+      }
+      return;
+    }
+
+    // require() doesn't have namespace imports so we skip this.
+    // We only allow it in our param type to keep things consistent for removeImport.
+    if (typeof importSpecifier === 'object' && 'namespace' in importSpecifier) {
+      return;
+    }
+
+    // Handle named requires e.g. const { foo, bar } = require('baz')
+    if (Array.isArray(importSpecifier) && t.isObjectPattern(declarator.id)) {
+      const objectPattern = declarator.id as t.ObjectPattern;
+      importSpecifier.forEach((specifier) => {
+        const index = objectPattern.properties.findIndex(
+          (prop) =>
+            t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === specifier
+        );
+
+        if (index !== -1) {
+          objectPattern.properties.splice(index, 1);
+        }
+      });
+
+      // If no properties left in the destructuring, remove the entire declaration
+      if (objectPattern.properties.length === 0) {
+        this._ast.program.body.splice(requireDeclarationIndex, 1);
+      }
+    }
+  }
+
+  _removeImport(
+    importSpecifier: string[] | string | { namespace: string } | null,
+    fromImport: string
+  ) {
+    // Find import declaration first.
+    const importDeclarationIndex = this._ast.program.body.findIndex(
+      (node) =>
+        t.isImportDeclaration(node) &&
+        (node.source.value === fromImport || node.source.value === fromImport.split('node:')[1])
+    );
+    if (importDeclarationIndex === -1) {
+      return;
+    }
+    const importDeclaration = this._ast.program.body[importDeclarationIndex] as t.ImportDeclaration;
+
+    // Remove side-effect imports (e.g., import 'foo') if exact match, else do nothing.
+    if (importSpecifier === null) {
+      if (importDeclaration.specifiers.length === 0) {
+        this._ast.program.body.splice(importDeclarationIndex, 1);
+      }
+
+      return;
+    }
+
+    // From now on, remove requested specifiers from the import declaration.
+    // Handle namespace imports e.g. import * as foo from 'bar'
+    if (typeof importSpecifier === 'object' && 'namespace' in importSpecifier) {
+      const index = importDeclaration.specifiers.findIndex(
+        (specifier) =>
+          t.isImportNamespaceSpecifier(specifier) &&
+          t.isIdentifier(specifier.local) &&
+          specifier.local.name === importSpecifier.namespace
+      );
+
+      if (index !== -1) {
+        importDeclaration.specifiers.splice(index, 1);
+      }
+    }
+
+    // Handle default imports e.g. import foo from 'bar'
+    if (typeof importSpecifier === 'string') {
+      const index = importDeclaration.specifiers.findIndex(
+        (specifier) =>
+          t.isImportDefaultSpecifier(specifier) &&
+          t.isIdentifier(specifier.local) &&
+          specifier.local.name === importSpecifier
+      );
+
+      if (index !== -1) {
+        importDeclaration.specifiers.splice(index, 1);
+      }
+    }
+
+    // Handle named imports e.g. import { foo } from 'bar'
+    if (Array.isArray(importSpecifier)) {
+      importSpecifier.forEach((specifier) => {
+        const index = importDeclaration.specifiers.findIndex(
+          (current) =>
+            t.isImportSpecifier(current) &&
+            t.isIdentifier(current.imported) &&
+            current.imported.name === specifier
+        );
+
+        if (index !== -1) {
+          importDeclaration.specifiers.splice(index, 1);
+        }
+      });
+    }
+
+    // If the import declaration has no specifiers left, remove it.
+    if (importDeclaration.specifiers.length === 0) {
+      this._ast.program.body.splice(importDeclarationIndex, 1);
+    }
+  }
+
+  /**
+   * Remove import specifiers for a given import statement.
+   *
+   * Does not support removing type imports (yet)
+   *
+   * @example
+   *
+   * ```ts
+   * // import { foo } from 'bar';
+   * setImport(['foo'], 'bar');
+   *
+   * // import foo from 'bar';
+   * setImport('foo', 'bar');
+   *
+   * // import * as foo from 'bar';
+   * setImport({ namespace: 'foo' }, 'bar');
+   *
+   * // import 'bar';
+   * setImport(null, 'bar');
+   * ```
+   *
+   * @param importSpecifiers - The import specifiers to remove. If a string is passed in, will only
+   *   remove the default import. Otherwise, named imports matching the array will be removed.
+   * @param fromImport - The module to import from
+   */
+  removeImport(
+    importSpecifier: string[] | string | { namespace: string } | null,
+    fromImport: string
+  ) {
+    this._removeRequireImport(importSpecifier, fromImport);
+    this._removeImport(importSpecifier, fromImport);
   }
 }
 

@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
@@ -32,9 +34,9 @@ export async function createDefaultWebpackConfig(
         // Trying to apply style-loader or css-loader to files that already have been
         // processed by them causes webpack to crash, so no one else can add similar
         // loader configurations to the `.css` extension.
-        require.resolve('style-loader'),
+        fileURLToPath(import.meta.resolve('style-loader')),
         {
-          loader: require.resolve('css-loader'),
+          loader: fileURLToPath(import.meta.resolve('css-loader')),
           options: {
             importLoaders: 1,
           },

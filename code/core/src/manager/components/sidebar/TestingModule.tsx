@@ -14,6 +14,8 @@ import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/ico
 import { internal_fullTestProviderStore } from '#manager-stores';
 import { keyframes, styled } from 'storybook/theming';
 
+import { useDynamicFavicon } from './useDynamicFavicon';
+
 const DEFAULT_HEIGHT = 500;
 
 const spin = keyframes({
@@ -68,6 +70,8 @@ const Card = styled.div(({ theme }) => ({
   zIndex: 1,
   borderRadius: theme.appBorderRadius,
   backgroundColor: theme.background.content,
+  display: 'flex',
+  flexDirection: 'column-reverse',
 
   '&:hover #testing-module-collapse-toggle': {
     opacity: 1,
@@ -76,7 +80,6 @@ const Card = styled.div(({ theme }) => ({
 
 const Collapsible = styled.div(({ theme }) => ({
   overflow: 'hidden',
-
   willChange: 'auto',
   boxShadow: `inset 0 -1px 0 ${theme.appBorderColor}`,
 }));
@@ -175,6 +178,7 @@ interface TestingModuleProps {
   warningCount: number;
   warningsActive: boolean;
   setWarningsActive: (active: boolean) => void;
+  successCount: number;
 }
 
 export const TestingModule = ({
@@ -189,6 +193,7 @@ export const TestingModule = ({
   warningCount,
   warningsActive,
   setWarningsActive,
+  successCount,
 }: TestingModuleProps) => {
   const timeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -256,7 +261,21 @@ export const TestingModule = ({
     }
   }, [isCrashed, isCollapsed, toggleCollapsed]);
 
-  if (!hasTestProviders && (!errorCount || !warningCount)) {
+  useDynamicFavicon(
+    isCrashed
+      ? 'critical'
+      : errorCount > 0
+        ? 'negative'
+        : warningCount > 0
+          ? 'warning'
+          : isRunning
+            ? 'active'
+            : successCount > 0
+              ? 'positive'
+              : undefined
+  );
+
+  if (!hasTestProviders && !errorCount && !warningCount) {
     return null;
   }
 
@@ -270,34 +289,6 @@ export const TestingModule = ({
       data-updated={isUpdated}
     >
       <Card>
-        {hasTestProviders && (
-          <Collapsible
-            data-testid="collapse"
-            style={{
-              transition: isChangingCollapse ? 'max-height 250ms' : 'max-height 0ms',
-              display: hasTestProviders ? 'block' : 'none',
-              maxHeight: isCollapsed ? 0 : maxHeight,
-            }}
-          >
-            <Content ref={contentRef}>
-              {Object.values(registeredTestProviders).map((registeredTestProvider) => {
-                const { render: Render, id } = registeredTestProvider;
-                if (!Render) {
-                  once.warn(
-                    `No render function found for test provider with id '${id}', skipping...`
-                  );
-                  return null;
-                }
-                return (
-                  <TestProvider key={id} data-module-id={id}>
-                    <Render />
-                  </TestProvider>
-                );
-              })}
-            </Content>
-          </Collapsible>
-        )}
-
         <Bar {...(hasTestProviders ? { onClick: (e) => toggleCollapsed(e) } : {})}>
           <Action>
             {hasTestProviders && (
@@ -432,6 +423,35 @@ export const TestingModule = ({
             )}
           </Filters>
         </Bar>
+
+        {hasTestProviders && (
+          <Collapsible
+            data-testid="collapse"
+            {...(isCollapsed && { inert: '' })}
+            style={{
+              transition: isChangingCollapse ? 'max-height 250ms' : 'max-height 0ms',
+              display: hasTestProviders ? 'block' : 'none',
+              maxHeight: isCollapsed ? 0 : maxHeight,
+            }}
+          >
+            <Content ref={contentRef}>
+              {Object.values(registeredTestProviders).map((registeredTestProvider) => {
+                const { render: Render, id } = registeredTestProvider;
+                if (!Render) {
+                  once.warn(
+                    `No render function found for test provider with id '${id}', skipping...`
+                  );
+                  return null;
+                }
+                return (
+                  <TestProvider key={id} data-module-id={id}>
+                    <Render />
+                  </TestProvider>
+                );
+              })}
+            </Content>
+          </Collapsible>
+        )}
       </Card>
     </Outline>
   );

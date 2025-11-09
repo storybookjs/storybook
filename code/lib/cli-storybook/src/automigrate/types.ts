@@ -40,7 +40,8 @@ type BaseFix<ResultType = any> = {
   check: (options: CheckOptions) => Promise<ResultType | null>;
   /** Keep the prompt message short and concise. */
   prompt: () => string;
-  promptDefaultValue?: boolean;
+  /** Whether the automigration is selected by default when the user is prompted. */
+  defaultSelected?: boolean;
   link?: string;
 };
 

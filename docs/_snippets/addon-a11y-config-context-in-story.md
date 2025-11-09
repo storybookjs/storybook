@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="common" language="ts"
+```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // ...rest of story file
 
 export const ExampleStory: Story = {
@@ -134,4 +134,58 @@ export const ExampleStory = {
     },
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const ExampleStory = meta.story({
+  parameters: {
+    a11y: {
+      /*
+       * Axe's context parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter
+       * to learn more.
+       */
+      context: {
+        include: ['body'],
+        exclude: ['.no-a11y-check'],
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const ExampleStory = meta.story({
+  parameters: {
+    a11y: {
+      /*
+       * Axe's context parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter
+       * to learn more.
+       */
+      context: {
+        include: ['body'],
+        exclude: ['.no-a11y-check'],
+      },
+    },
+  },
+});
 ```

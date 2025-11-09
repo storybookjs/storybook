@@ -6,3 +6,6 @@ end_of_line = lf
 [*.{js,json,ts,vue,svelte,html}]
 indent_style = space
 indent_size = 2
+
+[*.{yml,yaml}]
+quote_type = single

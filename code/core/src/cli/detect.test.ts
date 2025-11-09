@@ -21,7 +21,7 @@ vi.mock(import('fs'), async (importOriginal) => {
 });
 
 vi.mock('storybook/internal/node-logger');
-vi.mock('find-up');
+vi.mock('empathic/find');
 
 const MOCK_FRAMEWORK_FILES: {
   name: string;
@@ -241,7 +241,7 @@ describe('Detect', () => {
         operationDir: 'some/path',
       },
       getAllDependencies: () => ({}),
-      getModulePackageJSON: () => null,
+      getModulePackageJSON: () => Promise.resolve(null),
     } as Partial<JsPackageManager>;
 
     await expect(detect(packageManager as any, { html: true })).resolves.toBe(ProjectType.HTML);
@@ -254,12 +254,12 @@ describe('Detect', () => {
       getAllDependencies: () => ({
         typescript: '1.0.0',
       }),
-      getModulePackageJSON: (packageName) => {
+      getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '1.0.0',
-            };
+            });
           default:
             return null;
         }
@@ -280,9 +280,9 @@ describe('Detect', () => {
       getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '4.8.0',
-            };
+            });
           default:
             return null;
         }
@@ -299,9 +299,9 @@ describe('Detect', () => {
       getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '4.9.1',
-            };
+            });
           default:
             return null;
         }
@@ -318,9 +318,9 @@ describe('Detect', () => {
       getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '4.9.0',
-            };
+            });
           default:
             return null;
         }
@@ -337,9 +337,9 @@ describe('Detect', () => {
       getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '4.9.0-beta',
-            };
+            });
           default:
             return null;
         }
@@ -352,7 +352,7 @@ describe('Detect', () => {
   it(`should return language javascript by default`, async () => {
     const packageManager = {
       getAllDependencies: () => ({}),
-      getModulePackageJSON: () => null,
+      getModulePackageJSON: () => Promise.resolve(null),
     } as Partial<JsPackageManager>;
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
@@ -361,12 +361,12 @@ describe('Detect', () => {
   it(`should return language Javascript even when Typescript is detected in the node_modules but not listed as a direct dependency`, async () => {
     const packageManager = {
       getAllDependencies: () => ({}),
-      getModulePackageJSON: (packageName) => {
+      getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '4.9.0',
-            };
+            });
           default:
             return null;
         }

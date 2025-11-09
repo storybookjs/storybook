@@ -21,7 +21,6 @@ export * from './utils/HandledError';
 export * from './utils/interpolate';
 export * from './utils/interpret-files';
 export * from './utils/interpret-require';
-export * from './utils/load-custom-presets';
 export * from './utils/load-main-config';
 export * from './utils/load-manager-or-addons-file';
 export * from './utils/load-preview-or-config-file';
@@ -37,7 +36,6 @@ export * from './utils/template';
 export * from './utils/validate-config';
 export * from './utils/validate-configuration-files';
 export * from './utils/satisfies';
-export * from './utils/strip-abs-node-modules-path';
 export * from './utils/formatter';
 export * from './utils/get-story-id';
 export * from './utils/posix';
@@ -46,6 +44,8 @@ export * from './utils/sync-main-preview-addons';
 export * from './js-package-manager';
 export * from './utils/scan-and-transform-files';
 export * from './utils/transform-imports';
+export * from '../shared/utils/module';
+export * from './utils/utils';
 
 export { versions };
 

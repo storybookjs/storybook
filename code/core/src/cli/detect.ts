@@ -5,7 +5,7 @@ import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/inter
 import { HandledError, commandLog, getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 import prompts from 'prompts';
 import semver from 'semver';
 
@@ -112,8 +112,8 @@ export function detectFrameworkPreset(
  * @returns CoreBuilder
  */
 export async function detectBuilder(packageManager: JsPackageManager, projectType: ProjectType) {
-  const viteConfig = findUpSync(viteConfigFiles, { stopAt: getProjectRoot() });
-  const webpackConfig = findUpSync(webpackConfigFiles, { stopAt: getProjectRoot() });
+  const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
+  const webpackConfig = find.any(webpackConfigFiles, { last: getProjectRoot() });
   const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
@@ -133,6 +133,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
 
   // Fallback to Vite or Webpack based on project type
   switch (projectType) {
+    case ProjectType.REACT_NATIVE_AND_RNW:
     case ProjectType.REACT_NATIVE_WEB:
       return CoreBuilder.Vite;
     case ProjectType.REACT_SCRIPTS:
@@ -170,8 +171,9 @@ export function isStorybookInstantiated(configDir = resolve(process.cwd(), '.sto
   return existsSync(configDir);
 }
 
+// TODO: Remove in SB11
 export async function detectPnp() {
-  return !!findUpSync(['.pnp.js', '.pnp.cjs']);
+  return !!find.any(['.pnp.js', '.pnp.cjs']);
 }
 
 export async function detectLanguage(packageManager: JsPackageManager) {
@@ -183,17 +185,23 @@ export async function detectLanguage(packageManager: JsPackageManager) {
 
   const isTypescriptDirectDependency = !!packageManager.getAllDependencies().typescript;
 
-  const getModulePackageJSONVersion = (pkg: string) => {
-    return packageManager.getModulePackageJSON(pkg)?.version ?? null;
+  const getModulePackageJSONVersion = async (pkg: string) => {
+    return (await packageManager.getModulePackageJSON(pkg))?.version ?? null;
   };
 
-  const typescriptVersion = getModulePackageJSONVersion('typescript');
-  const prettierVersion = getModulePackageJSONVersion('prettier');
-  const babelPluginTransformTypescriptVersion = getModulePackageJSONVersion(
-    '@babel/plugin-transform-typescript'
-  );
-  const typescriptEslintParserVersion = getModulePackageJSONVersion('@typescript-eslint/parser');
-  const eslintPluginStorybookVersion = getModulePackageJSONVersion('eslint-plugin-storybook');
+  const [
+    typescriptVersion,
+    prettierVersion,
+    babelPluginTransformTypescriptVersion,
+    typescriptEslintParserVersion,
+    eslintPluginStorybookVersion,
+  ] = await Promise.all([
+    getModulePackageJSONVersion('typescript'),
+    getModulePackageJSONVersion('prettier'),
+    getModulePackageJSONVersion('@babel/plugin-transform-typescript'),
+    getModulePackageJSONVersion('@typescript-eslint/parser'),
+    getModulePackageJSONVersion('eslint-plugin-storybook'),
+  ]);
 
   if (isTypescriptDirectDependency && typescriptVersion) {
     if (
@@ -236,7 +244,6 @@ export async function detect(
     }
 
     const { packageJson } = packageManager.primaryPackageJson;
-
     return detectFrameworkPreset(packageJson);
   } catch (e) {
     return ProjectType.UNDETECTED;

@@ -1,18 +1,23 @@
 {
   "name": "sb",
-  "version": "9.1.0-alpha.6",
-  "description": "Storybook CLI",
+  "version": "10.1.0-alpha.7",
+  "description": "Storybook CLI: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "cli",
+    "dev",
+    "build",
+    "upgrade",
+    "init"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-storybook",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-sb",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/lib/cli-storybook"
+    "directory": "code/lib/cli-sb"
   },
   "funding": {
     "type": "opencollective",
@@ -26,5 +31,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
 }

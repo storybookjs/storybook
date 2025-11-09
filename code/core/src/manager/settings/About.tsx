@@ -73,7 +73,7 @@ const AboutScreen: FC<{ onNavigateToWhatsNew?: () => void }> = ({ onNavigateToWh
             </a>
           </Button>
           <Button asChild>
-            <a href="https://storybook.js.org/docs">
+            <a href="https://storybook.js.org/docs?ref=ui">
               <DocumentIcon style={{ display: 'inline', marginRight: 5 }} />
               Documentation
             </a>

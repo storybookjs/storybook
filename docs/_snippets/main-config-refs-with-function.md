@@ -1,9 +1,8 @@
-```js filename=".storybook/main.js" renderer="common" language="js"
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
 export default {
   // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-
   // 👇 Retrieve the current environment from the configType argument
   refs: (config, { configType }) => {
     if (configType === 'DEVELOPMENT') {
@@ -32,14 +31,13 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts"
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
 const config: StorybookConfig = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-
   // 👇 Retrieve the current environment from the configType argument
   refs: (config, { configType }) => {
     if (configType === 'DEVELOPMENT') {
@@ -68,4 +66,76 @@ const config: StorybookConfig = {
 };
 
 export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  // 👇 Retrieve the current environment from the configType argument
+  refs: (config, { configType }) => {
+    if (configType === 'DEVELOPMENT') {
+      return {
+        react: {
+          title: 'Composed React Storybook running in development mode',
+          url: 'http://localhost:7007',
+        },
+        angular: {
+          title: 'Composed Angular Storybook running in development mode',
+          url: 'http://localhost:7008',
+        },
+      };
+    }
+    return {
+      react: {
+        title: 'Composed React Storybook running in production',
+        url: 'https://your-production-react-storybook-url',
+      },
+      angular: {
+        title: 'Composed Angular Storybook running in production',
+        url: 'https://your-production-angular-storybook-url',
+      },
+    };
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  // 👇 Retrieve the current environment from the configType argument
+  refs: (config, { configType }) => {
+    if (configType === 'DEVELOPMENT') {
+      return {
+        react: {
+          title: 'Composed React Storybook running in development mode',
+          url: 'http://localhost:7007',
+        },
+        angular: {
+          title: 'Composed Angular Storybook running in development mode',
+          url: 'http://localhost:7008',
+        },
+      };
+    }
+    return {
+      react: {
+        title: 'Composed React Storybook running in production',
+        url: 'https://your-production-react-storybook-url',
+      },
+      angular: {
+        title: 'Composed Angular Storybook running in production',
+        url: 'https://your-production-angular-storybook-url',
+      },
+    };
+  },
+});
 ```

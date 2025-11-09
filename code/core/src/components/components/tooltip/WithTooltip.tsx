@@ -44,6 +44,11 @@ export interface WithTooltipPureProps
    * @default false
    */
   closeOnOutsideClick?: boolean;
+  /**
+   * Optional container to portal the tooltip into. Can be a CSS selector string or a DOM Element.
+   * Falls back to document.body.
+   */
+  portalContainer?: Element | string | null;
 }
 
 // Pure, does not bind to the body
@@ -87,6 +92,7 @@ const WithTooltipPure = ({
   strategy,
   followCursor,
   onVisibleChange,
+  portalContainer,
   ...props
 }: WithTooltipPureProps) => {
   const Container = svg ? TargetSvgContainer : TargetContainer;
@@ -119,6 +125,11 @@ const WithTooltipPure = ({
     }
   );
 
+  const portalTarget: Element =
+    (typeof portalContainer === 'string'
+      ? document.querySelector(portalContainer)
+      : portalContainer) || document.body;
+
   const tooltipComponent = isVisible ? (
     <Tooltip
       placement={state?.placement}
@@ -138,7 +149,7 @@ const WithTooltipPure = ({
       <Container trigger={trigger} ref={setTriggerRef as any} {...(props as any)}>
         {children}
       </Container>
-      {isVisible && ReactDOM.createPortal(tooltipComponent, document.body)}
+      {isVisible && ReactDOM.createPortal(tooltipComponent, portalTarget)}
     </>
   );
 };
@@ -166,7 +177,12 @@ const WithToolTipState = ({
 
   useEffect(() => {
     const hide = () => onVisibilityChange(false);
-    document.addEventListener('keydown', hide, false);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        hide();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown, false);
 
     // Find all iframes on the screen and bind to clicks inside them (waiting until the iframe is ready)
     const iframes: HTMLIFrameElement[] = Array.from(document.getElementsByTagName('iframe'));
@@ -200,7 +216,7 @@ const WithToolTipState = ({
     });
 
     return () => {
-      document.removeEventListener('keydown', hide);
+      document.removeEventListener('keydown', handleKeyDown);
       unbinders.forEach((unbind) => {
         unbind();
       });

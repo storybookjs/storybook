@@ -1,6 +1,5 @@
-// eslint-disable-next-line depend/ban-dependencies
-import { readFile } from 'fs-extra';
-import { resolve } from 'path';
+import { readFile, rm } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
@@ -39,6 +38,7 @@ export const compile: Task = {
   },
   async run({ codeDir }, { link, dryRun, debug, prod, skipCache }) {
     const command = link && !prod ? linkCommand : noLinkCommand;
+    await rm(join(codeDir, 'bench/esbuild-metafiles'), { recursive: true, force: true });
     return exec(
       `${command} ${skipCache ? '--skip-nx-cache' : ''}`,
       { cwd: codeDir },

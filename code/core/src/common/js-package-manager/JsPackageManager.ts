@@ -3,9 +3,9 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
-import { findUpMultipleSync, findUpSync } from 'find-up';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
@@ -13,7 +13,7 @@ import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError';
-import { getProjectRoot } from '../utils/paths';
+import { findFilesUp, getProjectRoot } from '../utils/paths';
 import storybookPackagesVersions from '../versions';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
 import type { InstallationMetadata } from './types';
@@ -106,18 +106,18 @@ export abstract class JsPackageManager {
   abstract getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string;
 
   /** Get the package.json file for a given module. */
-  abstract getModulePackageJSON(packageName: string): PackageJson | null;
+  abstract getModulePackageJSON(packageName: string): Promise<PackageJson | null>;
 
   isStorybookInMonorepo() {
-    const turboJsonPath = findUpSync(`turbo.json`, { stopAt: getProjectRoot() });
-    const rushJsonPath = findUpSync(`rush.json`, { stopAt: getProjectRoot() });
-    const nxJsonPath = findUpSync(`nx.json`, { stopAt: getProjectRoot() });
+    const turboJsonPath = find.up(`turbo.json`, { last: getProjectRoot() });
+    const rushJsonPath = find.up(`rush.json`, { last: getProjectRoot() });
+    const nxJsonPath = find.up(`nx.json`, { last: getProjectRoot() });
 
     if (turboJsonPath || rushJsonPath || nxJsonPath) {
       return true;
     }
 
-    const packageJsonPaths = findUpMultipleSync(`package.json`, { stopAt: getProjectRoot() });
+    const packageJsonPaths = findFilesUp(['package.json']);
     if (packageJsonPaths.length === 0) {
       return false;
     }
@@ -671,6 +671,7 @@ export abstract class JsPackageManager {
     return execaProcess;
   }
 
+  // TODO: Remove pnp compatibility code in SB11
   /** Returns the installed (within node_modules or pnp zip) version of a specified package */
   public async getInstalledVersion(packageName: string): Promise<string | null> {
     const cacheKey = packageName;
@@ -773,10 +774,7 @@ export abstract class JsPackageManager {
 
   /** List all package.json files starting from the given directory and stopping at the project root. */
   static listAllPackageJsonPaths(instanceDir: string, storiesPaths?: string[]): string[] {
-    const packageJsonPaths = findUpMultipleSync('package.json', {
-      cwd: instanceDir,
-      stopAt: getProjectRoot(),
-    });
+    const packageJsonPaths = findFilesUp(['package.json'], instanceDir);
 
     if (!storiesPaths) {
       return packageJsonPaths;

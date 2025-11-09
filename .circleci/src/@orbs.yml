@@ -1,0 +1,13 @@
+orbs:
+  # Efficient git cloning
+  git-shallow-clone: guitarrapc/git-shallow-clone@2.5.0
+  # Browser automation support
+  browser-tools: circleci/browser-tools@1.4.1
+  # Failure notifications via Discord
+  discord: antonioned/discord@0.1.0
+  # Code coverage reporting
+  codecov: codecov/codecov@3.2.4
+  # Node.js utilities
+  node: circleci/node@5.2.0
+  # Monorepo build optimization
+  nx: nrwl/nx@1.6.2

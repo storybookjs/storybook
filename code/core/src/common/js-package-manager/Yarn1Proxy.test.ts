@@ -7,6 +7,20 @@ import { dedent } from 'ts-dedent';
 import { JsPackageManager } from './JsPackageManager';
 import { Yarn1Proxy } from './Yarn1Proxy';
 
+vi.mock('node:process', async (importOriginal) => {
+  const original: any = await importOriginal();
+  return {
+    ...original,
+    default: {
+      ...original.default,
+      env: {
+        ...original.default.env,
+        CI: false,
+      },
+    },
+  };
+});
+
 describe('Yarn 1 Proxy', () => {
   let yarn1Proxy: Yarn1Proxy;
 

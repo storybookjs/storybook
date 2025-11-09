@@ -119,7 +119,6 @@ const parseTypeToControl = (type: JSDocType | undefined): any => {
       return {
         control: {
           type: 'radio',
-          labels: options.map(String),
         },
         options,
       };

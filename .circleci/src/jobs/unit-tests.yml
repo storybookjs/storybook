@@ -1,0 +1,31 @@
+executor:
+  class: xlarge
+  name: sb_playwright
+
+parallelism: 2
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - attach_workspace:
+      at: .
+  - run:
+      name: Run tests
+      # TEST_FILES should include all relevant test files, including story files, but not e2e-tests
+      # `circleci tests run` shards tests across parallel runners and allows rerunning failed tests by passing a subset of test files to the command via `xargs`
+      command: |
+        cd code
+        TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
+        echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
+  - store_test_results:
+      path: test-results
+  # TODO: bring coverage back later. This has caused flakiness in the tests because
+  # Somehow Vitest reports coverage while some tests are still running,
+  # then it tries to report coverage again and as result it crashes like this:
+  # https://app.circleci.com/pipelines/github/storybookjs/storybook/85043/workflows/4ddf7907-b93c-4b17-8fdf-fe0bd7fde905/jobs/715446
+  # - persist_to_workspace:
+  #     root: .
+  #     paths:
+  #       - code/coverage
+  - report-workflow-on-failure
+  - cancel-workflow-on-failure

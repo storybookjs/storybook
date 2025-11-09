@@ -1,15 +1,22 @@
-import path from 'node:path';
-import { join } from 'node:path';
+import { access, rm } from 'node:fs/promises';
+import path, { join } from 'node:path';
 import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists, remove } from 'fs-extra';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task, TaskKey } from '../task';
 
 const logger = console;
+
+const pathExists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
@@ -54,12 +61,13 @@ export const sandbox: Task = {
 
     if (!(await this.ready(details, options))) {
       logger.info('🗑  Removing old sandbox dir');
-      await remove(details.sandboxDir);
+      await rm(details.sandboxDir, { force: true, recursive: true });
     }
 
     const {
       create,
       install,
+      addGlobalMocks,
       addStories,
       extendMain,
       extendPreview,
@@ -75,6 +83,8 @@ export const sandbox: Task = {
       // The storybook package forwards some CLI commands to @storybook/cli with npx.
       // Adding the dep makes sure that even npx will use the linked workspace version.
       '@storybook/cli',
+      'lodash-es',
+      'uuid',
     ];
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
@@ -82,7 +92,7 @@ export const sandbox: Task = {
     options.addon.push('@storybook/addon-a11y');
 
     if (shouldAddVitestIntegration) {
-      extraDeps.push('happy-dom', 'vitest', 'playwright', '@vitest/browser');
+      extraDeps.push('happy-dom');
 
       if (details.template.expected.framework.includes('nextjs')) {
         extraDeps.push('@storybook/nextjs-vite', 'jsdom');
@@ -132,6 +142,11 @@ export const sandbox: Task = {
       await addStories(details, options);
     }
 
+    // not if sandbox is bench
+    if (!details.template.name.includes('Bench')) {
+      await addGlobalMocks(details, options);
+    }
+
     if (shouldAddVitestIntegration) {
       await setupVitest(details, options);
     }
@@ -147,11 +162,13 @@ export const sandbox: Task = {
 
     await setImportMap(details.sandboxDir);
 
-    const { JsPackageManagerFactory } = await import('../../code/core/src/common');
+    const { JsPackageManagerFactory } = await import(
+      '../../code/core/src/common/js-package-manager/JsPackageManagerFactory'
+    );
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 
-    await remove(path.join(details.sandboxDir, 'node_modules'));
+    await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
     await packageManager.installDependencies();
 
     await runMigrations(details, options);

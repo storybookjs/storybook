@@ -1,7 +1,7 @@
 import { basename, parse, relative } from 'node:path';
 
 import { sync as spawnSync } from 'cross-spawn';
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 
 import { getProjectRoot } from '../utils/paths';
 import { BUNProxy } from './BUNProxy';
@@ -56,11 +56,11 @@ export class JsPackageManagerFactory {
     const root = getProjectRoot();
 
     const lockFiles = [
-      findUpSync(YARN_LOCKFILE, { cwd, stopAt: root }),
-      findUpSync(PNPM_LOCKFILE, { cwd, stopAt: root }),
-      findUpSync(NPM_LOCKFILE, { cwd, stopAt: root }),
-      findUpSync(BUN_LOCKFILE, { cwd, stopAt: root }),
-      findUpSync(BUN_LOCKFILE_BINARY, { cwd, stopAt: root }),
+      find.up(YARN_LOCKFILE, { cwd, last: root }),
+      find.up(PNPM_LOCKFILE, { cwd, last: root }),
+      find.up(NPM_LOCKFILE, { cwd, last: root }),
+      find.up(BUN_LOCKFILE, { cwd, last: root }),
+      find.up(BUN_LOCKFILE_BINARY, { cwd, last: root }),
     ]
       .filter(Boolean)
       .sort((a, b) => {
@@ -195,7 +195,7 @@ export class JsPackageManagerFactory {
 }
 
 function hasNPM(cwd?: string) {
-  const npmVersionCommand = spawnSync('npm', ['--version'], {
+  const npmVersionCommand = spawnSync('npm --version', {
     cwd,
     shell: true,
     env: {
@@ -207,7 +207,7 @@ function hasNPM(cwd?: string) {
 }
 
 function hasBun(cwd?: string) {
-  const pnpmVersionCommand = spawnSync('bun', ['--version'], {
+  const pnpmVersionCommand = spawnSync('bun --version', {
     cwd,
     shell: true,
     env: {
@@ -219,7 +219,7 @@ function hasBun(cwd?: string) {
 }
 
 function hasPNPM(cwd?: string) {
-  const pnpmVersionCommand = spawnSync('pnpm', ['--version'], {
+  const pnpmVersionCommand = spawnSync('pnpm --version', {
     cwd,
     shell: true,
     env: {
@@ -231,7 +231,7 @@ function hasPNPM(cwd?: string) {
 }
 
 function getYarnVersion(cwd?: string): 1 | 2 | undefined {
-  const yarnVersionCommand = spawnSync('yarn', ['--version'], {
+  const yarnVersionCommand = spawnSync('yarn --version', {
     cwd,
     shell: true,
     env: {

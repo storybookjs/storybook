@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-create-react-app",
-  "version": "9.1.0-alpha.6",
+  "version": "10.1.0-alpha.7",
   "description": "Storybook for Create React App preset",
   "keywords": [
     "storybook"
@@ -19,24 +19,12 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./preset": {
-      "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./package.json": "./package.json"
+    "./index": "./dist/index.js",
+    "./package.json": "./package.json",
+    "./preset": "./dist/index.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "README.md",
@@ -45,8 +33,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.1",
@@ -66,13 +54,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts"
-    ],
-    "formats": [
-      "cjs"
-    ]
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
 }

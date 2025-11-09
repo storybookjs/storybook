@@ -1,7 +1,6 @@
-import { logger } from 'storybook/internal/node-logger';
-
 import prompts from 'prompts';
 
+import { logger } from '..';
 import { logTracker } from '../logger/log-tracker';
 import type {
   ConfirmPromptOptions,

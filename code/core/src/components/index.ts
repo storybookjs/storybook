@@ -37,7 +37,7 @@ export type {
   SupportedLanguage,
 } from './components/syntaxhighlighter/syntaxhighlighter-types';
 export { SyntaxHighlighter } from './components/syntaxhighlighter/lazy-syntaxhighlighter';
-export { createCopyToClipboardFunction } from './components/syntaxhighlighter/syntaxhighlighter';
+export { createCopyToClipboardFunction } from './components/syntaxhighlighter/clipboard';
 
 // UI
 export { ActionBar } from './components/ActionBar/ActionBar';
@@ -51,9 +51,8 @@ export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
 
 // Forms
 export { Button } from './components/Button/Button';
-export { Checkbox } from './components/Checkbox/Checkbox';
 export { IconButton } from './components/IconButton/IconButton';
-export { Form } from './components/form/index';
+export { Form } from './components/Form/Form';
 
 // Tooltips
 export { WithTooltip, WithTooltipPure } from './components/tooltip/lazy-WithTooltip';

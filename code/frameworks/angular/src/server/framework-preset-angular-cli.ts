@@ -6,16 +6,15 @@ import type { BuilderContext } from '@angular-devkit/architect';
 import { targetFromTargetString } from '@angular-devkit/architect';
 import type { JsonObject } from '@angular-devkit/core';
 import { logging } from '@angular-devkit/core';
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import type webpack from 'webpack';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
 import type { PresetOptions } from './preset-options';
-import { moduleIsAvailable } from './utils/module-is-available';
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot, resolvePackageDir } from 'storybook/internal/common';
 
 export async function webpackFinal(baseConfig: webpack.Configuration, options: PresetOptions) {
-  if (!moduleIsAvailable('@angular-devkit/build-angular')) {
+  if (!resolvePackageDir('@angular-devkit/build-angular')) {
     logger.info('=> Using base config because "@angular-devkit/build-angular" is not installed');
     return baseConfig;
   }
@@ -54,11 +53,16 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
   );
 
   try {
-    require.resolve('@angular/animations');
+    resolvePackageDir('@angular/animations');
   } catch (e) {
     webpackConfig.plugins.push(
       new WebpackIgnorePlugin({
         resourceRegExp: /@angular\/platform-browser\/animations$/,
+      })
+    );
+    webpackConfig.plugins.push(
+      new WebpackIgnorePlugin({
+        resourceRegExp: /@angular\/animations\/browser$/,
       })
     );
   }
@@ -80,8 +84,38 @@ function getBuilderContext(options: PresetOptions): BuilderContext {
   );
 }
 
+/**
+ * Deep merge function that properly handles nested objects. Preserves arrays and objects from
+ * source when they exist in target
+ *
+ * @internal - exported for testing purposes
+ */
+export function deepMerge(target: JsonObject, source: JsonObject): JsonObject {
+  const result = { ...target };
+
+  for (const key in source) {
+    if (source[key] !== undefined && source[key] !== null) {
+      if (
+        typeof source[key] === 'object' &&
+        !Array.isArray(source[key]) &&
+        typeof target[key] === 'object' &&
+        !Array.isArray(target[key]) &&
+        target[key] !== null
+      ) {
+        // Deep merge nested objects
+        result[key] = deepMerge(target[key] as JsonObject, source[key] as JsonObject);
+      } else {
+        // Override with source value
+        result[key] = source[key];
+      }
+    }
+  }
+
+  return result;
+}
+
 /** Get builder options Merge target options from browser target and from storybook options */
-async function getBuilderOptions(options: PresetOptions, builderContext: BuilderContext) {
+export async function getBuilderOptions(options: PresetOptions, builderContext: BuilderContext) {
   /** Get Browser Target options */
   let browserTargetOptions: JsonObject = {};
   if (options.angularBrowserTarget) {
@@ -95,16 +129,28 @@ async function getBuilderOptions(options: PresetOptions, builderContext: Builder
     browserTargetOptions = await builderContext.getTargetOptions(browserTarget);
   }
 
-  /** Merge target options from browser target options and from storybook options */
-  const builderOptions = {
-    ...browserTargetOptions,
-    ...options.angularBuilderOptions,
-    tsConfig:
-      options.tsConfig ??
-      (await findUp('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() })) ??
-      browserTargetOptions.tsConfig,
-  };
+  // `options.angularBuilderOptions` implicitly adds all options a target can have
+  // To figure out what user-land actually has explicitly defined in their target options, we
+  // manually need to read them
+  const explicitAngularBuilderOptions = await builderContext.getTargetOptions(
+    builderContext.target
+  );
+
+  /**
+   * Merge target options from browser target options and from storybook options Use deep merge to
+   * preserve nested properties like stylePreprocessorOptions.includePaths when they exist in
+   * browserTarget but not in storybook options
+   */
+  const builderOptions = deepMerge(browserTargetOptions, explicitAngularBuilderOptions || {});
+
+  // Handle tsConfig separately to maintain existing logic
+  builderOptions.tsConfig =
+    options.tsConfig ??
+    find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
+    browserTargetOptions.tsConfig;
   logger.info(`=> Using angular project with "tsConfig:${builderOptions.tsConfig}"`);
+
+  builderOptions.experimentalZoneless = options.angularBuilderOptions?.experimentalZoneless;
 
   return builderOptions;
 }

@@ -19,11 +19,12 @@ import {
   SyncIcon,
 } from '@storybook/icons';
 
+import { type API } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { type Call, CallStates, type ControlStates } from '../../instrumenter/types';
+import { type ControlStates } from '../../instrumenter/types';
 import type { Controls } from './InteractionsPanel';
-import { StatusBadge } from './StatusBadge';
+import { type PlayStatus, StatusBadge } from './StatusBadge';
 
 const SubnavWrapper = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
@@ -34,7 +35,7 @@ const SubnavWrapper = styled.div(({ theme }) => ({
 }));
 
 const StyledSubnav = styled.nav({
-  height: 40,
+  height: 39,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -44,9 +45,12 @@ const StyledSubnav = styled.nav({
 interface SubnavProps {
   controls: Controls;
   controlStates: ControlStates;
-  status: Call['status'];
+  status: PlayStatus;
   storyFileName?: string;
   onScrollToEnd?: () => void;
+  importPath?: string;
+  canOpenInEditor?: boolean;
+  api: API;
 }
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -73,8 +77,10 @@ const StyledSeparator = styled(Separator)({
   marginTop: 0,
 });
 
-const StyledLocation = styled(P)(({ theme }) => ({
-  color: theme.textMutedColor,
+const StyledLocation = styled(P)<{ isText?: boolean }>(({ theme, isText }) => ({
+  color: isText ? theme.textMutedColor : theme.color.secondary,
+  cursor: isText ? 'default' : 'pointer',
+  fontWeight: isText ? theme.typography.weight.regular : theme.typography.weight.bold,
   justifyContent: 'flex-end',
   textAlign: 'right',
   whiteSpace: 'nowrap',
@@ -96,7 +102,6 @@ const RewindButton = styled(StyledIconButton)({
 const JumpToEndButton = styled(StyledButton)({
   marginLeft: 9,
   marginRight: 9,
-  marginBottom: 1,
   lineHeight: '12px',
 });
 
@@ -119,8 +124,11 @@ export const Subnav: React.FC<SubnavProps> = ({
   status,
   storyFileName,
   onScrollToEnd,
+  importPath,
+  canOpenInEditor,
+  api,
 }) => {
-  const buttonText = status === CallStates.ERROR ? 'Scroll to error' : 'Scroll to end';
+  const buttonText = status === 'errored' ? 'Scroll to error' : 'Scroll to end';
   const theme = useTheme();
 
   return (
@@ -182,9 +190,28 @@ export const Subnav: React.FC<SubnavProps> = ({
               </RerunButton>
             </WithTooltip>
           </Group>
-          {storyFileName && (
+          {(importPath || storyFileName) && (
             <Group>
-              <StyledLocation>{storyFileName}</StyledLocation>
+              {canOpenInEditor ? (
+                <WithTooltip
+                  trigger="hover"
+                  hasChrome={false}
+                  tooltip={<Note note="Open in editor" />}
+                >
+                  <StyledLocation
+                    aria-label="Open in editor"
+                    onClick={() => {
+                      api.openInEditor({
+                        file: importPath as string,
+                      });
+                    }}
+                  >
+                    {storyFileName}
+                  </StyledLocation>
+                </WithTooltip>
+              ) : (
+                <StyledLocation isText={true}>{storyFileName}</StyledLocation>
+              )}
             </Group>
           )}
         </StyledSubnav>

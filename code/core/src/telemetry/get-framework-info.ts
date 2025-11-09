@@ -63,6 +63,7 @@ export async function getFrameworkInfo(mainConfig: StorybookConfig) {
   const builder = findMatchingPackage(frameworkPackageJson, knownBuilders);
   const renderer = findMatchingPackage(frameworkPackageJson, knownRenderers);
 
+  // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
   // parse framework name and strip off pnp paths etc.
   const sanitizedFrameworkName = getFrameworkPackageName(rawName);
   const frameworkOptions =

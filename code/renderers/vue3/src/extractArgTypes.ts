@@ -349,7 +349,7 @@ const isEnumSchema = (schemas: PropertyMetaSchema[]): schemas is string[] => {
  * @example
  *
  * ```
- * true, false;
+ * (true, false);
  * ```
  */
 const isBooleanSchema = (

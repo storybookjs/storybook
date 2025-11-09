@@ -23,6 +23,10 @@ const ignoreList = [
     ),
   (error: any) => error.message.includes('Lit is in dev mode. Not recommended for production!'),
   (error: any) => error.message.includes('error: `DialogContent` requires a `DialogTitle`'),
+  (error: any) =>
+    error.message.includes(
+      "importMetaResolve from within Storybook is being used in a Vitest test, but it shouldn't be. Please report this at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml"
+    ),
 ];
 
 const throwMessage = (type: any, message: any) => {
@@ -34,6 +38,8 @@ const throwMessage = (type: any, message: any) => {
 };
 const throwWarning = (message: any) => throwMessage('warn: ', message);
 const throwError = (message: any) => throwMessage('error: ', message);
+
+globalThis.FEATURES ??= {};
 
 vi.spyOn(console, 'warn').mockImplementation(throwWarning);
 vi.spyOn(console, 'error').mockImplementation(throwError);
@@ -84,10 +90,21 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
       info: vi.fn(),
       trace: vi.fn(),
       debug: vi.fn(),
+      verbose: vi.fn(),
       logBox: vi.fn(),
       intro: vi.fn(),
       outro: vi.fn(),
       step: vi.fn(),
     },
+  };
+});
+
+vi.mock('./core/src/shared/utils/module.ts', async (importOriginal) => {
+  return {
+    ...(await importOriginal()),
+    resolvePackageDir: vi.fn().mockReturnValue('/mocked/package/dir'),
+    importModule: vi.fn().mockResolvedValue({
+      mocked: true,
+    }),
   };
 });

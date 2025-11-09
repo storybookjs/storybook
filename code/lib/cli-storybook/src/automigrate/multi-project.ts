@@ -1,5 +1,6 @@
 import type { JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS, type TaskLogInstance, logger, prompt } from 'storybook/internal/node-logger';
+import { sanitizeError } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { UpgradeOptions } from '../upgrade';
@@ -234,32 +235,38 @@ export async function promptForAutomigrations(
       value: am.fix.id,
       label,
       hint: hint.join('\n'),
+      defaultSelected: am.fix.defaultSelected ?? true,
     };
   });
 
   const selectedIds = await prompt.multiselect({
     message: 'Select automigrations to run',
     options: choices,
-    initialValues: choices.map((c) => c.value),
+    initialValues: choices.filter((c) => c.defaultSelected).map((c) => c.value),
+    required: false,
   });
 
   return automigrations.filter((am) => selectedIds.includes(am.fix.id));
 }
 
+// Group automigrations by project
+type ConfigDir = string;
+type ErrorMessage = string;
+export type AutomigrationResult = {
+  automigrationStatuses: Record<FixId, FixStatus>;
+  automigrationErrors: Record<FixId, ErrorMessage>;
+};
 /** Runs selected automigrations for each project */
 export async function runAutomigrationsForProjects(
   selectedAutomigrations: AutomigrationCheckResult[],
   options: MultiProjectRunAutomigrationOptions
-): Promise<Record<string, Record<FixId, FixStatus>>> {
+): Promise<Record<ConfigDir, AutomigrationResult>> {
   const { dryRun, skipInstall, automigrations } = options;
-  const projectResults: Record<ConfigDir, Record<FixId, FixStatus>> = {};
+  const projectResults: Record<ConfigDir, AutomigrationResult> = {};
 
   const applicableAutomigrations = selectedAutomigrations.filter((am) =>
     am.reports.every((rep) => rep.status !== 'not_applicable')
   );
-
-  // Group automigrations by project
-  type ConfigDir = string;
   const projectAutomigrationResults = new Map<
     ConfigDir,
     {
@@ -327,6 +334,7 @@ export async function runAutomigrationsForProjects(
             },
           };
     const fixResults: Record<FixId, FixStatus> = {};
+    const fixFailures: Record<FixId, ErrorMessage> = {};
 
     for (const automigration of projectAutomigration) {
       const { fix, result, project, status } = automigration;
@@ -374,9 +382,12 @@ export async function runAutomigrationsForProjects(
           taskLog.message(CLI_COLORS.success(`${logger.SYMBOLS.success} ${fix.id}`));
         }
       } catch (error) {
+        const errorMessage =
+          (error instanceof Error ? error.stack : String(error)) ?? 'Unknown error';
         fixResults[fix.id] = FixStatus.FAILED;
+        fixFailures[fix.id] = sanitizeError(error as Error);
         taskLog.message(CLI_COLORS.error(`${logger.SYMBOLS.error} ${automigration.fix.id}`));
-        logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
+        logger.debug(errorMessage);
       }
     }
 
@@ -391,7 +402,10 @@ export async function runAutomigrationsForProjects(
       taskLog.success(`${countPrefix}Completed automigrations for ${projectName}`);
     }
 
-    projectResults[configDir] = fixResults;
+    projectResults[configDir] = {
+      automigrationStatuses: fixResults,
+      automigrationErrors: fixFailures,
+    };
   }
 
   return projectResults;
@@ -402,7 +416,7 @@ export async function runAutomigrations(
   options: UpgradeOptions
 ): Promise<{
   detectedAutomigrations: AutomigrationCheckResult[];
-  automigrationResults: Record<string, Record<FixId, FixStatus>>;
+  automigrationResults: Record<string, AutomigrationResult>;
 }> {
   // Prepare project data for automigrations
   const projectAutomigrationData: ProjectAutomigrationData[] = projects.map((project) => ({
@@ -453,13 +467,13 @@ export async function runAutomigrations(
 
   // Special case handling for rnstorybook-config which renames the config dir
   // TODO: Remove this as soon as the rn-storybook-config automigration is removed
-  Object.entries(automigrationResults).forEach(([configDir, fixResults]) => {
-    if (fixResults[rnstorybookConfig.id] === FixStatus.SUCCEEDED) {
+  Object.entries(automigrationResults).forEach(([configDir, resultData]) => {
+    if (resultData.automigrationStatuses[rnstorybookConfig.id] === FixStatus.SUCCEEDED) {
       const project = projects.find((p) => p.configDir === configDir);
       if (project) {
         const oldConfigDir = project.configDir;
         project.configDir = project.configDir.replace('.storybook', '.rnstorybook');
-        automigrationResults[project.configDir] = fixResults;
+        automigrationResults[project.configDir] = resultData;
         delete automigrationResults[oldConfigDir];
       }
     }

@@ -27,7 +27,7 @@ export const CustomFooter: Story = {
 };
 ```
 
-```js filename="Page.stories.js|jsx" renderer="react" language="js"
+```jsx filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Page } from './Page';
 
 export default {
@@ -46,7 +46,7 @@ export const CustomFooter = {
 };
 ```
 
-```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -73,7 +73,7 @@ export const CustomFooter = {
 } satisfies Story;
 ```
 
-```js filename="Page.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="Page.stories.js|jsx" renderer="solid" language="js"
 import { Page } from './Page';
 
 export default {
@@ -95,7 +95,7 @@ export const CustomFooter = {
 ```tsx filename="Page.stories.ts|tsx" renderer="solid" language="ts"
 import type { ComponentProps } from 'solid-js';
 
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Page } from './Page';
 
@@ -266,4 +266,47 @@ export const CustomFooter: Story = {
     footer: 'Built with Storybook',
   },
 };
+```
+
+```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  render: ({ footer, ...args }) => (
+    <Page {...args}>
+      <footer>{footer}</footer>
+    </Page>
+  ),
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  render: ({ footer, ...args }) => (
+    <Page {...args}>
+      <footer>{footer}</footer>
+    </Page>
+  ),
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
 ```

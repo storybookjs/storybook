@@ -1,0 +1,14 @@
+parameters:
+  workflow:
+    description: Which workflow to run
+    type: enum
+    enum: ['normal', 'merged', 'daily', 'skipped', 'docs']
+    default: 'skipped'
+  ghPrNumber:
+    description: The PR number
+    type: string
+    default: ''
+  ghBaseBranch:
+    description: The name of the base branch (the target of the PR)
+    type: string
+    default: 'next'

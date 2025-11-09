@@ -3,7 +3,7 @@ import type { Options, PresetProperty } from 'storybook/internal/types';
 
 import { loadCustomWebpackConfig } from '@storybook/core-webpack';
 
-import * as webpackReal from 'webpack';
+import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
 
 import { createDefaultWebpackConfig } from '../preview/base-webpack.config';
@@ -40,7 +40,7 @@ export async function webpack(config: Configuration, options: Options) {
 
   // Check whether user has a custom webpack config file and
   // return the (extended) base configuration if it's not available.
-  const customConfig = loadCustomWebpackConfig(configDir);
+  const customConfig = await loadCustomWebpackConfig(configDir);
 
   if (typeof customConfig === 'function') {
     logger.info('=> Loading custom Webpack config (full-control mode).');
@@ -51,5 +51,5 @@ export async function webpack(config: Configuration, options: Options) {
   return finalDefaultConfig;
 }
 
-export const webpackInstance = async () => webpackReal;
+export const webpackInstance = async () => webpackModule;
 export const webpackVersion = async () => '5';

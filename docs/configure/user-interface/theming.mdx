@@ -11,7 +11,7 @@ Storybook is theme-able using a lightweight theming API.
 
 It's possible to theme Storybook globally.
 
-Storybook includes two themes that look good out of the box: "light" and "dark". Unless you've set your preferred color scheme as dark, Storybook will use the light theme as default.
+Storybook includes a set of built-in themes that you can use to customize the appearance of your Storybook UI. The built-in themes are light, dark, and the "normal" theme that matches your preferred color scheme. Unless you specify otherwise, Storybook uses the normal theme by default.
 
 As an example, you can tell Storybook to use the "dark" theme by modifying [`.storybook/manager.js`](./features-and-behavior.mdx):
 
@@ -25,7 +25,7 @@ When setting a theme, set a complete theme object. The theme is replaced, not co
 
 ## Theming docs
 
-[Storybook Docs](../../writing-docs/index.mdx) uses the same theme system as Storybook’s UI but is themed independently from the main UI.
+[Storybook Docs](../../writing-docs/index.mdx) uses the same theme system as Storybook’s UI but is themed independently from the main UI. The default theme for Docs is always the "light" theme, regardless of the main UI theme.
 
 Supposing you have a Storybook theme defined for the main UI in [`.storybook/manager.js`](./features-and-behavior.mdx):
 
@@ -144,7 +144,7 @@ Here's how you might insert a custom `<Canvas />` block:
 
 Some addons require specific theme variables that a Storybook user must add. If you share your theme with the community, make sure to support the official API and other popular addons, so your users have a consistent experience.
 
-For example, the popular Actions addon uses [react-inspector](https://github.com/storybookjs/react-inspector/blob/master/src/styles/themes/chromeLight.tsx), which has themes of its own. Supply additional theme variables to style it like so:
+For example, the popular Actions feature uses [react-inspector](https://github.com/storybookjs/react-inspector/blob/master/src/styles/themes/chromeLight.tsx), which has themes of its own. Supply additional theme variables to style it like so:
 
 {/* prettier-ignore-start */}
 

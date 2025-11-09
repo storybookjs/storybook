@@ -1,0 +1,100 @@
+---
+title: 'Migration guide for Storybook 10'
+sidebar:
+  order: 1
+  title: Migrate to Storybook 10
+---
+
+[full-migration-notes]: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-9x-to-1000
+
+Storybook 10 is a breaking maintenance release focused on ESM-only package distribution. Its main features include:
+
+- 💎 ESM-only to reduce install size
+- ↗️ CSF Next preview with better typesafety and autocompletion
+- 🏷 Improved tags-based filtering
+
+Coming soon:
+
+- 🧪 Familiar and ergonomic CSF test functions (experimental)
+
+This guide is meant to help you **upgrade from Storybook 9.x to 10** successfully!
+
+<Callout variant="info">
+  **Migrating from a Storybook version prior to 9?**
+
+  You'll first need to [upgrade to Storybook 9](./migration-guide-from-older-version.mdx). Then you can return to this guide.
+</Callout>
+
+## Major breaking changes
+
+The rest of this guide will help you upgrade successfully, either automatically or manually. But first, there are some [breaking changes][full-migration-notes] in Storybook 10. Here are the most impactful changes you should know about before you go further:
+
+* [Main configuration (`.storybook/main.js|ts`) and other presets must be valid ESM](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#the-storybookmain-file-and-other-presets-must-be-valid-esm)
+* Ecosystem updates
+  * [Node 20.19+ or 22.12+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs-2019-or-2212-required)
+
+If any of these changes apply to your project, please read through the linked migration notes before continuing.
+
+If any of these new requirements or changes are blockers for your project, we recommend to continue using Storybook 8.x.
+
+You may wish to read the [full migration notes][full-migration-notes] before migrating. Or you can run the upgrade command below and we’ll try to take care of everything for you!
+
+## Automatic upgrade
+
+To upgrade your Storybook, run the [upgrade](./upgrading.mdx) command in the root of your repository:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-upgrade.md" />
+
+{/* prettier-ignore-end */}
+
+This will:
+
+1. Find all of the Storybook projects in your repository
+2. For each project
+   1. Determine that none of the [breaking changes](#major-breaking-changes) apply to your project
+      * If they do, you will receive instructions on how to resolve them before continuing
+   2. Upgrade your Storybook dependencies to the latest version
+   3. Run a collection of *automigrations*, which will:
+      * Check for common upgrade tasks
+      * Explain the necessary changes with links to more information
+      * Ask for approval, then perform the task automatically on your behalf
+
+## New projects
+
+To add Storybook to a project that isn’t currently using Storybook:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="create-command.md" />
+
+{/* prettier-ignore-end */}
+
+This will:
+
+1. Figure out which renderer (React, Vue, Angular, Web Components), builder (Webpack, Vite), or meta-framework (Next.js, SvelteKit) you’re using
+2. Install Storybook 10 and auto-configure it to mirror project settings
+
+## Troubleshooting
+
+The automatic upgrade should get your Storybook into a working state. If you encounter an error running Storybook after upgrading, here’s what to do:
+
+1. Try running the [`doctor` command](../api/cli-options.mdx#doctor) to check for common issues (such as duplicate dependencies, incompatible addons, or mismatched versions) and see suggestions for fixing them.
+2. If you’re running `storybook` with the `dev` command, try using the `build` command instead. Sometimes `build` errors are more legible than `dev` errors!
+3. Check [the full migration notes][full-migration-notes], which contains an exhaustive list of noteworthy changes in Storybook 10. Many of these are already handled by automigrations when you upgrade, but not all are. It’s also possible that you’re experiencing a corner case that we’re not aware of.
+4. Search [Storybook issues on GitHub](https://github.com/storybookjs/storybook/issues). If you’re seeing a problem, there’s a good chance other people are too. If so, upvote the issue, try out any workarounds described in the comments, and comment back if you have useful info to contribute.
+5. If there’s no existing issue, you can [file one](https://github.com/storybookjs/storybook/issues/new/choose), ideally with a reproduction attached. We’ll be on top of Storybook 10 issues as we’re stabilizing the release.
+
+If you prefer to debug yourself, here are a few useful things you can do to help narrow down the problem:
+
+1. Try removing all addons that are not in the `@storybook` npm namespace (make sure you don't remove the `storybook` package). Community addons that work well with 9.x might not yet be compatible with 10.x, and this is the fastest way to isolate that possibility. If you find an addon that needs to be upgraded to work with Storybook 10, please post an issue on the addon’s repository, or better yet, a pull request to upgrade it!
+2. Another debugging technique is to bisect to older prerelease versions of Storybook to figure out which release broke your Storybook. For example, assuming that the current prerelease of Storybook is `10.0.0-beta.56`, you could set the version to `10.0.0-alpha.0` in your `package.json` and reinstall to verify that it still works (`alpha.0` should be nearly identical to `9.1.x`). If it works, you could then try `10.0.0-beta.0`, then `10.0.0-beta.28` and so forth. Once you’ve isolated the bad release, read through its [CHANGELOG](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.prerelease.md) entry and perhaps there’s a change that jumps out as the culprit. If you find the problem, please submit an issue or pull request to the Storybook monorepo and we’ll do our best to take care of it quickly.
+
+## Optional migrations
+
+In addition to the automigrations and manual migrations above, there are also optional migrations that you should consider. These are features that we’ve deprecated in Storybook 10 (but remain backwards compatible), or best practices that should help you be more productive in the future.
+
+### `test-runner` to `addon-vitest`
+
+`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/integrations/vitest-addon.mdx#automatic-setup).

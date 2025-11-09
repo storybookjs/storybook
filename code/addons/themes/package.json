@@ -1,15 +1,22 @@
 {
   "name": "@storybook/addon-themes",
-  "version": "9.1.0-alpha.6",
-  "description": "Switch between multiple themes for you components in Storybook",
+  "version": "10.1.0-alpha.7",
+  "description": "Storybook Themes addon: Switch between themes from the toolbar",
   "keywords": [
     "css",
     "essentials",
+    "storybook",
     "storybook-addon",
-    "storybook-addons",
     "style",
     "themes",
-    "toggle"
+    "toggle",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/themes",
   "bugs": {
@@ -29,29 +36,14 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+      "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
-    "./postinstall": "./postinstall.js"
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "preview": [
-        "dist/preview.d.ts"
-      ]
+    "./postinstall": "./dist/postinstall.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
     }
   },
   "files": [
@@ -62,14 +54,14 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@storybook/icons": "^1.4.0",
+    "@storybook/icons": "^1.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.8.3"
@@ -80,18 +72,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "exportEntries": [
-      "./src/index.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.tsx"
-    ],
-    "previewEntries": [
-      "./src/preview.tsx"
-    ]
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16",
   "storybook": {
     "displayName": "Themes",
     "unsupportedFrameworks": [

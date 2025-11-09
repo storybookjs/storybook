@@ -1,12 +1,13 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 
 import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
@@ -148,15 +149,25 @@ export class Yarn2Proxy extends JsPackageManager {
     }
   }
 
-  getModulePackageJSON(packageName: string): PackageJson | null {
-    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
+  // TODO: Remove pnp compatibility code in SB11
+  async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
+    const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
       cwd: this.cwd,
-      stopAt: getProjectRoot(),
+      last: getProjectRoot(),
     });
 
     if (pnpapiPath) {
       try {
-        const pnpApi = require(pnpapiPath);
+        /*
+          This is a rather fragile way to access Yarn's PnP API, essentially manually loading it.
+          The proper way to do this would be to just do await import('pnpapi'),
+          as documented at https://yarnpkg.com/advanced/pnpapi#requirepnpapi
+
+          However the 'pnpapi' module is only injected when the Node process is started via Yarn,
+          which is not always the case for us, because we spawn child processes directly with Node,
+          eg. when running automigrations.
+        */
+        const { default: pnpApi } = await import(pathToFileURL(pnpapiPath).href);
 
         const resolvedPath = pnpApi.resolveToUnqualified(
           packageName,
@@ -180,20 +191,18 @@ export class Yarn2Proxy extends JsPackageManager {
 
         return crossFs.readJsonSync(virtualPath);
       } catch (error: any) {
-        if (error.code !== 'MODULE_NOT_FOUND') {
+        if (error.code !== 'ERR_MODULE_NOT_FOUND') {
           console.error('Error while fetching package version in Yarn PnP mode:', error);
         }
         return null;
       }
     }
 
-    const packageJsonPath = findUpSync(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: this.primaryPackageJson.operationDir, stopAt: getProjectRoot() }
-    );
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;

@@ -1,5 +1,3 @@
-import { join, relative, resolve } from 'node:path';
-
 import {
   getProjectRoot,
   loadAllPresets,
@@ -11,6 +9,10 @@ import { oneWayHash } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
+
+import { join, relative, resolve } from 'pathe';
+
+import { resolvePackageDir } from '../shared/utils/module';
 
 export async function loadStorybook(
   options: CLIOptions &
@@ -49,7 +51,7 @@ export async function loadStorybook(
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     isCritical: true,
@@ -62,12 +64,12 @@ export async function loadStorybook(
 
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-preset'),
+      join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-preset.js'),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
       ...corePresets,
     ],
     overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
   });

@@ -173,6 +173,7 @@ describe('initModule', () => {
       fullAPI: Object.assign(fullAPI, {
         getCurrentStoryData: () => ({
           type: 'story',
+          subtype: 'story',
           args: { a: 1, b: 2 },
           initialArgs: { a: 1, b: 1 },
         }),
@@ -218,7 +219,7 @@ describe('initModule', () => {
       state: { location },
       navigate,
       fullAPI: Object.assign(fullAPI, {
-        getCurrentStoryData: () => ({ type: 'story', args: { a: 1 } }),
+        getCurrentStoryData: () => ({ type: 'story', subtype: 'story', args: { a: 1 } }),
       }),
     });
 

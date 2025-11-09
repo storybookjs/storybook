@@ -1,9 +1,14 @@
 {
   "name": "@storybook/cli",
-  "version": "9.1.0-alpha.6",
-  "description": "Storybook CLI",
+  "version": "10.1.0-alpha.7",
+  "description": "Storybook CLI: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "cli",
+    "dev",
+    "build",
+    "upgrade",
+    "init"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-storybook",
   "bugs": {
@@ -22,14 +27,9 @@
   "author": "Storybook Team",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./bin/index.cjs": "./bin/index.cjs",
     "./package.json": "./package.json"
   },
-  "bin": "./bin/index.cjs",
+  "bin": "./dist/bin/index.js",
   "files": [
     "bin/**/*",
     "dist/**/*",
@@ -37,15 +37,15 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti  ../../../scripts/prepare/check.ts",
-    "prep": "jiti  ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@storybook/codemod": "workspace:*",
     "@types/semver": "^7.3.4",
-    "commander": "^12.1.0",
+    "commander": "^14.0.1",
     "create-storybook": "workspace:*",
-    "giget": "^1.0.0",
+    "giget": "^2.0.0",
     "jscodeshift": "^0.15.1",
     "storybook": "workspace:*",
     "ts-dedent": "^2.0.0"
@@ -53,12 +53,12 @@
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
     "@types/prompts": "^2.0.9",
-    "boxen": "^7.1.1",
+    "boxen": "^8.0.1",
     "comment-json": "^4.2.5",
     "cross-spawn": "^7.0.6",
+    "empathic": "^2.0.0",
     "envinfo": "^7.14.0",
     "execa": "^9.6.0",
-    "find-up": "^7.0.0",
     "globby": "^14.0.1",
     "leven": "^4.0.0",
     "p-limit": "^6.2.0",
@@ -72,15 +72,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/bin/index.ts"
-    ],
-    "formats": [
-      "cjs"
-    ],
-    "platform": "node"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
 }

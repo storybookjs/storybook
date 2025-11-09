@@ -1,15 +1,18 @@
 import { cp, rm, writeFile } from 'node:fs/promises';
-import { dirname, join, parse } from 'node:path';
 
 import { stringifyProcessEnvs } from 'storybook/internal/common';
-import { globalsModuleInfoMap } from 'storybook/internal/manager/globals-module-info';
 import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
+// TODO: Remove in SB11
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
+import { resolveModulePath } from 'exsolve';
+import { join, parse } from 'pathe';
 import sirv from 'sirv';
 
+import { globalsModuleInfoMap } from '../manager/globals/globals-module-info';
 import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support';
+import { resolvePackageDir } from '../shared/utils/module';
 import type {
   BuilderBuildResult,
   BuilderFunction,
@@ -22,26 +25,35 @@ import { getData } from './utils/data';
 import { readOrderedFiles } from './utils/files';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework';
 import { wrapManagerEntries } from './utils/managerEntries';
-import { safeResolve } from './utils/safeResolve';
 import { getTemplatePath, renderHTML } from './utils/template';
 
 export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support';
+
+const CORE_DIR_ORIGIN = join(resolvePackageDir('storybook'), 'dist/manager');
 
 const isRootPath = /^\/($|\?)/;
 let compilation: Compilation;
 let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;
 
 export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
-  const [addonsEntryPoints, customManagerEntryPoint, tsconfigPath, envs] = await Promise.all([
+  const [managerEntriesFromPresets, envs] = await Promise.all([
     options.presets.apply('managerEntries', []),
-    safeResolve(join(options.configDir, 'manager')),
-    getTemplatePath('addon.tsconfig.json'),
     options.presets.apply<Record<string, string>>('env'),
   ]);
+  const tsconfigPath = getTemplatePath('addon.tsconfig.json');
+  let configDirManagerEntry;
+  try {
+    configDirManagerEntry = resolveModulePath('./manager', {
+      from: options.configDir,
+      extensions: ['.js', '.mjs', '.jsx', '.ts', '.mts', '.tsx'],
+    });
+  } catch (e) {
+    // no manager entry found in config directory, that's fine
+  }
 
-  const entryPoints = customManagerEntryPoint
-    ? [...addonsEntryPoints, customManagerEntryPoint]
-    : addonsEntryPoints;
+  const entryPoints = configDirManagerEntry
+    ? [...managerEntriesFromPresets, configDirManagerEntry]
+    : managerEntriesFromPresets;
 
   return {
     entryPoints: await wrapManagerEntries(entryPoints, options.cacheKey),
@@ -161,12 +173,6 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-  const coreDirOrigin = join(
-    dirname(require.resolve('storybook/internal/package.json')),
-    'dist',
-    'manager'
-  );
-
   router.use(
     '/sb-addons',
     sirv(addonsDir, {
@@ -177,7 +183,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   );
   router.use(
     '/sb-manager',
-    sirv(coreDirOrigin, {
+    sirv(CORE_DIR_ORIGIN, {
       maxAge: 300000,
       dev: true,
       immutable: true,
@@ -269,11 +275,6 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   yield;
 
   const addonsDir = config.outdir;
-  const coreDirOrigin = join(
-    dirname(require.resolve('storybook/internal/package.json')),
-    'dist',
-    'manager'
-  );
   const coreDirTarget = join(options.outputDir, `sb-manager`);
 
   // TODO: this doesn't watch, we should change this to use the esbuild watch API: https://esbuild.github.io/api/#watch
@@ -284,7 +285,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
 
   yield;
 
-  const managerFiles = cp(coreDirOrigin, coreDirTarget, {
+  const managerFiles = cp(CORE_DIR_ORIGIN, coreDirTarget, {
     filter: (src) => {
       const { ext } = parse(src);
       if (ext) {

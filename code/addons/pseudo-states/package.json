@@ -1,12 +1,21 @@
 {
   "name": "storybook-addon-pseudo-states",
-  "version": "9.1.0-alpha.6",
-  "description": "CSS pseudo states for Storybook",
+  "version": "10.1.0-alpha.7",
+  "description": "Storybook Pseudo-states addon: Manipulate CSS pseudo states",
   "keywords": [
     "storybook",
+    "storybook-addon",
+    "css",
     "pseudo states",
     "style",
-    "test"
+    "test",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/pseudo-states",
   "bugs": {
@@ -22,24 +31,19 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+      "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
-    "./register": "./dist/manager.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    }
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "*.js",
     "*.d.ts",
@@ -47,11 +51,11 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "devDependencies": {
-    "@storybook/icons": "^1.4.0",
+    "@storybook/icons": "^1.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.8.3"
@@ -61,17 +65,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bundler": {
-    "exportEntries": [
-      "./src/index.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.ts"
-    ],
-    "previewEntries": [
-      "./src/preview.ts"
-    ]
   },
   "storybook": {
     "displayName": "Pseudo States",

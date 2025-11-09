@@ -476,7 +476,8 @@ export interface Addon_ToolbarConfig {
 }
 export interface Addon_Config {
   theme?: ThemeVars;
-  layout?: {
+  layoutCustomisations?: {
+    showPanel?: API_LayoutCustomisations['showPanel'];
     showSidebar?: API_LayoutCustomisations['showSidebar'];
     showToolbar?: API_LayoutCustomisations['showToolbar'];
   };

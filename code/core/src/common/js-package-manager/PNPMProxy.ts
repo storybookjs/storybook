@@ -1,10 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 
 import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
@@ -141,15 +142,16 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  public getModulePackageJSON(packageName: string): PackageJson | null {
-    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
+  // TODO: Remove pnp compatibility code in SB11
+  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
+    const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
       cwd: this.primaryPackageJson.operationDir,
-      stopAt: getProjectRoot(),
+      last: getProjectRoot(),
     });
 
     if (pnpapiPath) {
       try {
-        const pnpApi = require(pnpapiPath);
+        const pnpApi = await import(pathToFileURL(pnpapiPath).href);
 
         const resolvedPath = pnpApi.resolveToUnqualified(packageName, this.cwd, {
           considerBuiltins: false,
@@ -171,13 +173,8 @@ export class PNPMProxy extends JsPackageManager {
       }
     }
 
-    const packageJsonPath = findUpSync(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: this.cwd, stopAt: getProjectRoot() }
-    );
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
 
     if (!packageJsonPath) {
       return null;

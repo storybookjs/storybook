@@ -5,15 +5,13 @@ import { join, resolve } from 'node:path';
 import {
   type JsPackageManager,
   type PackageJson,
-  type PackageJsonWithDepsAndDevDeps,
   frameworkToRenderer,
   getProjectRoot,
 } from 'storybook/internal/common';
-import { versions as storybookMonorepoPackages } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
@@ -261,7 +259,7 @@ export async function adjustTemplate(templatePath: string, templateData: Record<
 }
 
 export async function isNxProject() {
-  return findUpSync('nx.json', { stopAt: getProjectRoot() });
+  return find.up('nx.json', { last: getProjectRoot() });
 }
 
 export function coerceSemver(version: string) {

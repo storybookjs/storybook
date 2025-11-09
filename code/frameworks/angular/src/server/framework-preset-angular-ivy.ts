@@ -6,6 +6,9 @@ import type { Configuration } from 'webpack';
 
 import type { AngularOptions } from '../types';
 import type { PresetOptions } from './preset-options';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 /**
  * Source :

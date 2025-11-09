@@ -1,10 +1,19 @@
 {
   "name": "@storybook/addon-onboarding",
-  "version": "9.1.0-alpha.6",
-  "description": "Storybook Addon Onboarding - Introduces a new onboarding experience",
+  "version": "10.1.0-alpha.7",
+  "description": "Storybook Onboarding: Help new users learn how to write stories",
   "keywords": [
-    "storybook-addons",
-    "addon-onboarding"
+    "storybook",
+    "storybook-addon",
+    "onboarding",
+    "getting started",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/onboarding",
   "bugs": {
@@ -20,19 +29,16 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
-    "./preset": "./dist/preset.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "README.md",
@@ -41,12 +47,12 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "devDependencies": {
     "@neoconfetti/react": "^1.0.0",
-    "@storybook/icons": "^1.4.0",
+    "@storybook/icons": "^1.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-joyride": "^2.8.2",
@@ -57,16 +63,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bundler": {
-    "exportEntries": [
-      "./src/index.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.tsx"
-    ],
-    "nodeEntries": [
-      "./src/preset.ts"
-    ]
   }
 }

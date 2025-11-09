@@ -12,6 +12,7 @@ export type RenderType = 'story' | 'docs';
  * - Tracking what is rendered to know if a change requires re-rendering or teardown + recreation.
  */
 export interface Render<TRenderer extends Renderer> {
+  renderId: number;
   type: RenderType;
   id: StoryId;
   isPreparing: () => boolean;

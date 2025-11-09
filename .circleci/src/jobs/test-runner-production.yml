@@ -1,0 +1,34 @@
+executor:
+  class: medium+
+  name: sb_playwright
+
+parameters:
+  parallelism:
+    type: integer
+
+parallelism: << parameters.parallelism >>
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - attach_workspace:
+      at: .
+  - run:
+      name: Install sandbox dependencies
+      command: |
+        TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
+        cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+  - start-event-collector
+  - run:
+      name: Running Test Runner
+      command: yarn task --task test-runner --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=never --junit
+      environment:
+        STORYBOOK_TELEMETRY_DEBUG: 1
+        STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
+  - run:
+      name: 'Check Telemetry'
+      command: yarn --cwd scripts jiti ./event-log-checker.ts test-run $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
+  - report-workflow-on-failure:
+      template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
+  - store_test_results:
+      path: test-results

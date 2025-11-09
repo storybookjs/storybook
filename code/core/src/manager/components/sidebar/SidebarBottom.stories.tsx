@@ -78,6 +78,7 @@ const meta = {
     isDevelopment: true,
     warningCount: 0,
     errorCount: 0,
+    successCount: 0,
     hasStatuses: false,
     notifications: [],
     api: {
@@ -131,6 +132,12 @@ export const Both: Story = {
 };
 
 export const DynamicHeight: Story = {
+  // do not test in chromatic
+  parameters: {
+    chromatic: {
+      disable: true,
+    },
+  },
   args: {
     registeredTestProviders: {
       'dynamic-height': {

@@ -1,6 +1,6 @@
 import { setOutput } from '@actions/core';
 import { program } from 'commander';
-import { intersection } from 'es-toolkit';
+import { intersection } from 'es-toolkit/array';
 import picocolors from 'picocolors';
 import { z } from 'zod';
 

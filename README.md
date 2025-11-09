@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://storybook.js.org/">
+  <a href="https://storybook.js.org/?ref=readme">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/263385/199832481-bbbf5961-6a26-481d-8224-51258cce9b33.png">
       <img src="https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png" alt="Storybook" width="400" />
@@ -27,7 +27,7 @@
   <a href="https://discord.gg/storybook">
     <img src="https://img.shields.io/badge/discord-join-7289DA.svg?logo=discord&longCache=true&style=flat" />
   </a>
-  <a href="https://storybook.js.org/community/">
+  <a href="https://storybook.js.org/community/?ref=readme">
     <img src="https://img.shields.io/badge/community-join-4BC424.svg" alt="Storybook Community" />
   </a>
   <a href="#backers">
@@ -45,11 +45,11 @@
 </p>
 
 <p align="center">
-Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of teams use it for UI development, testing, and documentation. Find out more at https://storybook.js.org!
+Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of teams use it for UI development, testing, and documentation. Find out more at <a href="https://storybook.js.org/?ref=readme">storybook.js.org</a>!
 </p>
 
 <center>
-  <img src="https://raw.githubusercontent.com/storybookjs/storybook/main/media/storybook-intro.gif" width="100%" />
+  <img src="https://raw.githubusercontent.com/storybookjs/storybook/refs/heads/release-6-5/media/storybook-intro.gif" width="100%" />
 </center>
 
 <p align="center">
@@ -74,19 +74,19 @@ Storybook is a frontend workshop for building UI components and pages in isolati
 
 ## Getting Started
 
-Visit [Storybook's website](https://storybook.js.org) to learn more about Storybook and to get started.
+Visit [Storybook's website](https://storybook.js.org/?ref=readme) to learn more about Storybook and to get started.
 
 ### Documentation
 
-Documentation can be found on [Storybook's docs site](https://storybook.js.org/docs).
+Documentation can be found on [Storybook's docs site](https://storybook.js.org/docs?ref=readme).
 
 ### Examples
 
-View [Component Encyclopedia](https://storybook.js.org/showcase) to see how leading teams use Storybook.
+View [Component Encyclopedia](https://storybook.js.org/showcase?ref=readme) to see how leading teams use Storybook.
 
 Use [storybook.new](https://storybook.new) to quickly create an example project in Stackblitz.
 
-Storybook comes with a lot of [addons](https://storybook.js.org/docs/configure/user-interface/storybook-addons) for component design, documentation, testing, interactivity, and so on. Storybook's API makes it possible to configure and extend in various ways. It has even been extended to support React Native, Android, iOS, and Flutter development for mobile.
+Storybook comes with a lot of [addons](https://storybook.js.org/docs/configure/user-interface/storybook-addons?ref=readme) for component design, documentation, testing, interactivity, and so on. Storybook's API makes it possible to configure and extend in various ways. It has even been extended to support React Native, Android, iOS, and Flutter development for mobile.
 
 ### Community
 
@@ -108,7 +108,7 @@ For additional help, share your issue in [the repo's GitHub Discussions](https:/
 | [Svelte](code/renderers/svelte)                                | [![Storybook demo](https://img.shields.io/npm/v/@storybook/svelte/latest?style=flat-square&color=blue&label)](https://next--630873996e4e3557791c069c.chromatic.com/)         | [![Svelte](https://img.shields.io/npm/dm/@storybook/svelte?style=flat-square&color=eee)](code/renderers/svelte)                                       |
 | [Preact](code/renderers/preact)                                | [![Storybook demo](https://img.shields.io/npm/v/@storybook/preact/latest?style=flat-square&color=blue&label)](https://next--63b588a512565bfaace15e7c.chromatic.com/)         | [![Preact](https://img.shields.io/npm/dm/@storybook/preact?style=flat-square&color=eee)](code/renderers/preact)                                       |
 | [Qwik](https://github.com/literalpie/storybook-framework-qwik) | [![](https://img.shields.io/npm/v/storybook-framework-qwik/latest?style=flat-square&color=blue&label)](/)                                                                    | [![Qwik](https://img.shields.io/npm/dm/storybook-framework-qwik?style=flat-square&color=eee)](https://github.com/literalpie/storybook-framework-qwik) |
-| [SolidJS](https://github.com/storybookjs/solidjs)              | [![](https://img.shields.io/npm/v/storybook-solidjs/latest?style=flat-square&color=blue&label)](/)                                                                           | [![SolidJS](https://img.shields.io/npm/dm/storybook-solidjs?style=flat-square&color=eee)](https://github.com/storybookjs/solidjs)                     |
+| [SolidJS](https://github.com/solidjs-community/storybook)      | [![](https://img.shields.io/npm/v/storybook-solidjs-vite/latest?style=flat-square&color=blue&label)](/)                                                                      | [![SolidJS](https://img.shields.io/npm/dm/storybook-solidjs-vite?style=flat-square&color=eee)](https://github.com/solidjs-community/storybook)        |
 | [Android, iOS, Flutter](https://github.com/storybookjs/native) | [![](https://img.shields.io/npm/v/@storybook/native/latest?style=flat-square&color=blue&label)](/)                                                                           | [![Native](https://img.shields.io/npm/dm/@storybook/native?style=flat-square&color=eee)](https://github.com/storybookjs/native)                       |
 
 ### Addons
@@ -124,14 +124,14 @@ For additional help, share your issue in [the repo's GitHub Discussions](https:/
 | [events](https://github.com/storybookjs/addon-events)                     | Interactively fire events to components that respond to EventEmitter       |
 | [google-analytics](https://github.com/storybookjs/addon-google-analytics) | Reports google analytics on stories                                        |
 | [graphql](https://github.com/storybookjs/addon-graphql)                   | Query a GraphQL server within Storybook stories                            |
-| [jest](code/addons/jest/)                                                 | View the results of components' unit tests in Storybook                    |
+| [jest](https://github.com/storybookjs/addon-jest)                         | View the results of components' unit tests in Storybook                    |
 | [links](code/addons/links/)                                               | Create links between stories                                               |
 | [measure](code/core/src/measure/)                                         | Visually inspect the layout and box model within the Storybook UI          |
 | [outline](code/core/src/outline/)                                         | Visually debug the CSS layout and alignment within the Storybook UI        |
 | [query params](https://github.com/storybookjs/addon-queryparams)          | Mock query params                                                          |
 | [viewport](code/core/src/viewport/)                                       | Change display sizes and layouts for responsive components using Storybook |
 
-See [Addon / Framework Support Table](https://storybook.js.org/docs/configure/integration/frameworks-feature-support)
+See [Addon / Framework Support Table](https://storybook.js.org/docs/configure/integration/frameworks-feature-support?ref=readme)
 
 To continue improving your experience, we have to eventually deprecate or remove certain addons in favor of new and better tools.
 
@@ -139,7 +139,7 @@ If you're using info/notes, we highly recommend you migrate to [docs](code/addon
 
 If you're using contexts, we highly recommend you migrate to [toolbars](https://github.com/storybookjs/storybook/tree/next/code/addons/toolbars) and [here is a guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#deprecated-addon-contexts) to help you.
 
-If you're using addon-storyshots, we highly recommend you migrate to the Storybook [test-runner](https://github.com/storybookjs/test-runner) and [here is a guide](https://storybook.js.org/docs/writing-tests/storyshots-migration-guide) to help you.
+If you're using addon-storyshots, we highly recommend you migrate to the Storybook [test-runner](https://github.com/storybookjs/test-runner) and [here is a guide](https://storybook.js.org/docs/writing-tests/storyshots-migration-guide?ref=readme) to help you.
 
 ## Badges & Presentation materials
 
@@ -156,7 +156,7 @@ If you're looking for material to use in your Storybook presentation, such as lo
 ## Community
 
 - Tweeting via [@storybookjs](https://x.com/storybookjs)
-- Blogging at [storybook.js.org](https://storybook.js.org/blog/) and [Medium](https://medium.com/storybookjs)
+- Blogging at [storybook.js.org](https://storybook.js.org/blog/?ref=readme) and [Medium](https://medium.com/storybookjs)
 - Chatting on [Discord](https://discord.gg/storybook)
 - Videos and streams at [YouTube](https://www.youtube.com/channel/UCr7Quur3eIyA_oe8FNYexfg)
 

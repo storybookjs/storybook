@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 
 import type { UniversalStore } from './index';
 

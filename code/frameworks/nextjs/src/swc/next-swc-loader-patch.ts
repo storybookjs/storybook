@@ -29,8 +29,8 @@ DEALINGS IN THE SOFTWARE.
 import { isAbsolute, relative } from 'node:path';
 
 import type { NextConfig } from 'next';
-import { isWasm, transform } from 'next/dist/build/swc';
-import { getLoaderSWCOptions } from 'next/dist/build/swc/options';
+import { isWasm, transform } from 'next/dist/build/swc/index.js';
+import { getLoaderSWCOptions } from 'next/dist/build/swc/options.js';
 
 export interface SWCLoaderOptions {
   rootDir: string;
@@ -153,6 +153,7 @@ export function pitch(this: any) {
   const callback = this.async();
   (async () => {
     if (
+      // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
       // TODO: investigate swc file reading in PnP mode?
       !process.versions.pnp &&
       !EXCLUDED_PATHS.test(this.resourcePath) &&

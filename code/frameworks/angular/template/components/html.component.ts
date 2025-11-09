@@ -3,7 +3,6 @@ import { Component, Input } from '@angular/core';
 // Type-only imports are stripped during compilation, causing runtime errors like "DomSanitizer is not defined".
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { DomSanitizer } from '@angular/platform-browser';
-
 @Component({
   standalone: false,
   selector: 'storybook-html',

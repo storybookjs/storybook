@@ -1,27 +1,29 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
+import { isAbsolute, posix, sep } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
   JsPackageManagerFactory,
-  extractProperFrameworkName,
   formatFileContent,
+  getInterpretedFile,
   getProjectRoot,
-  loadAllPresets,
+  isCI,
   loadMainConfig,
   scanAndTransformFiles,
-  serverResolve,
   transformImportFiles,
-  validateFrameworkName,
 } from 'storybook/internal/common';
+import { experimental_loadStorybook } from 'storybook/internal/core-server';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
+import * as find from 'empathic/find';
+import * as pkg from 'empathic/package';
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
-import { findUp } from 'find-up';
-import { dirname, join, relative, resolve } from 'pathe';
+import { dirname, relative, resolve } from 'pathe';
 import prompts from 'prompts';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -39,15 +41,30 @@ const addonA11yName = '@storybook/addon-a11y';
 
 let hasErrors = false;
 
+function nameMatches(name: string, pattern: string) {
+  if (name === pattern) {
+    return true;
+  }
+
+  if (name.includes(`${pattern}${sep}`)) {
+    return true;
+  }
+  if (name.includes(`${pattern}${posix.sep}`)) {
+    return true;
+  }
+
+  return false;
+}
+
 const logErrors = (...args: Parameters<typeof printError>) => {
   hasErrors = true;
   printError(...args);
 };
 
-const findFile = async (basename: string, extensions = EXTENSIONS) =>
-  findUp(
+const findFile = (basename: string, extensions = EXTENSIONS) =>
+  find.any(
     extensions.map((ext) => basename + ext),
-    { stopAt: getProjectRoot() }
+    { last: getProjectRoot() }
   );
 
 export default async function postInstall(options: PostinstallOptions) {
@@ -64,24 +81,34 @@ export default async function postInstall(options: PostinstallOptions) {
     force: options.packageManager,
   });
 
+  const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+  const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
+  const isVitest3_2To4 = vitestVersionSpecifier
+    ? satisfies(vitestVersionSpecifier, '>=3.2.0 <4.0.0')
+    : false;
+  const isVitest4OrNewer = vitestVersionSpecifier
+    ? satisfies(vitestVersionSpecifier, '>=4.0.0')
+    : true;
+
   const info = await getStorybookInfo(options);
   const allDeps = packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
-  const dependencies = ['vitest', '@vitest/browser', 'playwright'].filter((p) => !allDeps[p]);
-  const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
-  const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
-  const isVitest3_2OrNewer = vitestVersionSpecifier
-    ? satisfies(vitestVersionSpecifier, '>=3.2.0')
-    : true;
+  const dependencies = [
+    'vitest',
+    'playwright',
+    isVitest4OrNewer ? '@vitest/browser-playwright' : '@vitest/browser',
+  ];
 
-  const mainJsPath = serverResolve(resolve(options.configDir, 'main')) as string;
+  const uniqueDependencies = dependencies.filter((p) => !allDeps[p]);
+
+  const mainJsPath = getInterpretedFile(resolve(options.configDir, 'main')) as string;
   const config = await readConfig(mainJsPath);
 
   const hasCustomWebpackConfig = !!config.getFieldNode(['webpackFinal']);
 
-  const isInteractive = process.stdout.isTTY && !process.env.CI;
+  const isInteractive = process.stdout.isTTY && !isCI();
 
-  if (info.frameworkPackageName === '@storybook/nextjs' && !hasCustomWebpackConfig) {
+  if (nameMatches(info.frameworkPackageName, '@storybook/nextjs') && !hasCustomWebpackConfig) {
     const out =
       options.yes || !isInteractive
         ? { migrateToNextjsVite: !!options.yes }
@@ -130,7 +157,9 @@ export default async function postInstall(options: PostinstallOptions) {
     }
   }
 
-  const annotationsImport = SUPPORTED_FRAMEWORKS.includes(info.frameworkPackageName)
+  const annotationsImport = SUPPORTED_FRAMEWORKS.find((f) =>
+    nameMatches(info.frameworkPackageName, f)
+  )
     ? info.frameworkPackageName === '@storybook/nextjs'
       ? '@storybook/nextjs-vite'
       : info.frameworkPackageName
@@ -146,8 +175,8 @@ export default async function postInstall(options: PostinstallOptions) {
     }
 
     if (
-      info.frameworkPackageName !== '@storybook/nextjs' &&
-      info.builderPackageName !== '@storybook/builder-vite'
+      !nameMatches(info.frameworkPackageName, '@storybook/nextjs') &&
+      !nameMatches(info.builderPackageName, '@storybook/builder-vite')
     ) {
       reasons.push(
         '• The addon can only be used with a Vite-based Storybook framework or Next.js.'
@@ -177,7 +206,7 @@ export default async function postInstall(options: PostinstallOptions) {
       `);
     }
 
-    if (info.frameworkPackageName === '@storybook/nextjs') {
+    if (nameMatches(info.frameworkPackageName, '@storybook/nextjs')) {
       const nextVersion = await packageManager.getInstalledVersion('next');
       if (!nextVersion) {
         reasons.push(dedent`
@@ -242,7 +271,7 @@ export default async function postInstall(options: PostinstallOptions) {
     );
     try {
       const storybookVersion = await packageManager.getInstalledVersion('storybook');
-      dependencies.push(`@storybook/nextjs-vite@^${storybookVersion}`);
+      uniqueDependencies.push(`@storybook/nextjs-vite@^${storybookVersion}`);
     } catch (e) {
       console.error('Failed to install @storybook/nextjs-vite. Please install it manually');
     }
@@ -260,10 +289,10 @@ export default async function postInstall(options: PostinstallOptions) {
         Read more about Vitest coverage providers at https://vitest.dev/guide/coverage.html#coverage-providers
       `
     );
-    dependencies.push(`@vitest/coverage-v8`); // Version specifier is added below
+    uniqueDependencies.push(`@vitest/coverage-v8`); // Version specifier is added below
   }
 
-  const versionedDependencies = dependencies.map((p) => {
+  const versionedDependencies = uniqueDependencies.map((p) => {
     if (p.includes('vitest')) {
       return vitestVersionSpecifier ? `${p}@${vitestVersionSpecifier}` : p;
     }
@@ -291,14 +320,18 @@ export default async function postInstall(options: PostinstallOptions) {
   } else {
     logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
     logger.plain('  npx playwright install chromium --with-deps');
-    await packageManager.executeCommand({
-      command: 'npx',
-      args: ['playwright', 'install', 'chromium', '--with-deps'],
-    });
+    try {
+      await packageManager.executeCommand({
+        command: 'npx',
+        args: ['playwright', 'install', 'chromium', '--with-deps'],
+      });
+    } catch (e) {
+      console.error('Failed to install Playwright. Please install it manually');
+    }
   }
 
   const fileExtension =
-    allDeps.typescript || (await findFile('tsconfig', [...EXTENSIONS, '.json'])) ? 'ts' : 'js';
+    allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
 
   const vitestSetupFile = resolve(options.configDir, `vitest.setup.${fileExtension}`);
   if (existsSync(vitestSetupFile)) {
@@ -344,27 +377,29 @@ export default async function postInstall(options: PostinstallOptions) {
     `
   );
 
-  const vitestWorkspaceFile =
-    (await findFile('vitest.workspace', ['.ts', '.js', '.json'])) ||
-    (await findFile('vitest.projects', ['.ts', '.js', '.json']));
-  const viteConfigFile = await findFile('vite.config');
-  const vitestConfigFile = await findFile('vitest.config');
-  const vitestShimFile = await findFile('vitest.shims.d');
+  const vitestWorkspaceFile = findFile('vitest.workspace', ['.ts', '.js', '.json']);
+  const viteConfigFile = findFile('vite.config');
+  const vitestConfigFile = findFile('vitest.config');
+  const vitestShimFile = findFile('vitest.shims.d');
   const rootConfig = vitestConfigFile || viteConfigFile;
-
-  const browserConfig = `{
-        enabled: true,
-        headless: true,
-        provider: 'playwright',
-        instances: [{ browser: 'chromium' }]
-      }`;
 
   if (fileExtension === 'ts' && !vitestShimFile) {
     await writeFile(
       'vitest.shims.d.ts',
-      '/// <reference types="@vitest/browser/providers/playwright" />'
+      isVitest4OrNewer
+        ? '/// <reference types="@vitest/browser-playwright" />'
+        : '/// <reference types="@vitest/browser/providers/playwright" />'
     );
   }
+
+  const getTemplateName = () => {
+    if (isVitest4OrNewer) {
+      return 'vitest.config.4.template.ts';
+    } else if (isVitest3_2To4) {
+      return 'vitest.config.3.2.template.ts';
+    }
+    return 'vitest.config.template.ts';
+  };
 
   // If there's an existing workspace file, we update that file to include the Storybook Addon Vitest plugin.
   // We assume the existing workspaces include the Vite(st) config, so we won't add it.
@@ -374,7 +409,6 @@ export default async function postInstall(options: PostinstallOptions) {
         ? relative(dirname(vitestWorkspaceFile), viteConfigFile)
         : '',
       CONFIG_DIR: options.configDir,
-      BROWSER_CONFIG: browserConfig,
       SETUP_FILE: relative(dirname(vitestWorkspaceFile), vitestSetupFile),
     }).then((t) => t.replace(`\n  'ROOT_CONFIG',`, '').replace(/\s+extends: '',/, ''));
     const workspaceFile = await fs.readFile(vitestWorkspaceFile, 'utf8');
@@ -411,20 +445,15 @@ export default async function postInstall(options: PostinstallOptions) {
   else if (rootConfig) {
     let target, updated;
     const configFile = await fs.readFile(rootConfig, 'utf8');
-    const hasProjectsConfig = configFile.includes('projects:');
     const configFileHasTypeReference = configFile.match(
       /\/\/\/\s*<reference\s+types=["']vitest\/config["']\s*\/>/
     );
 
-    const templateName =
-      hasProjectsConfig || isVitest3_2OrNewer
-        ? 'vitest.config.3.2.template.ts'
-        : 'vitest.config.template.ts';
+    const templateName = getTemplateName();
 
     if (templateName) {
       const configTemplate = await loadTemplate(templateName, {
         CONFIG_DIR: options.configDir,
-        BROWSER_CONFIG: browserConfig,
         SETUP_FILE: relative(dirname(rootConfig), vitestSetupFile),
       });
 
@@ -439,11 +468,14 @@ export default async function postInstall(options: PostinstallOptions) {
       logger.plain(`  ${rootConfig}`);
 
       const formattedContent = await formatFileContent(rootConfig, generate(target).code);
+      // Only add triple slash reference to vite.config files, not vitest.config files
+      // vitest.config files already have the vitest/config types available
+      const shouldAddReference = !configFileHasTypeReference && !vitestConfigFile;
       await writeFile(
         rootConfig,
-        configFileHasTypeReference
-          ? formattedContent
-          : '/// <reference types="vitest/config" />\n' + formattedContent
+        shouldAddReference
+          ? '/// <reference types="vitest/config" />\n' + formattedContent
+          : formattedContent
       );
     } else {
       logErrors(
@@ -460,14 +492,11 @@ export default async function postInstall(options: PostinstallOptions) {
   // If there's no existing Vitest/Vite config, we create a new Vitest config file.
   else {
     const newConfigFile = resolve(`vitest.config.${fileExtension}`);
-    const configTemplate = await loadTemplate(
-      isVitest3_2OrNewer ? 'vitest.config.3.2.template.ts' : 'vitest.config.template.ts',
-      {
-        CONFIG_DIR: options.configDir,
-        BROWSER_CONFIG: browserConfig,
-        SETUP_FILE: relative(dirname(newConfigFile), vitestSetupFile),
-      }
-    );
+
+    const configTemplate = await loadTemplate(getTemplateName(), {
+      CONFIG_DIR: options.configDir,
+      SETUP_FILE: relative(dirname(newConfigFile), vitestSetupFile),
+    });
 
     logger.line(1);
     logger.plain(`${step} Creating a Vitest config file:`);
@@ -482,26 +511,24 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
-      const command = ['automigrate', 'addon-a11y-addon-test'];
 
-      command.push('--loglevel', 'silent');
-      command.push('--yes', '--skip-doctor');
-
-      if (options.packageManager) {
-        command.push('--package-manager', options.packageManager);
-      }
-
-      if (options.skipInstall) {
-        command.push('--skip-install');
-      }
-
-      if (options.configDir !== '.storybook') {
-        command.push('--config-dir', options.configDir);
-      }
-
-      await execa('storybook', command, {
-        stdio: 'inherit',
-      });
+      await execa(
+        'storybook',
+        [
+          'automigrate',
+          'addon-a11y-addon-test',
+          '--loglevel',
+          'silent',
+          '--yes',
+          '--skip-doctor',
+          ...(options.packageManager ? ['--package-manager', options.packageManager] : []),
+          ...(options.skipInstall ? ['--skip-install'] : []),
+          ...(options.configDir !== '.storybook' ? ['--config-dir', `"${options.configDir}"`] : []),
+        ],
+        {
+          stdio: 'inherit',
+        }
+      );
     } catch (e: unknown) {
       logErrors(
         '🚨 Oh no!',
@@ -548,48 +575,54 @@ export default async function postInstall(options: PostinstallOptions) {
   logger.line(1);
 }
 
+async function getPackageNameFromPath(input: string): Promise<string> {
+  const path = input.startsWith('file://') ? fileURLToPath(input) : input;
+  if (!isAbsolute(path)) {
+    return path;
+  }
+
+  const packageJsonPath = pkg.up({ cwd: path });
+  if (!packageJsonPath) {
+    throw new Error(`Could not find package.json in path: ${path}`);
+  }
+
+  const { default: packageJson } = await import(pathToFileURL(packageJsonPath).href, {
+    with: { type: 'json' },
+  });
+  return packageJson.name;
+}
+
 async function getStorybookInfo({ configDir, packageManager: pkgMgr }: PostinstallOptions) {
   const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr, configDir });
   const { packageJson } = packageManager.primaryPackageJson;
 
-  const config = await loadMainConfig({ configDir, noCache: true });
-  const { framework } = config;
+  const config = await loadMainConfig({ configDir });
 
-  const frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  validateFrameworkName(frameworkName);
-  const frameworkPackageName = extractProperFrameworkName(frameworkName);
-
-  const presets = await loadAllPresets({
-    corePresets: [join(frameworkName, 'preset')],
-    overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
-    ],
-    packageJson,
+  const { presets } = await experimental_loadStorybook({
     configDir,
-    isCritical: true,
+    packageJson,
   });
 
+  const framework = await presets.apply('framework', {});
   const core = await presets.apply('core', {});
 
   const { builder, renderer } = core;
-
   if (!builder) {
     throw new Error('Could not detect your Storybook builder.');
   }
 
-  const builderPackageJson = await fs.readFile(
-    require.resolve(join(typeof builder === 'string' ? builder : builder.name, 'package.json')),
-    'utf8'
+  const frameworkPackageName = await getPackageNameFromPath(
+    typeof framework === 'string' ? framework : framework.name
   );
-  const builderPackageName = JSON.parse(builderPackageJson).name;
+
+  const builderPackageName = await getPackageNameFromPath(
+    typeof builder === 'string' ? builder : builder.name
+  );
 
   let rendererPackageName: string | undefined;
+
   if (renderer) {
-    const rendererPackageJson = await fs.readFile(
-      require.resolve(join(renderer, 'package.json')),
-      'utf8'
-    );
-    rendererPackageName = JSON.parse(rendererPackageJson).name;
+    rendererPackageName = await getPackageNameFromPath(renderer);
   }
 
   return {

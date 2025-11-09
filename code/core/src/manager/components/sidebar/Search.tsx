@@ -129,6 +129,7 @@ const FocusKey = styled.code(({ theme }) => ({
   margin: 5,
   marginTop: 6,
   height: 16,
+  fontFamily: theme.typography.fonts.base,
   lineHeight: '16px',
   textAlign: 'center',
   fontSize: '11px',

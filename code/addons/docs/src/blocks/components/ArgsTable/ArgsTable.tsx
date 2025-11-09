@@ -7,7 +7,7 @@ import { includeConditionalArg } from 'storybook/internal/csf';
 
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
-import { pickBy } from 'es-toolkit/compat';
+import { pickBy } from 'es-toolkit/object';
 import { transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
@@ -167,13 +167,14 @@ export const TableWrapper = styled.table<{
   },
 }));
 
-const StyledIconButton = styled(IconButton as any)(({ theme }) => ({
-  margin: '-4px -12px -4px 0',
-}));
+const TablePositionWrapper = styled.div({
+  position: 'relative',
+});
 
-const ControlHeadingWrapper = styled.span({
-  display: 'flex',
-  justifyContent: 'space-between',
+const ButtonPositionWrapper = styled.div({
+  position: 'absolute',
+  right: 8,
+  top: 6,
 });
 
 export enum ArgsTableError {
@@ -330,7 +331,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     return (
       <EmptyBlock>
         {error}&nbsp;
-        <Link href="http://storybook.js.org/docs/" target="_blank" withArrow>
+        <Link href="http://storybook.js.org/docs/?ref=ui" target="_blank" withArrow>
           <DocumentIcon /> Read the docs
         </Link>
       </EmptyBlock>
@@ -380,82 +381,94 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
 
   return (
     <ResetWrapper>
-      <TableWrapper {...{ compact, inAddonPanel }} className="docblock-argstable sb-unstyled">
-        <thead className="docblock-argstable-head">
-          <tr>
-            <th>
-              <span>Name</span>
-            </th>
-            {compact ? null : (
-              <th>
-                <span>Description</span>
-              </th>
-            )}
-            {compact ? null : (
-              <th>
-                <span>Default</span>
-              </th>
-            )}
-            {updateArgs ? (
-              <th>
-                <ControlHeadingWrapper>
-                  Control{' '}
-                  {!isLoading && resetArgs && (
-                    <StyledIconButton onClick={() => resetArgs()} title="Reset controls">
-                      <UndoIcon aria-hidden />
-                    </StyledIconButton>
-                  )}
-                </ControlHeadingWrapper>
-              </th>
-            ) : null}
-          </tr>
-        </thead>
-        <tbody className="docblock-argstable-body">
-          {groups.ungrouped.map((row) => (
-            <ArgRow key={row.key} row={row} arg={args && args[row.key]} {...common} />
-          ))}
+      <TablePositionWrapper>
+        {updateArgs && !isLoading && resetArgs && (
+          <ButtonPositionWrapper>
+            <IconButton
+              onClick={() => resetArgs()}
+              aria-label="Reset controls"
+              title="Reset controls"
+            >
+              <UndoIcon />
+            </IconButton>
+          </ButtonPositionWrapper>
+        )}
 
-          {Object.entries(groups.ungroupedSubsections).map(([subcategory, subsection]) => (
-            <SectionRow key={subcategory} label={subcategory} level="subsection" colSpan={colSpan}>
-              {subsection.map((row) => (
-                <ArgRow
-                  key={row.key}
-                  row={row}
-                  arg={args && args[row.key]}
-                  expandable={expandable}
-                  {...common}
-                />
-              ))}
-            </SectionRow>
-          ))}
+        <TableWrapper {...{ compact, inAddonPanel }} className="docblock-argstable sb-unstyled">
+          <thead className="docblock-argstable-head">
+            <tr>
+              <th>
+                <span>Name</span>
+              </th>
+              {compact ? null : (
+                <th>
+                  <span>Description</span>
+                </th>
+              )}
+              {compact ? null : (
+                <th>
+                  <span>Default</span>
+                </th>
+              )}
+              {updateArgs ? (
+                <th>
+                  <span>Control</span>
+                </th>
+              ) : null}
+            </tr>
+          </thead>
+          <tbody className="docblock-argstable-body">
+            {groups.ungrouped.map((row) => (
+              <ArgRow key={row.key} row={row} arg={args && args[row.key]} {...common} />
+            ))}
 
-          {Object.entries(groups.sections).map(([category, section]) => (
-            <SectionRow key={category} label={category} level="section" colSpan={colSpan}>
-              {section.ungrouped.map((row) => (
-                <ArgRow key={row.key} row={row} arg={args && args[row.key]} {...common} />
-              ))}
-              {Object.entries(section.subsections).map(([subcategory, subsection]) => (
-                <SectionRow
-                  key={subcategory}
-                  label={subcategory}
-                  level="subsection"
-                  colSpan={colSpan}
-                >
-                  {subsection.map((row) => (
-                    <ArgRow
-                      key={row.key}
-                      row={row}
-                      arg={args && args[row.key]}
-                      expandable={expandable}
-                      {...common}
-                    />
-                  ))}
-                </SectionRow>
-              ))}
-            </SectionRow>
-          ))}
-        </tbody>
-      </TableWrapper>
+            {Object.entries(groups.ungroupedSubsections).map(([subcategory, subsection]) => (
+              <SectionRow
+                key={subcategory}
+                label={subcategory}
+                level="subsection"
+                colSpan={colSpan}
+              >
+                {subsection.map((row) => (
+                  <ArgRow
+                    key={row.key}
+                    row={row}
+                    arg={args && args[row.key]}
+                    expandable={expandable}
+                    {...common}
+                  />
+                ))}
+              </SectionRow>
+            ))}
+
+            {Object.entries(groups.sections).map(([category, section]) => (
+              <SectionRow key={category} label={category} level="section" colSpan={colSpan}>
+                {section.ungrouped.map((row) => (
+                  <ArgRow key={row.key} row={row} arg={args && args[row.key]} {...common} />
+                ))}
+                {Object.entries(section.subsections).map(([subcategory, subsection]) => (
+                  <SectionRow
+                    key={subcategory}
+                    label={subcategory}
+                    level="subsection"
+                    colSpan={colSpan}
+                  >
+                    {subsection.map((row) => (
+                      <ArgRow
+                        key={row.key}
+                        row={row}
+                        arg={args && args[row.key]}
+                        expandable={expandable}
+                        {...common}
+                      />
+                    ))}
+                  </SectionRow>
+                ))}
+              </SectionRow>
+            ))}
+          </tbody>
+        </TableWrapper>
+      </TablePositionWrapper>
     </ResetWrapper>
   );
 };

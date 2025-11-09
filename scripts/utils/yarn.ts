@@ -1,7 +1,5 @@
+import { access, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists, readJSON, writeJSON } from 'fs-extra';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
@@ -17,6 +15,15 @@ export type YarnOptions = {
 
 const logger = console;
 
+const pathExists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   logger.info(`🔢 Adding package resolutions:`);
 
@@ -25,20 +32,24 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   }
 
   const packageJsonPath = join(cwd, 'package.json');
-  const packageJson = await readJSON(packageJsonPath);
+  const content = await readFile(packageJsonPath, 'utf-8');
+  const packageJson = JSON.parse(content);
   packageJson.resolutions = {
     ...packageJson.resolutions,
     ...storybookVersions,
     // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
-    '@swc/core': '1.5.7',
     playwright: '1.52.0',
     'playwright-core': '1.52.0',
     '@playwright/test': '1.52.0',
+    rollup: '4.44.2',
   };
-  await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
 
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
+  await rm(join(cwd, '.yarnrc.yml'), { force: true }).catch(() => {});
+
+  // TODO: Remove in SB11
   const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
   const command = [
@@ -79,14 +90,20 @@ export const addWorkaroundResolutions = async ({
   }
 
   const packageJsonPath = join(cwd, 'package.json');
-  const packageJson = await readJSON(packageJsonPath);
+  const content = await readFile(packageJsonPath, 'utf-8');
+  const packageJson = JSON.parse(content);
 
   const additionalReact19Resolutions = ['nextjs/default-ts', 'nextjs/prerelease'].includes(key)
     ? {
         react: '^19.0.0',
         'react-dom': '^19.0.0',
       }
-    : {};
+    : key === 'react-webpack/prerelease-ts'
+      ? {
+          react: packageJson.dependencies.react,
+          'react-dom': packageJson.dependencies['react-dom'],
+        }
+      : {};
 
   packageJson.resolutions = {
     ...packageJson.resolutions,
@@ -95,9 +112,10 @@ export const addWorkaroundResolutions = async ({
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
     typescript: '~5.7.3',
+    rollup: '4.44.2',
   };
 
-  await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
 
 export const configureYarn2ForVerdaccio = async ({
@@ -130,7 +148,7 @@ export const configureYarn2ForVerdaccio = async ({
   ) {
     // Don't error with INCOMPATIBLE_PEER_DEPENDENCY for SvelteKit sandboxes, it is expected to happen with @sveltejs/vite-plugin-svelte
     command.push(
-      `yarn config set logFilters --json '[ { "code": "YN0013", "level": "discard" } ]'`
+      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"}]"`
     );
   } else if (key.includes('nuxt')) {
     // Nothing to do for Nuxt
@@ -138,7 +156,7 @@ export const configureYarn2ForVerdaccio = async ({
     // Discard all YN0013 - FETCH_NOT_CACHED messages
     // Error on YN0060 - INCOMPATIBLE_PEER_DEPENDENCY
     command.push(
-      `yarn config set logFilters --json '[ { "code": "YN0013", "level": "discard" }, { "code": "YN0060", "level": "error" } ]'`
+      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"},{\\"code\\":\\"YN0060\\",\\"level\\":\\"error\\"}]"`
     );
   }
 

@@ -34,6 +34,11 @@ export async function getSyncedStorybookAddons(
   if (!isCsfFactory) {
     return previewConfig;
   }
+  const existingAddons = previewConfig.getFieldNode(['addons']);
+
+  if (!existingAddons) {
+    previewConfig.setFieldNode(['addons'], t.arrayExpression([]));
+  }
 
   const addons = getAddonNames(mainConfig);
   if (!addons) {
@@ -41,7 +46,6 @@ export async function getSyncedStorybookAddons(
   }
 
   const syncedAddons: string[] = [];
-  const existingAddons = previewConfig.getFieldNode(['addons']);
   /**
    * This goes through all mainConfig.addons, read their package.json and check whether they have an
    * exports map called preview, if so add to the array

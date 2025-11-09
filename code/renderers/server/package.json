@@ -1,9 +1,12 @@
 {
   "name": "@storybook/server",
-  "version": "9.1.0-alpha.6",
-  "description": "Storybook Server renderer",
+  "version": "10.1.0-alpha.7",
+  "description": "Storybook Server renderer: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "server",
+    "renderer",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/server",
   "bugs": {
@@ -19,19 +22,16 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./preset": "./preset.js",
-    "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
-    "./package.json": "./package.json"
+    "./entry-preview": "./dist/entry-preview.js",
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "template/cli/**/*",
@@ -41,8 +41,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
@@ -55,19 +55,8 @@
   "peerDependencies": {
     "storybook": "workspace:^"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/preset.ts",
-      "./src/entry-preview.ts"
-    ],
-    "platform": "browser"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
 }

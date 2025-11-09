@@ -21,8 +21,8 @@ export const Tool = memo(function MyAddonSelector() {
 
   useEffect(() => {
     api.setAddonShortcut(ADDON_ID, {
-      label: 'Toggle Measure [O]',
-      defaultShortcut: ['O'],
+      label: 'Toggle Outline',
+      defaultShortcut: ['alt', 'O'],
       actionName: 'outline',
       showInMenu: false,
       action: toggleMyTool,

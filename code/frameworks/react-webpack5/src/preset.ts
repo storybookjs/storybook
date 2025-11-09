@@ -1,4 +1,4 @@
-import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -6,11 +6,8 @@ import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
 
 import type { StorybookConfig } from './types';
 
-const getAbsolutePath = <I extends string>(input: I): I =>
-  dirname(require.resolve(join(input, 'package.json'))) as any;
-
 export const addons: PresetProperty<'addons'> = [
-  getAbsolutePath('@storybook/preset-react-webpack'),
+  fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
 ];
 
 export const core: PresetProperty<'core'> = async (config, options) => {
@@ -19,10 +16,10 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: getAbsolutePath('@storybook/builder-webpack5'),
+      name: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
-    renderer: getAbsolutePath('@storybook/react'),
+    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };
 };
 
@@ -31,7 +28,7 @@ export const webpack: StorybookConfig['webpack'] = async (config, options) => {
 
   config.resolve.alias = {
     ...config.resolve?.alias,
-    '@storybook/react': getAbsolutePath('@storybook/react'),
+    '@storybook/react': fileURLToPath(import.meta.resolve('@storybook/react')),
   };
 
   if (options.features?.developmentModeForBuild) {

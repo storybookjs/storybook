@@ -6,7 +6,7 @@ import type {
   StrictInputType,
 } from 'storybook/internal/types';
 
-import { mapValues } from 'es-toolkit';
+import { mapValues } from 'es-toolkit/object';
 
 import { filterArgTypes } from './filterArgTypes';
 import { combineParameters } from './parameters';

@@ -1,0 +1,36 @@
+executor:
+  name: sb_playwright
+  class: medium
+
+parameters:
+  directory:
+    type: string
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - attach_workspace:
+      at: .
+  - run:
+      name: Install dependencies
+      command: yarn install --no-immutable
+      working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+      environment:
+        YARN_ENABLE_IMMUTABLE_INSTALLS: false
+  - run:
+      name: Run Jest tests
+      command: yarn jest
+      working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+  - run:
+      name: Run Vitest tests
+      command: yarn vitest
+      working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+  - run:
+      name: Run Playwright CT tests
+      command: yarn playwright-ct
+      working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+  - run:
+      name: Run Cypress CT tests
+      command: yarn cypress
+      working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+  - report-workflow-on-failure

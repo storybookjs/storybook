@@ -2,9 +2,9 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { startCase } from 'es-toolkit';
+import { startCase } from 'es-toolkit/string';
 import { ManagerContext } from 'storybook/manager-api';
-import { within } from 'storybook/test';
+import { fn, within } from 'storybook/test';
 
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
 import { MobileNavigation } from './MobileNavigation';
@@ -14,7 +14,11 @@ const MockPanel = () => {
   return (
     <div>
       panel
-      <button type="button" title="Close addon panel" onClick={() => setMobilePanelOpen(false)}>
+      <button
+        type="button"
+        aria-label="Close addon panel"
+        onClick={() => setMobilePanelOpen(false)}
+      >
         close
       </button>
     </div>
@@ -41,6 +45,7 @@ const mockManagerStore: any = {
       },
       someStoryId: {
         type: 'story',
+        subtype: 'story',
         id: 'someStoryId',
         name: 'story',
         parent: 'someComponentId',
@@ -49,9 +54,9 @@ const mockManagerStore: any = {
     },
   },
   api: {
-    getCurrentStoryData() {
+    getCurrentStoryData: fn(() => {
       return mockManagerStore.state.index.someStoryId;
-    },
+    }),
   },
 };
 
@@ -117,6 +122,7 @@ export const LongStoryName: Story = {
             },
             someStoryId: {
               type: 'story',
+              subtype: 'story',
               id: 'someStoryId',
               name: 'someLongStoryName',
               parent: 'someComponentId',
@@ -141,7 +147,7 @@ export const LongStoryName: Story = {
 
 export const MenuOpen: Story = {
   play: async ({ canvasElement }) => {
-    const menuOpen = await within(canvasElement).getByTitle('Open navigation menu');
+    const menuOpen = await within(canvasElement).getByLabelText('Open navigation menu');
     await menuOpen.click();
   },
 };
@@ -158,7 +164,7 @@ export const MenuClosed: Story = {
 
 export const PanelOpen: Story = {
   play: async ({ canvasElement }) => {
-    const panelButton = await within(canvasElement).getByTitle('Open addon panel');
+    const panelButton = await within(canvasElement).getByLabelText('Open addon panel');
     await panelButton.click();
   },
 };
@@ -168,7 +174,7 @@ export const PanelClosed: Story = {
     // @ts-expect-error (non strict)
     await PanelOpen.play(context);
     await new Promise((resolve) => setTimeout(resolve, 500));
-    const closeButton = await within(context.canvasElement).getByTitle('Close addon panel');
+    const closeButton = await within(context.canvasElement).getByLabelText('Close addon panel');
     await closeButton.click();
   },
 };

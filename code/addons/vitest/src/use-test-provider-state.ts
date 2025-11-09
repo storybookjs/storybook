@@ -9,7 +9,7 @@ import type {
 } from 'storybook/internal/types';
 
 import { store, testProviderStore } from '#manager-store';
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 import {
   type API,
   experimental_useStatusStore,

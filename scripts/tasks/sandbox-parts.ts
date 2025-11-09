@@ -1,31 +1,27 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
-import { isFunction } from 'es-toolkit';
-// eslint-disable-next-line depend/ban-dependencies
-import {
-  copy,
-  ensureDir,
-  ensureSymlink,
-  existsSync,
-  pathExists,
-  readFileSync,
-  readJson,
-  writeFile,
-  writeJson,
-} from 'fs-extra';
-import { readFile } from 'fs/promises';
+import { existsSync } from 'node:fs';
+import { access, cp, lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
+
+import { isFunction } from 'es-toolkit/predicate';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { babelParse, types as t } from '../../code/core/src/babel';
 import { detectLanguage } from '../../code/core/src/cli/detect';
 import { SupportedLanguage } from '../../code/core/src/cli/project_types';
-import { JsPackageManagerFactory, versions as storybookPackages } from '../../code/core/src/common';
+import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
+import storybookPackages from '../../code/core/src/common/versions';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { writeConfig } from '../../code/core/src/csf-tools';
+import {
+  readConfig as csfReadConfig,
+  formatConfig,
+  writeConfig,
+} from '../../code/core/src/csf-tools';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
@@ -43,6 +39,50 @@ import {
   installYarn2,
 } from '../utils/yarn';
 
+async function ensureSymlink(src: string, dest: string): Promise<void> {
+  await mkdir(dirname(dest), { recursive: true });
+
+  try {
+    await lstat(dest);
+    return;
+  } catch (e: any) {
+    if (e?.code !== 'ENOENT') {
+      throw e;
+    }
+  }
+
+  await symlink(src, dest);
+}
+
+// Windows-compatible symlink function that falls back to copying
+async function ensureSymlinkOrCopy(source: string, target: string): Promise<void> {
+  try {
+    await ensureSymlink(source, target);
+  } catch (error: any) {
+    // If symlink fails (typically on Windows without admin privileges), fall back to cp
+    if (error.code === 'EPERM' || error.code === 'EEXIST') {
+      logger.info(`Symlink failed for ${target}, falling back to cp`);
+      await cp(source, target, { recursive: true, force: true });
+    } else {
+      throw error;
+    }
+  }
+}
+
+async function readJson(path: string) {
+  const content = await readFile(path, 'utf-8');
+  return JSON.parse(content);
+}
+
+async function pathExists(path: string) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const logger = console;
 
 export const essentialsAddons = [
@@ -58,14 +98,14 @@ export const essentialsAddons = [
 
 export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRun, debug }) => {
   const parentDir = resolve(sandboxDir, '..');
-  await ensureDir(parentDir);
+  await mkdir(parentDir, { recursive: true });
 
   if ('inDevelopment' in template && template.inDevelopment) {
     const srcDir = join(REPROS_DIRECTORY, key, 'after-storybook');
     if (!existsSync(srcDir)) {
       throw new Error(`Missing repro directory '${srcDir}', did the generate task run?`);
     }
-    await copy(srcDir, sandboxDir);
+    await cp(srcDir, sandboxDir, { recursive: true });
   } else {
     await executeCLIStep(steps.repro, {
       argument: key,
@@ -83,7 +123,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
 
   if (link) {
     await executeCLIStep(steps.link, {
-      argument: sandboxDir,
+      argument: `"${sandboxDir}"`,
       cwd: CODE_DIRECTORY,
       optionValues: { local: true, start: false },
       dryRun,
@@ -134,12 +174,24 @@ export const init: Task['run'] = async (
   const cwd = sandboxDir;
 
   let extra = {};
-  if (template.expected.renderer === '@storybook/html') {
-    extra = { type: 'html' };
-  } else if (template.expected.renderer === '@storybook/server') {
-    extra = { type: 'server' };
-  } else if (template.expected.framework === '@storybook/react-native-web-vite') {
-    extra = { type: 'react_native_web' };
+
+  switch (template.expected.renderer) {
+    case '@storybook/html':
+      extra = { type: 'html' };
+      break;
+    case '@storybook/server':
+      extra = { type: 'server' };
+      break;
+    case '@storybook/svelte':
+      await prepareSvelteSandbox(cwd);
+      break;
+  }
+
+  switch (template.expected.framework) {
+    case '@storybook/react-native-web-vite':
+      extra = { type: 'react_native_web' };
+      await prepareReactNativeWebSandbox(cwd);
+      break;
   }
 
   await executeCLIStep(steps.init, {
@@ -220,7 +272,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
           exclude: /\\.stories\\.mdx$/,
           use: [
             {
-              loader: require.resolve('@storybook/addon-docs/mdx-loader'),
+              loader: '@storybook/addon-docs/mdx-loader',
             },
           ],
         },
@@ -332,7 +384,7 @@ async function linkPackageStories(
     ? resolve(linkInDir, variant ? getStoriesFolderWithVariant(variant, packageDir) : packageDir)
     : resolve(cwd, 'template-stories', packageDir);
 
-  await ensureSymlink(source, target);
+  await ensureSymlinkOrCopy(source, target);
 
   if (!linkInDir) {
     addStoriesEntry(mainConfig, packageDir, disableDocs);
@@ -384,7 +436,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     };
   }
 
-  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
   const isVue = template.expected.renderer === '@storybook/vue3';
   // const isAngular = template.expected.framework === '@storybook/angular';
@@ -421,13 +473,13 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       setupFilePath,
       dedent`import { beforeAll } from 'vitest'
       import { setProjectAnnotations } from '${storybookPackage}'
-      import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
+      import * as rendererDocsAnnotations from '${template.expected.renderer}/entry-preview-docs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
       import '../src/stories/components'
       import * as templateAnnotations from '../template-stories/core/preview'
       import * as projectAnnotations from './preview'
       ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
-  
+
       setProjectAnnotations([
         ${isVue ? 'vueAnnotations,' : ''}
         rendererDocsAnnotations,
@@ -489,8 +541,7 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  // FIXME: revert back to `next` once https://github.com/storybookjs/test-runner/pull/560 is merged
-  const extraDevDeps = ['@storybook/test-runner@0.22.1--canary.d4862d0.0'];
+  const extraDevDeps = ['@storybook/test-runner@latest'];
 
   if (debug) {
     logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);
@@ -518,6 +569,12 @@ export async function addExtraDependencies({
     );
   }
 }
+
+export const addGlobalMocks: Task['run'] = async ({ sandboxDir }) => {
+  await cp(join(CODE_DIRECTORY, 'core', 'template', '__mocks__'), join(sandboxDir, '__mocks__'), {
+    recursive: true,
+  });
+};
 
 export const addStories: Task['run'] = async (
   { sandboxDir, template, key },
@@ -548,7 +605,7 @@ export const addStories: Task['run'] = async (
   if (isCoreRenderer) {
     // Link in the template/components/index.js from preview-api, the renderer and the addons
     const rendererPath = await workspacePath('renderer', template.expected.renderer);
-    await ensureSymlink(
+    await ensureSymlinkOrCopy(
       join(CODE_DIRECTORY, rendererPath, 'template', 'components'),
       resolve(cwd, storiesPath, 'components')
     );
@@ -767,7 +824,32 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setFieldValue(['tags'], ['vitest']);
   }
 
-  await writeConfig(previewConfig);
+  if (template.name.includes('Bench')) {
+    await writeConfig(previewConfig);
+    return;
+  }
+
+  previewConfig.setImport(['sb'], 'storybook/test');
+  let config = formatConfig(previewConfig);
+
+  const mockBlock = [
+    "sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');",
+    "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });",
+    "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');",
+    "sb.mock(import('lodash-es'));",
+    "sb.mock(import('lodash-es/add'));",
+    "sb.mock(import('lodash-es/sum'));",
+    "sb.mock(import('uuid'));",
+    '',
+  ].join('\n');
+
+  // find last import statement and append sb.mock calls
+  config = config.replace(
+    'import { sb } from "storybook/test";',
+    `import { sb } from 'storybook/test';\n\n${mockBlock}`
+  );
+
+  await writeFile(previewConfig.fileName, config);
 };
 
 export const runMigrations: Task['run'] = async ({ sandboxDir, template }, { dryRun, debug }) => {
@@ -794,7 +876,45 @@ export async function setImportMap(cwd: string) {
     },
   };
 
-  await writeJson(join(cwd, 'package.json'), packageJson, { spaces: 2 });
+  await writeFile(join(cwd, 'package.json'), JSON.stringify(packageJson, null, 2));
+}
+
+async function prepareReactNativeWebSandbox(cwd: string) {
+  // Make it so that RN sandboxes have stories in src/stories similar to
+  // other react sandboxes, for consistency.
+  if (!(await pathExists(join(cwd, 'src')))) {
+    await mkdir(join(cwd, 'src'));
+  }
+}
+
+async function prepareSvelteSandbox(cwd: string) {
+  const svelteConfigJsPath = join(cwd, 'svelte.config.js');
+  const svelteConfigTsPath = join(cwd, 'svelte.config.ts');
+
+  // Check which config file exists
+  const configPath = (await pathExists(svelteConfigTsPath))
+    ? svelteConfigTsPath
+    : (await pathExists(svelteConfigJsPath))
+      ? svelteConfigJsPath
+      : null;
+
+  if (!configPath) {
+    throw new Error(
+      `No svelte.config.js or svelte.config.ts found in sandbox: ${cwd}, cannot modify config.`
+    );
+  }
+
+  const svelteConfig = await csfReadConfig(configPath);
+
+  // Enable async components
+  // see https://svelte.dev/docs/svelte/await-expressions
+  svelteConfig.setFieldValue(['compilerOptions', 'experimental', 'async'], true);
+
+  // Enable remote functions
+  // see https://svelte.dev/docs/kit/remote-functions
+  svelteConfig.setFieldValue(['kit', 'experimental', 'remoteFunctions'], true);
+
+  await writeConfig(svelteConfig);
 }
 
 async function prepareAngularSandbox(cwd: string, templateName: string) {
@@ -817,7 +937,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
     angularJson.projects[projectName].architect['build-storybook'].options.preserveSymlinks = true;
   });
 
-  await writeJson(join(cwd, 'angular.json'), angularJson, { spaces: 2 });
+  await writeFile(join(cwd, 'angular.json'), JSON.stringify(angularJson, null, 2));
 
   const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJson(packageJsonPath);
@@ -829,12 +949,12 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
     'build-storybook': `yarn docs:json && ${packageJson.scripts['build-storybook']}`,
   };
 
-  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
   // Set tsConfig compilerOptions
 
   const tsConfigPath = join(cwd, '.storybook', 'tsconfig.json');
-  const tsConfigContent = readFileSync(tsConfigPath, { encoding: 'utf-8' });
+  const tsConfigContent = await readFile(tsConfigPath, { encoding: 'utf-8' });
   // This does not preserve comments, but that shouldn't be an issue for sandboxes
   const tsConfigJson = JSON5.parse(tsConfigContent);
 
@@ -857,5 +977,5 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
     };
   }
 
-  await writeJson(tsConfigPath, tsConfigJson, { spaces: 2 });
+  await writeFile(tsConfigPath, JSON.stringify(tsConfigJson, null, 2));
 }

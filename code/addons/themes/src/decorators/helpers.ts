@@ -2,7 +2,7 @@ import { deprecate } from 'storybook/internal/client-logger';
 import type { StoryContext } from 'storybook/internal/types';
 
 import { addons, useParameter } from 'storybook/preview-api';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { DEFAULT_THEME_PARAMETERS, GLOBAL_KEY, PARAM_KEY, THEMING_EVENTS } from '../constants';
 import type { ThemesParameters as Parameters } from '../types';

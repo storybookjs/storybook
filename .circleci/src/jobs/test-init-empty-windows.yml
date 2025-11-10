@@ -18,13 +18,15 @@ steps:
         choco install nodejs-lts --version=22.11.0 -y
         corepack enable
   - run:
-      name: Regenerate Yarn install state for Windows
+      name: Install code dependencies
       shell: bash.exe
       working_directory: code
-      # Remove the Linux install state and regenerate for Windows
-      command: |
-        rm -f ../.yarn/code-install-state.gz
-        yarn install --immutable
+      command: yarn install
+  - run:
+      name: Install script dependencies
+      shell: bash.exe
+      working_directory: scripts
+      command: yarn install
   - when:
       condition:
         equal: ['npm', << parameters.packageManager >>]

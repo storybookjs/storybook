@@ -58,7 +58,7 @@ jobs:
       requires:
         - create-sandboxes
   - vitest-integration:
-      parallelism: 11
+      parallelism: 13
       requires:
         - create-sandboxes
   - test-portable-stories:
@@ -67,6 +67,9 @@ jobs:
       matrix:
         parameters:
           directory: ['react', 'vue3', 'nextjs', 'svelte']
+  - test-yarn-pnp:
+      requires:
+        - build
   - e2e-ui:
       requires:
         - build

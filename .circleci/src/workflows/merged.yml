@@ -54,7 +54,7 @@ jobs:
       requires:
         - create-sandboxes
   - vitest-integration:
-      parallelism: 6
+      parallelism: 7
       requires:
         - create-sandboxes
   - check-sandboxes:
@@ -67,6 +67,9 @@ jobs:
       matrix:
         parameters:
           directory: ['react', 'vue3', 'nextjs', 'svelte']
+  - test-yarn-pnp:
+      requires:
+        - build
   - e2e-ui:
       requires:
         - build

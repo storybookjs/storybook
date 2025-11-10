@@ -66,6 +66,9 @@ jobs:
   #          parallelism: 5
   #          requires:
   #            - create-sandboxes
+  - test-yarn-pnp:
+      requires:
+        - build
   - e2e-ui:
       requires:
         - build

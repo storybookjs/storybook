@@ -909,6 +909,26 @@ jobs:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
             - store_test_results:
                 path: test-results
+    test-yarn-pnp:
+        executor:
+            class: medium
+            name: sb_playwright
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                clone_options: --depth 1 --verbose
+            - attach_workspace:
+                at: .
+            - run:
+                command: yarn install --no-immutable
+                environment:
+                    YARN_ENABLE_IMMUTABLE_INSTALLS: false
+                name: Install dependencies
+                working_directory: test-storybooks/yarn-pnp
+            - run:
+                command: yarn storybook --smoke-test
+                name: Run Storybook smoke test
+                working_directory: test-storybooks/yarn-pnp
+            - report-workflow-on-failure
     unit-tests:
         executor:
             class: xlarge
@@ -1040,7 +1060,7 @@ workflows:
                 requires:
                     - create-sandboxes
             - vitest-integration:
-                parallelism: 11
+                parallelism: 13
                 requires:
                     - create-sandboxes
             - test-portable-stories:
@@ -1051,6 +1071,9 @@ workflows:
                             - vue3
                             - nextjs
                             - svelte
+                requires:
+                    - build
+            - test-yarn-pnp:
                 requires:
                     - build
             - e2e-ui:
@@ -1135,7 +1158,7 @@ workflows:
                 requires:
                     - create-sandboxes
             - vitest-integration:
-                parallelism: 6
+                parallelism: 7
                 requires:
                     - create-sandboxes
             - check-sandboxes:
@@ -1150,6 +1173,9 @@ workflows:
                             - vue3
                             - nextjs
                             - svelte
+                requires:
+                    - build
+            - test-yarn-pnp:
                 requires:
                     - build
             - e2e-ui:
@@ -1222,6 +1248,9 @@ workflows:
                 parallelism: 1
                 requires:
                     - create-sandboxes
+            - test-yarn-pnp:
+                requires:
+                    - build
             - e2e-ui:
                 requires:
                     - build

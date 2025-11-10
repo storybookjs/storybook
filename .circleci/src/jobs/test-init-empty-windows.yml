@@ -13,10 +13,10 @@ steps:
   - run:
       name: Setup Node & Yarn on Windows
       shell: bash.exe
+      # We pin to Node 22 because of npm issues with Node 24 as it isn't fully stable yet and it causes issues when running npx
       command: |
-        choco install nodejs-lts -y
+        choco install nodejs-lts --version=22.11.0 -y
         corepack enable
-        corepack prepare yarn@4.10.3 --activate
   - when:
       condition:
         equal: ['npm', << parameters.packageManager >>]

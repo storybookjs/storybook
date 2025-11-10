@@ -34,6 +34,10 @@ jobs:
       parallelism: 34
       requires:
         - build
+  - check-sandboxes:
+      parallelism: 1
+      requires:
+        - create-sandboxes
   # - smoke-test-sandboxes: # disabled for now
   #     requires:
   #       - create-sandboxes

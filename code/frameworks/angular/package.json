@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "10.1.0-alpha.5",
+  "version": "10.1.0-alpha.7",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

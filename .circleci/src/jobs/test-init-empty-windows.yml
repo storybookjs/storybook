@@ -17,6 +17,16 @@ steps:
       command: |
         choco install nodejs-lts --version=22.11.0 -y
         corepack enable
+  - run:
+      name: Install code dependencies
+      shell: bash.exe
+      working_directory: code
+      command: yarn install
+  - run:
+      name: Install script dependencies
+      shell: bash.exe
+      working_directory: scripts
+      command: yarn install
   - when:
       condition:
         equal: ['npm', << parameters.packageManager >>]

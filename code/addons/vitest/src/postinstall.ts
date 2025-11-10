@@ -46,6 +46,7 @@ export default async function postInstall(options: PostinstallOptions) {
     );
 
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+  logger.debug(`Vitest version specifier: ${vitestVersionSpecifier}`);
   const isVitest3_2To4 = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=3.2.0 <4.0.0')
     : false;

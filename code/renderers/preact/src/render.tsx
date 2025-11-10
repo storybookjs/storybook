@@ -16,7 +16,7 @@ export const render: ArgsStoryFn<PreactRenderer> = (args, context) => {
     );
   }
 
-  return <Component {...args} />;
+  return h(Component, args);
 };
 
 let renderedStory: Element;

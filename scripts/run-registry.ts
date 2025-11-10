@@ -11,6 +11,7 @@ import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
 
+import { npmAuth } from './npm-auth';
 import { maxConcurrentTasks } from './utils/concurrency';
 import { PACKS_DIRECTORY } from './utils/constants';
 import { getWorkspaces } from './utils/workspace';
@@ -186,24 +187,15 @@ const run = async () => {
   logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
 
   logger.log(`👤 add temp user to verdaccio`);
-  await execa(
-    'npx',
-    // creates a .npmrc file in the root directory of the project
-    [
-      'npm-auth-to-token',
-      '-u',
-      'foo',
-      '-p',
-      's3cret',
-      '-e',
-      'test@test.com',
-      '-r',
-      'http://localhost:6002',
-    ],
-    {
-      cwd: root,
-    }
-  );
+  // Use npmAuth helper to authenticate to the local Verdaccio registry
+  // This will create a .npmrc file in the root directory
+  await npmAuth({
+    username: 'foo',
+    password: 's3cret',
+    email: 'test@test.com',
+    registry: 'http://localhost:6002',
+    outputDir: root,
+  });
 
   logger.log(
     `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`

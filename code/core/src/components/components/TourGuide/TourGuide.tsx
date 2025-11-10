@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import type { CallBackProps } from 'react-joyride';
@@ -8,39 +8,112 @@ import { useTheme } from 'storybook/theming';
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 
 import { HighlightElement } from './HighlightElement';
-import { Tooltip } from './Tooltip';
+import { TourTooltip } from './TourTooltip';
+
+type StepDefinition = {
+  key?: string;
+  highlight?: string;
+  hideNextButton?: boolean;
+  onNext?: ({ next }: { next: () => void }) => void;
+} & Partial<
+  Pick<
+    // Unfortunately we can't use ts-expect-error here for some reason
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore Ignore circular reference
+    Step,
+    | 'content'
+    | 'disableBeacon'
+    | 'disableOverlay'
+    | 'floaterProps'
+    | 'offset'
+    | 'placement'
+    | 'spotlightClicks'
+    | 'styles'
+    | 'target'
+    | 'title'
+  >
+>;
 
 export const TourGuide = ({
+  step,
   steps,
-  onClose,
+  onNext,
+  onComplete,
+  onDismiss,
 }: {
+  step?: string;
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore Circular reference in Step type
-  steps: (Step & {
-    highlight?: string;
-    onNextButtonClick?: ({ setStepIndex }: { setStepIndex: (index: number) => void }) => void;
-  })[];
-  onClose?: () => void;
+  steps: StepDefinition[];
+  onNext?: ({ next }: { next: () => void }) => void;
+  onComplete?: () => void;
+  onDismiss?: () => void;
 }) => {
-  const [stepIndex, setStepIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState<number | null>(step ? null : 0);
   const theme = useTheme();
 
-  const next = () => setStepIndex((v) => v + 1);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const updateStepIndex = useCallback((index: number) => {
+    clearTimeout(timeoutRef.current);
+    setStepIndex((current) => {
+      if (index === -1) {
+        return null;
+      }
+      if (current === null || current === index) {
+        return index;
+      }
+      // Briefly hide the tour tooltip while switching steps
+      timeoutRef.current = setTimeout(setStepIndex, 300, index);
+      return null;
+    });
+  }, []);
 
-  const mappedSteps = steps.map((step) => ({
-    disableBeacon: true,
-    disableOverlay: true,
-    spotlightClicks: true,
-    offset: 0,
-    ...step,
-    content: (
-      <>
-        {step.content}
-        {step.highlight && <HighlightElement targetSelector={step.highlight} pulsating />}
-      </>
-    ),
-    onNextButtonClick: step.onNextButtonClick && (() => step.onNextButtonClick({ next })),
-  }));
+  useEffect(
+    () => (step ? updateStepIndex(steps.findIndex(({ key }) => key === step)) : undefined),
+    [step, steps, updateStepIndex]
+  );
+
+  const mappedSteps = useMemo(() => {
+    return steps.map((step, index) => {
+      const next = () => updateStepIndex(index + 1);
+      return {
+        disableBeacon: true,
+        disableOverlay: true,
+        spotlightClicks: true,
+        offset: 0,
+        ...step,
+        content: (
+          <>
+            {step.content}
+            {step.highlight && <HighlightElement targetSelector={step.highlight} pulsating />}
+          </>
+        ),
+        onNext: step.onNext ? () => step.onNext?.({ next }) : onNext && (() => onNext?.({ next })),
+      };
+    });
+  }, [steps, onNext, updateStepIndex]);
+
+  const callback = useCallback(
+    (data: CallBackProps) => {
+      if (data.action === ACTIONS.NEXT && data.lifecycle === 'complete') {
+        if (data.index === data.size - 1) {
+          onComplete?.();
+        } else if (data.step?.onNext) {
+          data.step.onNext();
+        } else {
+          updateStepIndex(data.index + 1);
+        }
+      }
+      if (data.action === ACTIONS.CLOSE) {
+        onDismiss?.();
+      }
+    },
+    [onComplete, onDismiss, updateStepIndex]
+  );
+
+  if (stepIndex === null) {
+    return null;
+  }
 
   return (
     <Joyride
@@ -51,8 +124,8 @@ export const TourGuide = ({
       disableCloseOnEsc
       disableOverlayClose
       disableScrolling
-      callback={(data: CallBackProps) => data.action === ACTIONS.CLOSE && onClose?.()}
-      tooltipComponent={Tooltip}
+      callback={callback}
+      tooltipComponent={TourTooltip}
       floaterProps={{
         disableAnimation: true,
         styles: {
@@ -107,8 +180,13 @@ TourGuide.render = (props: ComponentProps<typeof TourGuide>) => {
     <ThemeProvider theme={convert(themes.light)}>
       <TourGuide
         {...props}
-        onClose={() => {
-          props.onClose?.();
+        onComplete={() => {
+          props.onComplete?.();
+          root?.render(null);
+          root = null;
+        }}
+        onDismiss={() => {
+          props.onDismiss?.();
           root?.render(null);
           root = null;
         }}

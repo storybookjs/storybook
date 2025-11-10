@@ -357,8 +357,8 @@ export default {
                       'Run tests right from your Storybook sidebar using the testing widget.',
                     placement: 'right-end',
                     target: '#storybook-testing-module',
-                    highlight: '#sidebar-bottom-wrapper > :last-child',
-                    onNextButtonClick: ({ next }: { next: () => void }) => {
+                    highlight: '#storybook-testing-module',
+                    onNext: ({ next }: { next: () => void }) => {
                       const toggle = document.getElementById('testing-module-collapse-toggle');
                       if (toggle?.getAttribute('aria-label') === 'Expand testing module') {
                         toggle.click();

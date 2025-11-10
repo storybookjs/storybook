@@ -94,7 +94,7 @@ export const ChecklistModule = () => {
 
   return (
     <CollapsibleWithMargin collapsed={!hasTasks}>
-      <HoverCard outlineAnimation="rainbow">
+      <HoverCard outlineAnimation="rainbow" id="storybook-checklist-module">
         <Collapsible
           collapsed={!hasTasks}
           disabled={!hasTasks}

@@ -1,14 +1,14 @@
 import type { FC } from 'react';
 import React, { useEffect } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button, IconButton } from 'storybook/internal/components';
 
 import { CloseAltIcon } from '@storybook/icons';
 
 import type { Step, TooltipRenderProps } from 'react-joyride';
 import { color, styled } from 'storybook/theming';
 
-import { Button } from '../../components/Button/Button';
+const ONBOARDING_ARROW_STYLE_ID = 'storybook-onboarding-arrow-style';
 
 const TooltipBody = styled.div`
   padding: 15px;
@@ -56,6 +56,24 @@ const Count = styled.span`
   font-size: 13px;
 `;
 
+const NextButton = styled(Button)`
+  background: ${color.lightest};
+  border: none;
+  box-shadow: none;
+  color: ${color.secondary};
+
+  &:hover,
+  &:active {
+    background: ${color.lightest};
+    color: ${color.defaultText};
+  }
+
+  &:focus {
+    background: ${color.lightest};
+    color: ${color.darkest};
+  }
+`;
+
 type TooltipProps = {
   index: number;
   size: number;
@@ -78,7 +96,6 @@ type TooltipProps = {
       | 'styles'
     > & {
       hideNextButton: boolean;
-      onNextButtonClick: () => void;
     }
   >;
   closeProps: TooltipRenderProps['closeProps'];
@@ -86,7 +103,7 @@ type TooltipProps = {
   tooltipProps: TooltipRenderProps['tooltipProps'];
 };
 
-export const Tooltip: FC<TooltipProps> = ({
+export const TourTooltip: FC<TooltipProps> = ({
   index,
   size,
   step,
@@ -96,7 +113,7 @@ export const Tooltip: FC<TooltipProps> = ({
 }) => {
   useEffect(() => {
     const style = document.createElement('style');
-    style.id = '#sb-onboarding-arrow-style';
+    style.id = ONBOARDING_ARROW_STYLE_ID;
     style.innerHTML = `
       .__floater__arrow { container-type: size; }
       .__floater__arrow span { background: ${color.secondary}; }
@@ -115,13 +132,7 @@ export const Tooltip: FC<TooltipProps> = ({
       }
     `;
     document.head.appendChild(style);
-    return () => {
-      const styleElement = document.querySelector('#sb-onboarding-arrow-style');
-
-      if (styleElement) {
-        styleElement.remove();
-      }
-    };
+    return () => document.getElementById(ONBOARDING_ARROW_STYLE_ID)?.remove();
   }, []);
 
   return (
@@ -140,13 +151,7 @@ export const Tooltip: FC<TooltipProps> = ({
           {index + 1} of {size}
         </Count>
         {!step.hideNextButton && (
-          <Button
-            {...primaryProps}
-            onClick={step.onNextButtonClick || primaryProps.onClick}
-            variant="white"
-          >
-            {index + 1 === size ? 'Done' : 'Next'}
-          </Button>
+          <NextButton {...primaryProps}>{index + 1 === size ? 'Done' : 'Next'}</NextButton>
         )}
       </TooltipFooter>
     </TooltipBody>

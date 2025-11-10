@@ -85,6 +85,8 @@ export { Bar, FlexBar } from './components/bar/bar';
 export { AddonPanel } from './components/addon-panel/addon-panel';
 
 export { TourGuide } from './components/TourGuide/TourGuide';
+export { TourTooltip } from './components/TourGuide/TourTooltip';
+export { HighlightElement } from './components/TourGuide/HighlightElement';
 
 // Graphics
 export { StorybookLogo } from './brand/StorybookLogo';

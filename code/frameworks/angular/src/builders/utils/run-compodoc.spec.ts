@@ -11,7 +11,7 @@ const mockRunScript = vi.fn();
 vi.mock('storybook/internal/common', () => ({
   JsPackageManagerFactory: {
     getPackageManager: () => ({
-      runPackageCommandSync: mockRunScript,
+      runPackageCommand: mockRunScript,
     }),
   },
 }));

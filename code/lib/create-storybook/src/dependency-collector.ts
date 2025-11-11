@@ -1,5 +1,3 @@
-import type { JsPackageManager } from 'storybook/internal/common';
-
 export type DependencyType = 'dependencies' | 'devDependencies';
 
 interface PackageInfo {

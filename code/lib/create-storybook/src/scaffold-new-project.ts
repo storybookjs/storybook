@@ -2,7 +2,7 @@ import { readdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { prompt } from 'storybook/internal/node-logger';
 import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 

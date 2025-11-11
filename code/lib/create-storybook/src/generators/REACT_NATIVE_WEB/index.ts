@@ -7,10 +7,7 @@ import {
   cliStoriesTargetPath,
   detectLanguage,
 } from 'storybook/internal/cli';
-import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
-
-import { dedent } from 'ts-dedent';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 

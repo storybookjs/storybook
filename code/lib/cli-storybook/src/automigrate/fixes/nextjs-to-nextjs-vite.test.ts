@@ -215,11 +215,9 @@ describe('nextjs-to-nextjs-vite', () => {
         storybookVersion: '9.0.0',
       } as any);
 
-      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
-      expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
-        { type: 'devDependencies', skipInstall: true },
-        ['@storybook/nextjs-vite@9.0.0']
-      );
+      // In dry run mode, package.json updates should be skipped
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
       expect(mockWriteFile).not.toHaveBeenCalled();
     });
   });

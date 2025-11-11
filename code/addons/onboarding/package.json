@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@neoconfetti/react": "^1.0.0",
-    "@storybook/icons": "^1.6.0",
+    "@storybook/icons": "https://pkg.pr.new/storybookjs/icons/@storybook/icons@45",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-joyride": "^2.8.2",

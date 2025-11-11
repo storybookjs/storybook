@@ -73,7 +73,7 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.6.0",
+    "@storybook/icons": "https://pkg.pr.new/storybookjs/icons/@storybook/icons@45",
     "prompts": "^2.4.0",
     "ts-dedent": "^2.2.0"
   },

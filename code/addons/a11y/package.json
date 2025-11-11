@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@radix-ui/react-tabs": "1.0.4",
-    "@storybook/icons": "^1.6.0",
+    "@storybook/icons": "https://pkg.pr.new/storybookjs/icons/@storybook/icons@45",
     "@testing-library/react": "^14.0.0",
     "execa": "^9.5.2",
     "react": "^18.2.0",

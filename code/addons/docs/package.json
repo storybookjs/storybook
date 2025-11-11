@@ -85,7 +85,7 @@
   "dependencies": {
     "@mdx-js/react": "^3.0.0",
     "@storybook/csf-plugin": "workspace:*",
-    "@storybook/icons": "^1.6.0",
+    "@storybook/icons": "https://pkg.pr.new/storybookjs/icons/@storybook/icons@45",
     "@storybook/react-dom-shim": "workspace:*",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",

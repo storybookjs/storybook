@@ -71,7 +71,9 @@ export class AddonConfigurationCommand {
       }
 
       return { status: hasFailures ? 'failed' : 'success' };
-    } catch {
+    } catch (e) {
+      logger.error('Unexpected error during addon configuration:');
+      logger.error(e);
       return { status: 'failed' };
     }
   }

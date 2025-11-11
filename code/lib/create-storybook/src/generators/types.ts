@@ -133,4 +133,5 @@ export type CommandOptions = {
   enableCrashReports?: boolean;
   debug?: boolean;
   dev?: boolean;
+  logfile?: string | boolean;
 };

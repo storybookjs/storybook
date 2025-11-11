@@ -158,7 +158,7 @@ steps:
               STORYBOOK_DISABLE_TELEMETRY: true
   - when:
       condition:
-        equal: ['react-vite-ts', << parameters.template >>]
+        equal: ['npm', << parameters.packageManager >>]
       steps:
         - run:
             name: Verdaccio
@@ -188,5 +188,6 @@ steps:
               IN_STORYBOOK_SANDBOX: true
               STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
               STORYBOOK_DISABLE_TELEMETRY: true
-  # TODO: Discuss this. The Discord orb isn't powershell compatible
+  # TODO: Find out a solution for this. The Discord orb we use isn't powershell compatible.
+  # For now this will just not report on Discord, but it will fail correctly in CircleCI.
   # - report-workflow-on-failure

@@ -57,19 +57,6 @@ jobs:
       parallelism: 5
       requires:
         - create-sandboxes
-  # remove this later
-  - test-init-empty-windows:
-      requires:
-        - build
-      matrix:
-        parameters:
-          packageManager:
-            - 'npm'
-          template:
-            - 'react-vite-ts'
-            - 'nextjs-ts'
-            - 'vue-vite-ts'
-            - 'lit-vite-ts'
   - check-sandboxes:
       parallelism: 1
       requires:

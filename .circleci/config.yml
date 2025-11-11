@@ -955,8 +955,8 @@ jobs:
             - when:
                 condition:
                     equal:
-                        - react-vite-ts
-                        - << parameters.template >>
+                        - npm
+                        - << parameters.packageManager >>
                 steps:
                     - run:
                         background: true
@@ -1296,6 +1296,18 @@ workflows:
                             - lit-vite-ts
                 requires:
                     - build
+            - test-init-empty-windows:
+                matrix:
+                    parameters:
+                        packageManager:
+                            - npm
+                        template:
+                            - react-vite-ts
+                            - nextjs-ts
+                            - vue-vite-ts
+                            - lit-vite-ts
+                requires:
+                    - build
         when:
             equal:
                 - daily
@@ -1386,6 +1398,18 @@ workflows:
             - test-init-features:
                 requires:
                     - build
+            - test-init-empty-windows:
+                matrix:
+                    parameters:
+                        packageManager:
+                            - npm
+                        template:
+                            - react-vite-ts
+                            - nextjs-ts
+                            - vue-vite-ts
+                            - lit-vite-ts
+                requires:
+                    - build
         when:
             equal:
                 - merged
@@ -1443,18 +1467,6 @@ workflows:
                 parallelism: 5
                 requires:
                     - create-sandboxes
-            - test-init-empty-windows:
-                matrix:
-                    parameters:
-                        packageManager:
-                            - npm
-                        template:
-                            - react-vite-ts
-                            - nextjs-ts
-                            - vue-vite-ts
-                            - lit-vite-ts
-                requires:
-                    - build
             - check-sandboxes:
                 parallelism: 1
                 requires:

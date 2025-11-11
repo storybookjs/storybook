@@ -123,6 +123,7 @@ export type UpgradeOptions = {
   configDir?: string[];
   fixId?: string;
   skipInstall?: boolean;
+  logfile?: string | boolean;
 };
 
 function getUpgradeResults(

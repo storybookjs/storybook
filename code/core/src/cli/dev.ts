@@ -34,13 +34,6 @@ function printError(error: any) {
   );
 }
 
-const handleCommandFailure = async (): Promise<never> => {
-  const logFile = await logTracker.writeToFile();
-  logger.log(`Storybook debug logs can be found at: ${logFile}`);
-  logger.outro('Storybook exited with an error');
-  process.exit(1);
-};
-
 export const dev = async (cliOptions: CLIOptions) => {
   const { env } = process;
   env.NODE_ENV = env.NODE_ENV || 'development';
@@ -67,5 +60,5 @@ export const dev = async (cliOptions: CLIOptions) => {
       printError,
     },
     () => buildDevStandalone(options)
-  ).catch(handleCommandFailure);
+  );
 };

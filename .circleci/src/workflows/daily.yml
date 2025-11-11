@@ -97,6 +97,18 @@ jobs:
             # --smoke-test is not supported for the angular builder right now
             # - "angular-cli"
             - 'lit-vite-ts'
+  - test-init-empty-windows:
+      requires:
+        - build
+      matrix:
+        parameters:
+          packageManager:
+            - 'npm'
+          template:
+            - 'react-vite-ts'
+            - 'nextjs-ts'
+            - 'vue-vite-ts'
+            - 'lit-vite-ts'
 # TODO: don't forget to reenable this
 #      - bench-sandboxes:
 #          parallelism: 5

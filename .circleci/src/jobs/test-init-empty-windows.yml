@@ -188,4 +188,5 @@ steps:
               IN_STORYBOOK_SANDBOX: true
               STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
               STORYBOOK_DISABLE_TELEMETRY: true
-  - report-workflow-on-failure
+  # TODO: Discuss this. The Discord orb isn't powershell compatible
+  # - report-workflow-on-failure

@@ -986,7 +986,6 @@ jobs:
                             STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
                         name: Storybook init from empty directory (Windows --skip-install)
                         shell: bash.exe
-            - report-workflow-on-failure
     test-init-features:
         executor:
             class: small

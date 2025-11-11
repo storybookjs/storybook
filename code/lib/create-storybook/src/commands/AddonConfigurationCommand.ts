@@ -168,7 +168,7 @@ export class AddonConfigurationCommand {
     // Log results for each addon, each as a separate log entry
     addons.forEach((addon, index) => {
       const error = addonResults.get(addon);
-      logger.log(CLI_COLORS.dimmed(error ? `❌ ${addon}` : `✅ ${addon}`), {
+      logger.log(CLI_COLORS.muted(error ? `❌ ${addon}` : `✅ ${addon}`), {
         spacing: index === 0 ? 1 : 0,
       });
     });

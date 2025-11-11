@@ -27,7 +27,7 @@ const promptCrashReports = async () => {
 
   const enableCrashReports = await prompt.confirm({
     message: dedent`
-      Send anonymous crash reports to help improve Storybook?
+      Would you like to send anonymous crash reports to improve Storybook and fix bugs faster?
       This helps us improve Storybook and fix bugs faster.
     `,
     initialValue: true,

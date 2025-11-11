@@ -3,7 +3,6 @@ import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
 
 import * as newLogger from './logger/logger';
-import { isClackEnabled } from './prompts/prompt-config';
 
 export { prompt } from './prompts';
 export { logTracker } from './logger/log-tracker';

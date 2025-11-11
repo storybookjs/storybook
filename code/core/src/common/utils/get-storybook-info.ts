@@ -136,7 +136,10 @@ export const getStorybookInfo = async (
   cwd?: string
 ): Promise<CoreCommon_StorybookInfo> => {
   const configInfo = getConfigInfo(configDir);
-  const mainConfig = (await loadMainConfig({ configDir, cwd })) as StorybookConfigRaw;
+  const mainConfig = (await loadMainConfig({
+    configDir: configInfo.configDir,
+    cwd,
+  })) as StorybookConfigRaw;
 
   invariant(mainConfig, `Unable to find or evaluate ${configInfo.mainConfigPath}`);
 
@@ -176,6 +179,7 @@ export const getStorybookInfo = async (
     addons,
     mainConfig,
     framework,
+    version,
     renderer: renderer ?? undefined,
     builder: builder ?? undefined,
     frameworkPackage,

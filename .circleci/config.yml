@@ -790,7 +790,7 @@ jobs:
                     mkdir features-1
                     cd features-1
                     npm set registry http://localhost:6001
-                    npx create-storybook --yes --package-manager npm --features dev docs test a11y --loglevel=debug
+                    npx create-storybook --yes --package-manager npm --features dev docs test a11y
                     npx vitest
                 environment:
                     IN_STORYBOOK_SANDBOX: true

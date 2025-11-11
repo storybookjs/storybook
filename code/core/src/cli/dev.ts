@@ -1,6 +1,6 @@
 import { cache } from 'storybook/internal/common';
 import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
-import { logTracker, logger, instance as npmLog } from 'storybook/internal/node-logger';
+import { logger, instance as npmLog } from 'storybook/internal/node-logger';
 import type { CLIOptions, PackageJson } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';

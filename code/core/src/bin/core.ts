@@ -109,10 +109,6 @@ command('dev')
     'URL path to be appended when visiting Storybook for the first time'
   )
   .option('--preview-only', 'Use the preview without the manager UI')
-  .option(
-    '--logfile [path]',
-    'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log'
-  )
   .action(async (options) => {
     const { default: packageJson } = await import('storybook/package.json', {
       with: { type: 'json' },

@@ -263,6 +263,31 @@ jobs:
                 name: Ensure no changes pending
             - report-workflow-on-failure
             - cancel-workflow-on-failure
+    check-sandboxes:
+        executor:
+            class: medium
+            name: sb_node_22_classic
+        parallelism: << parameters.parallelism >>
+        parameters:
+            parallelism:
+                type: integer
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                clone_options: --depth 1 --verbose
+            - attach_workspace:
+                at: .
+            - run:
+                command: |
+                    TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
+                    cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+                name: Install sandbox dependencies
+            - run:
+                command: yarn task --task check-sandbox --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox) --no-link --start-from=never --junit
+                name: Type check Sandboxes
+            - report-workflow-on-failure:
+                template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
+            - store_test_results:
+                path: test-results
     chromatic-internal-storybook:
         environment:
             NODE_OPTIONS: --max_old_space_size=4096
@@ -884,6 +909,26 @@ jobs:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
             - store_test_results:
                 path: test-results
+    test-yarn-pnp:
+        executor:
+            class: medium
+            name: sb_playwright
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                clone_options: --depth 1 --verbose
+            - attach_workspace:
+                at: .
+            - run:
+                command: yarn install --no-immutable
+                environment:
+                    YARN_ENABLE_IMMUTABLE_INSTALLS: false
+                name: Install dependencies
+                working_directory: test-storybooks/yarn-pnp
+            - run:
+                command: yarn storybook --smoke-test
+                name: Run Storybook smoke test
+                working_directory: test-storybooks/yarn-pnp
+            - report-workflow-on-failure
     unit-tests:
         executor:
             class: xlarge
@@ -994,6 +1039,10 @@ workflows:
                 parallelism: 34
                 requires:
                     - build
+            - check-sandboxes:
+                parallelism: 1
+                requires:
+                    - create-sandboxes
             - chromatic-sandboxes:
                 parallelism: 31
                 requires:
@@ -1022,6 +1071,9 @@ workflows:
                             - vue3
                             - nextjs
                             - svelte
+                requires:
+                    - build
+            - test-yarn-pnp:
                 requires:
                     - build
             - e2e-ui:
@@ -1109,6 +1161,10 @@ workflows:
                 parallelism: 7
                 requires:
                     - create-sandboxes
+            - check-sandboxes:
+                parallelism: 1
+                requires:
+                    - create-sandboxes
             - test-portable-stories:
                 matrix:
                     parameters:
@@ -1117,6 +1173,9 @@ workflows:
                             - vue3
                             - nextjs
                             - svelte
+                requires:
+                    - build
+            - test-yarn-pnp:
                 requires:
                     - build
             - e2e-ui:
@@ -1185,6 +1244,13 @@ workflows:
                 parallelism: 5
                 requires:
                     - create-sandboxes
+            - check-sandboxes:
+                parallelism: 1
+                requires:
+                    - create-sandboxes
+            - test-yarn-pnp:
+                requires:
+                    - build
             - e2e-ui:
                 requires:
                     - build

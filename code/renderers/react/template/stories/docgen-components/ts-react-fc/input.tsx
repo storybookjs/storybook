@@ -88,6 +88,6 @@ interface TypeScriptPropsProps {
   inlinedNumericLiteralUnion: 0 | 1 | 2;
 }
 
-export const TypeScriptProps: FC<TypeScriptPropsProps> = (props) => <div>TypeScript!</div>;
+export const TypeScriptProps: FC<TypeScriptPropsProps> = () => <div>TypeScript!</div>;
 
 export const component = TypeScriptProps;

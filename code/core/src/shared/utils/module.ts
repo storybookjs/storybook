@@ -32,6 +32,7 @@ export const resolvePackageDir = (
   try {
     return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'), parent)));
   } catch {
+    // Necessary fallback for Bun runtime
     return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'))));
   }
 };

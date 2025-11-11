@@ -600,9 +600,6 @@ export abstract class JsPackageManager {
   public abstract runPackageCommand(
     options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
   ): ExecaChildProcess;
-  public abstract runPackageCommandSync(
-    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
-  ): string;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
   public abstract findInstallations(
     pattern?: string[],

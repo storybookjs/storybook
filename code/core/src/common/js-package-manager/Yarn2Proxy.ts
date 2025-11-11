@@ -12,7 +12,7 @@ import * as find from 'empathic/find';
 import type { ExecaChildProcess } from 'execa';
 
 import type { ExecuteCommandOptions } from '../utils/command';
-import { executeCommand, executeCommandSync } from '../utils/command';
+import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
@@ -91,17 +91,6 @@ export class Yarn2Proxy extends JsPackageManager {
 
   getRunCommand(command: string): string {
     return `yarn ${command}`;
-  }
-
-  public runPackageCommandSync({
-    args,
-    ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }) {
-    return executeCommandSync({
-      command: 'yarn',
-      args: ['exec', ...args],
-      ...options,
-    });
   }
 
   public runPackageCommand({

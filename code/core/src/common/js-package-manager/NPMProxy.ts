@@ -11,7 +11,7 @@ import type { ExecaChildProcess } from 'execa';
 import sort from 'semver/functions/sort.js';
 
 import type { ExecuteCommandOptions } from '../utils/command';
-import { executeCommand, executeCommandSync } from '../utils/command';
+import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
@@ -93,17 +93,6 @@ export class NPMProxy extends JsPackageManager {
       this.installArgs = [];
     }
     return this.installArgs;
-  }
-
-  public runPackageCommandSync({
-    args,
-    ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): string {
-    return executeCommandSync({
-      command: 'npm',
-      args: ['exec', '--', ...args],
-      ...options,
-    });
   }
 
   public runPackageCommand(

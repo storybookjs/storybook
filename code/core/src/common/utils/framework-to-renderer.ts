@@ -1,5 +1,4 @@
-import type { SupportedRenderers } from 'storybook/internal/types';
-import type { SupportedFrameworks } from 'storybook/internal/types';
+import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
 export const frameworkToRenderer: Record<
   SupportedFrameworks | SupportedRenderers,

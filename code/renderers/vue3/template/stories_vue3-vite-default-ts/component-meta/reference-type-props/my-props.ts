@@ -17,7 +17,7 @@ enum MyEnum {
   Large,
 }
 
-const categories = [
+const _categories = [
   'Uncategorized',
   'Content',
   'Interaction',
@@ -26,7 +26,7 @@ const categories = [
   'Addons',
 ] as const;
 
-type MyCategories = (typeof categories)[number];
+type MyCategories = (typeof _categories)[number];
 
 export interface MyProps {
   /**

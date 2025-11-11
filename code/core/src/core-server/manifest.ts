@@ -778,7 +778,7 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
         <div class="panel panel-stories">
           ${errorStories
             .map(
-              (ex, j) => `
+              (ex) => `
             <div class="note err">
               <div class="row">
                 <span class="ex-name">${esc(ex.name)}</span>

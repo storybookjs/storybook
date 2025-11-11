@@ -21,7 +21,6 @@ export const SUPPORTED_FRAMEWORKS: Framework[] = [
  * When selecting framework nextjs & intent includes test, prompt for nextjs-vite. When selecting
  * another framework that doesn't support test addon, prompt for ignoring test intent.
  */
-const name = 'Framework test compatibility';
 export const frameworkTest: Check = {
   condition: async (context, state) => {
     if (

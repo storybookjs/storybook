@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { expect, test } from 'vitest';
 
 import { getUsedProps } from './mount-utils';

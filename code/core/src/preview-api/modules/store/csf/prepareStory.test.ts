@@ -153,7 +153,7 @@ describe('prepareStory', () => {
       const { parameters } = prepareStory(
         { id, name, moduleExport },
         { id, title },
-        { render: (args: any) => {} }
+        { render: (_args: any) => {} }
       );
 
       expect(parameters).toEqual(expect.objectContaining({ __isArgsStory: true }));

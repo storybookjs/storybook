@@ -179,7 +179,7 @@ export async function loadPreset(
     if (isObject(contents)) {
       const { addons: addonsInput = [], presets: presetsInput = [], ...rest } = contents;
 
-      let filter = (i: PresetConfig) => {
+      let filter = (_i: PresetConfig) => {
         return true;
       };
 

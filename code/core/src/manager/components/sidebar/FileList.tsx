@@ -16,7 +16,7 @@ export const FileListWrapper = styled('div')(({ theme }) => ({
   },
 }));
 
-export const FileList = styled('div')(({ theme }) => ({
+export const FileList = styled('div')({
   height: '280px',
   overflow: 'auto',
   msOverflowStyle: 'none',
@@ -25,7 +25,7 @@ export const FileList = styled('div')(({ theme }) => ({
   '::-webkit-scrollbar': {
     display: 'none',
   },
-}));
+});
 
 export const FileListLi = styled('li')(({ theme }) => ({
   ':focus-visible': {
@@ -42,11 +42,11 @@ export const FileListLi = styled('li')(({ theme }) => ({
   },
 }));
 
-export const FileListItem = styled('div')(({ theme }) => ({
+export const FileListItem = styled('div')({
   display: 'flex',
   flexDirection: 'column',
   position: 'relative',
-}));
+});
 
 export const FileListItemContentWrapper = styled.div<{
   selected: boolean;
@@ -135,10 +135,10 @@ export const FileListItemPath = styled('div')(({ theme }) => ({
   maxWidth: '100%',
 }));
 
-export const FileListExport = styled('ul')(({ theme }) => ({
+export const FileListExport = styled('ul')({
   margin: 0,
   padding: 0,
-}));
+});
 
 export const FileListItemExport = styled('li')<{ error: boolean }>(({ theme, error }) => ({
   padding: '8px 16px 8px 16px',
@@ -177,20 +177,20 @@ export const FileListItemExport = styled('li')<{ error: boolean }>(({ theme, err
   },
 }));
 
-export const FileListItemExportName = styled('div')(({ theme }) => ({
+export const FileListItemExportName = styled('div')({
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
   width: 'calc(100% - 20px)',
-}));
+});
 
-export const FileListItemExportNameContent = styled('span')(({ theme }) => ({
+export const FileListItemExportNameContent = styled('span')({
   whiteSpace: 'nowrap',
   textOverflow: 'ellipsis',
   overflow: 'hidden',
   maxWidth: 'calc(100% - 160px)',
   display: 'inline-block',
-}));
+});
 
 export const DefaultExport = styled('span')(({ theme }) => ({
   display: 'inline-block',

@@ -4,7 +4,6 @@ import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 import { AUTODOCS_TAG, PLAY_FN_TAG, TEST_FN_TAG, isMdxEntry } from './StoryIndexGenerator';
 
 const PAGE_REGEX = /(page|screen)/i;
-const SVELTE_CSF_TAG = 'svelte-csf';
 
 export const isPageStory = (storyId: string) => PAGE_REGEX.test(storyId);
 

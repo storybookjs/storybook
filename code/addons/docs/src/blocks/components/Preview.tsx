@@ -210,7 +210,7 @@ export const Preview: FC<PreviewProps> = ({
 
   const context = useContext(DocsContext);
 
-  const copyToClipboard = useCallback(async (text: string) => {
+  const copyToClipboard = useCallback(async () => {
     const { createCopyToClipboardFunction } = await import('storybook/internal/components');
     createCopyToClipboardFunction();
   }, []);
@@ -226,7 +226,7 @@ export const Preview: FC<PreviewProps> = ({
 
     e.preventDefault();
     if (additionalActionItems.filter((item) => item.title === 'Copied').length === 0) {
-      copyToClipboard(source?.props.code ?? '').then(() => {
+      copyToClipboard().then(() => {
         setAdditionalActionItems([
           ...additionalActionItems,
           {

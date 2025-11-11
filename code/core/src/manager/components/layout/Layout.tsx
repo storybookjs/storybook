@@ -205,7 +205,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
 };
 
 const LayoutContainer = styled.div<LayoutState & { showPanel: boolean }>(
-  ({ navSize, rightPanelWidth, bottomPanelHeight, viewMode, panelPosition, showPanel }) => {
+  ({ navSize, rightPanelWidth, bottomPanelHeight, panelPosition, showPanel }) => {
     return {
       width: '100%',
       height: ['100vh', '100dvh'], // This array is a special Emotion syntax to set a fallback if 100dvh is not supported

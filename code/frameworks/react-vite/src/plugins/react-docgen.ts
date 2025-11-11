@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs';
 import { relative, sep } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
 
 import { createFilter } from '@rollup/pluginutils';
 import * as find from 'empathic/find';

@@ -1,5 +1,5 @@
 export async function getPrettier() {
-  return import('prettier').catch((e) => ({
+  return import('prettier').catch(() => ({
     resolveConfig: async () => null,
     format: (content: string) => content,
   }));

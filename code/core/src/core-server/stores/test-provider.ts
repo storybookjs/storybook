@@ -1,6 +1,8 @@
 import { optionalEnvToBoolean } from '../../common/utils/envs';
-import { createTestProviderStore } from '../../shared/test-provider-store';
-import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from '../../shared/test-provider-store';
+import {
+  UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS,
+  createTestProviderStore,
+} from '../../shared/test-provider-store';
 import { UniversalStore } from '../../shared/universal-store';
 
 const testProviderStore = createTestProviderStore({

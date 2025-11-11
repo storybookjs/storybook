@@ -18,43 +18,41 @@ const Row = styled.div(({ theme }) => ({
   },
 }));
 
-const Column = styled.div<{ position: 'first' | 'second' | 'third' | 'last' }>(
-  ({ position, theme }) => {
-    const baseStyles = {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: 5,
-      padding: '10px 15px',
-      alignItems: 'flex-start',
-    };
+const Column = styled.div<{ position: 'first' | 'second' | 'third' | 'last' }>(({ position }) => {
+  const baseStyles = {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 5,
+    padding: '10px 15px',
+    alignItems: 'flex-start',
+  };
 
-    // Apply the same column width ratios as the actual ArgsTable component
-    switch (position) {
-      case 'first':
-        return {
-          ...baseStyles,
-          width: '25%',
-          paddingLeft: 20,
-        };
-      case 'second':
-        return {
-          ...baseStyles,
-          width: '35%',
-        };
-      case 'third':
-        return {
-          ...baseStyles,
-          width: '15%',
-        };
-      case 'last':
-        return {
-          ...baseStyles,
-          width: '25%',
-          paddingRight: 20,
-        };
-    }
+  // Apply the same column width ratios as the actual ArgsTable component
+  switch (position) {
+    case 'first':
+      return {
+        ...baseStyles,
+        width: '25%',
+        paddingLeft: 20,
+      };
+    case 'second':
+      return {
+        ...baseStyles,
+        width: '35%',
+      };
+    case 'third':
+      return {
+        ...baseStyles,
+        width: '15%',
+      };
+    case 'last':
+      return {
+        ...baseStyles,
+        width: '25%',
+        paddingRight: 20,
+      };
   }
-);
+});
 
 const SkeletonText = styled.div<{ width?: number | string; height?: number }>(
   ({ theme, width, height }) => ({

@@ -17,7 +17,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
-  test: (val) => true,
+  test: () => true,
 });
 
 const transform = async ({

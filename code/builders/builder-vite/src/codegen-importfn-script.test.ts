@@ -41,7 +41,6 @@ describe('toImportFn', () => {
   });
 
   it('should handle an empty array of stories', async () => {
-    const root = '/absolute/path';
     const stories: string[] = [];
 
     const result = await toImportFn(stories);

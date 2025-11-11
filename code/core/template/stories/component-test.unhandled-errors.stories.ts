@@ -20,7 +20,7 @@ export default {
 
 export const Default = {
   play: async (context) => {
-    const { args, canvasElement } = context;
+    const { canvasElement } = context;
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button'));
   },

@@ -161,7 +161,7 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
   }
 
   const filterDefaults = {
-    filterProps: (value: any, key: string): boolean => value !== undefined,
+    filterProps: (value: any): boolean => value !== undefined,
   };
 
   const opts = {

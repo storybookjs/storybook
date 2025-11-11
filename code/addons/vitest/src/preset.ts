@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -33,8 +32,7 @@ import {
 } from './constants';
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
-import type { CachedState, ErrorLike, StoreState } from './types';
-import type { StoreEvent } from './types';
+import type { CachedState, ErrorLike, StoreEvent, StoreState } from './types';
 
 type Event = {
   type: 'test-discrepancy';

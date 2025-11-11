@@ -37,7 +37,7 @@ export const withThemeByClassName = <TRenderer extends Renderer = Renderer>({
 
       Object.entries(themes)
         .filter(([themeName]) => themeName !== selectedThemeName)
-        .forEach(([themeName, className]) => {
+        .forEach(([_themeName, className]) => {
           const classes = classStringToArray(className);
           if (classes.length > 0) {
             parentElement.classList.remove(...classes);

@@ -1,5 +1,4 @@
 const path = require('path');
-const cache = {};
 
 module.exports = {
   meta: {

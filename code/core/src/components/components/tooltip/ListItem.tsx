@@ -73,10 +73,10 @@ export interface CenterTextProps {
 }
 
 const CenterText = styled.span<CenterTextProps>(
-  ({ theme }) => ({
+  {
     fontSize: '11px',
     lineHeight: '14px',
-  }),
+  },
   ({ active, theme }) =>
     active
       ? {
@@ -201,11 +201,8 @@ const ListItem = (props: ListItemProps) => {
     active = false,
     disabled = false,
     isIndented = false,
-    href = undefined,
-    onClick = undefined,
     icon,
     input,
-    LinkWrapper = undefined,
     ...rest
   } = props;
   const commonProps = { active, disabled };

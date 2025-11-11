@@ -12,4 +12,4 @@ interface Props {
   funcWithUnionArg: (a: string | number) => string;
   funcWithMultipleUnionReturns: () => string | ItemInterface;
 }
-export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;

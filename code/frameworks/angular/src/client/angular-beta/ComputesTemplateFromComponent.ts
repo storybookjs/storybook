@@ -1,5 +1,3 @@
-import type { ArgTypes } from 'storybook/internal/types';
-
 import type { Type } from '@angular/core';
 
 import type { ICollection } from '../types';
@@ -99,11 +97,9 @@ function stringifyCircular(obj: any) {
 const createAngularInputProperty = ({
   propertyName,
   value,
-  argType,
 }: {
   propertyName: string;
   value: any;
-  argType?: ArgTypes[string];
 }) => {
   let templateValue;
   switch (typeof value) {
@@ -137,8 +133,7 @@ const createAngularInputProperty = ({
  */
 export const computesTemplateSourceFromComponent = (
   component: Type<unknown>,
-  initialProps?: ICollection,
-  argTypes?: ArgTypes
+  initialProps?: ICollection
 ) => {
   const ngComponentMetadata = getComponentDecoratorMetadata(component);
   if (!ngComponentMetadata) {
@@ -163,7 +158,6 @@ export const computesTemplateSourceFromComponent = (
             createAngularInputProperty({
               propertyName,
               value: initialProps[propertyName],
-              argType: argTypes?.[propertyName],
             })
           )
           .join(' ')}`

@@ -36,7 +36,7 @@ export function transformStoryA11yParameters(code: string): CsfFile | null {
   const parsed = loadCsf(code, { makeTitle: (title?: string) => title || 'default' }).parse();
 
   // Use the story transformer utility to handle all story iteration
-  let hasChanges = transformStories(parsed, (storyObject, storyName, csf) => {
+  let hasChanges = transformStories(parsed, (storyObject) => {
     return migrateA11yParameters(storyObject);
   });
 

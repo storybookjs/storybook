@@ -134,7 +134,7 @@ const Container = styled.dialog<{ state: TransitionStatus }>(({ theme, state }) 
   },
 }));
 
-const SidebarContainer = styled.div<{ state: TransitionStatus }>(({ theme, state }) => ({
+const SidebarContainer = styled.div<{ state: TransitionStatus }>(({ state }) => ({
   position: 'absolute',
   width: '100%',
   height: '100%',

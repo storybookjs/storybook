@@ -86,7 +86,7 @@ export async function renderToCanvas(
     },
   });
 
-  vueApp.config.errorHandler = (e: unknown, instance, info) => {
+  vueApp.config.errorHandler = (e: unknown) => {
     const preview = (window as Record<string, any>)
       .__STORYBOOK_PREVIEW__ as PreviewWeb<VueRenderer>;
     const isPlaying = preview?.storyRenders.some(

@@ -69,7 +69,7 @@ export const importFn: Mocked<ModuleImportFn> = vi.fn(
 );
 
 export const docsRenderer = {
-  render: vi.fn().mockImplementation((context, parameters, element) => Promise.resolve()),
+  render: vi.fn().mockImplementation(() => Promise.resolve()),
   unmount: vi.fn(),
 };
 export const teardownrenderToCanvas: Mock<(teardown: TeardownRenderToCanvas) => void> = vi.fn();

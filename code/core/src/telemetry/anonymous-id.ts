@@ -46,7 +46,7 @@ export const getAnonymousProjectId = () => {
     });
 
     anonymousProjectId = oneWayHash(unhashedProjectId(String(originBuffer), projectRootPath));
-  } catch (_) {
+  } catch {
     //
   }
 

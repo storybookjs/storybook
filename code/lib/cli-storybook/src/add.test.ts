@@ -91,7 +91,7 @@ vi.mock('storybook/internal/common', () => {
   };
 });
 
-describe('getVersionSpecifier', (it) => {
+describe('getVersionSpecifier', () => {
   test.each([
     ['@storybook/addon-docs', ['@storybook/addon-docs', undefined]],
     ['@storybook/addon-docs@7.0.1', ['@storybook/addon-docs', '7.0.1']],

@@ -21,4 +21,4 @@ interface Props {
   numericEnum: NumericEnum;
   stringEnum: StringEnum;
 }
-export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;

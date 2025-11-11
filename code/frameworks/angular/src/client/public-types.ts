@@ -64,8 +64,8 @@ type AngularInputSignalWithTransform<T, U> = AngularCore.InputSignalWithTransfor
 // @ts-ignore Angular < 17.3 doesn't export AngularOutputEmitterRef
 type AngularOutputEmitterRef<T> = AngularCore.OutputEmitterRef<T>;
 
-type AngularHasInputSignal = typeof AngularCore extends { input: infer U } ? true : false;
-type AngularHasOutputSignal = typeof AngularCore extends { output: infer U } ? true : false;
+type AngularHasInputSignal = typeof AngularCore extends { input: infer _U } ? true : false;
+type AngularHasOutputSignal = typeof AngularCore extends { output: infer _U } ? true : false;
 
 type InputSignal<T> = AngularHasInputSignal extends true ? AngularInputSignal<T> : never;
 type InputSignalWithTransform<T, U> = AngularHasInputSignal extends true

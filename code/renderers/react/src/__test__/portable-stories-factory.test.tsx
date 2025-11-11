@@ -5,15 +5,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 
 import {
+  CSF2Secondary,
   CSF2StoryWithLocale,
   CSF3Button,
   CSF3ButtonWithRender,
   CSF3InputFieldFilled,
   CSF3Primary,
+  HooksStory,
   MountInPlayFunction,
   MountInPlayFunctionThrow,
 } from './Button.csf4.stories';
-import { CSF2Secondary, HooksStory } from './Button.csf4.stories';
 
 afterEach(() => {
   cleanup();

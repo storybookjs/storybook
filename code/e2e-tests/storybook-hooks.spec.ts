@@ -32,7 +32,7 @@ test.describe('Storybook hooks', () => {
     await new SbPage(page, expect).waitUntilLoaded();
   });
 
-  test('should call beforeAll upon loading Storybook', async ({ page }, { titlePath }) => {
+  test('should call beforeAll upon loading Storybook', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('example/button', 'primary');

@@ -663,7 +663,7 @@ export abstract class JsPackageManager {
 
     // If ignoreError is true, catch and suppress errors
     if (ignoreError) {
-      execaProcess.catch((err) => {
+      execaProcess.catch(() => {
         // Silently ignore errors when ignoreError is true
       });
     }

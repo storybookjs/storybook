@@ -77,7 +77,7 @@ describe('testProviderStore', () => {
     describe('getState', () => {
       it('should initially return pending state for new provider', () => {
         // Arrange - create empty test provider store
-        const { getTestProviderStoreById, fullTestProviderStore } = createTestProviderStore({
+        const { getTestProviderStoreById } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
             TestProviderStoreEvent

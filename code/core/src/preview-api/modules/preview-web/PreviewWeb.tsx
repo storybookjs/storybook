@@ -1,5 +1,4 @@
-import type { ModuleImportFn, ProjectAnnotations } from 'storybook/internal/types';
-import type { Renderer } from 'storybook/internal/types';
+import type { ModuleImportFn, ProjectAnnotations, Renderer } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 

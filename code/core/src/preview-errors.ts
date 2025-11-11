@@ -1,7 +1,6 @@
 import { dedent } from 'ts-dedent';
 
-import type { Status } from './shared/status-store';
-import type { StatusTypeId } from './shared/status-store';
+import type { Status, StatusTypeId } from './shared/status-store';
 import { StorybookError } from './storybook-error';
 
 /**

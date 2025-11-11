@@ -1,11 +1,14 @@
 import { logger } from 'storybook/internal/client-logger';
 import type { Story } from 'storybook/internal/csf';
 import { getStoryChildren, isExportStory, isStory, toTestId } from 'storybook/internal/csf';
-import type { ComponentTitle, Parameters, Path, Renderer } from 'storybook/internal/types';
 import type {
   CSFFile,
+  ComponentTitle,
   ModuleExports,
   NormalizedComponentAnnotations,
+  Parameters,
+  Path,
+  Renderer,
 } from 'storybook/internal/types';
 
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';

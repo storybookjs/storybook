@@ -1,8 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
-import type { Plugin } from 'vitest/config';
+import type { Plugin, ViteUserConfig } from 'vitest/config';
 import { mergeConfig } from 'vitest/config';
-import type { ViteUserConfig } from 'vitest/config';
 
 import {
   DEFAULT_FILES_PATTERN,
@@ -19,12 +18,11 @@ import {
 } from 'storybook/internal/core-server';
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
-import { telemetry } from 'storybook/internal/telemetry';
-import { oneWayHash } from 'storybook/internal/telemetry';
+import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
-import { dirname, join, normalize, relative, resolve, sep } from 'pathe';
+import { join, normalize, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';

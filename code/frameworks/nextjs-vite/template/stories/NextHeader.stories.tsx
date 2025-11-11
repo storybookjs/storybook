@@ -1,5 +1,4 @@
-import type { Meta } from '@storybook/nextjs-vite';
-import type { StoryObj } from '@storybook/nextjs-vite';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { cookies, headers } from '@storybook/nextjs-vite/headers.mock';
 
 import { expect, userEvent, within } from 'storybook/test';

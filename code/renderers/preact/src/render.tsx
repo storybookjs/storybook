@@ -37,7 +37,7 @@ const StoryHarness: preact.FunctionalComponent<{
   showError: RenderContext<PreactRenderer>['showError'];
   storyFn: () => any;
   canvasElement: PreactRenderer['canvasElement'];
-}> = ({ showError, name, title, storyFn, canvasElement }) => {
+}> = ({ showError, name, title, storyFn }) => {
   const content = preact.h(storyFn as any, null);
   if (!content) {
     showError({

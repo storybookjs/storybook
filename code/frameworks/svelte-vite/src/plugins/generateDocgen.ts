@@ -305,7 +305,7 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
 
       return false;
     },
-    getSourceFile(fileName, languageVersion, onError) {
+    getSourceFile(fileName, languageVersion) {
       if (fileName.endsWith('.svelte.tsx') || fileName.endsWith('.svelte.jsx')) {
         // .svelte file (`import ... from './path/to/file.svelte'`)
 

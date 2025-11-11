@@ -76,7 +76,7 @@ const Swatch = ({ value, style, ...props }: SwatchProps) => {
   return <SwatchColor {...props} style={{ ...style, backgroundImage }} />;
 };
 
-const Input = styled(Form.Input)(({ theme, readOnly }) => ({
+const Input = styled(Form.Input)(({ theme }) => ({
   width: '100%',
   paddingLeft: 30,
   paddingRight: 30,

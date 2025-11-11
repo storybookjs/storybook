@@ -46,7 +46,7 @@ vi.mock('picocolors', async (importOriginal) => {
   };
 });
 
-const loggerMock = vi.mocked(logger);
+vi.mocked(logger);
 
 describe('addonA11yAddonTest', () => {
   const configDir = '/path/to/config';

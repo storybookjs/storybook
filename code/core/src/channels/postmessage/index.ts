@@ -86,7 +86,7 @@ export class PostMessageTransport implements ChannelTransport {
         allowUndefined,
         maxDepth,
         space,
-      }).filter(([k, v]) => typeof v !== 'undefined')
+      }).filter(([_k, v]) => typeof v !== 'undefined')
     );
 
     const stringifyOptions = {

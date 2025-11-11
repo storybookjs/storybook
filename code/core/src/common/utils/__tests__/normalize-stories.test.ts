@@ -28,7 +28,7 @@ vi.mock('node:fs', () => {
   };
 
   return {
-    access: (path: string, mode: number, cb: (err?: Error) => void): void => undefined,
+    access: (): void => undefined,
     lstatSync: (path: string) => ({
       isDirectory: () => !path.match(/\.[a-z]+$/),
     }),

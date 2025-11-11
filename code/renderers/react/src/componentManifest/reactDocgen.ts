@@ -99,7 +99,7 @@ const getExportPaths = cached(
     let ast;
     try {
       ast = babelParse(code);
-    } catch (_) {
+    } catch {
       return [];
     }
 

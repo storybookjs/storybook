@@ -13,7 +13,7 @@ const mockChannelListeners = new Map<string, Set<(...args: any[]) => void>>();
 
 const mockChannel = {
   on: vi.fn((eventType: string, listener: (...args: any[]) => void) => {
-    const [universalStorePrefix, environmentId, universalStoreId] = eventType.split(':');
+    const [_universalStorePrefix, _environmentId, universalStoreId] = eventType.split(':');
     if (!mockChannelListeners.has(universalStoreId)) {
       mockChannelListeners.set(universalStoreId, new Set());
     }
@@ -29,7 +29,7 @@ const mockChannel = {
     listeners.delete(listener);
   }),
   emit: vi.fn((eventType: string, channelEvent: ChannelEvent<any, any>) => {
-    const [universalStorePrefix, environmentId, universalStoreId] = eventType.split(':');
+    const [_universalStorePrefix, _environmentId, universalStoreId] = eventType.split(':');
     if (!mockChannelListeners.has(universalStoreId)) {
       return;
     }

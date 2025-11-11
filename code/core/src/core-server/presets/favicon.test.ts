@@ -56,10 +56,10 @@ vi.mock('storybook/internal/node-logger', () => {
 
 vi.mock('node:fs', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:fs')>()),
-  existsSync: vi.fn((p: string) => {
+  existsSync: vi.fn(() => {
     return false;
   }),
-  statSync: vi.fn((p: string) => {
+  statSync: vi.fn(() => {
     return {
       isFile: () => false,
     };

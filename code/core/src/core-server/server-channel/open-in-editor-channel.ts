@@ -5,7 +5,7 @@ import type {
 } from 'storybook/internal/core-events';
 import { OPEN_IN_EDITOR_REQUEST, OPEN_IN_EDITOR_RESPONSE } from 'storybook/internal/core-events';
 import { telemetry } from 'storybook/internal/telemetry';
-import type { CoreConfig, Options, StoryIndex } from 'storybook/internal/types';
+import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import launch from 'launch-editor';
 

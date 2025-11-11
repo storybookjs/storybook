@@ -112,7 +112,7 @@ function removeUnusedTemplates(csf: CsfFile) {
   });
 }
 
-export default async function transform(info: FileInfo, api: API, options: { parser?: string }) {
+export default async function transform(info: FileInfo, _api: API, _options: { parser?: string }) {
   const makeTitle = (userTitle?: string) => {
     return userTitle || 'FIXME';
   };
@@ -222,7 +222,7 @@ export default async function transform(info: FileInfo, api: API, options: { par
 }
 
 class StorybookImportHelper {
-  constructor(file: BabelFile, info: FileInfo) {
+  constructor(file: BabelFile, _info: FileInfo) {
     this.sbImportDeclarations = this.getAllSbImportDeclarations(file);
   }
 

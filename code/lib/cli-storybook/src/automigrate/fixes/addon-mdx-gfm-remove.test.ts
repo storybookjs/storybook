@@ -63,10 +63,6 @@ const baseCheckOptions: CheckOptions = {
   storiesPaths: [],
 };
 
-interface AddonMdxGfmOptions {
-  hasMdxGfm: boolean;
-}
-
 // Add type for migration object
 interface Migration {
   check: (options: CheckOptions) => Promise<true | null>;

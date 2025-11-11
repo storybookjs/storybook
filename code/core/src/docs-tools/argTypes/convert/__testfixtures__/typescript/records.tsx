@@ -9,4 +9,4 @@ interface Props {
   recordOfPrimitive: Record<string, number>;
   recordOfComplexObject: Record<string, ItemInterface>;
 }
-export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;

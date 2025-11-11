@@ -1,4 +1,4 @@
-function add(a, b) {
+function add(_a, _b) {
   return 'mocked 3';
 }
 

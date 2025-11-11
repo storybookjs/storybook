@@ -12,4 +12,5 @@ interface Props {
   interface: ItemInterface;
   genericInterface: GenericInterface<string>;
 }
-export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+
+export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;

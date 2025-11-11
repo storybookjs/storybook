@@ -147,7 +147,6 @@ export const fixFauxEsmRequire = {
       // Add __filename and __dirname if used and not already declared
       if (hasUnderscoreFilename || hasUnderscoreDirname) {
         const declarationsToInsert: t.Statement[] = [];
-        let insertOffset = 0;
 
         // Add __filename declaration if needed and not already exists
         // Note: __filename is always needed if __dirname is used, since __dirname depends on __filename
@@ -164,7 +163,6 @@ export const fixFauxEsmRequire = {
             ),
           ]);
           declarationsToInsert.push(filenameDeclaration);
-          insertOffset++;
         }
 
         // Add __dirname declaration if needed and not already exists
@@ -176,7 +174,6 @@ export const fixFauxEsmRequire = {
             ),
           ]);
           declarationsToInsert.push(dirnameDeclaration);
-          insertOffset++;
         }
 
         // Insert declarations after imports

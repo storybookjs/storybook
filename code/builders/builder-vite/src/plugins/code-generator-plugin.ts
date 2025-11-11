@@ -91,7 +91,7 @@ export function codeGeneratorPlugin(options: Options): Plugin {
 
       return undefined;
     },
-    async load(id, config) {
+    async load(id) {
       if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)) {
         return generateImportFnScriptCode(options);
       }

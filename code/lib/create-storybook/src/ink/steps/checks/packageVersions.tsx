@@ -9,7 +9,6 @@ import { CompatibilityType } from './CompatibilityType';
  * - Yes -> ignore test intent
  * - No -> exit
  */
-const name = 'Vitest and MSW compatibility';
 export const packageVersions: Check = {
   condition: async (context) => {
     if (context.packageManager) {

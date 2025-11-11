@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { action } from 'storybook/actions';
 
 import { Subnav } from './Subnav';

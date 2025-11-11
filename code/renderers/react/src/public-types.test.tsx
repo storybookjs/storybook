@@ -24,12 +24,12 @@ const Button: (props: ButtonProps) => ReactElement = () => <></>;
 
 describe('Args can be provided in multiple ways', () => {
   it('✅ All required args may be provided in meta', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const _meta = satisfies<Meta<typeof Button>>()({
       component: Button,
       args: { label: 'good', disabled: false },
     });
 
-    type Story = StoryObj<typeof meta>;
+    type Story = StoryObj<typeof _meta>;
     const Basic: Story = {};
 
     expectTypeOf(Basic).toEqualTypeOf<
@@ -38,11 +38,11 @@ describe('Args can be provided in multiple ways', () => {
   });
 
   it('✅ Required args may be provided partial in meta and the story', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const _meta = satisfies<Meta<typeof Button>>()({
       component: Button,
       args: { label: 'good' },
     });
-    const Basic: StoryObj<typeof meta> = {
+    const Basic: StoryObj<typeof _meta> = {
       args: { disabled: false },
     };
 
@@ -52,8 +52,8 @@ describe('Args can be provided in multiple ways', () => {
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
-      const meta = satisfies<Meta<typeof Button>>()({ component: Button });
-      const Basic: StoryObj<typeof meta> = {
+      const _meta = satisfies<Meta<typeof Button>>()({ component: Button });
+      const Basic: StoryObj<typeof _meta> = {
         // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
       };
@@ -62,19 +62,19 @@ describe('Args can be provided in multiple ways', () => {
       expectTypeOf(Basic).toEqualTypeOf<Expected>();
     }
     {
-      const meta = satisfies<Meta<typeof Button>>()({
+      const _meta = satisfies<Meta<typeof Button>>()({
         component: Button,
         args: { label: 'good' },
       });
       // @ts-expect-error disabled not provided ❌
-      const Basic: StoryObj<typeof meta> = {};
+      const Basic: StoryObj<typeof _meta> = {};
 
       type Expected = ReactStory<ButtonProps, SetOptional<ButtonProps, 'label'>>;
       expectTypeOf(Basic).toEqualTypeOf<Expected>();
     }
     {
-      const meta = satisfies<Meta<ButtonProps>>()({ component: Button });
-      const Basic: StoryObj<typeof meta> = {
+      const _meta = satisfies<Meta<ButtonProps>>()({ component: Button });
+      const Basic: StoryObj<typeof _meta> = {
         // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
       };
@@ -102,12 +102,12 @@ it('✅ Void functions are not changed', () => {
 
   const Cmp: (props: CmpProps) => ReactElement = () => <></>;
 
-  const meta = satisfies<Meta<CmpProps>>()({
+  const _meta = satisfies<Meta<CmpProps>>()({
     component: Cmp,
     args: { label: 'good' },
   });
 
-  const Basic: StoryObj<typeof meta> = {
+  const Basic: StoryObj<typeof _meta> = {
     args: {
       disabled: false,
       onLoading: () => <div>Loading...</div>,
@@ -128,7 +128,7 @@ describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
     type Props = ButtonProps & { theme: ThemeData };
 
-    const meta = satisfies<Meta<Props>>()({
+    const _meta = satisfies<Meta<Props>>()({
       component: Button,
       args: { disabled: false },
       render: (args, { component }) => {
@@ -143,7 +143,7 @@ describe('Story args can be inferred', () => {
       },
     });
 
-    const Basic: StoryObj<typeof meta> = { args: { theme: 'light', label: 'good' } };
+    const Basic: StoryObj<typeof _meta> = { args: { theme: 'light', label: 'good' } };
 
     type Expected = ReactStory<Props, SetOptional<Props, 'disabled'>>;
     expectTypeOf(Basic).toEqualTypeOf<Expected>();
@@ -159,13 +159,13 @@ describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for decorators', () => {
     type Props = ButtonProps & { decoratorArg: number };
 
-    const meta = satisfies<Meta<Props>>()({
+    const _meta = satisfies<Meta<Props>>()({
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator],
     });
 
-    const Basic: StoryObj<typeof meta> = { args: { decoratorArg: 0, label: 'good' } };
+    const Basic: StoryObj<typeof _meta> = { args: { decoratorArg: 0, label: 'good' } };
 
     type Expected = ReactStory<Props, SetOptional<Props, 'disabled'>>;
     expectTypeOf(Basic).toEqualTypeOf<Expected>();
@@ -195,13 +195,13 @@ describe('Story args can be inferred', () => {
       </>
     );
 
-    const meta = satisfies<Meta<Props>>()({
+    const _meta = satisfies<Meta<Props>>()({
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator, secondDecorator, thirdDecorator, fourthDecorator],
     });
 
-    const Basic: StoryObj<typeof meta> = {
+    const Basic: StoryObj<typeof _meta> = {
       args: { decoratorArg: 0, decoratorArg2: '', label: 'good' },
     };
 
@@ -210,19 +210,19 @@ describe('Story args can be inferred', () => {
   });
 });
 
-it('StoryObj<typeof meta> is allowed when meta is upcasted to Meta<Props>', () => {
+it('StoryObj<typeof _meta> is allowed when meta is upcasted to Meta<Props>', () => {
   expectTypeOf<StoryObj<Meta<ButtonProps>>>().toEqualTypeOf<
     ReactStory<ButtonProps, Partial<ButtonProps>>
   >();
 });
 
-it('StoryObj<typeof meta> is allowed when meta is upcasted to Meta<typeof Cmp>', () => {
+it('StoryObj<typeof _meta> is allowed when meta is upcasted to Meta<typeof Cmp>', () => {
   expectTypeOf<StoryObj<Meta<typeof Button>>>().toEqualTypeOf<
     ReactStory<ButtonProps, Partial<ButtonProps>>
   >();
 });
 
-it('StoryObj<typeof meta> is allowed when all arguments are optional', () => {
+it('StoryObj<typeof _meta> is allowed when all arguments are optional', () => {
   expectTypeOf<StoryObj<Meta<{ label?: string }>>>().toEqualTypeOf<
     ReactStory<{ label?: string }, { label?: string }>
   >();
@@ -245,7 +245,7 @@ it('Props can be defined as interfaces, issue #21768', () => {
     </>
   );
 
-  const meta = {
+  const _meta = {
     component: Component,
     args: {
       label: 'label',
@@ -253,7 +253,7 @@ it('Props can be defined as interfaces, issue #21768', () => {
     decorators: [withDecorator],
   } satisfies Meta<Props>;
 
-  const Basic: StoryObj<typeof meta> = {};
+  const Basic: StoryObj<typeof _meta> = {};
 
   type Expected = ReactStory<Props, SetOptional<Props, 'label'>>;
   expectTypeOf(Basic).toEqualTypeOf<Expected>();
@@ -267,12 +267,12 @@ it('Components without Props can be used, issue #21768', () => {
     </>
   );
 
-  const meta = {
+  const _meta = {
     component: Component,
     decorators: [withDecorator],
   } satisfies Meta<typeof Component>;
 
-  const Basic: StoryObj<typeof meta> = {};
+  const Basic: StoryObj<typeof _meta> = {};
 
   type Expected = ReactStory<{}, {}>;
   expectTypeOf(Basic).toEqualTypeOf<Expected>();
@@ -306,14 +306,14 @@ it('Meta is broken when using discriminating types, issue #23629', () => {
 
 it('Infer mock function given to args in meta.', () => {
   type Props = { label: string; onClick: () => void; onRender: () => JSX.Element };
-  const TestButton = (props: Props) => <></>;
+  const TestButton = (_props: Props) => <></>;
 
-  const meta = {
+  const _meta = {
     component: TestButton,
     args: { label: 'label', onClick: fn(), onRender: () => <>some jsx</> },
   } satisfies Meta<typeof TestButton>;
 
-  type Story = StoryObj<typeof meta>;
+  type Story = StoryObj<typeof _meta>;
 
   const Basic: Story = {
     play: async ({ args, mount }) => {

@@ -1,3 +1,5 @@
+/* eslint-disable import/no-duplicates */
+
 /**
  * This entry is to ensure we use a single version of Babel across the codebase. This is to prevent
  * issues with multiple versions of Babel being used in the same project. It also prevents us from

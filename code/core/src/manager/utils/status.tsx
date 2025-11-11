@@ -1,8 +1,11 @@
 import type { ReactElement } from 'react';
 import React from 'react';
 
-import type { StatusValue } from 'storybook/internal/types';
-import { type API_HashEntry, type StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import {
+  type API_HashEntry,
+  type StatusValue,
+  type StatusesByStoryIdAndTypeId,
+} from 'storybook/internal/types';
 
 import { CircleIcon } from '@storybook/icons';
 

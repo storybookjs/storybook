@@ -1,8 +1,5 @@
 import { spawn } from 'node:child_process';
 import { appendFile, writeFileSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
-
-import trash from 'trash';
 
 const logger = console;
 
@@ -17,39 +14,6 @@ const cleaningProcess = spawn('git', [
 ]);
 
 cleaningProcess.stdout.on('data', (data) => {
-  if (data && data.toString()) {
-    const l = data
-      .toString()
-      .split(/\n/)
-      .forEach((i) => {
-        const [, uri] = i.match(/Would remove (.*)$/) || [];
-
-        if (uri) {
-          if (
-            uri.match(/node_modules/) ||
-            uri.match(/dist/) ||
-            uri.match(/ts3\.4/) ||
-            uri.match(/\.cache/) ||
-            uri.match(/dll/)
-          ) {
-            rm(uri, { force: true, recursive: true }).then(() => {
-              logger.log(`deleted ${uri}`);
-            });
-          } else {
-            trash(uri)
-              .then(() => {
-                logger.log(`trashed ${uri}`);
-              })
-              .catch((e) => {
-                logger.log('failed to trash, will try permanent delete');
-                rm(uri, { force: true, recursive: true }).then(() => {
-                  logger.log(`deleted ${uri}`);
-                });
-              });
-          }
-        }
-      });
-  }
   appendFile('reset.log', data, (err) => {
     if (err) {
       throw err;

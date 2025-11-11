@@ -1,4 +1,4 @@
-import { type NodePath, recast, types as t } from 'storybook/internal/babel';
+import { recast, types as t } from 'storybook/internal/babel';
 import { getPrettier } from 'storybook/internal/common';
 import { type CsfFile } from 'storybook/internal/csf-tools';
 import type { PresetPropertyFn } from 'storybook/internal/types';

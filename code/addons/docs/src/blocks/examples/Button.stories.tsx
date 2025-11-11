@@ -101,7 +101,7 @@ export const Clicking: Story = {
       </>
     );
   },
-  play: async ({ canvasElement, id }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     const button = canvas.getByText('Increment');

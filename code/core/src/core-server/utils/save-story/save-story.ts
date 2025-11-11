@@ -74,7 +74,7 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
       newStoryName = name && storyNameFromExport(name);
       newStoryId = newStoryName && toId(componentId, newStoryName);
 
-      const [storyName] = stories.find(([key, value]) => value.id.endsWith(`--${storyId}`)) || [];
+      const [storyName] = stories.find(([_key, value]) => value.id.endsWith(`--${storyId}`)) || [];
       if (!storyName) {
         throw new SaveStoryError(`Source story not found.`);
       }

@@ -110,7 +110,7 @@ describe('Helpers', () => {
         ],
       ])('svelte %s => %s', async (svelteSpecifier, expectedAddonSpecifier) => {
         const packageManager = {
-          getInstalledVersion: async (pkg: string) => undefined,
+          getInstalledVersion: async () => undefined,
           getAllDependencies: () => ({ svelte: svelteSpecifier }),
         } as any as JsPackageManager;
         await expect(helpers.getVersionSafe(packageManager, 'svelte')).resolves.toBe(

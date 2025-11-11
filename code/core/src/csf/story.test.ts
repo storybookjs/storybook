@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 /* global HTMLElement */
 import { test } from 'vitest';
 

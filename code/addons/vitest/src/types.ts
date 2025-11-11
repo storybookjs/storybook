@@ -1,6 +1,5 @@
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
-import type { PreviewAnnotation, StoryId } from 'storybook/internal/types';
-import type { API_HashEntry } from 'storybook/internal/types';
+import type { API_HashEntry, PreviewAnnotation, StoryId } from 'storybook/internal/types';
 
 export interface VitestError extends Error {
   VITEST_TEST_PATH?: string;

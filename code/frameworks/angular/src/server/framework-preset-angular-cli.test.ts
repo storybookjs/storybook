@@ -220,7 +220,7 @@ describe('framework-preset-angular-cli', () => {
         angularBrowserTarget: 'test-project:build',
       };
 
-      const result = await getBuilderOptions(options, mockBuilderContext);
+      await getBuilderOptions(options, mockBuilderContext);
 
       expect(mockedLogger.info).toHaveBeenCalledWith(
         '=> Using angular browser target options from "test-project:build"'
@@ -240,7 +240,7 @@ describe('framework-preset-angular-cli', () => {
         angularBrowserTarget: 'test-project:build:production',
       };
 
-      const result = await getBuilderOptions(options, mockBuilderContext);
+      await getBuilderOptions(options, mockBuilderContext);
 
       expect(mockedLogger.info).toHaveBeenCalledWith(
         '=> Using angular browser target options from "test-project:build:production"'

@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createVitest as actualCreateVitest } from 'vitest/node';
 
-import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import { experimental_MockUniversalStore } from 'storybook/internal/core-server';
 import type {
   Options,
@@ -50,8 +49,6 @@ vi.mock('vitest/node', async (importOriginal) => ({
 
 const createVitest = vi.mocked(actualCreateVitest);
 
-const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
-const mockChannel = new Channel({ transport });
 const mockStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(
   {
     ...storeOptions,

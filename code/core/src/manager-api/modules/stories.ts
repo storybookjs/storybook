@@ -881,12 +881,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   );
 
   // When there's a preview error, we don't show it in the manager, but simply
-  provider.channel?.on(CONFIG_ERROR, function handleConfigError(this: any, err: any) {
+  provider.channel?.on(CONFIG_ERROR, function handleConfigError(this: any, _err: any) {
     const { ref } = getEventMetadata(this, fullAPI)!;
     api.setPreviewInitialized(ref);
   });
 
-  provider.channel?.on(STORY_MISSING, function handleConfigError(this: any, err: any) {
+  provider.channel?.on(STORY_MISSING, function handleConfigError(this: any, _err: any) {
     const { ref } = getEventMetadata(this, fullAPI)!;
     api.setPreviewInitialized(ref);
   });

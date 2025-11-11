@@ -1,8 +1,8 @@
 import type {
   Addon_StorySortComparatorV7,
   Addon_StorySortObjectParameter,
+  IndexEntry,
 } from 'storybook/internal/types';
-import type { IndexEntry } from 'storybook/internal/types';
 
 const STORY_KIND_PATH_SEPARATOR = /\s*\/\s*/;
 

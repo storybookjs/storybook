@@ -13,7 +13,7 @@ const mockChannelListeners = new Map<string, Set<(...args: any[]) => void>>();
 
 const mockChannel = {
   on: vi.fn((eventType: string, listener: (...args: any[]) => void) => {
-    const [universalStorePrefix, environmentId, universalStoreId] = eventType.split(':');
+    const [_universalStorePrefix, _environmentId, universalStoreId] = eventType.split(':');
     if (!mockChannelListeners.has(universalStoreId)) {
       mockChannelListeners.set(universalStoreId, new Set());
     }
@@ -29,7 +29,7 @@ const mockChannel = {
     listeners.delete(listener);
   }),
   emit: vi.fn((eventType: string, channelEvent: ChannelEvent<any, any>) => {
-    const [universalStorePrefix, environmentId, universalStoreId] = eventType.split(':');
+    const [_universalStorePrefix, _environmentId, universalStoreId] = eventType.split(':');
     if (!mockChannelListeners.has(universalStoreId)) {
       return;
     }
@@ -930,7 +930,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
 
     it('should throw when trying to set state before the store is ready', async () => {
       // Arrange - create a leader and a follower
-      const leader = UniversalStore.create({
+      UniversalStore.create({
         id: 'env1:test',
         leader: true,
         initialState: { count: 0 },
@@ -1115,7 +1115,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
 
     it('should throw when trying to send an event before the store is ready', async () => {
       // Arrange - create a leader and a follower
-      const leader = UniversalStore.create({
+      UniversalStore.create({
         id: 'env1:test',
         leader: true,
         initialState: { count: 0 },

@@ -2,7 +2,6 @@ import { type CleanupCallback, combineTags, includeConditionalArg } from 'storyb
 import { NoRenderFunctionError } from 'storybook/internal/preview-errors';
 import type {
   Args,
-  ArgsStoryFn,
   Globals,
   ModuleExport,
   NormalizedComponentAnnotations,
@@ -19,7 +18,6 @@ import type {
 } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { global as globalThis } from '@storybook/global';
 
 import { applyHooks } from '../../addons';
 import { mountDestructured } from '../../preview-web/render/mount-utils';
@@ -188,7 +186,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   // will have a limited cost. If this proves misguided, we can refactor it.
 
   const defaultTags = ['dev', 'test'];
-  const extraTags = globalThis.DOCS_OPTIONS?.autodocs === true ? ['autodocs'] : [];
+  const extraTags = global.DOCS_OPTIONS?.autodocs === true ? ['autodocs'] : [];
   /**
    * DISCLAIMER: This feels like a hack but seems like it's the only way to override the autodocs
    * tag for test-fn stories. That's because the Story index does not include negated tags e.g.

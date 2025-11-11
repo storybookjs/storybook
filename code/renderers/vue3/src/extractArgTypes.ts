@@ -1,6 +1,6 @@
-import type { ExtractedProp } from 'storybook/internal/docs-tools';
 import {
   type ArgTypesExtractor,
+  type ExtractedProp,
   convert,
   extractComponentProps,
   hasDocgen,

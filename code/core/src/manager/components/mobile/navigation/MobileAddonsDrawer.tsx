@@ -1,5 +1,5 @@
 import type { FC, ReactNode } from 'react';
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback } from 'react';
 
 import { Transition } from 'react-transition-group';
 import type { TransitionStatus } from 'react-transition-group/Transition';

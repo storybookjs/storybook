@@ -25,7 +25,7 @@ const meta = {
     header: 'If you see this, the header slot was not reactive.', // this can be useless if you have custom render function that overrides the slot
     footer: 'If you see this, the footer slot was not reactive.',
   },
-  play: async ({ canvasElement, id, args }) => {
+  play: async ({ canvasElement, id }) => {
     const channel = (globalThis as any).__STORYBOOK_ADDONS_CHANNEL__;
 
     const canvas = within(canvasElement);
@@ -57,7 +57,7 @@ export const NoDecorators: Story = {};
 
 export const DecoratorFunctionalComponent: Story = {
   decorators: [
-    (storyFn, context) => {
+    (storyFn) => {
       const story = storyFn();
       return () => h('div', [h('h2', ['Decorator not using args']), [h(story)]]);
     },
@@ -76,7 +76,7 @@ export const DecoratorFunctionalComponentArgsFromContext: Story = {
 
 export const DecoratorComponentOptions: Story = {
   decorators: [
-    (storyFn, context) => {
+    () => {
       return {
         template: '<div><h2>Decorator not using args</h2><story/></div>',
       };

@@ -1,5 +1,7 @@
-import { createTestProviderStore } from '../../../shared/test-provider-store';
-import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from '../../../shared/test-provider-store';
+import {
+  UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS,
+  createTestProviderStore,
+} from '../../../shared/test-provider-store';
 import { useUniversalStore } from '../../../shared/universal-store/use-universal-store-manager';
 import { experimental_MockUniversalStore } from '../../index.mock';
 

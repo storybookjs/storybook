@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { StoryFn, moduleMetadata } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
 
 import { CHIP_COLOR } from './angular-src/chip-color.token';
 import { ChipsGroupComponent } from './angular-src/chips-group.component';

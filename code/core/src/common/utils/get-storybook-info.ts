@@ -1,8 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import type { SupportedFrameworks } from 'storybook/internal/types';
-import type { CoreCommon_StorybookInfo, PackageJson } from 'storybook/internal/types';
+import type {
+  CoreCommon_StorybookInfo,
+  PackageJson,
+  SupportedFrameworks,
+} from 'storybook/internal/types';
 
 import { JsPackageManager } from '../js-package-manager/JsPackageManager';
 import { getStorybookConfiguration } from './get-storybook-configuration';

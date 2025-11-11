@@ -13,7 +13,6 @@ import type {
   TaskLogOptions,
   TextPromptOptions,
 } from './prompt-provider-base';
-import { asyncLocalStorage } from './storage';
 
 // Re-export types for convenience
 export type {

@@ -41,7 +41,7 @@ const getOperatingSystem = (): 'Windows' | 'macOS' | 'Linux' | `Other: ${string}
     }
 
     return `Other: ${platform}`;
-  } catch (_err) {
+  } catch {
     return 'Unknown';
   }
 };

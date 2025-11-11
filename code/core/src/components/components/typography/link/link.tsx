@@ -192,7 +192,6 @@ export const Link = ({
   withArrow = false,
   containsIcon = false,
   className = undefined,
-  style = undefined,
   ...rest
 }: LinkProps) => (
   <A

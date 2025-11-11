@@ -233,7 +233,7 @@ jsdocStringifyRules.JsdocTypeUnion = (result, transform) =>
 function extractType(typeString: string): JSDocType | null {
   try {
     return parseJSDocType(typeString, 'typescript');
-  } catch (_err) {
+  } catch {
     return null;
   }
 }

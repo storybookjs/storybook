@@ -20,7 +20,7 @@ function migrateType(oldType: string) {
   return oldType.replace('Component', '');
 }
 
-export default async function transform(info: FileInfo, api: API, options: { parser?: string }) {
+export default async function transform(info: FileInfo, _api: API, _options: { parser?: string }) {
   // TODO what do I need to with the title?
   const csf = loadCsf(info.source, { makeTitle: (title) => title });
   const fileNode = csf._ast;

@@ -1,5 +1,4 @@
-import { cp, mkdir, writeFile } from 'node:fs/promises';
-import { rm } from 'node:fs/promises';
+import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 
 import {
   loadAllPresets,

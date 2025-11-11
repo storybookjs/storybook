@@ -4,13 +4,13 @@ import { styled } from 'storybook/theming';
 
 import { FileList, FileListItem } from './FileList';
 
-const FileListItemContentWrapperSkeleton = styled('div')(({ theme }) => ({
+const FileListItemContentWrapperSkeleton = styled('div')({
   display: 'flex',
   alignItems: 'flex-start',
   gap: '8px',
   alignSelf: 'stretch',
   padding: '8px 16px',
-}));
+});
 
 const FileListItemContentSkeleton = styled('div')({
   display: 'flex',

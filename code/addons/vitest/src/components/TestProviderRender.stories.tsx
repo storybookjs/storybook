@@ -1,7 +1,5 @@
 import React from 'react';
 
-import { Addon_TypesEnum } from 'storybook/internal/types';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext, addons } from 'storybook/manager-api';

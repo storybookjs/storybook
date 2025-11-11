@@ -221,7 +221,6 @@ export class NoMetaError extends Error {
 
 export class MultipleMetaError extends Error {
   constructor(message: string, ast: t.Node, fileName?: string) {
-    const msg = `${message} ${formatLocation(ast, fileName)}`.trim();
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       
@@ -233,7 +232,6 @@ export class MultipleMetaError extends Error {
 
 export class MixedFactoryError extends Error {
   constructor(message: string, ast: t.Node, fileName?: string) {
-    const msg = `${message} ${formatLocation(ast, fileName)}`.trim();
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       
@@ -245,7 +243,6 @@ export class MixedFactoryError extends Error {
 
 export class BadMetaError extends Error {
   constructor(message: string, ast: t.Node, fileName?: string) {
-    const msg = ``.trim();
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       

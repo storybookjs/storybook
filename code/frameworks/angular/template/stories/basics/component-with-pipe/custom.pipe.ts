@@ -6,7 +6,7 @@ import { Pipe } from '@angular/core';
   name: 'customPipe',
 })
 export class CustomPipePipe implements PipeTransform {
-  transform(value: any, args?: any): any {
+  transform(value: any): any {
     return `CustomPipe: ${value}`;
   }
 }

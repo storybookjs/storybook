@@ -43,7 +43,7 @@ const buildStoryArgs = (args: Args, argTypes: ArgTypes) => {
   return storyArgs;
 };
 
-export const render: StoryFn<ServerRenderer> = (args: Args) => {};
+export const render: StoryFn<ServerRenderer> = () => {};
 
 export async function renderToCanvas(
   {

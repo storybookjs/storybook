@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
-import { generate, parser } from 'storybook/internal/babel';
+import { generate, parser, types as t } from 'storybook/internal/babel';
 
 import {
   cleanupTypeImports,

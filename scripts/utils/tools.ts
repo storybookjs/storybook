@@ -18,7 +18,6 @@ import sortPackageJson from 'sort-package-json';
 import { dedent } from 'ts-dedent';
 import type * as typefest from 'type-fest';
 import typescript from 'typescript';
-import ts from 'typescript';
 
 import { CODE_DIRECTORY } from './constants';
 
@@ -46,7 +45,7 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
         compilerOptions: {
           esModuleInterop: true,
           baseUrl: '.',
-          jsx: ts.JsxEmit.React,
+          jsx: typescript.JsxEmit.React,
           declaration: true,
           noEmit: false,
           emitDeclarationOnly: true,
@@ -55,7 +54,7 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
           declarationMap: false,
           skipLibCheck: true,
           preserveSymlinks: false,
-          target: ts.ScriptTarget.ESNext,
+          target: typescript.ScriptTarget.ESNext,
         },
       }),
     ],

@@ -1093,7 +1093,7 @@ describe('PreviewWeb', () => {
         const [blockLoadersGate, openBlockLoadersGate] = createGate();
 
         document.location.search = '?id=component-one--a';
-        componentOneExports.default.loaders[0].mockImplementationOnce(async (input) => {
+        componentOneExports.default.loaders[0].mockImplementationOnce(async () => {
           openLoadersRanGate();
           return blockLoadersGate;
         });
@@ -3223,7 +3223,7 @@ describe('PreviewWeb', () => {
     });
 
     describe('when the current story changes importPath', () => {
-      const newImportFn = vi.fn(async (path) => ({ ...componentOneExports }));
+      const newImportFn = vi.fn(async () => ({ ...componentOneExports }));
 
       const newStoryIndex = {
         v: 5,

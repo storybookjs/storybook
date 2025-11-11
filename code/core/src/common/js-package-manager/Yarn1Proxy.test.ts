@@ -96,7 +96,7 @@ describe('Yarn 1 Proxy', () => {
         .mockReturnValue(Promise.resolve({ stdout: '7.0.0' }) as any);
       const writePackageSpy = vi.spyOn(yarn1Proxy, 'writePackageJson').mockImplementation(vi.fn());
 
-      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((args) => {
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation(() => {
         return {
           dependencies: {},
           devDependencies: {

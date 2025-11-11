@@ -2,7 +2,6 @@ import { once } from 'storybook/internal/client-logger';
 
 import { isEqual as deepEqual, isPlainObject } from 'es-toolkit/predicate';
 import memoize from 'memoizerific';
-import type { Options as QueryOptions } from 'picoquery';
 import { parse, stringify } from 'picoquery';
 import { dedent } from 'ts-dedent';
 

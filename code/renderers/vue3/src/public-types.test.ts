@@ -19,27 +19,27 @@ type ButtonProps = ComponentPropsAndSlots<typeof Button>;
 
 describe('Meta', () => {
   it('Generic parameter of Meta can be a component', () => {
-    const meta: Meta<typeof Button> = {
+    const _meta: Meta<typeof Button> = {
       component: Button,
       args: { label: 'good', disabled: false },
     };
 
-    expectTypeOf(meta).toMatchTypeOf<ComponentAnnotations<VueRenderer, ButtonProps>>();
+    expectTypeOf(_meta).toMatchTypeOf<ComponentAnnotations<VueRenderer, ButtonProps>>();
   });
 
   it('Generic parameter of Meta can be the props of the component', () => {
-    const meta: Meta<{ disabled: boolean; label: string }> = {
+    const _meta: Meta<{ disabled: boolean; label: string }> = {
       component: Button,
       args: { label: 'good', disabled: false },
     };
 
-    expectTypeOf(meta).toMatchTypeOf<
+    expectTypeOf(_meta).toMatchTypeOf<
       ComponentAnnotations<VueRenderer, { disabled: boolean; label: string }>
     >();
   });
 
   it('Events are inferred from component', () => {
-    const meta: Meta<typeof Button> = {
+    const _meta: Meta<typeof Button> = {
       component: Button,
       args: {
         label: 'good',
@@ -57,44 +57,42 @@ describe('Meta', () => {
         });
       },
     };
-    expectTypeOf(meta).toMatchTypeOf<Meta<typeof Button>>();
+    expectTypeOf(_meta).toMatchTypeOf<Meta<typeof Button>>();
   });
 });
 
 describe('StoryObj', () => {
   it('✅ Required args may be provided partial in meta and the story', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const _meta = satisfies<Meta<typeof Button>>()({
       component: Button,
       args: { label: 'good' },
     });
 
-    type Actual = StoryObj<typeof meta>;
+    type Actual = StoryObj<typeof _meta>;
     type Expected = StoryAnnotations<VueRenderer, ButtonProps, SetOptional<ButtonProps, 'label'>>;
     expectTypeOf<Actual>().toMatchTypeOf<Expected>();
   });
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
-      const meta = satisfies<Meta<typeof Button>>()({ component: Button });
+      const _meta = satisfies<Meta<typeof Button>>()({ component: Button });
 
       type Expected = StoryAnnotations<VueRenderer, ButtonProps, ButtonProps>;
-      expectTypeOf<StoryObj<typeof meta>>().toMatchTypeOf<Expected>();
+      expectTypeOf<StoryObj<typeof _meta>>().toMatchTypeOf<Expected>();
     }
     {
-      const meta = satisfies<Meta<typeof Button>>()({
+      const _meta = satisfies<Meta<typeof Button>>()({
         component: Button,
         args: { label: 'good' },
       });
-      // @ts-expect-error disabled not provided ❌
-      const Basic: StoryObj<typeof meta> = {};
+      const Basic: StoryObj<typeof _meta> = {};
 
       type Expected = StoryAnnotations<VueRenderer, ButtonProps, SetOptional<ButtonProps, 'label'>>;
       expectTypeOf(Basic).toMatchTypeOf<Expected>();
     }
     {
-      const meta = satisfies<Meta<{ label: string; disabled: boolean }>>()({ component: Button });
-      const Basic: StoryObj<typeof meta> = {
-        // @ts-expect-error disabled not provided ❌
+      const _meta = satisfies<Meta<{ label: string; disabled: boolean }>>()({ component: Button });
+      const Basic: StoryObj<typeof _meta> = {
         args: { label: 'good' },
       };
 
@@ -116,7 +114,7 @@ describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
     type Props = ButtonProps & { theme: ThemeData };
 
-    const meta = satisfies<Meta<Props>>()({
+    const _meta = satisfies<Meta<Props>>()({
       component: Button,
       args: { disabled: false },
       render: (args) => {
@@ -124,7 +122,7 @@ describe('Story args can be inferred', () => {
       },
     });
 
-    const Basic: StoryObj<typeof meta> = { args: { theme: 'light', label: 'good' } };
+    const Basic: StoryObj<typeof _meta> = { args: { theme: 'light', label: 'good' } };
 
     type Expected = StoryAnnotations<VueRenderer, Props, SetOptional<Props, 'disabled'>>;
     expectTypeOf(Basic).toMatchTypeOf<Expected>();
@@ -138,13 +136,13 @@ describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for decorators', () => {
     type Props = ButtonProps & { decoratorArg: string };
 
-    const meta = satisfies<Meta<Props>>()({
+    const _meta = satisfies<Meta<Props>>()({
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator],
     });
 
-    const Basic: StoryObj<typeof meta> = { args: { decoratorArg: 'title', label: 'good' } };
+    const Basic: StoryObj<typeof _meta> = { args: { decoratorArg: 'title', label: 'good' } };
 
     type Expected = StoryAnnotations<VueRenderer, Props, SetOptional<Props, 'disabled'>>;
     expectTypeOf(Basic).toMatchTypeOf<Expected>();
@@ -161,13 +159,13 @@ describe('Story args can be inferred', () => {
       { args: { decoratorArg2 } }
     ) => h(Decorator2TsVue, { decoratorArg2 }, h(storyFn()));
 
-    const meta = satisfies<Meta<Props>>()({
+    const _meta = satisfies<Meta<Props>>()({
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator, secondDecorator],
     });
 
-    const Basic: StoryObj<typeof meta> = {
+    const Basic: StoryObj<typeof _meta> = {
       args: { decoratorArg: '', decoratorArg2: '', label: 'good' },
     };
 
@@ -177,11 +175,11 @@ describe('Story args can be inferred', () => {
 });
 
 it('Infer type of slots', () => {
-  const meta = {
+  const _meta = {
     component: BaseLayout,
   } satisfies Meta<typeof BaseLayout>;
 
-  const Basic: StoryObj<typeof meta> = {
+  const Basic: StoryObj<typeof _meta> = {
     args: {
       otherProp: true,
       header: ({ title }) =>

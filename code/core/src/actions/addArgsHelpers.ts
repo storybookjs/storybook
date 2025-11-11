@@ -31,7 +31,7 @@ export const inferActionsFromArgTypesRegex: ArgsEnhancer<Renderer> = (context) =
     ([name]) => !!argTypesRegex.test(name)
   );
 
-  return argTypesMatchingRegex.reduce((acc, [name, argType]) => {
+  return argTypesMatchingRegex.reduce((acc, [name]) => {
     if (isInInitialArgs(name, initialArgs)) {
       acc[name] = action(name, { implicit: true, id });
     }
@@ -50,7 +50,9 @@ export const addActionsFromArgTypes: ArgsEnhancer<Renderer> = (context) => {
     return {};
   }
 
-  const argTypesWithAction = Object.entries(argTypes).filter(([name, argType]) => !!argType.action);
+  const argTypesWithAction = Object.entries(argTypes).filter(
+    ([_name, argType]) => !!argType.action
+  );
 
   return argTypesWithAction.reduce((acc, [name, argType]) => {
     if (isInInitialArgs(name, initialArgs)) {

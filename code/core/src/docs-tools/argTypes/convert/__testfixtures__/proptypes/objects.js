@@ -2,7 +2,7 @@ import React from 'react';
 
 import PropTypes from 'prop-types';
 
-export const Component = (props) => <>JSON.stringify(props)</>;
+export const Component = (props) => <>{JSON.stringify(props)}</>;
 Component.propTypes = {
   optionalObject: PropTypes.object,
   optionalObjectOf: PropTypes.objectOf(PropTypes.number),

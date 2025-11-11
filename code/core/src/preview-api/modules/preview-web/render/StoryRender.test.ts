@@ -12,7 +12,7 @@ import type {
 
 import { ReporterAPI, type StoryStore } from '../../store';
 import { PREPARE_ABORTED } from './Render';
-import { StoryRender, serializeError } from './StoryRender';
+import { StoryRender } from './StoryRender';
 
 const entry = {
   type: 'story',
@@ -213,6 +213,7 @@ describe('StoryRender', () => {
   it('errors if play function destructures mount but does not call it', async () => {
     const story = buildStory({
       usesMount: true,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       playFunction: async ({ mount }) => {
         // forget to call mount
       },

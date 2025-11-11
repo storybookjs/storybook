@@ -5,8 +5,16 @@ import { BottomBarIcon, CloseIcon } from '@storybook/icons';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
-import { expect, spyOn } from 'storybook/test';
-import { findByText, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
+import {
+  expect,
+  findByText,
+  fireEvent,
+  screen,
+  spyOn,
+  userEvent,
+  waitFor,
+  within,
+} from 'storybook/test';
 
 import { IconButton } from '../IconButton/IconButton';
 import { TabWrapper, Tabs, TabsState } from './tabs';

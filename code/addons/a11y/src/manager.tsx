@@ -47,7 +47,7 @@ const Title = () => {
   );
 };
 
-addons.register(ADDON_ID, (api) => {
+addons.register(ADDON_ID, (_api) => {
   addons.add(PANEL_ID, {
     title: '',
     type: types.TOOL,

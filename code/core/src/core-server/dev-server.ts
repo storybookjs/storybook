@@ -1,8 +1,7 @@
 import { logConfig } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
-import type { ComponentsManifest, Options } from 'storybook/internal/types';
-import { type ComponentManifestGenerator } from 'storybook/internal/types';
+import { type ComponentsManifest, type Options } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';

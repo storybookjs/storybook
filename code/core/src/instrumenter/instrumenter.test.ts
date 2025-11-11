@@ -191,7 +191,7 @@ describe('Instrumenter', () => {
   });
 
   it('emits a "call" event every time a patched function is invoked', async () => {
-    const { fn } = instrument({ fn: (...args: any) => {} });
+    const { fn } = instrument({ fn: (..._args: any) => {} });
 
     fn('foo', 'bar');
     fn('baz');
@@ -210,7 +210,7 @@ describe('Instrumenter', () => {
   });
 
   it('handles circular references', () => {
-    const { fn } = instrument({ fn: (...args: any) => {} });
+    const { fn } = instrument({ fn: (..._args: any) => {} });
     const obj = { key: 'value', obj: {}, array: [] as any[] };
     obj.obj = obj;
     obj.array = [obj];
@@ -247,7 +247,7 @@ describe('Instrumenter', () => {
   it('maps event args which originate from an earlier call to a call ref', () => {
     const { fn1, fn2 } = instrument({
       fn1: (arg: any) => arg,
-      fn2: (arg: any) => {},
+      fn2: (_arg: any) => {},
     });
     fn2(fn1({}));
     expect(mocks.callSpy).toHaveBeenLastCalledWith(
@@ -261,7 +261,7 @@ describe('Instrumenter', () => {
   it('does not map primitive event args which originate from an earlier call', () => {
     const { fn1, fn2 } = instrument({
       fn1: (...args: any) => args[0],
-      fn2: (...args: any) => {},
+      fn2: (..._args: any) => {},
     });
     fn2(
       fn1(undefined),
@@ -297,7 +297,7 @@ describe('Instrumenter', () => {
   });
 
   it('maps HTML Elements in event args to an element ref', () => {
-    const { fn } = instrument({ fn: (...args: any) => {} });
+    const { fn } = instrument({ fn: (..._args: any) => {} });
     fn(new HTMLElement({ prefix: '', localName: 'div', id: 'root', classList: [] }));
     expect(mocks.callSpy).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -449,7 +449,7 @@ describe('Instrumenter', () => {
   });
 
   it('emits a "sync" event with debounce after a patched function is invoked', () => {
-    const { fn } = instrument({ fn: (...args: any) => {} }, { intercept: true });
+    const { fn } = instrument({ fn: (..._args: any) => {} }, { intercept: true });
     vi.useFakeTimers();
     mocks.syncSpy.mockClear();
     fn('foo');
@@ -459,7 +459,7 @@ describe('Instrumenter', () => {
   });
 
   it('sends a folded log with the "sync" event', () => {
-    const { fn } = instrument({ fn: (...args: any) => ({ fn2: () => {} }) }, { intercept: true });
+    const { fn } = instrument({ fn: (..._args: any) => ({ fn2: () => {} }) }, { intercept: true });
     vi.useFakeTimers();
     mocks.syncSpy.mockClear();
     fn('foo', fn('bar')).fn2();
@@ -476,7 +476,7 @@ describe('Instrumenter', () => {
   });
 
   it('sends control states with the "sync" event', () => {
-    const { fn } = instrument({ fn: (...args: any) => {} }, { intercept: true });
+    const { fn } = instrument({ fn: (..._args: any) => {} }, { intercept: true });
     vi.useFakeTimers();
     mocks.syncSpy.mockClear();
     fn('foo');
@@ -743,7 +743,7 @@ describe('Instrumenter', () => {
     });
 
     it('disables control states', async () => {
-      const { fn } = instrument({ fn: (...args: any) => {} }, { intercept: true });
+      const { fn } = instrument({ fn: (..._args: any) => {} }, { intercept: true });
       vi.useFakeTimers();
       mocks.syncSpy.mockClear();
       fn('foo');

@@ -44,7 +44,7 @@ const getDotStorybookReferences = async (searchDir: string) => {
           if (content.includes('.storybook')) {
             referencedFiles.push(file);
           }
-        } catch (readError) {
+        } catch {
           // Skip files that can't be read (e.g., binary files)
         }
       })

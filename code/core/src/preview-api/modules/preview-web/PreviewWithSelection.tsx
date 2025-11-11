@@ -22,9 +22,17 @@ import {
   MdxFileWithNoCsfReferencesError,
   NoStoryMatchError,
 } from 'storybook/internal/preview-errors';
-import type { DocsIndexEntry, StoryIndex } from 'storybook/internal/types';
-import type { Args, Globals, Renderer, StoryId, ViewMode } from 'storybook/internal/types';
-import type { ModuleImportFn, ProjectAnnotations } from 'storybook/internal/types';
+import type {
+  Args,
+  DocsIndexEntry,
+  Globals,
+  ModuleImportFn,
+  ProjectAnnotations,
+  Renderer,
+  StoryId,
+  StoryIndex,
+  ViewMode,
+} from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 

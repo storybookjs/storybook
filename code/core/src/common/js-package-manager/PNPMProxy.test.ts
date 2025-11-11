@@ -77,7 +77,7 @@ describe('PNPM Proxy', () => {
         .mockResolvedValue({ stdout: '7.0.0' } as any);
       const writePackageSpy = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
 
-      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((args) => {
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation(() => {
         return {
           dependencies: {},
           devDependencies: {

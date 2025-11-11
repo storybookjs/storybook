@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as sbcc from 'storybook/internal/common';
-import type { JsPackageManager } from 'storybook/internal/common';
 
 import { getStorybookVersion } from './upgrade';
 import { generateUpgradeSpecs } from './util';
@@ -52,12 +51,12 @@ describe.each([
 });
 
 describe('toUpgradedDependencies', () => {
-  let mockPackageManager: JsPackageManager;
+  let mockPackageManager: sbcc.JsPackageManager;
 
   beforeEach(() => {
     mockPackageManager = {
       latestVersion: vi.fn(),
-    } as unknown as JsPackageManager;
+    } as unknown as sbcc.JsPackageManager;
 
     vi.mocked(mockPackageManager.latestVersion).mockImplementation(async (packageName: string) => {
       if (packageName === '@storybook/addon-designs@next') {

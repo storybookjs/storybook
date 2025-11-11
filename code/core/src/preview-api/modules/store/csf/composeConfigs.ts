@@ -1,5 +1,8 @@
-import type { ModuleExports, NormalizedProjectAnnotations } from 'storybook/internal/types';
-import type { Renderer } from 'storybook/internal/types';
+import type {
+  ModuleExports,
+  NormalizedProjectAnnotations,
+  Renderer,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 

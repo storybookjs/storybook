@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 //* @vitest-environment happy-dom */
 import { describe, expect, test, vi } from 'vitest';
 

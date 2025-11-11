@@ -1,5 +1,4 @@
-import { cp, mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
-import { readFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
 import * as ghActions from '@actions/core';

@@ -18,7 +18,7 @@ export interface ISomeInterface {
   selector: 'doc-button',
   template: '<button>{{ label }}</button>',
 })
-export class InputComponent<T> {
+export class InputComponent<_T> {
   /** Appearance style of the button. */
   @Input()
   public appearance: 'primary' | 'secondary' = 'secondary';

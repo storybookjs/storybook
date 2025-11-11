@@ -1,8 +1,14 @@
 import type { ComponentType } from 'react';
 
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
-import type { AddonTypes, InferTypes, Meta, Preview, Story } from 'storybook/internal/csf';
-import type { PreviewAddon } from 'storybook/internal/csf';
+import type {
+  AddonTypes,
+  InferTypes,
+  Meta,
+  Preview,
+  PreviewAddon,
+  Story,
+} from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,

@@ -12,7 +12,6 @@ const configPath = '.storybook';
  * - Yes -> overwrite (delete)
  * - No -> exit
  */
-const name = '.storybook directory';
 export const configDir: Check = {
   condition: async (context, state) => {
     return fs

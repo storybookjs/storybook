@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { expect, test } from 'vitest';
 
 import { h } from 'vue';
@@ -239,9 +240,12 @@ test.each([
 
 test.each<{ fn: (...args: any[]) => unknown; expectedNames: string[] }>([
   { fn: () => ({}), expectedNames: [] },
+
   { fn: (a) => ({}), expectedNames: ['a'] },
+
   { fn: (a, b) => ({}), expectedNames: ['a', 'b'] },
   { fn: (a, b, { c }) => ({}), expectedNames: ['a', 'b', '{', 'c', '}'] },
+
   { fn: ({ a, b }) => ({}), expectedNames: ['{', 'a', 'b', '}'] },
   {
     fn: {

@@ -52,12 +52,12 @@ describe('Meta', () => {
 
 describe('StoryObj', () => {
   it('✅ Required args may be provided partial in meta and the story', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const _meta = satisfies<Meta<typeof Button>>()({
       component: Button,
       args: { label: 'good' },
     });
 
-    type Actual = StoryObj<typeof meta>;
+    type Actual = StoryObj<typeof _meta>;
     type Expected = SvelteStory<
       typeof Button,
       { disabled: boolean; label: string },
@@ -68,22 +68,22 @@ describe('StoryObj', () => {
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
-      const meta = satisfies<Meta<typeof Button>>()({ component: Button });
+      const _meta = satisfies<Meta<typeof Button>>()({ component: Button });
 
       type Expected = SvelteStory<
         typeof Button,
         { disabled: boolean; label: string },
         { disabled: boolean; label: string }
       >;
-      expectTypeOf<StoryObj<typeof meta>>().toExtend<Expected>();
+      expectTypeOf<StoryObj<typeof _meta>>().toExtend<Expected>();
     }
     {
-      const meta = satisfies<Meta<typeof Button>>()({
+      const _meta = satisfies<Meta<typeof Button>>()({
         component: Button,
         args: { label: 'good' },
       });
       // @ts-expect-error disabled not provided ❌
-      const Basic: StoryObj<typeof meta> = {};
+      const Basic: StoryObj<typeof _meta> = {};
 
       type Expected = SvelteStory<
         typeof Button,
@@ -93,8 +93,8 @@ describe('StoryObj', () => {
       expectTypeOf(Basic).toExtend<Expected>();
     }
     {
-      const meta = satisfies<Meta<{ label: string; disabled: boolean }>>()({ component: Button });
-      const Basic: StoryObj<typeof meta> = {
+      const _meta = satisfies<Meta<{ label: string; disabled: boolean }>>()({ component: Button });
+      const Basic: StoryObj<typeof _meta> = {
         // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
       };
@@ -123,7 +123,7 @@ type ThemeData = 'light' | 'dark';
 
 describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
-    const meta = satisfies<Meta<ComponentProps<typeof Button> & { theme: ThemeData }>>()({
+    const _meta = satisfies<Meta<ComponentProps<typeof Button> & { theme: ThemeData }>>()({
       component: Button,
       args: { disabled: false },
       render: (args, { component }) => {
@@ -134,7 +134,7 @@ describe('Story args can be inferred', () => {
       },
     });
 
-    const Basic: StoryObj<typeof meta> = { args: { theme: 'light', label: 'good' } };
+    const Basic: StoryObj<typeof _meta> = { args: { theme: 'light', label: 'good' } };
 
     type Expected = SvelteStory<
       typeof Button,
@@ -155,13 +155,13 @@ describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for decorators', () => {
     type Props = ComponentProps<typeof Button> & { decoratorArg: string };
 
-    const meta = satisfies<Meta<Props>>()({
+    const _meta = satisfies<Meta<Props>>()({
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator],
     });
 
-    const Basic: StoryObj<typeof meta> = { args: { decoratorArg: 'title', label: 'good' } };
+    const Basic: StoryObj<typeof _meta> = { args: { decoratorArg: 'title', label: 'good' } };
 
     type Expected = SvelteStory<
       typeof Button,
@@ -182,13 +182,13 @@ describe('Story args can be inferred', () => {
       props: { decoratorArg2 },
     });
 
-    const meta = satisfies<Meta<Props>>()({
+    const _meta = satisfies<Meta<Props>>()({
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator, secondDecorator],
     });
 
-    const Basic: StoryObj<typeof meta> = {
+    const Basic: StoryObj<typeof _meta> = {
       args: { decoratorArg: '', decoratorArg2: '', label: 'good' },
     };
 

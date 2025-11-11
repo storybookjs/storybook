@@ -76,7 +76,7 @@ export async function importModule(
         delete require.cache[require.resolve(path)];
       }
       mod = require(path);
-    } catch (requireError) {
+    } catch {
       /*
         If everything fails, throw the original import error, as the require error won't be helpful
         in Node 20 requireError will always be "Error [ERR_REQUIRE_CYCLE_MODULE]: Cannot require() ES Module"

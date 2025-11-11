@@ -135,7 +135,7 @@ describe('NPM Proxy', () => {
         vi.spyOn(npmProxy, 'packageJsonPaths', 'get').mockImplementation(() => ['package.json']);
 
         const writePackageSpy = vi.spyOn(npmProxy, 'writePackageJson').mockImplementation(vi.fn());
-        vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((args) => {
+        vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation(() => {
           return {
             dependencies: {},
             devDependencies: {

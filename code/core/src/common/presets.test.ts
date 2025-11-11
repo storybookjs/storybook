@@ -1,5 +1,4 @@
-import path, { join, normalize, relative } from 'node:path';
-import { fileURLToPath, pathToFileURL, resolve } from 'node:url';
+import { normalize } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -304,8 +303,8 @@ describe('presets', () => {
   });
 
   it('applies presets in chain', async () => {
-    const mockPresetFooExtendWebpack = vi.fn((...args: any[]) => ({}));
-    const mockPresetBarExtendWebpack = vi.fn((...args: any[]) => ({}));
+    const mockPresetFooExtendWebpack = vi.fn(() => ({}));
+    const mockPresetBarExtendWebpack = vi.fn(() => ({}));
 
     mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
       if (path === 'preset-foo') {
@@ -361,7 +360,7 @@ describe('presets', () => {
 
   it('allows for presets to export presets array', async () => {
     const input = {};
-    const mockPresetBar = vi.fn((...args: any[]) => input);
+    const mockPresetBar = vi.fn(() => input);
 
     mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
       if (path === 'preset-foo') {
@@ -390,8 +389,8 @@ describe('presets', () => {
     const input = {};
     const storybookOptions = { a: 1 };
     const presetOptions = { b: 2 };
-    const mockPresetBar = vi.fn((...args: any[]) => input);
-    const mockPresetFoo = vi.fn((...args: any[]) => ['preset-bar']);
+    const mockPresetBar = vi.fn(() => input);
+    const mockPresetFoo = vi.fn(() => ['preset-bar']);
 
     mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
       if (path === 'preset-foo') {

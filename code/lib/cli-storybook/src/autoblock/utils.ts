@@ -1,7 +1,6 @@
 import type { JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 
-import picocolors from 'picocolors';
 import { lt } from 'semver';
 
 import { shortenPath } from '../util';

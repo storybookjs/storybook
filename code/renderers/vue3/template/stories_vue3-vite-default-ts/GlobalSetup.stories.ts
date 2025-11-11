@@ -29,7 +29,7 @@ export const Primary: Story = {
     primary: true,
     label: 'someColor injected from .storybook/preview.ts',
   },
-  play: async ({ canvasElement, id }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     const button = await canvas.getByRole('button');

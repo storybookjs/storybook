@@ -115,7 +115,7 @@ export function watchStorySpecifiers(
     }
   }
 
-  wp.on('change', async (filePath: Path, mtime: Date, explanation: string) => {
+  wp.on('change', async (filePath: Path, mtime: Date) => {
     // When a file is renamed (including being moved out of the watched dir)
     // we see first an event with explanation=rename and no mtime for the old name.
     // then an event with explanation=rename with an mtime for the new name.
@@ -125,7 +125,7 @@ export function watchStorySpecifiers(
     const removed = !mtime;
     await onChangeOrRemove(filePath, removed);
   });
-  wp.on('remove', async (filePath: Path, explanation: string) => {
+  wp.on('remove', async (filePath: Path) => {
     await onChangeOrRemove(filePath, true);
   });
 

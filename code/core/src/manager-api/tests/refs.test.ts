@@ -57,7 +57,7 @@ const store = {
       },
     },
   }),
-  setState: vi.fn((a: any) => {}),
+  setState: vi.fn((_a: any) => {}),
 };
 
 function createMockStore(initialState: Partial<State> = {}) {

@@ -48,7 +48,7 @@ export interface SWCLoaderOptions {
 }
 
 const mockCurrentTraceSpan = {
-  traceChild: (name: string) => mockCurrentTraceSpan,
+  traceChild: () => mockCurrentTraceSpan,
   traceAsyncFn: async (fn: any) => fn(),
 };
 
@@ -161,7 +161,7 @@ export function pitch(this: any) {
       isAbsolute(this.resourcePath) &&
       !(await isWasm())
     ) {
-      const loaderSpan = mockCurrentTraceSpan.traceChild('next-swc-loader');
+      const loaderSpan = mockCurrentTraceSpan.traceChild();
       this.addDependency(this.resourcePath);
       return loaderSpan.traceAsyncFn(() => loaderTransform.call(this, loaderSpan));
     }
@@ -177,7 +177,7 @@ export function pitch(this: any) {
 }
 
 export default function swcLoader(this: any, inputSource: string, inputSourceMap: any) {
-  const loaderSpan = mockCurrentTraceSpan.traceChild('next-swc-loader');
+  const loaderSpan = mockCurrentTraceSpan.traceChild();
   const callback = this.async();
   loaderSpan
     .traceAsyncFn(() => loaderTransform.call(this, loaderSpan, inputSource, inputSourceMap))

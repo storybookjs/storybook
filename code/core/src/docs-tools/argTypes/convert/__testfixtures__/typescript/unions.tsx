@@ -18,4 +18,4 @@ interface Props {
   inlinedNumericLiteralUnion: 0 | 1;
   enumUnion: EnumUnion;
 }
-export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;

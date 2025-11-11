@@ -10,7 +10,7 @@ const meta: Meta = {
   parameters: {
     layout: 'fullscreen',
   },
-  render: (args) => {
+  render: () => {
     return <div className="storybook-root">This is the story content</div>;
   },
   args: {

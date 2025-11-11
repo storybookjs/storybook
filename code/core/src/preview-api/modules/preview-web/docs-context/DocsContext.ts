@@ -46,7 +46,7 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     this.nameToStoryId = new Map();
     this.attachedCSFFiles = new Set();
 
-    csfFiles.forEach((csfFile, index) => {
+    csfFiles.forEach((csfFile) => {
       this.referenceCSFFile(csfFile);
     });
   }

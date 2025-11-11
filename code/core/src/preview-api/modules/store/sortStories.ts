@@ -4,10 +4,12 @@ import type {
   Addon_StorySortParameterV7,
   IndexEntry,
   IndexEntryLegacy,
+  Parameters,
+  Path,
+  PreparedStory,
+  Renderer,
   StoryIndexEntry,
 } from 'storybook/internal/types';
-import type { Parameters, Path, Renderer } from 'storybook/internal/types';
-import type { PreparedStory } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 

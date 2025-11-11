@@ -10,7 +10,7 @@ import { types } from 'storybook/manager-api';
 
 const initialZoom = 1 as const;
 
-const Context = createContext({ value: initialZoom, set: (v: number) => {} });
+const Context = createContext({ value: initialZoom, set: (_v: number) => {} });
 
 class ZoomProvider extends Component<
   PropsWithChildren<{ shouldScale: boolean }>,

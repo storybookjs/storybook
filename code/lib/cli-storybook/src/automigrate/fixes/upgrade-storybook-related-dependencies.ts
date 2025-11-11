@@ -1,8 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import type { PackageJson } from 'storybook/internal/common';
-import type { JsPackageManager } from 'storybook/internal/common';
+import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 import { isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { onlyWindows, skipWindows } from '../../../../vitest.helpers';
 import { processPreviewAnnotation } from './process-preview-annotation';
 
 describe('processPreviewAnnotation()', () => {

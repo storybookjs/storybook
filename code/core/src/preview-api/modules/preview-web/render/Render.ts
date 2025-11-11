@@ -1,5 +1,4 @@
-import type { Renderer, StoryId } from 'storybook/internal/types';
-import type { StoryRenderOptions } from 'storybook/internal/types';
+import type { Renderer, StoryId, StoryRenderOptions } from 'storybook/internal/types';
 
 export type RenderType = 'story' | 'docs';
 

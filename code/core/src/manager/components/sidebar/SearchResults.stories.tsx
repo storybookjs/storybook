@@ -6,7 +6,7 @@ import { searchItem } from '../../utils/tree';
 import { IconSymbols } from './IconSymbols';
 import { SearchResults } from './SearchResults';
 import { mockDataset } from './mockdata';
-import type { CombinedDataset, Refs, SearchItem } from './types';
+import type { CombinedDataset, SearchItem } from './types';
 
 export default {
   component: SearchResults,

@@ -14,7 +14,7 @@ const MockedWebsocket = vi.hoisted(() => {
 
     onclose: (event: any) => void;
 
-    constructor(url: string) {
+    constructor(_url: string) {
       this.onopen = vi.fn();
       this.onmessage = vi.fn();
       this.onerror = vi.fn();

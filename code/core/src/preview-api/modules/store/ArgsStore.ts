@@ -1,5 +1,4 @@
-import type { PreparedStory } from 'storybook/internal/types';
-import type { Args, StoryId } from 'storybook/internal/types';
+import type { Args, PreparedStory, StoryId } from 'storybook/internal/types';
 
 import { DEEPLY_EQUAL, combineArgs, deepDiff, mapArgsToTypes, validateOptions } from './args';
 

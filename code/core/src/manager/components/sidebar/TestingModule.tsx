@@ -1,8 +1,7 @@
 import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import { once } from 'storybook/internal/client-logger';
-import { Button, IconButton, TooltipNote } from 'storybook/internal/components';
-import { WithTooltip } from 'storybook/internal/components';
+import { Button, IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 import type {
   Addon_Collection,
   Addon_TestProviderType,

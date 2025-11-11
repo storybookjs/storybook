@@ -1,7 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
-import { type FunctionInterpolation, type Theme, styled } from 'storybook/theming';
+import { type FunctionInterpolation, styled } from 'storybook/theming';
 
 import { UseSymbol } from './IconSymbols';
 import { CollapseIcon } from './components/CollapseIcon';

@@ -5,12 +5,13 @@ import {
   builderPackages,
   extractProperFrameworkName,
   frameworkPackages,
+  frameworkToRenderer,
+  getCoercedStorybookVersion,
   getStorybookInfo,
   loadMainConfig,
   rendererPackages,
 } from 'storybook/internal/common';
 import type { PackageManagerName } from 'storybook/internal/common';
-import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';

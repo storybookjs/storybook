@@ -110,7 +110,7 @@ const NotificationTextWrapper = styled.div(({ theme }) => ({
   color: theme.base === 'dark' ? theme.color.mediumdark : theme.color.mediumlight,
 }));
 
-const Headline = styled.div<{ hasIcon: boolean }>(({ theme, hasIcon }) => ({
+const Headline = styled.div(({ theme }) => ({
   height: '100%',
   alignItems: 'center',
   whiteSpace: 'balance',
@@ -136,9 +136,7 @@ const ItemContent: FC<Pick<State['notifications'][0], 'icon' | 'content'>> = ({
   <>
     {!icon || <NotificationIconWrapper>{icon}</NotificationIconWrapper>}
     <NotificationTextWrapper>
-      <Headline title={headline} hasIcon={!!icon}>
-        {headline}
-      </Headline>
+      <Headline title={headline}>{headline}</Headline>
       {subHeadline && <SubHeadline>{subHeadline}</SubHeadline>}
     </NotificationTextWrapper>
   </>

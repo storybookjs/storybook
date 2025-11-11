@@ -7,7 +7,6 @@ import { useUniversalStore } from '../universal-store/use-universal-store-manage
 import {
   type Status,
   type StatusStoreEvent,
-  StatusValue,
   type StatusesByStoryIdAndTypeId,
   createStatusStore,
 } from './index';
@@ -390,7 +389,7 @@ describe('statusStore', () => {
 
       it('should update existing statuses and add new ones in a single operation', () => {
         // Arrange - create a status store
-        const { getStatusStoreByTypeId, fullStatusStore } = createStatusStore({
+        const { getStatusStoreByTypeId } = createStatusStore({
           universalStatusStore: new MockUniversalStore({
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState,
@@ -428,7 +427,7 @@ describe('statusStore', () => {
 
       it('should error when setting statuses with wrong typeId', () => {
         // Arrange - create a status store
-        const { getStatusStoreByTypeId, fullStatusStore } = createStatusStore({
+        const { getStatusStoreByTypeId } = createStatusStore({
           universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
           environment: 'manager',
         });

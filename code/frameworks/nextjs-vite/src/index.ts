@@ -1,9 +1,8 @@
 import type { AddonTypes, InferTypes, PreviewAddon } from 'storybook/internal/csf';
 import type { ProjectAnnotations } from 'storybook/internal/types';
 
-import type { ReactPreview } from '@storybook/react';
+import type { ReactPreview, ReactTypes } from '@storybook/react';
 import { __definePreview } from '@storybook/react';
-import type { ReactTypes } from '@storybook/react';
 
 import type vitePluginStorybookNextJs from 'vite-plugin-storybook-nextjs';
 

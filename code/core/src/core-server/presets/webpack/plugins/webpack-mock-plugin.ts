@@ -1,4 +1,3 @@
-import { createRequire } from 'node:module';
 import { dirname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,8 +9,6 @@ import {
   resolveExternalModule,
   resolveWithExtensions,
 } from '../../../mocking-utils/resolve';
-
-const require = createRequire(import.meta.url);
 
 // --- Type Definitions ---
 

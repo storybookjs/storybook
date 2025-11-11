@@ -7,7 +7,6 @@ import { CompatibilityType } from './CompatibilityType';
  * - Yes -> continue
  * - No -> exit
  */
-const name = 'Framework package';
 export const frameworkPackage: Check = {
   condition: async (context, state) => {
     if (state.framework !== 'nextjs') {

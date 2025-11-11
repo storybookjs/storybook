@@ -294,7 +294,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
       return refs;
     },
 
-    setRef: async (id, { storyIndex, setStoriesData, ...rest }, ready = false) => {
+    setRef: async (id, { storyIndex, setStoriesData, ...rest }, _ready = false) => {
       if (singleStory) {
         return;
       }

@@ -1,4 +1,4 @@
-import type { FC, MouseEvent, PropsWithChildren, SyntheticEvent } from 'react';
+import type { FC, MouseEvent, PropsWithChildren } from 'react';
 import React, { useContext } from 'react';
 
 import type { SupportedLanguage } from 'storybook/internal/components';
@@ -77,7 +77,7 @@ const AnchorInPage: FC<PropsWithChildren<AnchorInPageProps>> = ({ hash, children
     <A
       href={hash}
       target="_self"
-      onClick={(event: SyntheticEvent) => {
+      onClick={() => {
         const id = hash.substring(1);
         const element = document.getElementById(id);
         if (element) {
@@ -193,7 +193,7 @@ const HeaderWithOcticonAnchor: FC<PropsWithChildren<HeaderWithOcticonAnchorProps
         href={hash}
         tabIndex={-1}
         target="_self"
-        onClick={(event: SyntheticEvent) => {
+        onClick={() => {
           const element = document.getElementById(id);
           if (element) {
             navigate(context, hash);

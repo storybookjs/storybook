@@ -13,4 +13,4 @@ interface Props {
   intersectionType: InterfaceIntersection;
   intersectionWithInlineType: ItemInterface & { inlineValue: string };
 }
-export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;

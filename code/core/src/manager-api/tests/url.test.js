@@ -19,8 +19,6 @@ const storyState = (storyId) => ({
 });
 
 describe('initial state', () => {
-  const viewMode = 'story';
-
   describe('config query parameters', () => {
     it('handles full parameter', () => {
       const navigate = vi.fn();
@@ -213,7 +211,7 @@ describe('initModule', () => {
     store.setState({ ...storyState('test--story'), customQueryParams: { full: 1 }, location });
     const navigate = vi.fn();
     const channel = new EventEmitter();
-    const { api } = initURL({
+    initURL({
       store,
       provider: { channel },
       state: { location },

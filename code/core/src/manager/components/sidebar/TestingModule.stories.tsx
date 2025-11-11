@@ -1,11 +1,11 @@
 import React from 'react';
 
 import type { Listener } from 'storybook/internal/channels';
-import type { TestProviderStateByProviderId } from 'storybook/internal/types';
 import {
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
+  type TestProviderStateByProviderId,
 } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';

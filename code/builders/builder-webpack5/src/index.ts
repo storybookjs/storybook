@@ -97,7 +97,7 @@ export const bail: WebpackBuilder['bail'] = async () => {
     reject();
   }
   // we wait for the compiler to finish it's work, so it's command-line output doesn't interfere
-  return new Promise((res, rej) => {
+  return new Promise((res) => {
     if (process && compilation) {
       try {
         compilation.close(() => res());
@@ -248,7 +248,7 @@ function getWebpackStats({ config, stats }: { config: Configuration; stats: Stat
  *
  * I am sorry for making you read about generators today :')
  */
-const builder: BuilderFunction = async function* builderGeneratorFn({ startTime, options }) {
+const builder: BuilderFunction = async function* builderGeneratorFn({ options }) {
   const webpackInstance = await executor.get(options);
   yield;
   const config = await getConfig(options);

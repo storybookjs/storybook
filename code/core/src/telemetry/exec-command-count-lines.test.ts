@@ -22,7 +22,7 @@ type ExecaStreamer = typeof Promise & {
 
 function createExecaStreamer() {
   let resolver: () => void;
-  const promiseLike: ExecaStreamer = new Promise<void>((aResolver, aRejecter) => {
+  const promiseLike: ExecaStreamer = new Promise<void>((aResolver) => {
     resolver = aResolver;
   }) as any;
 

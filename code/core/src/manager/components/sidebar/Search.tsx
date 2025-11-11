@@ -258,7 +258,7 @@ export const Search = React.memo<SearchProps>(function Search({
     [api]
   );
 
-  const onInputValueChange = useCallback((inputValue: string, stateAndHelpers: any) => {
+  const onInputValueChange = useCallback(() => {
     showAllComponents(false);
   }, []);
 

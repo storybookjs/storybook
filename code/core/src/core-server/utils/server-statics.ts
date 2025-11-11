@@ -1,6 +1,6 @@
 import { existsSync, statSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
-import { basename, dirname, isAbsolute, join, posix, resolve, sep, win32 } from 'node:path';
+import { basename, isAbsolute, join, posix, resolve, sep, win32 } from 'node:path';
 
 import { getDirectoryFromWorkingDir, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { logger, once } from 'storybook/internal/node-logger';

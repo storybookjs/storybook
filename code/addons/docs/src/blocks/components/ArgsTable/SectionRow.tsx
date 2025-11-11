@@ -44,11 +44,11 @@ const ExpanderIconRight = styled(ChevronRightIcon)(({ theme }) => ({
   display: 'inline-block',
 }));
 
-const FlexWrapper = styled.span(({ theme }) => ({
+const FlexWrapper = styled.span({
   display: 'flex',
   lineHeight: '20px',
   alignItems: 'center',
-}));
+});
 
 const Section = styled.td(({ theme }) => ({
   position: 'relative',
@@ -125,7 +125,7 @@ export const SectionRow: FC<SectionRowProps> = ({
     <>
       <StyledTr title={helperText}>
         <Level colSpan={1}>
-          <ClickIntercept onClick={(e) => setExpanded(!expanded)} tabIndex={0}>
+          <ClickIntercept onClick={() => setExpanded(!expanded)} tabIndex={0}>
             {helperText}
           </ClickIntercept>
           <FlexWrapper>
@@ -135,7 +135,7 @@ export const SectionRow: FC<SectionRowProps> = ({
         </Level>
         <StyledTd colSpan={colSpan - 1}>
           <ClickIntercept
-            onClick={(e) => setExpanded(!expanded)}
+            onClick={() => setExpanded(!expanded)}
             tabIndex={-1}
             style={{ outline: 'none' }}
           >

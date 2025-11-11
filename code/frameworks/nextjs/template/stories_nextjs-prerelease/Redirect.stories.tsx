@@ -50,7 +50,7 @@ export default {
 } as Meta;
 
 export const SingletonStateGetsInvalidatedAfterRedirecting: StoryObj = {
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button'));
   },

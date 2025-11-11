@@ -58,6 +58,8 @@ describe('LinkTo', () => {
       expect(container.firstChild).toMatchInlineSnapshot(`
         <a
           href="originpathname?path=/story/foo--bar"
+          name="bar"
+          title="foo"
         >
           link
         </a>

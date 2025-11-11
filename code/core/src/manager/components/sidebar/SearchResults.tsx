@@ -119,7 +119,7 @@ const Highlight: FC<PropsWithChildren<{ match?: Match }>> = React.memo(function 
   return <span>{result}</span>;
 });
 
-const Title = styled.div(({ theme }) => ({
+const Title = styled.div({
   display: 'grid',
   justifyContent: 'start',
   gridAutoColumns: 'auto',
@@ -131,7 +131,7 @@ const Title = styled.div(({ theme }) => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
-}));
+});
 
 const Path = styled.div(({ theme }) => ({
   display: 'grid',

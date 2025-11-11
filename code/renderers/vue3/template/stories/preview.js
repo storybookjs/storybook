@@ -32,6 +32,6 @@ setup((app, context) => {
 });
 
 // additonal setup to provide some propriety  to the app
-setup((app, context) => {
+setup((app) => {
   app.provide(someColor, 'green');
 });

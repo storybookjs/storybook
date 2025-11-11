@@ -1,7 +1,6 @@
 import type { FC, MouseEventHandler } from 'react';
 import React, { forwardRef, useCallback, useMemo } from 'react';
 
-import type { TooltipLinkListLink } from 'storybook/internal/components';
 import { Spaced, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
@@ -150,7 +149,7 @@ const Version = styled.div(({ theme }) => ({
 const CurrentVersion: FC<CurrentVersionProps> = ({ url, versions }) => {
   const currentVersionId = useMemo(() => {
     // @ts-expect-error (non strict)
-    const c = Object.entries(versions).find(([k, v]) => v === url);
+    const c = Object.entries(versions).find(([_k, v]) => v === url);
     return c && c[0] ? c[0] : 'current';
   }, [url, versions]);
 

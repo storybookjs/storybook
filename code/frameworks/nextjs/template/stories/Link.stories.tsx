@@ -6,19 +6,6 @@ import Link from 'next/link';
 
 import style from './Link.stories.module.css';
 
-// `onClick`, `href`, and `ref` need to be passed to the DOM element
-// for proper handling
-const MyButton = React.forwardRef<
-  HTMLAnchorElement,
-  React.DetailedHTMLProps<React.AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>
->(function Button({ onClick, href, children }, ref) {
-  return (
-    <a href={href} onClick={onClick} ref={ref}>
-      {children}
-    </a>
-  );
-});
-
 const Component = () => (
   <ul>
     <li>

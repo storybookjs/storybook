@@ -75,7 +75,7 @@ export default class LinkTo extends PureComponent<Props, State> {
   };
 
   render() {
-    const { kind, title = kind, story, name = story, children, ...rest } = this.props;
+    const { kind, story, children, ...rest } = this.props;
     const { href } = this.state;
 
     return (

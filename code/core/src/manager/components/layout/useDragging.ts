@@ -59,7 +59,7 @@ export function useDragging({
       }
     };
 
-    const onDragEnd = (e: MouseEvent) => {
+    const onDragEnd = (_e: MouseEvent) => {
       setState((state) => {
         if (draggedElement === sidebarResizer) {
           if (state.navSize < SIDEBAR_MIN_WIDTH_PX && state.navSize > 0) {

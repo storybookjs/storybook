@@ -75,7 +75,7 @@ export async function externalGlobalsPlugin(externals: Record<string, string>): 
       };
     },
     // Replace imports with variables destructured from global scope
-    async transform(code: string, id: string) {
+    async transform(code: string) {
       const globalsList = Object.keys(externals);
 
       if (globalsList.every((glob) => !code.includes(glob))) {

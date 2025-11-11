@@ -59,7 +59,7 @@ export const renderElement = async (node: ReactElement, el: Element, rootOptions
   return promise;
 };
 
-export const unmountElement = (el: Element, shouldUseNewRootApi?: boolean) => {
+export const unmountElement = (el: Element) => {
   const root = nodes.get(el);
 
   if (root) {

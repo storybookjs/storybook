@@ -1,6 +1,5 @@
 import { optionalEnvToBoolean } from '../../common/utils/envs';
-import { createStatusStore } from '../../shared/status-store';
-import { UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/status-store';
+import { UNIVERSAL_STATUS_STORE_OPTIONS, createStatusStore } from '../../shared/status-store';
 import { UniversalStore } from '../../shared/universal-store';
 
 const statusStore = createStatusStore({

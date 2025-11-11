@@ -1,9 +1,10 @@
-import type { Mock, MockInstance } from '@vitest/spy';
 import {
   type MaybeMocked,
   type MaybeMockedDeep,
   type MaybePartiallyMocked,
   type MaybePartiallyMockedDeep,
+  type Mock,
+  type MockInstance,
   isMockFunction,
   mocks,
   fn as vitestFn,

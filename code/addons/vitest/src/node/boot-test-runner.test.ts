@@ -10,8 +10,7 @@ import { execaNode } from 'execa';
 
 import { storeOptions } from '../constants';
 import { log } from '../logger';
-import type { StoreEvent } from '../types';
-import type { StoreState } from '../types';
+import type { StoreEvent, StoreState } from '../types';
 import { killTestRunner, runTestRunner } from './boot-test-runner';
 
 let stdout: (chunk: any) => void;
@@ -47,27 +46,18 @@ vi.mock('../logger', () => ({
 vi.mock('../../../../core/src/shared/utils/module', () => ({
   importMetaResolve: vi
     .fn()
-    .mockImplementation(
-      (a) => 'file://' + join(__dirname, '..', '..', 'dist', 'node', 'vitest.js')
-    ),
+    .mockImplementation(() => 'file://' + join(__dirname, '..', '..', 'dist', 'node', 'vitest.js')),
 }));
-
-let statusStoreSubscriber = vi.hoisted(() => undefined);
-let testProviderStoreSubscriber = vi.hoisted(() => undefined);
 
 vi.mock('storybook/internal/core-server', async (importOriginal) => {
   const actual = await importOriginal<typeof import('storybook/internal/core-server')>();
   return {
     ...actual,
     internal_universalStatusStore: {
-      subscribe: (listener: any) => {
-        statusStoreSubscriber = listener;
-      },
+      subscribe: () => {},
     },
     internal_universalTestProviderStore: {
-      subscribe: (listener: any) => {
-        testProviderStoreSubscriber = listener;
-      },
+      subscribe: () => {},
     },
   };
 });

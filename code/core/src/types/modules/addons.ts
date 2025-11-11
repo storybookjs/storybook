@@ -1,6 +1,5 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
-import type { State } from '../../manager-api';
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { API_LayoutCustomisations, API_SidebarOptions } from './api';
@@ -155,7 +154,7 @@ export interface Addon_StoryApi<StoryFnReturnType = unknown> {
   [k: string]: string | Addon_ClientApiReturnFn<StoryFnReturnType>;
 }
 
-export interface Addon_ClientStoryApi<StoryFnReturnType = unknown> {}
+export interface Addon_ClientStoryApi<_StoryFnReturnType = unknown> {}
 
 export type Addon_LoadFn = () => any;
 export type Addon_RequireContext = any; // FIXME
@@ -302,7 +301,7 @@ export interface Addon_BaseMeta<ComponentType> {
   subcomponents?: Record<string, ComponentType>;
 }
 
-export type Addon_BaseStoryObject<TArgs, StoryFnReturnType> = {
+export type Addon_BaseStoryObject<_TArgs, _StoryFnReturnType> = {
   /** Override the display name in the UI */
   storyName?: string;
 };

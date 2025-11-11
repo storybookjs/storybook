@@ -60,8 +60,8 @@ export const NormalizedTitleAndName = {
 export const Callback = {
   args: {
     onClick: linkTo(
-      (event: Event) => 'addons-links-linkto',
-      (event: Event) => 'target'
+      () => 'addons-links-linkto',
+      () => 'target'
     ),
   },
 };

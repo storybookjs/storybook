@@ -384,7 +384,7 @@ export class StoryIndexGenerator {
     let resolved;
     try {
       resolved = resolveImport(matchedPath, { basedir: dirname(absolutePath) });
-    } catch (_) {
+    } catch {
       return matchedPath;
     }
     const relativePath = relative(this.options.workingDir, resolved);

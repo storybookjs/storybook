@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { StoryFn, moduleMetadata } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
 
 import { ChipsGroupComponent } from './angular-src/chips-group.component';
 import { ChipsModule } from './angular-src/chips.module';

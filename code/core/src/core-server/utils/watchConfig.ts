@@ -16,11 +16,11 @@ export function watchConfig(
   wp.watch({
     directories: [configDir],
   });
-  wp.on('change', async (filePath: Path, mtime: Date, explanation: string) => {
+  wp.on('change', async (filePath: Path, mtime: Date) => {
     const removed = !mtime;
     await onInvalidate(filePath, removed);
   });
-  wp.on('remove', async (filePath: Path, explanation: string) => {
+  wp.on('remove', async (filePath: Path) => {
     await onInvalidate(filePath, true);
   });
 

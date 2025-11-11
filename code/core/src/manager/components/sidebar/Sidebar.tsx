@@ -7,8 +7,12 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import type { API_LoadedRefData, StoryIndex, TagsOptions } from 'storybook/internal/types';
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import type {
+  API_LoadedRefData,
+  StatusesByStoryIdAndTypeId,
+  StoryIndex,
+  TagsOptions,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { PlusIcon } from '@storybook/icons';

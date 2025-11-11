@@ -34,7 +34,7 @@ describe('storybook type system', () => {
           funcWithUnionArg: (a: string | number) => string;
           funcWithMultipleUnionReturns: () => string | ItemInterface;
         }
-        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+        export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;
         "
       `);
       expect(convertTs(input)).toMatchInlineSnapshot(`
@@ -79,7 +79,7 @@ describe('storybook type system', () => {
           funcWithUnionArg: (a: string | number) => string;
           funcWithMultipleUnionReturns: () => string | ItemInterface;
         }
-        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+        export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;
         "
       `);
       expect(convertTs(input)).toMatchInlineSnapshot(`
@@ -133,7 +133,7 @@ describe('storybook type system', () => {
           numericEnum: NumericEnum;
           stringEnum: StringEnum;
         }
-        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+        export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;
         "
       `);
       expect(convertTs(input)).toMatchInlineSnapshot(`
@@ -176,7 +176,7 @@ describe('storybook type system', () => {
           inlinedNumericLiteralUnion: 0 | 1;
           enumUnion: EnumUnion;
         }
-        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+        export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;
         "
       `);
       expect(convertTs(input)).toMatchInlineSnapshot(`
@@ -232,7 +232,7 @@ describe('storybook type system', () => {
           intersectionType: InterfaceIntersection;
           intersectionWithInlineType: ItemInterface & { inlineValue: string };
         }
-        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+        export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;
         "
       `);
       expect(convertTs(input)).toMatchInlineSnapshot(`
@@ -293,7 +293,7 @@ describe('storybook type system', () => {
           arrayOfPrimitive: string[];
           arrayOfComplexObject: ItemInterface[];
         }
-        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+        export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;
         "
       `);
       expect(convertTs(input)).toMatchInlineSnapshot(`
@@ -365,7 +365,8 @@ describe('storybook type system', () => {
           interface: ItemInterface;
           genericInterface: GenericInterface<string>;
         }
-        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+
+        export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;
         "
       `);
       expect(convertTs(input)).toMatchInlineSnapshot(`
@@ -396,7 +397,7 @@ describe('storybook type system', () => {
           recordOfPrimitive: Record<string, number>;
           recordOfComplexObject: Record<string, ItemInterface>;
         }
-        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+        export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;
         "
       `);
       expect(convertTs(input)).toMatchInlineSnapshot(`
@@ -433,7 +434,7 @@ describe('storybook type system', () => {
           aliasesUnion: AliasesUnion;
           genericAlias: GenericAlias<string>;
         }
-        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+        export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;
         "
       `);
       expect(convertTs(input)).toMatchInlineSnapshot(`
@@ -487,7 +488,7 @@ describe('storybook type system', () => {
           tupleOfPrimitive: [string, number];
           tupleWithComplexType: [string, ItemInterface];
         }
-        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+        export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;
         "
       `);
       expect(convertTs(input)).toMatchInlineSnapshot(`
@@ -514,7 +515,7 @@ describe('storybook type system', () => {
 
         import PropTypes from 'prop-types';
 
-        export const Component = (props) => <>JSON.stringify(props)</>;
+        export const Component = (props) => <>{JSON.stringify(props)}</>;
         Component.propTypes = {
           optionalBool: PropTypes.bool,
           optionalFunc: PropTypes.func,
@@ -551,7 +552,7 @@ describe('storybook type system', () => {
 
         import PropTypes from 'prop-types';
 
-        export const Component = (props) => <>JSON.stringify(props)</>;
+        export const Component = (props) => <>{JSON.stringify(props)}</>;
         Component.propTypes = {
           optionalArray: PropTypes.array,
           arrayOfStrings: PropTypes.arrayOf(PropTypes.string),
@@ -595,7 +596,7 @@ describe('storybook type system', () => {
 
         import PropTypes from 'prop-types';
 
-        export const Component = (props) => <>JSON.stringify(props)</>;
+        export const Component = (props) => <>{JSON.stringify(props)}</>;
         Component.propTypes = {
           oneOfNumber: PropTypes.oneOf([1, 2, 3]),
           oneOfMiscellaneous: PropTypes.oneOf([false, true, undefined]),
@@ -647,7 +648,7 @@ describe('storybook type system', () => {
 
         import PropTypes from 'prop-types';
 
-        export const Component = (props) => <>JSON.stringify(props)</>;
+        export const Component = (props) => <>{JSON.stringify(props)}</>;
         Component.propTypes = {
           // An object that could be one of many types
           optionalUnion: PropTypes.oneOfType([
@@ -696,7 +697,7 @@ describe('storybook type system', () => {
 
         import PropTypes from 'prop-types';
 
-        export const Component = (props) => <>JSON.stringify(props)</>;
+        export const Component = (props) => <>{JSON.stringify(props)}</>;
         Component.propTypes = {
           optionalObject: PropTypes.object,
           optionalObjectOf: PropTypes.objectOf(PropTypes.number),
@@ -754,7 +755,7 @@ describe('storybook type system', () => {
 
         import PropTypes from 'prop-types';
 
-        export const Component = (props) => <>JSON.stringify(props)</>;
+        export const Component = (props) => <>{JSON.stringify(props)}</>;
         Component.propTypes = {
           // Anything that can be rendered: numbers, strings, elements or an array
           // (or fragment) containing these types.

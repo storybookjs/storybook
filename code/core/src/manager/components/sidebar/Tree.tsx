@@ -3,10 +3,10 @@ import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, IconButton, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import type { StatusValue } from 'storybook/internal/types';
 import {
   type API_HashEntry,
   type StatusByTypeId,
+  type StatusValue,
   type StatusesByStoryIdAndTypeId,
   type StoryId,
 } from 'storybook/internal/types';

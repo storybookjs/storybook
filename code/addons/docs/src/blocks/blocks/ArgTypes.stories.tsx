@@ -1,5 +1,3 @@
-import React from 'react';
-
 import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';

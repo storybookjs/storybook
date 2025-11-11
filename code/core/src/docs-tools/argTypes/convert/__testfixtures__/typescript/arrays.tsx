@@ -15,4 +15,4 @@ interface Props {
   arrayOfPrimitive: string[];
   arrayOfComplexObject: ItemInterface[];
 }
-export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+export const Component: FC<Props> = (props: Props) => <>{JSON.stringify(props)}</>;

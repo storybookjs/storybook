@@ -1,9 +1,9 @@
 /** @vitest-environment happy-dom */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
+import { SourceType } from 'storybook/internal/docs-tools';
 
-import { addons, emitTransformCode, useEffect, useRef, useState } from 'storybook/preview-api';
+import { addons, emitTransformCode, useRef } from 'storybook/preview-api';
 
 import { sourceDecorator } from './sourceDecorator';
 

@@ -1,6 +1,10 @@
 import type { PackageManagerName } from 'storybook/internal/common';
-import { versions } from 'storybook/internal/common';
-import { HandledError, JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
+import {
+  HandledError,
+  JsPackageManagerFactory,
+  isCorePackage,
+  versions,
+} from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import {
   CLI_COLORS,

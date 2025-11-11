@@ -74,7 +74,7 @@ describe('client-api.decorators', () => {
     const decoratedStories = [];
     const decorators = [
       // @ts-expect-error (not defined)
-      (s, c) => {
+      (s) => {
         // @ts-expect-error (not defined)
         decoratedStories.push = s;
         return s();
@@ -99,7 +99,7 @@ describe('client-api.decorators', () => {
     });
     const decorators = [
       // @ts-expect-error (not defined)
-      async (s, c) => {
+      async (s) => {
         // The fence here simulates async-ness in react rendering an element (`<S />` doesn't run `S()` straight away)
         await fence;
         s();

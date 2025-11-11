@@ -90,7 +90,7 @@ export function ensurePanel(
   return currentPanel;
 }
 
-export const init: ModuleFn<SubAPI, SubState> = ({ provider, store, fullAPI }): any => {
+export const init: ModuleFn<SubAPI, SubState> = ({ provider, store }): any => {
   const api: SubAPI = {
     getElements: (type) => provider.getElements(type),
     getSelectedPanel: (): any => {

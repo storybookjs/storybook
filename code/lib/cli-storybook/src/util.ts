@@ -1,6 +1,12 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
-import { HandledError, JsPackageManager, normalizeStories } from 'storybook/internal/common';
-import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
+import {
+  HandledError,
+  JsPackageManager,
+  getProjectRoot,
+  isSatelliteAddon,
+  normalizeStories,
+  versions,
+} from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -81,9 +87,6 @@ const DEFAULT_BOXEN_STYLE: Options = {
 
 /** Glob pattern for finding Storybook directories */
 const STORYBOOK_DIR_PATTERN = ['**/.storybook', '**/.rnstorybook'];
-
-/** Default fallback version when none is found */
-const DEFAULT_FALLBACK_VERSION = '0.0.0';
 
 // ============================================================================
 // UTILITY FUNCTIONS

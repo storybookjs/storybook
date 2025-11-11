@@ -14,8 +14,10 @@ import type {
   TestProviderStateByProviderId,
   TestProviderStoreEvent,
 } from '../shared/test-provider-store';
-import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from '../shared/test-provider-store';
-import { createTestProviderStore } from '../shared/test-provider-store';
+import {
+  UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS,
+  createTestProviderStore,
+} from '../shared/test-provider-store';
 import type { UniversalStore } from '../shared/universal-store';
 
 export const {

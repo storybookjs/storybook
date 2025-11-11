@@ -8,7 +8,7 @@ import { loadConfig, printConfig } from './ConfigFile';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
-  test: (val) => true,
+  test: () => true,
 });
 
 const getField = (path: string[], source: string) => {

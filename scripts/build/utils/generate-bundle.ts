@@ -89,6 +89,7 @@ export async function generateBundle({
     treeShaking: true,
     color: true,
     external,
+    minifySyntax: true,
     define: {
       /*
        * We need to disable the default behavior of replacing process.env.NODE_ENV with "development"

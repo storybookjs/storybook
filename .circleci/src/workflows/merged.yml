@@ -79,6 +79,18 @@ jobs:
   - test-init-features:
       requires:
         - build
+  - test-init-empty-windows:
+      requires:
+        - build
+      matrix:
+        parameters:
+          packageManager:
+            - 'npm'
+          template:
+            - 'react-vite-ts'
+            - 'nextjs-ts'
+            - 'vue-vite-ts'
+            - 'lit-vite-ts'
 # TODO: don't forget to reenable this
 #      - bench-sandboxes:
 #          parallelism: 5

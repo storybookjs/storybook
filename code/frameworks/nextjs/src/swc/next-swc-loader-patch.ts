@@ -158,6 +158,7 @@ export function pitch(this: any) {
       isWasm = await nextSwcUtils.isWasm();
       // @ts-expect-error Relevant from Next.js >= 16.0.2-canary.12
     } else if (!!nextSwcUtils.getBindingsSync) {
+      await nextSwcUtils.loadBindings();
       // @ts-expect-error Relevant from Next.js >= 16.0.2-canary.12
       isWasm = nextSwcUtils.getBindingsSync().isWasm;
     }

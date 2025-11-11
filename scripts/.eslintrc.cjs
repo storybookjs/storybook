@@ -58,10 +58,22 @@ module.exports = {
     '@typescript-eslint/no-wrapper-object-types': 'warn',
     '@typescript-eslint/no-empty-object-type': 'warn',
     '@typescript-eslint/ban-ts-comment': 'error',
-    '@typescript-eslint/no-unused-vars': 'warn',
+    'import/no-duplicates': 'error', // merge duplicate imports from the same module
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^e',
+        ignoreRestSiblings: true,
+      },
+    ],
     '@typescript-eslint/no-redeclare': 'off',
     '@typescript-eslint/no-unsafe-function-type': 'warn',
-    '@typescript-eslint/consistent-type-imports': ['error', { disallowTypeAnnotations: false }],
+    '@typescript-eslint/consistent-type-imports': [
+      'error',
+      { disallowTypeAnnotations: false, fixStyle: 'inline-type-imports' },
+    ],
     'no-use-before-define': 'off',
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
     'depend/ban-dependencies': [

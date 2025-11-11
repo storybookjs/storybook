@@ -36,7 +36,7 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   const rendererName = await extractRenderer(frameworkName);
 
   if (rendererName) {
-    globals.STORYBOOK_RENDERER = (await extractRenderer(frameworkName)) ?? undefined;
+    globals.STORYBOOK_RENDERER = rendererName ?? undefined;
   }
 
   const resolvedPreviewBuilder = pluckNameFromConfigProperty(builder);

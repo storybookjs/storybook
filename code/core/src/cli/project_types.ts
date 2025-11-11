@@ -1,4 +1,3 @@
-import type { SupportedBuilder } from 'storybook/internal/types';
 import { SupportedFramework } from 'storybook/internal/types';
 
 import { minVersion, validRange } from 'semver';

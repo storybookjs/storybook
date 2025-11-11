@@ -12,6 +12,7 @@ import { parseConfigFile, runServer } from 'verdaccio';
 import { npmAuth } from './npm-auth';
 import { maxConcurrentTasks } from './utils/concurrency';
 import { PACKS_DIRECTORY } from './utils/constants';
+import { killProcessOnPort } from './utils/kill-process-on-port';
 import { getWorkspaces } from './utils/workspace';
 
 program
@@ -36,6 +37,10 @@ const pathExists = async (p: string) => {
 };
 
 const startVerdaccio = async () => {
+  // Kill Verdaccio related processes if they are already running
+  await killProcessOnPort(6001);
+  await killProcessOnPort(6002);
+
   const ready = {
     proxy: false,
     verdaccio: false,

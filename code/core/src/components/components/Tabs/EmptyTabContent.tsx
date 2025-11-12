@@ -51,7 +51,7 @@ export const EmptyTabContent = ({ title, description, footer }: Props) => {
         <Title>{title}</Title>
         {description && <Description>{description}</Description>}
       </Content>
-      <Footer>{footer}</Footer>
+      {footer && <Footer>{footer}</Footer>}
     </Wrapper>
   );
 };

@@ -33,7 +33,7 @@ export interface CurrentVersionProps {
   versions: RefType['versions'];
 }
 
-const IndicatorPlacement = styled.aside(({ theme }) => ({
+const IndicatorPlacement = styled.div(({ theme }) => ({
   height: 16,
 
   display: 'flex',

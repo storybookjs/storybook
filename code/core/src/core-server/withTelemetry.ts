@@ -51,7 +51,7 @@ export async function getErrorLevel({
 
   // If we are running init or similar, we just have to go with true here
   if (!presetOptions) {
-    return 'full';
+    return 'error';
   }
 
   // should we load the preset?

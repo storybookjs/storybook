@@ -27,6 +27,10 @@ const Title = styled.div(({ theme }) => ({
   color: theme.color.defaultText,
 }));
 
+const Footer = styled.div(({ theme }) => ({
+  fontSize: theme.typography.size.s2 - 1,
+}));
+
 const Description = styled.div(({ theme }) => ({
   fontWeight: theme.typography.weight.regular,
   fontSize: theme.typography.size.s2 - 1,
@@ -47,7 +51,7 @@ export const EmptyTabContent = ({ title, description, footer }: Props) => {
         <Title>{title}</Title>
         {description && <Description>{description}</Description>}
       </Content>
-      {footer}
+      <Footer>{footer}</Footer>
     </Wrapper>
   );
 };

@@ -8,7 +8,6 @@ import {
 export const universalChecklistStore = experimental_UniversalStore.create<StoreState, StoreEvent>({
   ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
   leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
-  debug: true,
 });
 
 export const checklistStore = createChecklistStore(universalChecklistStore);

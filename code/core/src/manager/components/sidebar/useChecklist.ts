@@ -29,6 +29,7 @@ export type ChecklistItem = RawItemWithSection & {
   isOpen: boolean;
   isLockedBy: string[];
   isReady: boolean;
+  isCompleted: boolean;
   isAccepted: boolean;
   isDone: boolean;
   isSkipped: boolean;
@@ -85,6 +86,7 @@ export const useChecklist = () => {
     return Object.values(itemsById).map<ChecklistItem>((item) => {
       const isAccepted = accepted.includes(item.id);
       const isDone = done.includes(item.id);
+      const isCompleted = isAccepted || isDone;
       const isSkipped = skipped.includes(item.id);
       const isMuted = Array.isArray(muted) ? muted.includes(item.id) : !!muted;
 
@@ -101,6 +103,7 @@ export const useChecklist = () => {
         isOpen,
         isLockedBy,
         isReady,
+        isCompleted,
         isAccepted,
         isDone,
         isSkipped,

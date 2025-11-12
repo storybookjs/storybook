@@ -32,7 +32,7 @@ type ChecklistSection = {
 };
 
 type ChecklistItemWithRef = ChecklistItem & {
-  nodeRef?: React.RefObject<HTMLLIElement>;
+  nodeRef: React.RefObject<HTMLLIElement>;
 };
 
 const Sections = styled.ol(({ theme }) => ({

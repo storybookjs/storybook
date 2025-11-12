@@ -52,7 +52,6 @@ export const internal_universalChecklistStore = new experimental_MockUniversalSt
   {
     ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
     leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
-    debug: true,
   },
   testUtils
 ) as unknown as UniversalStore<StoreState, StoreEvent>;

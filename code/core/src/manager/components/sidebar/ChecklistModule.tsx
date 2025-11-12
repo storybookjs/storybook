@@ -1,4 +1,4 @@
-import React, { createRef, useMemo } from 'react';
+import React, { createRef, useEffect, useMemo, useState } from 'react';
 
 import {
   Card,
@@ -20,15 +20,32 @@ import {
   EyeCloseIcon,
   ListUnorderedIcon,
   StatusFailIcon,
+  StatusPassIcon,
 } from '@storybook/icons';
 
 import { internal_checklistStore as checklistStore } from '#manager-stores';
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming';
 
+import { Particles } from '../../../components/components/Particles';
 import { TextFlip } from '../TextFlip';
 import { Transition, TransitionGroup } from '../Transition';
-import { useChecklist } from './useChecklist';
+import { type ChecklistItem, useChecklist } from './useChecklist';
+
+const fadeScaleIn = keyframes`
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+`;
+
+type ChecklistItemWithRef = ChecklistItem & {
+  nodeRef: React.RefObject<HTMLLIElement>;
+};
 
 const CollapsibleWithMargin = styled(Collapsible)(({ collapsed }) => ({
   marginTop: collapsed ? 0 : 16,
@@ -51,6 +68,27 @@ const CollapseToggle = styled(ListboxButton)({
 const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
   color: theme.color.secondary,
 }));
+
+const Checked = styled(StatusPassIcon)(({ theme }) => ({
+  padding: 1,
+  borderRadius: '50%',
+  background: theme.color.positive,
+  color: theme.background.content,
+  animation: `${fadeScaleIn} 500ms forwards`,
+}));
+
+const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
+  ({ theme, isCompleted, isSkipped }) => ({
+    textDecoration: isSkipped ? 'line-through' : 'none',
+    color: isSkipped
+      ? theme.textMutedColor
+      : isCompleted
+        ? theme.base === 'dark'
+          ? theme.color.positive
+          : theme.color.positiveText
+        : theme.color.defaultText,
+  })
+);
 
 const title = (progress: number) => {
   switch (true) {
@@ -84,13 +122,28 @@ const OpenGuideAction = ({ children }: { children?: React.ReactNode }) => {
 
 export const ChecklistModule = () => {
   const api = useStorybookApi();
-  const { loaded, allItems, nextItems, progress, mute } = useChecklist();
+  const { loaded, accepted, done, skipped, allItems, nextItems, progress, mute } = useChecklist();
 
-  const next = useMemo(
-    () => nextItems.map((item) => ({ ...item, nodeRef: createRef<HTMLDivElement>() })),
+  const [items, setItems] = useState<ChecklistItemWithRef[]>([]);
+
+  const itemsWithRef = useMemo(
+    () => nextItems.map((item) => ({ ...item, nodeRef: createRef<HTMLLIElement>() })),
     [nextItems]
   );
-  const hasTasks = next.length > 0;
+
+  useEffect(() => {
+    setItems((current) =>
+      current.map((item) => ({
+        ...item,
+        isCompleted: accepted.includes(item.id) || done.includes(item.id),
+        isSkipped: skipped.includes(item.id),
+      }))
+    );
+    const timeout = setTimeout(setItems, 2000, itemsWithRef);
+    return () => clearTimeout(timeout);
+  }, [accepted, done, skipped, itemsWithRef]);
+
+  const hasTasks = items.length > 0;
 
   return (
     <CollapsibleWithMargin collapsed={!hasTasks}>
@@ -182,15 +235,22 @@ export const ChecklistModule = () => {
           )}
         >
           <TransitionGroup as="ul" component={Listbox}>
-            {next.map((item) => (
+            {items.map((item) => (
               <Transition key={item.id} nodeRef={item.nodeRef} timeout={300}>
+                {/* @ts-expect-error Ref doesn't understand "as" prop */}
                 <ListboxItem as="li" ref={item.nodeRef}>
                   <ListboxAction onClick={() => api.navigate(`/settings/guide#${item.id}`)}>
                     <ListboxIcon>
-                      <StatusFailIcon />
+                      {item.isCompleted ? (
+                        <Particles anchor={Checked} key={item.id} />
+                      ) : (
+                        <StatusFailIcon />
+                      )}
                     </ListboxIcon>
                     <ListboxText>
-                      <span>{item.label}</span>
+                      <ItemLabel isCompleted={item.isCompleted} isSkipped={item.isSkipped}>
+                        {item.label}
+                      </ItemLabel>
                     </ListboxText>
                   </ListboxAction>
                   {item.action && (

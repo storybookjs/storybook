@@ -13,6 +13,33 @@ const fileMocks = {
     import { defineConfig } from 'vitest/config'
     export default defineConfig({})
   `,
+  'vitest.merge-config.ts': `
+    import { mergeConfig, defineConfig } from 'vitest/config'
+    import viteConfig from './vite.config'
+
+    export default mergeConfig(
+      viteConfig,
+      defineConfig({
+        test: {
+          environment: 'jsdom',
+        },
+      }),
+    )
+  `,
+  'vitest.merge-config-multi-args.ts': `
+    import { mergeConfig, defineConfig } from 'vitest/config'
+    import viteConfig from './vite.config'
+
+    export default mergeConfig(
+      viteConfig,
+      {},
+      defineConfig({
+        test: {
+          environment: 'jsdom',
+        },
+      }),
+    )
+  `,
   'invalidConfig.ts': `
     import { defineConfig } from 'vitest/config'
     export default defineConfig(['packages/*'])
@@ -153,6 +180,22 @@ describe('vitestConfigFiles', () => {
 
     it('should allow existing test config option', async () => {
       vi.mocked(find.any).mockImplementation(coerce('config', 'testConfig.ts'));
+      const result = await vitestConfigFiles.condition(mockContext, state);
+      expect(result).toEqual({
+        type: 'compatible',
+      });
+    });
+
+    it('should allow existing test config option with mergeConfig', async () => {
+      vi.mocked(find.any).mockImplementation(coerce('config', 'vitest.merge-config.ts'));
+      const result = await vitestConfigFiles.condition(mockContext, state);
+      expect(result).toEqual({
+        type: 'compatible',
+      });
+    });
+
+    it('should allow existing test config option with mergeConfig and defineConfig as argument in a different position', async () => {
+      vi.mocked(find.any).mockImplementation(coerce('config', 'vitest.merge-config-multi-args.ts'));
       const result = await vitestConfigFiles.condition(mockContext, state);
       expect(result).toEqual({
         type: 'compatible',

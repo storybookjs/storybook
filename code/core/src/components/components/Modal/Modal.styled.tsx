@@ -1,14 +1,16 @@
 import type { ComponentProps } from 'react';
 import React, { useContext } from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { deprecate } from 'storybook/internal/client-logger';
 
 import { CrossIcon } from '@storybook/icons';
 
-import { Heading, Text } from 'react-aria-components';
+import { Heading } from 'react-aria-components/patched-dist/Heading';
+import { Text } from 'react-aria-components/patched-dist/Text';
 import type { TransitionStatus } from 'react-transition-state';
 import { keyframes, styled } from 'storybook/theming';
 
+import { Button } from '../Button/Button';
 // Import the ModalContext from the main Modal component
 import { ModalContext } from './Modal';
 
@@ -52,22 +54,22 @@ const zoomOut = keyframes({
 const slideFromBottom = keyframes({
   from: {
     opacity: 0,
-    transform: 'translate(0, 100%)',
+    maxHeight: '0px',
   },
   to: {
     opacity: 1,
-    transform: 'translate(0, 0)',
+    maxHeight: '80vh',
   },
 });
 
 const slideToBottom = keyframes({
   from: {
     opacity: 1,
-    transform: 'translate(0, 0)',
+    maxHeight: '80vh',
   },
   to: {
     opacity: 0,
-    transform: 'translate(0, 100%)',
+    maxHeight: '0px',
   },
 });
 
@@ -76,7 +78,8 @@ export const Overlay = styled.div<{
   $transitionDuration?: number;
 }>(({ $status, $transitionDuration }) => ({
   backdropFilter: 'blur(24px)',
-  position: 'fixed',
+  background: 'rgba(0, 0, 0, 0.4)',
+  position: 'absolute',
   inset: 0,
   width: '100%',
   height: '100%',
@@ -101,7 +104,7 @@ export const Container = styled.div<{
     backgroundColor: theme.background.bar,
     borderRadius: 6,
     boxShadow: '0px 4px 67px 0px #00000040',
-    position: 'fixed',
+    position: 'absolute',
     overflow: 'auto',
     zIndex: 100,
 
@@ -137,16 +140,14 @@ export const Container = styled.div<{
           right: '0',
           width: width ?? '100%',
           height: height ?? '80%',
+          interpolateSize: 'allow-keywords',
           maxWidth: '100%',
-          maxHeight: '80vh',
           '@media (prefers-reduced-motion: no-preference)': {
-            animationTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
+            animationTimingFunction: 'cubic-bezier(.9,.16,.77,.64)',
             animation:
               $status === 'exiting' || $status === 'preExit'
                 ? `${slideToBottom} ${$transitionDuration}ms`
-                : $status === 'entering' || $status === 'preEnter'
-                  ? `${slideFromBottom} ${$transitionDuration}ms`
-                  : 'none',
+                : `${slideFromBottom} ${$transitionDuration}ms`,
             animationFillMode: 'forwards !important',
           },
         }
@@ -192,6 +193,25 @@ export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
     >
       <CrossIcon />
     </Button>
+  );
+};
+
+export const Dialog = {
+  Close: () => {
+    deprecate('Modal.Dialog.Close is deprecated, please use Modal.Close instead.');
+    return <Close />;
+  },
+};
+
+export const CloseButton = ({ ariaLabel, ...props }: React.ComponentProps<typeof Button>) => {
+  deprecate('Modal.CloseButton is deprecated, please use Modal.Close instead.');
+
+  return (
+    <Close asChild>
+      <Button ariaLabel={ariaLabel || 'Close'} {...props}>
+        <CrossIcon />
+      </Button>
+    </Close>
   );
 };
 

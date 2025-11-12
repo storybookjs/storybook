@@ -57,7 +57,7 @@ The following options are configurable under the `layoutCustomisations` namespac
 
 ## Customize the UI
 
-Storybook's UI is highly customizable. Its API and configuration options, available via the `showSidebar` and `showToolbar` functions, allow you to control how the sidebar and toolbar elements are displayed. Both functions will enable you to include some default behavior and can be overridden to customize the UI to your needs.
+Storybook's UI is highly customizable. Its API and configuration options, available via the `showSidebar`, `showPanel` and `showToolbar` functions, allow you to control how the sidebar, addon panel and toolbar elements are displayed. Each function will enable you to include some default behavior and can be overridden to customize the UI to your needs.
 
 ### Override sidebar visibility
 
@@ -68,13 +68,14 @@ The sidebar, present on the left of the screen, contains the search function and
 | **path**                 | String   | Path to the page being displayed                               | `'/story/components-button--default'` |
 | **viewMode**             | String   | Whether the current page is a story or docs                    | `'docs'` or `'story'`                 |
 | **singleStory**          | Boolean  | Whether the current page is the only story for a component     | `true` or `false`                     |
-| **storyId**              | String   | The id of the current story or docs page                       | `'blocks-blocks-unstyled--docs'`      |
+| **storyId**              | String   | The id of the current story or docs page                       | `'blocks-unstyled--docs'`      |
+| **index**              | Object   | The index containing statically analysed metadata for every story    | `{ 'blocks-unstyled--docs': { tags: ['autodocs'] } }`  |
 | **layout**               | Object   | The current layout state                                       | *see below*                           |
 | **layout.isFullscreen**  | Boolean  | Whether the preview canvas is in fullscreen mode               | `true` or `false`                     |
 | **layout.panelPosition** | String   | Whether the panel is shown below or on the side of the preview | `'bottom'` or `'right'`               |
 | **layout.showNav**       | Boolean  | The setting for whether the end user wants to see the sidebar  | `true` or `false`                     |
 | **layout.showPanel**     | Boolean  | The setting for whether the end user wants to see the panel    | `true` or `false`                     |
-| **layout.showSidebar**   | Boolean  | The setting for whether the end user wants to see the sidebar  | `true` or `false`                     |
+| **layout.showToolbar**   | Boolean  | The setting for whether the end user wants to see the toolbar  | `true` or `false`                     |
 
 {/* prettier-ignore-start */}
 
@@ -88,6 +89,30 @@ The sidebar, present on the left of the screen, contains the search function and
 
 </Callout>
 
+### Configure the addon panel
+
+When viewing a story, Storybook displays the addon panel on the bottom or right of the UI. The panel shows UIs for available addons (e.g., the [interactions panel](../../writing-tests/interaction-testing#debugging-interaction-tests), [accessibility tests panel](../../writing-tests/accessibility-testing) or [controls panel](../../essentials/controls)). If you want to customize when the addon panel appears, you can use the `showPanel` function. Listed below are the available options and an overview of how to use them.
+
+| Name                     | Type     | Description                                                    | Example Value                         |
+| ------------------------ | -------- | -------------------------------------------------------------- | ------------------------------------- |
+| **path**                 | String   | Path to the page being displayed                               | `'/story/components-button--default'` |
+| **viewMode**             | String   | Whether the current page is a story or docs                    | `'docs'` or `'story'`                 |
+| **singleStory**          | Boolean  | Whether the current page is the only story for a component     | `true` or `false`                     |
+| **storyId**              | String   | The id of the current story or docs page                       | `'blocks-unstyled--docs'`      |
+| **index**              | Object   | The index containing statically analysed metadata for every story    | `{ 'blocks-unstyled--docs': { tags: ['autodocs'] } }`  |
+| **layout**               | Object   | The current layout state                                       | *see below*                           |
+| **layout.isFullscreen**  | Boolean  | Whether the preview canvas is in fullscreen mode               | `true` or `false`                     |
+| **layout.panelPosition** | String   | Whether the panel is shown below or on the side of the preview | `'bottom'` or `'right'`               |
+| **layout.showNav**       | Boolean  | The setting for whether the end user wants to see the sidebar  | `true` or `false`                     |
+| **layout.showPanel**     | Boolean  | The setting for whether the end user wants to see the panel    | `true` or `false`                     |
+| **layout.showToolbar**   | Boolean  | The setting for whether the end user wants to see the toolbar  | `true` or `false`                     |
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-manager-addon-panel-hide-on-showcase.md"  />
+
+{/* prettier-ignore-end */}
+
 ### Configure the toolbar
 
 By default, Storybook displays a toolbar at the top of the UI, allowing you to access menus from addons (e.g., [viewport](../../essentials/viewport.mdx), [background](../../essentials/backgrounds.mdx)), or custom defined [menus](../../essentials/toolbars-and-globals.mdx#global-types-and-the-toolbar-annotation). However, if you want to customize the toolbar's behavior, you can use the `showToolbar` function. Listed below are the available options and an overview of how to use them.
@@ -97,7 +122,8 @@ By default, Storybook displays a toolbar at the top of the UI, allowing you to a
 | **path**                 | String   | Path to the page being displayed                               | `'/story/components-button--default'` |
 | **viewMode**             | String   | Whether the current page is a story or docs                    | `'docs'` or `'story'`                 |
 | **singleStory**          | Boolean  | Whether the current page is the only story for a component     | `true` or `false`                     |
-| **storyId**              | String   | The id of the current story or docs page                       | `'blocks-blocks-unstyled--docs'`      |
+| **storyId**              | String   | The id of the current story or docs page                       | `'blocks-unstyled--docs'`      |
+| **index**              | Object   | The index containing statically analysed metadata for every story    | `{ 'blocks-unstyled--docs': { tags: ['autodocs'] } }`  |
 | **layout**               | Object   | The current layout state                                       | *see below*                           |
 | **layout.isFullscreen**  | Boolean  | Whether the preview canvas is in fullscreen mode               | `true` or `false`                     |
 | **layout.panelPosition** | String   | Whether the panel is shown below or on the side of the preview | `'bottom'` or `'right'`               |

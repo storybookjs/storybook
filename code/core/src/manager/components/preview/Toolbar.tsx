@@ -1,11 +1,11 @@
-import React, { useId } from 'react';
+import React from 'react';
 
 import { AbstractToolbar, Button, Separator, TabList } from 'storybook/internal/components';
 import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
-import type { TabListState } from 'react-stately';
+import type { TabListState } from '@react-stately/tabs';
 import {
   type API,
   type Combo,
@@ -83,16 +83,14 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
   tabs,
   tabState,
 }) {
-  const headingId = useId();
-
   return isShown && (tabs || tools || toolsExtra) ? (
     <StyledSection
       className="sb-bar"
       key="toolbar"
       data-testid="sb-preview-toolbar"
-      aria-labelledby={headingId}
+      aria-labelledby="sb-preview-toolbar-title"
     >
-      <h2 id={headingId} className="sb-sr-only">
+      <h2 id="sb-preview-toolbar-title" className="sb-sr-only">
         Toolbar
       </h2>
       {tabs.length > 1 ? (

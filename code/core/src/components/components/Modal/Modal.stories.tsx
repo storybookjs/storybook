@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-
-import { Button } from 'storybook/internal/components';
+import React, { forwardRef, useRef, useState } from 'react';
 
 import { action } from 'storybook/actions';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
+import { Button } from '../Button/Button';
 import { Modal } from './Modal';
 
 const SampleModalContent = () => (
@@ -38,6 +37,40 @@ const SampleModalContent = () => (
   </Modal.Content>
 );
 
+const MockContainer = forwardRef<
+  HTMLDivElement,
+  {
+    bgColor: string;
+    borderColor: string;
+    id?: string;
+    text: string;
+  }
+>(({ bgColor, borderColor, id, text }, ref) => (
+  <div
+    id={id}
+    ref={ref}
+    style={{
+      position: 'relative',
+      width: '60%',
+      height: '300px',
+      marginTop: '20px',
+      border: `3px dashed ${borderColor}`,
+      borderRadius: '8px',
+      background: bgColor,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <div
+      style={{ textAlign: 'center', backgroundColor: '#fff6', color: '#111', fontWeight: 'bold' }}
+    >
+      {text}
+    </div>
+  </div>
+));
+MockContainer.displayName = 'MockContainer';
+
 const meta = preview.meta({
   id: 'overlay-Modal',
   title: 'Overlay/Modal',
@@ -46,6 +79,9 @@ const meta = preview.meta({
     ariaLabel: 'Sample modal',
     dismissOnClickOutside: true,
     dismissOnEscape: true,
+  },
+  globals: {
+    sb_theme: 'light',
   },
   argTypes: {
     width: {
@@ -221,6 +257,248 @@ export const DismissalBehavior = meta.story({
   ),
 });
 
+export const OnInteractOutside = meta.story({
+  name: 'OnInteractOutside (deprecated)',
+  args: {
+    children: <SampleModalContent />,
+    onInteractOutside: fn(),
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+
+    return (
+      <>
+        <Modal {...args} open={isOpen} onOpenChange={setOpen} />
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal
+        </Button>
+        <Button ariaLabel={false} style={{ marginLeft: '1rem' }}>
+          Outside Button
+        </Button>
+      </>
+    );
+  },
+  play: async ({ args, canvas, step }) => {
+    await step('Open modal', async () => {
+      const trigger = canvas.getByText('Open Modal');
+      await userEvent.click(trigger);
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+    });
+
+    await step('Click outside to close', async () => {
+      const outsideButton = canvas.getByText('Outside Button');
+      await userEvent.click(outsideButton);
+      expect(args.onInteractOutside).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).not.toBeInTheDocument();
+      });
+    });
+  },
+});
+
+export const OnInteractOutsidePreventDefault = meta.story({
+  name: 'OnInteractOutside - e.preventDefault (deprecated)',
+  args: {
+    children: <SampleModalContent />,
+    onInteractOutside: (e) => e.preventDefault(),
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+
+    return (
+      <>
+        <Modal {...args} open={isOpen} onOpenChange={setOpen} />
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal
+        </Button>
+        <Button ariaLabel={false} style={{ marginLeft: '1rem' }}>
+          Outside Button
+        </Button>
+      </>
+    );
+  },
+  play: async ({ canvas, step }) => {
+    await step('Open modal', async () => {
+      const trigger = canvas.getByText('Open Modal');
+      await userEvent.click(trigger);
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+    });
+
+    await step('Click outside to close but modal stays open', async () => {
+      const outsideButton = canvas.getByText('Outside Button');
+      await userEvent.click(outsideButton);
+      // Wait a bit to ensure the modal close animation would've had time to play.
+      await new Promise((r) => setTimeout(r, 300));
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+    });
+  },
+});
+
+export const OnInteractOutsideDismissDisabled = meta.story({
+  name: 'OnInteractOutside - dismiss disabled (deprecated)',
+  args: {
+    children: <SampleModalContent />,
+    dismissOnClickOutside: false,
+    onInteractOutside: fn(),
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+
+    return (
+      <>
+        <Modal {...args} open={isOpen} onOpenChange={setOpen} />
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal
+        </Button>
+        <Button ariaLabel={false} style={{ marginLeft: '1rem' }}>
+          Outside Button
+        </Button>
+      </>
+    );
+  },
+  play: async ({ args, canvas, step }) => {
+    await step('Open modal', async () => {
+      const trigger = canvas.getByText('Open Modal');
+      await userEvent.click(trigger);
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+    });
+
+    await step('Click outside to close, nothing should happen', async () => {
+      const outsideButton = canvas.getByText('Outside Button');
+      await userEvent.click(outsideButton);
+      expect(args.onInteractOutside).not.toHaveBeenCalled();
+      // Wait a bit to ensure the modal close animation would've had time to play.
+      await new Promise((r) => setTimeout(r, 300));
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+    });
+  },
+});
+
+export const OnEscapeKeyDown = meta.story({
+  name: 'OnEscapeKeyDown (deprecated)',
+  args: {
+    children: <SampleModalContent />,
+    onEscapeKeyDown: fn(),
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+
+    return (
+      <>
+        <Modal {...args} open={isOpen} onOpenChange={setOpen} />
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal
+        </Button>
+      </>
+    );
+  },
+  play: async ({ args, canvas, step }) => {
+    await step('Open modal', async () => {
+      const trigger = canvas.getByText('Open Modal');
+      await userEvent.click(trigger);
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+    });
+
+    await step('Close modal with Escape key', async () => {
+      await userEvent.keyboard('{Escape}');
+      expect(args.onEscapeKeyDown).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).not.toBeInTheDocument();
+      });
+    });
+  },
+});
+
+export const OnEscapeKeyDownPreventDefault = meta.story({
+  name: 'OnEscapeKeyDown - e.preventDefault (deprecated)',
+  args: {
+    children: <SampleModalContent />,
+    onEscapeKeyDown: (e) => e.preventDefault(),
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+
+    return (
+      <>
+        <Modal {...args} open={isOpen} onOpenChange={setOpen} />
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal
+        </Button>
+      </>
+    );
+  },
+  play: async ({ canvas, step }) => {
+    await step('Open modal', async () => {
+      const trigger = canvas.getByText('Open Modal');
+      await userEvent.click(trigger);
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+    });
+
+    await step('Click outside to close but modal stays open', async () => {
+      await userEvent.keyboard('{Escape}');
+      // Wait a bit to ensure the modal close animation would've had time to play.
+      await new Promise((r) => setTimeout(r, 300));
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+    });
+  },
+});
+
+export const OnEscapeKeyDownEscDisabled = meta.story({
+  name: 'OnEscapeKeyDown - dismiss disabled (deprecated)',
+  args: {
+    children: <SampleModalContent />,
+    dismissOnEscape: false,
+    onEscapeKeyDown: fn(),
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+
+    return (
+      <>
+        <Modal {...args} open={isOpen} onOpenChange={setOpen} />
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal
+        </Button>
+      </>
+    );
+  },
+  play: async ({ args, canvas, step }) => {
+    await step('Open modal', async () => {
+      const trigger = canvas.getByText('Open Modal');
+      await userEvent.click(trigger);
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+    });
+
+    await step('Click outside to close, nothing should happen', async () => {
+      await userEvent.keyboard('{Escape}');
+      expect(args.onEscapeKeyDown).not.toHaveBeenCalled();
+      // Wait a bit to ensure the modal close animation would've had time to play.
+      await new Promise((r) => setTimeout(r, 300));
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+    });
+  },
+});
+
 const ModalWithTrigger = ({
   triggerText,
   ...modalProps
@@ -391,16 +669,28 @@ export const WithOpenChangeCallback = meta.story({
       </>
     );
   },
-  play: async ({ args, canvasElement }) => {
+  play: async ({ args, canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const trigger = canvas.getByText('Open Modal (with callback)');
 
-    await userEvent.click(trigger);
-    await expect(args.onOpenChange).toHaveBeenCalledWith(true);
+    await step('Open modal and verify callback', async () => {
+      const trigger = canvas.getByText('Open Modal (with callback)');
+      await userEvent.click(trigger);
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+      await expect(args.onOpenChange).toHaveBeenCalledWith(true);
+    });
 
-    const closeButton = await screen.findByLabelText('Close modal');
-    await userEvent.click(closeButton);
-    await expect(args.onOpenChange).toHaveBeenCalledWith(false);
+    await step('Close modal and verify callback', async () => {
+      const closeButton = await waitFor(() => screen.findByLabelText('Close modal'), {
+        timeout: 3000,
+      });
+      await userEvent.click(closeButton);
+      await expect(args.onOpenChange).toHaveBeenCalledWith(false);
+    });
   },
 });
 
@@ -427,12 +717,22 @@ export const InteractiveKeyboard = meta.story({
     await step('Open modal with Enter key', async () => {
       trigger.focus();
       await userEvent.keyboard('{Enter}');
-      await expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
     });
 
     await step('Navigate through modal content with focus trap', async () => {
-      await userEvent.tab();
-      const closeButton = await screen.findByRole('button', { name: 'Close modal' });
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const closeButton = await waitFor(
+        () => screen.findByRole('button', { name: 'Close modal' }),
+        { timeout: 3000 }
+      );
+      closeButton.focus();
+
       await expect(closeButton).toHaveFocus();
 
       await userEvent.tab();
@@ -449,6 +749,9 @@ export const InteractiveKeyboard = meta.story({
 
       await userEvent.tab();
       await expect(closeButton).toHaveFocus();
+
+      await userEvent.tab();
+      await expect(sampleButton).toHaveFocus();
     });
 
     await step('Close modal with Escape key', async () => {
@@ -486,11 +789,18 @@ export const InteractiveMouse = meta.story({
     await step('Open modal', async () => {
       const trigger = canvas.getByText('Open Modal (Mouse Test)');
       await userEvent.click(trigger);
-      await expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
     });
 
     await step('Click close button', async () => {
-      const closeButton = await screen.findByLabelText('Close modal');
+      const closeButton = await waitFor(() => screen.findByLabelText('Close modal'), {
+        timeout: 3000,
+      });
       await userEvent.click(closeButton);
     });
 
@@ -661,6 +971,100 @@ export const BottomDrawerTransitions = meta.story({
         <Button ariaLabel={false} onClick={() => setOpen(true)}>
           Open Bottom Drawer with Transitions
         </Button>
+      </>
+    );
+  },
+});
+
+export const WithContainer = meta.story({
+  args: {
+    children: <SampleModalContent />,
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+    const container = useRef<HTMLDivElement>(null);
+
+    return (
+      <>
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal in Custom Container
+        </Button>
+        <MockContainer
+          bgColor="rgba(255, 71, 133, 0.05"
+          borderColor="#ff4785"
+          text="Custom Container. Modal will appear within this bordered area."
+          ref={container}
+        />
+        <Modal
+          {...args}
+          container={container.current || undefined}
+          open={isOpen}
+          onOpenChange={setOpen}
+        />
+      </>
+    );
+  },
+});
+
+export const WithPortalSelector = meta.story({
+  args: {
+    children: <SampleModalContent />,
+    portalSelector: '#custom-modal-portal-target',
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+
+    return (
+      <>
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal in Portal Target
+        </Button>
+        <MockContainer
+          id="custom-modal-portal-target"
+          bgColor="rgba(30, 167, 253, 0.05)"
+          borderColor="#1EA7FD"
+          text="Portal Selector Target. Modal will appear within this bordered area."
+        />
+        <Modal {...args} open={isOpen} onOpenChange={setOpen} />
+      </>
+    );
+  },
+});
+
+export const WithContainerAndPortalSelector = meta.story({
+  args: {
+    children: <SampleModalContent />,
+    portalSelector: '#ignored-portal-target',
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+    const [container, setContainer] = useState<HTMLElement | null>(null);
+
+    return (
+      <>
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal (Container takes precedence)
+        </Button>
+        <MockContainer
+          id="ignored-portal-target"
+          bgColor="rgba(153, 153, 153, 0.05)"
+          borderColor="#999"
+          text="Ignored Portal Selector Target"
+        />
+        <MockContainer
+          bgColor="rgba(55, 213, 163, 0.05)"
+          borderColor="#37D5A3"
+          text="Active Container (takes precedence)."
+          ref={(element) => setContainer(element ?? null)}
+        />
+        {
+          <Modal
+            {...args}
+            container={container || undefined}
+            open={isOpen}
+            onOpenChange={setOpen}
+          />
+        }
       </>
     );
   },

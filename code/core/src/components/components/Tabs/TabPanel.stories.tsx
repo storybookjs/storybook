@@ -1,19 +1,23 @@
 import type { FC } from 'react';
 import { useState } from 'react';
 
+import type { TabListState } from '@react-stately/tabs';
 import { expect, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { TabList } from './TabList';
 import { TabPanel } from './TabPanel';
-import type { TabProps } from './TabsView';
 import { useTabsState } from './TabsView';
+import type { TabProps } from './TabsView';
 
 const TabContent: FC<{ tabNumber: number }> = ({ tabNumber }) => {
   const [counter, setCounter] = useState(0);
 
   return (
-    <div data-testid={tabNumber} style={{ backgroundColor: '#f0f0f0', padding: '20px' }}>
+    <div
+      data-testid={tabNumber}
+      style={{ backgroundColor: '#f0f0f0', color: '#111', padding: '20px' }}
+    >
       <h3>Content for Tab {tabNumber}</h3>
       <button onClick={() => setCounter(counter + 1)}>Clicked {counter} times</button>
       <ul>
@@ -56,7 +60,7 @@ const meta = preview.meta({
       return (
         <>
           <TabList state={state} />
-          <Story args={{ ...args, id: state.selectedItem?.key, state }} />
+          <Story args={{ ...args, id: (state as TabListState<object>).selectedItem?.key, state }} />
         </>
       );
     },

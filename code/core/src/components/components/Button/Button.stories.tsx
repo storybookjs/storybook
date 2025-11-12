@@ -1,10 +1,9 @@
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import { FaceHappyIcon } from '@storybook/icons';
 
 import { fn } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
 import { Button } from './Button';
@@ -102,13 +101,13 @@ export const PseudoStates = meta.story({
       </Row>
       <Row id="active">
         <Button ariaLabel={false} variant="solid">
-          active
+          Active
         </Button>
         <Button ariaLabel={false} variant="outline">
-          active
+          Active
         </Button>
         <Button ariaLabel={false} variant="ghost">
-          active
+          Active
         </Button>
       </Row>
       <Row id="focus">
@@ -130,6 +129,78 @@ export const PseudoStates = meta.story({
           Focus Visible
         </Button>
         <Button ariaLabel={false} variant="ghost">
+          Focus Visible
+        </Button>
+      </Row>
+    </Stack>
+  ),
+  parameters: {
+    pseudo: {
+      hover: '#hover button',
+      active: '#active button',
+      focus: '#focus button',
+      focusVisible: '#focus-visible button',
+    },
+  },
+});
+
+export const Active = meta.story({
+  name: 'Active (deprecated)',
+  args: { ariaLabel: false, active: true },
+  render: (args) => (
+    <Stack>
+      <Row>
+        <Button {...args} variant="solid">
+          Button
+        </Button>
+        <Button {...args} variant="outline">
+          Button
+        </Button>
+        <Button {...args} variant="ghost">
+          Button
+        </Button>
+      </Row>
+      <Row id="hover">
+        <Button {...args} variant="solid">
+          Hover
+        </Button>
+        <Button {...args} variant="outline">
+          Hover
+        </Button>
+        <Button {...args} variant="ghost">
+          Hover
+        </Button>
+      </Row>
+      <Row id="active">
+        <Button {...args} variant="solid">
+          active
+        </Button>
+        <Button {...args} variant="outline">
+          active
+        </Button>
+        <Button {...args} variant="ghost">
+          active
+        </Button>
+      </Row>
+      <Row id="focus">
+        <Button {...args} variant="solid">
+          Focus
+        </Button>
+        <Button {...args} variant="outline">
+          Focus
+        </Button>
+        <Button {...args} variant="ghost">
+          Focus
+        </Button>
+      </Row>
+      <Row id="focus-visible">
+        <Button {...args} variant="solid">
+          Focus Visible
+        </Button>
+        <Button {...args} variant="outline">
+          Focus Visible
+        </Button>
+        <Button {...args} variant="ghost">
           Focus Visible
         </Button>
       </Row>

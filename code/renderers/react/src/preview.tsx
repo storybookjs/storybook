@@ -40,6 +40,10 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
     const defineStory = meta.story.bind(meta);
     meta.story = (__input: any) => {
       const story = defineStory(__input);
+      // TODO: [test-syntax] Are we sure we want this? the Component construct was for
+      // compatibility with raw portable stories. We don't actually use this in vitest.
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore this is a private property used only here
       story.Component = story.__compose();
       return story;
     };
@@ -80,7 +84,7 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
 >;
 
-interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
+export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
 /** @ts-expect-error hard */
   extends Meta<T, MetaInput> {
   // Required args don't need to be provided when the user uses an empty render

@@ -1,12 +1,20 @@
 import { Bar } from 'storybook/internal/components';
 
+import { expect } from 'storybook/test';
+
 import preview from '../../../../../.storybook/preview';
 import { TabList } from './TabList';
+import { TabPanel } from './TabPanel';
 import type { TabProps } from './TabsView';
 import { useTabsState } from './TabsView';
 
 const DEFAULT_TABS: TabProps[] = [
-  { id: 'tab1', title: 'Tab 1', children: () => <div>Content for Tab 1</div> },
+  {
+    id: 'tab1',
+    'aria-label': 'Tab one',
+    title: 'Tab 1',
+    children: () => <div>Content for Tab 1</div>,
+  },
   { id: 'tab2', title: 'Tab 2', children: () => <div>Content for Tab 2</div> },
   { id: 'tab3', title: 'Tab 3', children: () => <div>Content for Tab 3</div> },
 ];
@@ -52,7 +60,12 @@ const meta = preview.meta({
   decorators: [
     (Story, { args, parameters }) => {
       const state = useTabsState({ tabs: parameters.data.tabs });
-      return <Story args={{ ...args, state }} />;
+      return (
+        <>
+          <Story args={{ ...args, state }} />
+          <TabPanel state={state} />
+        </>
+      );
     },
   ],
 });
@@ -112,8 +125,7 @@ export const WithFixedWidth = meta.story({
     },
   },
   decorators: [
-    (Story, { args, parameters }) => {
-      const state = useTabsState({ tabs: parameters.data.tabs });
+    (Story, { args }) => {
       return (
         <Bar
           border
@@ -121,9 +133,17 @@ export const WithFixedWidth = meta.story({
           innerStyle={{ width: 400, padding: 0 }}
           backgroundColor={'rgba(0,0,0,.05)'}
         >
-          <Story args={{ ...args, state }} />
+          <Story args={{ ...args }} />
         </Bar>
       );
     },
   ],
+});
+
+export const PreservesAriaLabels = meta.story({
+  name: 'Preserves ARIA Labels',
+  play: ({ canvas }) => {
+    const tabOne = canvas.getAllByRole('tab')[0];
+    expect(tabOne).toHaveAttribute('aria-label', 'Tab one');
+  },
 });

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage } from './util';
+import { SbPage, checkTemplate } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -52,7 +52,7 @@ test.describe('interactions', () => {
     );
     test.skip(
       browserName === 'firefox',
-      `Skipping on FIreFox, which has trouble with "initial value"`
+      `Skipping on FireFox, which has trouble with "initial value"`
     );
 
     const sbPage = new SbPage(page, expect);
@@ -69,7 +69,7 @@ test.describe('interactions', () => {
     await expect(interactionsTab).toBeVisible();
 
     const panel = sbPage.panelContent();
-    const runStatusBadge = panel.locator('[aria-label^="Test status:"]');
+    const runStatusBadge = panel.locator('[aria-label^="Story status:"]');
     await expect(runStatusBadge).toContainText(/Pass/);
     await expect(panel).toContainText(/"initial value"/);
     await expect(panel).toContainText(/clear/);
@@ -139,8 +139,50 @@ test.describe('interactions', () => {
     await expect(button).toContainText('Button', { timeout: 50000 });
 
     const panel = sbPage.panelContent();
-    await expect(panel).toContainText(/Pass/);
+    await expect(panel).toContainText(/Fail/);
     await expect(panel).toContainText(/Found 1 unhandled error/);
     await expect(panel).toBeVisible();
+  });
+});
+
+test.describe('test function', () => {
+  test.skip(
+    checkTemplate(templateName, (template) => template.expected.renderer !== '@storybook/react'),
+    `Skipping ${templateName}, which does not support test functions`
+  );
+  test.skip(
+    templateName.includes('react-native-web'),
+    'React Native does not use className locators'
+  );
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(storybookUrl);
+    await new SbPage(page, expect).waitUntilLoaded();
+  });
+
+  test('should execute steps in the test function', async ({ page }) => {
+    const sbPage = new SbPage(page, expect);
+    await sbPage.deepLinkToStory(
+      storybookUrl,
+      'stories/renderers/react/test-fn',
+      'default',
+      'simple'
+    );
+    await sbPage.viewAddonPanel('Interactions');
+
+    const welcome = sbPage.previewRoot().locator('button');
+    await expect(welcome).toContainText('Arg from story', { timeout: 50000 });
+
+    const interactionsTab = page.getByRole('tab', { name: 'Interactions' });
+    await expect(interactionsTab).toContainText(/(\d)/);
+    await expect(interactionsTab).toBeVisible();
+
+    const panel = sbPage.panelContent();
+    await expect(panel).toContainText(/Pass/);
+    await expect(panel).toContainText(/userEvent.click/);
+    await expect(panel).toBeVisible();
+
+    const done = panel.locator('[data-testid=icon-done]').nth(0);
+    await expect(done).toBeVisible();
   });
 });

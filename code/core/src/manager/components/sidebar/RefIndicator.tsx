@@ -1,7 +1,7 @@
 import type { FC, MouseEventHandler, ReactNode } from 'react';
 import React, { forwardRef, useCallback, useMemo } from 'react';
 
-import { Button, Select, Spaced, WithPopover } from 'storybook/internal/components';
+import { Button, PopoverProvider, Select, Spaced } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
 import {
@@ -45,20 +45,11 @@ const IndicatorPlacement = styled.aside(({ theme }) => ({
 }));
 
 const IndicatorClickTarget = styled(Button)(({ theme }) => ({
-  borderRadius: '100%',
-  cursor: 'pointer',
   color: theme.textMutedColor,
-
-  '&:hover': {
-    color: theme.barSelectedColor,
-  },
-  '&:focus': {
-    color: theme.barSelectedColor,
-    borderColor: theme.barSelectedColor,
-  },
   svg: {
-    height: 10,
-    width: 10,
+    height: 14,
+    width: 14,
+    padding: 2,
     transition: 'all 150ms ease-out',
     color: 'inherit',
   },
@@ -137,10 +128,6 @@ const SubtleSelect = styled(Select)(({ theme }) => ({
   color: theme.color.defaultText,
   fontSize: theme.typography.size.s1,
   fontWeight: theme.typography.weight.regular,
-  '&:hover': {
-    background: 'transparent',
-    color: theme.color.defaultText,
-  },
 }));
 
 export const RefIndicator = React.memo(
@@ -167,7 +154,7 @@ export const RefIndicator = React.memo(
 
       return (
         <IndicatorPlacement ref={forwardedRef}>
-          <WithPopover
+          <PopoverProvider
             placement={isMobile ? 'bottom' : 'bottom-start'}
             padding={0}
             popover={() => (
@@ -201,7 +188,7 @@ export const RefIndicator = React.memo(
             >
               <GlobeIcon />
             </IndicatorClickTarget>
-          </WithPopover>
+          </PopoverProvider>
 
           {ref.versions && Object.keys(ref.versions).length ? (
             <>

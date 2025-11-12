@@ -58,10 +58,6 @@ const OpenInEditorButton = styled(Button)(({ theme }) => ({
   justifyContent: 'flex-end',
   textAlign: 'right',
   whiteSpace: 'nowrap',
-  marginTop: 'auto',
-  marginBottom: 1,
-  // 15 to align on screen edge - 7 from button padding
-  marginRight: 8,
   fontSize: 13,
   lineHeight: 24,
 }));

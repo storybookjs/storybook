@@ -1,216 +1,138 @@
+import type { ComponentProps, FunctionComponent } from 'react';
 import React from 'react';
 
-import { Popover, TooltipNote } from 'storybook/internal/components';
+import type { StoryObj } from '@storybook/react-vite';
 
-import { expect, fn, screen } from 'storybook/test';
+import { expect, screen } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../.storybook/preview';
-import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers';
-import { WithTooltip } from './WithTooltip';
+import { TooltipMessage } from './TooltipMessage';
+import { WithToolTipState as WithTooltip } from './WithTooltip';
 
-const SampleTooltip = () => 'Lorem ipsum dolor sit';
-const SampleTooltipNote = () => <TooltipNote note="This note appears on hover and focus" />;
-
-const MaxWidthPopover = styled(Popover)({
-  maxWidth: 300,
+const ViewPort = styled.div({
+  height: 300,
 });
 
-const meta = preview.meta({
-  id: 'overlay-WithTooltip',
-  title: 'Overlay/WithTooltip',
+const BackgroundBox = styled.div({
+  width: 500,
+  height: 500,
+  overflowY: 'scroll',
+  background: '#eee',
+  position: 'relative',
+});
+
+const Spacer = styled.div({
+  height: 100,
+});
+
+const Trigger = styled.div({
+  width: 200,
+  height: 100,
+  backgroundColor: 'red',
+  color: 'white',
+});
+
+interface TooltipProps {
+  onHide?: () => void;
+}
+
+const Tooltip: FunctionComponent<TooltipProps> = ({ onHide }) => (
+  <TooltipMessage
+    title="Lorem ipsum dolor sit"
+    desc="Amet consectatur vestibulum concet durum politu coret weirom"
+    links={[
+      {
+        title: 'Continue',
+        onClick: onHide,
+      },
+    ]}
+  />
+);
+
+export default {
   component: WithTooltip,
+  decorators: [
+    (storyFn: any) => (
+      <ViewPort>
+        <BackgroundBox>
+          <Spacer />
+          {storyFn()}
+        </BackgroundBox>
+      </ViewPort>
+    ),
+  ],
+};
+
+export const SimpleHover: StoryObj<ComponentProps<typeof WithTooltip>> = {
   args: {
-    triggerOnFocusOnly: false,
     placement: 'top',
-    offset: 8,
-    delayShow: 400,
-    delayHide: 200,
-    tooltip: <SampleTooltipNote />,
-    children: <Trigger>Hover me!</Trigger>,
-  },
-  decorators: [OverlayTriggerDecorator],
-});
-
-export const Base = meta.story({
-  args: {
-    tooltip: <SampleTooltipNote />,
-    children: <Trigger>Hover me!</Trigger>,
-  },
-});
-
-export const FocusOnly = meta.story({
-  args: {
-    triggerOnFocusOnly: true,
-    tooltip: <SampleTooltipNote />,
-    children: <Trigger tabIndex={0}>Focus me!</Trigger>,
-  },
-});
-
-export const Placements = meta.story({
-  args: {
-    children: <button>ignored</button>,
-    tooltip: 'ignored',
+    trigger: 'hover',
   },
   render: (args) => (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '1rem',
-        padding: '2rem',
-      }}
-    >
-      <WithTooltip {...args} placement="top" tooltip="Top placement">
-        <Trigger>Top</Trigger>
-      </WithTooltip>
-      <WithTooltip {...args} placement="top-start" tooltip="Top start placement">
-        <Trigger>Top Start</Trigger>
-      </WithTooltip>
-      <WithTooltip {...args} placement="top-end" tooltip="Top end placement">
-        <Trigger>Top End</Trigger>
-      </WithTooltip>
-      <WithTooltip {...args} placement="bottom" tooltip="Bottom placement">
-        <Trigger>Bottom</Trigger>
-      </WithTooltip>
-      <WithTooltip {...args} placement="bottom-start" tooltip="Bottom start placement">
-        <Trigger>Bottom Start</Trigger>
-      </WithTooltip>
-      <WithTooltip {...args} placement="bottom-end" tooltip="Bottom end placement">
-        <Trigger>Bottom End</Trigger>
-      </WithTooltip>
-      <WithTooltip {...args} placement="left" tooltip="Left placement">
-        <Trigger>Left</Trigger>
-      </WithTooltip>
-      <WithTooltip {...args} placement="left-start" tooltip="Left start placement">
-        <Trigger>Left Start</Trigger>
-      </WithTooltip>
-      <WithTooltip {...args} placement="left-end" tooltip="Left end placement">
-        <Trigger>Left End</Trigger>
-      </WithTooltip>
-      <WithTooltip {...args} placement="right" tooltip="Right placement">
-        <Trigger>Right</Trigger>
-      </WithTooltip>
-      <WithTooltip {...args} placement="right-start" tooltip="Right start placement">
-        <Trigger>Right Start</Trigger>
-      </WithTooltip>
-      <WithTooltip {...args} placement="right-end" tooltip="Right end placement">
-        <Trigger>Right End</Trigger>
-      </WithTooltip>
-    </div>
+    <WithTooltip {...args} tooltip={<Tooltip />}>
+      <Trigger>Hover me!</Trigger>
+    </WithTooltip>
   ),
-});
+};
 
-/** TooltipNote is the recommended Tooltip to use within Storybook. */
-export const WithTooltipNote = meta.story({
+export const SimpleHoverFunctional: StoryObj<ComponentProps<typeof WithTooltip>> = {
   args: {
-    tooltip: SampleTooltipNote(),
-    children: <Trigger>Hover me!</Trigger>,
+    placement: 'top',
+    trigger: 'hover',
   },
-});
+  render: (args) => (
+    <WithTooltip {...args} tooltip={Tooltip}>
+      <Trigger>Hover me!</Trigger>
+    </WithTooltip>
+  ),
+};
 
-export const WithCustomTooltip = meta.story({
+export const SimpleClick: StoryObj<ComponentProps<typeof WithTooltip>> = {
   args: {
-    tooltip: (
-      <Popover hasChrome color="positive" padding={8}>
-        This is a custom tooltip !
-      </Popover>
-    ),
-    children: <Trigger>Hover me!</Trigger>,
+    placement: 'top',
   },
-});
+  render: (args) => (
+    <WithTooltip {...args} tooltip={<Tooltip />}>
+      <Trigger>Click me!</Trigger>
+    </WithTooltip>
+  ),
+};
 
-export const WithLongContent = meta.story({
+export const SimpleClickStartOpen: StoryObj<ComponentProps<typeof WithTooltip>> = {
   args: {
-    tooltip: (
-      <MaxWidthPopover color="positive" hasChrome padding={8}>
-        <h3 style={{ margin: '0 0 8px 0' }}>Very Long Tooltip Content</h3>
-        <p style={{ margin: '0', fontSize: '12px', lineHeight: '1.4' }}>
-          This is a very long tooltip that demonstrates how the tooltip component handles extensive
-          content. It should wrap properly and maintain good readability even with multiple lines of
-          text. The tooltip positioning should also adapt to ensure it remains visible within the
-          viewport boundaries.
-        </p>
-      </MaxWidthPopover>
-    ),
-    children: <Trigger>Long content</Trigger>,
+    placement: 'top',
+    startOpen: true,
   },
-});
-
-export const WithComplexContent = meta.story({
-  args: {
-    tooltip: (
-      <MaxWidthPopover color="positive" hasChrome padding={8}>
-        <h3 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>Complex Tooltip</h3>
-        <p style={{ margin: '0 0 8px 0', fontSize: '12px' }}>
-          This tooltip contains multiple elements including:
-        </p>
-        <ul style={{ margin: '0', paddingLeft: '16px', fontSize: '12px' }}>
-          <li>Headings</li>
-          <li>Paragraphs</li>
-          <li>Lists</li>
-          <li>And more!</li>
-        </ul>
-      </MaxWidthPopover>
-    ),
-    children: <Trigger>Complex content</Trigger>,
-  },
-});
-
-export const CustomOffset = meta.story({
-  args: {
-    offset: 20,
-    tooltip: <TooltipNote note="Tooltip with custom offset (20px)" />,
-    children: <Trigger>Hover me!</Trigger>,
-  },
-});
-
-export const CustomDelays = meta.story({
-  args: {
-    delayShow: 1000,
-    delayHide: 500,
-    tooltip: <TooltipNote note="Tooltip with custom delays (1000ms show, 500ms hide)" />,
-    children: <Trigger>Hover me!</Trigger>,
-  },
-});
-
-export const Instantaneous = meta.story({
-  args: {
-    delayShow: 0,
-    delayHide: 0,
-    tooltip: <TooltipNote note="Tooltip with no delays" />,
-    children: <Trigger>Hover me!</Trigger>,
-  },
-});
-
-export const AlwaysOpen = meta.story({
-  args: {
-    visible: true,
-    tooltip: <SampleTooltip />,
-    children: <Trigger>Always visible tooltip</Trigger>,
-    placement: 'right-start',
-  },
+  render: (args) => (
+    <WithTooltip {...args} tooltip={<Tooltip />}>
+      <Trigger>Click me!</Trigger>
+    </WithTooltip>
+  ),
   play: async () => {
     await expect(await screen.findByText('Lorem ipsum dolor sit')).toBeInTheDocument();
   },
-});
+};
 
-export const NeverOpen = meta.story({
+export const SimpleClickCloseOnClick: StoryObj<ComponentProps<typeof WithTooltip>> = {
   args: {
-    visible: false,
-    tooltip: <SampleTooltip />,
-    children: <Trigger>Never visible tooltip</Trigger>,
-    placement: 'right-start',
+    placement: 'top',
+    closeOnOutsideClick: true,
   },
-  play: async () => {
-    await expect(await screen.findByText('Lorem ipsum dolor sit')).toBeInTheDocument();
-  },
-});
+  render: (args) => (
+    <WithTooltip {...args} tooltip={<Tooltip />}>
+      <Trigger>Click me!</Trigger>
+    </WithTooltip>
+  ),
+};
 
-export const WithVisibilityCallback = meta.story({
+export const WithoutChrome: StoryObj<ComponentProps<typeof WithTooltip>> = {
   args: {
-    onVisibleChange: fn(),
-    tooltip: <TooltipNote note="Tooltip with visibility callback" />,
-    children: <Trigger>Hover me!</Trigger>,
+    placement: 'top',
+    hasChrome: false,
   },
-});
+  render: (args) => (
+    <WithTooltip {...args} tooltip={<Tooltip />}>
+      <Trigger>Click me!</Trigger>
+    </WithTooltip>
+  ),
+};

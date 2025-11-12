@@ -144,6 +144,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     previewLevelTags,
     core,
     extraOptimizeDeps,
+    features,
   ] = await Promise.all([
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
@@ -153,6 +154,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     extractTagsFromPreview(finalOptions.configDir),
     presets.apply('core'),
     presets.apply('optimizeViteDeps', []),
+    presets.apply('features', {}),
   ]);
 
   const pluginsToIgnore = [
@@ -265,6 +267,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           ],
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything
+          // TODO: Remove the check once we don't support Vitest 3 anymore
           ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
             ? {
                 server: {
@@ -332,6 +335,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           ...(frameworkName?.includes('vue3')
             ? { __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false' }
             : {}),
+          FEATURES: JSON.stringify(features),
         },
       };
 

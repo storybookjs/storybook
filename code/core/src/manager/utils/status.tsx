@@ -72,7 +72,7 @@ export function getGroupStatus(
   allStatuses: StatusesByStoryIdAndTypeId
 ): Record<string, StatusValue> {
   return Object.values(collapsedData).reduce<Record<string, StatusValue>>((acc, item) => {
-    if (item.type === 'group' || item.type === 'component') {
+    if (item.type === 'group' || item.type === 'component' || item.type === 'story') {
       // @ts-expect-error (non strict)
       const leafs = getDescendantIds(collapsedData as any, item.id, false)
         .map((id) => collapsedData[id])

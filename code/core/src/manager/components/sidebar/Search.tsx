@@ -74,8 +74,9 @@ const SearchField = styled.div<{ isMobile: boolean }>(({ theme, isMobile }) => (
   borderRadius: theme.appBorderRadius + 2,
 
   '&:has(input:focus), &:has(input:active)': {
-    boxShadow: `${theme.color.secondary} 0 0 0 1px inset`,
     background: theme.background.app,
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: 2,
   },
 }));
 
@@ -409,7 +410,7 @@ export const Search = React.memo<SearchProps>(function Search({
                   </FocusKey>
                 )}
                 <Actions>
-                  {isOpen && (
+                  {input && (
                     <Button
                       padding="small"
                       variant="ghost"

@@ -18,7 +18,7 @@ async function run() {
   const { typesExternal: external } = await getExternal(process.cwd());
 
   const dir = dirname(entryPoint).replace('src', 'dist');
-  const outputFile = entryPoint.replace('src', 'dist').replace('.ts', '.d.ts');
+  const outputFile = entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
   const out = await rollup({
     input: entryPoint,
     external: (id) => {

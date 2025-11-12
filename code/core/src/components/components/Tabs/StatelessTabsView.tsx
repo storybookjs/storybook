@@ -1,11 +1,12 @@
 import type { FC, ReactNode } from 'react';
 import React from 'react';
 
-import { Bar, EmptyTabContent } from 'storybook/internal/components';
-import type { TabsViewProps } from 'storybook/internal/components';
-
-import { Tabs } from 'react-aria-components';
+import { Tabs } from 'react-aria-components/patched-dist/Tabs';
 import { styled } from 'storybook/theming';
+
+import { Bar } from '../Bar/Bar';
+import { EmptyTabContent } from './EmptyTabContent';
+import type { TabsViewProps } from './TabsView';
 
 const Container = styled(Tabs)<{ $simulatedGap: string | number }>(({ $simulatedGap }) => ({
   display: 'flex',
@@ -41,7 +42,9 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
 }) => {
   const EmptyContent = emptyState ?? <EmptyTabContent title="Nothing found" />;
   const [tabListChild, ...tabPanelChildren] = React.Children.toArray(children);
-  if (!showToolsWhenEmpty && tabPanelChildren?.length === 0) {
+  const hasContent = tabPanelChildren && tabPanelChildren.length > 0;
+
+  if (!showToolsWhenEmpty && !hasContent) {
     return EmptyContent;
   }
 
@@ -76,9 +79,9 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
         }}
       >
         {tools}
-        {tabListChild}
+        {hasContent ? tabListChild : <div />}
       </Bar>
-      {tabPanelChildren}
+      {hasContent ? tabPanelChildren : EmptyContent}
     </Container>
   );
 };

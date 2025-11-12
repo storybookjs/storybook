@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -26,6 +25,7 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
+import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
@@ -33,6 +33,7 @@ import { resolvePackageDir } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
+import { initPreviewInitializedChannel } from '../server-channel/preview-initialized-channel';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
@@ -258,6 +259,7 @@ export const experimental_serverChannel = async (
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
   initOpenInEditorChannel(channel, options, coreOptions);
+  initPreviewInitializedChannel(channel, options, coreOptions);
 
   return channel;
 };

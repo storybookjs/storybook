@@ -2,7 +2,13 @@ import type { FC } from 'react';
 import React, { Fragment, useCallback, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
-import { Button, ErrorFormatter, Link, Spaced, WithPopover } from 'storybook/internal/components';
+import {
+  Button,
+  ErrorFormatter,
+  Link,
+  PopoverProvider,
+  Spaced,
+} from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
@@ -11,6 +17,7 @@ import { styled } from 'storybook/theming';
 
 import { useLayout } from '../layout/LayoutProvider';
 import { Contained, Loader } from './Loader';
+import { NoResults } from './NoResults';
 
 const { window: globalWindow } = global;
 
@@ -120,7 +127,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
         <TextStyle>
           Oh no! Something went wrong loading this Storybook.
           <br />
-          <WithPopover
+          <PopoverProvider
             hasCloseButton
             offset={isMobile ? 0 : 8}
             placement={isMobile ? 'bottom-end' : 'bottom-start'}
@@ -133,7 +140,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
             <Link isButton>
               View error <ChevronDownIcon />
             </Link>
-          </WithPopover>{' '}
+          </PopoverProvider>{' '}
           <Link href="https://storybook.js.org/docs?ref=ui" cancel={false} target="_blank">
             View docs
           </Link>
@@ -150,29 +157,48 @@ const WideSpaced = styled(Spaced)({
   flex: 1,
 });
 
-export const EmptyBlock: FC<any> = ({ isMain }) => (
+export const EmptyBlock = ({ isMain, hasEntries }: { isMain: boolean; hasEntries: boolean }) => (
   <Contained>
     <FlexSpaced col={1}>
       <WideSpaced>
-        <Text>
-          {isMain ? (
-            <>
-              Oh no! Your Storybook is empty. Possible reasons why:
-              <ul>
-                <li>
-                  The glob specified in <code>main.js</code> isn't correct.
-                </li>
-                <li>No stories are defined in your story files.</li>
-                <li>You're using filter-functions, and all stories are filtered away.</li>
-              </ul>{' '}
-            </>
-          ) : (
-            <>
-              This composed storybook is empty, maybe you're using filter-functions, and all stories
-              are filtered away.
-            </>
-          )}
-        </Text>
+        {hasEntries ? (
+          <NoResults>
+            <strong>No stories found</strong>
+            <small>Your selected filters did not match any stories.</small>
+          </NoResults>
+        ) : isMain ? (
+          <Text>
+            Oh no! Your Storybook is empty. This can happen when:
+            <ul>
+              <li>
+                Your{' '}
+                <Link
+                  href="https://storybook.js.org/docs/api/main-config/main-config-stories?ref=ui"
+                  cancel={false}
+                  target="_blank"
+                >
+                  stories glob configuration
+                </Link>{' '}
+                does not match any files.{' '}
+              </li>
+              <li>
+                You have{' '}
+                <Link
+                  href="https://storybook.js.org/docs/writing-stories?ref=ui"
+                  cancel={false}
+                  target="_blank"
+                >
+                  no stories defined
+                </Link>{' '}
+                in your story files.{' '}
+              </li>
+            </ul>
+          </Text>
+        ) : (
+          <Text>
+            This composed Storybook is empty. Perhaps no stories match your selected filters.
+          </Text>
+        )}
       </WideSpaced>
     </FlexSpaced>
   </Contained>

@@ -1,12 +1,12 @@
 import type { FC, ReactNode } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button } from 'storybook/internal/components';
-
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
-import { TabList as TabListUpstream } from 'react-aria-components';
+import { TabList as TabListUpstream } from 'react-aria-components/patched-dist/Tabs';
 import { styled } from 'storybook/theming';
+
+import { Button } from '../Button/Button';
 
 const Root = styled.div({
   display: 'flex',

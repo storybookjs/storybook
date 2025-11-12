@@ -3,7 +3,7 @@ import React from 'react';
 import type { StoryAnnotations } from 'storybook/internal/csf';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { fn, within } from 'storybook/test';
+import { fn, userEvent, within } from 'storybook/test';
 
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';
@@ -174,6 +174,18 @@ const refs: Record<string, RefType> = {
 export const Optimized = () => (
   <Ref
     {...refs.optimized}
+    hasEntries={true}
+    isLoading={false}
+    isBrowsing
+    selectedStoryId=""
+    highlightedRef={{ current: null }}
+    setHighlighted={() => {}}
+  />
+);
+export const NoEntries = () => (
+  <Ref
+    {...refs.empty}
+    hasEntries={false}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -184,6 +196,7 @@ export const Optimized = () => (
 export const IsEmpty = () => (
   <Ref
     {...refs.empty}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -194,6 +207,7 @@ export const IsEmpty = () => (
 export const StartInjectedUnknown = () => (
   <Ref
     {...refs.startInjected_unknown}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -204,6 +218,7 @@ export const StartInjectedUnknown = () => (
 export const StartInjectedLoading = () => (
   <Ref
     {...refs.startInjected_loading}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -214,6 +229,7 @@ export const StartInjectedLoading = () => (
 export const StartInjectedReady = () => (
   <Ref
     {...refs.startInjected_ready}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -224,6 +240,7 @@ export const StartInjectedReady = () => (
 export const Versions = () => (
   <Ref
     {...refs.versions}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -234,6 +251,7 @@ export const Versions = () => (
 export const VersionsMissingCurrent = () => (
   <Ref
     {...refs.versionsMissingCurrent}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -244,6 +262,7 @@ export const VersionsMissingCurrent = () => (
 export const Errored = () => (
   <Ref
     {...refs.error}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -254,6 +273,7 @@ export const Errored = () => (
 export const ErroredMobile = () => (
   <Ref
     {...refs.error}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -266,8 +286,8 @@ export const ErroredWithErrorOpen: StoryAnnotations = {
   render: () => Errored(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByText('View error');
-    button.click();
+    const button = await canvas.findByText('View error');
+    await userEvent.click(button);
   },
 };
 export const ErroredMobileWithErrorOpen: StoryAnnotations = {
@@ -275,16 +295,16 @@ export const ErroredMobileWithErrorOpen: StoryAnnotations = {
   globals: { sb_theme: 'stacked', viewport: { value: 'mobile1' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByText('View error');
-    button.click();
+    const button = await canvas.findByText('View error');
+    await userEvent.click(button);
   },
 };
 export const ErroredWithIndicatorOpen: StoryAnnotations = {
   render: () => Errored(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByRole('button', { name: 'Extra actions' });
-    button.click();
+    const button = await canvas.findByRole('button', { name: 'Extra actions' });
+    await userEvent.click(button);
   },
 };
 export const ErroredMobileWithIndicatorOpen: StoryAnnotations = {
@@ -292,13 +312,14 @@ export const ErroredMobileWithIndicatorOpen: StoryAnnotations = {
   globals: { sb_theme: 'stacked', viewport: { value: 'mobile1' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByRole('button', { name: 'Extra actions' });
-    button.click();
+    const button = await canvas.findByRole('button', { name: 'Extra actions' });
+    await userEvent.click(button);
   },
 };
 export const Auth = () => (
   <Ref
     {...refs.auth}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -309,6 +330,7 @@ export const Auth = () => (
 export const Long = () => (
   <Ref
     {...refs.long}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -320,6 +342,7 @@ export const Long = () => (
 export const WithSourceCode = () => (
   <Ref
     {...refs.withSourceCode}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""

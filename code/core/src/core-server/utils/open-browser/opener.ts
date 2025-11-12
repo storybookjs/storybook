@@ -80,7 +80,6 @@ function startBrowserProcess(
       'Google Chrome',
       'Microsoft Edge',
       'Brave Browser',
-      'Arc',
       'Vivaldi',
       'Chromium',
     ];

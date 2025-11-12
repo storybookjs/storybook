@@ -2,11 +2,10 @@ import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
-import { shortcutToAriaKeyshortcuts } from 'storybook/internal/manager-api';
-import type { API_KeyCollection } from 'storybook/internal/manager-api';
 
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
+import { type API_KeyCollection, shortcutToAriaKeyshortcuts } from 'storybook/manager-api';
 import { isPropValid, styled } from 'storybook/theming';
 
 import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper';
@@ -18,6 +17,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   padding?: 'small' | 'medium' | 'none';
   variant?: 'outline' | 'solid' | 'ghost';
   onClick?: (event: SyntheticEvent) => void;
+  active?: boolean;
   disabled?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
 
@@ -27,13 +27,20 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
    * Button's content is already accessible to all. When a string is passed, it is also used as the
    * default tooltip text.
    */
-  ariaLabel: string | false;
+  ariaLabel?: string | false;
 
   /**
    * An optional tooltip to display when the Button is hovered. If the Button has no text content,
    * consider making this the same as the aria-label.
    */
   tooltip?: string;
+
+  /**
+   * Only use this flag when tooltips on button interfere with other keyboard interactions, like
+   * when building a custom select or menu button. Disables tooltips from the `tooltip`, `shortcut`
+   * and `ariaLabel` props.
+   */
+  disableAllTooltips?: boolean;
 
   /**
    * A more thorough description of what the Button does, provided to non-sighted users through an
@@ -58,27 +65,40 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = 'outline',
       padding = 'medium',
       disabled = false,
+      active,
       onClick,
       ariaLabel,
       ariaDescription = undefined,
       tooltip = undefined,
       shortcut = undefined,
+      disableAllTooltips = false,
       ...props
     },
     ref
   ) => {
     let Comp: 'button' | 'a' | typeof Slot = 'button';
 
+    if (ariaLabel === undefined || ariaLabel === '') {
+      deprecate(
+        `The 'ariaLabel' prop on 'Button' will become mandatory in Storybook 11. Buttons with text content should set 'ariaLabel={false}' to indicate that they are accessible as-is. Buttons without text content must provide a meaningful 'ariaLabel' for accessibility. The button content is: ${props.children}.`
+      );
+
+      // TODO in Storybook 11
+      // throw new Error(
+      //   'Button requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
+      // );
+    }
+
+    if (active !== undefined) {
+      deprecate(
+        'The `active` prop on `Button` is deprecated and will be removed in Storybook 11. Use specialized components like `ToggleButton` or `Select` instead.'
+      );
+    }
+
     if (asChild) {
       Comp = Slot;
     }
     const { ariaDescriptionAttrs, AriaDescription } = useAriaDescription(ariaDescription);
-
-    if (ariaLabel === '') {
-      throw new Error(
-        'Button requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
-      );
-    }
 
     const shortcutAttribute = useMemo(() => {
       return shortcut ? shortcutToAriaKeyshortcuts(shortcut) : undefined;
@@ -110,7 +130,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <>
-        <InteractiveTooltipWrapper shortcut={shortcut} tooltip={finalTooltip}>
+        <InteractiveTooltipWrapper
+          disableAllTooltips={disableAllTooltips}
+          shortcut={shortcut}
+          tooltip={finalTooltip}
+        >
           <StyledButton
             as={Comp}
             ref={ref}
@@ -118,6 +142,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             size={size}
             padding={padding}
             disabled={disabled}
+            active={active}
             animating={isAnimating}
             animation={animation}
             onClick={handleClick}
@@ -142,7 +167,7 @@ const StyledButton = styled('button', {
     animating: boolean;
     animation: ButtonProps['animation'];
   }
->(({ theme, variant, size, disabled, animating, animation = 'none', padding }) => ({
+>(({ theme, variant, size, disabled, active, animating, animation = 'none', padding }) => ({
   border: 0,
   cursor: disabled ? 'not-allowed' : 'pointer',
   display: 'inline-flex',
@@ -192,32 +217,12 @@ const StyledButton = styled('button', {
       return theme.button.background;
     }
 
+    if (variant === 'ghost' && active) {
+      return transparentize(0.93, theme.barSelectedColor);
+    }
+
     return 'transparent';
   })(),
-  ...(variant === 'ghost'
-    ? {
-        // This is a hack to apply bar styles to the button as soon as it is part of a bar
-        // It is a temporary solution until we have implemented Theming 2.0.
-        '.sb-bar &': {
-          background: 'transparent',
-          color: theme.barTextColor,
-          '&:hover': {
-            color: theme.barHoverColor,
-            background: transparentize(0.86, theme.barHoverColor),
-          },
-
-          '&:active': {
-            color: theme.barSelectedColor,
-            background: transparentize(0.93, theme.barSelectedColor),
-          },
-
-          '&:focus': {
-            boxShadow: `${rgba(theme.barHoverColor, 1)} 0 0 0 1px inset`,
-            outline: 'none',
-          },
-        },
-      }
-    : {}),
   color: (() => {
     if (variant === 'solid') {
       return theme.color.lightest;
@@ -225,6 +230,10 @@ const StyledButton = styled('button', {
 
     if (variant === 'outline') {
       return theme.input.color;
+    }
+
+    if (variant === 'ghost' && active) {
+      return theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary;
     }
 
     if (variant === 'ghost') {
@@ -283,6 +292,12 @@ const StyledButton = styled('button', {
   '&:focus-visible': {
     outline: `2px solid ${rgba(theme.color.secondary, 1)}`,
     outlineOffset: 2,
+    // Should ensure focus outline gets drawn above next sibling
+    zIndex: '1',
+  },
+
+  '.sb-bar &:focus-visible, .sb-list &:focus-visible': {
+    outlineOffset: 0,
   },
 
   '> svg': {

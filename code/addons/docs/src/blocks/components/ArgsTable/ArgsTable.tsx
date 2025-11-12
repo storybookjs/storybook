@@ -7,10 +7,10 @@ import { includeConditionalArg } from 'storybook/internal/csf';
 
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
-import { pickBy } from 'es-toolkit/compat';
+import { pickBy } from 'es-toolkit/object';
 import { styled } from 'storybook/theming';
 
-import { EmptyBlock } from '..';
+import { EmptyBlock } from '../EmptyBlock';
 import { ArgRow } from './ArgRow';
 import { Empty } from './Empty';
 import { SectionRow } from './SectionRow';
@@ -20,8 +20,9 @@ import type { ArgType, ArgTypes, Args, Globals } from './types';
 export const TableWrapper = styled.table<{
   compact?: boolean;
   inAddonPanel?: boolean;
+  inTabPanel?: boolean;
   isLoading?: boolean;
-}>(({ theme, compact, inAddonPanel }) => ({
+}>(({ theme, compact, inAddonPanel, inTabPanel }) => ({
   '&&': {
     // Resets for cascading/system styles
     borderSpacing: 0,
@@ -104,8 +105,7 @@ export const TableWrapper = styled.table<{
     },
 
     // Makes border alignment consistent w/other DocBlocks
-    marginLeft: inAddonPanel ? 0 : 1,
-    marginRight: inAddonPanel ? 0 : 1,
+    marginInline: inAddonPanel || inTabPanel ? 0 : 1,
 
     tbody: {
       // Safari doesn't love shadows on tbody so we need to use a shadow filter. In order to do this,
@@ -199,6 +199,7 @@ export interface ArgsTableOptionProps {
   resetArgs?: (argNames?: string[]) => void;
   compact?: boolean;
   inAddonPanel?: boolean;
+  inTabPanel?: boolean;
   initialExpandedArgs?: boolean;
   isLoading?: boolean;
   sort?: SortType;
@@ -321,6 +322,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     resetArgs,
     compact,
     inAddonPanel,
+    inTabPanel,
     initialExpandedArgs,
     sort = 'none',
     isLoading,
@@ -395,7 +397,10 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
           </ButtonPositionWrapper>
         )}
 
-        <TableWrapper {...{ compact, inAddonPanel }} className="docblock-argstable sb-unstyled">
+        <TableWrapper
+          {...{ compact, inAddonPanel, inTabPanel }}
+          className="docblock-argstable sb-unstyled"
+        >
           <thead className="docblock-argstable-head">
             <tr>
               <th>

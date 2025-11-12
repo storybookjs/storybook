@@ -166,7 +166,7 @@ export const AddonPanel = React.memo<{
             </StatelessTab>
           ))}
         </StatelessTabList>
-        <PreRenderAddons panels={panels} />
+        {Object.keys(panels).length ? <PreRenderAddons panels={panels} /> : null}
       </StatelessTabsView>
     </Section>
   );

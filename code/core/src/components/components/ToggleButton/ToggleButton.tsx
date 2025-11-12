@@ -1,10 +1,9 @@
 import React, { forwardRef } from 'react';
 
-import { Button } from 'storybook/internal/components';
-import type { ButtonProps } from 'storybook/internal/components';
-
 import { darken, transparentize } from 'polished';
 import { styled } from 'storybook/theming';
+
+import { Button, type ButtonProps } from '../Button/Button';
 
 export interface ToggleButtonProps extends ButtonProps {
   /** Whether the ToggleButton is currently pressed or not. */
@@ -24,37 +23,35 @@ export const ToggleButton = forwardRef<HTMLButtonElement, ToggleButtonProps>(
 
 ToggleButton.displayName = 'ToggleButton';
 
-const StyledToggle = styled(Button)<ToggleButtonProps>(({ theme, variant, pressed }) => ({
-  ...(pressed
-    ? {
-        ...(variant === 'solid'
-          ? {
-              background:
-                theme.base === 'lighten'
-                  ? darken(0.1, theme.color.secondary)
-                  : darken(0.2, theme.color.secondary),
-            }
-          : {}),
-        ...(variant === 'outline'
-          ? {
-              background: transparentize(0.94, theme.barSelectedColor),
-              boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
-              color: theme.barSelectedColor,
-            }
-          : {}),
-        ...(variant === 'ghost'
-          ? {
-              background: transparentize(0.94, theme.barSelectedColor),
-              color: theme.barSelectedColor,
-              // This is a hack to apply bar styles to the button as soon as it is part of a bar
-              // It is a temporary solution until we have implemented Theming 2.0.
-              '.sb-bar &': {
+const StyledToggle = styled(Button)<ToggleButtonProps>(
+  ({ theme, variant = 'outline', pressed }) => ({
+    ...(pressed
+      ? {
+          ...(variant === 'solid'
+            ? {
+                background:
+                  theme.base === 'lighten'
+                    ? darken(0.1, theme.color.secondary)
+                    : darken(0.2, theme.color.secondary),
+              }
+            : {}),
+          ...(variant === 'outline'
+            ? {
                 background: transparentize(0.94, theme.barSelectedColor),
-
+                boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
                 color: theme.barSelectedColor,
-              },
-            }
-          : {}),
-      }
-    : {}),
-}));
+              }
+            : {}),
+          ...(variant === 'ghost'
+            ? {
+                background: transparentize(0.93, theme.barSelectedColor),
+                color:
+                  theme.base === 'light'
+                    ? darken(0.1, theme.color.secondary)
+                    : theme.color.secondary,
+              }
+            : {}),
+        }
+      : {}),
+  })
+);

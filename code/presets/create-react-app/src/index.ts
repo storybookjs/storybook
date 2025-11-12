@@ -1,7 +1,9 @@
+import module from 'node:module';
 import { dirname, join, relative } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
+// TODO: Remove in SB11
 import PnpWebpackPlugin from 'pnp-webpack-plugin';
 import type { Configuration, RuleSetRule, WebpackPluginInstance } from 'webpack';
 
@@ -28,6 +30,7 @@ type ResolveLoader = Configuration['resolveLoader'];
 // This loader is shared by both the `managerWebpack` and `webpack` functions.
 const resolveLoader: ResolveLoader = {
   modules: ['node_modules', join(REACT_SCRIPTS_PATH, 'node_modules')],
+  // TODO: Remove in SB11
   plugins: [PnpWebpackPlugin.moduleLoader(module)],
 };
 
@@ -127,6 +130,7 @@ const webpack = async (
         join(REACT_SCRIPTS_PATH, 'node_modules'),
         ...getModulePath(CWD),
       ],
+      // TODO: Remove in SB11
       plugins: [PnpWebpackPlugin as any],
       // manual copy from builder-webpack because defaults are disabled in this CRA preset
       conditionNames: [

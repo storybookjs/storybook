@@ -19,7 +19,7 @@ export const PAGE_STEP_SIZE = 5;
 
 export const Listbox = styled('ul')({
   minWidth: 180,
-  maxHeight: 504,
+  height: '100%',
   borderRadius: 6,
   overflow: 'hidden auto',
   listStyle: 'none',

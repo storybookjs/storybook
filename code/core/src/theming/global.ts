@@ -130,5 +130,9 @@ export const createGlobal = memoize(1)(({
     '.sb-hidden-until-focus:focus': {
       opacity: 1,
     },
+
+    '.react-aria-Popover:focus-visible': {
+      outline: 'none',
+    },
   };
 });

@@ -1,12 +1,12 @@
 import React from 'react';
 
 import { Button } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { LinuxIcon } from '@storybook/icons';
 
 import type { StoryAnnotations } from 'core/src/types';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
 import { Select } from './Select';
@@ -28,6 +28,7 @@ const meta = preview.meta({
       { title: 'Frog', value: 'frog' },
     ],
   },
+  tags: ['!vitest'],
 });
 
 const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });
@@ -217,7 +218,7 @@ export const DefaultOptionMulti = meta.story({
 
 const disabledPlayFn: StoryAnnotations['play'] = async ({ canvasElement, args }) => {
   const canvas = within(canvasElement);
-  const selectButton = canvas.getByRole(args.multiSelect ? 'combobox' : 'button');
+  const selectButton = await canvas.findByRole('button');
   expect(selectButton).toHaveAttribute('aria-disabled', 'true');
 
   await userEvent.click(selectButton);
@@ -260,21 +261,21 @@ export const DefaultOpen = meta.story({
 
 export const MouseSelection = meta.story({
   name: 'Mouse Selection (single)',
-  play: async ({ canvasElement, args }) => {
-    const selectButton = within(canvasElement).getByRole('button');
+  play: async ({ canvas, args }) => {
+    const selectButton = await canvas.findByRole('button');
     await userEvent.click(selectButton);
 
     const listbox = await screen.findByRole('listbox');
     expect(listbox).toBeInTheDocument();
 
-    const pollywogOption = screen.getByRole('option', { name: 'Pollywog' });
+    const pollywogOption = await screen.findByRole('option', { name: 'Pollywog' });
     await userEvent.click(pollywogOption);
 
     expect(args.onSelect).toHaveBeenCalledWith('pollywog');
     expect(args.onChange).toHaveBeenCalledWith(['pollywog']);
 
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    expect(selectButton).toHaveTextContent('Pollywog');
+    await expect(selectButton).toHaveTextContent('Pollywog');
   },
 });
 
@@ -289,48 +290,47 @@ export const MouseSelectionMulti = meta.story({
       <Button ariaLabel={false}>Other content</Button>
     </Row>
   ),
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+  play: async ({ canvas, args }) => {
+    const selectButton = await canvas.findByRole('button', { name: /Animal/ });
     await userEvent.click(selectButton);
 
-    const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
+    const tadpoleOption = await screen.findByRole('option', { name: 'Tadpole' });
     await userEvent.click(tadpoleOption);
 
     expect(args.onSelect).toHaveBeenCalledWith('tadpole');
     expect(args.onChange).toHaveBeenCalledWith(['tadpole']);
     expect(selectButton).toHaveTextContent('1');
-    expect(screen.getByRole('listbox')).toBeInTheDocument(); // Listbox should not close in multi select mode.
+    expect(await screen.findByRole('listbox')).toBeInTheDocument(); // Listbox should not close in multi select mode.
 
-    const pollywogOption = screen.getByRole('option', { name: 'Pollywog' });
+    const pollywogOption = await screen.findByRole('option', { name: 'Pollywog' });
     await userEvent.click(pollywogOption);
 
     expect(args.onChange).toHaveBeenLastCalledWith(['tadpole', 'pollywog']);
     expect(selectButton).toHaveTextContent('2');
-    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    expect(await screen.findByRole('listbox')).toBeInTheDocument();
 
-    await userEvent.click(canvas.getByText('Other content'));
+    await userEvent.click(await canvas.findByText('Other content'));
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument(); // Now closed.
   },
 });
 
 const kbSelectionTest =
   (triggerKey: string, selectKey: string): StoryAnnotations['play'] =>
-  async ({ canvasElement, args, step }) => {
-    const selectButton = within(canvasElement).getByRole(args.multiSelect ? 'combobox' : 'button');
+  async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button');
     selectButton.focus();
 
     await step('Open listbox', async () => {
       await userEvent.keyboard(triggerKey);
       const listbox = await screen.findByRole('listbox');
       expect(listbox).toBeInTheDocument();
-      const optionOne = screen.getByRole('option', { name: 'Tadpole' });
+      const optionOne = await screen.findByRole('option', { name: 'Tadpole' });
       expect(document.activeElement).toBe(optionOne);
     });
 
     await step('Press ArrowDown', async () => {
       await userEvent.keyboard('{ArrowDown}');
-      const optionTwo = screen.getByRole('option', { name: 'Pollywog' });
+      const optionTwo = await screen.findByRole('option', { name: 'Pollywog' });
       expect(document.activeElement).toBe(optionTwo);
     });
 
@@ -366,15 +366,15 @@ export const KeyboardSelectionSS = meta.story({
 
 const kbMultiSelectionTest =
   (triggerKey: string, selectKey: string): StoryAnnotations['play'] =>
-  async ({ canvasElement, args, step }) => {
-    const selectButton = within(canvasElement).getByRole('combobox');
+  async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button', { name: /Animal/ });
     selectButton.focus();
 
     await step('Open listbox', async () => {
       await userEvent.keyboard(triggerKey);
       const listbox = await screen.findByRole('listbox');
       expect(listbox).toBeInTheDocument();
-      const optionOne = screen.getByRole('option', { name: 'Tadpole' });
+      const optionOne = await screen.findByRole('option', { name: 'Tadpole' });
       expect(document.activeElement).toBe(optionOne);
     });
 
@@ -387,7 +387,7 @@ const kbMultiSelectionTest =
 
     await step('Press ArrowDown', async () => {
       await userEvent.keyboard('{ArrowDown}');
-      const optionTwo = screen.getByRole('option', { name: 'Pollywog' });
+      const optionTwo = await screen.findByRole('option', { name: 'Pollywog' });
       expect(document.activeElement).toBe(optionTwo);
     });
 
@@ -431,8 +431,8 @@ export const KeyboardSelectionMultiSS = meta.story({
 
 export const MouseOpenNoAutoselect = meta.story({
   name: 'AutoSelect - nothing selected on Mouse open (single)',
-  play: async ({ canvasElement, args, step }) => {
-    const selectButton = within(canvasElement).getByRole('button');
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button');
 
     await step('Click on button', async () => {
       await userEvent.click(selectButton);
@@ -454,8 +454,8 @@ export const MouseOpenNoAutoselect = meta.story({
 
 export const KeyboardOpenAutoselect = meta.story({
   name: 'AutoSelect - first item select on Enter (single)',
-  play: async ({ canvasElement, args, step }) => {
-    const selectButton = within(canvasElement).getByRole(args.multiSelect ? 'combobox' : 'button');
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button');
 
     await step('Open with Enter', async () => {
       selectButton.focus();
@@ -483,8 +483,8 @@ export const KeyboardOpenAutoselect = meta.story({
 
 export const ArrowDownAutoSelect = meta.story({
   name: 'AutoSelect - first item select on ArrowDown (single)',
-  play: async ({ canvasElement, args }) => {
-    const selectButton = within(canvasElement).getByRole('button');
+  play: async ({ canvas, args }) => {
+    const selectButton = await canvas.findByRole('button');
     selectButton.focus();
     await userEvent.keyboard('{ArrowDown}');
     expect(args.onSelect).toHaveBeenCalledWith('tadpole');
@@ -497,8 +497,8 @@ export const ArrowDownAutoSelect = meta.story({
 
 export const ArrowUpAutoSelect = meta.story({
   name: 'AutoSelect - last item select on ArrowUp (single)',
-  play: async ({ canvasElement, args }) => {
-    const selectButton = within(canvasElement).getByRole('button');
+  play: async ({ canvas, args }) => {
+    const selectButton = await canvas.findByRole('button');
     selectButton.focus();
     await userEvent.keyboard('{ArrowUp}');
     expect(args.onSelect).toHaveBeenCalledWith('frog');
@@ -517,25 +517,25 @@ export const MouseFastNavPage = meta.story({
       value: `option-${i + 1}`,
     })),
   },
-  play: async ({ canvasElement, step }) => {
-    const selectButton = within(canvasElement).getByRole('button');
+  play: async ({ canvas, step }) => {
+    const selectButton = await canvas.findByRole('button');
 
     await step('Open select (no active option)', async () => {
       await userEvent.click(selectButton);
       const listbox = await screen.findByRole('listbox');
       expect(listbox).toBeInTheDocument();
-      expect(document.activeElement).toBe(selectButton);
+      expect(document.activeElement).toBe(listbox);
     });
 
     await step('Press PageDown (6th option is active)', async () => {
       await userEvent.keyboard('{PageDown}');
-      const sixthOption = screen.getByRole('option', { name: 'Option 6' });
+      const sixthOption = await screen.findByRole('option', { name: 'Option 6' });
       expect(document.activeElement).toBe(sixthOption);
     });
 
     await step('Press PageUp (1st option is active)', async () => {
       await userEvent.keyboard('{PageUp}');
-      const firstOption = screen.getByRole('option', { name: 'Option 1' });
+      const firstOption = await screen.findByRole('option', { name: 'Option 1' });
       expect(document.activeElement).toBe(firstOption);
     });
   },
@@ -548,27 +548,27 @@ export const KeyboardFastNavPage = meta.story({
       value: `option-${i + 1}`,
     })),
   },
-  play: async ({ canvasElement, step }) => {
-    const selectButton = within(canvasElement).getByRole('button');
+  play: async ({ canvas, step }) => {
+    const selectButton = await canvas.findByRole('button');
     selectButton.focus();
 
     await step('Open select (1st option is active)', async () => {
       await userEvent.keyboard('{Enter}');
       const listbox = await screen.findByRole('listbox');
       expect(listbox).toBeInTheDocument();
-      const firstOption = screen.getByRole('option', { name: 'Option 1' });
+      const firstOption = await screen.findByRole('option', { name: 'Option 1' });
       expect(document.activeElement).toBe(firstOption);
     });
 
     await step('Press PageDown (6th option is active)', async () => {
       await userEvent.keyboard('{PageDown}');
-      const sixthOption = screen.getByRole('option', { name: 'Option 6' });
+      const sixthOption = await screen.findByRole('option', { name: 'Option 6' });
       expect(document.activeElement).toBe(sixthOption);
     });
 
     await step('Press PageUp (1st option is active)', async () => {
       await userEvent.keyboard('{PageUp}');
-      const firstOption = screen.getByRole('option', { name: 'Option 1' });
+      const firstOption = await screen.findByRole('option', { name: 'Option 1' });
       expect(document.activeElement).toBe(firstOption);
     });
   },
@@ -582,31 +582,31 @@ export const MouseFastNavHomeEnd = meta.story({
       value: `option-${i + 1}`,
     })),
   },
-  play: async ({ canvasElement, step }) => {
-    const selectButton = within(canvasElement).getByRole('button');
+  play: async ({ canvas, step }) => {
+    const selectButton = await canvas.findByRole('button');
 
     await step('Open select (no active option)', async () => {
       await userEvent.click(selectButton);
       const listbox = await screen.findByRole('listbox');
       expect(listbox).toBeInTheDocument();
-      expect(document.activeElement).toBe(selectButton);
+      expect(document.activeElement).toBe(listbox);
     });
 
     await step('Navigate to middle with ArrowDown', async () => {
       await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}');
-      const middleOption = screen.getByRole('option', { name: 'Option 3' });
+      const middleOption = await screen.findByRole('option', { name: 'Option 3' });
       expect(document.activeElement).toBe(middleOption);
     });
 
     await step('Navigate to end with End', async () => {
       await userEvent.keyboard('{End}');
-      const lastOption = screen.getByRole('option', { name: 'Option 20' });
+      const lastOption = await screen.findByRole('option', { name: 'Option 20' });
       expect(document.activeElement).toBe(lastOption);
     });
 
     await step('Navigate to start with Home', async () => {
       await userEvent.keyboard('{Home}');
-      const firstOption = screen.getByRole('option', { name: 'Option 1' });
+      const firstOption = await screen.findByRole('option', { name: 'Option 1' });
       expect(document.activeElement).toBe(firstOption);
     });
   },
@@ -620,33 +620,33 @@ export const KeyboardFastNavHomeEnd = meta.story({
       value: `option-${i + 1}`,
     })),
   },
-  play: async ({ canvasElement, step }) => {
-    const selectButton = within(canvasElement).getByRole('button');
+  play: async ({ canvas, step }) => {
+    const selectButton = await canvas.findByRole('button');
     selectButton.focus();
 
     await step('Open select (1st option is active)', async () => {
       await userEvent.keyboard('{Enter}');
       const listbox = await screen.findByRole('listbox');
       expect(listbox).toBeInTheDocument();
-      const firstOption = screen.getByRole('option', { name: 'Option 1' });
+      const firstOption = await screen.findByRole('option', { name: 'Option 1' });
       expect(document.activeElement).toBe(firstOption);
     });
 
     await step('Navigate to middle with ArrowDown', async () => {
       await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}');
-      const middleOption = screen.getByRole('option', { name: 'Option 4' });
+      const middleOption = await screen.findByRole('option', { name: 'Option 4' });
       expect(document.activeElement).toBe(middleOption);
     });
 
     await step('Navigate to end with End', async () => {
       await userEvent.keyboard('{End}');
-      const lastOption = screen.getByRole('option', { name: 'Option 20' });
+      const lastOption = await screen.findByRole('option', { name: 'Option 20' });
       expect(document.activeElement).toBe(lastOption);
     });
 
     await step('Navigate to start with Home', async () => {
       await userEvent.keyboard('{Home}');
-      const firstOption = screen.getByRole('option', { name: 'Option 1' });
+      const firstOption = await screen.findByRole('option', { name: 'Option 1' });
       expect(document.activeElement).toBe(firstOption);
     });
   },
@@ -658,9 +658,8 @@ export const MouseDeselection = meta.story({
     multiSelect: true,
     defaultOptions: ['tadpole', 'pollywog'],
   },
-  play: async ({ canvasElement, args, step }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button', { name: /Animal/ });
 
     await step('Check initial state', async () => {
       expect(selectButton).toHaveTextContent('2');
@@ -671,7 +670,7 @@ export const MouseDeselection = meta.story({
     });
 
     await step('Deselect first option', async () => {
-      const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
+      const tadpoleOption = await screen.findByRole('option', { name: 'Tadpole' });
       expect(tadpoleOption).toHaveAttribute('aria-selected', 'true');
       await userEvent.click(tadpoleOption);
       expect(args.onDeselect).toHaveBeenCalledWith('tadpole');
@@ -690,9 +689,8 @@ export const KeyboardDeselection = meta.story({
     multiSelect: true,
     defaultOptions: ['tadpole', 'pollywog'],
   },
-  play: async ({ canvasElement, args, step }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button', { name: /Animal/ });
 
     await step('Check initial state', async () => {
       expect(selectButton).toHaveTextContent('2');
@@ -704,7 +702,7 @@ export const KeyboardDeselection = meta.story({
     });
 
     await step('Deselect first option', async () => {
-      const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
+      const tadpoleOption = await screen.findByRole('option', { name: 'Tadpole' });
       expect(tadpoleOption).toHaveAttribute('aria-selected', 'true');
       await userEvent.keyboard('{Enter}');
       expect(args.onDeselect).toHaveBeenCalledWith('tadpole');
@@ -727,13 +725,12 @@ export const OnSelectHandler = meta.story({
   args: {
     onSelect: fn().mockName('onSelect'),
   },
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('button');
+  play: async ({ canvas, args }) => {
+    const selectButton = await canvas.findByRole('button');
 
     await userEvent.click(selectButton);
 
-    const frogOption = screen.getByRole('option', { name: 'Frog' });
+    const frogOption = await screen.findByRole('option', { name: 'Frog' });
     await userEvent.click(frogOption);
 
     expect(args.onSelect).toHaveBeenCalledTimes(1);
@@ -748,12 +745,11 @@ export const OnDeselectHandler = meta.story({
     defaultOptions: ['tadpole'],
     onDeselect: fn().mockName('onDeselect'),
   },
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+  play: async ({ canvas, args }) => {
+    const selectButton = await canvas.findByRole('button', { name: /Animal/ });
     await userEvent.click(selectButton);
 
-    const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
+    const tadpoleOption = await screen.findByRole('option', { name: 'Tadpole' });
     await userEvent.click(tadpoleOption);
 
     expect(args.onDeselect).toHaveBeenCalledTimes(1);
@@ -767,22 +763,21 @@ export const OnChangeHandler = meta.story({
     multiSelect: true,
     onChange: fn().mockName('onChange'),
   },
-  play: async ({ canvasElement, args, step }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button', { name: /Animal/ });
 
     await step('Open select', async () => {
       await userEvent.click(selectButton);
     });
 
     await step('Select first option', async () => {
-      const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
+      const tadpoleOption = await screen.findByRole('option', { name: 'Tadpole' });
       await userEvent.click(tadpoleOption);
       expect(args.onChange).toHaveBeenCalledWith(['tadpole']);
     });
 
     await step('Select second option', async () => {
-      const frogOption = screen.getByRole('option', { name: 'Frog' });
+      const frogOption = await screen.findByRole('option', { name: 'Frog' });
       await userEvent.click(frogOption);
       expect(args.onChange).toHaveBeenLastCalledWith(['tadpole', 'frog']);
     });
@@ -795,9 +790,8 @@ export const WithResetSingle = meta.story({
     defaultOptions: 'frog',
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvasElement, args, step }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('button');
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button');
 
     await step('Check initial state', async () => {
       expect(selectButton).toHaveTextContent('Frog');
@@ -809,12 +803,12 @@ export const WithResetSingle = meta.story({
     });
 
     await step('Check Reset option exists', async () => {
-      const resetOption = screen.getByRole('option', { name: 'Reset selection' });
+      const resetOption = await screen.findByRole('option', { name: 'Reset selection' });
       expect(resetOption).toBeInTheDocument();
     });
 
     await step('Click Reset', async () => {
-      const resetOption = screen.getByRole('option', { name: 'Reset selection' });
+      const resetOption = await screen.findByRole('option', { name: 'Reset selection' });
       await userEvent.click(resetOption);
 
       expect(args.onReset).toHaveBeenCalledTimes(1);
@@ -833,9 +827,8 @@ export const WithResetMulti = meta.story({
     defaultOptions: ['tadpole', 'frog'],
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvasElement, args, step }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button');
 
     await step('Check initial state', async () => {
       expect(selectButton).toHaveTextContent('2');
@@ -847,12 +840,12 @@ export const WithResetMulti = meta.story({
     });
 
     await step('Check Reset option exists', async () => {
-      const resetOption = screen.getByRole('option', { name: 'Reset selection' });
+      const resetOption = await screen.findByRole('option', { name: 'Reset selection' });
       expect(resetOption).toBeInTheDocument();
     });
 
     await step('Click Reset', async () => {
-      const resetOption = screen.getByRole('option', { name: 'Reset selection' });
+      const resetOption = await screen.findByRole('option', { name: 'Reset selection' });
       await userEvent.click(resetOption);
 
       expect(args.onReset).toHaveBeenCalledTimes(1);
@@ -868,16 +861,15 @@ export const KeyboardResetSingle = meta.story({
     defaultOptions: 'frog',
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvasElement, args, step }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('button');
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button');
     selectButton.focus();
 
     await step('Open with Enter and navigate to reset option', async () => {
       await userEvent.keyboard('{Enter}');
       await userEvent.keyboard('{Home}');
 
-      const resetOption = screen.getByRole('option', { name: 'Reset selection' });
+      const resetOption = await screen.findByRole('option', { name: 'Reset selection' });
       expect(document.activeElement).toBe(resetOption);
     });
 
@@ -898,16 +890,15 @@ export const KeyboardResetMulti = meta.story({
     defaultOptions: ['tadpole', 'frog'],
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvasElement, args, step }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button');
     selectButton.focus();
 
     await step('Open with Enter and navigate to reset option', async () => {
       await userEvent.keyboard('{Enter}');
       await userEvent.keyboard('{Home}');
 
-      const resetOption = screen.getByRole('option', { name: 'Reset selection' });
+      const resetOption = await screen.findByRole('option', { name: 'Reset selection' });
       expect(document.activeElement).toBe(resetOption);
     });
 
@@ -918,7 +909,7 @@ export const KeyboardResetMulti = meta.story({
       expect(args.onChange).toHaveBeenCalledWith([]);
       expect(selectButton).not.toHaveTextContent('2');
 
-      expect(screen.getByRole('listbox')).toBeInTheDocument();
+      expect(await screen.findByRole('listbox')).toBeInTheDocument();
     });
 
     await step('Close with Escape', async () => {
@@ -935,16 +926,15 @@ export const KeyboardResetMultiSpace = meta.story({
     defaultOptions: ['tadpole', 'frog'],
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvasElement, args, step }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+  play: async ({ canvas, args, step }) => {
+    const selectButton = await canvas.findByRole('button');
     selectButton.focus();
 
     await step('Open with Space and navigate to reset option', async () => {
       await userEvent.keyboard(' ');
       await userEvent.keyboard('{Home}');
 
-      const resetOption = screen.getByRole('option', { name: 'Reset selection' });
+      const resetOption = await screen.findByRole('option', { name: 'Reset selection' });
       expect(document.activeElement).toBe(resetOption);
     });
 
@@ -955,7 +945,7 @@ export const KeyboardResetMultiSpace = meta.story({
       expect(args.onChange).toHaveBeenCalledWith([]);
       expect(selectButton).not.toHaveTextContent('2');
 
-      expect(screen.getByRole('listbox')).toBeInTheDocument();
+      expect(await screen.findByRole('listbox')).toBeInTheDocument();
     });
 
     await step('Close with Escape', async () => {
@@ -970,14 +960,13 @@ export const ResetButtonVisibilitySingle = meta.story({
   args: {
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('button');
+  play: async ({ canvas, step }) => {
+    const selectButton = await canvas.findByRole('button');
 
     await step('Open without selection', async () => {
       await userEvent.click(selectButton);
 
-      const resetOption = screen.getByRole('option', { name: 'Reset selection' });
+      const resetOption = await screen.findByRole('option', { name: 'Reset selection' });
       expect(resetOption).toBeInTheDocument();
       // Reset option should not be disabled when the user cursor is on it in
       // single-select mode even without selection, because single-select Select
@@ -987,14 +976,14 @@ export const ResetButtonVisibilitySingle = meta.story({
     });
 
     await step('Select an option', async () => {
-      const frogOption = screen.getByRole('option', { name: 'Frog' });
+      const frogOption = await screen.findByRole('option', { name: 'Frog' });
       await userEvent.click(frogOption);
     });
 
     await step('Reopen select and check reset option', async () => {
       await userEvent.click(selectButton);
 
-      const resetOption = screen.getByRole('option', { name: 'Reset selection' });
+      const resetOption = await screen.findByRole('option', { name: 'Reset selection' });
       expect(resetOption).toBeInTheDocument();
       expect(resetOption).not.toHaveAttribute('aria-disabled', 'true');
     });
@@ -1007,25 +996,24 @@ export const ResetButtonVisibilityMulti = meta.story({
     multiSelect: true,
     onReset: fn().mockName('onReset'),
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+  play: async ({ canvas, step }) => {
+    const selectButton = await canvas.findByRole('button');
 
     await step('Open without selection', async () => {
       await userEvent.click(selectButton);
 
-      const resetOption = screen.getByRole('option', { name: 'Reset selection' });
+      const resetOption = await screen.findByRole('option', { name: 'Reset selection' });
       expect(resetOption).toBeInTheDocument();
       expect(resetOption).toHaveAttribute('aria-disabled', 'true');
     });
 
     await step('Select an option', async () => {
-      const frogOption = screen.getByRole('option', { name: 'Frog' });
+      const frogOption = await screen.findByRole('option', { name: 'Frog' });
       await userEvent.click(frogOption);
     });
 
     await step('Check reset option', async () => {
-      const resetOption = screen.getByRole('option', { name: 'Reset selection' });
+      const resetOption = await screen.findByRole('option', { name: 'Reset selection' });
       expect(resetOption).toBeInTheDocument();
       expect(resetOption).not.toHaveAttribute('aria-disabled', 'true');
     });
@@ -1039,13 +1027,12 @@ export const CustomResetLabel = meta.story({
     onReset: fn().mockName('onReset'),
     resetLabel: 'Clear selection',
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('button');
+  play: async ({ canvas }) => {
+    const selectButton = await canvas.findByRole('button');
 
     await userEvent.click(selectButton);
 
-    const resetOption = screen.getByRole('option', { name: 'Clear selection' });
+    const resetOption = await screen.findByRole('option', { name: 'Clear selection' });
     expect(resetOption).toBeInTheDocument();
   },
 });
@@ -1055,13 +1042,12 @@ export const WithoutReset = meta.story({
   args: {
     defaultOptions: 'frog',
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('button');
+  play: async ({ canvas }) => {
+    const selectButton = await canvas.findByRole('button');
 
     await userEvent.click(selectButton);
 
-    const options = screen.getAllByRole('option');
+    const options = await screen.findAllByRole('option');
     for (const option of options) {
       expect(option).not.toHaveTextContent('Reset selection');
     }

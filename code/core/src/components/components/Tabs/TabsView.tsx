@@ -1,12 +1,16 @@
 import type { ComponentProps, FC, HTMLAttributes, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
-import { Bar, EmptyTabContent, TabList, TabPanel } from 'storybook/internal/components';
-
+import { Item } from '@react-stately/collections';
+import type { TabListState } from '@react-stately/tabs';
+import { useTabListState } from '@react-stately/tabs';
 import type { Key } from '@react-types/shared';
-import type { TabListState } from 'react-stately';
-import { Item, useTabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
+
+import { Bar } from '../Bar/Bar';
+import { EmptyTabContent } from './EmptyTabContent';
+import { TabList } from './TabList';
+import { TabPanel } from './TabPanel';
 
 export interface TabProps {
   id: string;
@@ -28,7 +32,7 @@ export const useTabsState = ({
   onSelectionChange,
   selected,
   tabs,
-}: useTabsStateProps): TabListState<object> => {
+}: useTabsStateProps): unknown => {
   return useTabListState({
     children: tabs.map(({ children: Children, id, 'aria-label': ariaLabel, title: Title }) => (
       <Item key={id} aria-label={ariaLabel} title={typeof Title === 'function' ? <Title /> : Title}>
@@ -53,7 +57,7 @@ export const FlexTabPanel = styled(TabPanel)(() => ({
 }));
 
 const FlexTabList = styled(TabList)<{ $simulatedGap: Key }>(({ $simulatedGap }) => ({
-  flex: '1 1 100%',
+  flex: '1 1 0%',
   '&[data-show-scroll-buttons="true"]': { marginInlineEnd: $simulatedGap },
 }));
 
@@ -96,9 +100,7 @@ export interface TabsViewProps extends HTMLAttributes<HTMLDivElement> {
   id?: string;
 
   /** Props to pass to the TabPanel component. */
-  panelProps?: Omit<ComponentProps<typeof TabPanel>, 'id' | 'state'> & {
-    id?: string;
-  };
+  panelProps?: Omit<ComponentProps<typeof TabPanel>, 'state'>;
 }
 
 export const TabsView: FC<TabsViewProps> = ({
@@ -114,11 +116,17 @@ export const TabsView: FC<TabsViewProps> = ({
   tools,
   ...props
 }) => {
-  const state = useTabsState({ defaultSelected, onSelectionChange, selected, tabs });
+  const state = useTabsState({
+    defaultSelected,
+    onSelectionChange,
+    selected,
+    tabs,
+  }) as TabListState<object>;
 
   const EmptyContent = emptyState ?? <EmptyTabContent title="Nothing found" />;
+  const hasContent = tabs.length > 0;
 
-  if (!showToolsWhenEmpty && tabs.length === 0) {
+  if (!showToolsWhenEmpty && !hasContent) {
     return EmptyContent;
   }
 
@@ -147,13 +155,13 @@ export const TabsView: FC<TabsViewProps> = ({
         }}
       >
         {tools}
-        <FlexTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 6} />
+        {hasContent ? (
+          <FlexTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 6} />
+        ) : (
+          <div />
+        )}
       </Bar>
-      <FlexTabPanel
-        state={state}
-        {...panelProps}
-        id={state.selectedItem?.key ? `${state.selectedItem?.key}` : undefined}
-      />
+      {hasContent ? <FlexTabPanel state={state} {...panelProps} /> : EmptyContent}
     </Container>
   );
 };

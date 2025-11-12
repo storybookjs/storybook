@@ -1,15 +1,23 @@
-import React, { type HTMLAttributes, createContext, useEffect, useState } from 'react';
+import React, { type HTMLAttributes, createContext, useEffect, useRef, useState } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
-import { UNSAFE_PortalProvider } from 'react-aria';
-import { Dialog, ModalOverlay, Modal as ModalUpstream } from 'react-aria-components';
+import { FocusScope } from '@react-aria/focus';
+import { Overlay, UNSAFE_PortalProvider, useModalOverlay } from '@react-aria/overlays';
+import { mergeProps } from '@react-aria/utils';
+import { useOverlayTriggerState } from '@react-stately/overlays';
+import type { KeyboardEvent as RAKeyboardEvent } from '@react-types/shared';
 import { useTransitionState } from 'react-transition-state';
 
 import { useMediaQuery } from '../../../manager/hooks/useMedia';
 import * as Components from './Modal.styled';
 
 interface ModalProps extends HTMLAttributes<HTMLDivElement> {
+  container?: HTMLElement;
+
+  portalSelector?: string;
+
   /** Width of the Modal. Defaults to `740`. */
   width?: number | string;
 
@@ -28,11 +36,18 @@ interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   /** Uncontrolled state: whether the Modal is initially open on the first. */
   defaultOpen?: boolean;
 
+  /** @deprecated Use `dismissOnEscape` instead. */
+  onEscapeKeyDown?: (event: KeyboardEvent) => void;
+
+  /** @deprecated Use `dismissOnInteractOutside` instead. */
+  onInteractOutside?: (event: FocusEvent | MouseEvent | TouchEvent) => void;
+
   /** Handler called when visibility of the Modal changes. */
   onOpenChange?: (isOpen: boolean) => void;
 
+  // TODO: Storybook 11, make this required
   /** The accessible name for the modal. */
-  ariaLabel: string;
+  ariaLabel?: string;
 
   /** Whether the modal can be dismissed by clicking outside. Defaults to `true`. */
   dismissOnClickOutside?: boolean;
@@ -51,6 +66,8 @@ interface ModalProps extends HTMLAttributes<HTMLDivElement> {
 export const ModalContext = createContext<{ close?: () => void }>({});
 
 function BaseModal({
+  container,
+  portalSelector,
   children,
   width,
   height,
@@ -59,12 +76,36 @@ function BaseModal({
   dismissOnEscape = true,
   className,
   open,
+  onEscapeKeyDown,
+  onInteractOutside,
   onOpenChange,
   defaultOpen,
   transitionDuration = 200,
   variant = 'dialog',
   ...props
 }: ModalProps) {
+  if (ariaLabel === undefined || ariaLabel === '') {
+    deprecate('The `ariaLabel` prop on `Modal` will become mandatory in Storybook 11.');
+    // TODO in Storybook 11
+    // throw new Error(
+    //   'Modal requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
+    // );
+  }
+
+  if (onEscapeKeyDown !== undefined) {
+    deprecate(
+      'The `onEscapeKeyDown` prop is deprecated and will be removed in Storybook 11. Use `dismissOnEscape` instead.'
+    );
+  }
+
+  if (onInteractOutside !== undefined) {
+    deprecate(
+      'The `onInteractOutside` prop is deprecated and will be removed in Storybook 11. Use `dismissOnInteractOutside` instead.'
+    );
+  }
+
+  const overlayRef = useRef<HTMLDivElement>(null);
+
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [{ status, isMounted }, toggle] = useTransitionState({
     timeout: reducedMotion ? 0 : transitionDuration,
@@ -72,14 +113,39 @@ function BaseModal({
     unmountOnExit: true,
   });
 
+  // Create state for the overlay trigger
+  const state = useOverlayTriggerState({
+    isOpen: open || isMounted,
+    defaultOpen,
+    onOpenChange: (isOpen: boolean) => {
+      toggle(isOpen);
+      onOpenChange?.(isOpen);
+    },
+  });
+
   const close = () => {
-    handleOpenChange(false);
+    state.close();
   };
 
-  const handleOpenChange = (isOpen: boolean) => {
-    toggle(isOpen);
-    onOpenChange?.(isOpen);
-  };
+  const { modalProps, underlayProps } = useModalOverlay(
+    {
+      isDismissable: dismissOnClickOutside,
+      isKeyboardDismissDisabled: true,
+      shouldCloseOnInteractOutside: onInteractOutside
+        ? (element: Element) => {
+            const mockedEvent = new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              relatedTarget: element,
+            });
+            onInteractOutside(mockedEvent);
+            return !mockedEvent.defaultPrevented;
+          }
+        : undefined,
+    },
+    state,
+    overlayRef
+  );
 
   // Sync external open state with transition state
   useEffect(() => {
@@ -91,7 +157,7 @@ function BaseModal({
     }
   }, [open, defaultOpen, isMounted, toggle]);
 
-  // Call onOpenChange ourselves when the modal is initially opened, as react-aria won't.
+  // Call onOpenChange ourselves when the modal is initially opened
   useEffect(() => {
     if (isMounted && (open || defaultOpen)) {
       onOpenChange?.(true);
@@ -103,18 +169,39 @@ function BaseModal({
     return null;
   }
 
+  const finalModalProps = mergeProps(modalProps, {
+    onKeyDown: (e: RAKeyboardEvent) => {
+      if (e.key !== 'Escape') {
+        modalProps.onKeyDown?.(e);
+      } else {
+        if (dismissOnEscape) {
+          onEscapeKeyDown?.(e.nativeEvent);
+          if (!e.nativeEvent.defaultPrevented) {
+            close();
+          }
+        }
+      }
+    },
+  });
+
+  const containerElement =
+    container ?? (portalSelector ? document.querySelector<HTMLElement>(portalSelector) : undefined);
+
   return (
-    <ModalOverlay
-      defaultOpen={defaultOpen}
-      isOpen={open || isMounted}
-      onOpenChange={handleOpenChange}
-      isDismissable={dismissOnClickOutside}
-      isKeyboardDismissDisabled={!dismissOnEscape}
-    >
-      <Components.Overlay $status={status} $transitionDuration={transitionDuration} />
-      <ModalUpstream>
-        <Dialog aria-label={ariaLabel}>
+    <Overlay disableFocusManagement portalContainer={containerElement || undefined}>
+      {/* Overlay won't place focus within the modal on its own, and so its own FocusScope
+       starts cycling through focusable elements only after we've clicked or tabbed into the modal.
+       So we use our own focus scope and autofocus within on mount. */}
+      {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+      <FocusScope restoreFocus contain autoFocus>
+        <Components.Overlay
+          $status={status}
+          $transitionDuration={transitionDuration}
+          {...underlayProps}
+        />
+        <div role="dialog" aria-label={ariaLabel} ref={overlayRef} {...finalModalProps}>
           <ModalContext.Provider value={{ close }}>
+            {/* We need to set the FocusScope ourselves somehow, Overlay won't set it. */}
             <Components.Container
               $variant={variant}
               $status={status}
@@ -127,9 +214,9 @@ function BaseModal({
               {children}
             </Components.Container>
           </ModalContext.Provider>
-        </Dialog>
-      </ModalUpstream>
-    </ModalOverlay>
+        </div>
+      </FocusScope>
+    </Overlay>
   );
 }
 
@@ -141,6 +228,10 @@ export const Modal = Object.assign(BaseModal, Components);
  */
 export const ModalDecorator: DecoratorFunction = (Story, { args }) => {
   const [container, setContainer] = useState<HTMLElement | null>(null);
+
+  if (args.container || args.portalSelector) {
+    return <Story {...{ args }} />;
+  }
 
   return (
     <>

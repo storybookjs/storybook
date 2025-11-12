@@ -53,7 +53,6 @@ const SkipToCanvasLink = styled(Button)(({ theme }) => ({
     display: 'block',
     position: 'absolute',
     fontSize: theme.typography.size.s1,
-    zIndex: 3,
     border: 0,
     width: 1,
     height: 1,
@@ -73,6 +72,7 @@ const SkipToCanvasLink = styled(Button)(({ theme }) => ({
       clip: 'unset',
       overflow: 'unset',
       opacity: 1,
+      zIndex: 3,
     },
   },
 }));

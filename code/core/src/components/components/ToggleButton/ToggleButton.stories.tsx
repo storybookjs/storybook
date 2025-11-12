@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { styled } from 'storybook/theming';
 
 import { ToggleButton } from './ToggleButton';
 

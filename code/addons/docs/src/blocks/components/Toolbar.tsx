@@ -1,9 +1,9 @@
 import type { FC, SyntheticEvent } from 'react';
 import React from 'react';
 
-import { Button, Toolbar as SharedToolbar } from 'storybook/internal/components';
+import { Button, Toolbar as SharedToolbar, getStoryHref } from 'storybook/internal/components';
 
-import { ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
+import { ShareAltIcon, ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
@@ -37,6 +37,12 @@ const AbsoluteBar = styled(SharedToolbar)({
   alignItems: 'center',
 });
 
+const Wrapper = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 4,
+});
+
 const IconPlaceholder = styled.div(({ theme }) => ({
   width: 14,
   height: 14,
@@ -46,49 +52,81 @@ const IconPlaceholder = styled.div(({ theme }) => ({
   animation: `${theme.animation.glow} 1.5s ease-in-out infinite`,
 }));
 
-export const Toolbar: FC<ToolbarProps> = ({ isLoading, zoom, resetZoom, ...rest }) => (
-  <AbsoluteBar innerStyle={{ gap: 4, paddingInline: 7 }} {...rest}>
+export const Toolbar: FC<ToolbarProps> = ({
+  isLoading,
+  storyId,
+  baseUrl,
+  zoom,
+  resetZoom,
+  ...rest
+}) => (
+  <AbsoluteBar innerStyle={{ gap: 4, paddingInline: 7, justifyContent: 'space-between' }} {...rest}>
+    <Wrapper key="left">
+      {isLoading ? (
+        [1, 2, 3].map((key) => <IconPlaceholder key={key} />)
+      ) : (
+        <>
+          <Button
+            padding="small"
+            variant="ghost"
+            key="zoomin"
+            onClick={(e: SyntheticEvent) => {
+              e.preventDefault();
+              zoom(0.8);
+            }}
+            ariaLabel="Zoom in"
+          >
+            <ZoomIcon />
+          </Button>
+          <Button
+            padding="small"
+            variant="ghost"
+            key="zoomout"
+            onClick={(e: SyntheticEvent) => {
+              e.preventDefault();
+              zoom(1.25);
+            }}
+            ariaLabel="Zoom out"
+          >
+            <ZoomOutIcon />
+          </Button>
+          <Button
+            padding="small"
+            variant="ghost"
+            key="zoomreset"
+            onClick={(e: SyntheticEvent) => {
+              e.preventDefault();
+              resetZoom();
+            }}
+            ariaLabel="Reset zoom"
+          >
+            <ZoomResetIcon />
+          </Button>
+        </>
+      )}
+    </Wrapper>
+
     {isLoading ? (
-      [1, 2, 3].map((key) => <IconPlaceholder key={key} />)
+      <Wrapper key="right">
+        <IconPlaceholder />
+      </Wrapper>
     ) : (
-      <>
-        <Button
-          padding="small"
-          variant="ghost"
-          key="zoomin"
-          onClick={(e: SyntheticEvent) => {
-            e.preventDefault();
-            zoom(0.8);
-          }}
-          ariaLabel="Zoom in"
-        >
-          <ZoomIcon />
-        </Button>
-        <Button
-          padding="small"
-          variant="ghost"
-          key="zoomout"
-          onClick={(e: SyntheticEvent) => {
-            e.preventDefault();
-            zoom(1.25);
-          }}
-          ariaLabel="Zoom out"
-        >
-          <ZoomOutIcon />
-        </Button>
-        <Button
-          padding="small"
-          variant="ghost"
-          key="zoomreset"
-          onClick={(e: SyntheticEvent) => {
-            e.preventDefault();
-            resetZoom();
-          }}
-          ariaLabel="Reset zoom"
-        >
-          <ZoomResetIcon />
-        </Button>
-      </>
+      baseUrl &&
+      storyId && (
+        <Wrapper key="right">
+          <Button
+            asChild
+            padding="small"
+            variant="ghost"
+            key="opener"
+            ariaLabel="Open canvas in new tab"
+          >
+            <a href={getStoryHref(baseUrl, storyId)} target="_blank" rel="noopener noreferrer">
+              <ShareAltIcon />
+            </a>
+          </Button>
+        </Wrapper>
+      )
     )}
   </AbsoluteBar>
 );

@@ -1,17 +1,18 @@
 import type { FC, KeyboardEvent } from 'react';
-import React, { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-
-import type { ButtonProps } from 'storybook/internal/components';
-import { Button, Popover, ScrollArea } from 'storybook/internal/components';
+import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { RefreshIcon } from '@storybook/icons';
 
+import { useInteractOutside } from '@react-aria/interactions';
+import { Overlay, useOverlay, useOverlayPosition } from '@react-aria/overlays';
 import { useObjectRef } from '@react-aria/utils';
-import { transparentize } from 'polished';
-import { Overlay, useInteractOutside, useOverlay, useOverlayPosition } from 'react-aria';
-import { useOverlayTriggerState } from 'react-stately';
-import { styled } from 'storybook/theming';
+import { useOverlayTriggerState } from '@react-stately/overlays';
+import { darken, transparentize } from 'polished';
+import { styled, useTheme } from 'storybook/theming';
 
+import { Button, type ButtonProps } from '../Button/Button';
+import { Form } from '../Form/Form';
+import { Popover } from '../Popover/Popover';
 import { SelectOption } from './SelectOption';
 import type { Option, ResetOption } from './helpers';
 import { Listbox, PAGE_STEP_SIZE } from './helpers';
@@ -94,20 +95,14 @@ function setSelectedFromDefault(
   return options.filter((opt) => defaultOptions.some((def) => opt.value === def));
 }
 
-const StyledButton = styled(Button)<ButtonProps & { hasSelection?: boolean; isOpen?: boolean }>(
-  ({ isOpen, hasSelection, theme }) =>
+const StyledButton = styled(Button)<ButtonProps & { $hasSelection?: boolean; $isOpen?: boolean }>(
+  ({ $isOpen: isOpen, $hasSelection: hasSelection, theme }) =>
     isOpen || hasSelection
       ? {
           boxShadow: 'none',
           background: transparentize(0.93, theme.barSelectedColor),
-          color: theme.barSelectedColor,
-
-          // This is a hack to apply bar styles to the button as soon as it is part of a bar
-          // It is a temporary solution until we have implemented Theming 2.0.
-          '.sb-bar &': {
-            background: transparentize(0.93, theme.barSelectedColor),
-            color: theme.barSelectedColor,
-          },
+          color:
+            theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
         }
       : {}
 );
@@ -142,6 +137,7 @@ const MinimalistPopover: FC<{
     overlayRef: popoverRef,
     placement: 'bottom start',
     offset: 8,
+    maxHeight: 504,
     isOpen: true,
   });
 
@@ -157,6 +153,15 @@ const MinimalistPopover: FC<{
     },
     popoverRef
   );
+
+  const theme = useTheme();
+
+  positionProps.style = {
+    ...positionProps.style,
+    overflow: 'hidden auto',
+    scrollbarColor: `${theme.barTextColor} transparent`,
+    scrollbarWidth: 'thin',
+  };
 
   return (
     <Overlay disableFocusManagement {...overlayProps}>
@@ -192,7 +197,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     const [isOpen, setIsOpen] = useState(props.defaultOpen || false);
     const triggerRef = useObjectRef(ref);
 
-    const id = useId();
+    const id = useMemo(() => {
+      return 'select-' + Math.random().toString(36).substring(2, 15);
+    }, []);
     const listboxId = `${id}-listbox`;
     const listboxRef = useRef<HTMLUListElement>(null);
 
@@ -303,7 +310,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     const moveActiveOptionDown = useCallback(
       (step = 1) => {
         if (!isOpen || !activeOption) {
-          setActiveOption(options[0]);
+          setActiveOption(options[step === 1 ? 0 : Math.min(step, options.length - 1)]);
           return;
         }
         const currentIndex = options.findIndex((option) => option.value === activeOption.value);
@@ -325,7 +332,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     const moveActiveOptionUp = useCallback(
       (step = 1) => {
         if (!isOpen || !activeOption) {
-          setActiveOption(options[options.length - 1]);
+          setActiveOption(options[Math.max(0, options.length - step)]);
           return;
         }
         const currentIndex = options.findIndex((option) => option.value === activeOption.value);
@@ -428,21 +435,36 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           optionElement.scrollIntoView({ block: 'nearest' });
           optionElement.focus();
         }
+      } else if (isOpen) {
+        listboxRef.current?.focus();
       }
     }, [isOpen, activeOption, id]);
+
+    // We customise the ariaLabel to include a current value, and we let tooltip
+    // receive the original ariaLabel as the value is displayed in children.
+    const finalAriaLabel = useMemo(() => {
+      if (selectedOptions.length === 1) {
+        return `${ariaLabel} ${selectedOptions[0].title}`;
+      }
+      if (selectedOptions.length) {
+        return `${ariaLabel}, ${selectedOptions.length} values selected`;
+      }
+      return ariaLabel;
+    }, [ariaLabel, selectedOptions]);
 
     return (
       <>
         <StyledButton
           {...props}
           variant="ghost"
-          ariaLabel={ariaLabel}
-          tooltip={isOpen ? undefined : tooltip}
+          ariaLabel={finalAriaLabel}
+          tooltip={tooltip ?? ariaLabel}
+          disableAllTooltips={isOpen}
           id={id}
           ref={triggerRef}
           padding={padding}
-          isOpen={isOpen}
-          hasSelection={!!selectedOptions.length}
+          $isOpen={isOpen}
+          $hasSelection={!!selectedOptions.length}
           // Can be removed once #32325 is fixed (Button will then provide aria-disabled)
           aria-disabled={disabled}
           disabled={disabled}
@@ -455,21 +477,15 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           }}
           tabIndex={isOpen ? -1 : 0}
           onKeyDown={handleButtonKeyDown}
-          role={multiSelect ? 'combobox' : 'button'}
+          role="button"
           aria-controls={isOpen ? listboxId : undefined}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
         >
-          {!multiSelect && selectedOptions.length === 0 && (
+          {!multiSelect && (
             <>
               {icon}
-              {children}
-            </>
-          )}
-          {!multiSelect && !!selectedOptions.length && (
-            <>
-              {icon}
-              {selectedOptions[0].title}
+              {selectedOptions[0]?.title ?? children}
             </>
           )}
 
@@ -489,27 +505,37 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
         </StyledButton>
         {otState.isOpen && (
           <MinimalistPopover handleClose={handleClose} triggerRef={triggerRef}>
-            <ScrollArea vertical>
-              <Listbox
-                aria-label={ariaLabel}
-                role="listbox"
-                id={listboxId}
-                ref={listboxRef}
-                aria-multiselectable={multiSelect}
-                onKeyDown={handleListboxKeyDown}
-              >
-                {options.map((option) => (
+            <Listbox
+              aria-label={ariaLabel}
+              role="listbox"
+              id={listboxId}
+              ref={listboxRef}
+              aria-multiselectable={multiSelect}
+              onKeyDown={handleListboxKeyDown}
+              tabIndex={isOpen ? 0 : -1}
+            >
+              {options.map((option) => {
+                const isSelected =
+                  selectedOptions?.some((sel) => sel.value === option.value) &&
+                  option !== resetOption;
+                const isReset = option === resetOption;
+
+                return (
                   <SelectOption
                     key={option.value ?? 'sb-reset'}
                     title={option.title}
                     description={option.description}
-                    icon={option.icon}
+                    icon={
+                      !isReset && multiSelect ? (
+                        // Purely decorative.
+                        <Form.Checkbox checked={isSelected} hidden />
+                      ) : (
+                        option.icon
+                      )
+                    }
                     id={valueToId(id, option)}
                     isActive={isOpen && activeOption?.value === option.value}
-                    isSelected={
-                      selectedOptions?.some((sel) => sel.value === option.value) &&
-                      option !== resetOption
-                    }
+                    isSelected={isSelected}
                     onClick={() => {
                       handleSelectOption(option);
                       if (!multiSelect) {
@@ -517,9 +543,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                       }
                     }}
                     onFocus={() => setActiveOption(option)}
-                    shouldLookDisabled={
-                      option === resetOption && selectedOptions.length === 0 && multiSelect
-                    }
+                    shouldLookDisabled={isReset && selectedOptions.length === 0 && multiSelect}
                     onKeyDown={(e: KeyboardEvent) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
@@ -537,9 +561,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                   >
                     {option.children}
                   </SelectOption>
-                ))}
-              </Listbox>
-            </ScrollArea>
+                );
+              })}
+            </Listbox>
           </MinimalistPopover>
         )}
       </>

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 
 import { Button, EmptyTabContent } from 'storybook/internal/components';
-import { fn } from 'storybook/internal/test';
 
 import { CrossIcon, ExpandIcon } from '@storybook/icons';
+
+import { fn } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { StatelessTab } from './StatelessTab';
@@ -56,6 +57,7 @@ const meta = preview.meta({
   title: 'Tabs/StatelessTabsView',
   component: StatelessTabsView,
   args: { backgroundColor: '#2e2e2e', children: '', tools: DEFAULT_TOOLS },
+  globals: { sb_theme: 'dark' },
 });
 
 export const Basic = meta.story({
@@ -89,6 +91,19 @@ export const EmptyWithToolsShowFalse = meta.story({
 
 export const EmptyWithToolsShowTrue = meta.story({
   args: {
+    showToolsWhenEmpty: true,
+  },
+  render: RenderEmpty,
+});
+
+export const EmptyToolsShowCustom = meta.story({
+  args: {
+    emptyState: (
+      <EmptyTabContent
+        title="Custom empty state"
+        description={<>This component does not currently have tabs.</>}
+      />
+    ),
     showToolsWhenEmpty: true,
   },
   render: RenderEmpty,

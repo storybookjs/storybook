@@ -1,15 +1,17 @@
 import type { FC, HTMLAttributes } from 'react';
 import React, { useRef } from 'react';
 
-import { ScrollArea } from 'storybook/internal/components';
-
-import { useTabPanel } from 'react-aria';
-import type { Node, TabListState } from 'react-stately';
+import { useTabPanel } from '@react-aria/tabs';
+import type { TabListState } from '@react-stately/tabs';
+import type { Node } from '@react-types/shared';
 import { styled } from 'storybook/theming';
+
+import { ScrollArea } from '../ScrollArea/ScrollArea';
+import type { useTabsState } from './TabsView';
 
 export interface TabPanelProps extends HTMLAttributes<HTMLDivElement> {
   /** The state of the tab list. Primary mechanism for using the tabpanel. */
-  state: TabListState<object>;
+  state: ReturnType<typeof useTabsState>;
 
   /**
    * Whether the panel adds a vertical scrollbar. Disable if you want to use fixed or sticky
@@ -22,9 +24,6 @@ export interface TabPanelProps extends HTMLAttributes<HTMLDivElement> {
    * rendered with the hidden attribute and do not affect the accessibility object model.
    */
   renderAllChildren?: boolean;
-
-  /** Unique id of the tab. */
-  id: string | undefined;
 }
 
 const Panel = styled.div({
@@ -35,26 +34,25 @@ const Panel = styled.div({
 export const TabPanel: FC<TabPanelProps> = ({
   hasScrollbar = true,
   renderAllChildren = false,
-  id,
   state,
-  ...rest
 }) => {
   const ref = useRef(null);
-  const { tabPanelProps } = useTabPanel({ id }, state, ref);
+  const typedState = state as TabListState<object>;
+  const { tabPanelProps } = useTabPanel(typedState.selectedItem ?? {}, typedState, ref);
 
   const childrenToRender = (
-    renderAllChildren ? [...state.collection] : [state.selectedItem]
+    renderAllChildren ? [...typedState.collection] : [typedState.selectedItem]
   ).filter((item): item is Node<object> => !!item);
 
   return childrenToRender.map((item) => {
-    const isSelected = state.selectedKey === item.key;
+    const isSelected = typedState.selectedKey === item.key;
 
     return (
       <Panel
         key={item.key}
         ref={isSelected ? ref : undefined}
-        {...(isSelected ? rest : {})}
         {...(isSelected ? tabPanelProps : {})}
+        id={isSelected ? `${tabPanelProps.id}`.replace(/null$/, `${item.key}`) : undefined}
         hidden={isSelected ? undefined : true}
       >
         {hasScrollbar ? (

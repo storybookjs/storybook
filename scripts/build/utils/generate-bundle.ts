@@ -89,11 +89,6 @@ export async function generateBundle({
     treeShaking: true,
     color: true,
     external,
-    alias: {
-      // The following aliases replace React-provided shims with ESM-friendly counterparts
-      // because the upstream packages are still CJS only.
-      'use-sync-external-store': './src/use-sync-external-store',
-    },
     define: {
       /*
        * We need to disable the default behavior of replacing process.env.NODE_ENV with "development"
@@ -130,7 +125,6 @@ export async function generateBundle({
     splitting: false,
     external: [], // don't externalize anything, we're using aliases to bundle everything into the runtimes
     alias: {
-      ...sharedOptions.alias,
       // The following aliases ensures that the runtimes bundles in the actual sources of these modules
       // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
       'storybook/preview-api': './src/preview-api',

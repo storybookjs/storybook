@@ -37,7 +37,7 @@ export type {
   SupportedLanguage,
 } from './components/syntaxhighlighter/syntaxhighlighter-types';
 export { SyntaxHighlighter } from './components/syntaxhighlighter/lazy-syntaxhighlighter';
-export { createCopyToClipboardFunction } from './components/syntaxhighlighter/syntaxhighlighter';
+export { createCopyToClipboardFunction } from './components/syntaxhighlighter/clipboard';
 
 // UI
 export { ActionBar } from './components/ActionBar/ActionBar';
@@ -65,18 +65,19 @@ export type { PopperPlacement } from './components/shared/overlayHelpers';
 // Popovers
 export { Popover } from './components/Popover/Popover';
 export type { PopoverProps } from './components/Popover/Popover';
-export { WithPopover } from './components/Popover/lazy-WithPopover';
-export type { WithPopoverProps } from './components/Popover/WithPopover';
+export { PopoverProvider } from './components/Popover/PopoverProvider';
+export type { PopoverProviderProps } from './components/Popover/PopoverProvider';
 
 // Tooltips
 export { Tooltip } from './components/tooltip/Tooltip';
 export type { TooltipProps } from './components/tooltip/Tooltip';
 export { TooltipNote } from './components/tooltip/TooltipNote';
 export type { TooltipNoteProps } from './components/tooltip/TooltipNote';
-export { WithTooltip } from './components/tooltip/lazy-WithTooltip';
-export type { WithTooltipProps } from './components/tooltip/WithTooltip';
+export { TooltipProvider } from './components/tooltip/TooltipProvider';
+export type { TooltipProviderProps } from './components/tooltip/TooltipProvider';
 
 // Old tooltips - deprecated and to remove in Storybook 11
+export { WithTooltip, WithTooltipPure } from './components/tooltip/lazy-WithTooltip';
 export { TooltipMessage } from './components/tooltip/TooltipMessage';
 export {
   TooltipLinkList,
@@ -85,10 +86,10 @@ export {
 export { default as ListItem } from './components/tooltip/ListItem';
 
 // Bar, Toolbar and Tabs
-export { Tabs, TabsState, TabWrapper } from './components/tabs/tabs';
-export { TabButton } from './components/tabs/button';
-export { Separator, interleaveSeparators } from './components/bar/separator';
-export { Bar, FlexBar, type BarProps } from './components/bar/bar';
+export { Tabs, TabsState, TabBar, TabWrapper } from './components/Tabs/Tabs';
+export { TabButton } from './components/Tabs/Button';
+export { Separator, interleaveSeparators } from './components/Bar/Separator';
+export { Bar, FlexBar, type BarProps } from './components/Bar/Bar';
 export { EmptyTabContent } from './components/Tabs/EmptyTabContent';
 export { AddonPanel } from './components/addon-panel/addon-panel';
 export { Toolbar, AbstractToolbar } from './components/Toolbar/Toolbar';

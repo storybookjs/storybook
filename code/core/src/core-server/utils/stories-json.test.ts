@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
-import { debounce } from 'es-toolkit/compat';
+import { debounce } from 'es-toolkit/function';
 import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
@@ -16,7 +16,7 @@ import type { ServerChannel } from './get-server-channel';
 import { DEBOUNCE, useStoriesJson } from './stories-json';
 
 vi.mock('watchpack');
-vi.mock('es-toolkit/compat');
+vi.mock('es-toolkit/function', { spy: true });
 vi.mock('storybook/internal/node-logger');
 
 vi.mock('../utils/constants', () => {
@@ -154,6 +154,7 @@ describe('useStoriesJson', () => {
               "id": "a--story-one",
               "importPath": "./src/A.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -181,6 +182,7 @@ describe('useStoriesJson', () => {
               "id": "b--story-one",
               "importPath": "./src/B.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -195,6 +197,7 @@ describe('useStoriesJson', () => {
               "id": "componentpath-extension--story-one",
               "importPath": "./src/componentPath/extension.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -208,6 +211,7 @@ describe('useStoriesJson', () => {
               "id": "componentpath-noextension--story-one",
               "importPath": "./src/componentPath/noExtension.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -221,6 +225,7 @@ describe('useStoriesJson', () => {
               "id": "componentpath-package--story-one",
               "importPath": "./src/componentPath/package.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -246,6 +251,7 @@ describe('useStoriesJson', () => {
               "id": "d--story-one",
               "importPath": "./src/D.stories.jsx",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -313,6 +319,7 @@ describe('useStoriesJson', () => {
               "id": "example-button--story-one",
               "importPath": "./src/Button.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -326,6 +333,7 @@ describe('useStoriesJson', () => {
               "id": "first-nested-deeply-f--story-one",
               "importPath": "./src/first-nested/deeply/F.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -338,6 +346,7 @@ describe('useStoriesJson', () => {
               "id": "first-nested-deeply-features--with-csf-1",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With CSF 1",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -350,6 +359,7 @@ describe('useStoriesJson', () => {
               "id": "first-nested-deeply-features--with-play",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Play",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -363,6 +373,7 @@ describe('useStoriesJson', () => {
               "id": "first-nested-deeply-features--with-render",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Render",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -375,6 +386,7 @@ describe('useStoriesJson', () => {
               "id": "first-nested-deeply-features--with-story-fn",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Story Fn",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -387,6 +399,7 @@ describe('useStoriesJson', () => {
               "id": "first-nested-deeply-features--with-test",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Test",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -413,6 +426,7 @@ describe('useStoriesJson', () => {
               "id": "h--story-one",
               "importPath": "./src/H.stories.mjs",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -426,6 +440,7 @@ describe('useStoriesJson', () => {
               "id": "nested-button--story-one",
               "importPath": "./src/nested/Button.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -439,6 +454,7 @@ describe('useStoriesJson', () => {
               "id": "second-nested-g--story-one",
               "importPath": "./src/second-nested/G.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -559,7 +575,8 @@ describe('useStoriesJson', () => {
 
     it('debounces invalidation events', async () => {
       vi.mocked(debounce).mockImplementation(
-        (await vi.importActual<typeof import('es-toolkit/compat')>('es-toolkit/compat')).debounce
+        (await vi.importActual<typeof import('es-toolkit/function')>('es-toolkit/function'))
+          .debounce
       );
 
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;

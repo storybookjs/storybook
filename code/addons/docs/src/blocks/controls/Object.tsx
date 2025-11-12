@@ -5,7 +5,7 @@ import { Button, Form, ToggleButton } from 'storybook/internal/components';
 
 import { AddIcon, SubtractIcon } from '@storybook/icons';
 
-import { cloneDeep } from 'es-toolkit/compat';
+import { cloneDeep } from 'es-toolkit/object';
 import { type Theme, styled, useTheme } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';

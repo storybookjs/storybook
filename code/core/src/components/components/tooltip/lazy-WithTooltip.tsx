@@ -10,3 +10,13 @@ export const WithTooltip = (props: ComponentProps<typeof LazyWithTooltip>) => (
     <LazyWithTooltip {...props} />
   </Suspense>
 );
+
+const LazyWithTooltipPure = lazy(() =>
+  import('./WithTooltip').then((mod) => ({ default: mod.WithTooltipPure }))
+);
+
+export const WithTooltipPure = (props: ComponentProps<typeof LazyWithTooltipPure>) => (
+  <Suspense fallback={<div />}>
+    <LazyWithTooltipPure {...props} />
+  </Suspense>
+);

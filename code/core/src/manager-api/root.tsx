@@ -34,6 +34,7 @@ import type {
   API_RootEntry,
   API_StateMerger,
   API_StoryEntry,
+  API_TestEntry,
   ArgTypes,
   Args,
   Globals,
@@ -489,7 +490,7 @@ export function useGlobalTypes(): ArgTypes {
   return useStorybookApi().getGlobalTypes();
 }
 
-function useCurrentStory(): API_StoryEntry | API_DocsEntry {
+function useCurrentStory(): API_StoryEntry | API_TestEntry | API_DocsEntry {
   const { getCurrentStoryData } = useStorybookApi();
 
   return getCurrentStoryData();

@@ -1,9 +1,9 @@
 import type { FC } from 'react';
 import React, { createContext, useContext, useState } from 'react';
 
-import { useParameter } from 'storybook/internal/preview-api';
-
 import type { Meta, StoryObj } from '@storybook/react';
+
+import { useParameter } from 'storybook/preview-api';
 
 const Component: FC = () => <p>Story</p>;
 
@@ -43,7 +43,7 @@ export const Context: StoryObj<typeof Component> = {
       </TestContext.Provider>
     ),
   ],
-  render: function Render(args, context) {
+  render: function Render() {
     const value = useContext(TestContext);
 
     if (!value) {

@@ -1,14 +1,16 @@
 import React, { type DOMAttributes, type ReactElement, useMemo } from 'react';
 
-import { TooltipNote, WithTooltip } from 'storybook/internal/components';
-import { shortcutToHumanString } from 'storybook/internal/manager-api';
-import type { API_KeyCollection } from 'storybook/internal/manager-api';
+import { type API_KeyCollection, shortcutToHumanString } from 'storybook/manager-api';
+
+import { TooltipNote } from '../../tooltip/TooltipNote';
+import { TooltipProvider } from '../../tooltip/TooltipProvider';
 
 export const InteractiveTooltipWrapper: React.FC<{
   children: ReactElement<DOMAttributes<Element>, string>;
   shortcut?: API_KeyCollection;
+  disableAllTooltips?: boolean;
   tooltip?: string;
-}> = ({ children, shortcut, tooltip }) => {
+}> = ({ children, disableAllTooltips, shortcut, tooltip }) => {
   const tooltipLabel = useMemo(() => {
     // We read from document despite the lack of reactivity, because this
     // option isn't changeable in the UI. If it was, we'd need to fetch the
@@ -27,9 +29,13 @@ export const InteractiveTooltipWrapper: React.FC<{
   }, [shortcut, tooltip]);
 
   return tooltipLabel ? (
-    <WithTooltip placement="top" tooltip={<TooltipNote note={tooltipLabel} />}>
+    <TooltipProvider
+      placement="top"
+      tooltip={<TooltipNote note={tooltipLabel} />}
+      visible={!disableAllTooltips ? undefined : false}
+    >
       {children}
-    </WithTooltip>
+    </TooltipProvider>
   ) : (
     <>{children}</>
   );

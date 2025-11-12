@@ -17,7 +17,11 @@ import { SupportedLanguage } from '../../code/core/src/cli/project_types';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
 import storybookPackages from '../../code/core/src/common/versions';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { formatConfig, writeConfig } from '../../code/core/src/csf-tools';
+import {
+  readConfig as csfReadConfig,
+  formatConfig,
+  writeConfig,
+} from '../../code/core/src/csf-tools';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
@@ -170,19 +174,24 @@ export const init: Task['run'] = async (
   const cwd = sandboxDir;
 
   let extra = {};
-  if (template.expected.renderer === '@storybook/html') {
-    extra = { type: 'html' };
-  } else if (template.expected.renderer === '@storybook/server') {
-    extra = { type: 'server' };
-  } else if (template.expected.framework === '@storybook/react-native-web-vite') {
-    extra = { type: 'react_native_web' };
+
+  switch (template.expected.renderer) {
+    case '@storybook/html':
+      extra = { type: 'html' };
+      break;
+    case '@storybook/server':
+      extra = { type: 'server' };
+      break;
+    case '@storybook/svelte':
+      await prepareSvelteSandbox(cwd);
+      break;
   }
 
   switch (template.expected.framework) {
     case '@storybook/react-native-web-vite':
+      extra = { type: 'react_native_web' };
       await prepareReactNativeWebSandbox(cwd);
       break;
-    default:
   }
 
   await executeCLIStep(steps.init, {
@@ -218,6 +227,10 @@ export const init: Task['run'] = async (
       await prepareAngularSandbox(cwd, template.name);
       break;
     default:
+  }
+
+  if (template.typeCheck) {
+    await prepareTypeChecking(cwd);
   }
 
   if (!skipTemplateStories) {
@@ -532,7 +545,7 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  const extraDevDeps = ['@storybook/test-runner@0.23.1--canary.d0c3175.0'];
+  const extraDevDeps = ['@storybook/test-runner@latest'];
 
   if (debug) {
     logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);
@@ -876,6 +889,74 @@ async function prepareReactNativeWebSandbox(cwd: string) {
   if (!(await pathExists(join(cwd, 'src')))) {
     await mkdir(join(cwd, 'src'));
   }
+}
+
+async function prepareSvelteSandbox(cwd: string) {
+  const svelteConfigJsPath = join(cwd, 'svelte.config.js');
+  const svelteConfigTsPath = join(cwd, 'svelte.config.ts');
+
+  // Check which config file exists
+  const configPath = (await pathExists(svelteConfigTsPath))
+    ? svelteConfigTsPath
+    : (await pathExists(svelteConfigJsPath))
+      ? svelteConfigJsPath
+      : null;
+
+  if (!configPath) {
+    throw new Error(
+      `No svelte.config.js or svelte.config.ts found in sandbox: ${cwd}, cannot modify config.`
+    );
+  }
+
+  const svelteConfig = await csfReadConfig(configPath);
+
+  // Enable async components
+  // see https://svelte.dev/docs/svelte/await-expressions
+  svelteConfig.setFieldValue(['compilerOptions', 'experimental', 'async'], true);
+
+  // Enable remote functions
+  // see https://svelte.dev/docs/kit/remote-functions
+  svelteConfig.setFieldValue(['kit', 'experimental', 'remoteFunctions'], true);
+
+  await writeConfig(svelteConfig);
+}
+
+/**
+ * Prepare a sandbox for typechecking.
+ *
+ * 1. Add a typecheck script
+ * 2. Ensure typescript compiler options compatible with our example code
+ * 3. Set skipLibCheck to false to test storybook's public types
+ *
+ * This is currently configured for manipulating the output of `create vite` so will need some
+ * adjustment when we extend to type checking webpack sandboxes (if we ever do).
+ */
+async function prepareTypeChecking(cwd: string) {
+  const packageJsonPath = join(cwd, 'package.json');
+  const packageJson = await readJson(packageJsonPath);
+
+  packageJson.scripts = {
+    ...packageJson.scripts,
+    typecheck: 'yarn tsc -p tsconfig.app.json',
+  };
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+
+  const tsConfigPath = join(cwd, 'tsconfig.app.json');
+  const tsConfigContent = await readFile(tsConfigPath, { encoding: 'utf-8' });
+  // This does not preserve comments, but that shouldn't be an issue for sandboxes
+  const tsConfigJson = JSON5.parse(tsConfigContent);
+
+  // We use enums
+  tsConfigJson.compilerOptions.erasableSyntaxOnly = false;
+  // Lots of unnecessary imports of react that need fixing
+  tsConfigJson.compilerOptions.noUnusedLocals = false;
+  // This is much better done by eslint
+  tsConfigJson.compilerOptions.noUnusedParameters = false;
+  // Means we can check our own public types
+  tsConfigJson.compilerOptions.skipLibCheck = false;
+  // Add chai global types
+  (tsConfigJson.compilerOptions.types ??= []).push('chai');
+  await writeFile(tsConfigPath, JSON.stringify(tsConfigJson, null, 2));
 }
 
 async function prepareAngularSandbox(cwd: string, templateName: string) {

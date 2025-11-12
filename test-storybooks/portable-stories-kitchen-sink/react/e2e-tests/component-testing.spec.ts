@@ -562,11 +562,11 @@ test.describe("component testing", () => {
     // around to reset focus.
     await page.keyboard.press('Tab');
     await page.keyboard.press('Escape');
+    await page.click("body");
     await expect(sidebarContextMenu).not.toBeVisible();
 
     // Assert - Tests are running and errors are reported
-    const errorLink = page.locator(
-      "#storybook-testing-module #testing-module-description a"
+    const errorLink = page.locator("#testing-module-description a"
     );
     await expect(errorLink).toContainText("View full error", {
       timeout: 30000,
@@ -629,6 +629,7 @@ test.describe("component testing", () => {
     // around to reset focus.
     await page.keyboard.press('Tab');
     await page.keyboard.press('Escape');
+    await page.click("body");
     await expect(sidebarContextMenu).not.toBeVisible();
 
     await page.click("body");
@@ -639,7 +640,7 @@ test.describe("component testing", () => {
     await expect(
       page
         .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: error\"]")
-    ).toHaveCount(1);
+    ).toHaveCount(3); // 1 story, 1 component, 1 group
   });
 
   test("should run focused test for a group", async ({ page, browserName }) => {
@@ -666,19 +667,8 @@ test.describe("component testing", () => {
       .click();
     const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
+      
 
-    // HACK: the testing module popover has poor tracking of focus due to how many disabled
-    // buttons it has and how deeply it changes its UI on events. This would be solved once
-    // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
-    // around to reset focus.
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Escape');
-    await expect(sidebarContextMenu).not.toBeVisible();
-
-    // Assert - Tests are running and reported
-    await expect(
-      sidebarContextMenu.locator("#testing-module-description")
-    ).toContainText("Ran 11 tests", { timeout: 30000 });
     // Assert - 1 failing test shows as a failed status
     await expect(
       sidebarContextMenu.getByText("2 stories with errors")
@@ -686,6 +676,25 @@ test.describe("component testing", () => {
     await expect(
       sidebarContextMenu.getByLabel("Component tests failed")
     ).toHaveCount(1);
+
+    // HACK: the testing module popover has poor tracking of focus due to how many disabled
+    // buttons it has and how deeply it changes its UI on events. This would be solved once
+    // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
+    // around to reset focus.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Escape');
+    await page.click("body");
+    await expect(sidebarContextMenu).not.toBeVisible();
+
+    // Assert - Tests are running and reported
+    await expect(
+      page.locator("#testing-module-description")
+    ).toContainText("Ran 11 tests", { timeout: 30000 });
+    await expect(
+      page
+        .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: error\"]")
+    ).toHaveCount(4); // 1 visible/expanded story, 1 expanded component, 1 collapsed component, 1 group
+    
 
     await page.click("body");
     await expect(
@@ -695,7 +704,7 @@ test.describe("component testing", () => {
     await expect(
       page
         .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: error\"]")
-    ).toHaveCount(1);
+    ).toHaveCount(4);
   });
 
   test("should run focused tests without coverage, even when enabled", async ({
@@ -739,11 +748,12 @@ test.describe("component testing", () => {
     // around to reset focus.
     await page.keyboard.press('Tab');
     await page.keyboard.press('Escape');
+    await page.click("body");
     await expect(sidebarContextMenu).not.toBeVisible();
 
     // Arrange - Wait for test to finish and unfocus sidebar context menu
     await expect(
-      sidebarContextMenu.locator("#testing-module-description")
+      page.locator("#testing-module-description")
     ).toContainText("Ran 1 test", { timeout: 30000 });
     await page.click("body");
 

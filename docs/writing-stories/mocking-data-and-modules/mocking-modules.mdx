@@ -331,3 +331,7 @@ Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate
 ### Receiving an `exports is not defined` error
 
 Webpack projects may encounter an `exports is not defined` error when using [automocking](#automocking). This is usually caused by attempting to mock a module with CommonJS (CJS) entry points. Automocking with Webpack only works with modules that have ESModules (ESM) entry points exclusively, so you must use a [mock file](#mock-files) to mock CJS modules.
+
+### Mocking conflicts with other testing tools
+
+If you've already set up mocking with other testing tools (e.g., [Jest](https://jestjs.io/)), you may encounter conflicts when using Storybook's mocking system. These conflicts can cause unexpected behavior, errors, or incorrect mocks when both tools try to mock the same module. This is a known issue when sharing mock files or configurations between Storybook and other testing tools. To address this situation, we recommend that you verify which tool is responsible for mocking a particular module and make sure the configurations do not overlap to avoid any conflicts.

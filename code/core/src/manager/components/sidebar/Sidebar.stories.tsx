@@ -76,6 +76,7 @@ const meta = {
           title: 'dummy',
           importPath: './dummy.stories.js',
           type: 'story',
+          subtype: 'story',
           tags: ['A', 'B', 'C', 'dev'],
         },
       },
@@ -197,6 +198,16 @@ export const EmptyMobile: Story = {
   args: Empty.args,
   decorators: [mobileLayoutDecorator],
   globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+};
+
+export const EmptyIndex: Story = {
+  args: {
+    index: {},
+    indexJson: {
+      entries: {},
+      v: 6,
+    },
+  },
 };
 
 export const IndexError: Story = {

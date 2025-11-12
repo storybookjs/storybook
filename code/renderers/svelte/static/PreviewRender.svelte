@@ -26,4 +26,9 @@
   });
 </script>
 
-<DecoratorHandler {Component} {props} />
+<svelte:boundary>
+  {#snippet pending()}
+    <div id="sb-pending-async-component-notice">Pending async component...</div>
+  {/snippet}
+  <DecoratorHandler {Component} {props} />
+</svelte:boundary>

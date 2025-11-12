@@ -34,7 +34,7 @@ const Message = styled.div(({ theme }) => ({
 const Container = styled.div(({ theme }) => ({
   position: 'absolute',
   width: '100%',
-  bottom: '40px',
+  bottom: '0px',
   background: theme.background.bar,
   fontSize: `13px`,
   borderTop: '1px solid',
@@ -98,7 +98,7 @@ const Iframe = styled.iframe<{ isLoaded: boolean }>(
     margin: 0,
     padding: 0,
     width: '100%',
-    height: 'calc(100% - 80px)',
+    height: 'calc(100% - 40px)',
     background: 'white',
   },
   ({ isLoaded }) => ({ visibility: isLoaded ? 'visible' : 'hidden' })

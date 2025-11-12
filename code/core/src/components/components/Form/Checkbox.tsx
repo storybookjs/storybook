@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { color, styled } from 'storybook/internal/theming';
+import { color, styled } from 'storybook/theming';
 
 const Input = styled.input(({ theme }) => ({
   appearance: 'none',
@@ -40,7 +40,7 @@ const Input = styled.input(({ theme }) => ({
     background: 'white',
   },
   '&:enabled:focus-visible': {
-    outline: `2px solid ${color.secondary}`,
+    outline: `2px solid ${theme.color.secondary}`,
     outlineOffset: 2,
   },
 }));

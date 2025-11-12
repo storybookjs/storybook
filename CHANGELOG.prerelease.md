@@ -1,3 +1,7 @@
+## 10.1.0-alpha.10
+
+- Core: Significantly improve Storybook's own accessibility - [#32458](https://github.com/storybookjs/storybook/pull/32458), thanks @Sidnioulz!
+
 ## 10.1.0-alpha.9
 
 - Core: Improve globbing using dynamic CWD - [#32990](https://github.com/storybookjs/storybook/pull/32990), thanks @ia319!

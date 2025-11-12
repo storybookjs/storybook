@@ -1,1 +1,1 @@
-{"version":"10.1.0-alpha.6","info":{"plain":"- Core: Add reentry guard to focus patch - [#32655](https://github.com/storybookjs/storybook/pull/32655), thanks @ia319!\n- Nextjs Vite: Update internal plugin to support `svgr` use cases - [#32957](https://github.com/storybookjs/storybook/pull/32957), thanks @yannbf!"}}
+{"version":"10.1.0-alpha.10","info":{"plain":"- Core: Significantly improve Storybook's own accessibility - [#32458](https://github.com/storybookjs/storybook/pull/32458), thanks @Sidnioulz!"}}

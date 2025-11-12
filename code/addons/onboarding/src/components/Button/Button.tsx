@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 import React, { forwardRef } from 'react';
 
+import { darken, lighten, transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
 export interface ButtonProps extends ComponentProps<'button'> {
@@ -9,23 +10,19 @@ export interface ButtonProps extends ComponentProps<'button'> {
   variant?: 'primary' | 'secondary' | 'outline' | 'white';
 }
 
-const StyledButton = styled.button<{ variant: ButtonProps['variant'] }>`
-  all: unset;
-  box-sizing: border-box;
-  border: 0;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 0.75rem;
-  background: ${({ theme, variant }) => {
-    if (variant === 'primary') {
-      return theme.color.secondary;
-    }
-
+const StyledButton = styled.button<{ variant: ButtonProps['variant'] }>(({ theme, variant }) => ({
+  all: 'unset',
+  boxSizing: 'border-box',
+  border: 0,
+  borderRadius: '4px',
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '0 0.75rem',
+  background: (() => {
     if (variant === 'secondary') {
-      return theme.color.lighter;
+      return theme.button.background;
     }
 
     if (variant === 'outline') {
@@ -35,105 +32,79 @@ const StyledButton = styled.button<{ variant: ButtonProps['variant'] }>`
     if (variant === 'white') {
       return theme.color.lightest;
     }
-    return theme.color.secondary;
-  }};
-  color: ${({ theme, variant }) => {
-    if (variant === 'primary') {
-      return theme.color.lightest;
-    }
-
-    if (variant === 'secondary') {
-      return theme.darkest;
-    }
-
-    if (variant === 'outline') {
-      return theme.darkest;
+    return theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary);
+  })(),
+  color: (() => {
+    if (variant === 'secondary' || variant === 'outline') {
+      return theme.color.defaultText;
     }
 
     if (variant === 'white') {
-      return theme.color.secondary;
+      return theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary);
     }
+
     return theme.color.lightest;
-  }};
-  box-shadow: ${({ variant }) => {
+  })(),
+  boxShadow: (() => {
     if (variant === 'secondary') {
-      return '#D9E8F2 0 0 0 1px inset';
+      return `${theme.button.border} 0 0 0 1px inset`;
     }
 
     if (variant === 'outline') {
-      return '#D9E8F2 0 0 0 1px inset';
+      return `${theme.button.border} 0 0 0 1px inset`;
     }
     return 'none';
-  }};
-  height: 32px;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  font-family: ${({ theme }) => theme.typography.fonts.base};
-  transition: background-color, box-shadow, color, opacity;
-  transition-duration: 0.16s;
-  transition-timing-function: ease-in-out;
-  text-decoration: none;
+  })(),
+  height: '32px',
+  fontSize: '0.8125rem',
+  fontWeight: '700',
+  fontFamily: theme.typography.fonts.base,
+  transition: 'background-color, box-shadow, color, opacity',
+  transitionDuration: '0.16s',
+  transitionTimingFunction: 'ease-in-out',
+  textDecoration: 'none',
 
-  &:hover {
-    background-color: ${({ theme, variant }) => {
-      if (variant === 'primary') {
-        return '#0b94eb';
-      }
-
-      if (variant === 'secondary') {
-        return '#eef4f9';
-      }
-
-      if (variant === 'outline') {
-        return 'transparent';
+  '&:hover, &:focus': {
+    background: (() => {
+      if (variant === 'secondary' || variant === 'outline') {
+        return transparentize(0.93, theme.color.secondary);
       }
 
       if (variant === 'white') {
-        return theme.color.lightest;
-      }
-      return '#0b94eb';
-    }};
-    color: ${({ theme, variant }) => {
-      if (variant === 'primary') {
-        return theme.color.lightest;
+        return transparentize(0.1, theme.color.lightest);
       }
 
-      if (variant === 'secondary') {
-        return theme.darkest;
-      }
-
-      if (variant === 'outline') {
-        return theme.darkest;
+      return theme.base === 'light'
+        ? lighten(0.1, theme.color.secondary)
+        : darken(0.3, theme.color.secondary);
+    })(),
+    color: (() => {
+      if (variant === 'secondary' || variant === 'outline') {
+        return theme.barSelectedColor;
       }
 
       if (variant === 'white') {
-        return theme.color.darkest;
+        return theme.base === 'light'
+          ? lighten(0.1, theme.color.secondary)
+          : darken(0.3, theme.color.secondary);
       }
       return theme.color.lightest;
-    }};
-  }
-
-  &:focus {
-    box-shadow: ${({ variant }) => {
-      if (variant === 'primary') {
-        return 'inset 0 0 0 1px rgba(0, 0, 0, 0.2)';
+    })(),
+    boxShadow: (() => {
+      if (variant === 'secondary' || variant === 'outline' || variant === 'white') {
+        return `inset 0 0 0 1px ${theme.barSelectedColor}`;
       }
 
-      if (variant === 'secondary') {
-        return 'inset 0 0 0 1px #0b94eb';
-      }
+      return 'none';
+    })(),
+  },
 
-      if (variant === 'outline') {
-        return 'inset 0 0 0 1px #0b94eb';
-      }
-
-      if (variant === 'white') {
-        return 'none';
-      }
-      return 'inset 0 0 0 2px rgba(0, 0, 0, 0.1)';
-    }};
-  }
-`;
+  '&:focus-visible': {
+    outline: `solid ${theme.color.secondary}`,
+    outlineOffset: '2px',
+    outlineWidth: '2px',
+  },
+}));
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { children, onClick, variant = 'primary', ...rest },

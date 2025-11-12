@@ -22,6 +22,7 @@ export const SUPPORTED_FRAMEWORKS = [
   '@storybook/nextjs',
   '@storybook/nextjs-vite',
   '@storybook/react-vite',
+  '@storybook/preact-vite',
   '@storybook/svelte-vite',
   '@storybook/vue3-vite',
   '@storybook/html-vite',

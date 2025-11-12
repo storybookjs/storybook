@@ -71,7 +71,9 @@ export class AddonConfigurationCommand {
       }
 
       return { status: hasFailures ? 'failed' : 'success' };
-    } catch {
+    } catch (e) {
+      logger.error('Unexpected error during addon configuration:');
+      logger.error(e);
       return { status: 'failed' };
     }
   }
@@ -168,7 +170,7 @@ export class AddonConfigurationCommand {
     // Log results for each addon, each as a separate log entry
     addons.forEach((addon, index) => {
       const error = addonResults.get(addon);
-      logger.log(CLI_COLORS.dimmed(error ? `❌ ${addon}` : `✅ ${addon}`), {
+      logger.log(CLI_COLORS.muted(error ? `❌ ${addon}` : `✅ ${addon}`), {
         spacing: index === 0 ? 1 : 0,
       });
     });

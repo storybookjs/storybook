@@ -6,12 +6,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { runCompodoc } from './run-compodoc';
 
-const mockRunScript = vi.fn();
+const mockRunScript = vi.fn().mockResolvedValue({ stdout: '' });
 
 vi.mock('storybook/internal/common', () => ({
   JsPackageManagerFactory: {
     getPackageManager: () => ({
-      runPackageCommandSync: mockRunScript,
+      runPackageCommand: mockRunScript,
     }),
   },
 }));

@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { platform } from 'node:os';
 import { join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -11,7 +10,7 @@ import type { ExecaChildProcess } from 'execa';
 import sort from 'semver/functions/sort.js';
 
 import type { ExecuteCommandOptions } from '../utils/command';
-import { executeCommand, executeCommandSync } from '../utils/command';
+import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
@@ -107,15 +106,6 @@ export class BUNProxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  public runPackageCommandSync(
-    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
-  ): string {
-    return executeCommandSync({
-      command: 'bunx',
-      ...options,
-    });
-  }
-
   public runPackageCommand(
     options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
   ): ExecaChildProcess {
@@ -150,11 +140,11 @@ export class BUNProxy extends JsPackageManager {
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     const exec = async ({ packageDepth }: { packageDepth: number }) => {
-      const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
       return executeCommand({
         command: 'npm',
-        args: ['ls', '--json', `--depth=${packageDepth}`, pipeToNull],
+        args: ['ls', '--json', `--depth=${packageDepth}`],
         cwd: this.cwd,
+        stdio: ['ignore', 'pipe', 'ignore'],
         env: {
           FORCE_COLOR: 'false',
         },

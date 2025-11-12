@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises';
 
-import type { ProjectType } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
@@ -9,7 +8,6 @@ import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
 type ExecuteFinalizationParams = {
-  projectType: ProjectType;
   storybookCommand?: string | null;
 };
 
@@ -24,6 +22,7 @@ type ExecuteFinalizationParams = {
  * - Show next steps
  */
 export class FinalizationCommand {
+  constructor(private logfile: string | boolean | undefined) {}
   /** Execute finalization steps */
   async execute({ storybookCommand }: ExecuteFinalizationParams): Promise<void> {
     // Update .gitignore
@@ -67,7 +66,7 @@ export class FinalizationCommand {
     logger.warn('Storybook setup completed, but some non-blocking errors occurred.');
     this.printNextSteps(storybookCommand);
 
-    const logFile = await logTracker.writeToFile();
+    const logFile = await logTracker.writeToFile(this.logfile);
     logger.warn(`Storybook debug logs can be found at: ${logFile}`);
   }
 
@@ -90,6 +89,9 @@ export class FinalizationCommand {
     `);
   }
 }
-export const executeFinalization = (params: ExecuteFinalizationParams) => {
-  return new FinalizationCommand().execute(params);
+export const executeFinalization = ({
+  logfile,
+  ...params
+}: ExecuteFinalizationParams & { logfile: string | boolean | undefined }) => {
+  return new FinalizationCommand(logfile).execute(params);
 };

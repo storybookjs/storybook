@@ -36,10 +36,14 @@ function setupAbortController(): SetupAbortControllerResult {
 
   // Set up stdin in raw mode to capture single keypresses
   if (process.stdin.isTTY) {
-    isRawMode = true;
-    process.stdin.setRawMode(true);
-    process.stdin.resume();
-    process.stdin.on('data', onKeyPress);
+    try {
+      isRawMode = true;
+      process.stdin.setRawMode(true);
+      process.stdin.resume();
+      process.stdin.on('data', onKeyPress);
+    } catch {
+      isRawMode = false;
+    }
   }
 
   return { abortController, cleanup };

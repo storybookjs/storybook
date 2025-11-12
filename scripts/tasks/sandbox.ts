@@ -46,6 +46,7 @@ export const sandbox: Task = {
       'serve',
       'chromatic',
       'bench',
+      'check-sandbox',
     ];
     const isSelectedTaskAfterSandboxCreation = tasksAfterSandbox.includes(selectedTask);
     return isSelectedTaskAfterSandboxCreation && pathExists(sandboxDir);
@@ -84,6 +85,8 @@ export const sandbox: Task = {
       // Adding the dep makes sure that even npx will use the linked workspace version.
       '@storybook/cli',
       'lodash-es',
+      '@types/lodash-es',
+      '@types/aria-query',
       'uuid',
     ];
 

@@ -82,8 +82,11 @@ export class ProjectDetectionCommand {
 
       return detectedType;
     } catch (err) {
+      if (err instanceof HandledError || err instanceof NxProjectDetectedError) {
+        throw err;
+      }
       logger.error(String(err));
-      throw new HandledError(err);
+      throw new HandledError(err instanceof Error ? err.message : String(err));
     }
   }
 

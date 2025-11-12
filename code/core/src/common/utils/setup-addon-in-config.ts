@@ -42,7 +42,9 @@ export async function setupAddonInConfig({
   try {
     const newMainConfig = await loadMainConfig({ configDir, skipCache: true });
 
-    await syncStorybookAddons(newMainConfig, previewConfigPath!, configDir);
+    if (previewConfigPath) {
+      await syncStorybookAddons(newMainConfig, previewConfigPath, configDir);
+    }
   } catch (e) {
     //
   }

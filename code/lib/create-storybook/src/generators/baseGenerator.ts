@@ -16,7 +16,7 @@ import {
   isCI,
   optionalEnvToBoolean,
 } from 'storybook/internal/common';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { prompt } from 'storybook/internal/node-logger';
 import type { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 import { SupportedFramework } from 'storybook/internal/types';
 
@@ -74,12 +74,13 @@ const applyAddonGetAbsolutePathWrapper = (pkg: string | { name: string }) => {
   return obj;
 };
 
-const getFrameworkDetails = (
-  renderer: SupportedRenderer,
-  builder: SupportedBuilder,
-  framework: SupportedFramework,
-  shouldApplyRequireWrapperOnPackageNames?: boolean
-): {
+const getFrameworkDetails = ({
+  framework,
+  shouldApplyRequireWrapperOnPackageNames,
+}: {
+  framework: SupportedFramework;
+  shouldApplyRequireWrapperOnPackageNames?: boolean;
+}): {
   frameworkPackage: string;
   frameworkPackagePath: string;
 } => {
@@ -141,12 +142,10 @@ export async function baseGenerator(
     title: 'Generating Storybook configuration',
   });
 
-  const { frameworkPackagePath, frameworkPackage } = getFrameworkDetails(
-    renderer,
-    builder,
+  const { frameworkPackagePath, frameworkPackage } = getFrameworkDetails({
     framework,
-    shouldApplyRequireWrapperOnPackageNames
-  );
+    shouldApplyRequireWrapperOnPackageNames,
+  });
 
   const {
     extraAddons = [],

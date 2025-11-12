@@ -2,7 +2,6 @@ import fs from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ProjectType } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -19,7 +18,7 @@ describe('FinalizationCommand', () => {
   let command: FinalizationCommand;
 
   beforeEach(() => {
-    command = new FinalizationCommand();
+    command = new FinalizationCommand(undefined);
 
     vi.mocked(getProjectRoot).mockReturnValue('/test/project');
     vi.mocked(logger.step).mockImplementation(() => {});
@@ -36,7 +35,6 @@ describe('FinalizationCommand', () => {
       vi.mocked(fs.appendFile).mockResolvedValue(undefined);
 
       await command.execute({
-        projectType: ProjectType.REACT,
         storybookCommand: 'npm run storybook',
       });
 
@@ -52,7 +50,6 @@ describe('FinalizationCommand', () => {
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await command.execute({
-        projectType: ProjectType.VUE3,
         storybookCommand: 'yarn storybook',
       });
 
@@ -66,7 +63,6 @@ describe('FinalizationCommand', () => {
       vi.mocked(getProjectRoot).mockReturnValue('/test/project');
 
       await command.execute({
-        projectType: ProjectType.REACT,
         storybookCommand: 'npm run storybook',
       });
 
@@ -81,7 +77,6 @@ describe('FinalizationCommand', () => {
       );
 
       await command.execute({
-        projectType: ProjectType.REACT,
         storybookCommand: 'npm run storybook',
       });
 
@@ -94,7 +89,6 @@ describe('FinalizationCommand', () => {
       vi.mocked(fs.appendFile).mockResolvedValue(undefined);
 
       await command.execute({
-        projectType: ProjectType.REACT,
         storybookCommand: 'npm run storybook',
       });
 
@@ -108,7 +102,6 @@ describe('FinalizationCommand', () => {
       vi.mocked(find.up).mockReturnValue(undefined);
 
       await command.execute({
-        projectType: ProjectType.ANGULAR,
         storybookCommand: 'ng run my-app:storybook',
       });
 

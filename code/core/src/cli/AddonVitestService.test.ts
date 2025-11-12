@@ -167,6 +167,17 @@ describe('AddonVitestService', () => {
       expect(result.reasons).toBeUndefined();
     });
 
+    it('should return compatible when vitest >=4.0.0', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('4.0.0') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions(mockPackageManager);
+
+      expect(result.compatible).toBe(true);
+      expect(result.reasons).toBeUndefined();
+    });
+
     it('should return incompatible when vitest <3.0.0', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
         .mockResolvedValueOnce('2.5.0') // vitest

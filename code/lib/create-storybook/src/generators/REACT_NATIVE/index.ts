@@ -80,9 +80,9 @@ export default defineGeneratorModule({
   },
   postConfigure: ({ packageManager }) => {
     logger.log(dedent`
-      ${CLI_COLORS.warning('React Native (RN) Storybook installation is not 100% automated.')}
+      ${CLI_COLORS.warning('The Storybook for React Native installation is not 100% automated.')}
   
-      To run RN Storybook, you will need to:
+      To run Storybook for React Native, you will need to:
   
       1. Replace the contents of your app entry with the following
   
@@ -96,7 +96,7 @@ export default defineGeneratorModule({
       For more details go to:
       https://github.com/storybookjs/react-native#getting-started
   
-      Then to start RN Storybook, run:
+      Then to start Storybook for React Native, run:
   
       ${CLI_COLORS.cta(' ' + packageManager.getRunCommand('start') + ' ')}
     `);

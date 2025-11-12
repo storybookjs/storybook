@@ -234,6 +234,10 @@ export const init: Task['run'] = async (
     default:
   }
 
+  if (template.typeCheck) {
+    await prepareTypeChecking(cwd);
+  }
+
   if (!skipTemplateStories) {
     for (const addon of addons) {
       await executeCLIStep(steps.add, {
@@ -920,6 +924,44 @@ async function prepareSvelteSandbox(cwd: string) {
   svelteConfig.setFieldValue(['kit', 'experimental', 'remoteFunctions'], true);
 
   await writeConfig(svelteConfig);
+}
+
+/**
+ * Prepare a sandbox for typechecking.
+ *
+ * 1. Add a typecheck script
+ * 2. Ensure typescript compiler options compatible with our example code
+ * 3. Set skipLibCheck to false to test storybook's public types
+ *
+ * This is currently configured for manipulating the output of `create vite` so will need some
+ * adjustment when we extend to type checking webpack sandboxes (if we ever do).
+ */
+async function prepareTypeChecking(cwd: string) {
+  const packageJsonPath = join(cwd, 'package.json');
+  const packageJson = await readJson(packageJsonPath);
+
+  packageJson.scripts = {
+    ...packageJson.scripts,
+    typecheck: 'yarn tsc -p tsconfig.app.json',
+  };
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+
+  const tsConfigPath = join(cwd, 'tsconfig.app.json');
+  const tsConfigContent = await readFile(tsConfigPath, { encoding: 'utf-8' });
+  // This does not preserve comments, but that shouldn't be an issue for sandboxes
+  const tsConfigJson = JSON5.parse(tsConfigContent);
+
+  // We use enums
+  tsConfigJson.compilerOptions.erasableSyntaxOnly = false;
+  // Lots of unnecessary imports of react that need fixing
+  tsConfigJson.compilerOptions.noUnusedLocals = false;
+  // This is much better done by eslint
+  tsConfigJson.compilerOptions.noUnusedParameters = false;
+  // Means we can check our own public types
+  tsConfigJson.compilerOptions.skipLibCheck = false;
+  // Add chai global types
+  (tsConfigJson.compilerOptions.types ??= []).push('chai');
+  await writeFile(tsConfigPath, JSON.stringify(tsConfigJson, null, 2));
 }
 
 async function prepareAngularSandbox(cwd: string, templateName: string) {

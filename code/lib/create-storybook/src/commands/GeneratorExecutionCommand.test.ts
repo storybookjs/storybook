@@ -10,11 +10,10 @@ import {
   SupportedRenderer,
 } from 'storybook/internal/types';
 
-import * as addonA11y from '../addon-dependencies/addon-a11y';
-import * as addonVitest from '../addon-dependencies/addon-vitest';
 import { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import { baseGenerator } from '../generators/baseGenerator';
+import { AddonService } from '../services';
 import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
 import { GeneratorExecutionCommand } from './GeneratorExecutionCommand';
 
@@ -29,8 +28,11 @@ vi.mock('../generators/baseGenerator', () => ({
     success: true,
   }),
 }));
-vi.mock('../addon-dependencies/addon-a11y', { spy: true });
-vi.mock('../addon-dependencies/addon-vitest', { spy: true });
+vi.mock('../services', () => ({
+  AddonService: vi.fn().mockImplementation(() => ({
+    getAddonsForFeatures: vi.fn(),
+  })),
+}));
 
 describe('GeneratorExecutionCommand', () => {
   let command: GeneratorExecutionCommand;
@@ -45,9 +47,16 @@ describe('GeneratorExecutionCommand', () => {
     configure: ReturnType<typeof vi.fn>;
   };
   let mockFrameworkInfo: FrameworkDetectionResult;
+  let mockAddonService: { getAddonsForFeatures: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     dependencyCollector = new DependencyCollector();
+    mockAddonService = {
+      getAddonsForFeatures: vi.fn().mockReturnValue([]),
+    };
+    vi.mocked(AddonService).mockImplementation(
+      () => mockAddonService as unknown as InstanceType<typeof AddonService>
+    );
     command = new GeneratorExecutionCommand(dependencyCollector);
     mockPackageManager = {
       getRunCommand: vi.fn().mockReturnValue('npm run storybook'),
@@ -73,11 +82,6 @@ describe('GeneratorExecutionCommand', () => {
     };
 
     vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
-    vi.mocked(addonVitest.getAddonVitestDependencies).mockResolvedValue([
-      'vitest',
-      '@vitest/browser',
-    ]);
-    vi.mocked(addonA11y.getAddonA11yDependencies).mockReturnValue([]);
     vi.mocked(logger.warn).mockImplementation(() => {});
 
     vi.clearAllMocks();
@@ -86,6 +90,12 @@ describe('GeneratorExecutionCommand', () => {
   describe('execute', () => {
     it('should execute generator with all features', async () => {
       const selectedFeatures = new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING]);
+      mockAddonService.getAddonsForFeatures.mockReturnValue([
+        '@chromatic-com/storybook',
+        '@storybook/addon-vitest',
+        '@storybook/addon-docs',
+        '@storybook/addon-onboarding',
+      ]);
       const options = {
         skipInstall: false,
         features: selectedFeatures,
@@ -103,6 +113,7 @@ describe('GeneratorExecutionCommand', () => {
       expect(generatorRegistry.get).toHaveBeenCalledWith(ProjectType.REACT);
       expect(mockGenerator.configure).toHaveBeenCalled();
       expect(baseGenerator).toHaveBeenCalled();
+      expect(mockAddonService.getAddonsForFeatures).toHaveBeenCalledWith(selectedFeatures);
     });
 
     it('should throw error if generator not found', async () => {
@@ -126,6 +137,12 @@ describe('GeneratorExecutionCommand', () => {
 
     it('should pass correct options to generator', async () => {
       const selectedFeatures = new Set([Feature.DOCS, Feature.TEST, Feature.A11Y]);
+      mockAddonService.getAddonsForFeatures.mockReturnValue([
+        '@chromatic-com/storybook',
+        '@storybook/addon-vitest',
+        '@storybook/addon-a11y',
+        '@storybook/addon-docs',
+      ]);
       const options = {
         skipInstall: true,
         builder: SupportedBuilder.VITE,
@@ -176,6 +193,7 @@ describe('GeneratorExecutionCommand', () => {
           extraPackages: [],
         })
       );
+      expect(mockAddonService.getAddonsForFeatures).toHaveBeenCalledWith(selectedFeatures);
     });
   });
 });

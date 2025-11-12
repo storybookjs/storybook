@@ -72,7 +72,7 @@ export default async function postInstall(options: PostinstallOptions) {
     const reasons = compatibilityResult.reasons.map((r) => `• ${CLI_COLORS.error(r)}`);
     reasons.unshift(dedent`
       Automated setup failed
-      We have found incompatibilities due to the following package incompatibilities:
+      The following packages have incompatibilities that prevent automated setup:
     `);
     reasons.push(
       dedent`

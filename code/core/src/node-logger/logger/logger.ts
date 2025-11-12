@@ -144,12 +144,22 @@ export const debug = createLogger(
   '[DEBUG]'
 );
 
+type LogFunctionArgs<T extends (...args: any[]) => any> = Parameters<ReturnType<T>>;
+
 /** For general information that should always be visible to the user */
-export const log = createLogger('info', LOG_FUNCTIONS.log());
+export const log = createLogger('info', (...args: LogFunctionArgs<typeof LOG_FUNCTIONS.log>) =>
+  LOG_FUNCTIONS.log()(...args)
+);
 /** For general information that should catch the user's attention */
-export const info = createLogger('info', LOG_FUNCTIONS.info());
-export const warn = createLogger('warn', LOG_FUNCTIONS.warn());
-export const error = createLogger('error', LOG_FUNCTIONS.error());
+export const info = createLogger('info', (...args: LogFunctionArgs<typeof LOG_FUNCTIONS.info>) =>
+  LOG_FUNCTIONS.info()(...args)
+);
+export const warn = createLogger('warn', (...args: LogFunctionArgs<typeof LOG_FUNCTIONS.warn>) =>
+  LOG_FUNCTIONS.warn()(...args)
+);
+export const error = createLogger('error', (...args: LogFunctionArgs<typeof LOG_FUNCTIONS.error>) =>
+  LOG_FUNCTIONS.error()(...args)
+);
 
 type BoxOptions = {
   title?: string;

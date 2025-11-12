@@ -6,26 +6,12 @@ import { Feature } from 'storybook/internal/types';
 import { DependencyCollector } from '../dependency-collector';
 import { DependencyInstallationCommand } from './DependencyInstallationCommand';
 
-vi.mock('../addon-dependencies/addon-a11y', () => ({
-  getAddonA11yDependencies: vi.fn(),
-}));
-
-vi.mock('../addon-dependencies/addon-vitest', () => ({
-  getAddonVitestDependencies: vi.fn(),
-}));
-
 describe('DependencyInstallationCommand', () => {
   let command: DependencyInstallationCommand;
   let mockPackageManager: JsPackageManager;
   let dependencyCollector: DependencyCollector;
 
   beforeEach(async () => {
-    const { getAddonA11yDependencies } = await import('../addon-dependencies/addon-a11y');
-    const { getAddonVitestDependencies } = await import('../addon-dependencies/addon-vitest');
-
-    vi.mocked(getAddonA11yDependencies).mockReturnValue([]);
-    vi.mocked(getAddonVitestDependencies).mockResolvedValue([]);
-
     dependencyCollector = new DependencyCollector();
     command = new DependencyInstallationCommand(dependencyCollector);
 

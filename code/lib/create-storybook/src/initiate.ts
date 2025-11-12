@@ -104,7 +104,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 8: Print final summary
   await executeFinalization({
-    projectType,
+    logfile: options.logfile,
     storybookCommand,
   });
 
@@ -124,8 +124,8 @@ export async function doInitiate(options: CommandOptions): Promise<
   };
 }
 
-const handleCommandFailure = async (): Promise<never> => {
-  const logFile = await logTracker.writeToFile();
+const handleCommandFailure = async (logFilePath: string | boolean | undefined): Promise<never> => {
+  const logFile = await logTracker.writeToFile(logFilePath);
   logger.error('Storybook encountered an error during initialization');
   logger.log(`Storybook debug logs can be found at: ${logFile}`);
   logger.outro('Storybook exited with an error');
@@ -151,7 +151,9 @@ export async function initiate(options: CommandOptions): Promise<void> {
 
       return result;
     }
-  ).catch(handleCommandFailure);
+  ).catch(() => {
+    handleCommandFailure(options.logfile);
+  });
 
   if (initiateResult?.shouldRunDev) {
     await runStorybookDev(initiateResult);

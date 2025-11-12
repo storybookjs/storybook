@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => {
     commonGlobOptions: vi.fn(),
     promptText: vi.fn(),
     globby: vi.fn(),
+    loggerLog: vi.fn(),
   };
 });
 
@@ -17,6 +18,9 @@ vi.mock('./common-glob-options', () => ({
 }));
 
 vi.mock('storybook/internal/node-logger', () => ({
+  logger: {
+    log: mocks.loggerLog,
+  },
   prompt: {
     text: mocks.promptText,
   },

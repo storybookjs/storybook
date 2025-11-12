@@ -28,16 +28,18 @@ import { type UpgradeOptions, upgrade } from '../upgrade';
 addToGlobalContext('cliVersion', versions.storybook);
 
 // Return a failed exit code but write the logs to a file first
-const handleCommandFailure = async (error: unknown): Promise<never> => {
-  if (!(error instanceof HandledError)) {
-    logger.error(String(error));
-  }
+const handleCommandFailure =
+  (logFilePath: string | boolean | undefined) =>
+  async (error: unknown): Promise<never> => {
+    if (!(error instanceof HandledError)) {
+      logger.error(String(error));
+    }
 
-  const logFile = await logTracker.writeToFile();
-  logger.log(`Storybook debug logs can be found at: ${logFile}`);
-  logger.outro('');
-  process.exit(1);
-};
+    const logFile = await logTracker.writeToFile(logFilePath);
+    logger.log(`Storybook debug logs can be found at: ${logFile}`);
+    logger.outro('');
+    process.exit(1);
+  };
 
 const command = (name: string) =>
   program
@@ -50,8 +52,8 @@ const command = (name: string) =>
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
     .option(
-      '--write-logs',
-      'Write all debug logs to the debug-storybook.log file at the end of the run'
+      '--logfile [path]',
+      'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
     )
     .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
     .hook('preAction', async (self) => {
@@ -64,7 +66,7 @@ const command = (name: string) =>
         logger.setLogLevel(options.loglevel);
       }
 
-      if (options.writeLogs) {
+      if (options.logfile) {
         logTracker.enableLogWriting();
       }
 
@@ -74,9 +76,9 @@ const command = (name: string) =>
         logger.error('Error loading global settings:\n' + String(e));
       }
     })
-    .hook('postAction', async () => {
+    .hook('postAction', async ({ getOptionValue }) => {
       if (logTracker.shouldWriteLogsToFile) {
-        const logFile = await logTracker.writeToFile();
+        const logFile = await logTracker.writeToFile(getOptionValue('logfile'));
         logger.log(`Storybook debug logs can be found at: ${logFile}`);
         logger.outro(CLI_COLORS.success('Done!'));
       }
@@ -152,7 +154,7 @@ command('remove <addon>')
         await telemetry('remove', { addon: addonName, source: 'cli' });
       }
       logger.outro('Done!');
-    }).catch(handleCommandFailure)
+    }).catch(handleCommandFailure(options.logfile))
   );
 
 command('upgrade')
@@ -178,7 +180,7 @@ command('upgrade')
         await upgrade(options);
         logger.outro('Storybook upgrade completed!');
       }
-    ).catch(handleCommandFailure);
+    ).catch(handleCommandFailure(options.logfile));
   });
 
 command('info')
@@ -222,7 +224,7 @@ command('migrate [migration]')
       logger.intro(`Running ${migration} migration`);
       await migrate(migration, options);
       logger.outro('Migration completed');
-    }).catch(handleCommandFailure);
+    }).catch(handleCommandFailure(options.logfile));
   });
 
 command('sandbox [filterValue]')
@@ -243,7 +245,9 @@ command('link <repo-url-or-directory>')
   .description('Pull down a repro from a URL (or a local directory), link it, and run storybook')
   .option('--local', 'Link a local directory already in your file system')
   .option('--no-start', 'Start the storybook', true)
-  .action((target, { local, start }) => link({ target, local, start }).catch(handleCommandFailure));
+  .action((target, { local, start, logfile }) =>
+    link({ target, local, start }).catch(handleCommandFailure(logfile))
+  );
 
 command('automigrate [fixId]')
   .description('Check storybook for incompatibilities or migrations and apply fixes')
@@ -263,7 +267,7 @@ command('automigrate [fixId]')
       logger.intro(`Running ${fixId} automigration`);
       await doAutomigrate({ fixId, ...options });
       logger.outro('Done');
-    }).catch(handleCommandFailure);
+    }).catch(handleCommandFailure(options.logfile));
   });
 
 command('doctor')
@@ -275,7 +279,7 @@ command('doctor')
       logger.intro('Doctoring Storybook');
       await doctor(options);
       logger.outro('Done');
-    }).catch(handleCommandFailure);
+    }).catch(handleCommandFailure(options.logfile));
   });
 
 program.on('command:*', ([invalidCmd]) => {

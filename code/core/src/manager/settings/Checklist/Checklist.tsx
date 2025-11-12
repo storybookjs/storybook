@@ -1,4 +1,4 @@
-import React, { createRef, useCallback, useMemo } from 'react';
+import React, { createRef, useMemo } from 'react';
 
 import {
   Button,
@@ -22,19 +22,16 @@ import {
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import type { useChecklist } from '../../components/sidebar/useChecklist';
-import type { ChecklistData } from './checklistData';
+import type { ChecklistItem, useChecklist } from '../../components/sidebar/useChecklist';
 
-type ChecklistSection = Omit<ChecklistData['sections'][number], 'items'> & {
+type ChecklistSection = {
+  id: string;
+  title: string;
   itemIds: string[];
   progress: number;
 };
 
-type ChecklistItem = ChecklistData['sections'][number]['items'][number] & {
-  isAccepted: boolean; // was it manually accepted by the user?
-  isDone: boolean; // was it automatically completed by the system?
-  isLockedBy: string[]; // items that must be completed before this item can be completed
-  isSkipped: boolean; // was it skipped by the user?
+type ChecklistItemWithRef = ChecklistItem & {
   nodeRef?: React.RefObject<HTMLLIElement>;
 };
 
@@ -231,66 +228,58 @@ const ToggleButton = styled(Button)({
 });
 
 export const Checklist = ({
-  sections,
-  accepted,
-  done,
-  skipped,
+  availableItems,
   accept,
   skip,
   reset,
 }: Pick<
   ReturnType<typeof useChecklist>,
-  'sections' | 'accepted' | 'done' | 'skipped' | 'accept' | 'skip' | 'reset'
+  'availableItems' | 'accepted' | 'done' | 'skipped' | 'accept' | 'skip' | 'reset'
 >) => {
   const api = useStorybookApi();
   const locationHash = useLocationHash();
 
-  const isCompleted = useCallback(
-    (id: string) => accepted.includes(id) || done.includes(id) || skipped.includes(id),
-    [accepted, done, skipped]
+  const { itemsById, sectionsById } = useMemo(
+    () =>
+      availableItems.reduce<{
+        itemsById: Record<ChecklistItem['id'], ChecklistItem>;
+        sectionsById: Record<ChecklistSection['id'], ChecklistSection>;
+      }>(
+        (acc, item) => {
+          acc.itemsById[item.id] = item;
+          const { sectionId: id, sectionTitle: title } = item;
+          acc.sectionsById[id] = acc.sectionsById[id] ?? { id, title, itemIds: [] };
+          acc.sectionsById[id].itemIds.push(item.id);
+          return acc;
+        },
+        { itemsById: {}, sectionsById: {} }
+      ),
+    [availableItems]
   );
 
-  const sectionsById: Record<ChecklistSection['id'], ChecklistSection> = useMemo(
+  const sections = useMemo(
     () =>
-      Object.fromEntries(
-        sections.map(({ items, ...section }) => {
-          const progress =
-            (items.reduce((a, b) => (isCompleted(b.id) ? a + 1 : a), 0) / items.length) * 100;
-          const itemIds = items.map(({ id }) => id);
-          return [section.id, { ...section, itemIds, progress }];
-        })
-      ),
-    [sections, isCompleted]
-  );
-
-  const itemsById: Record<ChecklistItem['id'], ChecklistItem> = useMemo(
-    () =>
-      Object.fromEntries(
-        sections.flatMap(({ items }) =>
-          items.map((item) => {
-            const isAccepted = accepted.includes(item.id);
-            const isDone = done.includes(item.id);
-            const isLockedBy =
-              item.after?.filter((id) => !accepted.includes(id) && !done.includes(id)) ?? [];
-            const isSkipped = skipped.includes(item.id);
-            const nodeRef = createRef<HTMLLIElement>();
-            return [item.id, { ...item, isAccepted, isDone, isLockedBy, isSkipped, nodeRef }];
-          })
-        )
-      ),
-    [sections, accepted, done, skipped]
+      Object.values(sectionsById).map(({ id, title, itemIds }) => {
+        const items = itemIds.map<ChecklistItemWithRef>((id) => ({
+          ...itemsById[id],
+          nodeRef: createRef<HTMLLIElement>(),
+        }));
+        const progress =
+          (items.reduce((acc, item) => (item.isOpen ? acc : acc + 1), 0) / items.length) * 100;
+        return { id, title, items, progress };
+      }),
+    [itemsById, sectionsById]
   );
 
   const next = useMemo(
-    () => Object.values(sections).findIndex(({ items }) => items.some((it) => !isCompleted(it.id))),
-    [sections, isCompleted]
+    () => Object.values(sections).findIndex(({ items }) => items.some((it) => it.isOpen)),
+    [sections]
   );
 
   return (
     <Sections>
-      {sections.map(({ id }, index) => {
-        const { title, itemIds, progress } = sectionsById[id];
-        const hasTarget = itemIds.some((id) => id === locationHash);
+      {sections.map(({ id, title, items, progress }, index) => {
+        const hasTarget = items.some((item) => item.id === locationHash);
         const collapsed = !hasTarget && (progress === 0 || progress === 100) && next !== index;
 
         return (
@@ -323,90 +312,84 @@ export const Checklist = ({
                 )}
               >
                 <Items>
-                  {itemIds.map((itemId) => {
-                    const { content, isAccepted, isDone, isLockedBy, isSkipped, ...item } =
-                      itemsById[itemId];
+                  {items.map(
+                    ({ content, isOpen, isAccepted, isDone, isLockedBy, isSkipped, ...item }) => {
+                      const isChecked = isAccepted || isDone;
+                      const isCollapsed = isChecked && item.id !== locationHash;
+                      const isLocked = isLockedBy.length > 0;
+                      const itemContent = content?.();
 
-                    const isChecked = isAccepted || isDone;
-                    const isCompleted = isAccepted || isDone || isSkipped;
-                    const isCollapsed = isChecked && itemId !== locationHash;
-                    const isLocked = isLockedBy.length > 0;
-                    const itemContent = content?.();
-
-                    return (
-                      <ListboxItem as="li" key={item.id}>
-                        <FocusTarget
-                          targetHash={item.id}
-                          highlightDuration={2000}
-                          outlineOffset={-2}
-                        >
-                          <FocusProxy targetId={`toggle-${item.id}`} outlineOffset={-2}>
-                            <Collapsible
-                              collapsed={isCollapsed}
-                              summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
-                                <ItemSummary
-                                  isCollapsed={isCollapsed || !itemContent}
-                                  onClick={itemContent ? toggleCollapsed : undefined}
-                                >
-                                  <StatusIcon>
-                                    <Checked data-visible={isChecked} />
-                                    <Skipped visible={isSkipped}>Skipped</Skipped>
-                                  </StatusIcon>
-                                  <ItemHeading skipped={isSkipped}>{item.label}</ItemHeading>
-                                  <Actions>
-                                    {itemContent && (
-                                      <ToggleButton
-                                        {...toggleProps}
-                                        id={`toggle-${item.id}`}
-                                        variant="ghost"
-                                        padding="small"
-                                        aria-label={item.label}
-                                      >
-                                        <ChevronSmallDownIcon />
-                                      </ToggleButton>
-                                    )}
-                                    {isLocked && (
-                                      <WithTooltip
-                                        as="div"
-                                        hasChrome={false}
-                                        placement="top"
-                                        trigger="hover"
-                                        tooltip={
-                                          <TooltipNote
-                                            note={`Complete ${isLockedBy.map((id) => `“${itemsById[id].label}”`).join(', ')} first`}
-                                          />
-                                        }
-                                      >
-                                        <Button
+                      return (
+                        <ListboxItem as="li" key={item.id}>
+                          <FocusTarget
+                            targetHash={item.id}
+                            highlightDuration={2000}
+                            outlineOffset={-2}
+                          >
+                            <FocusProxy targetId={`toggle-${item.id}`} outlineOffset={-2}>
+                              <Collapsible
+                                collapsed={isCollapsed}
+                                summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
+                                  <ItemSummary
+                                    isCollapsed={isCollapsed || !itemContent}
+                                    onClick={itemContent ? toggleCollapsed : undefined}
+                                  >
+                                    <StatusIcon>
+                                      <Checked data-visible={isChecked} />
+                                      <Skipped visible={isSkipped}>Skipped</Skipped>
+                                    </StatusIcon>
+                                    <ItemHeading skipped={isSkipped}>{item.label}</ItemHeading>
+                                    <Actions>
+                                      {itemContent && (
+                                        <ToggleButton
+                                          {...toggleProps}
+                                          id={`toggle-${item.id}`}
                                           variant="ghost"
                                           padding="small"
-                                          aria-label="Locked"
-                                          disabled
-                                          readOnly
+                                          aria-label={item.label}
                                         >
-                                          <LockIcon />
+                                          <ChevronSmallDownIcon />
+                                        </ToggleButton>
+                                      )}
+                                      {isLocked && (
+                                        <WithTooltip
+                                          as="div"
+                                          hasChrome={false}
+                                          placement="top"
+                                          trigger="hover"
+                                          tooltip={
+                                            <TooltipNote
+                                              note={`Complete ${isLockedBy.map((id) => `“${itemsById[id].label}”`).join(', ')} first`}
+                                            />
+                                          }
+                                        >
+                                          <Button
+                                            variant="ghost"
+                                            padding="small"
+                                            aria-label="Locked"
+                                            disabled
+                                            readOnly
+                                          >
+                                            <LockIcon />
+                                          </Button>
+                                        </WithTooltip>
+                                      )}
+                                      {isOpen && !isLocked && item.action && (
+                                        <Button
+                                          variant="solid"
+                                          size="small"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            item.action?.onClick({
+                                              api,
+                                              accept: () => accept(item.id),
+                                            });
+                                          }}
+                                        >
+                                          {item.action.label}
                                         </Button>
-                                      </WithTooltip>
-                                    )}
-                                    {!isCompleted && !isLocked && item.action && (
-                                      <Button
-                                        variant="solid"
-                                        size="small"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          item.action?.onClick({
-                                            api,
-                                            accept: () => accept(item.id),
-                                          });
-                                        }}
-                                      >
-                                        {item.action.label}
-                                      </Button>
-                                    )}
-                                    {!isCompleted &&
-                                      !isLocked &&
-                                      !item.action &&
-                                      !item.subscribe && (
+                                      )}
+                                      {isOpen && !isLocked && !item.action && !item.subscribe && (
                                         <Button
                                           variant="outline"
                                           size="small"
@@ -419,43 +402,44 @@ export const Checklist = ({
                                           Mark as complete
                                         </Button>
                                       )}
-                                    {!isCompleted && !isLocked && (
-                                      <Button
-                                        variant="ghost"
-                                        size="small"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          skip(item.id);
-                                        }}
-                                        aria-label="Skip"
-                                      >
-                                        Skip
-                                      </Button>
-                                    )}
-                                    {((isAccepted && !item.once) || isSkipped) && !isLocked && (
-                                      <Button
-                                        variant="ghost"
-                                        padding="small"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          reset(item.id);
-                                        }}
-                                        aria-label="Undo"
-                                      >
-                                        <UndoIcon />
-                                      </Button>
-                                    )}
-                                  </Actions>
-                                </ItemSummary>
-                              )}
-                            >
-                              {itemContent && <ItemContent>{itemContent}</ItemContent>}
-                            </Collapsible>
-                          </FocusProxy>
-                        </FocusTarget>
-                      </ListboxItem>
-                    );
-                  })}
+                                      {isOpen && !isLocked && (
+                                        <Button
+                                          variant="ghost"
+                                          size="small"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            skip(item.id);
+                                          }}
+                                          aria-label="Skip"
+                                        >
+                                          Skip
+                                        </Button>
+                                      )}
+                                      {((isAccepted && !item.once) || isSkipped) && !isLocked && (
+                                        <Button
+                                          variant="ghost"
+                                          padding="small"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            reset(item.id);
+                                          }}
+                                          aria-label="Undo"
+                                        >
+                                          <UndoIcon />
+                                        </Button>
+                                      )}
+                                    </Actions>
+                                  </ItemSummary>
+                                )}
+                              >
+                                {itemContent && <ItemContent>{itemContent}</ItemContent>}
+                              </Collapsible>
+                            </FocusProxy>
+                          </FocusTarget>
+                        </ListboxItem>
+                      );
+                    }
+                  )}
                 </Items>
               </Collapsible>
             </FocusProxy>

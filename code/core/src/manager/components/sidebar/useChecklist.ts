@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { API_IndexHash } from 'storybook/internal/types';
 
@@ -8,6 +8,7 @@ import {
 } from '#manager-stores';
 import { throttle } from 'es-toolkit/function';
 import {
+  type API,
   experimental_useUniversalStore,
   useStorybookApi,
   useStorybookState,
@@ -16,7 +17,23 @@ import {
 import type { ChecklistData } from '../../settings/Checklist/checklistData';
 import { checklistData } from '../../settings/Checklist/checklistData';
 
-type ChecklistItem = ChecklistData['sections'][number]['items'][number];
+type RawItemWithSection = ChecklistData['sections'][number]['items'][number] & {
+  itemIndex: number;
+  sectionId: string;
+  sectionIndex: number;
+  sectionTitle: string;
+};
+
+export type ChecklistItem = RawItemWithSection & {
+  isAvailable: boolean;
+  isOpen: boolean;
+  isLockedBy: string[];
+  isReady: boolean;
+  isAccepted: boolean;
+  isDone: boolean;
+  isSkipped: boolean;
+  isMuted: boolean;
+};
 
 const subscriptions = new Map<string, void | (() => void)>();
 
@@ -31,33 +48,86 @@ const useStoryIndex = () => {
   return index;
 };
 
+const checkAvailable = (
+  item: RawItemWithSection,
+  context: { api: API; index: API_IndexHash | undefined; item: RawItemWithSection },
+  itemsById: Record<RawItemWithSection['id'], RawItemWithSection>
+) => {
+  if (item.available && !item.available(context)) {
+    return false;
+  }
+  for (const afterId of item.after ?? []) {
+    if (itemsById[afterId] && !checkAvailable(itemsById[afterId], context, itemsById)) {
+      return false;
+    }
+  }
+  return true;
+};
+
 export const useChecklist = () => {
   const api = useStorybookApi();
   const index = useStoryIndex();
   const [checklistState] = experimental_useUniversalStore(universalChecklistStore);
   const { loaded, muted, accepted, done, skipped } = checklistState;
 
-  const isOpen = useCallback(
-    (item: ChecklistItem) =>
-      !accepted.includes(item.id) &&
-      !done.includes(item.id) &&
-      !skipped.includes(item.id) &&
-      (item.available?.({ api, index, item }) ?? true),
-    [api, index, accepted, done, skipped]
-  );
+  const itemsById = useMemo<Record<RawItemWithSection['id'], RawItemWithSection>>(() => {
+    return Object.fromEntries(
+      checklistData.sections.flatMap(
+        ({ items, id: sectionId, title: sectionTitle }, sectionIndex) =>
+          items.map(({ id, ...item }, itemIndex) => {
+            return [id, { id, itemIndex, sectionId, sectionIndex, sectionTitle, ...item }];
+          })
+      )
+    );
+  }, []);
 
-  const isReady = useCallback(
-    (item: ChecklistItem): boolean =>
-      isOpen(item) &&
-      !(Array.isArray(muted) && muted.includes(item.id)) &&
-      !item.after?.some((id) => !accepted.includes(id) && !done.includes(id)),
-    [isOpen, accepted, done, muted]
-  );
+  const allItems = useMemo(() => {
+    return Object.values(itemsById).map<ChecklistItem>((item) => {
+      const isAccepted = accepted.includes(item.id);
+      const isDone = done.includes(item.id);
+      const isSkipped = skipped.includes(item.id);
+      const isMuted = Array.isArray(muted) ? muted.includes(item.id) : !!muted;
 
-  const allItems = useMemo<ChecklistItem[]>(
-    () => checklistData.sections.flatMap(({ items }) => items),
-    []
-  );
+      const isAvailable =
+        isAccepted || isDone || checkAvailable(item, { api, index, item }, itemsById);
+      const isOpen = !isAccepted && !isDone && !isSkipped && isAvailable;
+      const isLockedBy =
+        item.after?.filter((id) => !accepted.includes(id) && !done.includes(id)) ?? [];
+      const isReady = isOpen && !isMuted && isLockedBy.length === 0;
+
+      return {
+        ...item,
+        isAvailable,
+        isOpen,
+        isLockedBy,
+        isReady,
+        isAccepted,
+        isDone,
+        isSkipped,
+        isMuted,
+      };
+    });
+  }, [itemsById, accepted, done, skipped, muted, api, index]);
+
+  const itemCollections = useMemo(() => {
+    const availableItems = allItems.filter((item) => item.isAvailable);
+    const openItems = availableItems.filter((item) => item.isOpen);
+    const readyItems = openItems.filter((item) => item.isReady);
+
+    // Collect a list of the next 3 tasks that are ready.
+    // Tasks are pulled from each section in a round-robin fashion,
+    // so that users can choose their own adventure.
+    const nextItems = readyItems
+      .sort((a, b) => a.itemIndex - b.itemIndex)
+      .slice(0, 3)
+      .sort((a, b) => a.sectionIndex - b.sectionIndex);
+
+    const progress = Math.round(
+      ((availableItems.length - openItems.length) / availableItems.length) * 100
+    );
+
+    return { availableItems, openItems, readyItems, nextItems, progress };
+  }, [allItems]);
 
   useEffect(() => {
     if (!loaded) {
@@ -69,9 +139,8 @@ export const useChecklist = () => {
         continue;
       }
 
-      const open = isOpen(item);
       const subscribed = subscriptions.has(item.id);
-      if (open && !subscribed) {
+      if (item.isOpen && !subscribed) {
         subscriptions.set(
           item.id,
           item.subscribe({
@@ -82,7 +151,7 @@ export const useChecklist = () => {
             skip: () => checklistStore.skip(item.id),
           })
         );
-      } else if (subscribed && !open) {
+      } else if (subscribed && !item.isOpen) {
         const unsubscribe = subscriptions.get(item.id);
         subscriptions.delete(item.id);
         if (typeof unsubscribe === 'function') {
@@ -90,34 +159,12 @@ export const useChecklist = () => {
         }
       }
     }
-  }, [api, loaded, allItems, isOpen]);
-
-  const { openItems, nextItems, progress } = useMemo(() => {
-    const openItems = allItems.filter(isOpen);
-    const progress = Math.round(((allItems.length - openItems.length) / allItems.length) * 100);
-
-    // Collect a list of the next 3 tasks that are ready.
-    // Tasks are pulled from each section in a round-robin fashion,
-    // so that users can choose their own adventure.
-    const nextItems = checklistData.sections
-      .flatMap(({ items }, sectionIndex) =>
-        items.filter(isReady).map((item, itemIndex) => ({ item, itemIndex, sectionIndex }))
-      )
-      .sort((a, b) => a.itemIndex - b.itemIndex)
-      .slice(0, 3)
-      .sort((a, b) => a.sectionIndex - b.sectionIndex)
-      .flatMap(({ item }) => (item ? [item] : []));
-
-    return { openItems, nextItems, progress };
-  }, [allItems, isOpen, isReady]);
+  }, [api, loaded, allItems]);
 
   return {
-    ...checklistData,
+    allItems,
+    ...itemCollections,
     ...checklistStore,
     ...checklistState,
-    allItems,
-    nextItems,
-    openItems,
-    progress,
   };
 };

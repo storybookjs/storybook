@@ -123,7 +123,10 @@ export const checklistData: ChecklistData = {
         {
           id: 'guided-tour',
           label: 'Take the guided tour',
-          available: ({ index }) => !!index && 'example-button--primary' in index,
+          available: ({ index }) =>
+            !!index &&
+            'example-button--primary' in index &&
+            addons.experimental_getRegisteredAddons().includes('@storybook/addon-onboarding'),
           criteria: 'Guided tour is completed',
           subscribe: ({ api, accept }) =>
             api.on('STORYBOOK_ADDON_ONBOARDING_CHANNEL', ({ step, type }) => {
@@ -146,7 +149,10 @@ export const checklistData: ChecklistData = {
         {
           id: 'onboarding-survey',
           label: 'Complete the onboarding survey',
-          available: ({ index }) => !!index && 'example-button--primary' in index,
+          available: ({ index }) =>
+            !!index &&
+            'example-button--primary' in index &&
+            addons.experimental_getRegisteredAddons().includes('@storybook/addon-onboarding'),
           once: true,
           criteria: 'Onboarding survey is completed',
           subscribe: ({ api, accept }) =>
@@ -320,6 +326,7 @@ export default {
         {
           id: 'install-vitest',
           label: 'Install Vitest addon',
+          available: () => true, // TODO check for compatibility with the project
           criteria: '@storybook/addon-vitest registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
             if (addons.experimental_getRegisteredAddons().includes('storybook/test')) {
@@ -339,7 +346,7 @@ export default {
         },
         {
           id: 'run-tests',
-          after: ['render-component', 'install-vitest'],
+          after: ['install-vitest'],
           label: 'Test your components',
           criteria: 'Component tests are run from the test widget in the sidebar',
           subscribe: ({ done }) =>
@@ -465,7 +472,7 @@ async play({ canvas, userEvent }) {
         },
         {
           id: 'accessibility-tests',
-          after: ['render-component', 'install-a11y'],
+          after: ['install-a11y'],
           label: 'Run accessibility tests',
           criteria: 'Accessibility tests are run from the test widget in the sidebar',
           subscribe: ({ api, done }) => api.on('storybook/a11y/result', done), // TODO check test widget state
@@ -488,6 +495,7 @@ async play({ canvas, userEvent }) {
         {
           id: 'install-chromatic',
           label: 'Install Visual Tests addon',
+          available: () => true, // TODO check for compatibility with the project (not React Native)
           criteria: '@chromatic-com/storybook registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
             if (addons.experimental_getRegisteredAddons().includes('chromaui/addon-visual-tests')) {
@@ -509,7 +517,7 @@ async play({ canvas, userEvent }) {
         },
         {
           id: 'visual-tests',
-          after: ['render-component', 'install-chromatic'],
+          after: ['install-chromatic'],
           label: 'Run visual tests',
           criteria:
             'Visual tests are run from the test widget in the sidebar or the Visual Tests panel',
@@ -529,7 +537,7 @@ async play({ canvas, userEvent }) {
         },
         {
           id: 'coverage',
-          after: ['render-component'],
+          after: ['install-vitest'],
           label: 'Generate a coverage report',
           criteria: 'Generate and view a coverage report',
           content: () => (
@@ -550,7 +558,6 @@ async play({ canvas, userEvent }) {
         },
         {
           id: 'ci-tests',
-          after: ['render-component'],
           label: 'Automate tests in CI',
           criteria: 'Have a CI workflow that runs component tests, either with Vitest or Chromatic',
           content: () => (
@@ -573,8 +580,28 @@ async play({ canvas, userEvent }) {
       title: 'Document',
       items: [
         {
+          id: 'install-docs',
+          label: 'Install Docs addon',
+          criteria: '@storybook/addon-docs registered in .storybook/main.js|ts',
+          subscribe: ({ done }) => {
+            if (addons.experimental_getRegisteredAddons().includes('storybook/docs')) {
+              done();
+            }
+          },
+          content: () => (
+            <>
+              <p>
+                Storybook Docs transforms your Storybook stories into component documentation. Add
+                the Docs addon to your Storybook project to get started:
+              </p>
+              <CodeSnippet language="bash">{`npx storybook add @storybook/addon-docs`}</CodeSnippet>
+              <p>Restart your Storybook after installing the addon.</p>
+            </>
+          ),
+        },
+        {
           id: 'autodocs',
-          after: ['render-component'],
+          after: ['install-docs'],
           label: 'Automatically document your components',
           criteria: 'At least one component with the autodocs tag applied',
           subscribe: subscribeToIndex((entries) =>
@@ -606,7 +633,7 @@ export default {
         },
         {
           id: 'mdx-docs',
-          after: ['render-component'],
+          after: ['install-docs'],
           label: 'Custom content with MDX',
           criteria: 'At least one MDX page',
           subscribe: subscribeToIndex((entries) =>
@@ -630,9 +657,8 @@ export default {
         },
         {
           id: 'publish-storybook',
-          after: ['render-component'],
           label: 'Publish your Storybook to share',
-          criteria: 'Some form of `storybook build` in the project source',
+          criteria: "Have some form of `storybook build` in the project's CI config",
           content: () => (
             <>
               <p>

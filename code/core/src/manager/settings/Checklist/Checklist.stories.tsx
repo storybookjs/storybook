@@ -9,6 +9,28 @@ import preview from '../../../../../.storybook/preview';
 import { Checklist } from './Checklist';
 import { checklistData } from './checklistData';
 
+const accepted = ['controls'];
+const done = ['install-storybook', 'render-component', 'whats-new-storybook-10'];
+const skipped = ['viewports'];
+
+const availableItems = checklistData.sections.flatMap(
+  ({ id: sectionId, title: sectionTitle, items }, sectionIndex) =>
+    items.map((item) => ({
+      ...item,
+      sectionId,
+      sectionIndex,
+      sectionTitle,
+      isAvailable: true,
+      isOpen: !accepted.includes(item.id) && !done.includes(item.id) && !skipped.includes(item.id),
+      isLockedBy: [],
+      isReady: true,
+      isAccepted: accepted.includes(item.id),
+      isDone: done.includes(item.id),
+      isSkipped: skipped.includes(item.id),
+      isMuted: false,
+    }))
+);
+
 const Container = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2,
 }));
@@ -38,11 +60,5 @@ const meta = preview.meta({
 });
 
 export const Default = meta.story({
-  args: {
-    ...checklistData,
-    ...checklistStore,
-    accepted: ['controls'],
-    done: ['install-storybook', 'render-component', 'whats-new-storybook-10'],
-    skipped: ['viewports'],
-  },
+  args: { availableItems, ...checklistStore },
 });

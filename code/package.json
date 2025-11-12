@@ -216,6 +216,9 @@
     "vitest": "^3.2.4",
     "wait-on": "^8.0.3"
   },
+  "devDependencies": {
+    "react-popper-tooltip": "^4.4.2"
+  },
   "dependenciesMeta": {
     "ejs": {
       "built": false
@@ -283,5 +286,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "10.1.0-alpha.10"
 }

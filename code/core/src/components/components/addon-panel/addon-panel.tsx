@@ -1,6 +1,10 @@
 import type { ReactElement } from 'react';
 import React, { useEffect, useRef } from 'react';
 
+import { styled } from 'storybook/theming';
+
+import { ScrollArea } from '../ScrollArea/ScrollArea';
+
 const usePrevious = (value: any) => {
   const ref = useRef();
 
@@ -21,11 +25,22 @@ const useUpdate = (update: boolean, value: any) => {
 export interface AddonPanelProps {
   active: boolean;
   children: ReactElement;
+  hasScrollbar?: boolean;
 }
 
-export const AddonPanel = ({ active, children }: AddonPanelProps) => {
+const Div = styled.div({
+  height: '100%',
+});
+
+export const AddonPanel = ({ active, children, hasScrollbar = true }: AddonPanelProps) => {
   return (
     // the hidden attribute is an valid html element that's both accessible and works to visually hide content
-    <div hidden={!active}>{useUpdate(active, children)}</div>
+    <Div hidden={!active}>
+      {hasScrollbar ? (
+        <ScrollArea vertical>{useUpdate(active, children)}</ScrollArea>
+      ) : (
+        useUpdate(active, children)
+      )}
+    </Div>
   );
 };

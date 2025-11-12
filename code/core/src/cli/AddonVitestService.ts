@@ -139,7 +139,7 @@ export class AddonVitestService {
           (signal) =>
             packageManager.runPackageCommand({
               args: playwrightCommand,
-              stdio: 'ignore',
+              stdio: ['inherit', 'pipe', 'pipe'],
               signal,
             }),
           {

@@ -126,7 +126,7 @@ export class AddonVitestService {
         : await (async () => {
             logger.log(dedent`
             Playwright browser binaries are necessary for @storybook/addon-vitest. The download can take some time. If you don't want to wait, you can skip the installation and run the following command manually later:
-            ${CLI_COLORS.cta(playwrightCommand.join(' '))}
+            ${CLI_COLORS.cta(`npx ${playwrightCommand.join(' ')}`)}
             `);
             return prompt.confirm({
               message: 'Do you want to install Playwright with Chromium now?',

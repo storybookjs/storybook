@@ -157,47 +157,35 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
 };
 
 export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
-  if (isInteractiveTerminal()) {
+  if (isInteractiveTerminal() || shouldLog('info')) {
     const task = getPromptProvider().taskLog(options);
 
     // Wrap the task log methods to handle console.log patching
     const wrappedTaskLog: TaskLogInstance = {
       message: (message: string) => {
-        if (shouldLog('info')) {
-          task.message(wrapTextForClack(message));
-        }
+        task.message(wrapTextForClack(message));
       },
       success: (message: string, options?: { showLog?: boolean }) => {
         activeTaskLog = null;
         restoreConsoleLog();
-        if (shouldLog('info')) {
-          task.success(message, options);
-        }
+        task.success(message, options);
       },
       error: (message: string) => {
         activeTaskLog = null;
         restoreConsoleLog();
-        if (shouldLog('error')) {
-          task.error(message);
-        }
+        task.error(message);
       },
       group: function (title: string) {
         this.message(`\n${title}\n`);
         return {
           message: (message: string) => {
-            if (shouldLog('info')) {
-              task.message(wrapTextForClack(message));
-            }
+            task.message(wrapTextForClack(message));
           },
           success: (message: string) => {
-            if (shouldLog('info')) {
-              task.success(message);
-            }
+            task.success(message);
           },
           error: (message: string) => {
-            if (shouldLog('error')) {
-              task.error(message);
-            }
+            task.error(message);
           },
         };
       },
@@ -209,27 +197,29 @@ export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
 
     return wrappedTaskLog;
   } else {
+    const maybeLog = shouldLog('info') ? logger.log : (_: string) => {};
+
     return {
       message: (message: string) => {
-        logger.log(message);
+        maybeLog(message);
       },
       success: (message: string) => {
-        logger.log(message);
+        maybeLog(message);
       },
       error: (message: string) => {
-        logger.log(message);
+        maybeLog(message);
       },
       group: (title: string) => {
-        logger.log(`\n${title}\n`);
+        maybeLog(`\n${title}\n`);
         return {
           message: (message: string) => {
-            logger.log(message);
+            maybeLog(message);
           },
           success: (message: string) => {
-            logger.log(message);
+            maybeLog(message);
           },
           error: (message: string) => {
-            logger.log(message);
+            maybeLog(message);
           },
         };
       },

@@ -62,7 +62,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       trigger="hover"
       tooltip={<TooltipNote note={badgeNote} />}
     >
-      <StyledBadge aria-label="Story status" status={status}>
+      <StyledBadge aria-label={`Story status: ${badgeText}`} status={status}>
         {badgeText}
       </StyledBadge>
     </WithTooltip>

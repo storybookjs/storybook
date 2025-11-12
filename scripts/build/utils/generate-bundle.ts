@@ -83,7 +83,8 @@ export async function generateBundle({
     ignoreAnnotations: true,
     splitting: true,
     metafile: true,
-    keepNames: true, // required to show correct error messages based on class names
+    // keepNames: true, // required to show correct error messages based on class names
+
     outbase: 'src',
     outdir: 'dist',
     treeShaking: true,

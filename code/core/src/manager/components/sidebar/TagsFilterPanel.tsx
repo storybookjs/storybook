@@ -159,6 +159,7 @@ export const TagsFilterPanel = ({
                     onChange={() => onToggle(!isChecked)}
                     data-tag={title}
                     aria-hidden={true}
+                    role="presentation"
                     tabIndex={-1}
                   />
                 </>

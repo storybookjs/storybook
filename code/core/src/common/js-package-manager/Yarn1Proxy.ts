@@ -54,9 +54,10 @@ export class Yarn1Proxy extends JsPackageManager {
     args,
     ...options
   }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+    const [command, ...rest] = args;
     return executeCommand({
       command: `yarn`,
-      args: ['exec', ...args],
+      args: ['exec', command, '--', ...rest],
       ...options,
     });
   }

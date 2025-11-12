@@ -57,11 +57,18 @@ jobs:
       parallelism: 5
       requires:
         - create-sandboxes
+  - check-sandboxes:
+      parallelism: 1
+      requires:
+        - create-sandboxes
   # TODO: don't forget to reenable this
   #      - bench-sandboxes:
   #          parallelism: 5
   #          requires:
   #            - create-sandboxes
+  - test-yarn-pnp:
+      requires:
+        - build
   - e2e-ui:
       requires:
         - build

@@ -54,6 +54,10 @@ const config = defineMain({
       titlePrefix: 'highlight',
     },
     {
+      directory: '../core/src/onboarding',
+      titlePrefix: 'onboarding',
+    },
+    {
       directory: '../addons/docs/src/blocks',
       titlePrefix: 'addons/docs/blocks',
     },
@@ -76,10 +80,6 @@ const config = defineMain({
     {
       directory: '../addons/themes/template/stories',
       titlePrefix: 'addons/themes',
-    },
-    {
-      directory: '../addons/onboarding/src',
-      titlePrefix: 'addons/onboarding',
     },
     {
       directory: '../addons/pseudo-states/src',

@@ -5,8 +5,6 @@ import docsConfig from '../../../code/addons/docs/build-config';
 // @ts-ignore
 import linksConfig from '../../../code/addons/links/build-config';
 // @ts-ignore
-import onboardingConfig from '../../../code/addons/onboarding/build-config';
-// @ts-ignore
 import pseudoStatesConfig from '../../../code/addons/pseudo-states/build-config';
 // @ts-ignore
 import themesConfig from '../../../code/addons/themes/build-config';
@@ -89,7 +87,6 @@ export const buildEntries = {
   '@storybook/addon-a11y': a11yConfig,
   '@storybook/addon-docs': docsConfig,
   '@storybook/addon-links': linksConfig,
-  '@storybook/addon-onboarding': onboardingConfig,
   'storybook-addon-pseudo-states': pseudoStatesConfig,
   '@storybook/addon-themes': themesConfig,
   '@storybook/addon-vitest': vitestConfig,

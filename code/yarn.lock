@@ -6164,21 +6164,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-onboarding@workspace:*, @storybook/addon-onboarding@workspace:addons/onboarding":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-onboarding@workspace:addons/onboarding"
-  dependencies:
-    "@neoconfetti/react": "npm:^1.0.0"
-    "@storybook/icons": "npm:^1.6.0"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    react-joyride: "npm:^2.8.2"
-    typescript: "npm:^5.8.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:addons/themes":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:addons/themes"
@@ -6858,7 +6843,6 @@ __metadata:
     "@storybook/addon-designs": "npm:^11.0.1"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-links": "workspace:*"
-    "@storybook/addon-onboarding": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
     "@storybook/addon-vitest": "workspace:*"
     "@storybook/angular": "workspace:*"
@@ -24514,6 +24498,7 @@ __metadata:
     "@emotion/styled": "npm:^11.14.0"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@happy-dom/global-registrator": "npm:^18.0.1"
+    "@neoconfetti/react": "npm:^1.0.0"
     "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"
     "@radix-ui/react-dialog": "npm:^1.1.2"
@@ -24606,6 +24591,7 @@ __metadata:
     react-dom: "npm:^18.2.0"
     react-helmet-async: "npm:^1.3.0"
     react-inspector: "npm:^6.0.0"
+    react-joyride: "npm:^2.8.2"
     react-popper-tooltip: "npm:^4.4.2"
     react-router-dom: "npm:6.15.0"
     react-syntax-highlighter: "npm:^15.4.5"

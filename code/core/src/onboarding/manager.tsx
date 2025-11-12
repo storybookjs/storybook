@@ -12,7 +12,7 @@ const Onboarding = lazy(() => import('./Onboarding'));
 // The addon is enabled only when:
 // 1. The onboarding query parameter is present
 // 2. The example button stories are present
-addons.register('@storybook/addon-onboarding', async (api) => {
+export default addons.register('storybook/addon-onboarding', async (api) => {
   const urlState = api.getUrlState();
   const isOnboarding =
     urlState.path === '/onboarding' || urlState.queryParams.onboarding === 'true';
@@ -24,7 +24,7 @@ addons.register('@storybook/addon-onboarding', async (api) => {
 
     if (!hasButtonStories) {
       console.warn(
-        `[@storybook/addon-onboarding] It seems like you have finished the onboarding experience in Storybook! Therefore this addon is not necessary anymore and will not be loaded. You are free to remove it from your project. More info: https://github.com/storybookjs/storybook/tree/next/code/addons/onboarding#uninstalling`
+        `[storybook/addon-onboarding] It seems like you have finished the onboarding experience in Storybook! Therefore this addon is not necessary anymore and will not be loaded. You are free to remove it from your project. More info: https://github.com/storybookjs/storybook/tree/next/code/addons/onboarding#uninstalling`
       );
       return;
     }

@@ -17,7 +17,6 @@ const projectJson = (name: string, framework: string, tags: string[]) => ({
     'interactions',
     'addon-vitest',
     'links',
-    'onboarding',
     'blocks',
     ...(!['storybook-framework-qwik', 'storybook-solidjs-vite'].includes(framework)
       ? [framework]

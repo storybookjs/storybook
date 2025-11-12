@@ -300,10 +300,6 @@ export async function baseGenerator(
     extraAddons.push('@storybook/addon-docs');
   }
 
-  if (features.includes('onboarding')) {
-    extraAddons.push('@storybook/addon-onboarding');
-  }
-
   // added to main.js
   const addons = [
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),

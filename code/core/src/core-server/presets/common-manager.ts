@@ -11,6 +11,7 @@ import backgroundsManager from '../../backgrounds/manager';
 import measureManager from '../../measure/manager';
 import outlineManager from '../../outline/manager';
 import viewportManager from '../../viewport/manager';
+import onboardingManager from '../../onboarding/manager';
 
 const TAG_FILTERS = 'tag-filters';
 const STATIC_FILTER = 'static-filter';
@@ -48,4 +49,5 @@ export default [
   controlsManager,
   viewportManager,
   outlineManager,
+  onboardingManager,
 ];

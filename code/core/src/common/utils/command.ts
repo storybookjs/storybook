@@ -1,7 +1,7 @@
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 // eslint-disable-next-line depend/ban-dependencies
-import { type CommonOptions, type ExecaChildProcess, execa } from 'execa';
+import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
 
 const COMMON_ENV_VARS = {
   COREPACK_ENABLE_STRICT: '0',
@@ -43,4 +43,17 @@ export function executeCommand(options: ExecuteCommandOptions): ExecaChildProces
   }
 
   return execaProcess;
+}
+
+export function executeCommandSync(options: ExecuteCommandOptions): string {
+  const { command, args = [], ignoreError = false } = options;
+  try {
+    const commandResult = execaCommandSync([command, ...args].join(' '), getExecaOptions(options));
+    return commandResult.stdout ?? '';
+  } catch (err) {
+    if (!ignoreError) {
+      throw err;
+    }
+    return '';
+  }
 }

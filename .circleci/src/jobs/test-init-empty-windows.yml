@@ -1,6 +1,4 @@
-executor:
-  class: small
-  name: sb_node_22_browsers
+executor: win/default
 
 parameters:
   packageManager:
@@ -9,10 +7,27 @@ parameters:
     type: string
 
 steps:
-  - git-shallow-clone/checkout_advanced:
-      clone_options: '--depth 1 --verbose'
+  - checkout
   - attach_workspace:
       at: .
+  - run:
+      name: Setup Node & Yarn on Windows
+      shell: bash.exe
+      # We pin to Node 22 because of npm issues with Node 24 as it isn't fully stable yet and it causes issues when running npx
+      command: |
+        choco install nodejs-lts --version=22.11.0 -y
+        corepack enable
+  # Make sure to install dependencies again because we are now running on Windows and the attached workspace had dependencies installed for Linux
+  - run:
+      name: Install code dependencies
+      shell: bash.exe
+      working_directory: code
+      command: yarn install
+  - run:
+      name: Install script dependencies
+      shell: bash.exe
+      working_directory: scripts
+      command: yarn install
   - when:
       condition:
         equal: ['npm', << parameters.packageManager >>]
@@ -20,17 +35,20 @@ steps:
         - run:
             name: Verdaccio
             background: true
+            shell: bash.exe
             command: |
               cd code
               yarn local-registry --open
         - run:
             name: Wait on Verdaccio
+            shell: bash.exe
             command: |
               cd code
               yarn wait-on tcp:127.0.0.1:6001
               yarn wait-on tcp:127.0.0.1:6002
         - run:
-            name: Storybook init from empty directory (NPM)
+            name: Storybook init from empty directory (Windows NPM)
+            shell: bash.exe
             command: |
               cd ..
               mkdir empty-<< parameters.template >>
@@ -49,17 +67,20 @@ steps:
         - run:
             name: Verdaccio
             background: true
+            shell: bash.exe
             command: |
               cd code
               yarn local-registry --open
         - run:
             name: Wait on Verdaccio
+            shell: bash.exe
             command: |
               cd code
               yarn wait-on tcp:127.0.0.1:6001
               yarn wait-on tcp:127.0.0.1:6002
         - run:
-            name: Storybook init from empty directory (Yarn 2)
+            name: Storybook init from empty directory (Windows Yarn 2)
+            shell: bash.exe
             command: |
               cd ..
               mkdir empty-<< parameters.template >>
@@ -79,17 +100,20 @@ steps:
         - run:
             name: Verdaccio
             background: true
+            shell: bash.exe
             command: |
               cd code
               yarn local-registry --open
         - run:
             name: Wait on Verdaccio
+            shell: bash.exe
             command: |
               cd code
               yarn wait-on tcp:127.0.0.1:6001
               yarn wait-on tcp:127.0.0.1:6002
         - run:
-            name: Storybook init from empty directory (PNPM)
+            name: Storybook init from empty directory (Windows PNPM)
+            shell: bash.exe
             command: |
               cd ..
               mkdir empty-<< parameters.template >>
@@ -109,17 +133,20 @@ steps:
         - run:
             name: Verdaccio
             background: true
+            shell: bash.exe
             command: |
               cd code
               yarn local-registry --open
         - run:
             name: Wait on Verdaccio
+            shell: bash.exe
             command: |
               cd code
               yarn wait-on tcp:127.0.0.1:6001
               yarn wait-on tcp:127.0.0.1:6002
         - run:
-            name: Storybook init from empty directory (--skip-install)
+            name: Storybook init from empty directory (Windows --skip-install)
+            shell: bash.exe
             command: |
               cd ..
               mkdir empty-<< parameters.template >>-no-install
@@ -131,4 +158,6 @@ steps:
               IN_STORYBOOK_SANDBOX: true
               STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
               STORYBOOK_DISABLE_TELEMETRY: true
-  - report-workflow-on-failure
+  # TODO: Find out a solution for this. The Discord orb we use isn't powershell compatible.
+  # For now this will just not report on Discord, but it will fail correctly in CircleCI.
+  # - report-workflow-on-failure

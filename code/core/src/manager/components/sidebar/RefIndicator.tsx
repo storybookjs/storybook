@@ -131,7 +131,7 @@ const SubtleSelect = styled(Select)(({ theme }) => ({
 }));
 
 export const RefIndicator = React.memo(
-  forwardRef<HTMLElement, RefType & { state: ReturnType<typeof getStateType> }>(
+  forwardRef<HTMLDivElement, RefType & { state: ReturnType<typeof getStateType> }>(
     ({ state, ...ref }, forwardedRef) => {
       const api = useStorybookApi();
       const { isMobile } = useLayout();

@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import path, { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
+import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { commonGlobOptions, getProjectRoot, normalizeStoryPath } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
@@ -161,7 +161,7 @@ export class StoryIndexGenerator {
     const pathToSubIndex = {} as SpecifierStoriesCache;
 
     // Calculate a new CWD for each glob to handle paths that go above the workingDir.
-    const globCwd = slash(path.resolve(workingDir, specifier.directory));
+    const globCwd = slash(resolve(workingDir, specifier.directory));
     const globPattern = specifier.files;
 
     // Dynamically import globby because it is a pure ESM module

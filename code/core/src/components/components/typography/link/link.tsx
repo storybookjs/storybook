@@ -67,7 +67,7 @@ const A = styled.a<LinkStylesProps>(
   ({ theme }) => ({
     display: 'inline-block',
     transition: 'all 150ms ease-out',
-    textDecoration: 'none',
+    textDecoration: 'underline',
 
     color: theme.color.secondary,
 

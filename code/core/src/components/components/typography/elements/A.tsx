@@ -8,7 +8,7 @@ export const A = styled(Link)(withReset, ({ theme }) => ({
   lineHeight: '24px',
 
   color: theme.color.secondary,
-  textDecoration: 'none',
+  textDecoration: 'underline',
   '&.absent': {
     color: '#cc0000',
   },

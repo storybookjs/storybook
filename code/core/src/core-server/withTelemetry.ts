@@ -194,10 +194,12 @@ export async function withTelemetry<T>(
 
     throw error;
   } finally {
-    const errors = ErrorCollector.getErrors();
-    for (const error of errors) {
-      await sendTelemetryError(error, eventType, options, false);
+    if (enableTelemetry) {
+      const errors = ErrorCollector.getErrors();
+      for (const error of errors) {
+        await sendTelemetryError(error, eventType, options, false);
+      }
+      process.off('SIGINT', cancelTelemetry);
     }
-    process.off('SIGINT', cancelTelemetry);
   }
 }

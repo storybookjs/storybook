@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-webpack5",
-  "version": "10.1.0-alpha.9",
+  "version": "10.1.0-alpha.10",
   "description": "Storybook for React and Webpack: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

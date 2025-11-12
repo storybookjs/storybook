@@ -20,23 +20,23 @@ export const Default: Story = {};
 export const Submitting: Story = {
   play: async ({ args }) => {
     const button = await screen.findByRole('button', { name: 'Submit' });
-    await expect(button).toBeDisabled();
+    await expect(button).toHaveAttribute('aria-disabled', 'true');
 
     await userEvent.click(await screen.findByText('Design system'));
-    await expect(button).toBeDisabled();
+    await expect(button).toHaveAttribute('aria-disabled', 'true');
 
     await userEvent.click(await screen.findByText('Functional testing'));
     await userEvent.click(await screen.findByText('Accessibility testing'));
     await userEvent.click(await screen.findByText('Visual testing'));
-    await expect(button).toBeDisabled();
+    await expect(button).toHaveAttribute('aria-disabled', 'true');
 
     await userEvent.selectOptions(screen.getByRole('combobox'), ['We use it at work']);
-    await expect(button).not.toBeDisabled();
+    await expect(button).toHaveAttribute('aria-disabled', 'false');
 
     await userEvent.click(button);
 
     await waitFor(async () => {
-      await expect(button).toBeDisabled();
+      await expect(button).toHaveAttribute('aria-disabled', 'true');
       await expect(args.onComplete).toHaveBeenCalledWith({
         building: {
           'application-ui': false,

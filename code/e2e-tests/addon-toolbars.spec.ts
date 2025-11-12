@@ -32,6 +32,6 @@ test.describe('addon-toolbars', () => {
     await expect(sbPage.previewRoot()).toContainText('안녕하세요');
 
     const button = sbPage.page.getByTitle('Internationalization locale');
-    await expect(button).toBeDisabled();
+    await expect(button).toHaveAttribute('aria-disabled');
   });
 });

@@ -40,7 +40,10 @@ function getSelectedParams(currentTree: FlightRouterState, params: Params = {}):
     const isDynamicParameter = Array.isArray(segment);
     const segmentValue = isDynamicParameter ? segment[1] : segment;
 
-    if (!segmentValue || segmentValue.startsWith(PAGE_SEGMENT_KEY)) {
+    if (
+      !segmentValue ||
+      (typeof segmentValue === 'string' && segmentValue.startsWith(PAGE_SEGMENT_KEY))
+    ) {
       continue;
     }
 

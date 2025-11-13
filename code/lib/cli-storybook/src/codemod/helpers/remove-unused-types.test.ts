@@ -4,6 +4,7 @@ import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
+import { getDiff } from '../../../../../core/src/core-server/utils/save-story/getDiff';
 import { removeUnusedTypes } from './remove-unused-types';
 
 expect.addSnapshotSerializer({
@@ -20,8 +21,8 @@ describe('removeUnusedTypes', () => {
 
   it('should remove unused Storybook types', async () => {
     const source = dedent`
-      import { StoryFn, StoryObj, ComponentStory, Meta, MetaObj, ComponentMeta } from '@storybook/react';
       import { Button } from './Button';
+      import { StoryFn, StoryObj, ComponentStory, Meta, MetaObj, ComponentMeta } from '@storybook/react';
 
       // unused types that should be removed
       type UnusedAlias = Meta<typeof Button>;
@@ -47,10 +48,36 @@ describe('removeUnusedTypes', () => {
       export default { component: Button };
     `;
     const transformed = getTransformed(source);
-    expect(transformed).toMatchInlineSnapshot(`
+    expect(getDiff(source, transformed)).toMatchInlineSnapshot(`
       import { Button } from './Button';
-
-      export default { component: Button };
+        
+      - import { StoryFn, StoryObj, ComponentStory, Meta, MetaObj, ComponentMeta } from '@storybook/react';
+      - 
+        
+        
+      - // unused types that should be removed
+      - type UnusedAlias = Meta<typeof Button>;
+      - type UnusedAlias2 = StoryObj<typeof Button>;
+      - type UnusedAlias3 = ComponentStory<typeof Button>;
+      - type UnusedAlias4 = ComponentMeta<typeof Button>;
+      - type UnusedDeepType = {
+      -   foo: {
+      -     bar: {
+      -       story: StoryObj<typeof Button>;
+      -     }
+      -   }
+      - };
+      - interface UnusedInterface extends Meta {}
+      - interface UnusedDeepInterface {
+      -   baz: {
+      -     qux: {
+      -       meta: Meta<typeof Button>;
+      -     }
+      -   }
+      - };
+      - 
+      - 
+        export default { component: Button };
     `);
   });
 

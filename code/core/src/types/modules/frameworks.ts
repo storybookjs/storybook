@@ -21,4 +21,6 @@ export enum SupportedFramework {
   NUXT = 'nuxt',
   REACT_RSBUILD = 'react-rsbuild',
   VUE3_RSBUILD = 'vue3-rsbuild',
+  HTML_RSBUILD = 'html-rsbuild',
+  WEB_COMPONENTS_RSBUILD = 'web-components-rsbuild',
 }

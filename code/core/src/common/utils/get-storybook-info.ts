@@ -55,12 +55,16 @@ export const frameworkPackages: Record<string, SupportedFramework> = {
   'storybook-solidjs-vite': SupportedFramework.SOLID,
   'storybook-react-rsbuild': SupportedFramework.REACT_RSBUILD,
   'storybook-vue3-rsbuild': SupportedFramework.VUE3_RSBUILD,
+  'storybook-web-components-rsbuild': SupportedFramework.WEB_COMPONENTS_RSBUILD,
+  'storybook-html-rsbuild': SupportedFramework.HTML_RSBUILD,
   '@storybook-vue/nuxt': SupportedFramework.NUXT,
 };
 
 export const builderPackages: Record<string, SupportedBuilder> = {
   '@storybook/builder-webpack5': SupportedBuilder.WEBPACK5,
   '@storybook/builder-vite': SupportedBuilder.VITE,
+  // community (outside of monorepo)
+  'storybook-builder-rsbuild': SupportedBuilder.RSBUILD,
 };
 
 export const compilerPackages: Record<string, CoreWebpackCompiler> = {

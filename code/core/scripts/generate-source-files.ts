@@ -88,7 +88,15 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
 }
 
 async function generateFrameworksFile(prettierConfig: prettier.Options | null): Promise<void> {
-  const thirdPartyFrameworks = ['qwik', 'solid', 'nuxt', 'react-rsbuild', 'vue3-rsbuild'];
+  const thirdPartyFrameworks = [
+    'qwik',
+    'solid',
+    'nuxt',
+    'react-rsbuild',
+    'vue3-rsbuild',
+    'html-rsbuild',
+    'web-components-rsbuild',
+  ];
   const destination = join(CORE_ROOT_DIR, 'src', 'types', 'modules', 'frameworks.ts');
   const frameworksDirectory = join(CODE_DIR, 'frameworks');
 

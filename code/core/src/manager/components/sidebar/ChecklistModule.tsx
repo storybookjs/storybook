@@ -6,6 +6,7 @@ import {
   Listbox,
   ListboxAction,
   ListboxButton,
+  ListboxHoverItem,
   ListboxIcon,
   ListboxItem,
   ListboxText,
@@ -264,7 +265,7 @@ export const ChecklistModule = () => {
             {items.map((item) => (
               <Transition key={item.id} nodeRef={item.nodeRef} timeout={300}>
                 {/* @ts-expect-error Ref doesn't understand "as" prop */}
-                <ListboxItem as="li" ref={item.nodeRef}>
+                <ListboxHoverItem as="li" ref={item.nodeRef} targetId={item.id}>
                   <ListboxAction onClick={() => api.navigate(`/settings/guide#${item.id}`)}>
                     <ListboxIcon>
                       {item.isCompleted ? (
@@ -281,6 +282,7 @@ export const ChecklistModule = () => {
                   </ListboxAction>
                   {item.action && (
                     <ListboxButton
+                      data-target-id={item.id}
                       onClick={() => {
                         item.action?.onClick({
                           api,
@@ -291,7 +293,7 @@ export const ChecklistModule = () => {
                       {item.action.label}
                     </ListboxButton>
                   )}
-                </ListboxItem>
+                </ListboxHoverItem>
               </Transition>
             ))}
           </TransitionGroup>

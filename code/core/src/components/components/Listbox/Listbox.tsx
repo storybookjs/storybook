@@ -15,48 +15,67 @@ export const Listbox = styled.div(({ theme }) => ({
   },
 }));
 
-export const ListboxItem = styled.div<{ active?: boolean }>(({ active, theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  flex: '0 0 auto',
-  gap: 4,
+export const ListboxItem = styled.div<{ active?: boolean; showOnHover?: string }>(
+  ({ active, theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flex: '0 0 auto',
+    gap: 4,
 
-  fontSize: theme.typography.size.s1,
-  fontWeight: active ? theme.typography.weight.bold : theme.typography.weight.regular,
-  color: active ? theme.color.secondary : theme.color.defaultText,
-  '--listbox-item-muted-color': active ? theme.color.secondary : theme.color.mediumdark,
+    fontSize: theme.typography.size.s1,
+    fontWeight: active ? theme.typography.weight.bold : theme.typography.weight.regular,
+    color: active ? theme.color.secondary : theme.color.defaultText,
+    '--listbox-item-muted-color': active ? theme.color.secondary : theme.color.mediumdark,
 
-  '@supports (interpolate-size: allow-keywords)': {
+    '@supports (interpolate-size: allow-keywords)': {
+      interpolateSize: 'allow-keywords',
+      overflow: 'hidden',
+      transition: 'all var(--transition-duration, 0.2s)',
+      transitionBehavior: 'allow-discrete',
+    },
+
+    '@media (prefers-reduced-motion: reduce)': {
+      transition: 'none',
+    },
+
+    '&.enter': {
+      opacity: 0,
+      blockSize: 0,
+      contentVisibility: 'hidden',
+    },
+    '&.enter-active': {
+      opacity: 1,
+      blockSize: 'auto',
+      contentVisibility: 'visible',
+    },
+    '&.exit': {
+      opacity: 1,
+      blockSize: 'auto',
+      contentVisibility: 'visible',
+    },
+    '&.exit-active, &.exit-done': {
+      opacity: 0,
+      blockSize: 0,
+      contentVisibility: 'hidden',
+    },
+  })
+);
+
+export const ListboxHoverItem = styled(ListboxItem)<{ targetId: string }>(({ targetId }) => ({
+  gap: 0,
+  [`& [data-target-id="${targetId}"]`]: {
     interpolateSize: 'allow-keywords',
-    overflow: 'hidden',
-    transition: 'all var(--transition-duration, 0.2s)',
-    transitionBehavior: 'allow-discrete',
-  },
-
-  '@media (prefers-reduced-motion: reduce)': {
-    transition: 'none',
-  },
-
-  '&.enter': {
-    opacity: 0,
-    blockSize: 0,
-    contentVisibility: 'hidden',
-  },
-  '&.enter-active': {
+    inlineSize: 'auto',
+    marginLeft: 4,
     opacity: 1,
-    blockSize: 'auto',
-    contentVisibility: 'visible',
+    transition: 'all 150ms',
   },
-  '&.exit': {
-    opacity: 1,
-    blockSize: 'auto',
-    contentVisibility: 'visible',
-  },
-  '&.exit-active, &.exit-done': {
+  [`&:not(:hover, :has(:focus-visible)) [data-target-id="${targetId}"]`]: {
+    inlineSize: 0,
+    marginLeft: 0,
     opacity: 0,
-    blockSize: 0,
-    contentVisibility: 'hidden',
+    paddingInline: 0,
   },
 }));
 

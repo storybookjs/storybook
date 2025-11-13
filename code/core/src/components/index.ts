@@ -50,6 +50,7 @@ export {
   ListboxButton,
   ListboxIcon,
   ListboxItem,
+  ListboxHoverItem,
   ListboxText,
 } from './components/Listbox/Listbox';
 export { Modal } from './components/Modal/Modal';

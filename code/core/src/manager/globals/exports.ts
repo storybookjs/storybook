@@ -520,6 +520,7 @@ export default {
     'Listbox',
     'ListboxAction',
     'ListboxButton',
+    'ListboxHoverItem',
     'ListboxIcon',
     'ListboxItem',
     'ListboxText',

@@ -30,7 +30,7 @@ const meta = preview.meta({
       loaded: true,
       muted: false,
       accepted: ['controls'],
-      done: ['install-storybook', 'render-component', 'whats-new-storybook-10'],
+      done: ['install-storybook', 'render-component'],
       skipped: ['more-components', 'more-stories'],
     });
   },
@@ -43,7 +43,7 @@ export const Default = meta.story({
         loaded: true,
         muted: false,
         accepted: ['controls'],
-        done: ['install-storybook', 'render-component', 'whats-new-storybook-10', 'viewports'],
+        done: ['install-storybook', 'render-component', 'viewports'],
         skipped: ['more-components', 'more-stories'],
       });
     }, 4000);
@@ -52,7 +52,7 @@ export const Default = meta.story({
         loaded: true,
         muted: false,
         accepted: ['controls'],
-        done: ['install-storybook', 'render-component', 'whats-new-storybook-10', 'viewports'],
+        done: ['install-storybook', 'render-component', 'viewports'],
         skipped: ['more-components', 'more-stories', 'install-vitest'],
       });
     }, 8000);

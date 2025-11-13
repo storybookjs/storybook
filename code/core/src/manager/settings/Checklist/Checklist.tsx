@@ -313,7 +313,16 @@ export const Checklist = ({
               >
                 <Items>
                   {items.map(
-                    ({ content, isOpen, isAccepted, isDone, isLockedBy, isSkipped, ...item }) => {
+                    ({
+                      content,
+                      isOpen,
+                      isAccepted,
+                      isDone,
+                      isLockedBy,
+                      isImmutable,
+                      isSkipped,
+                      ...item
+                    }) => {
                       const isChecked = isAccepted || isDone;
                       const isCollapsed = isChecked && item.id !== locationHash;
                       const isLocked = isLockedBy.length > 0;
@@ -415,7 +424,7 @@ export const Checklist = ({
                                           Skip
                                         </Button>
                                       )}
-                                      {((isAccepted && !item.once) || isSkipped) && !isLocked && (
+                                      {((isAccepted && !isImmutable) || isSkipped) && !isLocked && (
                                         <Button
                                           variant="ghost"
                                           padding="small"

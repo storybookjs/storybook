@@ -54,6 +54,9 @@ export interface ChecklistData {
       // Items that must be completed before this item can be completed (locked until then).
       after?: string[];
 
+      // What to do after the item is completed (prevent undo or hide the item).
+      afterCompletion?: 'immutable' | 'unavailable';
+
       // Function to check if the item should be available (displayed in the checklist).
       // Called any time the index is updated.
       available?: (args: {
@@ -61,9 +64,6 @@ export interface ChecklistData {
         index: API_IndexHash | undefined;
         item: ChecklistData['sections'][number]['items'][number];
       }) => boolean;
-
-      // If true, the item can only be completed once (disables undo for completed items).
-      once?: boolean;
 
       // Function returning content to display in the checklist item's collapsible area.
       content?: () => React.ReactNode;
@@ -115,12 +115,6 @@ export const checklistData: ChecklistData = {
       title: 'Storybook basics',
       items: [
         {
-          id: 'install-storybook',
-          label: 'Install Storybook',
-          criteria: 'Storybook is installed',
-          subscribe: ({ done }) => done(),
-        },
-        {
           id: 'guided-tour',
           label: 'Take the guided tour',
           available: ({ index }) =>
@@ -153,7 +147,7 @@ export const checklistData: ChecklistData = {
             !!index &&
             'example-button--primary' in index &&
             addons.experimental_getRegisteredAddons().includes('@storybook/addon-onboarding'),
-          once: true,
+          afterCompletion: 'immutable',
           criteria: 'Onboarding survey is completed',
           subscribe: ({ api, accept }) =>
             api.on(
@@ -326,6 +320,7 @@ export default {
         {
           id: 'install-vitest',
           label: 'Install Vitest addon',
+          afterCompletion: 'unavailable',
           available: () => true, // TODO check for compatibility with the project
           criteria: '@storybook/addon-vitest registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
@@ -449,6 +444,7 @@ async play({ canvas, userEvent }) {
         {
           id: 'install-a11y',
           label: 'Install Accessibility addon',
+          afterCompletion: 'unavailable',
           criteria: '@storybook/addon-a11y registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
             if (addons.experimental_getRegisteredAddons().includes('storybook/a11y')) {
@@ -495,6 +491,7 @@ async play({ canvas, userEvent }) {
         {
           id: 'install-chromatic',
           label: 'Install Visual Tests addon',
+          afterCompletion: 'unavailable',
           available: () => true, // TODO check for compatibility with the project (not React Native)
           criteria: '@chromatic-com/storybook registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
@@ -582,6 +579,7 @@ async play({ canvas, userEvent }) {
         {
           id: 'install-docs',
           label: 'Install Docs addon',
+          afterCompletion: 'unavailable',
           criteria: '@storybook/addon-docs registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
             if (addons.experimental_getRegisteredAddons().includes('storybook/docs')) {

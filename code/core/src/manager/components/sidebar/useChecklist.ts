@@ -28,6 +28,7 @@ export type ChecklistItem = RawItemWithSection & {
   isAvailable: boolean;
   isOpen: boolean;
   isLockedBy: string[];
+  isImmutable: boolean;
   isReady: boolean;
   isCompleted: boolean;
   isAccepted: boolean;
@@ -90,11 +91,13 @@ export const useChecklist = () => {
       const isSkipped = skipped.includes(item.id);
       const isMuted = Array.isArray(muted) ? muted.includes(item.id) : !!muted;
 
-      const isAvailable =
-        isAccepted || isDone || checkAvailable(item, { api, index, item }, itemsById);
+      const isAvailable = isCompleted
+        ? item.afterCompletion !== 'unavailable'
+        : checkAvailable(item, { api, index, item }, itemsById);
       const isOpen = !isAccepted && !isDone && !isSkipped && isAvailable;
       const isLockedBy =
         item.after?.filter((id) => !accepted.includes(id) && !done.includes(id)) ?? [];
+      const isImmutable = isCompleted && item.afterCompletion === 'immutable';
       const isReady = isOpen && !isMuted && isLockedBy.length === 0;
 
       return {
@@ -102,6 +105,7 @@ export const useChecklist = () => {
         isAvailable,
         isOpen,
         isLockedBy,
+        isImmutable,
         isReady,
         isCompleted,
         isAccepted,

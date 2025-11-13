@@ -300,7 +300,7 @@ export const Checklist = ({
                     <Actions>
                       <ToggleButton
                         {...toggleProps}
-                        id={`toggle-${id}`}
+                        data-target-id={`toggle-${id}`}
                         variant="ghost"
                         padding="small"
                         aria-label={title}
@@ -352,7 +352,7 @@ export const Checklist = ({
                                       {itemContent && (
                                         <ToggleButton
                                           {...toggleProps}
-                                          id={`toggle-${item.id}`}
+                                          data-target-id={`toggle-${item.id}`}
                                           variant="ghost"
                                           padding="small"
                                           aria-label={item.label}

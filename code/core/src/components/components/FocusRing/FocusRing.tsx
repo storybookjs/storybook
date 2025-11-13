@@ -15,7 +15,7 @@ export const FocusOutline = styled.div<{ active?: boolean; outlineOffset?: numbe
 );
 
 export const FocusProxy = styled(FocusOutline)<{ targetId: string }>(({ theme, targetId }) => ({
-  [`&:has(#${targetId}:focus-visible)`]: {
+  [`&:has([data-target-id="${targetId}"]:focus-visible)`]: {
     outlineColor: theme.color.secondary,
   },
 }));

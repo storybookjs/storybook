@@ -12,7 +12,7 @@ import type { ExecaChildProcess } from 'execa';
 import type { ExecuteCommandOptions } from '../utils/command';
 import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 
@@ -38,7 +38,7 @@ export type PnpmListOutput = PnpmListItem[];
 const PNPM_ERROR_REGEX = /(ELIFECYCLE|ERR_PNPM_[A-Z_]+)\s+(.*)/i;
 
 export class PNPMProxy extends JsPackageManager {
-  readonly type = 'pnpm';
+  readonly type = PackageManagerName.PNPM;
 
   installArgs: string[] | undefined;
 

@@ -12,7 +12,7 @@ import type { ExecaChildProcess } from 'execa';
 import type { ExecuteCommandOptions } from '../utils/command';
 import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 import { parsePackageData } from './util';
@@ -35,7 +35,7 @@ export type Yarn1ListOutput = {
 const YARN1_ERROR_REGEX = /^error\s(.*)$/gm;
 
 export class Yarn1Proxy extends JsPackageManager {
-  readonly type = 'yarn1';
+  readonly type = PackageManagerName.YARN1;
 
   installArgs: string[] | undefined;
 

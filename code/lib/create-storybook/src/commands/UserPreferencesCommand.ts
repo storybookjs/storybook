@@ -7,6 +7,7 @@ import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/ty
 import { Feature } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
+import { dedent } from 'ts-dedent';
 
 import type { DependencyCollector } from '../dependency-collector';
 import type { CommandOptions } from '../generators/types';
@@ -172,6 +173,10 @@ export class UserPreferencesCommand {
     const features = new Set<Feature>();
 
     if (this.commandOptions.features) {
+      logger.warn(dedent`
+        Skipping feature validation since the following features were explicitly selected:
+        ${Array.from(this.commandOptions.features).join(', ')}
+      `);
       return new Set(this.commandOptions.features);
     }
 

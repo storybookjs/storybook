@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sync as spawnSync } from 'cross-spawn';
 import * as find from 'empathic/find';
 
+import { PackageManagerName } from '.';
 import { BUNProxy } from './BUNProxy';
 import { JsPackageManagerFactory } from './JsPackageManagerFactory';
 import { NPMProxy } from './NPMProxy';
@@ -30,9 +31,9 @@ describe('CLASS: JsPackageManagerFactory', () => {
   describe('METHOD: getPackageManager', () => {
     describe('NPM proxy', () => {
       it('FORCE: it should return a NPM proxy when `force` option is `npm`', () => {
-        expect(JsPackageManagerFactory.getPackageManager({ force: 'npm' })).toBeInstanceOf(
-          NPMProxy
-        );
+        expect(
+          JsPackageManagerFactory.getPackageManager({ force: PackageManagerName.NPM })
+        ).toBeInstanceOf(NPMProxy);
       });
 
       it('USER AGENT: it should infer npm from the user agent', () => {
@@ -83,9 +84,9 @@ describe('CLASS: JsPackageManagerFactory', () => {
 
     describe('PNPM proxy', () => {
       it('FORCE: it should return a PNPM proxy when `force` option is `pnpm`', () => {
-        expect(JsPackageManagerFactory.getPackageManager({ force: 'pnpm' })).toBeInstanceOf(
-          PNPMProxy
-        );
+        expect(
+          JsPackageManagerFactory.getPackageManager({ force: PackageManagerName.PNPM })
+        ).toBeInstanceOf(PNPMProxy);
       });
 
       it('USER AGENT: it should infer pnpm from the user agent', () => {
@@ -173,9 +174,9 @@ describe('CLASS: JsPackageManagerFactory', () => {
 
     describe('Yarn 1 proxy', () => {
       it('FORCE: it should return a Yarn1 proxy when `force` option is `yarn1`', () => {
-        expect(JsPackageManagerFactory.getPackageManager({ force: 'yarn1' })).toBeInstanceOf(
-          Yarn1Proxy
-        );
+        expect(
+          JsPackageManagerFactory.getPackageManager({ force: PackageManagerName.YARN1 })
+        ).toBeInstanceOf(Yarn1Proxy);
       });
 
       it('USER AGENT: it should infer yarn1 from the user agent', () => {
@@ -301,9 +302,9 @@ describe('CLASS: JsPackageManagerFactory', () => {
 
     describe('Yarn 2 proxy', () => {
       it('FORCE: it should return a Yarn2 proxy when `force` option is `yarn2`', () => {
-        expect(JsPackageManagerFactory.getPackageManager({ force: 'yarn2' })).toBeInstanceOf(
-          Yarn2Proxy
-        );
+        expect(
+          JsPackageManagerFactory.getPackageManager({ force: PackageManagerName.YARN2 })
+        ).toBeInstanceOf(Yarn2Proxy);
       });
 
       it('USER AGENT: it should infer yarn2 from the user agent', () => {

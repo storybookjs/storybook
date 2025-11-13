@@ -2,13 +2,12 @@ import { readdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
 // eslint-disable-next-line depend/ban-dependencies
 import execa from 'execa';
-import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from './generators/types';
 

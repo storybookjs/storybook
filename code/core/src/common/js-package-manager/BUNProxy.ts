@@ -12,7 +12,7 @@ import sort from 'semver/functions/sort.js';
 import type { ExecuteCommandOptions } from '../utils/command';
 import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 
@@ -67,7 +67,7 @@ const NPM_ERROR_CODES = {
 };
 
 export class BUNProxy extends JsPackageManager {
-  readonly type = 'bun';
+  readonly type = PackageManagerName.BUN;
 
   installArgs: string[] | undefined;
 

@@ -1,7 +1,7 @@
-import type { FC, SyntheticEvent } from 'react';
-import React, { Fragment } from 'react';
+import type { FC, ReactNode, SyntheticEvent } from 'react';
+import React, { useMemo } from 'react';
 
-import { IconButton, ScrollArea, TabBar, TabButton } from 'storybook/internal/components';
+import { Button, ScrollArea, TabsView } from 'storybook/internal/components';
 import { Location, Route } from 'storybook/internal/router';
 import type { Addon_PageType } from 'storybook/internal/types';
 
@@ -19,50 +19,17 @@ import { WhatsNewPage } from './whats_new_page';
 
 const { document } = global;
 
-const Header = styled.div(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  height: 40,
-  boxShadow: `${theme.appBorderColor}  0 -1px 0 0 inset`,
-  background: theme.barBg,
-  paddingRight: 8,
-}));
-
-const TabBarButton = React.memo(function TabBarButton({
-  changeTab,
-  id,
-  title,
-}: {
-  changeTab: (tab: string) => void;
-  id: string;
-  title: string;
-}) {
-  return (
-    <Location>
-      {({ path }) => {
-        const active = path.includes(`settings/${id}`);
-        return (
-          <TabButton
-            id={`tabbutton-${id}`}
-            className={['tabbutton'].concat(active ? ['tabbutton-active'] : []).join(' ')}
-            type="button"
-            key="id"
-            active={active}
-            onClick={() => changeTab(id)}
-            role="tab"
-          >
-            {title}
-          </TabButton>
-        );
-      }}
-    </Location>
-  );
-});
-
 const Content = styled(ScrollArea)(({ theme }) => ({
   background: theme.background.content,
 }));
+
+const RouteWrapper: FC<{ children: ReactNode; path: string }> = ({ children, path }) => {
+  return (
+    <Content vertical horizontal={false}>
+      <Route path={path}>{children}</Route>
+    </Content>
+  );
+};
 
 const Pages: FC<{
   onClose: () => void;
@@ -84,42 +51,78 @@ const Pages: FC<{
     return () => document.removeEventListener('keydown', handleEscape);
   }, [enableShortcuts, onClose]);
 
+  const tabs = useMemo(() => {
+    const tabsToInclude = [
+      {
+        id: 'about',
+        title: 'About',
+        children: (
+          <RouteWrapper path="about">
+            <AboutPage key="about" />
+          </RouteWrapper>
+        ),
+      },
+      {
+        id: 'guided-tour',
+        title: 'Guided tour',
+        children: (
+          <RouteWrapper path="guided-tour">
+            <GuidedTourPage key="guided-tour" />
+          </RouteWrapper>
+        ),
+      },
+      {
+        id: 'shortcuts',
+        title: 'Keyboard shortcuts',
+        children: (
+          <RouteWrapper path="shortcuts">
+            <ShortcutsPage key="shortcuts" />
+          </RouteWrapper>
+        ),
+      },
+    ];
+
+    if (enableWhatsNew) {
+      tabsToInclude.push({
+        id: 'whats-new',
+        title: "What's new?",
+        children: (
+          <RouteWrapper path="whats-new">
+            <WhatsNewPage key="whats-new" />
+          </RouteWrapper>
+        ),
+      });
+    }
+
+    return tabsToInclude;
+  }, [enableWhatsNew]);
+
   return (
-    <Fragment>
-      <Header className="sb-bar">
-        <TabBar role="tablist">
-          <TabBarButton id="about" title="About" changeTab={changeTab} />
-          {enableWhatsNew && (
-            <TabBarButton id="whats-new" title="What's new?" changeTab={changeTab} />
-          )}
-          <TabBarButton id="guided-tour" title="Guided tour" changeTab={changeTab} />
-          <TabBarButton id="shortcuts" title="Keyboard shortcuts" changeTab={changeTab} />
-        </TabBar>
-        <IconButton
-          onClick={(e: SyntheticEvent) => {
-            e.preventDefault();
-            return onClose();
-          }}
-          title="Close settings page"
-        >
-          <CloseIcon />
-        </IconButton>
-      </Header>
-      <Content vertical horizontal={false}>
-        <Route path="about">
-          <AboutPage key="about" />
-        </Route>
-        <Route path="whats-new">
-          <WhatsNewPage key="whats-new" />
-        </Route>
-        <Route path="guided-tour">
-          <GuidedTourPage key="guided-tour" />
-        </Route>
-        <Route path="shortcuts">
-          <ShortcutsPage key="shortcuts" />
-        </Route>
-      </Content>
-    </Fragment>
+    <Location>
+      {({ path }) => {
+        const selected = tabs.find((tab) => path.includes(`settings/${tab.id}`))?.id;
+        return (
+          <TabsView
+            tabs={tabs}
+            tools={
+              <Button
+                padding="small"
+                variant="ghost"
+                onClick={(e: SyntheticEvent) => {
+                  e.preventDefault();
+                  return onClose();
+                }}
+                ariaLabel="Close settings page"
+              >
+                <CloseIcon />
+              </Button>
+            }
+            selected={selected}
+            onSelectionChange={changeTab}
+          />
+        );
+      }}
+    </Location>
   );
 };
 

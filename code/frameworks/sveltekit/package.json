@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "10.1.0-alpha.5",
+  "version": "10.1.0-alpha.10",
   "description": "Storybook for SvelteKit: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -76,5 +76,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae17"
 }

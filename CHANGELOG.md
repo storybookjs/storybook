@@ -1,3 +1,20 @@
+## 10.0.7
+
+- ESLint: Only apply csf-strict rules on stories files - [#31963](https://github.com/storybookjs/storybook/pull/31963), thanks @cylewaitforit!
+- Next.js: Update SWC loader to support new wasm detection - [#33003](https://github.com/storybookjs/storybook/pull/33003), thanks @yannbf!
+
+## 10.0.6
+
+- CSF: Fix export interface declaration for NextPreview - [#32914](https://github.com/storybookjs/storybook/pull/32914), thanks @icopp!
+- Controls: Add range validation in Number Control - [#32539](https://github.com/storybookjs/storybook/pull/32539), thanks @ia319!
+- Fix: Export interface declaration for ReactMeta - [#32915](https://github.com/storybookjs/storybook/pull/32915), thanks @icopp!
+- Vitest Addon: Add support for Preact - [#32948](https://github.com/storybookjs/storybook/pull/32948), thanks @yannbf!
+
+## 10.0.5
+
+- Core: Add reentry guard to focus patch - [#32655](https://github.com/storybookjs/storybook/pull/32655), thanks @ia319!
+- Nextjs Vite: Update internal plugin to support `svgr` use cases - [#32957](https://github.com/storybookjs/storybook/pull/32957), thanks @yannbf!
+
 ## 10.0.4
 
 - CLI: Fix issue with running Storybook after being initialized - [#32929](https://github.com/storybookjs/storybook/pull/32929), thanks @yannbf!

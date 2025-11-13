@@ -480,7 +480,6 @@ export const baseTemplates = {
   },
   'react-rsbuild/default-ts': {
     name: 'React Latest (RSBuild | TypeScript)',
-    inDevelopment: true,
     script: 'yarn create rsbuild -d {{beforeDir}} -t react-ts --tools eslint',
     expected: {
       framework: 'storybook-react-rsbuild',
@@ -536,7 +535,6 @@ export const baseTemplates = {
   },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RSBuild | TypeScript)',
-    inDevelopment: true,
     script: 'yarn create rsbuild -d {{beforeDir}} -t vue-ts --tools eslint',
     expected: {
       framework: 'storybook-vue3-rsbuild',
@@ -583,7 +581,6 @@ export const baseTemplates = {
   },
   'html-rsbuild/default-ts': {
     name: 'HTML Latest (RSBuild | TypeScript)',
-    inDevelopment: true,
     script: 'yarn create rsbuild -d {{beforeDir}} -t vanilla-ts --tools eslint',
     expected: {
       framework: 'storybook-html-rsbuild',
@@ -676,7 +673,6 @@ export const baseTemplates = {
   },
   'lit-rsbuild/default-ts': {
     name: 'Web Components Latest (RSBuild | TypeScript)',
-    inDevelopment: true,
     script: 'yarn create rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
     expected: {
       framework: 'storybook-web-components-rsbuild',
@@ -976,6 +972,7 @@ export const normal: TemplateKey[] = [
   'bench/react-vite-default-ts-test-build',
   'bench/react-webpack-18-ts-test-build',
   'ember/default-js',
+  'react-rsbuild/default-ts',
 ];
 
 export const merged: TemplateKey[] = [
@@ -986,6 +983,7 @@ export const merged: TemplateKey[] = [
   'nextjs-vite/15-ts',
   'preact-vite/default-ts',
   'html-vite/default-ts',
+  'vue3-rsbuild/default-ts',
 ];
 
 export const daily: TemplateKey[] = [
@@ -1008,6 +1006,8 @@ export const daily: TemplateKey[] = [
   'internal/react16-webpack',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',
+  'lit-rsbuild/default-ts',
+  'html-rsbuild/default-ts',
   // 'react-native-web-vite/rn-cli-ts',
 ];
 

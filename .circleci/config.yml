@@ -925,7 +925,7 @@ jobs:
                         shell: bash.exe
     test-init-features:
         executor:
-            class: medium+
+            class: small
             name: sb_node_22_browsers
         steps:
             - git-shallow-clone/checkout_advanced:
@@ -950,7 +950,7 @@ jobs:
                     mkdir features-1
                     cd features-1
                     npm set registry http://localhost:6001
-                    npx create-storybook --yes --package-manager npm --features dev docs test a11y
+                    npx create-storybook --yes --package-manager npm --features docs test a11y --loglevel=debug
                     npx vitest
                 environment:
                     IN_STORYBOOK_SANDBOX: true
@@ -1172,7 +1172,7 @@ workflows:
                 requires:
                     - build
             - create-sandboxes:
-                parallelism: 34
+                parallelism: 38
                 requires:
                     - build
             - check-sandboxes:
@@ -1180,7 +1180,7 @@ workflows:
                 requires:
                     - create-sandboxes
             - chromatic-sandboxes:
-                parallelism: 31
+                parallelism: 35
                 requires:
                     - create-sandboxes
             - e2e-production:
@@ -1188,11 +1188,11 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-dev:
-                parallelism: 28
+                parallelism: 32
                 requires:
                     - create-sandboxes
             - test-runner-production:
-                parallelism: 29
+                parallelism: 33
                 requires:
                     - create-sandboxes
             - vitest-integration:
@@ -1286,11 +1286,11 @@ workflows:
                 requires:
                     - unit-tests
             - create-sandboxes:
-                parallelism: 19
+                parallelism: 21
                 requires:
                     - build
             - chromatic-sandboxes:
-                parallelism: 16
+                parallelism: 18
                 requires:
                     - create-sandboxes
             - e2e-production:
@@ -1298,11 +1298,11 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-dev:
-                parallelism: 14
+                parallelism: 16
                 requires:
                     - create-sandboxes
             - test-runner-production:
-                parallelism: 14
+                parallelism: 16
                 requires:
                     - create-sandboxes
             - vitest-integration:
@@ -1381,11 +1381,11 @@ workflows:
                 requires:
                     - unit-tests
             - create-sandboxes:
-                parallelism: 13
+                parallelism: 14
                 requires:
                     - build
             - chromatic-sandboxes:
-                parallelism: 10
+                parallelism: 11
                 requires:
                     - create-sandboxes
             - e2e-production:
@@ -1393,11 +1393,11 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-dev:
-                parallelism: 8
+                parallelism: 9
                 requires:
                     - create-sandboxes
             - test-runner-production:
-                parallelism: 8
+                parallelism: 9
                 requires:
                     - create-sandboxes
             - vitest-integration:

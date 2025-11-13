@@ -43,6 +43,15 @@ const fadeScaleIn = keyframes`
   }
 `;
 
+const expand = keyframes`
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+`;
+
 type ChecklistItemWithRef = ChecklistItem & {
   nodeRef: React.RefObject<HTMLLIElement>;
 };
@@ -79,15 +88,32 @@ const Checked = styled(StatusPassIcon)(({ theme }) => ({
 
 const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
   ({ theme, isCompleted, isSkipped }) => ({
-    textDecoration: isSkipped ? 'line-through' : 'none',
+    position: 'relative',
+    margin: '0 -2px',
+    padding: '0 2px',
     color: isSkipped
-      ? theme.textMutedColor
+      ? theme.color.mediumdark
       : isCompleted
         ? theme.base === 'dark'
           ? theme.color.positive
           : theme.color.positiveText
         : theme.color.defaultText,
-  })
+    transition: 'color 500ms',
+  }),
+  ({ theme, isSkipped }) =>
+    isSkipped && {
+      '&:after': {
+        content: '""',
+        position: 'absolute',
+        top: '50%',
+        left: 0,
+        width: '100%',
+        height: 1,
+        background: theme.color.mediumdark,
+        animation: `${expand} 500ms forwards`,
+        transformOrigin: 'left',
+      },
+    }
 );
 
 const title = (progress: number) => {

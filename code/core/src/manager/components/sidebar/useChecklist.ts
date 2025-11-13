@@ -124,7 +124,15 @@ export const useChecklist = () => {
     // Collect a list of the next 3 tasks that are ready.
     // Tasks are pulled from each section in a round-robin fashion,
     // so that users can choose their own adventure.
-    const nextItems = readyItems
+    const nextItems = Object.values(
+      readyItems.reduce<Record<string, ChecklistItem[]>>((acc, item) => {
+        // Reset itemIndex to only include ready items.
+        acc[item.sectionId] ??= [];
+        acc[item.sectionId].push({ ...item, itemIndex: acc[item.sectionId].length });
+        return acc;
+      }, {})
+    )
+      .flat()
       .sort((a, b) => a.itemIndex - b.itemIndex)
       .slice(0, 3)
       .sort((a, b) => a.sectionIndex - b.sectionIndex);

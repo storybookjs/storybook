@@ -6,11 +6,8 @@ import path from 'path';
 
 import type { FileInfo } from '../../automigrate/codemod';
 import { cleanupTypeImports } from './csf-factories-utils';
+import { removeUnusedTypes } from './remove-unused-types';
 
-// Name of properties that should not be renamed to `Story.input.xyz`
-const reuseDisallowList = ['play', 'run', 'extends', 'story'];
-
-// Name of types that should be removed from the import list
 const typesDisallowList = [
   'Story',
   'StoryFn',
@@ -21,121 +18,10 @@ const typesDisallowList = [
   'ComponentMeta',
 ];
 
+// Name of properties that should not be renamed to `Story.input.xyz`
+const reuseDisallowList = ['play', 'run', 'extends', 'story'];
+
 type Options = { previewConfigPath: string; useSubPathImports: boolean };
-
-function findStorybookTypeAliases(ast: t.File): Map<string, t.TSTypeAliasDeclaration> {
-  const storybookTypeAliases = new Map<string, t.TSTypeAliasDeclaration>();
-
-  traverse(ast, {
-    TSTypeAliasDeclaration(path) {
-      if (!t.isIdentifier(path.node.id)) {
-        return;
-      }
-
-      let referencesStorybookType = false;
-      path.traverse({
-        TSTypeReference(innerPath) {
-          if (t.isIdentifier(innerPath.node.typeName)) {
-            // Check if the type annotation references any Storybook types
-            if (typesDisallowList.includes(innerPath.node.typeName.name)) {
-              referencesStorybookType = true;
-              innerPath.stop();
-            }
-          } else if (t.isTSQualifiedName(innerPath.node.typeName)) {
-            // Handle qualified names like `Storybook.Meta`
-            let current = innerPath.node.typeName;
-            while (t.isTSQualifiedName(current)) {
-              if (t.isIdentifier(current.right) && typesDisallowList.includes(current.right.name)) {
-                referencesStorybookType = true;
-                innerPath.stop();
-                break;
-              }
-              if (t.isIdentifier(current.left)) {
-                if (typesDisallowList.includes(current.left.name)) {
-                  referencesStorybookType = true;
-                  innerPath.stop();
-                }
-                break;
-              }
-              current = current.left as t.TSQualifiedName;
-            }
-          }
-        },
-      });
-
-      if (referencesStorybookType) {
-        storybookTypeAliases.set(path.node.id.name, path.node);
-      }
-    },
-  });
-
-  return storybookTypeAliases;
-}
-
-/** Find which Storybook-related type aliases are actually used in the code */
-function findUsedTypeNames(
-  ast: t.File,
-  storybookTypeAliases: Map<string, t.TSTypeAliasDeclaration>
-): Set<string> {
-  const usedTypeNames = new Set<string>();
-
-  traverse(ast, {
-    TSTypeReference(path) {
-      if (t.isIdentifier(path.node.typeName)) {
-        const typeName = path.node.typeName.name;
-        // Only track usage if it's not the type declaration itself
-        const isDeclaration =
-          path.parent.type === 'TSTypeAliasDeclaration' &&
-          t.isTSTypeAliasDeclaration(path.parent) &&
-          path.parent.typeAnnotation === path.node;
-
-        if (!isDeclaration && storybookTypeAliases.has(typeName)) {
-          usedTypeNames.add(typeName);
-        }
-      }
-    },
-    TSTypeAnnotation(path) {
-      // Check for type annotations in variable declarations, parameters, etc.
-      if (
-        t.isTSTypeReference(path.node.typeAnnotation) &&
-        t.isIdentifier(path.node.typeAnnotation.typeName)
-      ) {
-        const typeName = path.node.typeAnnotation.typeName.name;
-        if (storybookTypeAliases.has(typeName)) {
-          usedTypeNames.add(typeName);
-        }
-      }
-    },
-  });
-
-  return usedTypeNames;
-}
-
-/**
- * Remove unused Storybook-specific type aliases from the program
- *
- * Only removes types that:
- *
- * 1. Reference Storybook types (Meta, Story, StoryObj, etc.)
- * 2. Are not actually used anywhere in the code
- */
-function removeUnusedStorybookTypes(programNode: t.Program, ast: t.File): void {
-  const storybookTypeAliases = findStorybookTypeAliases(ast);
-  const usedTypeNames = findUsedTypeNames(ast, storybookTypeAliases);
-
-  // Collect types to remove
-  const typeAliasesToRemove = new Set<t.TSTypeAliasDeclaration>();
-  storybookTypeAliases.forEach((node, typeName) => {
-    if (!usedTypeNames.has(typeName)) {
-      typeAliasesToRemove.add(node);
-    }
-  });
-
-  // Filter out the unused types from the program body
-  programNode.body = programNode.body.filter(
-    (node) => !t.isTSTypeAliasDeclaration(node) || !typeAliasesToRemove.has(node)
-  );
-}
 
 export async function storyToCsfFactory(
   info: FileInfo,
@@ -441,12 +327,7 @@ export async function storyToCsfFactory(
     programNode.body.unshift(configImport);
   }
 
-  // Remove Storybook-specific type aliases e.g. `type Story = StoryObj<typeof meta>;`
-  // First: Removes types that reference Storybook types AND are not used in the code
-  removeUnusedStorybookTypes(programNode, csf._ast);
-
-  // Second: Remove type imports – now inferred – from @storybook/* packages
-  programNode.body = cleanupTypeImports(programNode, typesDisallowList);
+  removeUnusedTypes(programNode, csf._ast);
 
   return printCsf(csf).code;
 }

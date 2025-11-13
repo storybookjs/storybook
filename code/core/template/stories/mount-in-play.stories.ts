@@ -20,6 +20,6 @@ export const MountShouldBeDestructured = {
     } catch (e) {
       error = e;
     }
-    await expect(error?.name).toContain('MountMustBeDestructuredError');
+    await expect(error?.name).toContain('SB_PREVIEW_API_0012');
   },
 };

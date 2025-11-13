@@ -43,7 +43,7 @@ export default defineGeneratorModule({
       `);
     }
 
-    if (!craVersion && semver.gte(craVersion, '5.0.0')) {
+    if (craVersion && semver.lt(craVersion, '5.0.0')) {
       throw new Error(dedent`
         Storybook 7.0+ doesn't support react-scripts@<5.0.0.
   

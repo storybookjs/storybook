@@ -102,7 +102,6 @@ export interface GeneratorModule {
   configure: (
     packageManager: JsPackageManager,
     context: GeneratorContext
-    // Return undefined if the base generator shouldn't be executed
   ) => Promise<FrameworkOptions>;
   /**
    * The function that runs after the generator is configured. This is used to run any
@@ -133,4 +132,5 @@ export type CommandOptions = {
   enableCrashReports?: boolean;
   debug?: boolean;
   dev?: boolean;
+  logfile?: string | boolean;
 };

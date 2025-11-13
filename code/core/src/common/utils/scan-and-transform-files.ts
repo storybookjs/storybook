@@ -1,4 +1,4 @@
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { commonGlobOptions } from './common-glob-options';
 import { getProjectRoot } from './paths';
@@ -37,7 +37,7 @@ export async function scanAndTransformFiles<T extends Record<string, unknown>>({
         initialValue: defaultGlob,
       });
 
-  console.log('Scanning for affected files...');
+  logger.log('Scanning for affected files...');
 
   // eslint-disable-next-line depend/ban-dependencies
   const globby = (await import('globby')).globby;
@@ -50,7 +50,7 @@ export async function scanAndTransformFiles<T extends Record<string, unknown>>({
     absolute: true,
   });
 
-  console.log(`Scanning ${sourceFiles.length} files...`);
+  logger.log(`Scanning ${sourceFiles.length} files...`);
 
   // Transform the files using the provided transform function
   return transformFn(sourceFiles, transformOptions, dryRun);

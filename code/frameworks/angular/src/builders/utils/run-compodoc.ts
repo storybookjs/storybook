@@ -31,14 +31,16 @@ export const runCompodoc = (
     const packageManager = JsPackageManagerFactory.getPackageManager();
 
     try {
-      const stdout = packageManager.runPackageCommandSync({
-        args: finalCompodocArgs,
-        cwd: context.workspaceRoot,
-      });
-
-      context.logger.info(stdout);
-      observer.next();
-      observer.complete();
+      packageManager
+        .runPackageCommand({
+          args: finalCompodocArgs,
+          cwd: context.workspaceRoot,
+        })
+        .then((result) => {
+          context.logger.info(result.stdout);
+          observer.next();
+          observer.complete();
+        });
     } catch (e) {
       context.logger.error(e);
       observer.error();

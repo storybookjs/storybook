@@ -50,8 +50,8 @@ const createStorybookProgram = program
     'Complete the initialization of Storybook without launching the Storybook development server'
   )
   .option(
-    '--write-logs',
-    'Write all debug logs to the debug-storybook.log file at the end of the runn'
+    '--logfile [path]',
+    'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
   )
   .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
   .hook('preAction', async (self) => {
@@ -65,13 +65,13 @@ const createStorybookProgram = program
       logger.setLogLevel(options.loglevel);
     }
 
-    if (options.writeLogs) {
+    if (options.logfile) {
       logTracker.enableLogWriting();
     }
   })
-  .hook('postAction', async () => {
+  .hook('postAction', async ({ getOptionValue }) => {
     if (logTracker.shouldWriteLogsToFile) {
-      await logTracker.writeToFile();
+      await logTracker.writeToFile(getOptionValue('logfile'));
     }
   });
 

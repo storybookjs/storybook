@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, normalize, resolve } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 
@@ -163,7 +163,10 @@ export abstract class JsPackageManager {
   /** Read the `package.json` file available in the provided directory */
   static getPackageJson(packageJsonPath: string): PackageJsonWithDepsAndDevDeps {
     // Normalize path to absolute for consistent cache keys
-    const absolutePath = isAbsolute(packageJsonPath) ? packageJsonPath : resolve(packageJsonPath);
+    // Always use resolve() to ensure consistent format on Windows
+    // (handles drive letter casing and path separator differences)
+    // resolve() normalizes absolute paths too, ensuring consistent cache keys
+    const absolutePath = normalize(resolve(packageJsonPath));
 
     // Check cache first
     const cached = JsPackageManager.packageJsonCache.get(absolutePath);
@@ -200,7 +203,7 @@ export abstract class JsPackageManager {
       }
     });
 
-    const packageJsonPath = resolve(directory, 'package.json');
+    const packageJsonPath = normalize(resolve(directory, 'package.json'));
     const content = `${JSON.stringify(packageJsonToWrite, null, 2)}\n`;
     writeFileSync(packageJsonPath, content, 'utf8');
 
@@ -600,9 +603,6 @@ export abstract class JsPackageManager {
   public abstract runPackageCommand(
     options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
   ): ExecaChildProcess;
-  public abstract runPackageCommandSync(
-    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
-  ): string;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
   public abstract findInstallations(
     pattern?: string[],

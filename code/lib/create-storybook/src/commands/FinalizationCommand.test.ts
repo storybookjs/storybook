@@ -2,7 +2,6 @@ import fs from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ProjectType } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { Feature } from 'storybook/internal/types';
@@ -20,7 +19,7 @@ describe('FinalizationCommand', () => {
   let command: FinalizationCommand;
 
   beforeEach(() => {
-    command = new FinalizationCommand();
+    command = new FinalizationCommand(undefined);
 
     vi.mocked(getProjectRoot).mockReturnValue('/test/project');
     vi.mocked(logger.step).mockImplementation(() => {});
@@ -39,7 +38,6 @@ describe('FinalizationCommand', () => {
       const selectedFeatures = new Set([Feature.DOCS, Feature.TEST]);
 
       await command.execute({
-        projectType: ProjectType.REACT,
         selectedFeatures,
         storybookCommand: 'npm run storybook',
       });
@@ -58,7 +56,6 @@ describe('FinalizationCommand', () => {
       const selectedFeatures = new Set([]);
 
       await command.execute({
-        projectType: ProjectType.VUE3,
         selectedFeatures,
         storybookCommand: 'yarn storybook',
       });
@@ -75,7 +72,6 @@ describe('FinalizationCommand', () => {
       const selectedFeatures = new Set([]);
 
       await command.execute({
-        projectType: ProjectType.REACT,
         selectedFeatures,
         storybookCommand: 'npm run storybook',
       });
@@ -93,7 +89,6 @@ describe('FinalizationCommand', () => {
       const selectedFeatures = new Set([]);
 
       await command.execute({
-        projectType: ProjectType.REACT,
         selectedFeatures,
         storybookCommand: 'npm run storybook',
       });
@@ -109,7 +104,6 @@ describe('FinalizationCommand', () => {
       const selectedFeatures = new Set([]);
 
       await command.execute({
-        projectType: ProjectType.REACT,
         selectedFeatures,
         storybookCommand: 'npm run storybook',
       });
@@ -126,7 +120,6 @@ describe('FinalizationCommand', () => {
       const selectedFeatures = new Set([]);
 
       await command.execute({
-        projectType: ProjectType.REACT,
         selectedFeatures,
         storybookCommand: 'npm run storybook',
       });
@@ -140,7 +133,6 @@ describe('FinalizationCommand', () => {
       const selectedFeatures = new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING]);
 
       await command.execute({
-        projectType: ProjectType.NEXTJS,
         selectedFeatures,
         storybookCommand: 'npm run storybook',
       });
@@ -156,7 +148,6 @@ describe('FinalizationCommand', () => {
       const selectedFeatures = new Set([]);
 
       await command.execute({
-        projectType: ProjectType.ANGULAR,
         selectedFeatures,
         storybookCommand: 'ng run my-app:storybook',
       });

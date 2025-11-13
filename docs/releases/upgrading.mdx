@@ -108,14 +108,14 @@ storybook@latest upgrade [options]
 | `--loglevel <level>`             | Define log level: `debug`, `error`, `info`, `silent`, `trace`, or `warn` (default: `info`) |
 | `--package-manager <manager>`    | Force package manager: `npm`, `pnpm`, `yarn1`, `yarn2`, or `bun`                           |
 | `-s, --skip-check`               | Skip postinstall version and automigration checks                                          |
-| `--write-logs`                   | Write all debug logs to the debug-storybook.log file at the end of the run                                    |
+| `--logfile [path]`               | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided.                                    |
 | `-y, --yes`                      | Skip prompting the user                                                                    |
 
 ### Example usage
 
 ```bash
 # Upgrade with logging for debugging
-storybook@latest upgrade --loglevel debug --write-logs
+storybook@latest upgrade --loglevel debug --logfile debug-storybook.log
 
 # Force upgrade without prompts
 storybook@latest upgrade --force --yes

@@ -8,5 +8,5 @@ export const CLI_COLORS = {
   debug: picocolors.gray,
   // Only color a link if it is the primary call to action, otherwise links shouldn't be colored
   cta: picocolors.cyan,
-  dimmed: picocolors.dim,
+  muted: picocolors.dim,
 };

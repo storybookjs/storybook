@@ -94,11 +94,15 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
     logger.step('Migrating from @storybook/nextjs to @storybook/nextjs-vite...');
 
     // Update package.json files
-    logger.debug('Updating package.json files...');
-    await packageManager.removeDependencies(['@storybook/nextjs']);
-    await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
-      `@storybook/nextjs-vite@${storybookVersion}`,
-    ]);
+    if (dryRun) {
+      logger.debug('Dry run: Skipping package.json updates.');
+    } else {
+      logger.debug('Updating package.json files...');
+      await packageManager.removeDependencies(['@storybook/nextjs']);
+      await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
+        `@storybook/nextjs-vite@${storybookVersion}`,
+      ]);
+    }
 
     // Update main config file
     if (mainConfigPath) {

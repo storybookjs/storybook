@@ -85,8 +85,8 @@ describe('NPM Proxy', () => {
 
         expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({
-            command: 'npm',
-            args: ['exec', '--', 'compodoc', '-e', 'json', '-d', '.'],
+            command: 'npx',
+            args: ['compodoc', '-e', 'json', '-d', '.'],
           })
         );
       });
@@ -103,8 +103,8 @@ describe('NPM Proxy', () => {
 
         expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({
-            command: 'npm',
-            args: ['exec', '--', 'compodoc', '-e', 'json', '-d', '.'],
+            command: 'npx',
+            args: ['compodoc', '-e', 'json', '-d', '.'],
           })
         );
       });

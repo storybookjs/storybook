@@ -3,7 +3,7 @@ import * as fs from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { executeCommand, getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -30,6 +30,7 @@ describe('AddonVitestService', () => {
     mockPackageManager = {
       getAllDependencies: vi.fn(),
       getInstalledVersion: vi.fn(),
+      runPackageCommand: vi.fn(),
     } as Partial<JsPackageManager> as JsPackageManager;
 
     // Setup default mocks for logger and prompt
@@ -158,6 +159,17 @@ describe('AddonVitestService', () => {
     it('should return compatible when vitest >=3.0.0', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
         .mockResolvedValueOnce('3.0.0') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions(mockPackageManager);
+
+      expect(result.compatible).toBe(true);
+      expect(result.reasons).toBeUndefined();
+    });
+
+    it('should return compatible when vitest >=4.0.0', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('4.0.0') // vitest
         .mockResolvedValueOnce(null); // msw
 
       const result = await service.validatePackageVersions(mockPackageManager);

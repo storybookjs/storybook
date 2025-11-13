@@ -11,6 +11,7 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ExecaChildProcess } from 'execa';
 
+import { logger } from '../../node-logger';
 import type { ExecuteCommandOptions } from '../utils/command';
 import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
@@ -135,6 +136,8 @@ export class Yarn2Proxy extends JsPackageManager {
         cwd: this.instanceDir,
       });
       const commandResult = childProcess.stdout ?? '';
+
+      logger.debug(`Installation found for ${pattern.join(', ')}: ${commandResult}`);
 
       return this.mapDependencies(commandResult, pattern);
     } catch (e) {
@@ -280,6 +283,7 @@ export class Yarn2Proxy extends JsPackageManager {
     const duplicatedDependencies: Record<string, string[]> = {};
 
     lines.forEach((packageName) => {
+      logger.debug(`Processing package ${packageName}`);
       if (
         !packageName ||
         !pattern.some((p) => new RegExp(`${p.replace(/\*/g, '.*')}`).test(packageName))
@@ -288,6 +292,7 @@ export class Yarn2Proxy extends JsPackageManager {
       }
 
       const { name, value } = parsePackageData(packageName.replaceAll(`"`, ''));
+      logger.debug(`Package ${name} found with version ${value.version}`);
       if (!existingVersions[name]?.includes(value.version)) {
         if (acc[name]) {
           acc[name].push(value);

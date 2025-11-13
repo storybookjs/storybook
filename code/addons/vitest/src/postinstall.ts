@@ -46,6 +46,7 @@ export default async function postInstall(options: PostinstallOptions) {
     );
 
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+  logger.debug(`Vitest version specifier: ${vitestVersionSpecifier}`);
   const isVitest3_2To4 = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=3.2.0 <4.0.0')
     : false;
@@ -328,13 +329,14 @@ export default async function postInstall(options: PostinstallOptions) {
         'storybook',
         'automigrate',
         'addon-a11y-addon-test',
-        '--loglevel=silent',
+        '--loglevel',
+        'silent',
         '--yes',
         '--skip-doctor',
       ];
 
       if (options.packageManager) {
-        command.push(`--package-manager=${options.packageManager}`);
+        command.push('--package-manager', options.packageManager);
       }
 
       if (options.skipInstall) {
@@ -342,7 +344,7 @@ export default async function postInstall(options: PostinstallOptions) {
       }
 
       if (options.configDir !== '.storybook') {
-        command.push(`--config-dir="${options.configDir}"`);
+        command.push('--config-dir', options.configDir);
       }
 
       await prompt.executeTask(

@@ -162,14 +162,8 @@ export const error = createLogger('error', (...args: LogFunctionArgs<typeof LOG_
 );
 
 type BoxOptions = {
-  borderStyle?: 'round' | 'none';
-  contentPadding?: number;
   title?: string;
-  titleAlign?: 'left' | 'center' | 'right';
-  borderColor?: string;
-  backgroundColor?: string;
-  width?: number | 'auto';
-};
+} & clack.BoxOptions;
 
 export const logBox = (message: string, { title, ...options }: BoxOptions = {}) => {
   if (shouldLog('info')) {

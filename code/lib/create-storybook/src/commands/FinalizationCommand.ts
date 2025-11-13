@@ -3,13 +3,11 @@ import fs from 'node:fs/promises';
 import { getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
-import type { Feature } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
 type ExecuteFinalizationParams = {
-  selectedFeatures: Set<Feature>;
   storybookCommand?: string | null;
 };
 
@@ -26,16 +24,16 @@ type ExecuteFinalizationParams = {
 export class FinalizationCommand {
   constructor(private logfile: string | boolean | undefined) {}
   /** Execute finalization steps */
-  async execute({ selectedFeatures, storybookCommand }: ExecuteFinalizationParams): Promise<void> {
+  async execute({ storybookCommand }: ExecuteFinalizationParams): Promise<void> {
     // Update .gitignore
     await this.updateGitignore();
 
     const errors = ErrorCollector.getErrors();
 
     if (errors.length > 0) {
-      await this.printFailureMessage(selectedFeatures, storybookCommand);
+      await this.printFailureMessage(storybookCommand);
     } else {
-      this.printSuccessMessage(selectedFeatures, storybookCommand);
+      this.printSuccessMessage(storybookCommand);
     }
   }
 
@@ -64,31 +62,21 @@ export class FinalizationCommand {
     }
   }
 
-  private async printFailureMessage(
-    selectedFeatures: Set<Feature>,
-    storybookCommand?: string | null
-  ): Promise<void> {
+  private async printFailureMessage(storybookCommand?: string | null): Promise<void> {
     logger.warn('Storybook setup completed, but some non-blocking errors occurred.');
-    this.printNextSteps(selectedFeatures, storybookCommand);
+    this.printNextSteps(storybookCommand);
 
     const logFile = await logTracker.writeToFile(this.logfile);
     logger.warn(`Storybook debug logs can be found at: ${logFile}`);
   }
 
   /** Print success message with feature summary */
-  private printSuccessMessage(
-    selectedFeatures: Set<Feature>,
-    storybookCommand?: string | null
-  ): void {
+  private printSuccessMessage(storybookCommand?: string | null): void {
     logger.step(CLI_COLORS.success('Storybook was successfully installed in your project!'));
-    this.printNextSteps(selectedFeatures, storybookCommand);
+    this.printNextSteps(storybookCommand);
   }
 
-  private printNextSteps(selectedFeatures: Set<Feature>, storybookCommand?: string | null): void {
-    const printFeatures = (features: Set<Feature>) => Array.from(features).join(', ') || 'none';
-
-    logger.log(`Additional features: ${printFeatures(selectedFeatures)}`);
-
+  private printNextSteps(storybookCommand?: string | null): void {
     if (storybookCommand) {
       logger.log(
         `To run Storybook manually, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.`

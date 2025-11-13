@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { mkdir, readdir, rm } from 'node:fs/promises';
+import { readdir, rm } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
@@ -52,7 +52,6 @@ export const sandbox = async ({
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, isPrerelease ? nextVersion : latestVersion);
-  const borderColor = isOutdated ? '#FC521F' : '#F1618C';
 
   const downloadType = !isOutdated && init ? 'after-storybook' : 'before-storybook';
   const branch = isPrerelease ? 'next' : 'main';
@@ -78,7 +77,9 @@ export const sandbox = async ({
       .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
       .concat(isPrerelease ? [messages.prerelease] : [])
       .join('\n'),
-    { borderStyle: 'round', borderColor }
+    {
+      rounded: true,
+    }
   );
 
   if (!selectedConfig) {
@@ -255,7 +256,7 @@ export const sandbox = async ({
 
         Having a clean repro helps us solve your issue faster! 🙏
       `.trim(),
-      { borderStyle: 'round', borderColor: '#F1618C' }
+      { rounded: true }
     );
   } catch (error) {
     logger.error('🚨 Failed to create sandbox');

@@ -390,7 +390,7 @@ describe('AddonVitestService', () => {
       });
       expect(prompt.executeTaskWithSpinner).toHaveBeenCalledWith(expect.any(Function), {
         id: 'playwright-installation',
-        intro: 'Installing Playwright browser binaries',
+        intro: 'Installing Playwright browser binaries (Press "c" to abort)',
         error: expect.stringContaining('An error occurred'),
         success: 'Playwright browser binaries installed successfully',
         abortable: true,

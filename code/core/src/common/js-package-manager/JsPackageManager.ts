@@ -9,7 +9,7 @@ import { type ExecaChildProcess } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
-import { gt, satisfies } from 'semver';
+import { coerce, gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError';
@@ -635,10 +635,13 @@ export abstract class JsPackageManager {
 
       const version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
 
-      // Cache the result
-      JsPackageManager.installedVersionCache.set(cacheKey, version);
+      const coercedVersion = coerce(version, { includePrerelease: true })?.toString() ?? version;
 
-      return version;
+      logger.debug(`Installed version for ${packageName}: ${coercedVersion}`);
+      // Cache the result
+      JsPackageManager.installedVersionCache.set(cacheKey, coercedVersion);
+
+      return coercedVersion;
     } catch (e) {
       JsPackageManager.installedVersionCache.set(cacheKey, null);
       return null;

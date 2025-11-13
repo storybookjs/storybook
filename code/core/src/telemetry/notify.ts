@@ -19,7 +19,7 @@ export const notify = async () => {
 
   logger.log(
     dedent`
-    ${CLI_COLORS.info('Attention:')} Storybook collects completely anonymous telemetry regarding usage. This information is used to shape Storybook's roadmap and prioritize features. You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+    Attention: Storybook now collects completely anonymous telemetry regarding usage. This information is used to shape Storybook's roadmap and prioritize features. You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
     https://storybook.js.org/telemetry
     `
   );

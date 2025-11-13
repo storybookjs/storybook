@@ -264,7 +264,7 @@ command('automigrate [fixId]')
   .option('--skip-doctor', 'Skip doctor check')
   .action(async (fixId, options) => {
     withTelemetry('automigrate', { cliOptions: options }, async () => {
-      logger.intro(`Running ${fixId} automigration`);
+      logger.intro(fixId ? `Running ${fixId} automigration` : 'Running automigrations');
       await doAutomigrate({ fixId, ...options });
       logger.outro('Done');
     }).catch(handleCommandFailure(options.logfile));

@@ -105,7 +105,6 @@ export async function doInitiate(options: CommandOptions): Promise<
   // Step 8: Print final summary
   await executeFinalization({
     logfile: options.logfile,
-    selectedFeatures,
     storybookCommand,
   });
 
@@ -148,7 +147,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
     async () => {
       const result = await doInitiate(options);
 
-      logger.outro('Initiation completed');
+      logger.outro('');
 
       return result;
     }
@@ -178,6 +177,10 @@ async function runStorybookDev(result: {
     const supportsOnboarding = FeatureCompatibilityService.supportsOnboarding(projectType);
 
     const flags = [];
+
+    if (packageManager.type === 'npm') {
+      flags.push('--silent');
+    }
 
     // npm needs extra -- to pass flags to the command
     // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`

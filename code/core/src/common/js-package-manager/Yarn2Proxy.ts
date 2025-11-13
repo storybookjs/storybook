@@ -15,7 +15,7 @@ import { logger } from '../../node-logger';
 import type { ExecuteCommandOptions } from '../utils/command';
 import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 import { parsePackageData } from './util';
@@ -79,7 +79,7 @@ const CRITICAL_YARN2_ERROR_CODES = {
 
 // This encompasses Yarn Berry (v2+)
 export class Yarn2Proxy extends JsPackageManager {
-  readonly type = 'yarn2';
+  readonly type = PackageManagerName.YARN2;
 
   installArgs: string[] | undefined;
 

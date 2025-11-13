@@ -18,6 +18,8 @@ exports[`Renders CSF2Secondary story 1`] = `
     
     
     
+    
+    
   </div>
 </body>
 `;
@@ -52,6 +54,8 @@ exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
     
     
     
+    
+    
   </div>
 </body>
 `;
@@ -70,6 +74,8 @@ exports[`Renders CSF3Button story 1`] = `
       foo 
       <!---->
     </button>
+    
+    
     
     
     
@@ -105,6 +111,8 @@ exports[`Renders CSF3ButtonWithRender story 1`] = `
     
     
     
+    
+    
   </div>
 </body>
 `;
@@ -118,6 +126,8 @@ exports[`Renders CSF3InputFieldFilled story 1`] = `
     <input
       data-testid="input"
     />
+    
+    
     
     
     
@@ -140,6 +150,8 @@ exports[`Renders CSF3Primary story 1`] = `
       foo 
       <!---->
     </button>
+    
+    
     
     
     
@@ -167,6 +179,8 @@ exports[`Renders LoaderStory story 1`] = `
         mockFn return value
       </div>
     </div>
+    
+    
     
     
     
@@ -199,6 +213,8 @@ exports[`Renders NewStory story 1`] = `
       
       <!---->
     </div>
+    
+    
     
     
     

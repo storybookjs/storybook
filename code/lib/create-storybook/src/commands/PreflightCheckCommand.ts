@@ -2,6 +2,7 @@ import { detectPnp } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
   JsPackageManagerFactory,
+  PackageManagerName,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
@@ -43,7 +44,7 @@ export class PreflightCheckCommand {
         options.packageManager ? options.packageManager === 'yarn1' : packageManagerType === 'yarn1'
       ) {
         logger.warn('Empty directory with yarn1 is unsupported. Falling back to npm.');
-        packageManagerType = 'npm';
+        packageManagerType = PackageManagerName.NPM;
         options.packageManager = packageManagerType;
       }
 

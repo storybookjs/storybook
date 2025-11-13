@@ -19,7 +19,13 @@ import storybookPackagesVersions from '../versions';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
 import type { InstallationMetadata } from './types';
 
-export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm' | 'bun';
+export enum PackageManagerName {
+  NPM = 'npm',
+  YARN1 = 'yarn1',
+  YARN2 = 'yarn2',
+  PNPM = 'pnpm',
+  BUN = 'bun',
+}
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
 

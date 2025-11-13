@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProjectType } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import {
   Feature,
@@ -99,7 +99,7 @@ describe('GeneratorExecutionCommand', () => {
       const options = {
         skipInstall: false,
         features: selectedFeatures,
-        packageManager: 'npm' as const,
+        packageManager: PackageManagerName.NPM,
       };
 
       await command.execute({
@@ -121,7 +121,7 @@ describe('GeneratorExecutionCommand', () => {
       const selectedFeatures = new Set([]);
       const options = {
         features: selectedFeatures,
-        packageManager: 'npm' as const,
+        packageManager: PackageManagerName.NPM,
       };
 
       await expect(
@@ -150,7 +150,7 @@ describe('GeneratorExecutionCommand', () => {
         usePnp: true,
         yes: true,
         features: selectedFeatures,
-        packageManager: 'npm' as const,
+        packageManager: PackageManagerName.NPM,
       };
 
       await command.execute({

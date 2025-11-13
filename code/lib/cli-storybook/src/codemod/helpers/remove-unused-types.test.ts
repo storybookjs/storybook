@@ -46,8 +46,9 @@ describe('removeUnusedTypes', () => {
       };
 
       export default { component: Button };
-    `;
-    const transformed = getTransformed(source);
+    `.replace(/\r\n/g, '\n');
+
+    const transformed = getTransformed(source).replace(/\r\n/g, '\n');
     expect(getDiff(source, transformed)).toMatchInlineSnapshot(`
       import { Button } from './Button';
         

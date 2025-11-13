@@ -80,6 +80,7 @@ export type Template = {
    */
   modifications?: {
     skipTemplateStories?: boolean;
+    skipMocking?: boolean;
     mainConfig?: LoosenedStorybookConfig | ((config: ConfigFile) => LoosenedStorybookConfig);
     testBuild?: boolean;
     disableDocs?: boolean;
@@ -101,7 +102,7 @@ export type Template = {
 };
 
 type BaseTemplates = Template & {
-  name: `${string} ${`v${number}` | 'Latest' | 'Prerelease'} (${'Webpack' | 'Vite'} | ${
+  name: `${string} ${`v${number}` | 'Latest' | 'Prerelease'} (${'Webpack' | 'Vite' | 'RSBuild'} | ${
     | 'JavaScript'
     | 'TypeScript'})`;
 };
@@ -477,6 +478,22 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
+  'react-rsbuild/default-ts': {
+    name: 'React Latest (RSBuild | TypeScript)',
+    inDevelopment: true,
+    script: 'yarn create rsbuild -d {{beforeDir}} -t react-ts --tools eslint',
+    expected: {
+      framework: 'storybook-react-rsbuild',
+      renderer: '@storybook/react',
+      builder: 'storybook-builder-rsbuild',
+    },
+    modifications: {
+      useCsfFactory: true,
+      extraDependencies: ['prop-types'],
+      skipMocking: true,
+    },
+    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+  },
   'solid-vite/default-js': {
     name: 'SolidJS Latest (Vite | JavaScript)',
     script: 'npx degit solidjs/templates/js {{beforeDir}}',
@@ -517,6 +534,21 @@ export const baseTemplates = {
     },
     skipTasks: ['bench'],
   },
+  'vue3-rsbuild/default-ts': {
+    name: 'Vue Latest (RSBuild | TypeScript)',
+    inDevelopment: true,
+    script: 'yarn create rsbuild -d {{beforeDir}} -t vue-ts --tools eslint',
+    expected: {
+      framework: 'storybook-vue3-rsbuild',
+      renderer: '@storybook/vue3',
+      builder: 'storybook-builder-rsbuild',
+    },
+    modifications: {
+      useCsfFactory: true,
+      skipMocking: true,
+    },
+    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+  },
   // 'nuxt-vite/default-ts': {
   //   name: 'Nuxt v3 (Vite | TypeScript)',
   //   script: 'npx nuxi init --packageManager yarn --gitInit false -M @nuxt/ui {{beforeDir}}',
@@ -546,6 +578,21 @@ export const baseTemplates = {
       framework: '@storybook/html-vite',
       renderer: '@storybook/html',
       builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+  },
+  'html-rsbuild/default-ts': {
+    name: 'HTML Latest (RSBuild | TypeScript)',
+    inDevelopment: true,
+    script: 'yarn create rsbuild -d {{beforeDir}} -t vanilla-ts --tools eslint',
+    expected: {
+      framework: 'storybook-html-rsbuild',
+      renderer: '@storybook/html',
+      builder: 'storybook-builder-rsbuild',
+    },
+    modifications: {
+      useCsfFactory: true,
+      skipMocking: true,
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -626,6 +673,21 @@ export const baseTemplates = {
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests', 'bench', 'vitest-integration'],
+  },
+  'lit-rsbuild/default-ts': {
+    name: 'Web Components Latest (RSBuild | TypeScript)',
+    inDevelopment: true,
+    script: 'yarn create rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
+    expected: {
+      framework: 'storybook-web-components-rsbuild',
+      renderer: '@storybook/web-components',
+      builder: 'storybook-builder-rsbuild',
+    },
+    modifications: {
+      useCsfFactory: true,
+      skipMocking: true,
+    },
+    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
   'preact-vite/default-js': {
     name: 'Preact Latest (Vite | JavaScript)',
@@ -805,6 +867,7 @@ const benchTemplates = {
     isInternal: true,
     modifications: {
       skipTemplateStories: true,
+      skipMocking: true,
     },
     skipTasks: [
       'e2e-tests',
@@ -822,6 +885,7 @@ const benchTemplates = {
     isInternal: true,
     modifications: {
       skipTemplateStories: true,
+      skipMocking: true,
     },
     skipTasks: [
       'e2e-tests',
@@ -839,6 +903,7 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
       disableDocs: true,
+      skipMocking: true,
     },
     skipTasks: [
       'e2e-tests',
@@ -857,6 +922,7 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
       testBuild: true,
+      skipMocking: true,
     },
     skipTasks: [
       'e2e-tests',
@@ -874,6 +940,7 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
       testBuild: true,
+      skipMocking: true,
     },
     skipTasks: [
       'e2e-tests',

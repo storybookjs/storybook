@@ -833,7 +833,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setFieldValue(['tags'], ['vitest']);
   }
 
-  if (template.name.includes('Bench')) {
+  if (template.modifications?.skipMocking) {
     await writeConfig(previewConfig);
     return;
   }

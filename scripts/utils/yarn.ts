@@ -143,7 +143,11 @@ export const configureYarn2ForVerdaccio = async ({
     // React prereleases will have INCOMPATIBLE_PEER_DEPENDENCY errors because of transitive dependencies not allowing v19 betas
     key.includes('nextjs') ||
     key.includes('react-vite/prerelease') ||
-    key.includes('react-webpack/prerelease')
+    key.includes('react-webpack/prerelease') ||
+    key.includes('react-rsbuild/default-ts') ||
+    key.includes('vue-rsbuild/default-ts') ||
+    key.includes('html-rsbuild/default-ts') ||
+    key.includes('web-components-rsbuild/default-ts')
   ) {
     // Don't error with INCOMPATIBLE_PEER_DEPENDENCY for SvelteKit sandboxes, it is expected to happen with @sveltejs/vite-plugin-svelte
     command.push(

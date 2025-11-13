@@ -2,13 +2,20 @@ import type { FC } from 'react';
 import React, { Fragment, useCallback, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
-import { Button, ErrorFormatter, Link, Spaced, WithTooltip } from 'storybook/internal/components';
+import {
+  Button,
+  ErrorFormatter,
+  Link,
+  PopoverProvider,
+  Spaced,
+} from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
+import { useLayout } from '../layout/LayoutProvider';
 import { Contained, Loader } from './Loader';
 import { NoResults } from './NoResults';
 
@@ -35,14 +42,22 @@ const Text = styled.div(({ theme }) => ({
   },
 }));
 
-const ErrorDisplay = styled.pre(
+const ErrorDisplay = styled.pre<{ isMobile: boolean }>(
   {
-    width: 420,
     boxSizing: 'border-box',
     borderRadius: 8,
     overflow: 'auto',
     whiteSpace: 'pre',
   },
+  ({ isMobile }) =>
+    isMobile
+      ? {
+          maxWidth: 'calc(100vw - 40px)',
+        }
+      : {
+          minWidth: 420,
+          maxWidth: 640,
+        },
   ({ theme }) => ({
     color: theme.color.dark,
   })
@@ -81,7 +96,7 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
               this Storybook.
             </Text>
             <div>
-              <Button size="small" variant="outline" onClick={refresh}>
+              <Button ariaLabel={false} size="small" variant="outline" onClick={refresh}>
                 <SyncIcon />
                 Refresh now
               </Button>
@@ -103,30 +118,36 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
   );
 };
 
-export const ErrorBlock: FC<{ error: Error }> = ({ error }) => (
-  <Contained>
-    <Spaced>
-      <TextStyle>
-        Oh no! Something went wrong loading this Storybook.
-        <br />
-        <WithTooltip
-          tooltip={
-            <ErrorDisplay>
-              <ErrorFormatter error={error} />
-            </ErrorDisplay>
-          }
-        >
-          <Link isButton>
-            View error <ChevronDownIcon />
+export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
+  const { isMobile } = useLayout();
+  return (
+    <Contained>
+      <Spaced>
+        <TextStyle>
+          Oh no! Something went wrong loading this Storybook.
+          <br />
+          <PopoverProvider
+            hasCloseButton
+            offset={isMobile ? 0 : 8}
+            placement={isMobile ? 'bottom-end' : 'bottom-start'}
+            popover={
+              <ErrorDisplay isMobile={isMobile}>
+                <ErrorFormatter error={error} />
+              </ErrorDisplay>
+            }
+          >
+            <Link isButton>
+              View error <ChevronDownIcon />
+            </Link>
+          </PopoverProvider>{' '}
+          <Link href="https://storybook.js.org/docs?ref=ui" cancel={false} target="_blank">
+            View docs
           </Link>
-        </WithTooltip>{' '}
-        <Link withArrow href="https://storybook.js.org/docs?ref=ui" cancel={false} target="_blank">
-          View docs
-        </Link>
-      </TextStyle>
-    </Spaced>
-  </Contained>
-);
+        </TextStyle>
+      </Spaced>
+    </Contained>
+  );
+};
 
 const FlexSpaced = styled(Spaced)({
   display: 'flex',

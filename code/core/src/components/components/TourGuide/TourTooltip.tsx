@@ -1,10 +1,11 @@
 import type { FC } from 'react';
 import React, { useEffect } from 'react';
 
-import { Button, IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 
 import { CloseAltIcon } from '@storybook/icons';
 
+import { darken, lighten, transparentize } from 'polished';
 import type { Step, TooltipRenderProps } from 'react-joyride';
 import { color, styled } from 'storybook/theming';
 
@@ -56,23 +57,20 @@ const Count = styled.span`
   font-size: 13px;
 `;
 
-const NextButton = styled(Button)`
-  background: ${color.lightest};
-  border: none;
-  box-shadow: none;
-  color: ${color.secondary};
+const NextButton = styled(Button)(({ theme }) => ({
+  background: theme.color.lightest,
+  border: 'none',
+  boxShadow: 'none',
+  color: theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary),
 
-  &:hover,
-  &:active {
-    background: ${color.lightest};
-    color: ${color.defaultText};
-  }
-
-  &:focus {
-    background: ${color.lightest};
-    color: ${color.darkest};
-  }
-`;
+  '&:hover, &:focus': {
+    background: transparentize(0.1, theme.color.lightest),
+    color:
+      theme.base === 'light'
+        ? lighten(0.1, theme.color.secondary)
+        : darken(0.3, theme.color.secondary),
+  },
+}));
 
 type TooltipProps = {
   index: number;
@@ -140,9 +138,15 @@ export const TourTooltip: FC<TooltipProps> = ({
       <Wrapper>
         <TooltipHeader>
           {step.title && <TooltipTitle>{step.title}</TooltipTitle>}
-          <IconButton {...closeProps} onClick={closeProps.onClick as any} variant="solid">
+          <Button
+            {...closeProps}
+            onClick={closeProps.onClick as any}
+            variant="solid"
+            padding="small"
+            ariaLabel="Close"
+          >
             <CloseAltIcon />
-          </IconButton>
+          </Button>
         </TooltipHeader>
         <TooltipContent>{step.content}</TooltipContent>
       </Wrapper>

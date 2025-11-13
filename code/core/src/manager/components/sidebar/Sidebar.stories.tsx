@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import type { DecoratorFunction, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -98,9 +98,15 @@ const meta = {
     isDevelopment: true,
   },
   decorators: [
-    (storyFn) => (
+    (storyFn, { globals, title }) => (
       <ManagerContext.Provider value={managerContext}>
-        <LayoutProvider>
+        <LayoutProvider
+          forceDesktop={
+            globals.viewport?.value === 'desktop' ||
+            globals.viewport?.value === undefined ||
+            title.endsWith('scrolled')
+          }
+        >
           <IconSymbols />
           {storyFn()}
         </LayoutProvider>
@@ -123,6 +129,21 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
+
+const mobileLayoutDecorator: DecoratorFunction = (storyFn, { globals, title }) => (
+  <ManagerContext.Provider value={managerContext}>
+    <LayoutProvider
+      forceDesktop={
+        globals.viewport?.value === 'desktop' ||
+        globals.viewport?.value === undefined ||
+        title.endsWith('scrolled')
+      }
+    >
+      <IconSymbols />
+      {storyFn()}
+    </LayoutProvider>
+  </ManagerContext.Provider>
+);
 
 const refs: Record<string, RefType> = {
   optimized: {
@@ -171,6 +192,11 @@ export const SimpleInProduction: Story = {
   },
 };
 
+export const Mobile: Story = {
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+};
+
 export const Loading: Story = {
   args: {
     previewInitialized: false,
@@ -178,10 +204,22 @@ export const Loading: Story = {
   },
 };
 
+export const LoadingMobile: Story = {
+  args: Loading.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+};
+
 export const Empty: Story = {
   args: {
     index: {},
   },
+};
+
+export const EmptyMobile: Story = {
+  args: Empty.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
 };
 
 export const EmptyIndex: Story = {
@@ -242,6 +280,12 @@ export const WithRefsNarrow: Story = {
   },
 };
 
+export const WithRefsMobile: Story = {
+  args: WithRefs.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+};
+
 export const LoadingWithRefs: Story = {
   args: {
     ...Loading.args,
@@ -254,6 +298,12 @@ export const LoadingWithRefError: Story = {
     ...Loading.args,
     refs: refsError,
   },
+};
+
+export const LoadingWithRefErrorMobile: Story = {
+  args: LoadingWithRefError.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
 };
 
 export const WithRefEmpty: Story = {

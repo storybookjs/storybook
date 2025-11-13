@@ -2,6 +2,7 @@ import type { ComponentProps } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { darken } from 'polished';
 import type { CallBackProps } from 'react-joyride';
 import Joyride, { ACTIONS, type Step } from 'react-joyride';
 import { useTheme } from 'storybook/theming';
@@ -148,18 +149,21 @@ export const TourGuide = ({
         },
         spotlight: {
           backgroundColor: 'none',
-          border: `solid 2px ${theme.color.secondary}`,
+          border: `solid 2px ${theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary)}`,
           boxShadow: '0px 0px 0px 9999px rgba(27, 28, 29, 0.2)',
         },
         tooltip: {
           width: 280,
           color: theme.color.lightest,
-          background: theme.color.secondary,
+          background:
+            theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary),
         },
         options: {
           zIndex: 9998,
-          primaryColor: theme.color.secondary,
-          arrowColor: theme.color.secondary,
+          primaryColor:
+            theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary),
+          arrowColor:
+            theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary),
         },
       }}
     />

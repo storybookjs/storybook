@@ -1,12 +1,9 @@
-import { join } from 'node:path';
+import { getMockerRuntime } from 'storybook/internal/mocking-utils';
 
-import { buildSync } from 'esbuild';
 // HtmlWebpackPlugin is a standard part of Storybook's Webpack setup.
 // We can assume it's available as a dependency.
 import type HtmlWebpackPlugin from 'html-webpack-plugin';
 import type { Compiler } from 'webpack';
-
-import { resolvePackageDir } from '../../../../shared/utils/module';
 
 const PLUGIN_NAME = 'WebpackInjectMockerRuntimePlugin';
 
@@ -55,26 +52,7 @@ export class WebpackInjectMockerRuntimePlugin {
         PLUGIN_NAME,
         (data, cb) => {
           try {
-            // The runtime template is the same for both dev and build in the final implementation,
-            // as all mocking logic is handled at build time or by the dev server's transform.
-            const runtimeTemplatePath = join(
-              resolvePackageDir('storybook'),
-              'assets',
-              'server',
-              'mocker-runtime.template.js'
-            );
-            // Use esbuild to bundle the runtime script and its dependencies (`@vitest/mocker`, etc.)
-            // into a single, self-contained string of code.
-            const bundleResult = buildSync({
-              entryPoints: [runtimeTemplatePath],
-              bundle: true,
-              write: false, // Return the result in memory instead of writing to disk
-              format: 'esm',
-              target: 'es2020',
-              external: ['msw/browser', 'msw/core/http'],
-            });
-
-            const runtimeScriptContent = bundleResult.outputFiles[0].text;
+            const runtimeScriptContent = getMockerRuntime();
             const runtimeAssetName = 'mocker-runtime-injected.js';
 
             // Use the documented `emitAsset` method to add the pre-bundled runtime script

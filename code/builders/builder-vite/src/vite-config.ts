@@ -58,6 +58,8 @@ export async function commonConfig(
   const { config: { build: buildProperty = undefined, ...userConfig } = {} } =
     (await loadConfigFromFile(configEnv, viteConfigPath, projectRoot)) ?? {};
 
+  // This is the main Vite config that is used by Storybook.
+  // Some shared vite plugins are defined in the `./preset.ts` file so that it can be shared between the @storybook/builder-vite and @storybook/addon-vitest package.
   const sbConfig: InlineConfig = {
     configFile: false,
     cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey),

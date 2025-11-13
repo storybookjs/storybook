@@ -1,17 +1,16 @@
-import { createRequire } from 'node:module';
 import { dirname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { Compiler } from 'webpack';
-
-import { babelParser, extractMockCalls } from '../../../mocking-utils/extract';
 import {
+  babelParser,
+  extractMockCalls,
   getIsExternal,
   resolveExternalModule,
   resolveWithExtensions,
-} from '../../../mocking-utils/resolve';
+} from 'storybook/internal/mocking-utils';
 
-const require = createRequire(import.meta.url);
+import { findMockRedirect } from '@vitest/mocker/redirect';
+import type { Compiler } from 'webpack';
 
 // --- Type Definitions ---
 
@@ -131,7 +130,8 @@ export class WebpackMockPlugin {
     const mocks = extractMockCalls(
       { previewConfigPath, configDir: dirname(previewConfigPath) },
       babelParser,
-      compiler.context
+      compiler.context,
+      findMockRedirect
     );
 
     // 2. Resolve each mock call to its absolute path and replacement resource.
@@ -148,7 +148,7 @@ export class WebpackMockPlugin {
         } else {
           // No `__mocks__` file found. Use our custom loader to automock the module.
           const loaderPath = fileURLToPath(
-            import.meta.resolve('storybook/webpack/loaders/webpack-automock-loader')
+            import.meta.resolve('@storybook/builder-webpack5/loaders/webpack-automock-loader')
           );
           replacementResource = `${loaderPath}?spy=${mock.spy}!${absolutePath}`;
         }

@@ -91,7 +91,12 @@ export function extractMockCalls(
       jsx?: boolean;
     }
   ) => t.Node,
-  root: string
+  root: string,
+  findMockRedirect: (
+    root: string,
+    absolutePath: string,
+    externalPath: string | null
+  ) => string | null
 ): MockCall[] {
   try {
     const previewConfigCode = readFileSync(options.previewConfigPath, 'utf-8');
@@ -155,7 +160,12 @@ export function extractMockCalls(
           node.arguments[1].type === 'ObjectExpression' &&
           hasSpyTrue(node.arguments[1]);
 
-        const { absolutePath, redirectPath } = resolveMock(path, root, options.previewConfigPath);
+        const { absolutePath, redirectPath } = resolveMock(
+          path,
+          root,
+          options.previewConfigPath,
+          findMockRedirect
+        );
 
         const pathWithoutExtension = path.replace(/\.[^/.]+$/, '');
         const basenameAbsolutePath = basename(absolutePath);

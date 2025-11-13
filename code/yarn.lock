@@ -7886,6 +7886,7 @@ __metadata:
   dependencies:
     "@storybook/csf-plugin": "workspace:*"
     "@types/node": "npm:^22.0.0"
+    "@vitest/mocker": "npm:3.2.4"
     empathic: "npm:^2.0.0"
     es-module-lexer: "npm:^1.5.0"
     glob: "npm:^10.0.0"
@@ -7909,6 +7910,7 @@ __metadata:
     "@types/node": "npm:^22.0.0"
     "@types/pretty-hrtime": "npm:^1.0.0"
     "@types/webpack-hot-middleware": "npm:^2.25.6"
+    "@vitest/mocker": "npm:3.2.4"
     case-sensitive-paths-webpack-plugin: "npm:^2.4.0"
     cjs-module-lexer: "npm:^1.2.3"
     css-loader: "npm:^7.1.2"
@@ -26023,7 +26025,6 @@ __metadata:
     "@types/semver": "npm:^7.5.8"
     "@types/ws": "npm:^8"
     "@vitest/expect": "npm:3.2.4"
-    "@vitest/mocker": "npm:3.2.4"
     "@vitest/spy": "npm:3.2.4"
     "@vitest/utils": "npm:^3.2.4"
     "@yarnpkg/esbuild-plugin-pnp": "npm:^3.0.0-rc.10"

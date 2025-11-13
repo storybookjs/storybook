@@ -8,10 +8,11 @@ import type {
 } from 'estree';
 import MagicString from 'magic-string';
 
-import { __STORYBOOK_GLOBAL_THIS_ACCESSOR__ } from '../presets/vitePlugins/vite-inject-mocker/constants';
 import { type Positioned, getArbitraryModuleIdentifier } from './esmWalker';
 
 type ParseFn = (code: string) => Program;
+
+export const __STORYBOOK_GLOBAL_THIS_ACCESSOR__ = '__vitest_mocker__';
 
 export function getAutomockCode(originalCode: string, isSpy: boolean, parse: ParseFn) {
   const mocked = automockModule(originalCode, isSpy ? 'autospy' : 'automock', parse, {
@@ -49,7 +50,8 @@ export function automockModule(
   parse: (code: string) => any,
   options: any = {}
 ): MagicString {
-  const globalThisAccessor = options.globalThisAccessor || '"__vitest_mocker__"';
+  const globalThisAccessor =
+    options.globalThisAccessor || JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__);
   const ast = parse(code) as Program;
 
   const m = new MagicString(code);

@@ -21,6 +21,7 @@ import {
 
 const viteConfigFiles = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'];
 const webpackConfigFiles = ['webpack.config.js'];
+const rsbuildConfigFiles = ['rsbuild.config.ts', 'rsbuild.config.js', 'rsbuild.config.mjs'];
 
 const hasDependency = (
   packageJson: PackageJsonWithMaybeDeps,
@@ -106,34 +107,58 @@ export function detectFrameworkPreset(
 }
 
 /**
- * Attempts to detect which builder to use, by searching for a vite config file or webpack
- * installation. If neither are found it will choose the default builder based on the project type.
+ * Attempts to detect which builder to use, by searching for config files or builder installations.
+ * If multiple builders are detected, it will prompt the user to select one. If only one is
+ * detected, it will return that builder. If none are detected, it will prompt.
  *
  * @returns SupportedBuilder
  */
 export async function detectBuilder(packageManager: JsPackageManager) {
   const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
   const webpackConfig = find.any(webpackConfigFiles, { last: getProjectRoot() });
+  const rsbuildConfig = find.any(rsbuildConfigFiles, { last: getProjectRoot() });
   const dependencies = packageManager.getAllDependencies();
 
-  if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
-    return SupportedBuilder.VITE;
+  // Detect which builders are present
+  const hasVite = viteConfig || !!dependencies.vite;
+  const hasWebpack = webpackConfig || !!dependencies.webpack;
+  const hasRsbuild = rsbuildConfig || !!dependencies['@rsbuild/core'];
+
+  const detectedBuilders: SupportedBuilder[] = [];
+
+  if (hasVite) {
+    detectedBuilders.push(SupportedBuilder.VITE);
   }
 
-  // REWORK
-  if (webpackConfig || (dependencies.webpack && dependencies.vite !== undefined)) {
-    return SupportedBuilder.WEBPACK5;
+  if (hasWebpack) {
+    detectedBuilders.push(SupportedBuilder.WEBPACK5);
   }
+
+  if (hasRsbuild) {
+    detectedBuilders.push(SupportedBuilder.RSBUILD);
+  }
+
+  // If exactly one builder is detected, return it
+  if (detectedBuilders.length === 1) {
+    return detectedBuilders[0];
+  }
+
+  // If multiple builders are detected or none are detected, prompt the user
+  const options = [
+    { label: 'Vite', value: SupportedBuilder.VITE },
+    { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
+    { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
+  ];
 
   return prompt.select({
     message: dedent`
-      We were not able to detect the right builder for your project. 
-      Please select one:
+      ${
+        detectedBuilders.length > 1
+          ? 'Multiple builders were detected in your project. Please select one:'
+          : 'We were not able to detect the right builder for your project. Please select one:'
+      }
       `,
-    options: [
-      { label: 'Vite', value: SupportedBuilder.VITE },
-      { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
-    ],
+    options,
   });
 }
 

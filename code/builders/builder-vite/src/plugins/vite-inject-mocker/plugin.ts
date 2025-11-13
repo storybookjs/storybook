@@ -2,11 +2,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { resolvePackageDir } from 'storybook/internal/common';
+
 import { exactRegex } from '@rolldown/pluginutils';
 import { dedent } from 'ts-dedent';
 import type { ResolvedConfig, ViteDevServer } from 'vite';
-
-import { resolvePackageDir } from '../../../../shared/utils/module';
 
 const entryPath = '/vite-inject-mocker-entry.js';
 

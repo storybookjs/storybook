@@ -1,8 +1,7 @@
+import { rewriteSbMockImportCalls } from 'storybook/internal/mocking-utils';
 import { logger } from 'storybook/internal/node-logger';
 
 import type { LoaderDefinition } from 'webpack';
-
-import { rewriteSbMockImportCalls } from '../../../mocking-utils/extract';
 
 /**
  * A Webpack loader that normalize sb.mock(import(...)) calls to sb.mock(...)

@@ -1,7 +1,6 @@
-import type { LoaderContext } from 'webpack';
+import { babelParser, getAutomockCode } from 'storybook/internal/mocking-utils';
 
-import { getAutomockCode } from '../../../mocking-utils/automock';
-import { babelParser } from '../../../mocking-utils/extract';
+import type { LoaderContext } from 'webpack';
 
 /** Defines the options that can be passed to the webpack-automock-loader. */
 interface AutomockLoaderOptions {

@@ -1,7 +1,7 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
 import React, { useMemo, useState } from 'react';
 
-import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
   type API_HashEntry,
   type Addon_Collection,
@@ -26,15 +26,15 @@ const empty = {
   node: null,
 };
 
-const PositionedWithTooltip = styled(WithTooltip)({
-  position: 'absolute',
-  right: 0,
-  zIndex: 1,
-});
-
 const FloatingStatusButton = styled(StatusButton)({
   background: 'var(--tree-node-background-hover)',
   boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
+  position: 'absolute',
+  right: 0,
+  zIndex: 1,
+  '&:focus-visible': {
+    outlineOffset: -2,
+  },
 });
 
 export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {
@@ -127,24 +127,26 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
     return {
       onMouseEnter: handlers.onMouseEnter,
       node: shouldRender ? (
-        <PositionedWithTooltip
-          data-displayed={isOpen ? 'on' : 'off'}
-          closeOnOutsideClick
+        <PopoverProvider
           placement="bottom-end"
-          data-testid="context-menu"
-          onVisibleChange={(visible) => {
-            if (!visible) {
-              handlers.onClose();
-            } else {
-              setIsOpen(true);
-            }
-          }}
-          tooltip={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
+          defaultVisible={false}
+          visible={isOpen}
+          onVisibleChange={setIsOpen}
+          popover={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
+          hasChrome={true}
+          padding={0}
         >
-          <FloatingStatusButton type="button" status="status-value:pending">
+          <FloatingStatusButton
+            data-displayed={isOpen ? 'on' : 'off'}
+            data-testid="context-menu"
+            ariaLabel="Open context menu"
+            type="button"
+            status="status-value:pending"
+            onClick={handlers.onOpen}
+          >
             <EllipsisIcon />
           </FloatingStatusButton>
-        </PositionedWithTooltip>
+        </PopoverProvider>
       ) : null,
     };
   }, [context, handlers, isOpen, shouldRender, links, topLinks]);

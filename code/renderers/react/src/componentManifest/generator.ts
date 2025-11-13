@@ -132,21 +132,23 @@ export const componentManifestGenerator: PresetPropertyFn<
       } satisfies Partial<ComponentManifest>;
 
       if (!component?.reactDocgen) {
-        const error = !component
+        const error = !csf._meta?.component
           ? {
-              name: 'No meta.component specified',
-              message: 'Specify meta.component for the component to be included in the manifest.',
+              name: 'No component found',
+              message:
+                'We could not detect the component from your story file. Specify meta.component.',
             }
           : {
               name: 'No component import found',
-              message: `No component file found for the "${component.componentName}" component.`,
+              message: `No component file found for the "${csf.meta.component}" component.`,
             };
         return {
           ...base,
           error: {
             name: error.name,
             message:
-              csf._metaStatementPath?.buildCodeFrameError(error.message).message ?? error.message,
+              (csf._metaStatementPath?.buildCodeFrameError(error.message).message ??
+                error.message) + `\n\n${entry.importPath}:\n${storyFile}`,
           },
         };
       }

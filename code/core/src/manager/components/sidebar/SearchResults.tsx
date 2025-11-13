@@ -1,7 +1,7 @@
 import type { FC, MouseEventHandler, PropsWithChildren, ReactNode } from 'react';
 import React, { useCallback, useEffect } from 'react';
 
-import { Button, IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
@@ -118,7 +118,7 @@ const Highlight: FC<PropsWithChildren<{ match?: Match }>> = React.memo(function 
   return <span>{result}</span>;
 });
 
-const Title = styled.div(({ theme }) => ({
+const Title = styled.div({
   display: 'grid',
   justifyContent: 'start',
   gridAutoColumns: 'auto',
@@ -130,7 +130,7 @@ const Title = styled.div(({ theme }) => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
-}));
+});
 
 const Path = styled.div(({ theme }) => ({
   display: 'grid',
@@ -288,12 +288,15 @@ export const SearchResults: FC<{
       {results.length > 0 && !query && (
         <RecentlyOpenedTitle className="search-result-recentlyOpened">
           Recently opened
-          <IconButton
+          <Button
+            padding="small"
+            variant="ghost"
             className="search-result-recentlyOpened-clear"
             onClick={handleClearLastViewed}
+            ariaLabel="Clear recently opened items"
           >
             <TrashIcon />
-          </IconButton>
+          </Button>
         </RecentlyOpenedTitle>
       )}
       {results.length === 0 && query && (

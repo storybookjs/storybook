@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { Link, SyntaxHighlighter, TourGuide } from 'storybook/internal/components';
+import { Link, SyntaxHighlighter } from 'storybook/internal/components';
 import {
   STORY_ARGS_UPDATED,
   STORY_FINISHED,
@@ -16,6 +16,8 @@ import type {
 
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
+
+import { TourGuide } from '../../components/TourGuide/TourGuide';
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',

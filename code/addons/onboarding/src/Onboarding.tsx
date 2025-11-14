@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { HighlightElement, SyntaxHighlighter, TourGuide } from 'storybook/internal/components';
+import { SyntaxHighlighter } from 'storybook/internal/components';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 
 import { type API } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
+import { HighlightElement } from '../../../core/src/manager/components/TourGuide/HighlightElement';
+import { TourGuide } from '../../../core/src/manager/components/TourGuide/TourGuide';
 import { Confetti } from './components/Confetti/Confetti';
 import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants';
 import { ADDON_CONTROLS_ID, STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';

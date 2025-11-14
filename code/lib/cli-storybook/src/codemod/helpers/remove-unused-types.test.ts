@@ -12,6 +12,8 @@ expect.addSnapshotSerializer({
   test: () => true,
 });
 
+const unescape = (str: string) => str.replace(/\r\n/g, '\n');
+
 describe('removeUnusedTypes', () => {
   const getTransformed = (source: string) => {
     const csf = loadCsf(source, { makeTitle: () => 'FIXME' }).parse();
@@ -46,10 +48,10 @@ describe('removeUnusedTypes', () => {
       };
 
       export default { component: Button };
-    `.replace(/\r\n/g, '\n');
+    `;
 
-    const transformed = getTransformed(source).replace(/\r\n/g, '\n');
-    expect(getDiff(source, transformed)).toMatchInlineSnapshot(`
+    const transformed = getTransformed(source);
+    expect(getDiff(unescape(source), unescape(transformed))).toMatchInlineSnapshot(`
       import { Button } from './Button';
         
       - import { StoryFn, StoryObj, ComponentStory, Meta, MetaObj, ComponentMeta } from '@storybook/react';
@@ -115,6 +117,6 @@ describe('removeUnusedTypes', () => {
 
     const transformed = getTransformed(source);
 
-    expect(transformed).toEqual(source);
+    expect(unescape(transformed)).toEqual(unescape(source));
   });
 });

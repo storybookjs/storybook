@@ -4,13 +4,17 @@ import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview';
-import { universalChecklistStore as mockStore } from '../manager-stores.mock';
+import { internal_universalChecklistStore as mockStore } from '../manager-stores.mock';
 import { GuidePage } from './GuidePage';
 
 const managerContext: any = {
   state: {},
   api: {
-    navigateUrl: fn().mockName('api::navigateUrl'),
+    getData: fn().mockName('api::getData'),
+    getIndex: fn().mockName('api::getIndex'),
+    getUrlState: fn().mockName('api::getUrlState'),
+    navigate: fn().mockName('api::navigate'),
+    on: fn().mockName('api::on'),
   },
 };
 

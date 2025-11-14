@@ -1,17 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { SyntaxHighlighter } from 'storybook/internal/components';
+import { HighlightElement, SyntaxHighlighter, TourGuide } from 'storybook/internal/components';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 
-import type { Step } from 'react-joyride';
 import { type API } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
 import { Confetti } from './components/Confetti/Confetti';
-import { HighlightElement } from './components/HighlightElement/HighlightElement';
 import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants';
 import { ADDON_CONTROLS_ID, STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
-import { GuidedTour } from './features/GuidedTour/GuidedTour';
 import { IntentSurvey } from './features/IntentSurvey/IntentSurvey';
 import { SplashScreen } from './features/SplashScreen/SplashScreen';
 
@@ -44,30 +41,14 @@ const CodeWrapper = styled.div(({ theme }) => ({
 const theme = convert();
 
 export type StepKey = (typeof STORYBOOK_ADDON_ONBOARDING_STEPS)[number];
-export type StepDefinition = {
-  key: StepKey;
-  hideNextButton?: boolean;
-  onNextButtonClick?: () => void;
-} & Partial<
-  Pick<
-    // Unfortunately we can't use ts-expect-error here for some reason
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore Ignore circular reference
-    Step,
-    | 'content'
-    | 'disableBeacon'
-    | 'disableOverlay'
-    | 'floaterProps'
-    | 'offset'
-    | 'placement'
-    | 'spotlightClicks'
-    | 'styles'
-    | 'target'
-    | 'title'
-  >
->;
 
-export default function Onboarding({ api }: { api: API }) {
+export default function Onboarding({
+  api,
+  hasCompletedSurvey,
+}: {
+  api: API;
+  hasCompletedSurvey: boolean;
+}) {
   const [enabled, setEnabled] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
   const [step, setStep] = useState<StepKey>('1:Intro');
@@ -98,33 +79,38 @@ export default function Onboarding({ api }: { api: API }) {
     [api]
   );
 
-  const disableOnboarding = useCallback(() => {
-    // remove onboarding query parameter from current url
-    const url = new URL(window.location.href);
-    // @ts-expect-error (not strict)
-    const path = decodeURIComponent(url.searchParams.get('path'));
-    url.search = `?path=${path}&onboarding=false`;
-    history.replaceState({}, '', url.href);
-    api.setQueryParams({ onboarding: 'false' });
-    setEnabled(false);
-  }, [api, setEnabled]);
+  const disableOnboarding = useCallback(
+    (dismissedStep?: StepKey) => {
+      if (dismissedStep) {
+        api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
+          dismissedStep,
+          type: 'dismiss',
+          userAgent,
+        });
+      }
+      // remove onboarding query parameter from current url
+      const url = new URL(window.location.href);
+      // @ts-expect-error (not strict)
+      const path = decodeURIComponent(url.searchParams.get('path'));
+      url.search = `?path=${path}&onboarding=false`;
+      history.replaceState({}, '', url.href);
+      api.setQueryParams({ onboarding: 'false' });
+      setEnabled(false);
+    },
+    [api, setEnabled, userAgent]
+  );
 
-  const completeOnboarding = useCallback(
+  const completeSurvey = useCallback(
     (answers: Record<string, unknown>) => {
-      api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
-        step: '7:FinishedOnboarding' satisfies StepKey,
-        type: 'telemetry',
-        userAgent,
-      });
       api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
         answers,
         type: 'survey',
         userAgent,
       });
+      setStep('7:FinishedOnboarding');
       selectStory('configure-your-project--docs');
-      disableOnboarding();
     },
-    [api, selectStory, disableOnboarding, userAgent]
+    [api, selectStory, userAgent]
   );
 
   useEffect(() => {
@@ -148,6 +134,10 @@ export default function Onboarding({ api }: { api: API }) {
 
   useEffect(() => {
     setStep((current) => {
+      if (hasCompletedSurvey && current === '6:IntentSurvey') {
+        return '7:FinishedOnboarding';
+      }
+
       if (
         ['1:Intro', '5:StoryCreated', '6:IntentSurvey', '7:FinishedOnboarding'].includes(current)
       ) {
@@ -162,12 +152,13 @@ export default function Onboarding({ api }: { api: API }) {
         return '3:SaveFromControls';
       }
 
-      if (primaryControl) {
+      if (primaryControl || current === '2:Controls') {
         return '2:Controls';
       }
+
       return '1:Intro';
     });
-  }, [createNewStoryForm, primaryControl, saveFromControls]);
+  }, [hasCompletedSurvey, createNewStoryForm, primaryControl, saveFromControls]);
 
   useEffect(() => {
     return api.on(SAVE_STORY_RESPONSE, ({ payload, success }) => {
@@ -196,7 +187,7 @@ export default function Onboarding({ api }: { api: API }) {
   const snippet = source?.slice(startIndex).trim();
   const startingLineNumber = source?.slice(0, startIndex).split('\n').length;
 
-  const steps: StepDefinition[] = [
+  const controlsTour = [
     {
       key: '2:Controls',
       target: '#control-primary',
@@ -213,7 +204,7 @@ export default function Onboarding({ api }: { api: API }) {
       disableBeacon: true,
       disableOverlay: true,
       spotlightClicks: true,
-      onNextButtonClick: () => {
+      onNext: () => {
         const input = document.querySelector('#control-primary') as HTMLInputElement;
         input.click();
       },
@@ -234,7 +225,7 @@ export default function Onboarding({ api }: { api: API }) {
       disableBeacon: true,
       disableOverlay: true,
       spotlightClicks: true,
-      onNextButtonClick: () => {
+      onNext: () => {
         const button = document.querySelector(
           'button[aria-label="Create new story with these settings"]'
         ) as HTMLButtonElement;
@@ -280,7 +271,31 @@ export default function Onboarding({ api }: { api: API }) {
         },
       },
     },
-  ] as const;
+  ];
+
+  const checklistTour = [
+    {
+      key: '7:FinishedOnboarding',
+      target: '#storybook-checklist-module',
+      title: 'Continue at your own pace using the guide',
+      content: (
+        <>
+          Nice! You've got the essentials. You can continue at your own pace using the guide to
+          discover more of Storybook's capabilities.
+          <HighlightElement targetSelector="#storybook-checklist-module" pulsating />
+        </>
+      ),
+      offset: 0,
+      placement: 'right-start',
+      disableBeacon: true,
+      disableOverlay: true,
+      styles: {
+        tooltip: {
+          width: 350,
+        },
+      },
+    },
+  ];
 
   return (
     <ThemeProvider theme={theme}>
@@ -288,13 +303,23 @@ export default function Onboarding({ api }: { api: API }) {
       {step === '1:Intro' ? (
         <SplashScreen onDismiss={() => setStep('2:Controls')} />
       ) : step === '6:IntentSurvey' ? (
-        <IntentSurvey onComplete={completeOnboarding} onDismiss={disableOnboarding} />
-      ) : (
-        <GuidedTour
+        <IntentSurvey
+          onComplete={completeSurvey}
+          onDismiss={() => disableOnboarding('6:IntentSurvey')}
+        />
+      ) : step === '7:FinishedOnboarding' ? (
+        <TourGuide
           step={step}
-          steps={steps}
-          onClose={disableOnboarding}
-          onComplete={() => setStep('6:IntentSurvey')}
+          steps={checklistTour}
+          onComplete={() => disableOnboarding()}
+          onDismiss={() => disableOnboarding(step)}
+        />
+      ) : (
+        <TourGuide
+          step={step}
+          steps={controlsTour}
+          onComplete={() => setStep(hasCompletedSurvey ? '7:FinishedOnboarding' : '6:IntentSurvey')}
+          onDismiss={() => disableOnboarding(step)}
         />
       )}
     </ThemeProvider>

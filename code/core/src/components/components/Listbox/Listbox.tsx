@@ -1,4 +1,4 @@
-import React, { type ComponentProps } from 'react';
+import React, { type ComponentProps, forwardRef } from 'react';
 
 import type { TransitionStatus } from 'react-transition-state';
 import { styled } from 'storybook/theming';
@@ -15,11 +15,16 @@ export const Listbox = styled.div(({ theme }) => ({
   },
 }));
 
-export const ListboxItem = styled.li<{ active?: boolean; transitionStatus?: TransitionStatus }>(
+export const ListboxItem = styled.div<{
+  active?: boolean;
+  showOnHover?: string;
+  transitionStatus?: TransitionStatus;
+}>(
   ({ active, theme }) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flex: '0 0 auto',
     gap: 4,
 
     fontSize: theme.typography.size.s1,
@@ -58,17 +63,31 @@ export const ListboxItem = styled.li<{ active?: boolean; transitionStatus?: Tran
   }
 );
 
-export const ListboxButton = ({
-  padding = 'small',
-  size = 'medium',
-  variant = 'ghost',
-  ...props
-}: ComponentProps<typeof Button>) => (
-  <Button {...props} variant={variant} padding={padding} size={size} />
+export const ListboxHoverItem = styled(ListboxItem)<{ targetId: string }>(({ targetId }) => ({
+  gap: 0,
+  [`& [data-target-id="${targetId}"]`]: {
+    interpolateSize: 'allow-keywords',
+    inlineSize: 'auto',
+    marginLeft: 4,
+    opacity: 1,
+    transition: 'all 150ms',
+  },
+  [`&:not(:hover, :has(:focus-visible)) [data-target-id="${targetId}"]`]: {
+    inlineSize: 0,
+    marginLeft: 0,
+    opacity: 0,
+    paddingInline: 0,
+  },
+}));
+
+export const ListboxButton = forwardRef<HTMLButtonElement, ComponentProps<typeof Button>>(
+  function ListboxButton({ padding = 'small', size = 'medium', variant = 'ghost', ...props }, ref) {
+    return <Button {...props} variant={variant} padding={padding} size={size} ref={ref} />;
+  }
 );
 
 export const ListboxAction = styled(ListboxButton)({
-  flexGrow: 1,
+  flex: '0 1 100%',
   textAlign: 'start',
   justifyContent: 'space-between',
   fontWeight: 'inherit',
@@ -83,13 +102,26 @@ export const ListboxText = styled.div({
   alignItems: 'center',
   gap: 8,
   flexGrow: 1,
+  minWidth: 0,
   padding: '8px 0',
   lineHeight: '16px',
+
+  '& span': {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
   '&:first-child': {
     paddingLeft: 8,
   },
   '&:last-child': {
     paddingRight: 8,
+  },
+  'button > &:first-child': {
+    paddingLeft: 0,
+  },
+  'button > &:last-child': {
+    paddingRight: 0,
   },
 });
 
@@ -97,7 +129,8 @@ export const ListboxIcon = styled.div({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: 16,
-  height: 16,
+  flex: '0 0 14px',
+  width: 14,
+  height: 14,
   color: 'var(--listbox-item-muted-color)',
 });

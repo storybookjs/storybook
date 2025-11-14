@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 
-import { universalChecklistStore as mockStore } from '../manager-stores.mock';
+import { internal_universalChecklistStore as mockStore } from '../manager-stores.mock';
 import { Shortcut } from './Menu';
 
 const onLinkClick = action('onLinkClick');

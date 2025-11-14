@@ -236,11 +236,12 @@ export const Col = styled.div({
 
 export const Header = ({
   hasClose = true,
+  onClose,
   ...props
-}: React.ComponentProps<typeof Col> & { hasClose?: boolean }) => (
+}: React.ComponentProps<typeof Col> & { hasClose?: boolean; onClose?: () => void }) => (
   <Row>
     <Col {...props} />
-    {hasClose && <Close />}
+    {hasClose && <Close onClick={onClose} />}
   </Row>
 );
 

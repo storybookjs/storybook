@@ -10,7 +10,10 @@ import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
-import { internal_fullStatusStore, universalChecklistStore } from '../../manager-stores.mock';
+import {
+  internal_fullStatusStore,
+  internal_universalChecklistStore,
+} from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';
@@ -42,11 +45,14 @@ const managerContext: any = {
     emit: fn().mockName('api::emit'),
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
+    getData: fn().mockName('api::getData'),
+    getIndex: fn().mockName('api::getIndex'),
     getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
       'api::getShortcutKeys'
     ),
     getChannel: fn().mockName('api::getChannel'),
     getElements: fn(() => ({})),
+    navigate: fn().mockName('api::navigate'),
     selectStory: fn().mockName('api::selectStory'),
     experimental_setFilter: fn().mockName('api::experimental_setFilter'),
     getDocsUrl: () => 'https://storybook.js.org/docs/',
@@ -110,7 +116,7 @@ const meta = {
   globals: { sb_theme: 'side-by-side' },
   beforeEach: () => {
     internal_fullStatusStore.unset();
-    universalChecklistStore.setState({
+    internal_universalChecklistStore.setState({
       loaded: true,
       muted: false,
       accepted: ['controls'],

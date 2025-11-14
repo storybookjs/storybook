@@ -1,7 +1,8 @@
+import type { ComponentProps } from 'react';
 import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import { once } from 'storybook/internal/client-logger';
-import { Button, Card, ToggleButton } from 'storybook/internal/components';
+import { Button, Card, Optional, ToggleButton } from 'storybook/internal/components';
 import type {
   Addon_Collection,
   Addon_TestProviderType,
@@ -17,15 +18,14 @@ import { useDynamicFavicon } from './useDynamicFavicon';
 
 const DEFAULT_HEIGHT = 500;
 
-const HoverCard = styled(Card)(({ theme }) => ({
+const HoverCard = styled(Card)({
   display: 'flex',
   flexDirection: 'column-reverse',
-  '--card-box-shadow': `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app}`,
 
   '&:hover #testing-module-collapse-toggle': {
     opacity: 1,
   },
-}));
+});
 
 const Collapsible = styled.div(({ theme }) => ({
   overflow: 'hidden',
@@ -69,14 +69,12 @@ const CollapseToggle = styled(Button)({
   },
 });
 
-const RunButton = styled(Button)({
-  // 90px is the width of the button when the label is visible
-  '@container (max-width: 90px)': {
-    span: {
-      display: 'none',
-    },
-  },
-});
+const RunButton = ({ children, ...props }: ComponentProps<typeof Button>) => (
+  <Button size="medium" variant="ghost" padding="small" {...props}>
+    <PlayAllHollowIcon />
+    {children}
+  </Button>
+);
 
 const StatusButton = styled(ToggleButton)<{ pressed: boolean; status: 'negative' | 'warning' }>(
   { minWidth: 28 },
@@ -238,21 +236,32 @@ export const TestingModule = ({
       <Bar {...(hasTestProviders ? { onClick: (e) => toggleCollapsed(e) } : {})}>
         <Action>
           {hasTestProviders && (
-            <RunButton
-              size="medium"
-              variant="ghost"
-              padding="small"
-              ariaLabel={false}
-              tooltip={isRunning ? 'Running tests...' : 'Start all tests'}
-              onClick={(e: SyntheticEvent) => {
-                e.stopPropagation();
-                onRunAll();
-              }}
-              disabled={isRunning}
-            >
-              <PlayAllHollowIcon />
-              <span>{isRunning ? 'Running...' : 'Run tests'}</span>
-            </RunButton>
+            <Optional
+              content={
+                <RunButton
+                  ariaLabel={false}
+                  tooltip={isRunning ? 'Running tests...' : 'Start all tests'}
+                  disabled={isRunning}
+                  onClick={(e: SyntheticEvent) => {
+                    e.stopPropagation();
+                    onRunAll();
+                  }}
+                >
+                  <span>{isRunning ? 'Running...' : 'Run tests'}</span>
+                </RunButton>
+              }
+              fallback={
+                <RunButton
+                  ariaLabel={isRunning ? 'Running...' : 'Run tests'}
+                  tooltip={isRunning ? 'Running tests...' : 'Start all tests'}
+                  disabled={isRunning}
+                  onClick={(e: SyntheticEvent) => {
+                    e.stopPropagation();
+                    onRunAll();
+                  }}
+                />
+              }
+            />
           )}
         </Action>
         <Filters>

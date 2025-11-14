@@ -47,7 +47,9 @@ export const GuidePage = () => {
         </p>
       </Intro>
       <Checklist {...checklist} />
-      {checklist.muted ? (
+      {checklist.openItems.length === 0 ? (
+        <center>Your work here is done!</center>
+      ) : checklist.muted ? (
         <center>
           Want to see this in the sidebar?{' '}
           <Link onClick={() => checklist.mute(false)}>Show in sidebar</Link>

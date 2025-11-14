@@ -315,6 +315,7 @@ const StyledButton = styled('button', {
     }),
 
     '> svg': {
+      flex: '0 0 auto',
       animation:
         animating && animation !== 'none' ? `${theme.animation[animation]} 1000ms ease-out` : '',
     },

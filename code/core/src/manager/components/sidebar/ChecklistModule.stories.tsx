@@ -2,13 +2,17 @@ import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
-import { universalChecklistStore as mockStore } from '../../manager-stores.mock';
+import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock';
 import { ChecklistModule } from './ChecklistModule';
 
 const managerContext: any = {
   state: {},
   api: {
-    navigateUrl: fn().mockName('api::navigateUrl'),
+    getData: fn().mockName('api::getData'),
+    getIndex: fn().mockName('api::getIndex'),
+    getUrlState: fn().mockName('api::getUrlState'),
+    navigate: fn().mockName('api::navigate'),
+    on: fn().mockName('api::on'),
   },
 };
 
@@ -17,7 +21,7 @@ const meta = preview.meta({
   decorators: [
     (Story) => (
       <ManagerContext.Provider value={managerContext}>
-        <div style={{ width: 250 }}>{Story()}</div>
+        <div style={{ maxWidth: 300 }}>{Story()}</div>
       </ManagerContext.Provider>
     ),
   ],
@@ -26,10 +30,35 @@ const meta = preview.meta({
       loaded: true,
       muted: false,
       accepted: ['controls'],
-      done: ['add-component'],
-      skipped: ['viewports'],
+      done: ['install-storybook', 'render-component'],
+      skipped: ['more-components', 'more-stories'],
     });
   },
 });
 
-export const Default = meta.story({});
+export const Default = meta.story({
+  play: () => {
+    setTimeout(() => {
+      mockStore.setState({
+        loaded: true,
+        muted: false,
+        accepted: ['controls'],
+        done: ['install-storybook', 'render-component', 'viewports'],
+        skipped: ['more-components', 'more-stories'],
+      });
+    }, 4000);
+    setTimeout(() => {
+      mockStore.setState({
+        loaded: true,
+        muted: false,
+        accepted: ['controls'],
+        done: ['install-storybook', 'render-component', 'viewports'],
+        skipped: ['more-components', 'more-stories', 'install-vitest'],
+      });
+    }, 8000);
+  },
+});
+
+export const Narrow = meta.story({
+  decorators: [(Story) => <div style={{ maxWidth: 200 }}>{Story()}</div>],
+});

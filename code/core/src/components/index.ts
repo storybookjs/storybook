@@ -50,6 +50,7 @@ export {
   ListboxButton,
   ListboxIcon,
   ListboxItem,
+  ListboxHoverItem,
   ListboxText,
 } from './components/Listbox/Listbox';
 export { Modal, ModalDecorator } from './components/Modal/Modal';
@@ -59,6 +60,7 @@ export { ScrollArea } from './components/ScrollArea/ScrollArea';
 export { Zoom } from './components/Zoom/Zoom';
 export type { ActionItem } from './components/ActionBar/ActionBar';
 export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
+export { Optional } from './components/Optional/Optional';
 
 // Buttons
 export { Button, IconButton } from './components/Button/Button';
@@ -119,6 +121,10 @@ export { StatelessTabsView } from './components/Tabs/StatelessTabsView';
 export type { StatelessTabsViewProps } from './components/Tabs/StatelessTabsView';
 export { StatelessTab } from './components/Tabs/StatelessTab';
 export type { StatelessTabProps } from './components/Tabs/StatelessTab';
+
+export { TourGuide } from './components/TourGuide/TourGuide';
+export { TourTooltip } from './components/TourGuide/TourTooltip';
+export { HighlightElement } from './components/TourGuide/HighlightElement';
 
 // Graphics
 export { StorybookLogo } from './brand/StorybookLogo';

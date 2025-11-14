@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   Card,
@@ -6,9 +6,11 @@ import {
   Listbox,
   ListboxAction,
   ListboxButton,
+  ListboxHoverItem,
   ListboxIcon,
   ListboxItem,
   ListboxText,
+  Optional,
   ProgressSpinner,
   TooltipNote,
   WithTooltip,
@@ -19,15 +21,37 @@ import {
   EyeCloseIcon,
   ListUnorderedIcon,
   StatusFailIcon,
+  StatusPassIcon,
 } from '@storybook/icons';
 
-import { checklistStore } from '#manager-stores';
 import { type TransitionMapOptions, useTransitionMap } from 'react-transition-state';
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming';
 
+import { Particles } from '../../../components/components/Particles';
 import { TextFlip } from '../TextFlip';
+import type { ChecklistItem } from './useChecklist';
 import { useChecklist } from './useChecklist';
+
+const fadeScaleIn = keyframes`
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+`;
+
+const expand = keyframes`
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+`;
 
 const useTransitionArray = <K,>(array: K[], subset: K[], options: TransitionMapOptions<K>) => {
   const { setItem, toggle, stateMap } = useTransitionMap<K>({
@@ -71,6 +95,44 @@ const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
   color: theme.color.secondary,
 }));
 
+const Checked = styled(StatusPassIcon)(({ theme }) => ({
+  padding: 1,
+  borderRadius: '50%',
+  background: theme.color.positive,
+  color: theme.background.content,
+  animation: `${fadeScaleIn} 500ms forwards`,
+}));
+
+const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
+  ({ theme, isCompleted, isSkipped }) => ({
+    position: 'relative',
+    margin: '0 -2px',
+    padding: '0 2px',
+    color: isSkipped
+      ? theme.color.mediumdark
+      : isCompleted
+        ? theme.base === 'dark'
+          ? theme.color.positive
+          : theme.color.positiveText
+        : theme.color.defaultText,
+    transition: 'color 500ms',
+  }),
+  ({ theme, isSkipped }) =>
+    isSkipped && {
+      '&:after': {
+        content: '""',
+        position: 'absolute',
+        top: '50%',
+        left: 0,
+        width: '100%',
+        height: 1,
+        background: theme.color.mediumdark,
+        animation: `${expand} 500ms forwards`,
+        transformOrigin: 'left',
+      },
+    }
+);
+
 const title = (progress: number) => {
   switch (true) {
     case progress < 25:
@@ -84,11 +146,43 @@ const title = (progress: number) => {
   }
 };
 
+const OpenGuideAction = ({ children }: { children?: React.ReactNode }) => {
+  const api = useStorybookApi();
+  return (
+    <ListboxAction
+      onClick={(e) => {
+        e.stopPropagation();
+        api.navigate('/settings/guide');
+      }}
+    >
+      <ListboxIcon>
+        <ListUnorderedIcon />
+      </ListboxIcon>
+      {children}
+    </ListboxAction>
+  );
+};
+
 export const ChecklistModule = () => {
   const api = useStorybookApi();
-  const { loaded, allItems, nextItems, progress, mute } = useChecklist();
+  const { loaded, accepted, done, skipped, allItems, nextItems, progress, accept, mute } =
+    useChecklist();
 
-  const transitionItems = useTransitionArray(allItems, nextItems, { timeout: 300 });
+  const [items, setItems] = useState<ChecklistItem[]>([]);
+
+  useEffect(() => {
+    setItems((current) =>
+      current.map((item) => ({
+        ...item,
+        isCompleted: accepted.includes(item.id) || done.includes(item.id),
+        isSkipped: skipped.includes(item.id),
+      }))
+    );
+    const timeout = setTimeout(setItems, 2000, nextItems);
+    return () => clearTimeout(timeout);
+  }, [accepted, done, skipped, nextItems]);
+
+  const transitionItems = useTransitionArray(allItems, items, { timeout: 300 });
   const hasItems = nextItems.length > 0;
 
   return (
@@ -100,16 +194,16 @@ export const ChecklistModule = () => {
           summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
             <Listbox onClick={toggleCollapsed}>
               <ListboxItem>
-                <ListboxItem>
+                <ListboxItem style={{ flexShrink: 1 }}>
                   {loaded && (
-                    <ListboxAction
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        api.navigateUrl('/settings/guide', { plain: false });
-                      }}
-                    >
-                      <strong>{title(progress)}</strong>
-                    </ListboxAction>
+                    <Optional
+                      content={
+                        <OpenGuideAction>
+                          <strong>{title(progress)}</strong>
+                        </OpenGuideAction>
+                      }
+                      fallback={<OpenGuideAction />}
+                    />
                   )}
                 </ListboxItem>
                 <ListboxItem>
@@ -143,18 +237,9 @@ export const ChecklistModule = () => {
                       tooltip={({ onHide }) => (
                         <Listbox as="ul">
                           <ListboxItem as="li">
-                            <ListboxAction
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                api.navigateUrl('/settings/guide', { plain: false });
-                                onHide();
-                              }}
-                            >
-                              <ListboxIcon>
-                                <ListUnorderedIcon />
-                              </ListboxIcon>
+                            <OpenGuideAction>
                               <ListboxText>Open full guide</ListboxText>
-                            </ListboxAction>
+                            </OpenGuideAction>
                           </ListboxItem>
                           <ListboxItem as="li">
                             <ListboxAction
@@ -193,30 +278,40 @@ export const ChecklistModule = () => {
             {transitionItems.map(
               ([item, { status, isMounted }]) =>
                 isMounted && (
-                  <ListboxItem as="li" key={item.id} transitionStatus={status}>
-                    <ListboxAction
-                      onClick={() =>
-                        api.navigateUrl(`/settings/guide#${item.id}`, { plain: false })
-                      }
-                    >
+                  <ListboxHoverItem
+                    as="li"
+                    key={item.id}
+                    targetId={item.id}
+                    transitionStatus={status}
+                  >
+                    <ListboxAction onClick={() => api.navigate(`/settings/guide#${item.id}`)}>
                       <ListboxIcon>
-                        <StatusFailIcon />
+                        {item.isCompleted ? (
+                          <Particles anchor={Checked} key={item.id} />
+                        ) : (
+                          <StatusFailIcon />
+                        )}
                       </ListboxIcon>
-                      <ListboxText>{item.label}</ListboxText>
+                      <ListboxText>
+                        <ItemLabel isCompleted={item.isCompleted} isSkipped={item.isSkipped}>
+                          {item.label}
+                        </ItemLabel>
+                      </ListboxText>
                     </ListboxAction>
                     {item.action && (
                       <ListboxButton
+                        data-target-id={item.id}
                         onClick={() => {
                           item.action?.onClick({
                             api,
-                            accept: () => checklistStore.accept(item.id),
+                            accept: () => accept(item.id),
                           });
                         }}
                       >
                         {item.action.label}
                       </ListboxButton>
                     )}
-                  </ListboxItem>
+                  </ListboxHoverItem>
                 )
             )}
           </Listbox>

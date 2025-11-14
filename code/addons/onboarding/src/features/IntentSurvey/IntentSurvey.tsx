@@ -182,7 +182,7 @@ export const IntentSurvey = ({
     >
       <Form onSubmit={onSubmitForm} id="intent-survey-form">
         <Content>
-          <Modal.Header>
+          <Modal.Header onClose={onDismiss}>
             <Modal.Title>Help improve Storybook</Modal.Title>
           </Modal.Header>
 

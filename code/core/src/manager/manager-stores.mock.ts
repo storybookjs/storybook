@@ -45,46 +45,48 @@ export const {
   useUniversalStore: experimental_useUniversalStore,
 });
 
-export const universalChecklistStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(
+export const internal_universalChecklistStore = new experimental_MockUniversalStore<
+  StoreState,
+  StoreEvent
+>(
   {
     ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
     leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
-    debug: true,
   },
   testUtils
 ) as unknown as UniversalStore<StoreState, StoreEvent>;
 
 export const checklistStore: ChecklistStore = {
   accept: (id: TaskId) => {
-    universalChecklistStore.setState((state) => ({
+    internal_universalChecklistStore.setState((state) => ({
       ...state,
       accepted: state.accepted.includes(id) ? state.accepted : [...state.accepted, id],
       skipped: state.skipped.filter((v) => v !== id),
     }));
   },
   done: (id: TaskId) => {
-    universalChecklistStore.setState((state) => ({
+    internal_universalChecklistStore.setState((state) => ({
       ...state,
       done: state.done.includes(id) ? state.done : [...state.done, id],
       skipped: state.skipped.filter((v) => v !== id),
     }));
   },
   skip: (id: TaskId) => {
-    universalChecklistStore.setState((state) => ({
+    internal_universalChecklistStore.setState((state) => ({
       ...state,
       accepted: state.accepted.filter((v) => v !== id),
       skipped: state.skipped.includes(id) ? state.skipped : [...state.skipped, id],
     }));
   },
   reset: (id: TaskId) => {
-    universalChecklistStore.setState((state) => ({
+    internal_universalChecklistStore.setState((state) => ({
       ...state,
       accepted: state.accepted.filter((v) => v !== id),
       skipped: state.skipped.filter((v) => v !== id),
     }));
   },
   mute: (value: boolean | Array<TaskId>) => {
-    universalChecklistStore.setState((state) => ({
+    internal_universalChecklistStore.setState((state) => ({
       ...state,
       muted: Array.isArray(value)
         ? Array.from(

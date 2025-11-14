@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { checklistStore } from '#manager-stores';
+import { internal_checklistStore as checklistStore } from '#manager-stores';
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
@@ -9,6 +9,28 @@ import preview from '../../../../../.storybook/preview';
 import { Checklist } from './Checklist';
 import { checklistData } from './checklistData';
 
+const accepted = ['controls'];
+const done = ['install-storybook', 'render-component', 'whats-new-storybook-10'];
+const skipped = ['viewports'];
+
+const availableItems = checklistData.sections.flatMap(
+  ({ id: sectionId, title: sectionTitle, items }, sectionIndex) =>
+    items.map((item) => ({
+      ...item,
+      sectionId,
+      sectionIndex,
+      sectionTitle,
+      isAvailable: true,
+      isOpen: !accepted.includes(item.id) && !done.includes(item.id) && !skipped.includes(item.id),
+      isLockedBy: [],
+      isReady: true,
+      isAccepted: accepted.includes(item.id),
+      isDone: done.includes(item.id),
+      isSkipped: skipped.includes(item.id),
+      isMuted: false,
+    }))
+);
+
 const Container = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2,
 }));
@@ -16,7 +38,11 @@ const Container = styled.div(({ theme }) => ({
 const managerContext: any = {
   state: {},
   api: {
-    navigateUrl: fn().mockName('api::navigateUrl'),
+    getData: fn().mockName('api::getData'),
+    getIndex: fn().mockName('api::getIndex'),
+    getUrlState: fn().mockName('api::getUrlState'),
+    navigate: fn().mockName('api::navigate'),
+    on: fn().mockName('api::on'),
   },
 };
 
@@ -34,11 +60,5 @@ const meta = preview.meta({
 });
 
 export const Default = meta.story({
-  args: {
-    ...checklistData,
-    ...checklistStore,
-    accepted: ['controls'],
-    done: ['add-component'],
-    skipped: ['viewports'],
-  },
+  args: { availableItems, ...checklistStore },
 });

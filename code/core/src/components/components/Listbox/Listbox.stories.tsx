@@ -3,7 +3,14 @@ import { CheckIcon, EllipsisIcon, PlayAllHollowIcon } from '@storybook/icons';
 import { Badge, Form, ProgressSpinner } from '../..';
 import preview from '../../../../../.storybook/preview';
 import { Shortcut } from '../../../manager/container/Menu';
-import { Listbox, ListboxAction, ListboxButton, ListboxItem, ListboxText } from './Listbox';
+import {
+  Listbox,
+  ListboxAction,
+  ListboxButton,
+  ListboxHoverItem,
+  ListboxItem,
+  ListboxText,
+} from './Listbox';
 
 const meta = preview.meta({
   component: Listbox,
@@ -28,6 +35,13 @@ export const Default = meta.story({
           Cool
         </ListboxButton>
       </ListboxItem>
+      <ListboxHoverItem targetId="some-action">
+        <ListboxAction>Hover action</ListboxAction>
+        <ListboxButton data-target-id="some-action">
+          <PlayAllHollowIcon />
+          Cool
+        </ListboxButton>
+      </ListboxHoverItem>
       <ListboxItem>
         <ListboxText>With a button</ListboxText>
         <ListboxButton variant="solid">Go</ListboxButton>
@@ -59,6 +73,16 @@ export const Default = meta.story({
           <ListboxText>Active with an icon</ListboxText>
           <Shortcut keys={['⌘', 'A']} />
         </ListboxAction>
+      </ListboxItem>
+      <ListboxItem>
+        <ListboxText>
+          Some very long text which will wrap when the container is too narrow
+        </ListboxText>
+      </ListboxItem>
+      <ListboxItem>
+        <ListboxText>
+          <span>Some very long text which will ellipsize when the container is too narrow</span>
+        </ListboxText>
       </ListboxItem>
     </Listbox>
   ),

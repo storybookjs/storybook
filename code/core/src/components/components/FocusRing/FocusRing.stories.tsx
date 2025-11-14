@@ -35,7 +35,7 @@ export const Temporary = meta.story({
 export const Proxy = meta.story({
   render: () => (
     <FocusProxy targetId="focus-button" style={{ padding: 10 }}>
-      <button id="focus-button">Focus me</button>
+      <button data-target-id="focus-button">Focus me</button>
       <div>A bunch of content</div>
       <button>Another button</button>
     </FocusProxy>

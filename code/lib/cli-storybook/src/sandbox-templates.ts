@@ -1,10 +1,11 @@
-import { ProjectType } from 'storybook/internal/cli';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import {
   type StoriesEntry,
   type StorybookConfigRaw,
   SupportedBuilder,
 } from 'storybook/internal/types';
+
+import { ProjectType } from '../../../core/src/cli/projectTypes';
 
 export type SkippableTask =
   | 'smoke-test'

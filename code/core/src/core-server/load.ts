@@ -1,15 +1,16 @@
 import {
   getProjectRoot,
-  getStorybookInfo,
   loadAllPresets,
+  loadMainConfig,
   resolveAddonName,
+  validateFrameworkName,
 } from 'storybook/internal/common';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { join, relative, resolve } from 'pathe';
+import { dirname, join, relative, resolve } from 'pathe';
 
 import { resolvePackageDir } from '../shared/utils/module';
 
@@ -29,17 +30,19 @@ export async function loadStorybook(
   options.configDir = configDir;
   options.cacheKey = cacheKey;
 
+  const config = await loadMainConfig(options);
+  const { framework } = config;
   const corePresets = [];
 
-  const { frameworkPackage, builderPackage } = await getStorybookInfo(configDir);
-
-  if (frameworkPackage) {
-    corePresets.push(join(frameworkPackage, 'preset'));
+  let frameworkName = typeof framework === 'string' ? framework : framework?.name;
+  if (!options.ignorePreview) {
+    validateFrameworkName(frameworkName);
+  }
+  if (frameworkName) {
+    corePresets.push(join(frameworkName, 'preset'));
   }
 
-  if (builderPackage) {
-    corePresets.push(join(builderPackage, 'preset'));
-  }
+  frameworkName = frameworkName || 'custom';
 
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account
@@ -54,8 +57,14 @@ export async function loadStorybook(
     isCritical: true,
   });
 
-  const { renderer } = await presets.apply('core', {});
+  const { renderer, builder } = await presets.apply('core', {});
   const resolvedRenderer = renderer && resolveAddonName(options.configDir, renderer, options);
+
+  const builderName = typeof builder === 'string' ? builder : builder?.name;
+
+  if (builderName) {
+    corePresets.push(join(dirname(builderName), 'preset.js'));
+  }
 
   // Load second pass: all presets are applied in order
 

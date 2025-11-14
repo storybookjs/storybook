@@ -64,4 +64,4 @@ export const build: ViteBuilder['build'] = async ({ options }) => {
   return viteBuild(options as Options);
 };
 
-export const corePresets = [import.meta.resolve('@storybook/builder-vite/preset')];
+export const corePresets = [import.meta.resolve('./preset.js')];

@@ -18,7 +18,7 @@ export const getApplicationFilesCountUncached = async (basePath: string) => {
   );
 
   try {
-    return execCommandCountLines('git', ['ls-files', '--', ...globs]);
+    return await execCommandCountLines('git', ['ls-files', '--', ...globs]);
   } catch {
     return undefined;
   }

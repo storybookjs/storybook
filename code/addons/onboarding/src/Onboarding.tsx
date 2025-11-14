@@ -309,6 +309,8 @@ export default function Onboarding({
         />
       ) : step === '7:FinishedOnboarding' ? (
         <TourGuide
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore Circular reference in Step type
           step={step}
           steps={checklistTour}
           onComplete={() => disableOnboarding()}
@@ -316,6 +318,8 @@ export default function Onboarding({
         />
       ) : (
         <TourGuide
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore Circular reference in Step type
           step={step}
           steps={controlsTour}
           onComplete={() => setStep(hasCompletedSurvey ? '7:FinishedOnboarding' : '6:IntentSurvey')}

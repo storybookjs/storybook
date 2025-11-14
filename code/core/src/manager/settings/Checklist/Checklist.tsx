@@ -232,10 +232,7 @@ export const Checklist = ({
   accept,
   skip,
   reset,
-}: Pick<
-  ReturnType<typeof useChecklist>,
-  'availableItems' | 'accepted' | 'done' | 'skipped' | 'accept' | 'skip' | 'reset'
->) => {
+}: Pick<ReturnType<typeof useChecklist>, 'availableItems' | 'accept' | 'skip' | 'reset'>) => {
   const api = useStorybookApi();
   const locationHash = useLocationHash();
 

@@ -352,6 +352,8 @@ export default {
             label: 'Start',
             onClick: () =>
               TourGuide.render({
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore Circular reference in Step type
                 steps: [
                   {
                     title: 'Testing widget',

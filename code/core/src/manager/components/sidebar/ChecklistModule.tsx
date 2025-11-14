@@ -1,4 +1,4 @@
-import React, { createRef, useMemo } from 'react';
+import React, { useEffect } from 'react';
 
 import {
   Card,
@@ -22,12 +22,32 @@ import {
 } from '@storybook/icons';
 
 import { checklistStore } from '#manager-stores';
+import { type TransitionMapOptions, useTransitionMap } from 'react-transition-state';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { TextFlip } from '../TextFlip';
-import { Transition, TransitionGroup } from '../Transition';
 import { useChecklist } from './useChecklist';
+
+const useTransitionArray = <K,>(array: K[], subset: K[], options: TransitionMapOptions<K>) => {
+  const { setItem, toggle, stateMap } = useTransitionMap<K>({
+    allowMultiple: true,
+    mountOnEnter: true,
+    unmountOnExit: true,
+    preEnter: true,
+    ...options,
+  });
+
+  useEffect(() => {
+    array.forEach((task) => setItem(task));
+  }, [array, setItem]);
+
+  useEffect(() => {
+    array.forEach((task) => toggle(task, subset.includes(task)));
+  }, [array, subset, toggle]);
+
+  return Array.from(stateMap);
+};
 
 const CollapsibleWithMargin = styled(Collapsible)(({ collapsed }) => ({
   marginTop: collapsed ? 0 : 16,
@@ -68,18 +88,15 @@ export const ChecklistModule = () => {
   const api = useStorybookApi();
   const { loaded, allItems, nextItems, progress, mute } = useChecklist();
 
-  const next = useMemo(
-    () => nextItems.map((item) => ({ ...item, nodeRef: createRef<HTMLDivElement>() })),
-    [nextItems]
-  );
-  const hasTasks = next.length > 0;
+  const transitionItems = useTransitionArray(allItems, nextItems, { timeout: 300 });
+  const hasItems = nextItems.length > 0;
 
   return (
-    <CollapsibleWithMargin collapsed={!hasTasks}>
+    <CollapsibleWithMargin collapsed={!hasItems}>
       <HoverCard outlineAnimation="rainbow">
         <Collapsible
-          collapsed={!hasTasks}
-          disabled={!hasTasks}
+          collapsed={!hasItems}
+          disabled={!hasItems}
           summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
             <Listbox onClick={toggleCollapsed}>
               <ListboxItem>
@@ -172,34 +189,37 @@ export const ChecklistModule = () => {
             </Listbox>
           )}
         >
-          <TransitionGroup as="ul" component={Listbox}>
-            {next.map((item) => (
-              <Transition key={item.id} nodeRef={item.nodeRef} timeout={300}>
-                <ListboxItem as="li" ref={item.nodeRef}>
-                  <ListboxAction
-                    onClick={() => api.navigateUrl(`/settings/guide#${item.id}`, { plain: false })}
-                  >
-                    <ListboxIcon>
-                      <StatusFailIcon />
-                    </ListboxIcon>
-                    <ListboxText>{item.label}</ListboxText>
-                  </ListboxAction>
-                  {item.action && (
-                    <ListboxButton
-                      onClick={() => {
-                        item.action?.onClick({
-                          api,
-                          accept: () => checklistStore.accept(item.id),
-                        });
-                      }}
+          <Listbox as="ul">
+            {transitionItems.map(
+              ([item, { status, isMounted }]) =>
+                isMounted && (
+                  <ListboxItem as="li" key={item.id} transitionStatus={status}>
+                    <ListboxAction
+                      onClick={() =>
+                        api.navigateUrl(`/settings/guide#${item.id}`, { plain: false })
+                      }
                     >
-                      {item.action.label}
-                    </ListboxButton>
-                  )}
-                </ListboxItem>
-              </Transition>
-            ))}
-          </TransitionGroup>
+                      <ListboxIcon>
+                        <StatusFailIcon />
+                      </ListboxIcon>
+                      <ListboxText>{item.label}</ListboxText>
+                    </ListboxAction>
+                    {item.action && (
+                      <ListboxButton
+                        onClick={() => {
+                          item.action?.onClick({
+                            api,
+                            accept: () => checklistStore.accept(item.id),
+                          });
+                        }}
+                      >
+                        {item.action.label}
+                      </ListboxButton>
+                    )}
+                  </ListboxItem>
+                )
+            )}
+          </Listbox>
         </Collapsible>
       </HoverCard>
     </CollapsibleWithMargin>

@@ -1,5 +1,6 @@
 import React, { type ComponentProps } from 'react';
 
+import type { TransitionStatus } from 'react-transition-state';
 import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button';
@@ -14,49 +15,48 @@ export const Listbox = styled.div(({ theme }) => ({
   },
 }));
 
-export const ListboxItem = styled.div<{ active?: boolean }>(({ active, theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 4,
+export const ListboxItem = styled.li<{ active?: boolean; transitionStatus?: TransitionStatus }>(
+  ({ active, theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 4,
 
-  fontSize: theme.typography.size.s1,
-  fontWeight: active ? theme.typography.weight.bold : theme.typography.weight.regular,
-  color: active ? theme.color.secondary : theme.color.defaultText,
-  '--listbox-item-muted-color': active ? theme.color.secondary : theme.color.mediumdark,
+    fontSize: theme.typography.size.s1,
+    fontWeight: active ? theme.typography.weight.bold : theme.typography.weight.regular,
+    color: active ? theme.color.secondary : theme.color.defaultText,
+    '--listbox-item-muted-color': active ? theme.color.secondary : theme.color.mediumdark,
 
-  '@supports (interpolate-size: allow-keywords)': {
-    interpolateSize: 'allow-keywords',
-    overflow: 'hidden',
-    transition: 'all var(--transition-duration, 0.2s)',
-    transitionBehavior: 'allow-discrete',
-  },
+    '@supports (interpolate-size: allow-keywords)': {
+      interpolateSize: 'allow-keywords',
+      overflow: 'hidden',
+      transition: 'all var(--transition-duration, 0.2s)',
+      transitionBehavior: 'allow-discrete',
+    },
 
-  '@media (prefers-reduced-motion: reduce)': {
-    transition: 'none',
-  },
-
-  '&.enter': {
-    opacity: 0,
-    blockSize: 0,
-    contentVisibility: 'hidden',
-  },
-  '&.enter-active': {
-    opacity: 1,
-    blockSize: 'auto',
-    contentVisibility: 'visible',
-  },
-  '&.exit': {
-    opacity: 1,
-    blockSize: 'auto',
-    contentVisibility: 'visible',
-  },
-  '&.exit-active, &.exit-done': {
-    opacity: 0,
-    blockSize: 0,
-    contentVisibility: 'hidden',
-  },
-}));
+    '@media (prefers-reduced-motion: reduce)': {
+      transition: 'none',
+    },
+  }),
+  ({ transitionStatus }) => {
+    switch (transitionStatus) {
+      case 'preEnter':
+      case 'exiting':
+      case 'exited':
+        return {
+          opacity: 0,
+          blockSize: 0,
+          contentVisibility: 'hidden',
+        };
+      default:
+        return {
+          opacity: 1,
+          blockSize: 'auto',
+          contentVisibility: 'visible',
+        };
+    }
+  }
+);
 
 export const ListboxButton = ({
   padding = 'small',

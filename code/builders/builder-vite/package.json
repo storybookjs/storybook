@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "10.1.0-alpha.0",
+  "version": "10.1.0-alpha.10",
   "description": "A Storybook builder to dev and build with Vite",
   "keywords": [
     "storybook",
@@ -33,7 +33,8 @@
       "default": "./dist/index.js"
     },
     "./input/iframe.html": "./input/iframe.html",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
   },
   "files": [
     "dist/**/*",
@@ -41,6 +42,7 @@
     "README.md",
     "*.js",
     "*.d.ts",
+    "preset.js",
     "!src/**/*"
   ],
   "scripts": {
@@ -49,6 +51,7 @@
   },
   "dependencies": {
     "@storybook/csf-plugin": "workspace:*",
+    "@vitest/mocker": "3.2.4",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
@@ -69,5 +72,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae17"
 }

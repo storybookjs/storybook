@@ -1,4 +1,4 @@
-import type { NpmOptions, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
+import type { NpmOptions, ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import type {
@@ -6,6 +6,7 @@ import type {
   StorybookConfig,
   SupportedBuilder,
   SupportedFramework,
+  SupportedLanguage,
   SupportedRenderer,
 } from 'storybook/internal/types';
 
@@ -40,7 +41,7 @@ export interface FrameworkOptions {
   componentsDestinationPath?: string;
   installFrameworkPackages?: boolean;
   skipGenerator?: boolean;
-  storybookCommand?: string;
+  storybookCommand?: string | null;
   shouldRunDev?: boolean;
   frameworkPreviewParts?: FrameworkPreviewParts;
 }
@@ -72,7 +73,7 @@ export interface GeneratorMetadata {
    * framework. This is useful for project types that support multiple frameworks based on the
    * builder (e.g., Next.js with Vite vs Webpack).
    */
-  framework?: SupportedFramework | ((builder: SupportedBuilder) => SupportedFramework);
+  framework?: SupportedFramework | null | ((builder: SupportedBuilder) => SupportedFramework);
   /**
    * If the builder is a function, it will be called to determine the builder. This is useful for
    * generators that need to determine the builder based on the project type in cases where the
@@ -82,11 +83,12 @@ export interface GeneratorMetadata {
 }
 
 export interface GeneratorContext {
-  framework: SupportedFramework | undefined;
+  framework: SupportedFramework | null | undefined;
   renderer: SupportedRenderer;
   builder: SupportedBuilder;
   language: SupportedLanguage;
   features: Set<Feature>;
+  dependencyCollector: DependencyCollector;
   linkable?: boolean;
   yes?: boolean;
 }
@@ -101,7 +103,6 @@ export interface GeneratorModule {
   configure: (
     packageManager: JsPackageManager,
     context: GeneratorContext
-    // Return undefined if the base generator shouldn't be executed
   ) => Promise<FrameworkOptions>;
   /**
    * The function that runs after the generator is configured. This is used to run any
@@ -132,4 +133,5 @@ export type CommandOptions = {
   enableCrashReports?: boolean;
   debug?: boolean;
   dev?: boolean;
+  logfile?: string | boolean;
 };

@@ -2,11 +2,12 @@ import { detectPnp } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
   JsPackageManagerFactory,
+  PackageManagerName,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project';
@@ -30,9 +31,7 @@ export class PreflightCheckCommand {
   /** Execute preflight checks */
   constructor(private readonly versionService = new VersionService()) {}
   async execute(options: CommandOptions): Promise<PreflightCheckResult> {
-    const { packageManager: pkgMgr, force } = options;
-
-    const isEmptyDirProject = force !== true && currentDirectoryIsEmpty();
+    const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();
     let packageManagerType = JsPackageManagerFactory.getPackageManagerType();
 
     // Check if the current directory is empty
@@ -41,17 +40,25 @@ export class PreflightCheckCommand {
       // will very likely fail due to different kinds of hoisting issues
       // which doesn't get fixed anymore in yarn1.
       // We will fallback to npm in this case.
-      if (packageManagerType === 'yarn1') {
-        packageManagerType = 'npm';
+      if (
+        options.packageManager ? options.packageManager === 'yarn1' : packageManagerType === 'yarn1'
+      ) {
+        logger.warn('Empty directory with yarn1 is unsupported. Falling back to npm.');
+        packageManagerType = PackageManagerName.NPM;
+        options.packageManager = packageManagerType;
       }
 
       // Prompt the user to create a new project from our list
+      logger.intro(CLI_COLORS.info(`Initializing a new project`));
       await scaffoldNewProject(packageManagerType, options);
+      logger.outro(CLI_COLORS.info(`Project created successfully`));
       invalidateProjectRootCache();
     }
 
+    logger.intro(CLI_COLORS.info(`Initializing Storybook`));
+
     const packageManager = JsPackageManagerFactory.getPackageManager({
-      force: pkgMgr,
+      force: options.packageManager,
     });
 
     // Install base project dependencies if we scaffolded a new project

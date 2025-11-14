@@ -1,5 +1,5 @@
-import { ProjectType, SupportedLanguage, detectLanguage } from 'storybook/internal/cli';
-import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
@@ -9,9 +9,7 @@ export default defineGeneratorModule({
     projectType: ProjectType.REACT,
     renderer: SupportedRenderer.REACT,
   },
-  configure: async (packageManager) => {
-    // Add prop-types dependency if not using TypeScript
-    const language = await detectLanguage(packageManager);
+  configure: async (packageManager, { language }) => {
     const extraPackages = language === SupportedLanguage.JAVASCRIPT ? ['prop-types'] : [];
 
     return {

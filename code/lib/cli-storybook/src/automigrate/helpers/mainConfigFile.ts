@@ -6,7 +6,6 @@ import {
   extractFrameworkPackageName,
   frameworkPackages,
   getStorybookInfo,
-  loadMainConfig,
 } from 'storybook/internal/common';
 import type { PackageManagerName } from 'storybook/internal/common';
 import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
@@ -16,7 +15,6 @@ import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { dedent } from 'ts-dedent';
 
 import { getStoriesPathsFromConfig } from '../../util';
 

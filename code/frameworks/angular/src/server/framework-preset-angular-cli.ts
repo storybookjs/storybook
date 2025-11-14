@@ -16,7 +16,7 @@ import { relative } from 'pathe';
 
 export async function webpackFinal(baseConfig: webpack.Configuration, options: PresetOptions) {
   if (!resolvePackageDir('@angular-devkit/build-angular')) {
-    logger.info('=> Using base config because "@angular-devkit/build-angular" is not installed');
+    logger.info('Using base config because "@angular-devkit/build-angular" is not installed');
     return baseConfig;
   }
 

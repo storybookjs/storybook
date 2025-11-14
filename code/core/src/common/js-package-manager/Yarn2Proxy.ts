@@ -8,9 +8,14 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
 import * as find from 'empathic/find';
+// eslint-disable-next-line depend/ban-dependencies
+import type { ExecaChildProcess } from 'execa';
 
+import { logger } from '../../node-logger';
+import type { ExecuteCommandOptions } from '../utils/command';
+import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 import { parsePackageData } from './util';
@@ -74,7 +79,7 @@ const CRITICAL_YARN2_ERROR_CODES = {
 
 // This encompasses Yarn Berry (v2+)
 export class Yarn2Proxy extends JsPackageManager {
-  readonly type = 'yarn2';
+  readonly type = PackageManagerName.YARN2;
 
   installArgs: string[] | undefined;
 
@@ -89,31 +94,15 @@ export class Yarn2Proxy extends JsPackageManager {
     return `yarn ${command}`;
   }
 
-  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
-    return `yarn dlx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
-  }
-
-  public runPackageCommandSync(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ) {
-    return this.executeCommandSync({
+  public runPackageCommand({
+    args,
+    ...options
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+    return executeCommand({
       command: 'yarn',
-      args: ['exec', command, ...args],
-      cwd,
-      stdio,
+      args: ['exec', ...args],
+      ...options,
     });
-  }
-
-  public runPackageCommand(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ) {
-    return this.executeCommand({ command: 'yarn', args: ['exec', command, ...args], cwd, stdio });
   }
 
   public runInternalCommand(
@@ -122,7 +111,12 @@ export class Yarn2Proxy extends JsPackageManager {
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
   ) {
-    return this.executeCommand({ command: 'yarn', args: [command, ...args], cwd, stdio });
+    return executeCommand({
+      command: 'yarn',
+      args: [command, ...args],
+      cwd: cwd ?? this.cwd,
+      stdio,
+    });
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
@@ -133,7 +127,7 @@ export class Yarn2Proxy extends JsPackageManager {
     }
 
     try {
-      const childProcess = await this.executeCommand({
+      const childProcess = await executeCommand({
         command: 'yarn',
         args: yarnArgs.concat(pattern),
         env: {
@@ -142,6 +136,8 @@ export class Yarn2Proxy extends JsPackageManager {
         cwd: this.instanceDir,
       });
       const commandResult = childProcess.stdout ?? '';
+
+      logger.debug(`Installation found for ${pattern.join(', ')}: ${commandResult}`);
 
       return this.mapDependencies(commandResult, pattern);
     } catch (e) {
@@ -222,7 +218,7 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   protected runInstall() {
-    return this.executeCommand({
+    return executeCommand({
       command: 'yarn',
       args: ['install', ...this.getInstallArgs()],
       cwd: this.cwd,
@@ -237,7 +233,7 @@ export class Yarn2Proxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
-    return this.executeCommand({
+    return executeCommand({
       command: 'yarn',
       args: ['add', ...this.getInstallArgs(), ...args],
       stdio: prompt.getPreferredStdio(),
@@ -246,7 +242,7 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   public async getRegistryURL() {
-    const process = this.executeCommand({
+    const process = executeCommand({
       command: 'yarn',
       args: ['config', 'get', 'npmRegistryServer'],
     });
@@ -262,7 +258,7 @@ export class Yarn2Proxy extends JsPackageManager {
     const field = fetchAllVersions ? 'versions' : 'version';
     const args = ['--fields', field, '--json'];
     try {
-      const process = this.executeCommand({
+      const process = executeCommand({
         command: 'yarn',
         args: ['npm', 'info', packageName, ...args],
       });
@@ -287,6 +283,7 @@ export class Yarn2Proxy extends JsPackageManager {
     const duplicatedDependencies: Record<string, string[]> = {};
 
     lines.forEach((packageName) => {
+      logger.debug(`Processing package ${packageName}`);
       if (
         !packageName ||
         !pattern.some((p) => new RegExp(`${p.replace(/\*/g, '.*')}`).test(packageName))
@@ -295,6 +292,7 @@ export class Yarn2Proxy extends JsPackageManager {
       }
 
       const { name, value } = parsePackageData(packageName.replaceAll(`"`, ''));
+      logger.debug(`Package ${name} found with version ${value.version}`);
       if (!existingVersions[name]?.includes(value.version)) {
         if (acc[name]) {
           acc[name].push(value);

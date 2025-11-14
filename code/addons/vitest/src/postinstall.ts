@@ -9,7 +9,6 @@ import {
   formatFileContent,
   getProjectRoot,
   getStorybookInfo,
-  versions,
 } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import {
@@ -47,6 +46,7 @@ export default async function postInstall(options: PostinstallOptions) {
     );
 
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+  logger.debug(`Vitest version specifier: ${vitestVersionSpecifier}`);
   const isVitest3_2To4 = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=3.2.0 <4.0.0')
     : false;
@@ -72,7 +72,7 @@ export default async function postInstall(options: PostinstallOptions) {
     const reasons = compatibilityResult.reasons.map((r) => `• ${CLI_COLORS.error(r)}`);
     reasons.unshift(dedent`
       Automated setup failed
-      We have found incompatibilities due to the following package incompatibilities:
+      The following packages have incompatibilities that prevent automated setup:
     `);
     reasons.push(
       dedent`
@@ -325,10 +325,15 @@ export default async function postInstall(options: PostinstallOptions) {
 
   if (a11yAddon) {
     try {
-      const command = ['automigrate', 'addon-a11y-addon-test'];
-
-      command.push('--loglevel', 'silent');
-      command.push('--yes', '--skip-doctor');
+      const command = [
+        'storybook',
+        'automigrate',
+        'addon-a11y-addon-test',
+        '--loglevel',
+        'silent',
+        '--yes',
+        '--skip-doctor',
+      ];
 
       if (options.packageManager) {
         command.push('--package-manager', options.packageManager);
@@ -339,25 +344,19 @@ export default async function postInstall(options: PostinstallOptions) {
       }
 
       if (options.configDir !== '.storybook') {
-        command.push('--config-dir', `"${options.configDir}"`);
+        command.push('--config-dir', options.configDir);
       }
 
-      const remoteCommand = packageManager.getRemoteRunCommand(
-        'storybook',
-        command,
-        versions.storybook
+      await prompt.executeTask(
+        // TODO: Remove stdio: 'ignore' once we have a way to log the output of the command properly
+        () => packageManager.runPackageCommand({ args: command, stdio: 'ignore' }),
+        {
+          intro: 'Setting up a11y addon for @storybook/addon-vitest',
+          error: 'Failed to setup a11y addon for @storybook/addon-vitest',
+          success: 'a11y addon setup successfully',
+        }
       );
-      const [cmd, ...args] = remoteCommand.split(' ');
-
-      await prompt.executeTask(() => packageManager.executeCommand({ command: cmd, args }), {
-        id: 'a11y-addon-setup',
-        intro: 'Setting up a11y addon for @storybook/addon-vitest',
-        error: 'Failed to setup a11y addon for @storybook/addon-vitest',
-        success: 'a11y addon setup successfully',
-      });
     } catch (e: unknown) {
-      console.log(e);
-      logger.line();
       logger.error(dedent`
         Could not automatically set up ${addonA11yName} for @storybook/addon-vitest.
         Please refer to the documentation to complete the setup manually:
@@ -372,9 +371,8 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;
 
-  logger.line();
   if (errors.length === 0) {
-    logger.step(CLI_COLORS.success('All done!'));
+    logger.step(CLI_COLORS.success('@storybook/addon-vitest setup completed successfully'));
     logger.log(dedent`
         @storybook/addon-vitest is now configured and you're ready to run your tests!
         Here are a couple of tips to get you started:

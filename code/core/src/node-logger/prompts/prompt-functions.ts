@@ -1,4 +1,5 @@
 import { logger } from '../../client-logger';
+import { shouldLog } from '../logger';
 import { wrapTextForClack, wrapTextForClackHint } from '../wrap-utils';
 import { getPromptProvider } from './prompt-config';
 import type {
@@ -48,9 +49,13 @@ const patchConsoleLog = () => {
         .join(' ');
 
       if (activeTaskLog) {
-        activeTaskLog.message(message);
+        if (shouldLog('info')) {
+          activeTaskLog.message(message);
+        }
       } else if (activeSpinner) {
-        activeSpinner.message(message);
+        if (shouldLog('info')) {
+          activeSpinner.message(message);
+        }
       } else {
         originalConsoleLog!(...args);
       }
@@ -113,15 +118,21 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
       start: (message?: string) => {
         activeSpinner = wrappedSpinner;
         patchConsoleLog();
-        spinnerInstance.start(message);
+        if (shouldLog('info')) {
+          spinnerInstance.start(message);
+        }
       },
       stop: (message?: string) => {
         activeSpinner = null;
         restoreConsoleLog();
-        spinnerInstance.stop(message);
+        if (shouldLog('info')) {
+          spinnerInstance.stop(message);
+        }
       },
       message: (text: string) => {
-        spinnerInstance.message(text);
+        if (shouldLog('info')) {
+          spinnerInstance.message(text);
+        }
       },
     };
 
@@ -146,7 +157,7 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
 };
 
 export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
-  if (isInteractiveTerminal()) {
+  if (isInteractiveTerminal() && shouldLog('info')) {
     const task = getPromptProvider().taskLog(options);
 
     // Wrap the task log methods to handle console.log patching
@@ -168,13 +179,13 @@ export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
         this.message(`\n${title}\n`);
         return {
           message: (message: string) => {
-            this.message(message);
+            task.message(wrapTextForClack(message));
           },
           success: (message: string) => {
-            this.success(message);
+            task.success(message);
           },
           error: (message: string) => {
-            this.error(message);
+            task.error(message);
           },
         };
       },
@@ -186,27 +197,29 @@ export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
 
     return wrappedTaskLog;
   } else {
+    const maybeLog = shouldLog('info') ? logger.log : (_: string) => {};
+
     return {
       message: (message: string) => {
-        logger.log(message);
+        maybeLog(message);
       },
       success: (message: string) => {
-        logger.log(message);
+        maybeLog(message);
       },
       error: (message: string) => {
-        logger.log(message);
+        maybeLog(message);
       },
       group: (title: string) => {
-        logger.log(`\n${title}\n`);
+        maybeLog(`\n${title}\n`);
         return {
           message: (message: string) => {
-            logger.log(message);
+            maybeLog(message);
           },
           success: (message: string) => {
-            logger.log(message);
+            maybeLog(message);
           },
           error: (message: string) => {
-            logger.log(message);
+            maybeLog(message);
           },
         };
       },

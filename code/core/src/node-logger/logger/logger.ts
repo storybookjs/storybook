@@ -7,19 +7,27 @@ import { CLI_COLORS } from './colors';
 import { logTracker } from './log-tracker';
 
 const createLogFunction =
-  (
-    clackFn: (message: string) => void,
-    consoleFn: (...args: any[]) => void,
+  <T extends (...args: any[]) => any>(
+    clackFn: T,
+    consoleFn: (...args: Parameters<T>) => void,
     cliColors?: (typeof CLI_COLORS)[keyof typeof CLI_COLORS]
   ) =>
   () =>
     isClackEnabled()
-      ? (message: string) => {
+      ? (...args: Parameters<T>) => {
+          const [message, ...rest] = args;
           const currentTaskLog = getCurrentTaskLog();
           if (currentTaskLog) {
-            currentTaskLog.message(wrapTextForClack(cliColors ? cliColors(message) : message));
+            currentTaskLog.message(
+              cliColors && typeof message === 'string' ? cliColors(message) : message
+            );
           } else {
-            clackFn(wrapTextForClack(message));
+            // If first parameter is a string, wrap; otherwise pass as-is
+            if (typeof message === 'string') {
+              (clackFn as T)(wrapTextForClack(message), ...rest);
+            } else {
+              (clackFn as T)(message, ...rest);
+            }
           }
         }
       : consoleFn;
@@ -101,21 +109,22 @@ const formatLogMessage = (args: any[]): string => {
 };
 
 // Higher-level abstraction for creating logging functions
-function createLogger(
+function createLogger<T extends (...args: any[]) => void>(
   level: LogLevel | 'prompt',
-  logFn: (message: string) => void,
+  logFn: T,
   prefix?: string
 ) {
-  return function logFunction(...args: any[]) {
-    const message = formatLogMessage(args);
-    logTracker.addLog(level, message);
+  return function logFunction(...args: Parameters<T>) {
+    const [message, ...rest] = args;
+    const msg = formatLogMessage([message]);
+    logTracker.addLog(level, msg);
 
     if (level === 'prompt') {
       level = 'info';
     }
     if (shouldLog(level)) {
-      const formattedMessage = prefix ? `${prefix} ${message}` : message;
-      logFn(formattedMessage);
+      const formattedMessage = prefix ? `${prefix} ${msg}` : message;
+      logFn(formattedMessage, ...rest); // in practice, logFn typically expects a string
     }
   };
 }
@@ -135,30 +144,26 @@ export const debug = createLogger(
   '[DEBUG]'
 );
 
+type LogFunctionArgs<T extends (...args: any[]) => any> = Parameters<ReturnType<T>>;
+
 /** For general information that should always be visible to the user */
-export const log = createLogger('info', (...args) => {
-  return LOG_FUNCTIONS.log()(...args);
-});
+export const log = createLogger('info', (...args: LogFunctionArgs<typeof LOG_FUNCTIONS.log>) =>
+  LOG_FUNCTIONS.log()(...args)
+);
 /** For general information that should catch the user's attention */
-export const info = createLogger('info', (...args) => {
-  return LOG_FUNCTIONS.info()(...args);
-});
-export const warn = createLogger('warn', (...args) => {
-  return LOG_FUNCTIONS.warn()(...args);
-});
-export const error = createLogger('error', (...args) => {
-  return LOG_FUNCTIONS.error()(...args);
-});
+export const info = createLogger('info', (...args: LogFunctionArgs<typeof LOG_FUNCTIONS.info>) =>
+  LOG_FUNCTIONS.info()(...args)
+);
+export const warn = createLogger('warn', (...args: LogFunctionArgs<typeof LOG_FUNCTIONS.warn>) =>
+  LOG_FUNCTIONS.warn()(...args)
+);
+export const error = createLogger('error', (...args: LogFunctionArgs<typeof LOG_FUNCTIONS.error>) =>
+  LOG_FUNCTIONS.error()(...args)
+);
 
 type BoxOptions = {
-  borderStyle?: 'round' | 'none';
-  contentPadding?: number;
   title?: string;
-  titleAlign?: 'left' | 'center' | 'right';
-  borderColor?: string;
-  backgroundColor?: string;
-  width?: number | 'auto';
-};
+} & clack.BoxOptions;
 
 export const logBox = (message: string, { title, ...options }: BoxOptions = {}) => {
   if (shouldLog('info')) {
@@ -177,7 +182,7 @@ export const logBox = (message: string, { title, ...options }: BoxOptions = {}) 
 export const intro = (message: string) => {
   logTracker.addLog('info', message);
   if (shouldLog('info')) {
-    console.log('\n');
+    console.log('');
     LOG_FUNCTIONS.intro()(message);
   }
 };
@@ -186,7 +191,6 @@ export const outro = (message: string) => {
   logTracker.addLog('info', message);
   if (shouldLog('info')) {
     LOG_FUNCTIONS.outro()(message);
-    console.log('\n');
   }
 };
 

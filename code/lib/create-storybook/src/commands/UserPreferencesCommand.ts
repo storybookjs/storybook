@@ -7,6 +7,7 @@ import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/ty
 import { Feature } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
+import { dedent } from 'ts-dedent';
 
 import type { DependencyCollector } from '../dependency-collector';
 import type { CommandOptions } from '../generators/types';
@@ -28,7 +29,7 @@ export interface UserPreferencesResult {
 export interface UserPreferencesOptions {
   skipPrompt?: boolean;
   yes?: boolean;
-  framework: SupportedFramework | undefined;
+  framework: SupportedFramework | null;
   builder: SupportedBuilder;
   projectType: ProjectType;
 }
@@ -172,6 +173,10 @@ export class UserPreferencesCommand {
     const features = new Set<Feature>();
 
     if (this.commandOptions.features) {
+      logger.warn(dedent`
+        Skipping feature validation since the following features were explicitly selected:
+        ${Array.from(this.commandOptions.features).join(', ')}
+      `);
       return new Set(this.commandOptions.features);
     }
 
@@ -193,7 +198,7 @@ export class UserPreferencesCommand {
   /** Validate test feature compatibility and prompt user if issues found */
   private async isTestFeatureAvailable(
     packageManager: JsPackageManager,
-    framework: SupportedFramework | undefined,
+    framework: SupportedFramework | null,
     builder: SupportedBuilder
   ): Promise<boolean> {
     const result = await this.featureService.validateTestFeatureCompatibility(

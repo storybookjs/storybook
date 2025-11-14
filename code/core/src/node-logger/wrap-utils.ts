@@ -1,6 +1,4 @@
 import { S_BAR } from '@clack/prompts';
-// eslint-disable-next-line depend/ban-dependencies
-import { execaSync } from 'execa';
 import { cyan, dim, reset } from 'picocolors';
 import wrapAnsi from 'wrap-ansi';
 
@@ -32,7 +30,7 @@ function getVisibleLength(str: string): number {
 }
 
 function getEnvFromTerminal(key: string): string {
-  return execaSync('echo', [`$${key}`], { shell: true }).stdout.trim();
+  return (process.env[key] || '').trim();
 }
 
 /**
@@ -62,8 +60,8 @@ function supportsHyperlinks(): boolean {
         // Most other modern terminals support hyperlinks
         return true;
     }
-  } catch (error) {
-    // If we can't execute shell commands, fall back to conservative default
+  } catch {
+    // If we can't access environment variables, fall back to conservative default
     return false;
   }
 }

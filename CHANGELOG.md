@@ -1,3 +1,38 @@
+## 10.0.7
+
+- ESLint: Only apply csf-strict rules on stories files - [#31963](https://github.com/storybookjs/storybook/pull/31963), thanks @cylewaitforit!
+- Next.js: Update SWC loader to support new wasm detection - [#33003](https://github.com/storybookjs/storybook/pull/33003), thanks @yannbf!
+
+## 10.0.6
+
+- CSF: Fix export interface declaration for NextPreview - [#32914](https://github.com/storybookjs/storybook/pull/32914), thanks @icopp!
+- Controls: Add range validation in Number Control - [#32539](https://github.com/storybookjs/storybook/pull/32539), thanks @ia319!
+- Fix: Export interface declaration for ReactMeta - [#32915](https://github.com/storybookjs/storybook/pull/32915), thanks @icopp!
+- Vitest Addon: Add support for Preact - [#32948](https://github.com/storybookjs/storybook/pull/32948), thanks @yannbf!
+
+## 10.0.5
+
+- Core: Add reentry guard to focus patch - [#32655](https://github.com/storybookjs/storybook/pull/32655), thanks @ia319!
+- Nextjs Vite: Update internal plugin to support `svgr` use cases - [#32957](https://github.com/storybookjs/storybook/pull/32957), thanks @yannbf!
+
+## 10.0.4
+
+- CLI: Fix issue with running Storybook after being initialized - [#32929](https://github.com/storybookjs/storybook/pull/32929), thanks @yannbf!
+- CRA: Fix `module` not defined in ESM - [#32940](https://github.com/storybookjs/storybook/pull/32940), thanks @ndelangen!
+
+## 10.0.3
+
+- Core: Better handling for TypeScript satisfies/as syntaxes - [#32891](https://github.com/storybookjs/storybook/pull/32891), thanks @yannbf!
+- Core: Fix wrong import to fix Yarn PnP support - [#32928](https://github.com/storybookjs/storybook/pull/32928), thanks @yannbf!
+- ESlint: Update `@storybook/experimental-nextjs-vite` in `no-renderer-packages` rule - [#32909](https://github.com/storybookjs/storybook/pull/32909), thanks @ndelangen!
+- React Native: Update withStorybook setup instructions - [#32919](https://github.com/storybookjs/storybook/pull/32919), thanks @dannyhw!
+
+## 10.0.2
+
+- CLI: Fix glob string formatting in csf-factories codemod - [#32880](https://github.com/storybookjs/storybook/pull/32880), thanks @yannbf!
+- Core: Improve file path resolution on Windows - [#32893](https://github.com/storybookjs/storybook/pull/32893), thanks @yannbf!
+- Vite: Update `optimizeViteDeps` for addon-docs and addon-vitest - [#32881](https://github.com/storybookjs/storybook/pull/32881), thanks @ndelangen!
+
 ## 10.0.1
 
 - Presets: Fix incorrect imports - [#32875](https://github.com/storybookjs/storybook/pull/32875), thanks @ndelangen!

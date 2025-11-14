@@ -8,7 +8,6 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 // eslint-disable-next-line depend/ban-dependencies
 import execa from 'execa';
-import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from './generators/types';
 
@@ -123,16 +122,27 @@ export const scaffoldNewProject = async (
 
   if (!projectStrategy) {
     projectStrategy = await prompt.select({
-      message: dedent`
-        Empty directory detected:
-        Would you like to generate a new project from the following list?
-        Storybook supports many more frameworks and bundlers than listed below. If you don't see your preferred setup, you can still generate a project then rerun this command to add Storybook.
-      `,
-      options: Object.entries(SUPPORTED_PROJECTS).map(([key, value]) => ({
-        label: buildProjectDisplayNameForPrint(value),
-        value: key,
-      })),
+      message: 'Empty directory detected:',
+      options: [
+        ...Object.entries(SUPPORTED_PROJECTS).map(([key, value]) => ({
+          label: buildProjectDisplayNameForPrint(value),
+          value: key,
+        })),
+        {
+          label: 'Other',
+          value: 'other',
+          hint: 'To install Storybook on another framework, first generate a project with that framework and then rerun this command.',
+        },
+      ],
     });
+  }
+
+  if (projectStrategy === 'other') {
+    logger.warn(
+      'To install Storybook on another framework, first generate a project with that framework and then rerun this command.'
+    );
+    logger.outro('Exiting...');
+    process.exit(1);
   }
 
   const projectStrategyConfig = SUPPORTED_PROJECTS[projectStrategy];
@@ -167,7 +177,6 @@ export const scaffoldNewProject = async (
     spinner.message(`Executing ${createScript}`);
     await execa.command(createScript, {
       stdio: 'pipe',
-      shell: true,
       cwd: targetDir,
       cleanup: true,
     });
@@ -182,14 +191,14 @@ export const scaffoldNewProject = async (
     });
   }
 
+  spinner.stop(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
+
   if (!disableTelemetry) {
-    telemetry('scaffolded-empty', {
+    await telemetry('scaffolded-empty', {
       packageManager: packageManagerName,
       projectType: projectStrategy,
     });
   }
-
-  spinner.stop(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
 };
 
 const FILES_TO_IGNORE = [

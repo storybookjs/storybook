@@ -46,6 +46,8 @@ export * from './utils/scan-and-transform-files';
 export * from './utils/transform-imports';
 export * from '../shared/utils/module';
 export * from './utils/get-addon-names';
+export * from './utils/utils';
+export * from './utils/command';
 
 export { versions };
 

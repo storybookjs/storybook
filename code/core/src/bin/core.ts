@@ -25,6 +25,14 @@ addToGlobalContext('cliVersion', version);
  *
  * The dispatch CLI at ./dispatcher.ts routes commands to this core CLI.
  */
+
+const handleCommandFailure = async (logFilePath: string | boolean): Promise<never> => {
+  const logFile = await logTracker.writeToFile(logFilePath);
+  logger.log(`Storybook debug logs can be found at: ${logFile}`);
+  logger.outro('Storybook exited with an error');
+  process.exit(1);
+};
+
 const command = (name: string) =>
   program
     .command(name)
@@ -36,7 +44,10 @@ const command = (name: string) =>
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
     .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
-    .option('--write-logs', 'Write all debug logs to a file at the end of the run')
+    .option(
+      '--logfile [path]',
+      'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
+    )
     .hook('preAction', async (self) => {
       try {
         const options = self.opts();
@@ -44,7 +55,7 @@ const command = (name: string) =>
           logger.setLogLevel(options.loglevel);
         }
 
-        if (options.writeLogs) {
+        if (options.logfile) {
           logTracker.enableLogWriting();
         }
 
@@ -53,9 +64,9 @@ const command = (name: string) =>
         logger.error('Error loading global settings:\n' + String(e));
       }
     })
-    .hook('postAction', async () => {
+    .hook('postAction', async ({ getOptionValue }) => {
       if (logTracker.shouldWriteLogsToFile) {
-        const logFile = await logTracker.writeToFile();
+        const logFile = await logTracker.writeToFile(getOptionValue('logfile'));
         logger.outro(`Storybook debug logs can be found at: ${logFile}`);
       }
     });
@@ -119,7 +130,9 @@ command('dev')
       options.port = parseInt(`${options.port}`, 10);
     }
 
-    await dev({ ...options, packageJson }).catch(() => process.exit(1));
+    await dev({ ...options, packageJson }).catch(() => {
+      handleCommandFailure(options.logfile);
+    });
   });
 
 command('build')

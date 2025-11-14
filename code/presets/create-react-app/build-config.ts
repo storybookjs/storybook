@@ -4,7 +4,7 @@ const config: BuildEntries = {
   entries: {
     node: [
       {
-        exportEntries: ['./index'],
+        exportEntries: ['./index', './preset'],
         entryPoint: './src/index.ts',
         dts: false,
       },

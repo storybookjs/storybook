@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { JsPackageManagerFactory, invalidateProjectRootCache } from 'storybook/internal/common';
+import {
+  JsPackageManagerFactory,
+  PackageManagerName,
+  invalidateProjectRootCache,
+} from 'storybook/internal/common';
 
 import * as scaffoldModule from '../scaffold-new-project';
 import { PreflightCheckCommand } from './PreflightCheckCommand';
@@ -17,11 +21,13 @@ describe('PreflightCheckCommand', () => {
     mockPackageManager = {
       installDependencies: vi.fn(),
       latestVersion: vi.fn().mockResolvedValue('8.0.0'),
-      type: 'npm',
+      type: PackageManagerName.NPM,
     };
 
     vi.mocked(JsPackageManagerFactory.getPackageManager).mockReturnValue(mockPackageManager);
-    vi.mocked(JsPackageManagerFactory.getPackageManagerType).mockReturnValue('npm');
+    vi.mocked(JsPackageManagerFactory.getPackageManagerType).mockReturnValue(
+      PackageManagerName.NPM
+    );
     vi.mocked(scaffoldModule.scaffoldNewProject).mockResolvedValue(undefined);
     vi.mocked(invalidateProjectRootCache).mockImplementation(() => {});
     vi.clearAllMocks();
@@ -70,7 +76,9 @@ describe('PreflightCheckCommand', () => {
 
     it('should use npm instead of yarn1 for empty directory', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(true);
-      vi.mocked(JsPackageManagerFactory.getPackageManagerType).mockReturnValue('yarn1');
+      vi.mocked(JsPackageManagerFactory.getPackageManagerType).mockReturnValue(
+        PackageManagerName.YARN1
+      );
 
       await command.execute({ force: false, skipInstall: true } as any);
 

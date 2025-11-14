@@ -18,8 +18,6 @@ export const printErrorDetails = (error: any): void => {
   } else if (error.compilation?.errors) {
     error.compilation.errors.forEach((e: any) => logger.log(e));
   }
-
-  logger.line();
 };
 
 export const errorSummary = (error: any): string => {

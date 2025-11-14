@@ -1,13 +1,8 @@
-import {
-  ProjectType,
-  SupportedLanguage,
-  copyTemplateFiles,
-  getBabelDependencies,
-} from 'storybook/internal/cli';
+import { ProjectType, copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
-import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
@@ -16,10 +11,12 @@ export default defineGeneratorModule({
     projectType: ProjectType.REACT_NATIVE,
     renderer: SupportedRenderer.REACT,
     builderOverride: SupportedBuilder.WEBPACK5,
+    framework: null,
   },
   configure: async (packageManager, context) => {
     const missingReactDom = !packageManager.getDependencyVersion('react-dom');
     const reactVersion = packageManager.getDependencyVersion('react');
+    const dependencyCollector = context.dependencyCollector;
 
     const peerDependencies = [
       'react-native-safe-area-context',
@@ -49,8 +46,7 @@ export default defineGeneratorModule({
       ...(missingReactDom && reactVersion ? [`react-dom@${reactVersion}`] : []),
     ];
 
-    // React Native handles dependencies directly (not via baseGenerator)
-    await packageManager.addDependencies({ type: 'devDependencies' }, packages);
+    dependencyCollector.addDependencies(packages);
 
     // Add React Native specific scripts
     packageManager.addScripts({
@@ -73,14 +69,15 @@ export default defineGeneratorModule({
       // Signal to skip baseGenerator by returning minimal config
       storybookConfigFolder,
       skipGenerator: true,
+      storybookCommand: null,
       shouldRunDev: false, // React Native needs additional manual steps to configure the project
     };
   },
   postConfigure: ({ packageManager }) => {
     logger.log(dedent`
-      ${CLI_COLORS.warning('React Native (RN) Storybook installation is not 100% automated.')}
+      ${CLI_COLORS.warning('The Storybook for React Native installation is not 100% automated.')}
   
-      To run RN Storybook, you will need to:
+      To run Storybook for React Native, you will need to:
   
       1. Replace the contents of your app entry with the following
   
@@ -88,13 +85,13 @@ export default defineGeneratorModule({
   
       2. Wrap your metro config with the withStorybook enhancer function like this:
   
-      ${CLI_COLORS.info(' ' + "const withStorybook = require('@storybook/react-native/metro/withStorybook');" + ' ')}
+      ${CLI_COLORS.info(' ' + "const { withStorybook } = require('@storybook/react-native/metro/withStorybook');" + ' ')}
       ${CLI_COLORS.info(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
   
       For more details go to:
       https://github.com/storybookjs/react-native#getting-started
   
-      Then to start RN Storybook, run:
+      Then to start Storybook for React Native, run:
   
       ${CLI_COLORS.cta(' ' + packageManager.getRunCommand('start') + ' ')}
     `);

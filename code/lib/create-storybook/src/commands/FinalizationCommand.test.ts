@@ -2,10 +2,8 @@ import fs from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ProjectType } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import { Feature } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 
@@ -20,7 +18,7 @@ describe('FinalizationCommand', () => {
   let command: FinalizationCommand;
 
   beforeEach(() => {
-    command = new FinalizationCommand();
+    command = new FinalizationCommand(undefined);
 
     vi.mocked(getProjectRoot).mockReturnValue('/test/project');
     vi.mocked(logger.step).mockImplementation(() => {});
@@ -33,14 +31,10 @@ describe('FinalizationCommand', () => {
   describe('execute', () => {
     it('should update gitignore and print success message', async () => {
       vi.mocked(find.up).mockReturnValue('/test/project/.gitignore');
-      vi.mocked(fs.readFile).mockResolvedValue('node_modules/\n' as any);
+      vi.mocked(fs.readFile).mockResolvedValue('node_modules/\n');
       vi.mocked(fs.appendFile).mockResolvedValue(undefined);
 
-      const selectedFeatures = new Set([Feature.DOCS, Feature.TEST]);
-
       await command.execute({
-        projectType: ProjectType.REACT,
-        selectedFeatures,
         storybookCommand: 'npm run storybook',
       });
 
@@ -49,17 +43,14 @@ describe('FinalizationCommand', () => {
         '\n*storybook.log\nstorybook-static\n'
       );
       expect(logger.step).toHaveBeenCalledWith(expect.stringContaining('successfully installed'));
-      expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('docs, test'));
+      expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('npm run storybook'));
+      expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('storybook.js.org'));
     });
 
     it('should not update gitignore if file not found', async () => {
       vi.mocked(find.up).mockReturnValue(undefined);
 
-      const selectedFeatures = new Set([]);
-
       await command.execute({
-        projectType: ProjectType.VUE3,
-        selectedFeatures,
         storybookCommand: 'yarn storybook',
       });
 
@@ -72,11 +63,7 @@ describe('FinalizationCommand', () => {
       vi.mocked(find.up).mockReturnValue('/other/path/.gitignore');
       vi.mocked(getProjectRoot).mockReturnValue('/test/project');
 
-      const selectedFeatures = new Set([]);
-
       await command.execute({
-        projectType: ProjectType.REACT,
-        selectedFeatures,
         storybookCommand: 'npm run storybook',
       });
 
@@ -86,15 +73,9 @@ describe('FinalizationCommand', () => {
 
     it('should not add entries that already exist in gitignore', async () => {
       vi.mocked(find.up).mockReturnValue('/test/project/.gitignore');
-      vi.mocked(fs.readFile).mockResolvedValue(
-        'node_modules/\n*storybook.log\nstorybook-static\n' as any
-      );
-
-      const selectedFeatures = new Set([]);
+      vi.mocked(fs.readFile).mockResolvedValue('node_modules/\n*storybook.log\nstorybook-static\n');
 
       await command.execute({
-        projectType: ProjectType.REACT,
-        selectedFeatures,
         storybookCommand: 'npm run storybook',
       });
 
@@ -103,14 +84,10 @@ describe('FinalizationCommand', () => {
 
     it('should add only missing entries to gitignore', async () => {
       vi.mocked(find.up).mockReturnValue('/test/project/.gitignore');
-      vi.mocked(fs.readFile).mockResolvedValue('node_modules/\n*storybook.log\n' as any);
+      vi.mocked(fs.readFile).mockResolvedValue('node_modules/\n*storybook.log\n');
       vi.mocked(fs.appendFile).mockResolvedValue(undefined);
 
-      const selectedFeatures = new Set([]);
-
       await command.execute({
-        projectType: ProjectType.REACT,
-        selectedFeatures,
         storybookCommand: 'npm run storybook',
       });
 
@@ -120,44 +97,10 @@ describe('FinalizationCommand', () => {
       );
     });
 
-    it('should print features as "none" when no features selected', async () => {
-      vi.mocked(find.up).mockReturnValue(undefined);
-
-      const selectedFeatures = new Set([]);
-
-      await command.execute({
-        projectType: ProjectType.REACT,
-        selectedFeatures,
-        storybookCommand: 'npm run storybook',
-      });
-
-      expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('Additional features: none'));
-    });
-
-    it('should print all selected features', async () => {
-      vi.mocked(find.up).mockReturnValue(undefined);
-
-      const selectedFeatures = new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING]);
-
-      await command.execute({
-        projectType: ProjectType.NEXTJS,
-        selectedFeatures,
-        storybookCommand: 'npm run storybook',
-      });
-
-      expect(logger.log).toHaveBeenCalledWith(
-        expect.stringContaining('Additional features: docs, test, onboarding')
-      );
-    });
-
     it('should include storybook command in output', async () => {
       vi.mocked(find.up).mockReturnValue(undefined);
 
-      const selectedFeatures = new Set([]);
-
       await command.execute({
-        projectType: ProjectType.ANGULAR,
-        selectedFeatures,
         storybookCommand: 'ng run my-app:storybook',
       });
 

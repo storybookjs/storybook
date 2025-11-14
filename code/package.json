@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "10.1.0-alpha.0",
+  "version": "10.1.0-alpha.10",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -215,6 +215,9 @@
     "vite-plugin-inspect": "^11.0.0",
     "vitest": "^3.2.4",
     "wait-on": "^8.0.3"
+  },
+  "devDependencies": {
+    "react-popper-tooltip": "^4.4.2"
   },
   "dependenciesMeta": {
     "ejs": {

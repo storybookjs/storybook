@@ -14,12 +14,12 @@ export const getApplicationFilesCountUncached = async (basePath: string) => {
   ]);
 
   const globs = bothCasesNameMatches.flatMap((match) =>
-    extensions.map((extension) => `"${basePath}${sep}*${match}*.${extension}"`)
+    extensions.map((extension) => `${basePath}${sep}*${match}*.${extension}`)
   );
 
   try {
     const command = `git ls-files -- ${globs.join(' ')}`;
-    return await execCommandCountLines(command);
+    return execCommandCountLines(command);
   } catch {
     return undefined;
   }

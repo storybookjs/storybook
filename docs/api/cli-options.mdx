@@ -196,7 +196,7 @@ Options include:
 | `--debug`                | Outputs more logs in the CLI to assist debugging.<br />`storybook upgrade --debug`                                                                                                                |
 | `--disable-telemetry`    | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook upgrade --disable-telemetry`                                               |
 | `--enable-crash-reports` | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook upgrade --enable-crash-reports` |
-| `--write-logs`           | Write all debug logs to a file at the end of the run.<br />`storybook upgrade --write-logs`                                                                                                       |
+| `-logfile [path]`       | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided.<br />`storybook upgrade --logfile /tmp/debug-storybook.log`         |
 | `--loglevel <level>`     | Define log level: `debug`, `error`, `info`, `silent`, `trace`, or `warn` (default: `info`).<br />`storybook upgrade --loglevel debug`                                                             |
 
 ### `migrate`

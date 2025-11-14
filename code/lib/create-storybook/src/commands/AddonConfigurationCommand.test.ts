@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import type { Feature } from 'storybook/internal/types';
 
@@ -68,12 +68,13 @@ describe('AddonConfigurationCommand', () => {
     it('should skip configuration when no addons are provided', async () => {
       const addons: string[] = [];
       const options = {
-        packageManager: 'npm' as const,
+        packageManager: PackageManagerName.NPM,
         features: new Set<Feature>(),
       };
 
       const result = await command.execute({
         packageManager: mockPackageManager,
+        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
         options,
@@ -87,13 +88,14 @@ describe('AddonConfigurationCommand', () => {
     it('should configure test addons when test feature is enabled', async () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
       const options = {
-        packageManager: 'npm' as const,
+        packageManager: PackageManagerName.NPM,
         features: new Set<Feature>(),
         yes: true,
       };
 
       const result = await command.execute({
         packageManager: mockPackageManager,
+        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
         options,
@@ -109,7 +111,7 @@ describe('AddonConfigurationCommand', () => {
     it('should handle configuration errors gracefully', async () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
       const options = {
-        packageManager: 'npm' as const,
+        packageManager: PackageManagerName.NPM,
         features: new Set<Feature>(),
       };
       const error = new Error('Configuration failed');
@@ -118,6 +120,7 @@ describe('AddonConfigurationCommand', () => {
 
       const result = await command.execute({
         packageManager: mockPackageManager,
+        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
         options,
@@ -125,20 +128,21 @@ describe('AddonConfigurationCommand', () => {
 
       expect(result.status).toBe('failed');
       expect(mockTask.error).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to configure test addons')
+        expect.stringContaining('Failed to configure addons')
       );
     });
 
     it('should complete successfully with valid configuration', async () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
       const options = {
-        packageManager: 'npm' as const,
+        packageManager: PackageManagerName.NPM,
         features: new Set<Feature>(),
         yes: true,
       };
 
       const result = await command.execute({
         packageManager: mockPackageManager,
+        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
         options,

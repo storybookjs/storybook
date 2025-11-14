@@ -41,7 +41,7 @@ export class FeatureCompatibilityService {
    */
   async validateTestFeatureCompatibility(
     packageManager: JsPackageManager,
-    framework: SupportedFramework | undefined,
+    framework: SupportedFramework | null | undefined,
     builder: SupportedBuilder,
     directory: string
   ): Promise<FeatureCompatibilityResult> {

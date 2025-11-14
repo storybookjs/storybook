@@ -1,7 +1,8 @@
 import { ProjectType } from 'storybook/internal/cli';
 import { type JsPackageManager } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
+import { logTracker, logger } from 'storybook/internal/node-logger';
+import { ErrorCollector } from 'storybook/internal/telemetry';
 
 // eslint-disable-next-line depend/ban-dependencies
 import execa from 'execa';
@@ -23,7 +24,7 @@ import { FeatureCompatibilityService } from './services/FeatureCompatibilityServ
 import { TelemetryService } from './services/TelemetryService';
 
 /**
- * Main entry point for Storybook initialization (refactored)
+ * Main entry point for Storybook initialization
  *
  * This is a clean, command-based orchestration that replaces the monolithic 986-line implementation
  * with a modular, testable approach.
@@ -34,7 +35,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       shouldOnboard: boolean;
       projectType: ProjectType;
       packageManager: JsPackageManager;
-      storybookCommand?: string;
+      storybookCommand?: string | null;
     }
   | { shouldRunDev: false }
 > {
@@ -50,7 +51,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const { packageManager } = await executePreflightCheck(options);
 
   // Step 2: Detect project type
-  const projectType = await executeProjectDetection(packageManager, options);
+  const { projectType, language } = await executeProjectDetection(packageManager, options);
 
   // Step 3: Detect framework, renderer, and builder
   const { framework, builder, renderer } = await executeFrameworkDetection(
@@ -79,10 +80,11 @@ export async function doInitiate(options: CommandOptions): Promise<
       options,
       dependencyCollector,
       selectedFeatures,
+      language,
     });
 
   // Step 6: Install all dependencies in a single operation
-  await executeDependencyInstallation({
+  const dependencyInstallationResult = await executeDependencyInstallation({
     packageManager,
     dependencyCollector,
     skipInstall: !!options.skipInstall,
@@ -97,13 +99,13 @@ export async function doInitiate(options: CommandOptions): Promise<
     packageManager,
     addons: extraAddons,
     configDir,
+    dependencyInstallationResult,
     options,
   });
 
   // Step 8: Print final summary
   await executeFinalization({
-    projectType,
-    selectedFeatures,
+    logfile: options.logfile,
     storybookCommand,
   });
 
@@ -111,7 +113,11 @@ export async function doInitiate(options: CommandOptions): Promise<
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
 
   return {
-    shouldRunDev: !!options.dev && !options.skipInstall && shouldRunDev !== false,
+    shouldRunDev:
+      !!options.dev &&
+      !options.skipInstall &&
+      shouldRunDev !== false &&
+      ErrorCollector.getErrors().length === 0,
     shouldOnboard: newUser,
     projectType,
     packageManager,
@@ -119,13 +125,17 @@ export async function doInitiate(options: CommandOptions): Promise<
   };
 }
 
-const handleCommandFailure = async (): Promise<never> => {
-  const logFile = await logTracker.writeToFile();
+const handleCommandFailure = async (logFilePath: string | boolean | undefined): Promise<never> => {
+  const logFile = await logTracker.writeToFile(logFilePath);
   logger.error('Storybook encountered an error during initialization');
   logger.log(`Storybook debug logs can be found at: ${logFile}`);
   logger.outro('Storybook exited with an error');
   process.exit(1);
 };
+
+// cli command -> ctrl c -> exit 0
+// process.on('SIGINT', () => {
+// })
 
 /** Main initiate function with telemetry wrapper */
 export async function initiate(options: CommandOptions): Promise<void> {
@@ -136,15 +146,15 @@ export async function initiate(options: CommandOptions): Promise<void> {
       printError: (err) => !err.handled && logger.error(err),
     },
     async () => {
-      logger.intro(CLI_COLORS.info(`Initializing Storybook`));
-
       const result = await doInitiate(options);
 
-      logger.outro('Initiation completed');
+      logger.outro('');
 
       return result;
     }
-  ).catch(handleCommandFailure);
+  ).catch(() => {
+    handleCommandFailure(options.logfile);
+  });
 
   if (initiateResult?.shouldRunDev) {
     await runStorybookDev(initiateResult);
@@ -155,7 +165,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
 async function runStorybookDev(result: {
   projectType: ProjectType;
   packageManager: JsPackageManager;
-  storybookCommand?: string;
+  storybookCommand?: string | null;
   shouldOnboard: boolean;
 }): Promise<void> {
   const { projectType, packageManager, storybookCommand, shouldOnboard } = result;
@@ -168,6 +178,10 @@ async function runStorybookDev(result: {
     const supportsOnboarding = FeatureCompatibilityService.supportsOnboarding(projectType);
 
     const flags = [];
+
+    if (packageManager.type === 'npm') {
+      flags.push('--silent');
+    }
 
     // npm needs extra -- to pass flags to the command
     // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`

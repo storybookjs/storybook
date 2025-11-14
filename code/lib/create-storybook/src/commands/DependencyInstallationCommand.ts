@@ -1,9 +1,9 @@
+import { AddonVitestService } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { ErrorCollector } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 
-import { getAddonA11yDependencies } from '../addon-dependencies/addon-a11y';
-import { getAddonVitestDependencies } from '../addon-dependencies/addon-vitest';
 import type { DependencyCollector } from '../dependency-collector';
 
 type DependencyInstallationCommandParams = {
@@ -22,17 +22,20 @@ type DependencyInstallationCommandParams = {
  * - Handle skipInstall option
  */
 export class DependencyInstallationCommand {
-  constructor(private dependencyCollector: DependencyCollector) {}
+  constructor(
+    private dependencyCollector: DependencyCollector,
+    private addonVitestService = new AddonVitestService()
+  ) {}
   /** Execute dependency installation */
   async execute({
     packageManager,
     skipInstall = false,
     selectedFeatures,
-  }: DependencyInstallationCommandParams): Promise<void> {
+  }: DependencyInstallationCommandParams): Promise<{ status: 'success' | 'failed' }> {
     await this.collectAddonDependencies(packageManager, selectedFeatures);
 
     if (!this.dependencyCollector.hasPackages() && skipInstall) {
-      return;
+      return { status: 'success' };
     }
 
     const { dependencies, devDependencies } = this.dependencyCollector.getAllPackages();
@@ -65,8 +68,15 @@ export class DependencyInstallationCommand {
     task.success('Dependencies added to package.json', { showLog: true });
 
     if (!skipInstall && this.dependencyCollector.hasPackages()) {
-      await packageManager.installDependencies();
+      try {
+        await packageManager.installDependencies();
+      } catch (err) {
+        ErrorCollector.addError(err);
+        return { status: 'failed' };
+      }
     }
+
+    return { status: 'success' };
   }
 
   /** Collect addon dependencies without installing them */
@@ -76,12 +86,9 @@ export class DependencyInstallationCommand {
   ): Promise<void> {
     try {
       if (selectedFeatures.has(Feature.TEST)) {
-        const vitestDeps = await getAddonVitestDependencies(packageManager);
+        const vitestDeps = await this.addonVitestService.collectDependencies(packageManager);
         this.dependencyCollector.addDevDependencies(vitestDeps);
       }
-
-      const a11yDeps = getAddonA11yDependencies();
-      this.dependencyCollector.addDevDependencies(a11yDeps);
     } catch (err) {
       logger.warn(`Failed to collect addon dependencies: ${err}`);
     }

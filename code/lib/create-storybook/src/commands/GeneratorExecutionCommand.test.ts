@@ -1,36 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProjectType } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import {
   Feature,
   SupportedBuilder,
   SupportedFramework,
+  SupportedLanguage,
   SupportedRenderer,
 } from 'storybook/internal/types';
 
-import * as addonA11y from '../addon-dependencies/addon-a11y';
-import * as addonVitest from '../addon-dependencies/addon-vitest';
 import { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import { baseGenerator } from '../generators/baseGenerator';
+import { AddonService } from '../services';
 import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
 import { GeneratorExecutionCommand } from './GeneratorExecutionCommand';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../generators/GeneratorRegistry', { spy: true });
-vi.mock('../generators/baseGenerator', () => ({
-  baseGenerator: vi.fn().mockResolvedValue({
-    frameworkPackage: '@storybook/react-vite',
-    rendererPackage: '@storybook/react',
-    builderPackage: '@storybook/builder-vite',
-    configDir: '.storybook',
-    success: true,
-  }),
-}));
-vi.mock('../addon-dependencies/addon-a11y', { spy: true });
-vi.mock('../addon-dependencies/addon-vitest', { spy: true });
+vi.mock('../generators/baseGenerator', { spy: true });
+vi.mock('../services', { spy: true });
 
 describe('GeneratorExecutionCommand', () => {
   let command: GeneratorExecutionCommand;
@@ -45,13 +36,21 @@ describe('GeneratorExecutionCommand', () => {
     configure: ReturnType<typeof vi.fn>;
   };
   let mockFrameworkInfo: FrameworkDetectionResult;
+  let mockAddonService: { getAddonsForFeatures: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     dependencyCollector = new DependencyCollector();
-    command = new GeneratorExecutionCommand(dependencyCollector);
+    mockAddonService = {
+      getAddonsForFeatures: vi.fn().mockReturnValue([]),
+    };
+    vi.mocked(AddonService).mockImplementation(
+      () => mockAddonService as unknown as InstanceType<typeof AddonService>
+    );
     mockPackageManager = {
       getRunCommand: vi.fn().mockReturnValue('npm run storybook'),
     } as unknown as JsPackageManager;
+
+    command = new GeneratorExecutionCommand(dependencyCollector, mockPackageManager);
 
     mockFrameworkInfo = {
       renderer: SupportedRenderer.REACT,
@@ -73,12 +72,12 @@ describe('GeneratorExecutionCommand', () => {
     };
 
     vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
-    vi.mocked(addonVitest.getAddonVitestDependencies).mockResolvedValue([
-      'vitest',
-      '@vitest/browser',
-    ]);
-    vi.mocked(addonA11y.getAddonA11yDependencies).mockReturnValue([]);
     vi.mocked(logger.warn).mockImplementation(() => {});
+    vi.mocked(baseGenerator).mockResolvedValue({
+      configDir: '.storybook',
+      storybookCommand: undefined,
+      shouldRunDev: undefined,
+    });
 
     vi.clearAllMocks();
   });
@@ -86,16 +85,22 @@ describe('GeneratorExecutionCommand', () => {
   describe('execute', () => {
     it('should execute generator with all features', async () => {
       const selectedFeatures = new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING]);
+      mockAddonService.getAddonsForFeatures.mockReturnValue([
+        '@chromatic-com/storybook',
+        '@storybook/addon-vitest',
+        '@storybook/addon-docs',
+        '@storybook/addon-onboarding',
+      ]);
       const options = {
         skipInstall: false,
         features: selectedFeatures,
-        packageManager: 'npm' as const,
+        packageManager: PackageManagerName.NPM,
       };
 
       await command.execute({
         projectType: ProjectType.REACT,
-        packageManager: mockPackageManager,
         frameworkInfo: mockFrameworkInfo,
+        language: SupportedLanguage.TYPESCRIPT,
         options,
         selectedFeatures,
       });
@@ -103,6 +108,7 @@ describe('GeneratorExecutionCommand', () => {
       expect(generatorRegistry.get).toHaveBeenCalledWith(ProjectType.REACT);
       expect(mockGenerator.configure).toHaveBeenCalled();
       expect(baseGenerator).toHaveBeenCalled();
+      expect(mockAddonService.getAddonsForFeatures).toHaveBeenCalledWith(selectedFeatures);
     });
 
     it('should throw error if generator not found', async () => {
@@ -110,14 +116,14 @@ describe('GeneratorExecutionCommand', () => {
       const selectedFeatures = new Set([]);
       const options = {
         features: selectedFeatures,
-        packageManager: 'npm' as const,
+        packageManager: PackageManagerName.NPM,
       };
 
       await expect(
         command.execute({
           projectType: ProjectType.UNSUPPORTED,
-          packageManager: mockPackageManager,
           frameworkInfo: mockFrameworkInfo,
+          language: SupportedLanguage.TYPESCRIPT,
           options,
           selectedFeatures,
         })
@@ -126,6 +132,12 @@ describe('GeneratorExecutionCommand', () => {
 
     it('should pass correct options to generator', async () => {
       const selectedFeatures = new Set([Feature.DOCS, Feature.TEST, Feature.A11Y]);
+      mockAddonService.getAddonsForFeatures.mockReturnValue([
+        '@chromatic-com/storybook',
+        '@storybook/addon-vitest',
+        '@storybook/addon-a11y',
+        '@storybook/addon-docs',
+      ]);
       const options = {
         skipInstall: true,
         builder: SupportedBuilder.VITE,
@@ -133,13 +145,13 @@ describe('GeneratorExecutionCommand', () => {
         usePnp: true,
         yes: true,
         features: selectedFeatures,
-        packageManager: 'npm' as const,
+        packageManager: PackageManagerName.NPM,
       };
 
       await command.execute({
         projectType: ProjectType.VUE3,
-        packageManager: mockPackageManager,
         frameworkInfo: mockFrameworkInfo,
+        language: SupportedLanguage.TYPESCRIPT,
         options,
         selectedFeatures,
       });
@@ -176,6 +188,7 @@ describe('GeneratorExecutionCommand', () => {
           extraPackages: [],
         })
       );
+      expect(mockAddonService.getAddonsForFeatures).toHaveBeenCalledWith(selectedFeatures);
     });
   });
 });

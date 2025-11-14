@@ -22,8 +22,11 @@ export const frameworkToRenderer: Record<
   [SupportedFramework.WEB_COMPONENTS_VITE]: SupportedRenderer.WEB_COMPONENTS,
   [SupportedFramework.REACT_RSBUILD]: SupportedRenderer.REACT,
   [SupportedFramework.VUE3_RSBUILD]: SupportedRenderer.VUE3,
+  [SupportedFramework.HTML_RSBUILD]: SupportedRenderer.HTML,
+  [SupportedFramework.WEB_COMPONENTS_RSBUILD]: SupportedRenderer.WEB_COMPONENTS,
   [SupportedFramework.REACT_NATIVE_WEB_VITE]: SupportedRenderer.REACT,
-  [SupportedFramework.NUXT]: SupportedRenderer.REACT,
+  [SupportedFramework.NUXT]: SupportedRenderer.VUE3,
+
   // renderers
   [SupportedRenderer.HTML]: SupportedRenderer.HTML,
   [SupportedRenderer.PREACT]: SupportedRenderer.PREACT,
@@ -51,9 +54,11 @@ export const frameworkToBuilder: Record<SupportedFramework, SupportedBuilder> = 
   [SupportedFramework.SVELTEKIT]: SupportedBuilder.VITE,
   [SupportedFramework.VUE3_VITE]: SupportedBuilder.VITE,
   [SupportedFramework.WEB_COMPONENTS_VITE]: SupportedBuilder.VITE,
-  [SupportedFramework.QWIK]: SupportedBuilder.WEBPACK5,
-  [SupportedFramework.SOLID]: SupportedBuilder.WEBPACK5,
+  [SupportedFramework.QWIK]: SupportedBuilder.VITE,
+  [SupportedFramework.SOLID]: SupportedBuilder.VITE,
   [SupportedFramework.NUXT]: SupportedBuilder.VITE,
   [SupportedFramework.REACT_RSBUILD]: SupportedBuilder.RSBUILD,
   [SupportedFramework.VUE3_RSBUILD]: SupportedBuilder.RSBUILD,
+  [SupportedFramework.HTML_RSBUILD]: SupportedBuilder.RSBUILD,
+  [SupportedFramework.WEB_COMPONENTS_RSBUILD]: SupportedBuilder.RSBUILD,
 };

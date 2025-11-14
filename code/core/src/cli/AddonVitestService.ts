@@ -5,6 +5,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import type { CallExpression } from '@babel/types';
 import * as find from 'empathic/find';
@@ -21,7 +22,7 @@ type Result = {
 export interface AddonVitestCompatibilityOptions {
   packageManager: JsPackageManager;
   builder?: SupportedBuilder;
-  framework?: SupportedFramework;
+  framework?: SupportedFramework | null;
   projectRoot?: string;
 }
 
@@ -41,6 +42,7 @@ export class AddonVitestService {
     SupportedFramework.REACT_VITE,
     SupportedFramework.SVELTE_VITE,
     SupportedFramework.VUE3_VITE,
+    SupportedFramework.PREACT_VITE,
     SupportedFramework.HTML_VITE,
     SupportedFramework.WEB_COMPONENTS_VITE,
     SupportedFramework.SVELTEKIT,
@@ -124,7 +126,7 @@ export class AddonVitestService {
         : await (async () => {
             logger.log(dedent`
             Playwright browser binaries are necessary for @storybook/addon-vitest. The download can take some time. If you don't want to wait, you can skip the installation and run the following command manually later:
-            ${CLI_COLORS.cta(playwrightCommand.join(' '))}
+            ${CLI_COLORS.cta(`npx ${playwrightCommand.join(' ')}`)}
             `);
             return prompt.confirm({
               message: 'Do you want to install Playwright with Chromium now?',
@@ -134,26 +136,25 @@ export class AddonVitestService {
 
       if (shouldBeInstalled) {
         await prompt.executeTaskWithSpinner(
-          () => {
-            const result = packageManager.executeCommand({
-              command: 'npx',
+          (signal) =>
+            packageManager.runPackageCommand({
               args: playwrightCommand,
-              killSignal: 'SIGINT',
-            });
-
-            return result;
-          },
+              stdio: ['inherit', 'pipe', 'pipe'],
+              signal,
+            }),
           {
             id: 'playwright-installation',
-            intro: 'Installing Playwright browser binaries',
-            error: `An error occurred while installing Playwright browser binaries. Please run the following command later: ${playwrightCommand.join(' ')}`,
+            intro: 'Installing Playwright browser binaries (Press "c" to abort)',
+            error: `An error occurred while installing Playwright browser binaries. Please run the following command later: npx ${playwrightCommand.join(' ')}`,
             success: 'Playwright browser binaries installed successfully',
+            abortable: true,
           }
         );
       } else {
         logger.warn('Playwright installation skipped');
       }
     } catch (e) {
+      ErrorCollector.addError(e);
       if (e instanceof Error) {
         errors.push(e.stack ?? e.message);
       } else {

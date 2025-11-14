@@ -1,7 +1,6 @@
 import { ProjectType } from 'storybook/internal/cli';
-import { SupportedRenderer } from 'storybook/internal/types';
+import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
-import { SupportedBuilder } from '../../../../../core/src/types/modules/builders';
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
 export default defineGeneratorModule({

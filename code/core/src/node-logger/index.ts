@@ -3,7 +3,6 @@ import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
 
 import * as newLogger from './logger/logger';
-import { isClackEnabled } from './prompts/prompt-config';
 
 export { prompt } from './prompts';
 export { logTracker } from './logger/log-tracker';
@@ -50,9 +49,7 @@ export const colors = {
 export const logger = {
   ...newLogger,
   verbose: (message: string): void => newLogger.debug(message),
-  /** Logs information that should catch the user's attention */
-  info: (message: string): void =>
-    isClackEnabled() ? newLogger.info(message) : npmLog.info('', message),
+
   line: (count = 1): void => newLogger.log(`${Array(count - 1).fill('\n')}`),
   /** For non-critical issues or warnings */
   warn: (message: string): void => newLogger.warn(message),
@@ -62,17 +59,17 @@ export const logger = {
     npmLog.level = level;
     newLogger.setLogLevel(level);
   },
-  /** Logs an error */
-  error: (message: Error | string): void => {
+  error: (message: unknown): void => {
     let msg: string;
     if (message instanceof Error && message.stack) {
-      msg = message.stack.toString();
-    } else {
+      msg = message.stack.toString().replace(message.toString(), colors.red(message.toString()));
+    } else if (typeof message === 'string') {
       msg = message.toString();
+    } else {
+      msg = String(message);
     }
 
-    newLogger.debug(msg);
-    newLogger.error(message.toString().replaceAll(process.cwd(), '.'));
+    newLogger.error(msg.replaceAll(process.cwd(), '.'));
   },
 };
 

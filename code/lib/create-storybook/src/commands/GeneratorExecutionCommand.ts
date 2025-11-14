@@ -1,6 +1,6 @@
-import type { ProjectType, SupportedLanguage } from 'storybook/internal/cli';
+import type { ProjectType } from 'storybook/internal/cli';
 import { type JsPackageManager } from 'storybook/internal/common';
-import type { Feature } from 'storybook/internal/types';
+import { type Feature, type SupportedLanguage } from 'storybook/internal/types';
 
 import type { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
@@ -20,7 +20,7 @@ export type GeneratorExecutionResult = (
 
 type ExecuteProjectGeneratorOptions = {
   projectType: ProjectType;
-  packageManager: JsPackageManager;
+  language: SupportedLanguage;
   frameworkInfo: FrameworkDetectionResult;
   options: CommandOptions;
   selectedFeatures: Set<Feature>;
@@ -40,23 +40,24 @@ export class GeneratorExecutionCommand {
   /** Execute generator for the detected project type */
   constructor(
     private readonly dependencyCollector: DependencyCollector,
+    private readonly jsPackageManager: JsPackageManager,
     private readonly addonService = new AddonService()
   ) {}
 
   async execute({
     projectType,
     options,
-    packageManager,
     frameworkInfo,
     selectedFeatures,
+    language,
   }: ExecuteProjectGeneratorOptions) {
     // Get and execute generator (supports both old and new style)
     const generatorResult = await this.executeProjectGenerator({
       projectType,
-      packageManager,
       frameworkInfo,
       options,
       selectedFeatures,
+      language,
     });
 
     // Determine Storybook command
@@ -65,17 +66,19 @@ export class GeneratorExecutionCommand {
       ...generatorResult,
       configDir: 'configDir' in generatorResult ? generatorResult.configDir : undefined,
       storybookCommand:
-        generatorResult.storybookCommand ?? packageManager.getRunCommand('storybook'),
+        generatorResult.storybookCommand !== undefined
+          ? generatorResult.storybookCommand
+          : this.jsPackageManager.getRunCommand('storybook'),
     };
   }
 
   /** Execute the project-specific generator */
   private readonly executeProjectGenerator = async ({
     projectType,
-    packageManager,
     frameworkInfo,
     options,
     selectedFeatures,
+    language,
   }: ExecuteProjectGeneratorOptions) => {
     const generator = generatorRegistry.get(projectType);
 
@@ -88,19 +91,18 @@ export class GeneratorExecutionCommand {
       skipInstall: options.skipInstall,
     };
 
-    const language: SupportedLanguage = options.language || ('typescript' as SupportedLanguage);
-
     // All generators must be new-style modules with metadata + configure
     const generatorModule = generator as GeneratorModule;
 
     // Call configure function to get framework-specific options
-    const frameworkOptions = await generatorModule.configure(packageManager, {
+    const frameworkOptions = await generatorModule.configure(this.jsPackageManager, {
       framework: frameworkInfo.framework,
       renderer: frameworkInfo.renderer,
       builder: frameworkInfo.builder,
       language,
       linkable: !!options.linkable,
-      features: options.features || [],
+      features: selectedFeatures,
+      dependencyCollector: this.dependencyCollector,
       yes: options.yes,
     });
 
@@ -118,6 +120,10 @@ export class GeneratorExecutionCommand {
     } as GeneratorOptions;
 
     if (frameworkOptions.skipGenerator) {
+      if (generatorModule.postConfigure) {
+        await generatorModule.postConfigure({ packageManager: this.jsPackageManager });
+      }
+
       return {
         shouldRunDev: frameworkOptions.shouldRunDev,
         storybookCommand: frameworkOptions.storybookCommand,
@@ -128,10 +134,19 @@ export class GeneratorExecutionCommand {
     const extraAddons = this.addonService.getAddonsForFeatures(selectedFeatures);
 
     // Call baseGenerator with complete configuration
-    const generatorResult = await baseGenerator(packageManager, npmOptions, generatorOptions, {
-      ...frameworkOptions,
-      extraAddons: [...(frameworkOptions.extraAddons ?? []), ...extraAddons],
-    });
+    const generatorResult = await baseGenerator(
+      this.jsPackageManager,
+      npmOptions,
+      generatorOptions,
+      {
+        ...frameworkOptions,
+        extraAddons: [...(frameworkOptions.extraAddons ?? []), ...extraAddons],
+      }
+    );
+
+    if (generatorModule.postConfigure) {
+      await generatorModule.postConfigure({ packageManager: this.jsPackageManager });
+    }
 
     return {
       ...generatorResult,
@@ -140,8 +155,13 @@ export class GeneratorExecutionCommand {
   };
 }
 
-export const executeGeneratorExecution = (
-  options: ExecuteProjectGeneratorOptions & { dependencyCollector: DependencyCollector }
-) => {
-  return new GeneratorExecutionCommand(options.dependencyCollector).execute(options);
+export const executeGeneratorExecution = ({
+  dependencyCollector,
+  packageManager,
+  ...options
+}: ExecuteProjectGeneratorOptions & {
+  dependencyCollector: DependencyCollector;
+  packageManager: JsPackageManager;
+}) => {
+  return new GeneratorExecutionCommand(dependencyCollector, packageManager).execute(options);
 };

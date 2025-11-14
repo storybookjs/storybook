@@ -1,27 +1,33 @@
-import React from 'react';
+import { Button } from 'storybook/internal/components';
 
+import { styled } from 'storybook/theming';
+
+import preview from '../../../../../.storybook/preview';
 import { TooltipNote } from './TooltipNote';
-import { WithTooltip } from './WithTooltip';
+import { TooltipProvider } from './TooltipProvider';
 
-export default {
+const ViewPort = styled.div({
+  height: 300,
+});
+
+const meta = preview.meta({
+  id: 'overlay-TooltipNote',
+  title: 'Overlay/TooltipNote',
   component: TooltipNote,
+  args: {},
   decorators: [
-    (storyFn: any) => (
-      <div
-        style={{
-          height: '300px',
-        }}
-      >
-        <WithTooltip hasChrome={false} placement="top" startOpen tooltip={storyFn()}>
-          <div>Tooltip</div>
-        </WithTooltip>
-      </div>
+    (storyFn) => (
+      <ViewPort>
+        <TooltipProvider defaultVisible tooltip={storyFn()}>
+          <Button ariaLabel={false}>Show Tooltip</Button>
+        </TooltipProvider>
+      </ViewPort>
     ),
   ],
-};
+});
 
-export const Default = {
+export const Base = meta.story({
   args: {
     note: 'This is a note',
   },
-};
+});

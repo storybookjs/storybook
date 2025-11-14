@@ -30,7 +30,7 @@ describe('AddonVitestService', () => {
     mockPackageManager = {
       getAllDependencies: vi.fn(),
       getInstalledVersion: vi.fn(),
-      executeCommand: vi.fn(),
+      runPackageCommand: vi.fn(),
     } as Partial<JsPackageManager> as JsPackageManager;
 
     // Setup default mocks for logger and prompt
@@ -159,6 +159,17 @@ describe('AddonVitestService', () => {
     it('should return compatible when vitest >=3.0.0', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
         .mockResolvedValueOnce('3.0.0') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions(mockPackageManager);
+
+      expect(result.compatible).toBe(true);
+      expect(result.reasons).toBeUndefined();
+    });
+
+    it('should return compatible when vitest >=4.0.0', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('4.0.0') // vitest
         .mockResolvedValueOnce(null); // msw
 
       const result = await service.validatePackageVersions(mockPackageManager);
@@ -379,17 +390,19 @@ describe('AddonVitestService', () => {
       });
       expect(prompt.executeTaskWithSpinner).toHaveBeenCalledWith(expect.any(Function), {
         id: 'playwright-installation',
-        intro: 'Installing Playwright browser binaries',
+        intro: 'Installing Playwright browser binaries (Press "c" to abort)',
         error: expect.stringContaining('An error occurred'),
         success: 'Playwright browser binaries installed successfully',
+        abortable: true,
       });
     });
 
     it('should execute playwright install command', async () => {
-      let commandFactory: (() => ExecaChildProcess) | (() => ExecaChildProcess)[];
+      type ChildProcessFactory = (signal?: AbortSignal) => ExecaChildProcess;
+      let commandFactory: ChildProcessFactory | ChildProcessFactory[];
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
-        async (factory: (() => ExecaChildProcess) | (() => ExecaChildProcess)[]) => {
+        async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
           commandFactory = Array.isArray(factory) ? factory[0] : factory;
           // Simulate the child process completion
           commandFactory();
@@ -398,10 +411,10 @@ describe('AddonVitestService', () => {
 
       await service.installPlaywright(mockPackageManager);
 
-      expect(mockPackageManager.executeCommand).toHaveBeenCalledWith({
-        command: 'npx',
+      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
         args: ['playwright', 'install', 'chromium', '--with-deps'],
-        killSignal: 'SIGINT',
+        signal: undefined,
+        stdio: ['inherit', 'pipe', 'pipe'],
       });
     });
 

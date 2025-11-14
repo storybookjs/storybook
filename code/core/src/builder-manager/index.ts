@@ -141,7 +141,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   router,
 }) {
   if (!options.quiet) {
-    logger.info('Starting manager..');
+    logger.info('Starting...');
   }
 
   const {
@@ -320,7 +320,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
 
   await Promise.all([writeFile(join(options.outputDir, 'index.html'), html), managerFiles]);
 
-  logger.trace({ message: '=> Manager built', time: process.hrtime(startTime) });
+  logger.trace({ message: 'Manager built', time: process.hrtime(startTime) });
 
   return {
     toJson: () => ({}),

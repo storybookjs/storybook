@@ -61,7 +61,7 @@ export const telemetry = async (
 
     if (!payload.error || options?.enableCrashReports) {
       if (process.env?.STORYBOOK_TELEMETRY_DEBUG) {
-        logger.info('\n[telemetry]');
+        logger.info('[telemetry]');
         logger.info(JSON.stringify(telemetryData, null, 2));
       }
       await sendTelemetry(telemetryData, options);

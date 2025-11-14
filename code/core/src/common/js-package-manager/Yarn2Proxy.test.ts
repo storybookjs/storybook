@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 
+import { executeCommand } from '../utils/command';
 import { JsPackageManager } from './JsPackageManager';
 import { Yarn2Proxy } from './Yarn2Proxy';
 
@@ -17,6 +18,9 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
+vi.mock('../utils/command', { spy: true });
+const mockedExecuteCommand = vi.mocked(executeCommand);
+
 describe('Yarn 2 Proxy', () => {
   let yarn2Proxy: Yarn2Proxy;
 
@@ -24,7 +28,6 @@ describe('Yarn 2 Proxy', () => {
     yarn2Proxy = new Yarn2Proxy();
     JsPackageManager.clearLatestVersionCache();
     vi.spyOn(yarn2Proxy, 'writePackageJson').mockImplementation(vi.fn());
-    vi.spyOn(yarn2Proxy, 'executeCommand').mockClear();
   });
 
   it('type should be yarn2', () => {
@@ -37,7 +40,7 @@ describe('Yarn 2 Proxy', () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
       });
-      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValue({
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
         stdout: '',
       } as any);
 
@@ -51,11 +54,11 @@ describe('Yarn 2 Proxy', () => {
 
   describe('runScript', () => {
     it('should execute script `yarn compodoc -- -e json -d .`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValue({
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
         stdout: '7.1.0',
       } as any);
 
-      await yarn2Proxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
+      await yarn2Proxy.runPackageCommand({ args: ['compodoc', '-e', 'json', '-d', '.'] });
 
       expect(executeCommandSpy).toHaveBeenLastCalledWith(
         expect.objectContaining({
@@ -68,7 +71,7 @@ describe('Yarn 2 Proxy', () => {
 
   describe('addDependencies', () => {
     it('with devDep it should run `yarn install -D storybook`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValue({
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
         stdout: '',
       } as any);
 
@@ -85,7 +88,7 @@ describe('Yarn 2 Proxy', () => {
 
   describe('removeDependencies', () => {
     it('skipInstall should only change package.json without running install', async () => {
-      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValue({
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
         stdout: '7.0.0',
       } as any);
       const writePackageSpy = vi.spyOn(yarn2Proxy, 'writePackageJson').mockImplementation(vi.fn());
@@ -117,7 +120,7 @@ describe('Yarn 2 Proxy', () => {
 
   describe('latestVersion', () => {
     it('without constraint it returns the latest version', async () => {
-      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValue({
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
         stdout: '{"name":"storybook","version":"5.3.19"}',
       } as any);
 
@@ -133,7 +136,7 @@ describe('Yarn 2 Proxy', () => {
     });
 
     it('with constraint it returns the latest version satisfying the constraint', async () => {
-      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValue({
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
         stdout: '{"name":"storybook","versions":["4.25.3","5.3.19","6.0.0-beta.23"]}',
       } as any);
 
@@ -149,7 +152,7 @@ describe('Yarn 2 Proxy', () => {
     });
 
     it('throws an error if command output is not a valid JSON', async () => {
-      vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValue({
+      mockedExecuteCommand.mockResolvedValue({
         stdout: 'NOT A JSON',
       } as any);
 
@@ -192,7 +195,7 @@ describe('Yarn 2 Proxy', () => {
   describe('mapDependencies', () => {
     it('should display duplicated dependencies based on yarn2 output', async () => {
       // yarn info --name-only --recursive "@storybook/*" "storybook"
-      vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValue({
+      mockedExecuteCommand.mockResolvedValue({
         stdout: `
           "unrelated-and-should-be-filtered@npm:1.0.0"
           "@storybook/global@npm:5.0.0"

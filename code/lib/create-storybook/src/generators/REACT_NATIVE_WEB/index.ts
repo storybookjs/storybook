@@ -1,16 +1,13 @@
 import { readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { ProjectType, cliStoriesTargetPath } from 'storybook/internal/cli';
 import {
-  ProjectType,
+  SupportedBuilder,
+  SupportedFramework,
   SupportedLanguage,
-  cliStoriesTargetPath,
-  detectLanguage,
-} from 'storybook/internal/cli';
-import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
-import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
-
-import dedent from 'ts-dedent';
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
@@ -22,9 +19,8 @@ export default defineGeneratorModule({
     framework: SupportedFramework.REACT_NATIVE_WEB_VITE,
     builderOverride: SupportedBuilder.VITE,
   },
-  configure: async (packageManager) => {
+  configure: async (packageManager, { language }) => {
     // Add prop-types dependency if not using TypeScript
-    const language = await detectLanguage(packageManager);
     const extraPackages = ['vite', 'react-native-web'];
     if (language === SupportedLanguage.JAVASCRIPT) {
       extraPackages.push('prop-types');
@@ -34,7 +30,7 @@ export default defineGeneratorModule({
       extraPackages,
     };
   },
-  postConfigure: async ({ packageManager }) => {
+  postConfigure: async () => {
     try {
       const targetPath = await cliStoriesTargetPath();
       const cssFiles = (await readdir(targetPath)).filter((f) => f.endsWith('.css'));
@@ -42,14 +38,5 @@ export default defineGeneratorModule({
     } catch {
       // Silent fail if CSS cleanup fails - not critical
     }
-
-    logger.log(dedent`
-  
-      ${CLI_COLORS.success('React Native Web (RNW) Storybook is fully installed.')}
-  
-      To start RNW Storybook, run:
-  
-      ${CLI_COLORS.cta(' ' + packageManager.getRunCommand('storybook') + ' ')}
-    `);
   },
 });

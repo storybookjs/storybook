@@ -14,7 +14,10 @@ export default defineGeneratorModule({
   },
   configure: async (packageManager, context) => {
     await reactNativeGeneratorModule.configure(packageManager, context);
-    const configurationResult = reactNativeWebGeneratorModule.configure(packageManager);
+    const configurationResult = await reactNativeWebGeneratorModule.configure(
+      packageManager,
+      context
+    );
 
     return {
       ...configurationResult,
@@ -22,7 +25,7 @@ export default defineGeneratorModule({
     };
   },
   postConfigure: async ({ packageManager }) => {
-    reactNativeWebGeneratorModule.postConfigure({ packageManager });
+    await reactNativeWebGeneratorModule.postConfigure();
     reactNativeGeneratorModule.postConfigure({ packageManager });
   },
 });

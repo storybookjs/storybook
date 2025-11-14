@@ -27,7 +27,7 @@ const promptCrashReports = async () => {
 
   const enableCrashReports = await prompt.confirm({
     message: dedent`
-      Send anonymous crash reports to help improve Storybook?
+      Would you like to send anonymous crash reports to improve Storybook and fix bugs faster?
       This helps us improve Storybook and fix bugs faster.
     `,
     initialValue: true,
@@ -51,7 +51,7 @@ export async function getErrorLevel({
 
   // If we are running init or similar, we just have to go with true here
   if (!presetOptions) {
-    return 'full';
+    return 'error';
   }
 
   // should we load the preset?
@@ -194,10 +194,12 @@ export async function withTelemetry<T>(
 
     throw error;
   } finally {
-    const errors = ErrorCollector.getErrors();
-    for (const error of errors) {
-      await sendTelemetryError(error, eventType, options, false);
+    if (enableTelemetry) {
+      const errors = ErrorCollector.getErrors();
+      for (const error of errors) {
+        await sendTelemetryError(error, eventType, options, false);
+      }
+      process.off('SIGINT', cancelTelemetry);
     }
-    process.off('SIGINT', cancelTelemetry);
   }
 }

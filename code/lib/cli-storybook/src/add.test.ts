@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
+import { PackageManagerName } from '../../../core/src/common';
 import { add, getVersionSpecifier } from './add';
 
 const MockedConfig = vi.hoisted(() => {
@@ -130,7 +131,7 @@ describe('add', () => {
   ];
 
   test.each(testData)('$input', async ({ input, expected }) => {
-    await add(input, { packageManager: 'npm', skipPostinstall: true });
+    await add(input, { packageManager: PackageManagerName.NPM, skipPostinstall: true });
 
     expect(MockedPackageManager.addDependencies).toHaveBeenCalledWith(
       { type: 'devDependencies', writeOutputToFile: false },
@@ -144,21 +145,27 @@ describe('add (extra)', () => {
     vi.clearAllMocks();
   });
   test('not warning when installing the correct version of storybook', async () => {
-    await add('@storybook/addon-docs', { packageManager: 'npm', skipPostinstall: true });
+    await add('@storybook/addon-docs', {
+      packageManager: PackageManagerName.NPM,
+      skipPostinstall: true,
+    });
 
     expect(logger.warn).not.toHaveBeenCalledWith(
       expect.stringContaining(`is not the same as the version of Storybook you are using.`)
     );
   });
   test('not warning when installing unrelated package', async () => {
-    await add('aa', { packageManager: 'npm', skipPostinstall: true });
+    await add('aa', { packageManager: PackageManagerName.NPM, skipPostinstall: true });
 
     expect(logger.warn).not.toHaveBeenCalledWith(
       expect.stringContaining(`is not the same as the version of Storybook you are using.`)
     );
   });
   test('warning when installing a core addon mismatching version of storybook', async () => {
-    await add('@storybook/addon-docs@2.0.0', { packageManager: 'npm', skipPostinstall: true });
+    await add('@storybook/addon-docs@2.0.0', {
+      packageManager: PackageManagerName.NPM,
+      skipPostinstall: true,
+    });
 
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining(
@@ -168,7 +175,10 @@ describe('add (extra)', () => {
   });
 
   test('postInstall', async () => {
-    await add('@storybook/addon-docs', { packageManager: 'npm', skipPostinstall: false });
+    await add('@storybook/addon-docs', {
+      packageManager: PackageManagerName.NPM,
+      skipPostinstall: false,
+    });
 
     expect(MockedPostInstall.postinstallAddon).toHaveBeenCalledWith('@storybook/addon-docs', {
       packageManager: 'npm',

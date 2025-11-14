@@ -157,7 +157,7 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
 };
 
 export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
-  if (isInteractiveTerminal() || shouldLog('info')) {
+  if (isInteractiveTerminal() && shouldLog('info')) {
     const task = getPromptProvider().taskLog(options);
 
     // Wrap the task log methods to handle console.log patching

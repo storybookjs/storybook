@@ -655,6 +655,7 @@ export default {
     'Feature',
     'SupportedBuilder',
     'SupportedFramework',
+    'SupportedLanguage',
     'SupportedRenderer',
   ],
 } as const;

@@ -1,11 +1,6 @@
-import {
-  ProjectType,
-  SupportedLanguage,
-  copyTemplateFiles,
-  getBabelDependencies,
-} from 'storybook/internal/cli';
+import { ProjectType, copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
-import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 

@@ -6,20 +6,21 @@ import {
   type JsPackageManager,
   type PackageJson,
   frameworkToRenderer,
-  getProjectRoot,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
+import {
+  type SupportedFramework,
+  SupportedLanguage,
+  type SupportedRenderer,
+} from 'storybook/internal/types';
 import { Feature } from 'storybook/internal/types';
 
-import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 
 import { getRendererDir } from './dirs';
-import { SupportedLanguage } from './project_types';
 
 export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
   const filePath = resolve(jsonPath);
@@ -227,10 +228,6 @@ export async function adjustTemplate(templatePath: string, templateData: Record<
   });
 
   await writeFile(templatePath, template);
-}
-
-export async function isNxProject() {
-  return find.up('nx.json', { last: getProjectRoot() });
 }
 
 export function coerceSemver(version: string) {

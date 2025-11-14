@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 
 import {
   type NpmOptions,
-  SupportedLanguage,
   configureEslintPlugin,
   copyTemplateFiles,
   extractEslintInfo,
@@ -17,8 +16,7 @@ import {
   optionalEnvToBoolean,
 } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import type { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
-import { SupportedFramework } from 'storybook/internal/types';
+import { SupportedFramework, SupportedLanguage } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';

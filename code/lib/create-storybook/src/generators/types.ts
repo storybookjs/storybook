@@ -1,4 +1,4 @@
-import type { NpmOptions, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
+import type { NpmOptions, ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import type {
@@ -6,6 +6,7 @@ import type {
   StorybookConfig,
   SupportedBuilder,
   SupportedFramework,
+  SupportedLanguage,
   SupportedRenderer,
 } from 'storybook/internal/types';
 

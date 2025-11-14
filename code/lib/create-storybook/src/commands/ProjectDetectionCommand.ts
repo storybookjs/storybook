@@ -1,18 +1,13 @@
-import {
-  ProjectType,
-  detect,
-  installableProjectTypes,
-  isStorybookInstantiated,
-} from 'storybook/internal/cli';
+import { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { HandledError } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import { NxProjectDetectedError } from 'storybook/internal/server-errors';
+import type { SupportedLanguage } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types';
+import { ProjectTypeService } from '../services/ProjectTypeService';
 
 /**
  * Command for detecting the project type during Storybook initialization
@@ -25,73 +20,39 @@ import type { CommandOptions } from '../generators/types';
  * - Prompt for force install if needed
  */
 export class ProjectDetectionCommand {
+  constructor(
+    private options: CommandOptions,
+    jsPackageManager: JsPackageManager,
+    private projectTypeService: ProjectTypeService = new ProjectTypeService(jsPackageManager)
+  ) {}
+
   /** Execute project type detection */
-  async execute(packageManager: JsPackageManager, options: CommandOptions): Promise<ProjectType> {
+  async execute(): Promise<{ projectType: ProjectType; language: SupportedLanguage }> {
     let projectType: ProjectType;
-    const projectTypeProvided = options.type;
+    const projectTypeProvided = this.options.type;
 
     // Use provided type or auto-detect
     if (projectTypeProvided) {
-      projectType = await this.validateProvidedType(projectTypeProvided);
+      projectType = await this.projectTypeService.validateProvidedType(projectTypeProvided);
       logger.step(`Installing Storybook for user specified project type: ${projectTypeProvided}`);
     } else {
-      projectType = await this.autoDetectProjectType(packageManager, options);
+      const detected = await this.projectTypeService.autoDetectProjectType(this.options);
+      projectType = detected;
+      if (detected === ProjectType.REACT_NATIVE && !this.options.yes) {
+        projectType = await this.promptReactNativeVariant();
+      }
       logger.debug(`Project type detected: ${projectType}`);
     }
 
     // Check for existing installation
-    await this.checkExistingInstallation(projectType, options);
+    await this.checkExistingInstallation(projectType);
 
-    return projectType;
-  }
+    const language = this.options.language || (await this.projectTypeService.detectLanguage());
 
-  /** Validate user-provided project type */
-  private async validateProvidedType(projectTypeProvided: ProjectType): Promise<ProjectType> {
-    if (installableProjectTypes.includes(projectTypeProvided)) {
-      return projectTypeProvided;
-    }
-
-    logger.error(
-      `The provided project type ${projectTypeProvided} was not recognized by Storybook`
-    );
-
-    throw new HandledError(`Unknown project type supplied: ${projectTypeProvided}`);
-  }
-
-  /** Auto-detect project type */
-  private async autoDetectProjectType(
-    packageManager: JsPackageManager,
-    options: CommandOptions
-  ): Promise<ProjectType> {
-    try {
-      const detectedType = (await detect(packageManager as any, options)) as ProjectType;
-
-      // Handle React Native special case
-      if (detectedType === ProjectType.REACT_NATIVE && !options.yes) {
-        return await this.promptReactNativeVariant();
-      }
-
-      if (detectedType === ProjectType.UNDETECTED) {
-        logger.error('Storybook failed to detect your project type');
-        throw new HandledError('Storybook failed to detect your project type');
-      }
-
-      if (detectedType === ProjectType.NX) {
-        throw new NxProjectDetectedError();
-      }
-
-      return detectedType;
-    } catch (err) {
-      if (err instanceof HandledError || err instanceof NxProjectDetectedError) {
-        throw err;
-      }
-      logger.error(String(err));
-      throw new HandledError(err instanceof Error ? err.message : String(err));
-    }
+    return { projectType, language };
   }
 
   /** Prompt user to select React Native variant */
-  // TODO: Extract into generator
   private async promptReactNativeVariant(): Promise<ProjectType> {
     const manualType = await prompt.select({
       message: "We've detected a React Native project. Install:",
@@ -110,17 +71,13 @@ export class ProjectDetectionCommand {
         },
       ],
     });
-
     return manualType as ProjectType;
   }
 
   /** Check if Storybook is already installed and handle force option */
-  private async checkExistingInstallation(
-    projectType: ProjectType,
-    options: CommandOptions
-  ): Promise<void> {
-    const storybookInstantiated = isStorybookInstantiated();
-
+  private async checkExistingInstallation(projectType: ProjectType): Promise<void> {
+    const storybookInstantiated = this.projectTypeService.isStorybookInstantiated();
+    const options = this.options;
     if (
       options.force !== true &&
       options.yes !== true &&
@@ -128,11 +85,9 @@ export class ProjectDetectionCommand {
       projectType !== ProjectType.ANGULAR
     ) {
       const force = await prompt.confirm({
-        message: dedent`
-          We found a .storybook config directory in your project. 
-          We assume that Storybook is already instantiated for your project. Do you still want to continue and force the initialization?`,
+        message: dedent`We found a .storybook config directory in your project.
+We assume that Storybook is already instantiated for your project. Do you still want to continue and force the initialization?`,
       });
-
       if (force || options.yes) {
         options.force = true;
       } else {
@@ -146,5 +101,5 @@ export const executeProjectDetection = (
   packageManager: JsPackageManager,
   options: CommandOptions
 ) => {
-  return new ProjectDetectionCommand().execute(packageManager, options);
+  return new ProjectDetectionCommand(options, packageManager).execute();
 };

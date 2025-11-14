@@ -24,7 +24,7 @@ import { FeatureCompatibilityService } from './services/FeatureCompatibilityServ
 import { TelemetryService } from './services/TelemetryService';
 
 /**
- * Main entry point for Storybook initialization (refactored)
+ * Main entry point for Storybook initialization
  *
  * This is a clean, command-based orchestration that replaces the monolithic 986-line implementation
  * with a modular, testable approach.
@@ -51,7 +51,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const { packageManager } = await executePreflightCheck(options);
 
   // Step 2: Detect project type
-  const projectType = await executeProjectDetection(packageManager, options);
+  const { projectType, language } = await executeProjectDetection(packageManager, options);
 
   // Step 3: Detect framework, renderer, and builder
   const { framework, builder, renderer } = await executeFrameworkDetection(
@@ -80,6 +80,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       options,
       dependencyCollector,
       selectedFeatures,
+      language,
     });
 
   // Step 6: Install all dependencies in a single operation

@@ -11,9 +11,8 @@ import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
+import { SupportedLanguage } from '../../code/core/dist/types';
 import { babelParse, types as t } from '../../code/core/src/babel';
-import { detectLanguage } from '../../code/core/src/cli/detect';
-import { SupportedLanguage } from '../../code/core/src/cli/project_types';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
 import storybookPackages from '../../code/core/src/common/versions';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
@@ -23,6 +22,7 @@ import {
   writeConfig,
 } from '../../code/core/src/csf-tools';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
 import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
@@ -597,11 +597,12 @@ export const addStories: Task['run'] = async (
   const mainConfig = await readConfig({ fileName: 'main', cwd });
   const packageManager = JsPackageManagerFactory.getPackageManager({}, sandboxDir);
 
+  const projectTypeService = new ProjectTypeService(packageManager);
+
   // Ensure that we match the right stories in the stories directory
   updateStoriesField(
     mainConfig,
-    (await detectLanguage(packageManager as any as Parameters<typeof detectLanguage>[0])) ===
-      SupportedLanguage.JAVASCRIPT
+    (await projectTypeService.detectLanguage()) === SupportedLanguage.JAVASCRIPT
   );
 
   const isCoreRenderer =

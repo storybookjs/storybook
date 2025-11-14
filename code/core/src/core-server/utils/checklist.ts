@@ -14,7 +14,12 @@ const equals = <T>(a: T, b: T): boolean => {
     return a.length === b.length && a.every((value, index) => equals(value, b[index]));
   }
   if (a && b && typeof a === 'object' && typeof b === 'object') {
-    return Object.keys(a).every((key) => equals(a[key as keyof T], b[key as keyof T]));
+    const aKeys = Object.keys(a);
+    const bKeys = Object.keys(b);
+    return (
+      aKeys.length === bKeys.length &&
+      aKeys.every((key) => equals(a[key as keyof T], b[key as keyof T]))
+    );
   }
   return a === b;
 };

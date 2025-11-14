@@ -95,17 +95,14 @@ test.describe("component testing", () => {
       await clearStatusesButton.click();
     }
 
-    const watchModeToggle = page.getByRole("switch", { name: "Watch mode" });
-    if (
-      (await watchModeToggle.isVisible()) &&
-      (await watchModeToggle.getAttribute("aria-checked")) === "true"
-    ) {
+    const watchModeToggle = page.getByRole('switch', { name: 'Watch mode' });
+    if (await watchModeToggle.isVisible() && await watchModeToggle.getAttribute("aria-checked") === "true") {
       await watchModeToggle.click();
     }
 
     const configs = [
-      page.getByRole("checkbox", { name: "Coverage" }),
-      page.getByRole("checkbox", { name: "Accessibility" }),
+      page.getByRole('checkbox', { name: 'Coverage' }),
+      page.getByRole('checkbox', { name: 'Accessibility' }),
     ];
     for (const config of configs) {
       if (await config.isChecked()) {
@@ -157,9 +154,7 @@ test.describe("component testing", () => {
       timeout: 60000,
     });
 
-    const errorFilter = page.getByLabel(
-      /Filter main navigation to show \d+ tests with errors/
-    );
+    const errorFilter = page.getByLabel(/Filter main navigation to show \d+ tests with errors/);
     await expect(errorFilter).toBeVisible();
 
     // Assert discrepancy: CLI pass + Browser fail
@@ -211,30 +206,17 @@ test.describe("component testing", () => {
     );
 
     const runTestsButton = await page.getByLabel("Start test run");
-    const watchModeButton = await page.getByRole("switch", {
-      name: "Watch mode",
-    });
+    const watchModeButton = await page.getByRole('switch', { name: 'Watch mode' });
     await expect(runTestsButton).toBeEnabled();
     await expect(watchModeButton).toBeEnabled();
 
     await runTestsButton.click();
 
-    // UNDO THIS
-    // Assert - Tests are running and errors are reported
-    const errorLink = page.locator("#testing-module-description a");
-    await expect(errorLink).toContainText("View full error", {
-      timeout: 30000,
-    });
-    await errorLink.click();
-
-    await expect(page.locator("pre")).toContainText(
-      "I THREW AN UNHANDLED ERROR!"
-    );
-
     // Wait for both the watch mode button to be disabled and the testing text to appear
     await Promise.all([
       expect(watchModeButton).toBeDisabled(),
       expect(page.locator("#testing-module-description")).toHaveText(/Testing/),
+
     ]);
 
     // Wait for test results to appear
@@ -246,9 +228,7 @@ test.describe("component testing", () => {
     await expect(runTestsButton).toBeEnabled();
     await expect(watchModeButton).toBeEnabled();
 
-    const errorFilter = page.getByLabel(
-      /Filter main navigation to show \d+ tests with errors/
-    );
+    const errorFilter = page.getByLabel(/Filter main navigation to show \d+ tests with errors/);
     await expect(errorFilter).toBeVisible();
 
     // Assert for expected success
@@ -296,7 +276,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByRole("switch", { name: "Watch mode" }).click();
+    await page.getByRole('switch', { name: 'Watch mode' }).click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(8000);
@@ -305,9 +285,7 @@ test.describe("component testing", () => {
     );
 
     // Wait for test results to appear
-    const errorFilter = page.getByLabel(
-      /Filter main navigation to show \d+ tests with errors/
-    );
+    const errorFilter = page.getByLabel(/Filter main navigation to show \d+ tests with errors/);
     await expect(errorFilter).toBeVisible({ timeout: 30000 });
 
     // Assert for expected success
@@ -352,7 +330,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByRole("switch", { name: "Watch mode" }).click();
+    await page.getByRole('switch', { name: 'Watch mode' }).click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(3000);
@@ -391,7 +369,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByRole("switch", { name: "Watch mode" }).click();
+    await page.getByRole('switch', { name: 'Watch mode' }).click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(3000);
@@ -431,7 +409,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByRole("switch", { name: "Watch mode" }).click();
+    await page.getByRole('switch', { name: 'Watch mode' }).click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(3000);
@@ -535,7 +513,7 @@ test.describe("component testing", () => {
         '[data-item-id="addons-group-test--expected-failure"] button[data-testid="context-menu"]'
       )
       .click();
-    const sidebarContextMenu = page.getByRole("dialog");
+    const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
 
     // Assert - Only one test is running and reported
@@ -547,9 +525,8 @@ test.describe("component testing", () => {
     ).toHaveCount(1);
     await page.click("body");
     await expect(
-      page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: success"]'
-      )
+      page
+        .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: success\"]")
     ).toHaveCount(1);
   });
 
@@ -576,20 +553,21 @@ test.describe("component testing", () => {
         '[data-item-id="example-unhandlederrors"] button[data-testid="context-menu"]'
       )
       .click();
-    const sidebarContextMenu = page.getByRole("dialog");
+    const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
 
     // HACK: the testing module popover has poor tracking of focus due to how many disabled
     // buttons it has and how deeply it changes its UI on events. This would be solved once
     // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
     // around to reset focus.
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Escape");
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Escape');
     await page.click("body");
     await expect(sidebarContextMenu).not.toBeVisible();
 
     // Assert - Tests are running and errors are reported
-    const errorLink = page.locator("#testing-module-description a");
+    const errorLink = page.locator("#testing-module-description a"
+    );
     await expect(errorLink).toContainText("View full error", {
       timeout: 30000,
     });
@@ -630,7 +608,7 @@ test.describe("component testing", () => {
         '[data-item-id="addons-group-test"] button[data-testid="context-menu"]'
       )
       .click();
-    const sidebarContextMenu = page.getByRole("dialog");
+    const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
 
     // Assert - Tests are running and reported
@@ -649,21 +627,19 @@ test.describe("component testing", () => {
     // buttons it has and how deeply it changes its UI on events. This would be solved once
     // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
     // around to reset focus.
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Escape");
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Escape');
     await page.click("body");
     await expect(sidebarContextMenu).not.toBeVisible();
 
     await page.click("body");
     await expect(
-      page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: success"]'
-      )
+      page
+        .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: success\"]")
     ).toHaveCount(8);
     await expect(
-      page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: error"]'
-      )
+      page
+        .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: error\"]")
     ).toHaveCount(3); // 1 story, 1 component, 1 group
   });
 
@@ -689,8 +665,9 @@ test.describe("component testing", () => {
         '[data-item-id="addons-group"] button[data-testid="context-menu"]'
       )
       .click();
-    const sidebarContextMenu = page.getByRole("dialog");
+    const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
+      
 
     // Assert - 1 failing test shows as a failed status
     await expect(
@@ -704,32 +681,29 @@ test.describe("component testing", () => {
     // buttons it has and how deeply it changes its UI on events. This would be solved once
     // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
     // around to reset focus.
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Escape");
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Escape');
     await page.click("body");
     await expect(sidebarContextMenu).not.toBeVisible();
 
     // Assert - Tests are running and reported
-    await expect(page.locator("#testing-module-description")).toContainText(
-      "Ran 11 tests",
-      { timeout: 30000 }
-    );
     await expect(
-      page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: error"]'
-      )
+      page.locator("#testing-module-description")
+    ).toContainText("Ran 11 tests", { timeout: 30000 });
+    await expect(
+      page
+        .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: error\"]")
     ).toHaveCount(4); // 1 visible/expanded story, 1 expanded component, 1 collapsed component, 1 group
+    
 
     await page.click("body");
     await expect(
-      page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: success"]'
-      )
+      page
+        .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: success\"]")
     ).toHaveCount(8);
     await expect(
-      page.locator(
-        '#storybook-explorer-menu [data-testid="tree-status-button"][aria-label="Test status: error"]'
-      )
+      page
+        .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: error\"]")
     ).toHaveCount(4);
   });
 
@@ -765,23 +739,22 @@ test.describe("component testing", () => {
         '[data-item-id="example-button--csf-3-primary"] button[data-testid="context-menu"]'
       )
       .click();
-    const sidebarContextMenu = page.getByRole("dialog");
+    const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
 
     // HACK: the testing module popover has poor tracking of focus due to how many disabled
     // buttons it has and how deeply it changes its UI on events. This would be solved once
     // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
     // around to reset focus.
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Escape");
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Escape');
     await page.click("body");
     await expect(sidebarContextMenu).not.toBeVisible();
 
     // Arrange - Wait for test to finish and unfocus sidebar context menu
-    await expect(page.locator("#testing-module-description")).toContainText(
-      "Ran 1 test",
-      { timeout: 30000 }
-    );
+    await expect(
+      page.locator("#testing-module-description")
+    ).toContainText("Ran 1 test", { timeout: 30000 });
     await page.click("body");
 
     // Assert - Coverage is not shown because Focused Tests shouldn't collect coverage

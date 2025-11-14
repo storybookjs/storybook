@@ -65,6 +65,7 @@ describe('writeFileWithRetry', () => {
       expect(fs.writeFile).toHaveBeenCalledTimes(i);
       expect(fs.writeFile).toHaveBeenNthCalledWith(i, filename, 'foo', { flush: true });
       expect(complete).toBe(false);
+      expect(vi.getTimerCount()).toBe(1);
       await vi.advanceTimersByTimeAsync(100);
     }
 
@@ -81,7 +82,9 @@ describe('writeFileWithRetry', () => {
     const error = Object.assign(new Error('locked'), { code: 'EBUSY' });
     vi.mocked(fs.writeFile).mockRejectedValue(error);
 
-    const result = writeFileWithRetry(filename, 'foo', { flag: 'w' });
+    const result = expect(
+      writeFileWithRetry(filename, 'foo', { flag: 'w' })
+    ).rejects.toThrowError();
 
     // All five attempts fail.
     for (let i = 1; i <= 5; i++) {
@@ -96,6 +99,6 @@ describe('writeFileWithRetry', () => {
     // There should not be a delay after the final attempt.
     expect(vi.getTimerCount()).toBe(0);
 
-    await expect(result).rejects.toThrowError(error);
+    await result;
   });
 });

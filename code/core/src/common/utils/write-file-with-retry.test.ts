@@ -82,9 +82,9 @@ describe('writeFileWithRetry', () => {
     const error = Object.assign(new Error('locked'), { code: 'EBUSY' });
     vi.mocked(fs.writeFile).mockRejectedValue(error);
 
-    const result = expect(
-      writeFileWithRetry(filename, 'foo', { flag: 'w' })
-    ).rejects.toThrowError();
+    const result = expect(writeFileWithRetry(filename, 'foo', { flag: 'w' })).rejects.toThrowError(
+      error
+    );
 
     // All five attempts fail.
     for (let i = 1; i <= 5; i++) {

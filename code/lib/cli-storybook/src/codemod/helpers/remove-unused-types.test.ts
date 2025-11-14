@@ -24,7 +24,9 @@ describe('removeUnusedTypes', () => {
   it('should remove unused Storybook types', async () => {
     const source = dedent`
       import { Button } from './Button';
-      import { StoryFn, StoryObj, ComponentStory, Meta, MetaObj, ComponentMeta } from '@storybook/react';
+      import { StoryFn, StoryObj } from '@storybook/react';
+      import type { Meta, MetaObj } from '@storybook/react';
+      import { type ComponentStory, type ComponentMeta } from '@storybook/react';
 
       // unused types that should be removed
       type UnusedAlias = Meta<typeof Button>;
@@ -54,7 +56,9 @@ describe('removeUnusedTypes', () => {
     expect(getDiff(unescape(source), unescape(transformed))).toMatchInlineSnapshot(`
       import { Button } from './Button';
         
-      - import { StoryFn, StoryObj, ComponentStory, Meta, MetaObj, ComponentMeta } from '@storybook/react';
+      - import { StoryFn, StoryObj } from '@storybook/react';
+      - import type { Meta, MetaObj } from '@storybook/react';
+      - import { type ComponentStory, type ComponentMeta } from '@storybook/react';
       - 
         
         

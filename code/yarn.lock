@@ -7760,7 +7760,6 @@ __metadata:
     "@vitest/runner": "npm:^4.0.1"
     empathic: "npm:^2.0.0"
     es-toolkit: "npm:^1.36.0"
-    execa: "npm:^8.0.1"
     istanbul-lib-report: "npm:^3.0.1"
     micromatch: "npm:^4.0.8"
     pathe: "npm:^1.1.2"
@@ -7944,7 +7943,6 @@ __metadata:
     cross-spawn: "npm:^7.0.6"
     empathic: "npm:^2.0.0"
     envinfo: "npm:^7.14.0"
-    execa: "npm:^9.6.0"
     globby: "npm:^14.0.1"
     jscodeshift: "npm:^0.15.1"
     leven: "npm:^4.0.0"
@@ -16015,7 +16013,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"execa@npm:^9.5.2, execa@npm:^9.6.0":
+"execa@npm:^9.5.2":
   version: 9.6.0
   resolution: "execa@npm:9.6.0"
   dependencies:

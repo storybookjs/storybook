@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react';
 import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import { once } from 'storybook/internal/client-logger';
-import { Button, Card, Optional, ToggleButton } from 'storybook/internal/components';
+import { Button, Card, ToggleButton } from 'storybook/internal/components';
 import type {
   Addon_Collection,
   Addon_TestProviderType,
@@ -14,6 +14,7 @@ import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/ico
 import { internal_fullTestProviderStore } from '#manager-stores';
 import { styled } from 'storybook/theming';
 
+import { Optional } from '../Optional/Optional';
 import { useDynamicFavicon } from './useDynamicFavicon';
 
 const DEFAULT_HEIGHT = 500;

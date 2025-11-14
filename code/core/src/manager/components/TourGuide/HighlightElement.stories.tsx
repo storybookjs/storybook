@@ -1,4 +1,5 @@
-import { Button } from '../..';
+import { Button } from 'storybook/internal/components';
+
 import preview from '../../../../../.storybook/preview';
 import { HighlightElement } from './HighlightElement';
 

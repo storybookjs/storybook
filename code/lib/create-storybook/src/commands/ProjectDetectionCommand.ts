@@ -46,9 +46,9 @@ export class ProjectDetectionCommand {
   }
 
   /** Validate user-provided project type */
-  private async validateProvidedType(projectTypeProvided: string): Promise<ProjectType> {
+  private async validateProvidedType(projectTypeProvided: ProjectType): Promise<ProjectType> {
     if (installableProjectTypes.includes(projectTypeProvided)) {
-      return projectTypeProvided.toUpperCase() as ProjectType;
+      return projectTypeProvided;
     }
 
     logger.error(

@@ -35,28 +35,28 @@ export const externalFrameworks: ExternalFramework[] = [
 ];
 
 export enum ProjectType {
-  UNDETECTED = 'UNDETECTED',
-  UNSUPPORTED = 'UNSUPPORTED',
-  REACT = 'REACT',
-  REACT_SCRIPTS = 'REACT_SCRIPTS',
-  REACT_NATIVE = 'REACT_NATIVE',
-  REACT_NATIVE_WEB = 'REACT_NATIVE_WEB',
-  REACT_NATIVE_AND_RNW = 'REACT_NATIVE_AND_RNW',
-  REACT_PROJECT = 'REACT_PROJECT',
-  NEXTJS = 'NEXTJS',
-  VUE3 = 'VUE3',
-  NUXT = 'NUXT',
-  ANGULAR = 'ANGULAR',
-  EMBER = 'EMBER',
-  WEB_COMPONENTS = 'WEB_COMPONENTS',
-  HTML = 'HTML',
-  QWIK = 'QWIK',
-  PREACT = 'PREACT',
-  SVELTE = 'SVELTE',
-  SVELTEKIT = 'SVELTEKIT',
-  SERVER = 'SERVER',
-  NX = 'NX',
-  SOLID = 'SOLID',
+  UNDETECTED = 'undetected',
+  UNSUPPORTED = 'unsupported',
+  REACT = 'react',
+  REACT_SCRIPTS = 'react_scripts',
+  REACT_NATIVE = 'react_native',
+  REACT_NATIVE_WEB = 'react_native_web',
+  REACT_NATIVE_AND_RNW = 'react_native_and_rnw',
+  REACT_PROJECT = 'react_project',
+  NEXTJS = 'nextjs',
+  VUE3 = 'vue3',
+  NUXT = 'nuxt',
+  ANGULAR = 'angular',
+  EMBER = 'ember',
+  WEB_COMPONENTS = 'web_components',
+  HTML = 'html',
+  QWIK = 'qwik',
+  PREACT = 'preact',
+  SVELTE = 'svelte',
+  SVELTEKIT = 'sveltekit',
+  SERVER = 'server',
+  NX = 'nx',
+  SOLID = 'solid',
 }
 
 export enum SupportedLanguage {
@@ -214,12 +214,8 @@ export const unsupportedTemplate: TemplateConfiguration = {
   },
 };
 
-const notInstallableProjectTypes: ProjectType[] = [
+export const notInstallableProjectTypes: ProjectType[] = [
   ProjectType.UNDETECTED,
   ProjectType.UNSUPPORTED,
   ProjectType.NX,
 ];
-
-export const installableProjectTypes = Object.values(ProjectType)
-  .filter((type) => !notInstallableProjectTypes.includes(type))
-  .map((type) => type.toLowerCase());

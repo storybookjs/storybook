@@ -1,4 +1,4 @@
-import { ProjectType } from 'storybook/internal/cli';
+import { ProjectType, notInstallableProjectTypes } from 'storybook/internal/cli';
 import { PackageManagerName, isCI, optionalEnvToBoolean } from 'storybook/internal/common';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
@@ -50,12 +50,7 @@ const createStorybookProgram = program
   )
   .addOption(
     new Option('--type <type>', 'Add Storybook for a specific project type').choices(
-      Object.values(ProjectType).filter(
-        (type) =>
-          type !== ProjectType.UNDETECTED &&
-          type !== ProjectType.NX &&
-          type !== ProjectType.UNSUPPORTED
-      )
+      Object.values(ProjectType).filter((type) => !notInstallableProjectTypes.includes(type))
     )
   )
   .option('-y --yes', 'Answer yes to all prompts')

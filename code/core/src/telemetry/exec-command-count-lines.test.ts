@@ -37,7 +37,7 @@ describe('execCommandCountLines', () => {
     const streamer = createExecaStreamer();
     execaCommand.mockReturnValue(streamer as any);
 
-    const promise = execCommandCountLines('some command');
+    const promise = execCommandCountLines('some command', []);
 
     streamer.stdout.write('First line\n');
     streamer.stdout.write('Second line\n');
@@ -50,7 +50,7 @@ describe('execCommandCountLines', () => {
     const streamer = createExecaStreamer();
     execaCommand.mockReturnValue(streamer as any);
 
-    const promise = execCommandCountLines('some command');
+    const promise = execCommandCountLines('some command', []);
 
     streamer.stdout.write('First line\n');
     streamer.kill();
@@ -62,7 +62,7 @@ describe('execCommandCountLines', () => {
     const streamer = createExecaStreamer();
     execaCommand.mockReturnValue(streamer as any);
 
-    const promise = execCommandCountLines('some command');
+    const promise = execCommandCountLines('some command', []);
 
     streamer.kill();
 

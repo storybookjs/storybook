@@ -6,7 +6,8 @@ import { LinkIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
+import { ManagerContext } from 'storybook/manager-api';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { useMenu } from '../../container/Menu';
@@ -21,6 +22,17 @@ const fakemenu: MenuList = [
   ],
 ];
 
+const managerContext: any = {
+  state: {},
+  api: {
+    getData: fn().mockName('api::getData'),
+    getIndex: fn().mockName('api::getIndex'),
+    getUrlState: fn().mockName('api::getUrlState'),
+    navigate: fn().mockName('api::navigate'),
+    on: fn().mockName('api::on'),
+  },
+};
+
 const meta = {
   component: SidebarMenu,
   title: 'Sidebar/Menu',
@@ -28,7 +40,13 @@ const meta = {
     menu: fakemenu,
   },
   globals: { sb_theme: 'side-by-side' },
-  decorators: [(storyFn) => <LayoutProvider>{storyFn()}</LayoutProvider>],
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={managerContext}>
+        <LayoutProvider>{storyFn()}</LayoutProvider>
+      </ManagerContext.Provider>
+    ),
+  ],
   beforeEach: async () => {
     mockStore.setState({
       loaded: true,

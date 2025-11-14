@@ -1,4 +1,4 @@
-import React, { createRef } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import {
   Card,
@@ -12,11 +12,31 @@ import {
 import { StatusFailIcon } from '@storybook/icons';
 
 import { checklistStore, universalChecklistStore } from '#manager-stores';
+import { type TransitionMapOptions, useTransitionMap } from 'react-transition-state';
 import { experimental_useUniversalStore, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { checklistData } from '../../settings/Checklist/checklistData';
-import { Transition, TransitionGroup } from '../Transition';
+
+const useTransitionArray = <K,>(array: K[], subset: K[], options: TransitionMapOptions<K>) => {
+  const { setItem, toggle, stateMap } = useTransitionMap<K>({
+    allowMultiple: true,
+    mountOnEnter: true,
+    unmountOnExit: true,
+    preEnter: true,
+    ...options,
+  });
+
+  useEffect(() => {
+    array.forEach((task) => setItem(task));
+  }, [array, setItem]);
+
+  useEffect(() => {
+    array.forEach((task) => toggle(task, subset.includes(task)));
+  }, [array, subset, toggle]);
+
+  return Array.from(stateMap);
+};
 
 const ItemIcon = styled(StatusFailIcon)(({ theme }) => ({
   color: theme.color.mediumdark,
@@ -26,10 +46,13 @@ export const ChecklistModule = () => {
   const api = useStorybookApi();
   const [{ completed, skipped }] = experimental_useUniversalStore(universalChecklistStore);
 
-  const allTasks = checklistData.sections.flatMap(({ items }) => items);
-  const nextTasks = allTasks
-    .filter(({ id }) => !completed.includes(id) && !skipped.includes(id))
-    .map((task) => ({ ...task, nodeRef: createRef<HTMLLIElement>() }));
+  const allTasks = useMemo(() => checklistData.sections.flatMap(({ items }) => items), []);
+  const nextTasks = useMemo(
+    () => allTasks.filter(({ id }) => !completed.includes(id) && !skipped.includes(id)).slice(0, 3),
+    [allTasks, completed, skipped]
+  );
+
+  const transitionItems = useTransitionArray(allTasks, nextTasks, { timeout: 300 });
 
   if (nextTasks.length === 0) {
     return null;
@@ -47,32 +70,33 @@ export const ChecklistModule = () => {
           </ListboxButton>
         </ListboxItem>
       </Listbox>
-      <TransitionGroup component={Listbox}>
-        {nextTasks.slice(0, 3).map((task) => (
-          <Transition key={task.id} nodeRef={task.nodeRef} timeout={300}>
-            <ListboxItem ref={task.nodeRef}>
-              <ListboxAction
-                onClick={() =>
-                  api.navigateUrl(`/settings/guided-tour#${task.id}`, { plain: false })
-                }
-              >
-                <ItemIcon />
-                {task.label}
-              </ListboxAction>
-              {task.start && (
-                <ListboxButton
-                  onClick={() => {
-                    checklistStore.complete(task.id);
-                    task.start?.({ api });
-                  }}
+      <Listbox>
+        {transitionItems.map(
+          ([task, { status, isMounted }]) =>
+            isMounted && (
+              <ListboxItem key={task.id} transitionStatus={status}>
+                <ListboxAction
+                  onClick={() =>
+                    api.navigateUrl(`/settings/guided-tour#${task.id}`, { plain: false })
+                  }
                 >
-                  Start
-                </ListboxButton>
-              )}
-            </ListboxItem>
-          </Transition>
-        ))}
-      </TransitionGroup>
+                  <ItemIcon />
+                  {task.label}
+                </ListboxAction>
+                {task.start && (
+                  <ListboxButton
+                    onClick={() => {
+                      checklistStore.complete(task.id);
+                      task.start?.({ api });
+                    }}
+                  >
+                    Start
+                  </ListboxButton>
+                )}
+              </ListboxItem>
+            )
+        )}
+      </Listbox>
     </Card>
   );
 };

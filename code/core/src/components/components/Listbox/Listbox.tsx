@@ -1,5 +1,6 @@
 import React, { type ComponentProps } from 'react';
 
+import type { TransitionStatus } from 'react-transition-state';
 import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button';
@@ -14,44 +15,43 @@ export const Listbox = styled.ul(({ theme }) => ({
   },
 }));
 
-export const ListboxItem = styled.li({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 4,
+export const ListboxItem = styled.li<{ transitionStatus?: TransitionStatus }>(
+  {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 4,
 
-  '@supports (interpolate-size: allow-keywords)': {
-    interpolateSize: 'allow-keywords',
-    overflow: 'hidden',
-    transition: 'all var(--transition-duration, 0.2s)',
-    transitionBehavior: 'allow-discrete',
-  },
+    '@supports (interpolate-size: allow-keywords)': {
+      interpolateSize: 'allow-keywords',
+      overflow: 'hidden',
+      transition: 'all var(--transition-duration, 0.2s)',
+      transitionBehavior: 'allow-discrete',
+    },
 
-  '@media (prefers-reduced-motion: reduce)': {
-    transition: 'none',
+    '@media (prefers-reduced-motion: reduce)': {
+      transition: 'none',
+    },
   },
-
-  '&.enter': {
-    opacity: 0,
-    blockSize: 0,
-    contentVisibility: 'hidden',
-  },
-  '&.enter-active': {
-    opacity: 1,
-    blockSize: 'auto',
-    contentVisibility: 'visible',
-  },
-  '&.exit': {
-    opacity: 1,
-    blockSize: 'auto',
-    contentVisibility: 'visible',
-  },
-  '&.exit-active': {
-    opacity: 0,
-    blockSize: 0,
-    contentVisibility: 'hidden',
-  },
-});
+  ({ transitionStatus }) => {
+    switch (transitionStatus) {
+      case 'preEnter':
+      case 'exiting':
+      case 'exited':
+        return {
+          opacity: 0,
+          blockSize: 0,
+          contentVisibility: 'hidden',
+        };
+      default:
+        return {
+          opacity: 1,
+          blockSize: 'auto',
+          contentVisibility: 'visible',
+        };
+    }
+  }
+);
 
 export const ListboxButton = ({
   padding = 'small',

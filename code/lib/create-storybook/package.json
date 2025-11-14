@@ -50,7 +50,6 @@
     "@types/semver": "^7.3.4",
     "commander": "^14.0.1",
     "empathic": "^2.0.0",
-    "execa": "^5.0.0",
     "picocolors": "^1.1.0",
     "process-ancestry": "^0.0.2",
     "react": "^18.2.0",

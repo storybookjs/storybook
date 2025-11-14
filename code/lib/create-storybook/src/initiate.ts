@@ -1,11 +1,8 @@
 import { ProjectType } from 'storybook/internal/cli';
-import { type JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, executeCommand } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
-
-// eslint-disable-next-line depend/ban-dependencies
-import execa from 'execa';
 
 import {
   executeAddonConfiguration,
@@ -198,7 +195,8 @@ async function runStorybookDev(result: {
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
-    execa.command(`${storybookCommand} ${flags.join(' ')}`, {
+    executeCommand({
+      command: `${storybookCommand} ${flags.join(' ')}`,
       stdio: 'inherit',
     });
   } catch {

@@ -32,9 +32,11 @@ export const FocusRing = ({
   const [visible, setVisible] = useState(active);
 
   useEffect(() => {
-    setVisible(active);
-    const timeout = setTimeout(setVisible, highlightDuration, false);
-    return () => clearTimeout(timeout);
+    if (highlightDuration) {
+      setVisible(active);
+      const timeout = setTimeout(setVisible, highlightDuration, false);
+      return () => clearTimeout(timeout);
+    }
   }, [active, highlightDuration]);
 
   return <FocusOutline {...props} active={highlightDuration ? visible : active} ref={nodeRef} />;
@@ -52,21 +54,23 @@ export const FocusTarget = ({
   const [active, setActive] = useState(locationHash === targetHash);
 
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
 
     setActive(false);
     if (locationHash === targetHash) {
-      setTimeout(() => {
-        setActive(true);
-        nodeRef.current?.focus({ preventScroll: true });
-        nodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 0);
+      timeouts.push(
+        setTimeout(() => {
+          setActive(true);
+          nodeRef.current?.focus({ preventScroll: true });
+          nodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 0)
+      );
       if (highlightDuration) {
-        timeout = setTimeout(setActive, highlightDuration, false);
+        timeouts.push(setTimeout(setActive, highlightDuration, false));
       }
     }
 
-    return () => clearTimeout(timeout);
+    return () => timeouts.forEach(clearTimeout);
   }, [locationHash, targetHash, highlightDuration]);
 
   return <FocusRing {...props} active={active} nodeRef={nodeRef} tabIndex={-1} />;

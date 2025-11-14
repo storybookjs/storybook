@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
 import React, { type ComponentProps, forwardRef } from 'react';
 
+import type { TransitionStatus } from 'react-transition-state';
 import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button';
@@ -15,7 +15,11 @@ export const Listbox = styled.div(({ theme }) => ({
   },
 }));
 
-export const ListboxItem = styled.div<{ active?: boolean; showOnHover?: string }>(
+export const ListboxItem = styled.div<{
+  active?: boolean;
+  showOnHover?: string;
+  transitionStatus?: TransitionStatus;
+}>(
   ({ active, theme }) => ({
     display: 'flex',
     alignItems: 'center',
@@ -38,28 +42,25 @@ export const ListboxItem = styled.div<{ active?: boolean; showOnHover?: string }
     '@media (prefers-reduced-motion: reduce)': {
       transition: 'none',
     },
-
-    '&.enter': {
-      opacity: 0,
-      blockSize: 0,
-      contentVisibility: 'hidden',
-    },
-    '&.enter-active': {
-      opacity: 1,
-      blockSize: 'auto',
-      contentVisibility: 'visible',
-    },
-    '&.exit': {
-      opacity: 1,
-      blockSize: 'auto',
-      contentVisibility: 'visible',
-    },
-    '&.exit-active, &.exit-done': {
-      opacity: 0,
-      blockSize: 0,
-      contentVisibility: 'hidden',
-    },
-  })
+  }),
+  ({ transitionStatus }) => {
+    switch (transitionStatus) {
+      case 'preEnter':
+      case 'exiting':
+      case 'exited':
+        return {
+          opacity: 0,
+          blockSize: 0,
+          contentVisibility: 'hidden',
+        };
+      default:
+        return {
+          opacity: 1,
+          blockSize: 'auto',
+          contentVisibility: 'visible',
+        };
+    }
+  }
 );
 
 export const ListboxHoverItem = styled(ListboxItem)<{ targetId: string }>(({ targetId }) => ({

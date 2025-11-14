@@ -258,6 +258,7 @@
     "@types/pretty-hrtime": "^1.0.0",
     "@types/prompts": "^2.0.9",
     "@types/react-syntax-highlighter": "11.0.5",
+    "@types/react-transition-group": "^4.4.12",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8",
     "@vitest/utils": "^3.2.4",

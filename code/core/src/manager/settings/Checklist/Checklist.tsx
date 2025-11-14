@@ -3,12 +3,9 @@ import React, { createRef, useMemo } from 'react';
 import {
   Button,
   Collapsible,
-  FocusProxy,
-  FocusTarget,
   ListboxItem,
   TooltipNote,
   WithTooltip,
-  useLocationHash,
 } from 'storybook/internal/components';
 
 import {
@@ -22,7 +19,9 @@ import {
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { FocusProxy, FocusTarget } from '../../components/FocusRing/FocusRing';
 import type { ChecklistItem, useChecklist } from '../../components/sidebar/useChecklist';
+import { useLocationHash } from '../../components/useLocationHash';
 
 type ChecklistSection = {
   id: string;

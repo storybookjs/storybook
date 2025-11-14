@@ -43,7 +43,6 @@ export { createCopyToClipboardFunction } from './components/syntaxhighlighter/cl
 export { ActionBar } from './components/ActionBar/ActionBar';
 export { Collapsible } from './components/Collapsible/Collapsible';
 export { Card } from './components/Card/Card';
-export { FocusProxy, FocusRing, FocusTarget, FocusOutline } from './components/FocusRing/FocusRing';
 export {
   Listbox,
   ListboxAction,
@@ -60,7 +59,6 @@ export { ScrollArea } from './components/ScrollArea/ScrollArea';
 export { Zoom } from './components/Zoom/Zoom';
 export type { ActionItem } from './components/ActionBar/ActionBar';
 export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
-export { Optional } from './components/Optional/Optional';
 
 // Buttons
 export { Button, IconButton } from './components/Button/Button';
@@ -122,10 +120,6 @@ export type { StatelessTabsViewProps } from './components/Tabs/StatelessTabsView
 export { StatelessTab } from './components/Tabs/StatelessTab';
 export type { StatelessTabProps } from './components/Tabs/StatelessTab';
 
-export { TourGuide } from './components/TourGuide/TourGuide';
-export { TourTooltip } from './components/TourGuide/TourTooltip';
-export { HighlightElement } from './components/TourGuide/HighlightElement';
-
 // Graphics
 export { StorybookLogo } from './brand/StorybookLogo';
 export { StorybookIcon } from './brand/StorybookIcon';
@@ -136,7 +130,6 @@ export { ProgressSpinner } from './components/ProgressSpinner/ProgressSpinner';
 
 // Utils
 export { getStoryHref } from './components/utils/getStoryHref';
-export { useLocationHash } from './components/shared/useLocationHash';
 
 export * from './components/typography/DocumentFormatting';
 export * from './components/typography/ResetWrapper';

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { useLocationHash } from '../shared/useLocationHash';
+import { useLocationHash } from '../useLocationHash';
 
 export const FocusOutline = styled.div<{ active?: boolean; outlineOffset?: number }>(
   ({ theme, active = false, outlineOffset = 0 }) => ({

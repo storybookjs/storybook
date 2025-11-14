@@ -10,7 +10,6 @@ import {
   ListboxIcon,
   ListboxItem,
   ListboxText,
-  Optional,
   ProgressSpinner,
   TooltipNote,
   WithTooltip,
@@ -28,7 +27,8 @@ import { type TransitionMapOptions, useTransitionMap } from 'react-transition-st
 import { useStorybookApi } from 'storybook/manager-api';
 import { keyframes, styled } from 'storybook/theming';
 
-import { Particles } from '../../../components/components/Particles';
+import { Optional } from '../Optional/Optional';
+import { Particles } from '../Particles/Particles';
 import { TextFlip } from '../TextFlip';
 import type { ChecklistItem } from './useChecklist';
 import { useChecklist } from './useChecklist';

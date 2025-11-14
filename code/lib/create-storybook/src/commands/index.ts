@@ -20,7 +20,6 @@ export type {
 } from './UserPreferencesCommand';
 
 export { executeGeneratorExecution } from './GeneratorExecutionCommand';
-export type { GeneratorExecutionResult } from './GeneratorExecutionCommand';
 
 export { executeAddonConfiguration } from './AddonConfigurationCommand';
 

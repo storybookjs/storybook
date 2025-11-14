@@ -137,9 +137,9 @@ export const useChecklist = () => {
       .slice(0, 3)
       .sort((a, b) => a.sectionIndex - b.sectionIndex);
 
-    const progress = Math.round(
-      ((availableItems.length - openItems.length) / availableItems.length) * 100
-    );
+    const progress = availableItems.length
+      ? Math.round(((availableItems.length - openItems.length) / availableItems.length) * 100)
+      : 100;
 
     return { availableItems, openItems, readyItems, nextItems, progress };
   }, [allItems]);

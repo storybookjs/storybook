@@ -653,16 +653,6 @@ export default {
     'StatusTypeIdMismatchError',
     'UncaughtManagerError',
   ],
-  'storybook/internal/manager/manager-stores': [
-    'experimental_getStatusStore',
-    'experimental_getTestProviderStore',
-    'experimental_useStatusStore',
-    'experimental_useTestProviderStore',
-    'internal_checklistStore',
-    'internal_fullStatusStore',
-    'internal_fullTestProviderStore',
-    'internal_universalChecklistStore',
-  ],
   'storybook/internal/router': [
     'BaseLocationProvider',
     'DEEPLY_EQUAL',

@@ -6,6 +6,7 @@ import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
+import type { ChecklistItem } from '../../components/sidebar/useChecklist';
 import { Checklist } from './Checklist';
 import { checklistData } from './checklistData';
 
@@ -15,14 +16,17 @@ const skipped = ['viewports'];
 
 const availableItems = checklistData.sections.flatMap(
   ({ id: sectionId, title: sectionTitle, items }, sectionIndex) =>
-    items.map((item) => ({
+    items.map<ChecklistItem>((item, itemIndex) => ({
       ...item,
+      itemIndex,
       sectionId,
       sectionIndex,
       sectionTitle,
       isAvailable: true,
       isOpen: !accepted.includes(item.id) && !done.includes(item.id) && !skipped.includes(item.id),
       isLockedBy: [],
+      isImmutable: false,
+      isCompleted: accepted.includes(item.id) || done.includes(item.id),
       isReady: true,
       isAccepted: accepted.includes(item.id),
       isDone: done.includes(item.id),

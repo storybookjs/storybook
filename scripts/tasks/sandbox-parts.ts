@@ -597,7 +597,8 @@ export const addStories: Task['run'] = async (
   const mainConfig = await readConfig({ fileName: 'main', cwd });
   const packageManager = JsPackageManagerFactory.getPackageManager({}, sandboxDir);
 
-  const projectTypeService = new ProjectTypeService(packageManager);
+  // Package manager types differ slightly due to private methods and compilation differences of types
+  const projectTypeService = new ProjectTypeService(packageManager as any);
 
   // Ensure that we match the right stories in the stories directory
   updateStoriesField(

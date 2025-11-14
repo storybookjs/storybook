@@ -7,6 +7,7 @@ import {
   Feature,
   SupportedBuilder,
   SupportedFramework,
+  SupportedLanguage,
   SupportedRenderer,
 } from 'storybook/internal/types';
 
@@ -19,20 +20,8 @@ import { GeneratorExecutionCommand } from './GeneratorExecutionCommand';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../generators/GeneratorRegistry', { spy: true });
-vi.mock('../generators/baseGenerator', () => ({
-  baseGenerator: vi.fn().mockResolvedValue({
-    frameworkPackage: '@storybook/react-vite',
-    rendererPackage: '@storybook/react',
-    builderPackage: '@storybook/builder-vite',
-    configDir: '.storybook',
-    success: true,
-  }),
-}));
-vi.mock('../services', () => ({
-  AddonService: vi.fn().mockImplementation(() => ({
-    getAddonsForFeatures: vi.fn(),
-  })),
-}));
+vi.mock('../generators/baseGenerator', { spy: true });
+vi.mock('../services', { spy: true });
 
 describe('GeneratorExecutionCommand', () => {
   let command: GeneratorExecutionCommand;
@@ -57,10 +46,11 @@ describe('GeneratorExecutionCommand', () => {
     vi.mocked(AddonService).mockImplementation(
       () => mockAddonService as unknown as InstanceType<typeof AddonService>
     );
-    command = new GeneratorExecutionCommand(dependencyCollector);
     mockPackageManager = {
       getRunCommand: vi.fn().mockReturnValue('npm run storybook'),
     } as unknown as JsPackageManager;
+
+    command = new GeneratorExecutionCommand(dependencyCollector, mockPackageManager);
 
     mockFrameworkInfo = {
       renderer: SupportedRenderer.REACT,
@@ -83,6 +73,11 @@ describe('GeneratorExecutionCommand', () => {
 
     vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
     vi.mocked(logger.warn).mockImplementation(() => {});
+    vi.mocked(baseGenerator).mockResolvedValue({
+      configDir: '.storybook',
+      storybookCommand: undefined,
+      shouldRunDev: undefined,
+    });
 
     vi.clearAllMocks();
   });
@@ -104,8 +99,8 @@ describe('GeneratorExecutionCommand', () => {
 
       await command.execute({
         projectType: ProjectType.REACT,
-        packageManager: mockPackageManager,
         frameworkInfo: mockFrameworkInfo,
+        language: SupportedLanguage.TYPESCRIPT,
         options,
         selectedFeatures,
       });
@@ -127,8 +122,8 @@ describe('GeneratorExecutionCommand', () => {
       await expect(
         command.execute({
           projectType: ProjectType.UNSUPPORTED,
-          packageManager: mockPackageManager,
           frameworkInfo: mockFrameworkInfo,
+          language: SupportedLanguage.TYPESCRIPT,
           options,
           selectedFeatures,
         })
@@ -155,8 +150,8 @@ describe('GeneratorExecutionCommand', () => {
 
       await command.execute({
         projectType: ProjectType.VUE3,
-        packageManager: mockPackageManager,
         frameworkInfo: mockFrameworkInfo,
+        language: SupportedLanguage.TYPESCRIPT,
         options,
         selectedFeatures,
       });

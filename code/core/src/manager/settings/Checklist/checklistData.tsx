@@ -569,7 +569,7 @@ async play({ canvas, userEvent }) {
               </p>
               <p>
                 You can automate all of Storybook&apos;s tests by using Chromatic or by running the
-                <pre>vitest --project storybook</pre> command in your CI scripts.
+                <code>vitest --project storybook</code> command in your CI scripts.
               </p>
             </>
           ),
@@ -627,7 +627,7 @@ export default {
 }`}
               </CodeSnippet>
               <p>
-                That tag can also be applied in <pre>.storybook/preview.js</pre>, to generate
+                That tag can also be applied in <code>.storybook/preview.js</code>, to generate
                 documentation for all components.
               </p>
             </>
@@ -668,7 +668,7 @@ export default {
                 collaborative workflows.
               </p>
               <p>
-                Run <pre>npx storybook build</pre> in CI and deploy it using services like
+                Run <code>npx storybook build</code> in CI and deploy it using services like
                 Chromatic, Vercel, or Netlify.
               </p>
               <h4>Take it further</h4>

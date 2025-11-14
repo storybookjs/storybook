@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import {
   Card,
@@ -53,8 +53,13 @@ const expand = keyframes`
   }
 `;
 
-const useTransitionArray = <K,>(array: K[], subset: K[], options: TransitionMapOptions<K>) => {
-  const { setItem, toggle, stateMap } = useTransitionMap<K>({
+const useTransitionArray = <K, V>(
+  array: V[],
+  subset: V[],
+  options: { keyFn: (item: V) => K } & TransitionMapOptions<K>
+) => {
+  const keyFnRef = useRef(options.keyFn);
+  const { deleteItem, setItem, toggle, stateMap } = useTransitionMap<K>({
     allowMultiple: true,
     mountOnEnter: true,
     unmountOnExit: true,
@@ -63,14 +68,19 @@ const useTransitionArray = <K,>(array: K[], subset: K[], options: TransitionMapO
   });
 
   useEffect(() => {
-    array.forEach((task) => setItem(task));
-  }, [array, setItem]);
+    const keyFn = keyFnRef.current;
+    array.forEach((task) => setItem(keyFn(task)));
+    return () => array.forEach((task) => deleteItem(keyFn(task)));
+  }, [array, deleteItem, setItem, keyFnRef]);
 
   useEffect(() => {
-    array.forEach((task) => toggle(task, subset.includes(task)));
-  }, [array, subset, toggle]);
+    const keyFn = keyFnRef.current;
+    array.forEach((task) => toggle(keyFn(task), subset.map(keyFn).includes(keyFn(task))));
+  }, [array, subset, toggle, keyFnRef]);
 
-  return Array.from(stateMap);
+  return Array.from(stateMap).map(
+    ([key, value]) => [array.find((item) => options.keyFn(item) === key)!, value] as const
+  );
 };
 
 const CollapsibleWithMargin = styled(Collapsible)(({ collapsed }) => ({
@@ -150,6 +160,7 @@ const OpenGuideAction = ({ children }: { children?: React.ReactNode }) => {
   const api = useStorybookApi();
   return (
     <ListboxAction
+      ariaLabel="Open onboarding guide"
       onClick={(e) => {
         e.stopPropagation();
         api.navigate('/settings/guide');
@@ -171,19 +182,22 @@ export const ChecklistModule = () => {
   const [items, setItems] = useState<ChecklistItem[]>([]);
 
   useEffect(() => {
-    setItems((current) =>
-      current.map((item) => ({
-        ...item,
-        isCompleted: accepted.includes(item.id) || done.includes(item.id),
-        isSkipped: skipped.includes(item.id),
-      }))
-    );
+    setItems((current) => {
+      current.forEach((item) => {
+        item.isCompleted = accepted.includes(item.id) || done.includes(item.id);
+        item.isSkipped = skipped.includes(item.id);
+      });
+      return current;
+    });
     const timeout = setTimeout(setItems, 2000, nextItems);
     return () => clearTimeout(timeout);
   }, [accepted, done, skipped, nextItems]);
 
-  const transitionItems = useTransitionArray(allItems, items, { timeout: 300 });
-  const hasItems = nextItems.length > 0;
+  const transitionItems = useTransitionArray(allItems, items, {
+    keyFn: (item) => item.id,
+    timeout: 300,
+  });
+  const hasItems = items.length > 0;
 
   return (
     <CollapsibleWithMargin collapsed={!hasItems}>
@@ -219,7 +233,7 @@ export const ChecklistModule = () => {
                     <CollapseToggle
                       {...toggleProps}
                       id="checklist-module-collapse-toggle"
-                      aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
+                      ariaLabel={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
                     >
                       <ChevronSmallUpIcon
                         style={{
@@ -243,6 +257,7 @@ export const ChecklistModule = () => {
                           </ListboxItem>
                           <ListboxItem as="li">
                             <ListboxAction
+                              ariaLabel={false}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 mute(allItems.map(({ id }) => id));
@@ -258,7 +273,10 @@ export const ChecklistModule = () => {
                         </Listbox>
                       )}
                     >
-                      <ListboxButton onClick={(e) => e.stopPropagation()}>
+                      <ListboxButton
+                        ariaLabel={`${progress}% completed`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <ProgressCircle
                           percentage={progress}
                           running={false}
@@ -284,7 +302,10 @@ export const ChecklistModule = () => {
                     targetId={item.id}
                     transitionStatus={status}
                   >
-                    <ListboxAction onClick={() => api.navigate(`/settings/guide#${item.id}`)}>
+                    <ListboxAction
+                      ariaLabel={`Open onboarding guide for ${item.label}`}
+                      onClick={() => api.navigate(`/settings/guide#${item.id}`)}
+                    >
                       <ListboxIcon>
                         {item.isCompleted ? (
                           <Particles anchor={Checked} key={item.id} />
@@ -301,6 +322,7 @@ export const ChecklistModule = () => {
                     {item.action && (
                       <ListboxButton
                         data-target-id={item.id}
+                        ariaLabel={false}
                         onClick={() => {
                           item.action?.onClick({
                             api,

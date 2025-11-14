@@ -100,6 +100,7 @@ const SidebarMenuList: FC<{
             {links.map((link) => (
               <ListboxItem as="li" key={link.id} onClick={onClick} active={link.active}>
                 <ListboxAction
+                  ariaLabel={false}
                   onClick={(e) =>
                     link.onClick?.(e, {
                       id: link.id,

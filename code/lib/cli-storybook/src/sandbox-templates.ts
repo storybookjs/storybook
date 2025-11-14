@@ -1,11 +1,8 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import {
-  type StoriesEntry,
-  type StorybookConfigRaw,
-  SupportedBuilder,
-} from 'storybook/internal/types';
+import { type StoriesEntry, type StorybookConfigRaw } from 'storybook/internal/types';
 
 import { ProjectType } from '../../../core/src/cli/projectTypes';
+import { SupportedBuilder } from '../../../core/src/types/modules/builders';
 
 export type SkippableTask =
   | 'smoke-test'

@@ -174,6 +174,7 @@ export const scaffoldNewProject = async (
     spinner.message(`Executing ${createScript}`);
     await executeCommand({
       command: createScript,
+      shell: true,
       stdio: 'pipe',
       cwd: targetDir,
     });

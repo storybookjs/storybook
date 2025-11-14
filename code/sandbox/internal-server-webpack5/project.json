@@ -2,7 +2,7 @@
   "name": "internal/server-webpack5",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "server-webpack5"],
+  "implicitDependencies": ["core", "addon-links", "server-webpack5"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

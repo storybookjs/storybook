@@ -2,8 +2,8 @@ import type { Channel } from 'storybook/internal/channels';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
-import { version as addonVersion } from '../package.json';
-import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
+import versions from '../../common/versions';
+import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from '../../onboarding/constants';
 
 type Event = {
   type: 'telemetry' | 'survey';
@@ -11,20 +11,18 @@ type Event = {
   payload?: any;
 };
 
-export const experimental_serverChannel = async (channel: Channel, options: Options) => {
-  const { disableTelemetry } = await options.presets.apply<CoreConfig>('core', {});
-
-  if (disableTelemetry) {
+export function initOnboardingChannel(channel: Channel, options: Options, coreConfig: CoreConfig) {
+  if (coreConfig.disableTelemetry) {
     return channel;
   }
 
   channel.on(STORYBOOK_ADDON_ONBOARDING_CHANNEL, ({ type, ...event }: Event) => {
     if (type === 'telemetry') {
-      telemetry('addon-onboarding', { ...event, addonVersion });
+      telemetry('addon-onboarding', { ...event, addonVersion: versions.storybook });
     } else if (type === 'survey') {
-      telemetry('onboarding-survey', { ...event, addonVersion });
+      telemetry('onboarding-survey', { ...event, addonVersion: versions.storybook });
     }
   });
 
   return channel;
-};
+}

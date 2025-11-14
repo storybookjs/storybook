@@ -2,7 +2,7 @@
   "name": "lit-vite/default-ts",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "web-components-vite"],
+  "implicitDependencies": ["core", "addon-links", "web-components-vite"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

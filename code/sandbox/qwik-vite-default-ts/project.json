@@ -2,7 +2,7 @@
   "name": "qwik-vite/default-ts",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding"],
+  "implicitDependencies": ["core", "addon-links"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

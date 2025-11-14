@@ -32,6 +32,7 @@ import { dedent } from 'ts-dedent';
 import { resolvePackageDir } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
+import { initOnboardingChannel } from '../server-channel/onboarding-channel';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
 import { initPreviewInitializedChannel } from '../server-channel/preview-initialized-channel';
 import { initializeChecklist } from '../utils/checklist';
@@ -262,6 +263,8 @@ export const experimental_serverChannel = async (
   initCreateNewStoryChannel(channel, options, coreOptions);
   initOpenInEditorChannel(channel, options, coreOptions);
   initPreviewInitializedChannel(channel, options, coreOptions);
+
+  initOnboardingChannel(channel, options, coreOptions);
 
   return channel;
 };

@@ -54,6 +54,10 @@ const config = defineMain({
       titlePrefix: 'highlight',
     },
     {
+      directory: '../core/src/onboarding',
+      titlePrefix: 'onboarding',
+    },
+    {
       directory: '../addons/docs/src/blocks',
       titlePrefix: 'addons/docs/blocks',
     },
@@ -78,13 +82,6 @@ const config = defineMain({
       titlePrefix: 'addons/themes',
     },
     {
-      directory: '../addons/onboarding/src',
-      titlePrefix: 'addons/onboarding',
-    },
-    {
-      directory: '../addons/onboarding/example-stories',
-    },
-    {
       directory: '../addons/pseudo-states/src',
       titlePrefix: 'addons/pseudo-states',
     },
@@ -103,7 +100,6 @@ const config = defineMain({
     },
   ],
   addons: [
-    '@storybook/addon-onboarding',
     '@storybook/addon-themes',
     '@storybook/addon-docs',
     '@storybook/addon-designs',

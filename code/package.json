@@ -114,7 +114,6 @@
     "@storybook/addon-designs": "^11.0.1",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-links": "workspace:*",
-    "@storybook/addon-onboarding": "workspace:*",
     "@storybook/addon-themes": "workspace:*",
     "@storybook/addon-vitest": "workspace:*",
     "@storybook/angular": "workspace:*",

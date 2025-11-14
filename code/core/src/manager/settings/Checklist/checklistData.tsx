@@ -117,10 +117,7 @@ export const checklistData: ChecklistData = {
         {
           id: 'guided-tour',
           label: 'Take the guided tour',
-          available: ({ index }) =>
-            !!index &&
-            'example-button--primary' in index &&
-            addons.experimental_getRegisteredAddons().includes('@storybook/addon-onboarding'),
+          available: ({ index }) => !!index && 'example-button--primary' in index,
           criteria: 'Guided tour is completed',
           subscribe: ({ api, accept }) =>
             api.on('STORYBOOK_ADDON_ONBOARDING_CHANNEL', ({ step, type }) => {
@@ -143,10 +140,7 @@ export const checklistData: ChecklistData = {
         {
           id: 'onboarding-survey',
           label: 'Complete the onboarding survey',
-          available: ({ index }) =>
-            !!index &&
-            'example-button--primary' in index &&
-            addons.experimental_getRegisteredAddons().includes('@storybook/addon-onboarding'),
+          available: ({ index }) => !!index && 'example-button--primary' in index,
           afterCompletion: 'immutable',
           criteria: 'Onboarding survey is completed',
           subscribe: ({ api, accept }) =>

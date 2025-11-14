@@ -55,7 +55,6 @@
     "@chromatic-com/storybook": "^4.1.2",
     "@storybook/addon-a11y": "^10.1.0-alpha.6",
     "@storybook/addon-docs": "^10.1.0-alpha.6",
-    "@storybook/addon-onboarding": "^10.1.0-alpha.6",
     "@storybook/addon-vitest": "^10.1.0-alpha.6",
     "@storybook/vue3-vite": "^10.1.0-alpha.6",
     "@types/node": "^24.6.0",

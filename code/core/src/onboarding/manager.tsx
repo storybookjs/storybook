@@ -12,10 +12,10 @@ const Survey = lazy(() => import('./Survey'));
 
 let root: ReturnType<typeof createRoot> | null = null;
 const render = (node: React.ReactNode) => {
-  let container = document.getElementById('storybook-addon-onboarding');
+  let container = document.getElementById('storybook-onboarding');
   if (!container) {
     container = document.createElement('div');
-    container.id = 'storybook-addon-onboarding';
+    container.id = 'storybook-onboarding';
     document.body.appendChild(container);
   }
   root = root ?? createRoot(container);
@@ -25,7 +25,7 @@ const render = (node: React.ReactNode) => {
 // The addon is enabled only when:
 // 1. The onboarding query parameter is present
 // 2. The example button stories are present
-addons.register('@storybook/addon-onboarding', async (api) => {
+export default addons.register('storybook/onboarding', async (api) => {
   const { path, queryParams } = api.getUrlState();
   const isOnboarding = path === '/onboarding' || queryParams.onboarding === 'true';
   const isSurvey = queryParams.onboarding === 'survey';
@@ -51,7 +51,7 @@ addons.register('@storybook/addon-onboarding', async (api) => {
 
   if (!hasButtonStories) {
     console.warn(
-      `[@storybook/addon-onboarding] It seems like you have finished the onboarding experience in Storybook! Therefore this addon is not necessary anymore and will not be loaded. You are free to remove it from your project. More info: https://github.com/storybookjs/storybook/tree/next/code/addons/onboarding#uninstalling`
+      `[storybook/onboarding] It seems like you have finished the onboarding experience in Storybook! Therefore this addon is not necessary anymore and will not be loaded. You are free to remove it from your project. More info: https://github.com/storybookjs/storybook/tree/next/code/addons/onboarding#uninstalling`
     );
     return;
   }

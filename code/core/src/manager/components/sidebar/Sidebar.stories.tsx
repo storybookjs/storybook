@@ -2,13 +2,15 @@ import React from 'react';
 
 import type { DecoratorFunction, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
+import { global } from '@storybook/global';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
-import { internal_fullStatusStore } from '../../manager-stores.mock';
+import { internal_fullStatusStore, universalChecklistStore } from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';
@@ -108,6 +110,13 @@ const meta = {
   globals: { sb_theme: 'side-by-side' },
   beforeEach: () => {
     internal_fullStatusStore.unset();
+    universalChecklistStore.setState({
+      loaded: true,
+      muted: false,
+      accepted: ['controls'],
+      done: ['add-component'],
+      skipped: ['viewports'],
+    });
   },
 } satisfies Meta<typeof Sidebar>;
 
@@ -167,6 +176,13 @@ export const Simple: Story = {};
 export const SimpleInProduction: Story = {
   args: {
     showCreateStoryButton: false,
+  },
+  beforeEach: () => {
+    const configType = global.CONFIG_TYPE;
+    global.CONFIG_TYPE = 'PRODUCTION';
+    return () => {
+      global.CONFIG_TYPE = configType;
+    };
   },
 };
 

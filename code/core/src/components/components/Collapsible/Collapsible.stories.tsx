@@ -1,15 +1,16 @@
 import { useState } from 'react';
 
 import preview from '../../../../../.storybook/preview';
+import type { useCollapsible } from './Collapsible';
 import { Collapsible } from './Collapsible';
 
 const toggle = ({
   isCollapsed,
-  toggleCollapsed,
+  toggleProps,
 }: {
   isCollapsed: boolean;
-  toggleCollapsed: () => void;
-}) => <button onClick={toggleCollapsed}>{isCollapsed ? 'Open' : 'Close'}</button>;
+  toggleProps: ReturnType<typeof useCollapsible>['toggleProps'];
+}) => <button {...toggleProps}>{isCollapsed ? 'Open' : 'Close'}</button>;
 
 const content = <div style={{ background: 'papayawhip', padding: 16 }}>Peekaboo!</div>;
 
@@ -23,14 +24,20 @@ const meta = preview.meta({
 
 export const Default = meta.story({});
 
-export const Open = meta.story({
-  play: ({ canvas, userEvent }) => userEvent.click(canvas.getByRole('button', { name: 'Open' })),
+export const Collapsed = meta.story({
+  args: {
+    collapsed: true,
+  },
 });
 
-export const InitialOpen = meta.story({
+export const Disabled = meta.story({
   args: {
-    initialCollapsed: false,
+    disabled: true,
   },
+});
+
+export const Toggled = meta.story({
+  play: ({ canvas, userEvent }) => userEvent.click(canvas.getByRole('button', { name: 'Close' })),
 });
 
 export const Controlled = meta.story({
@@ -43,4 +50,5 @@ export const Controlled = meta.story({
       </>
     );
   },
+  play: ({ canvas, userEvent }) => userEvent.click(canvas.getByRole('button', { name: 'Toggle' })),
 });

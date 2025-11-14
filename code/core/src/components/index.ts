@@ -43,11 +43,12 @@ export { createCopyToClipboardFunction } from './components/syntaxhighlighter/cl
 export { ActionBar } from './components/ActionBar/ActionBar';
 export { Collapsible } from './components/Collapsible/Collapsible';
 export { Card } from './components/Card/Card';
-export { FocusProxy } from './components/FocusProxy/FocusProxy';
+export { FocusProxy, FocusRing, FocusTarget, FocusOutline } from './components/FocusRing/FocusRing';
 export {
   Listbox,
   ListboxAction,
   ListboxButton,
+  ListboxIcon,
   ListboxItem,
   ListboxText,
 } from './components/Listbox/Listbox';
@@ -129,6 +130,7 @@ export { ProgressSpinner } from './components/ProgressSpinner/ProgressSpinner';
 
 // Utils
 export { getStoryHref } from './components/utils/getStoryHref';
+export { useLocationHash } from './components/shared/useLocationHash';
 
 export * from './components/typography/DocumentFormatting';
 export * from './components/typography/ResetWrapper';

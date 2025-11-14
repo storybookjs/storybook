@@ -1,7 +1,6 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
-import { ChecklistModule } from './ChecklistModule';
 import { HighlightStyles } from './HighlightStyles';
 import { Ref } from './Refs';
 import type { CombinedDataset, Selection } from './types';
@@ -39,7 +38,6 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
       data-highlighted-ref-id={highlighted?.refId}
       data-highlighted-item-id={highlighted?.itemId}
     >
-      <ChecklistModule />
       {highlighted && <HighlightStyles {...highlighted} />}
       {dataset.entries.map(([refId, ref]) => (
         <Ref

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
+import type { ButtonHTMLAttributes } from 'react';
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
@@ -12,14 +12,14 @@ import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper';
 import { useAriaDescription } from './helpers/useAriaDescription';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  as?: 'button' | 'a' | 'label' | typeof Slot;
+  as?: 'a' | 'button' | 'div' | 'label' | typeof Slot;
   asChild?: boolean;
   size?: 'small' | 'medium';
   padding?: 'small' | 'medium' | 'none';
   variant?: 'outline' | 'solid' | 'ghost';
-  onClick?: (event: SyntheticEvent) => void;
   active?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
 
   /**
@@ -67,6 +67,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = 'outline',
       padding = 'medium',
       disabled = false,
+      readOnly = false,
       active,
       onClick,
       ariaLabel,
@@ -105,7 +106,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const [isAnimating, setIsAnimating] = useState(false);
 
-    const handleClick = (event: SyntheticEvent) => {
+    const handleClick: ButtonProps['onClick'] = (event) => {
       if (onClick) {
         onClick(event);
       }
@@ -141,6 +142,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             size={size}
             padding={padding}
             disabled={disabled}
+            readOnly={readOnly}
             active={active}
             animating={isAnimating}
             animation={animation}
@@ -166,144 +168,158 @@ const StyledButton = styled('button', {
     animating: boolean;
     animation: ButtonProps['animation'];
   }
->(({ theme, variant, size, disabled, active, animating, animation = 'none', padding }) => ({
-  border: 0,
-  cursor: disabled ? 'not-allowed' : 'pointer',
-  display: 'inline-flex',
-  gap: '6px',
-  alignItems: 'center',
-  justifyContent: 'center',
-  overflow: 'hidden',
-  padding: (() => {
-    if (padding === 'none') {
+>(
+  ({
+    theme,
+    variant,
+    size,
+    disabled,
+    readOnly,
+    active,
+    animating,
+    animation = 'none',
+    padding,
+  }) => ({
+    border: 0,
+    cursor: readOnly ? 'inherit' : disabled ? 'not-allowed' : 'pointer',
+    display: 'inline-flex',
+    gap: '6px',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    padding: (() => {
+      if (padding === 'none') {
+        return 0;
+      }
+      if (padding === 'small' && size === 'small') {
+        return '0 7px';
+      }
+      if (padding === 'small' && size === 'medium') {
+        return '0 9px';
+      }
+      if (size === 'small') {
+        return '0 10px';
+      }
+      if (size === 'medium') {
+        return '0 12px';
+      }
       return 0;
-    }
-    if (padding === 'small' && size === 'small') {
-      return '0 7px';
-    }
-    if (padding === 'small' && size === 'medium') {
-      return '0 9px';
-    }
-    if (size === 'small') {
-      return '0 10px';
-    }
-    if (size === 'medium') {
-      return '0 12px';
-    }
-    return 0;
-  })(),
-  height: size === 'small' ? '28px' : '32px',
-  position: 'relative',
-  textAlign: 'center',
-  textDecoration: 'none',
-  transitionProperty: 'background, box-shadow',
-  transitionDuration: '150ms',
-  transitionTimingFunction: 'ease-out',
-  verticalAlign: 'top',
-  whiteSpace: 'nowrap',
-  userSelect: 'none',
-  opacity: disabled ? 0.5 : 1,
-  margin: 0,
-  fontSize: `${theme.typography.size.s1}px`,
-  fontWeight: theme.typography.weight.bold,
-  lineHeight: '1',
-  background: (() => {
-    if (variant === 'solid') {
-      return theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary);
-    }
+    })(),
+    height: size === 'small' ? '28px' : '32px',
+    position: 'relative',
+    textAlign: 'center',
+    textDecoration: 'none',
+    transitionProperty: 'background, box-shadow',
+    transitionDuration: '150ms',
+    transitionTimingFunction: 'ease-out',
+    verticalAlign: 'top',
+    whiteSpace: 'nowrap',
+    userSelect: 'none',
+    opacity: disabled && !readOnly ? 0.5 : 1,
+    margin: 0,
+    fontSize: `${theme.typography.size.s1}px`,
+    fontWeight: theme.typography.weight.bold,
+    lineHeight: '1',
+    background: (() => {
+      if (variant === 'solid') {
+        return theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary);
+      }
 
-    if (variant === 'outline') {
-      return theme.button.background;
-    }
+      if (variant === 'outline') {
+        return theme.button.background;
+      }
 
-    if (variant === 'ghost' && active) {
-      return transparentize(0.93, theme.barSelectedColor);
-    }
+      if (variant === 'ghost' && active) {
+        return transparentize(0.93, theme.barSelectedColor);
+      }
 
-    return 'transparent';
-  })(),
-  color: (() => {
-    if (variant === 'solid') {
-      return theme.color.lightest;
-    }
+      return 'transparent';
+    })(),
+    color: (() => {
+      if (variant === 'solid') {
+        return theme.color.lightest;
+      }
 
-    if (variant === 'outline') {
+      if (variant === 'outline') {
+        return theme.input.color;
+      }
+
+      if (variant === 'ghost' && active) {
+        return theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary;
+      }
+
+      if (variant === 'ghost') {
+        return theme.textMutedColor;
+      }
       return theme.input.color;
-    }
-
-    if (variant === 'ghost' && active) {
-      return theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary;
-    }
-
-    if (variant === 'ghost') {
-      return theme.textMutedColor;
-    }
-    return theme.input.color;
-  })(),
-  boxShadow: variant === 'outline' ? `${theme.button.border} 0 0 0 1px inset` : 'none',
-  borderRadius: theme.input.borderRadius,
-  // Making sure that the button never shrinks below its minimum size
-  flexShrink: 0,
-
-  '&:hover': {
-    color: variant === 'ghost' ? theme.color.secondary : undefined,
-    background: (() => {
-      let bgColor = theme.color.secondary;
-
-      if (variant === 'solid') {
-        bgColor =
-          theme.base === 'light'
-            ? lighten(0.1, theme.color.secondary)
-            : darken(0.3, theme.color.secondary);
-      }
-
-      if (variant === 'outline') {
-        bgColor = theme.button.background;
-      }
-
-      if (variant === 'ghost') {
-        return transparentize(0.86, theme.color.secondary);
-      }
-      return theme.base === 'light' ? darken(0.02, bgColor) : lighten(0.03, bgColor);
     })(),
-  },
+    boxShadow: variant === 'outline' ? `${theme.button.border} 0 0 0 1px inset` : 'none',
+    borderRadius: theme.input.borderRadius,
+    // Making sure that the button never shrinks below its minimum size
+    flexShrink: 0,
 
-  '&:active': {
-    color: variant === 'ghost' ? theme.color.secondary : undefined,
-    background: (() => {
-      let bgColor = theme.color.secondary;
+    ...(!readOnly && {
+      '&:hover': {
+        color: variant === 'ghost' ? theme.color.secondary : undefined,
+        background: (() => {
+          let bgColor = theme.color.secondary;
 
-      if (variant === 'solid') {
-        bgColor = theme.color.secondary;
-      }
+          if (variant === 'solid') {
+            bgColor =
+              theme.base === 'light'
+                ? lighten(0.1, theme.color.secondary)
+                : darken(0.3, theme.color.secondary);
+          }
 
-      if (variant === 'outline') {
-        bgColor = theme.button.background;
-      }
+          if (variant === 'outline') {
+            bgColor = theme.button.background;
+          }
 
-      if (variant === 'ghost') {
-        return theme.background.hoverable;
-      }
-      return theme.base === 'light' ? darken(0.02, bgColor) : lighten(0.03, bgColor);
-    })(),
-  },
+          if (variant === 'ghost') {
+            return transparentize(0.86, theme.color.secondary);
+          }
+          return theme.base === 'light' ? darken(0.02, bgColor) : lighten(0.03, bgColor);
+        })(),
+      },
 
-  '&:focus-visible': {
-    outline: `2px solid ${rgba(theme.color.secondary, 1)}`,
-    outlineOffset: 2,
-    // Should ensure focus outline gets drawn above next sibling
-    zIndex: '1',
-  },
+      '&:active': {
+        color: variant === 'ghost' ? theme.color.secondary : undefined,
+        background: (() => {
+          let bgColor = theme.color.secondary;
 
-  '.sb-bar &:focus-visible, .sb-list &:focus-visible': {
-    outlineOffset: 0,
-  },
+          if (variant === 'solid') {
+            bgColor = theme.color.secondary;
+          }
 
-  '> svg': {
-    animation:
-      animating && animation !== 'none' ? `${theme.animation[animation]} 1000ms ease-out` : '',
-  },
-}));
+          if (variant === 'outline') {
+            bgColor = theme.button.background;
+          }
+
+          if (variant === 'ghost') {
+            return theme.background.hoverable;
+          }
+          return theme.base === 'light' ? darken(0.02, bgColor) : lighten(0.03, bgColor);
+        })(),
+      },
+
+      '&:focus-visible': {
+        outline: `2px solid ${rgba(theme.color.secondary, 1)}`,
+        outlineOffset: 2,
+        // Should ensure focus outline gets drawn above next sibling
+        zIndex: '1',
+      },
+
+      '.sb-bar &:focus-visible, .sb-list &:focus-visible': {
+        outlineOffset: 0,
+      },
+    }),
+
+    '> svg': {
+      animation:
+        animating && animation !== 'none' ? `${theme.animation[animation]} 1000ms ease-out` : '',
+    },
+  })
+);
 
 export const IconButton = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
   deprecate(

@@ -4,8 +4,8 @@ import {
 } from 'storybook/manager-api';
 import * as testUtils from 'storybook/test';
 
-import type { StoreEvent, StoreState } from '../shared/checklist-store';
-import { UNIVERSAL_CHECKLIST_STORE_OPTIONS, createChecklistStore } from '../shared/checklist-store';
+import type { ChecklistStore, StoreEvent, StoreState, TaskId } from '../shared/checklist-store';
+import { UNIVERSAL_CHECKLIST_STORE_OPTIONS } from '../shared/checklist-store';
 import {
   type StatusStoreEvent,
   type StatusesByStoryIdAndTypeId,
@@ -54,4 +54,43 @@ export const universalChecklistStore = new experimental_MockUniversalStore<Store
   testUtils
 ) as unknown as UniversalStore<StoreState, StoreEvent>;
 
-export const checklistStore = createChecklistStore(universalChecklistStore);
+export const checklistStore: ChecklistStore = {
+  accept: (id: TaskId) => {
+    universalChecklistStore.setState((state) => ({
+      ...state,
+      accepted: state.accepted.includes(id) ? state.accepted : [...state.accepted, id],
+      skipped: state.skipped.filter((v) => v !== id),
+    }));
+  },
+  done: (id: TaskId) => {
+    universalChecklistStore.setState((state) => ({
+      ...state,
+      done: state.done.includes(id) ? state.done : [...state.done, id],
+      skipped: state.skipped.filter((v) => v !== id),
+    }));
+  },
+  skip: (id: TaskId) => {
+    universalChecklistStore.setState((state) => ({
+      ...state,
+      accepted: state.accepted.filter((v) => v !== id),
+      skipped: state.skipped.includes(id) ? state.skipped : [...state.skipped, id],
+    }));
+  },
+  reset: (id: TaskId) => {
+    universalChecklistStore.setState((state) => ({
+      ...state,
+      accepted: state.accepted.filter((v) => v !== id),
+      skipped: state.skipped.filter((v) => v !== id),
+    }));
+  },
+  mute: (value: boolean | Array<TaskId>) => {
+    universalChecklistStore.setState((state) => ({
+      ...state,
+      muted: Array.isArray(value)
+        ? Array.from(
+            new Set([...(Array.isArray(state.muted) ? state.muted : []), ...(value || [])])
+          )
+        : value,
+    }));
+  },
+};

@@ -13,7 +13,7 @@ import { styled } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../keybinding';
 import { AboutPage } from './AboutPage';
-import { GuidedTourPage } from './GuidedTourPage';
+import { GuidePage } from './GuidePage';
 import { ShortcutsPage } from './ShortcutsPage';
 import { WhatsNewPage } from './whats_new_page';
 
@@ -62,25 +62,29 @@ const Pages: FC<{
           </RouteWrapper>
         ),
       },
-      {
-        id: 'guided-tour',
-        title: 'Guided tour',
-        children: (
-          <RouteWrapper path="guided-tour">
-            <GuidedTourPage key="guided-tour" />
-          </RouteWrapper>
-        ),
-      },
-      {
-        id: 'shortcuts',
-        title: 'Keyboard shortcuts',
-        children: (
-          <RouteWrapper path="shortcuts">
-            <ShortcutsPage key="shortcuts" />
-          </RouteWrapper>
-        ),
-      },
     ];
+
+    if (global.CONFIG_TYPE === 'DEVELOPMENT') {
+      tabsToInclude.push({
+        id: 'guide',
+        title: 'Guide',
+        children: (
+          <RouteWrapper path="guide">
+            <GuidePage key="guide" />
+          </RouteWrapper>
+        ),
+      });
+    }
+
+    tabsToInclude.push({
+      id: 'shortcuts',
+      title: 'Keyboard shortcuts',
+      children: (
+        <RouteWrapper path="shortcuts">
+          <ShortcutsPage key="shortcuts" />
+        </RouteWrapper>
+      ),
+    });
 
     if (enableWhatsNew) {
       tabsToInclude.push({

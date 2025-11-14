@@ -1,9 +1,11 @@
 import React from 'react';
 
+import { Link } from 'storybook/internal/components';
+
 import { styled } from 'storybook/theming';
 
+import { useChecklist } from '../components/sidebar/useChecklist';
 import { Checklist } from './Checklist/Checklist';
-import { checklistData } from './Checklist/checklistData';
 
 const Container = styled.div(({ theme }) => ({
   display: 'flex',
@@ -32,17 +34,32 @@ const Intro = styled.div(({ theme }) => ({
   },
 }));
 
-export const GuidedTourPage = () => {
+export const GuidePage = () => {
+  const checklist = useChecklist();
+
   return (
     <Container>
       <Intro>
-        <h1>Guided tour</h1>
+        <h1>Guide</h1>
         <p>
           Learn the basics. Set up Storybook. You know the drill. This isn't your first time setting
           up software so get to it!
         </p>
       </Intro>
-      <Checklist data={checklistData} />
+      <Checklist {...checklist} />
+      {checklist.muted ? (
+        <center>
+          Want to see this in the sidebar?{' '}
+          <Link onClick={() => checklist.mute(false)}>Show in sidebar</Link>
+        </center>
+      ) : (
+        <center>
+          Don&apos;t want to see this in the sidebar?{' '}
+          <Link onClick={() => checklist.mute(checklist.allItems.map(({ id }) => id))}>
+            Remove from sidebar
+          </Link>
+        </center>
+      )}
     </Container>
   );
 };

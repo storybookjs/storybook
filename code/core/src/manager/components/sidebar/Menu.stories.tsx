@@ -6,11 +6,11 @@ import { LinkIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import type { State } from 'storybook/manager-api';
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { useMenu } from '../../container/Menu';
+import { universalChecklistStore as mockStore } from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { type MenuList, SidebarMenu } from './Menu';
 
@@ -29,6 +29,15 @@ const meta = {
   },
   globals: { sb_theme: 'side-by-side' },
   decorators: [(storyFn) => <LayoutProvider>{storyFn()}</LayoutProvider>],
+  beforeEach: async () => {
+    mockStore.setState({
+      loaded: true,
+      muted: false,
+      accepted: ['controls'],
+      done: ['add-component'],
+      skipped: ['viewports'],
+    });
+  },
 } satisfies Meta<typeof SidebarMenu>;
 export default meta;
 
@@ -55,9 +64,8 @@ const DoubleThemeRenderingHack = styled.div({
 export const Expanded: Story = {
   globals: { sb_theme: 'light', viewport: 'desktop' },
   render: () => {
-    const menu = useMenu(
-      { whatsNewData: undefined } as State,
-      {
+    const menu = useMenu({
+      api: {
         // @ts-expect-error (Converted from ts-ignore)
         getShortcutKeys: () => ({}),
         getAddonsShortcuts: () => ({}),
@@ -65,12 +73,11 @@ export const Expanded: Story = {
         isWhatsNewUnread: () => false,
         getDocsUrl: () => 'https://storybook.js.org/docs/',
       },
-      false,
-      false,
-      false,
-      false,
-      false
-    );
+      showToolbar: false,
+      isPanelShown: false,
+      isNavShown: false,
+      enableShortcuts: false,
+    });
     return (
       <DoubleThemeRenderingHack>
         <SidebarMenu menu={menu} />
@@ -107,9 +114,8 @@ export const Expanded: Story = {
 export const ExpandedWithShortcuts: Story = {
   ...Expanded,
   render: () => {
-    const menu = useMenu(
-      { whatsNewData: undefined } as State,
-      {
+    const menu = useMenu({
+      api: {
         // @ts-expect-error (invalid)
         getShortcutKeys: () => ({
           shortcutsPage: ['⌘', '⇧​', ','],
@@ -130,12 +136,11 @@ export const ExpandedWithShortcuts: Story = {
         isWhatsNewUnread: () => false,
         getDocsUrl: () => 'https://storybook.js.org/docs/',
       },
-      false,
-      false,
-      false,
-      false,
-      true
-    );
+      showToolbar: false,
+      isPanelShown: false,
+      isNavShown: false,
+      enableShortcuts: true,
+    });
 
     return (
       <DoubleThemeRenderingHack>
@@ -161,9 +166,8 @@ export const ExpandedWithShortcuts: Story = {
 export const ExpandedWithWhatsNew: Story = {
   ...Expanded,
   render: () => {
-    const menu = useMenu(
-      { whatsNewData: { status: 'SUCCESS', disableWhatsNewNotifications: false } } as State,
-      {
+    const menu = useMenu({
+      api: {
         // @ts-expect-error (invalid)
         getShortcutKeys: () => ({}),
         getAddonsShortcuts: () => ({}),
@@ -171,12 +175,11 @@ export const ExpandedWithWhatsNew: Story = {
         isWhatsNewUnread: () => true,
         getDocsUrl: () => 'https://storybook.js.org/docs/',
       },
-      false,
-      false,
-      false,
-      false,
-      false
-    );
+      showToolbar: false,
+      isPanelShown: false,
+      isNavShown: false,
+      enableShortcuts: false,
+    });
 
     return (
       <DoubleThemeRenderingHack>

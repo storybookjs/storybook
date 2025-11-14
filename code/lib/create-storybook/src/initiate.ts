@@ -195,8 +195,10 @@ async function runStorybookDev(result: {
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
+    const [command, ...args] = [...storybookCommand.split(' '), ...flags];
     executeCommand({
-      command: `${storybookCommand} ${flags.join(' ')}`,
+      command: command,
+      args,
       stdio: 'inherit',
     });
   } catch {

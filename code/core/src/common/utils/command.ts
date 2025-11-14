@@ -119,6 +119,7 @@ function resolveCommand(command: string): string {
     'npx',
     'pnpm',
     'yarn',
+    'ng',
     // Anything installed via node_modules/.bin (vite, eslint, prettier, etc)
     // can be added here as needed. Do NOT list native executables.
   ]);

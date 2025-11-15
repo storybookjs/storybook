@@ -1,16 +1,13 @@
-import { execSync } from 'child_process';
 import { danger, fail } from 'danger';
+import pkg from '../code/package.json' assert { type: 'json' };
 
-execSync('npm install lodash');
+const intersection = (a: readonly string[], b: readonly string[]) =>
+  a.filter((v) => b.includes(v));
 
-// eslint-disable-next-line depend/ban-dependencies
-const flatten = require('lodash/flatten.js');
-// eslint-disable-next-line depend/ban-dependencies
-const intersection = require('lodash/intersection.js');
-// eslint-disable-next-line depend/ban-dependencies
-const isEmpty = require('lodash/isEmpty.js');
-
-const pkg = require('../code/package.json');
+type PrLogConfig = {
+  skipLabels?: string[];
+  validLabels?: [string, string][];
+};
 const prLogConfig = pkg['pr-log'];
 
 const Versions = {
@@ -24,20 +21,20 @@ const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
 const branchVersion = Versions.MINOR;
 
 const checkRequiredLabels = (labels: string[]) => {
-  const forbiddenLabels = flatten([
+  const forbiddenLabels = [
     'ci: do not merge',
     'in progress',
-    branchVersion !== Versions.MAJOR ? 'BREAKING CHANGE' : [],
-    branchVersion === Versions.PATCH ? 'feature request' : [],
-  ]);
+    ...(branchVersion !== Versions.MAJOR ? ['BREAKING CHANGE'] : []),
+    ...(branchVersion === Versions.PATCH ? ['feature request'] : []),
+  ];
 
-  const requiredLabels = flatten([
-    prLogConfig.skipLabels || [],
-    (prLogConfig.validLabels || []).map((keyVal: string) => keyVal[0]),
-  ]);
+  const requiredLabels = [
+    ...(prLogConfig?.skipLabels ?? []),
+    ...(prLogConfig?.validLabels ?? []).map(([label]) => label),
+  ];
 
   const blockingLabels = intersection(forbiddenLabels, labels);
-  if (!isEmpty(blockingLabels)) {
+  if (blockingLabels.length > 0) {
     fail(
       `PR is marked with ${blockingLabels.map((label: string) => `"${label}"`).join(', ')} label${
         blockingLabels.length > 1 ? 's' : ''
@@ -46,14 +43,14 @@ const checkRequiredLabels = (labels: string[]) => {
   }
 
   const foundRequiredLabels = intersection(requiredLabels, labels);
-  if (isEmpty(foundRequiredLabels)) {
+  if (foundRequiredLabels.length === 0) {
     fail(`PR is not labeled with one of: ${JSON.stringify(requiredLabels)}`);
   } else if (foundRequiredLabels.length > 1) {
     fail(`Please choose only one of these labels: ${JSON.stringify(foundRequiredLabels)}`);
   }
 
   const foundCILabels = intersection(ciLabels, labels);
-  if (isEmpty(foundCILabels)) {
+  if (foundCILabels.length === 0) {
     fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
   } else if (foundCILabels.length > 1) {
     fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);

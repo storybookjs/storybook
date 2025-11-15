@@ -93,26 +93,31 @@ const MenuButtonGroup = styled.div({
 
 const SidebarMenuList: FC<{
   menu: MenuList;
-  onClick: () => void;
-}> = ({ menu, onClick }) => (
+  onHide: () => void;
+}> = ({ menu, onHide }) => (
   <Container>
     {menu
       .filter((links) => links.length)
       .flatMap((links) => (
         <Listbox as="ul" key={links.map((link) => link.id).join('_')}>
           {links.map((link) => (
-            <ListboxItem as="li" key={link.id} onClick={onClick} active={link.active}>
+            <ListboxItem as="li" key={link.id} active={link.active}>
               <ListboxAction
+                {...(link.href && { as: 'a', href: link.href, target: '_blank' })}
                 ariaLabel={false}
-                onClick={(e) =>
+                id={`list-item-${link.id}`}
+                onClick={(e) => {
                   link.onClick?.(e, {
                     id: link.id,
                     active: link.active,
                     disabled: link.disabled,
                     title: link.title,
                     href: link.href,
-                  })
-                }
+                  });
+                  if (link.closeOnClick) {
+                    onHide();
+                  }
+                }}
               >
                 {(link.icon || link.input) && <ListboxIcon>{link.icon || link.input}</ListboxIcon>}
                 {(link.title || link.center) && (
@@ -168,7 +173,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
     <PopoverProvider
       placement={'bottom-start'}
       padding={0}
-      popover={({ onHide }) => <SidebarMenuList onClick={onHide} menu={menu} />}
+      popover={({ onHide }) => <SidebarMenuList onHide={onHide} menu={menu} />}
       onVisibleChange={setIsTooltipVisible}
     >
       <SidebarToggleButton

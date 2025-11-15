@@ -254,9 +254,9 @@ export const checklistData: ChecklistData = {
           subscribe: ({ api, done }) => api.on(STORY_ARGS_UPDATED, done),
           content: () => (
             <p>
-              Storybook gets better as you add more components. Start with the easy ones, like
-              Button or Avatar, and work your way up to more complex components, like Select,
-              Autocomplete, or even full pages.
+              When you change the value of one of the inputs in the Controls table, the story
+              automatically updates to reflect that change. It&apos;s a great way to explore how a
+              component handles various inputs.
             </p>
           ),
         },

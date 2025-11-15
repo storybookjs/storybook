@@ -68,6 +68,10 @@ const buttonStyleAdditions = ({
   `}
 `;
 
+const Container = styled.div({
+  minWidth: 250,
+});
+
 export const SidebarButton = styled(Button)<
   ComponentProps<typeof Button> & {
     highlighted: boolean;
@@ -90,42 +94,38 @@ const MenuButtonGroup = styled.div({
 const SidebarMenuList: FC<{
   menu: MenuList;
   onClick: () => void;
-}> = ({ menu, onClick }) => {
-  return (
-    <div style={{ minWidth: 250 }}>
-      {menu
-        .filter((links) => links.length)
-        .flatMap((links) => (
-          <Listbox as="ul" key={links.map((link) => link.id).join('_')}>
-            {links.map((link) => (
-              <ListboxItem as="li" key={link.id} onClick={onClick} active={link.active}>
-                <ListboxAction
-                  ariaLabel={false}
-                  onClick={(e) =>
-                    link.onClick?.(e, {
-                      id: link.id,
-                      active: link.active,
-                      disabled: link.disabled,
-                      title: link.title,
-                      href: link.href,
-                    })
-                  }
-                >
-                  {(link.icon || link.input) && (
-                    <ListboxIcon>{link.icon || link.input}</ListboxIcon>
-                  )}
-                  {(link.title || link.center) && (
-                    <ListboxText>{link.title || link.center}</ListboxText>
-                  )}
-                  {link.right}
-                </ListboxAction>
-              </ListboxItem>
-            ))}
-          </Listbox>
-        ))}
-    </div>
-  );
-};
+}> = ({ menu, onClick }) => (
+  <Container>
+    {menu
+      .filter((links) => links.length)
+      .flatMap((links) => (
+        <Listbox as="ul" key={links.map((link) => link.id).join('_')}>
+          {links.map((link) => (
+            <ListboxItem as="li" key={link.id} onClick={onClick} active={link.active}>
+              <ListboxAction
+                ariaLabel={false}
+                onClick={(e) =>
+                  link.onClick?.(e, {
+                    id: link.id,
+                    active: link.active,
+                    disabled: link.disabled,
+                    title: link.title,
+                    href: link.href,
+                  })
+                }
+              >
+                {(link.icon || link.input) && <ListboxIcon>{link.icon || link.input}</ListboxIcon>}
+                {(link.title || link.center) && (
+                  <ListboxText>{link.title || link.center}</ListboxText>
+                )}
+                {link.right}
+              </ListboxAction>
+            </ListboxItem>
+          ))}
+        </Listbox>
+      ))}
+  </Container>
+);
 
 export interface SidebarMenuProps {
   menu: MenuList;

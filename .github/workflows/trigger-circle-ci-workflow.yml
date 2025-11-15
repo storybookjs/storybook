@@ -40,19 +40,99 @@ jobs:
   get-parameters:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
+    # NB: We'll set the job output from the final step (id: set_workflow).
     steps:
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
-        run: echo "workflow=normal" >> $GITHUB_ENV
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:docs'))
-        run: echo "workflow=docs" >> $GITHUB_ENV
-      - if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'ci:merged')
-        run: echo "workflow=merged" >> $GITHUB_ENV
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
-        run: echo "workflow=daily" >> $GITHUB_ENV
+      - name: Reset workflow (start clean)
+        run: |
+          echo "Resetting workflow env"
+          # ensure workflow env var is empty for the job
+          echo "workflow=" >> $GITHUB_ENV
+
+      - name: Debug - show github context
+        run: |
+          echo "=== GITHUB CONTEXT / EVENT INFO ==="
+          echo "event_name: $GITHUB_EVENT_NAME"
+          echo "event.action: ${{ github.event.action || 'null' }}"
+          echo "pull_request exists? : ${{ github.event.pull_request != null }}"
+          echo "---- full event JSON (truncated to 20000 chars) ----"
+          # for readability, print parsed JSON (toJSON is safe here)
+          jq -C . <<<"${{ toJSON(github.event) }}" | sed -n '1,200p'
+
+      - name: Determine workflow from labels on pull_request_target labeled event
+        if: github.event_name == 'pull_request_target' && github.event.action == 'labeled'
+        run: |
+          echo "Labeled event detected"
+          echo "Added label: ${{ github.event.label.name }}"
+          case "${{ github.event.label.name }}" in
+            ci:normal) echo "workflow=normal" >> $GITHUB_ENV ;;
+            ci:docs)   echo "workflow=docs" >> $GITHUB_ENV ;;
+            ci:merged) echo "workflow=merged" >> $GITHUB_ENV ;;
+            ci:daily)  echo "workflow=daily" >> $GITHUB_ENV ;;
+            *)
+              echo "Label is not a ci: label — leaving workflow empty"
+              ;;
+          esac
+
+      - name: Determine workflow from labels on push event
+        if: github.event_name == 'push' && github.event.pull_request != null
+        run: |
+          echo "Push event with associated pull_request detected"
+          # Collect labels from the embedded pull_request JSON
+          LABELS=$(jq -r '.pull_request.labels[].name' <<<"${{ toJSON(github.event) }}" 2>/dev/null || true)
+          echo "PR labels: $LABELS"
+          for label in $LABELS; do
+            case "$label" in
+              ci:normal)
+                echo "Matched ci:normal"
+                echo "workflow=normal" >> $GITHUB_ENV
+                break
+                ;;
+              ci:docs)
+                echo "Matched ci:docs"
+                echo "workflow=docs" >> $GITHUB_ENV
+                break
+                ;;
+              ci:merged)
+                echo "Matched ci:merged"
+                echo "workflow=merged" >> $GITHUB_ENV
+                break
+                ;;
+              ci:daily)
+                echo "Matched ci:daily"
+                echo "workflow=daily" >> $GITHUB_ENV
+                break
+                ;;
+            esac
+          done
+
+      - name: Finalize workflow output and debug
+        id: set_workflow
+        run: |
+          echo "=== Finalize and debug workflow value ==="
+          # Show what was written into the $GITHUB_ENV file (last lines containing workflow)
+          echo "-- GITHUB_ENV contents for workflow --"
+          grep '^workflow=' $GITHUB_ENV || echo "(no workflow entry found in GITHUB_ENV)"
+
+          # The environment variable 'workflow' should now be available to steps.
+          echo "ENV workflow (the value we will publish): '${workflow}'"
+
+          # For extra safety convert literal 'workflow=' to empty string
+          # and set the job output explicitly via GITHUB_OUTPUT
+          # (this makes needs.get-parameters.outputs.workflow deterministic)
+          # If workflow is unset, this will write an empty value which is what we want.
+          echo "workflow=${workflow}" >> $GITHUB_OUTPUT
+
+          if [ -z "${workflow}" ]; then
+            echo "FINAL STATE: no ci:* workflow selected (empty)"
+          else
+            echo "FINAL STATE: workflow='${workflow}'"
+          fi
+
+    # Make job outputs come from the step (set_workflow)
     outputs:
-      workflow: ${{ env.workflow }}
-      ghBaseBranch: ${{ github.event.pull_request.base.ref }}
-      ghPrNumber: ${{ github.event.pull_request.number }}
+      workflow: ${{ steps.set_workflow.outputs.workflow }}
+      ghBaseBranch: ${{ github.event.pull_request && github.event.pull_request.base.ref || '' }}
+      ghPrNumber: ${{ github.event.pull_request && github.event.pull_request.number || '' }}
 
   trigger-circle-ci-workflow:
     runs-on: ubuntu-latest
@@ -62,7 +142,7 @@ jobs:
       - name: Trigger Normal tests
         uses: fjogeleit/http-request-action@v1
         with:
-          url: 'https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline'
-          method: 'POST'
+          url: "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline"
+          method: "POST"
           customHeaders: '{"Content-Type": "application/json", "Circle-Token": "${{ secrets.CIRCLE_CI_TOKEN }}"}'
           data: '{ "branch": "${{needs.get-branch.outputs.branch}}", "parameters": ${{toJson(needs.get-parameters.outputs)}} }'

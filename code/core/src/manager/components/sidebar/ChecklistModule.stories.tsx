@@ -47,7 +47,7 @@ export const Default = meta.story({
           done: ['install-storybook', 'render-component', 'viewports'],
           skipped: ['more-components', 'more-stories'],
         });
-      }, 4000);
+      }, 3000);
       setTimeout(() => {
         mockStore.setState({
           loaded: true,
@@ -57,7 +57,7 @@ export const Default = meta.story({
           skipped: ['more-components', 'more-stories', 'install-vitest'],
         });
         resolve(void 0);
-      }, 8000);
+      }, 5000);
     }),
 });
 

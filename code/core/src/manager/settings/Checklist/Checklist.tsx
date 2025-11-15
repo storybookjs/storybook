@@ -208,7 +208,7 @@ const Actions = styled.div({
 
 const ToggleButton = styled(Button)({
   opacity: 'var(--toggle-button-opacity)',
-  transition: 'all var(--transition-duration, 0.2s)',
+  transition: 'opacity var(--transition-duration, 0.2s)',
 
   '&:hover, &:focus': {
     opacity: 1,

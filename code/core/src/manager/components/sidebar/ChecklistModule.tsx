@@ -11,7 +11,6 @@ import {
   ListboxItem,
   ListboxText,
   ProgressSpinner,
-  TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
 
@@ -221,29 +220,19 @@ export const ChecklistModule = () => {
                   )}
                 </ListboxItem>
                 <ListboxItem>
-                  <WithTooltip
-                    hasChrome={false}
-                    tooltip={
-                      <TooltipNote
-                        note={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
-                      />
-                    }
-                    trigger="hover"
+                  <CollapseToggle
+                    {...toggleProps}
+                    id="checklist-module-collapse-toggle"
+                    ariaLabel={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
                   >
-                    <CollapseToggle
-                      {...toggleProps}
-                      id="checklist-module-collapse-toggle"
-                      ariaLabel={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
-                    >
-                      <ChevronSmallUpIcon
-                        style={{
-                          transform: isCollapsed ? 'rotate(180deg)' : 'none',
-                          transition: 'transform 250ms',
-                          willChange: 'auto',
-                        }}
-                      />
-                    </CollapseToggle>
-                  </WithTooltip>
+                    <ChevronSmallUpIcon
+                      style={{
+                        transform: isCollapsed ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 250ms',
+                        willChange: 'auto',
+                      }}
+                    />
+                  </CollapseToggle>
                   {loaded && (
                     <WithTooltip
                       as="div"

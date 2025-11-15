@@ -200,7 +200,7 @@ export const ChecklistModule = () => {
   const hasItems = items.length > 0;
 
   return (
-    <CollapsibleWithMargin collapsed={!hasItems}>
+    <CollapsibleWithMargin collapsed={!hasItems || !loaded}>
       <HoverCard outlineAnimation="rainbow">
         <Collapsible
           collapsed={!hasItems}

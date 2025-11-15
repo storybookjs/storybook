@@ -265,7 +265,7 @@ cd code && yarn test
 - Chromatic integration available for visual reviews
 
 ### End-to-End Testing
-- Playwright tests available (version 1.52.0 configured)
+- Playwright tests available (version 1.56.1 configured)
 - E2E test tasks: `yarn task --task e2e-tests-build` or `yarn task --task e2e-tests-dev`
 - Test runner scenarios: `yarn task --task test-runner-build` or `yarn task --task test-runner-dev`
 - Smoke tests: `yarn task --task smoke-test`

@@ -12,7 +12,7 @@
     "vitest": "SKIP_FAIL_ON_PURPOSE=true vitest run"
   },
   "resolutions": {
-    "@playwright/test": "1.52.0",
+    "@playwright/test": "1.56.1",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
     "@storybook/addon-docs": "file:../../../code/addons/docs",
     "@storybook/addon-jest": "file:../../../code/addons/jest",
@@ -48,14 +48,14 @@
     "@storybook/vue3-vite": "file:../../../code/frameworks/vue3-vite",
     "@storybook/web-components": "file:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
-    "playwright": "1.52.0"
+    "playwright": "1.56.1"
   },
   "dependencies": {
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
   },
   "devDependencies": {
-    "@playwright/test": "1.52.0",
+    "@playwright/test": "1.56.1",
     "@storybook/addon-a11y": "^8.0.0",
     "@storybook/addon-vitest": "^8.0.0",
     "@storybook/react": "^8.0.0",

@@ -1,18 +1,18 @@
 import type { Transform } from 'node:stream';
 import { PassThrough } from 'node:stream';
 
-import { beforeEach, describe, expect, it, vitest } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // eslint-disable-next-line depend/ban-dependencies
-import { execaCommand as rawExecaCommand } from 'execa';
+import { execa as rawExeca } from 'execa';
 
 import { execCommandCountLines } from './exec-command-count-lines';
 
-vitest.mock('execa');
+vi.mock('execa', { spy: true });
 
-const execaCommand = vitest.mocked(rawExecaCommand);
+const execa = vi.mocked(rawExeca);
 beforeEach(() => {
-  execaCommand.mockReset();
+  execa.mockReset();
 });
 
 type ExecaStreamer = typeof Promise & {
@@ -22,9 +22,9 @@ type ExecaStreamer = typeof Promise & {
 
 function createExecaStreamer() {
   let resolver: () => void;
-  const promiseLike: ExecaStreamer = new Promise<void>((aResolver, aRejecter) => {
+  const promiseLike = new Promise<void>((aResolver) => {
     resolver = aResolver;
-  }) as any;
+  }) as unknown as ExecaStreamer;
 
   promiseLike.stdout = new PassThrough();
   // @ts-expect-error technically it is invalid to use resolver "before" it is assigned (but not really)
@@ -35,7 +35,7 @@ function createExecaStreamer() {
 describe('execCommandCountLines', () => {
   it('counts lines, many', async () => {
     const streamer = createExecaStreamer();
-    execaCommand.mockReturnValue(streamer as any);
+    execa.mockReturnValue(streamer as unknown as ReturnType<typeof execa>);
 
     const promise = execCommandCountLines('some command', []);
 
@@ -48,7 +48,7 @@ describe('execCommandCountLines', () => {
 
   it('counts lines, one', async () => {
     const streamer = createExecaStreamer();
-    execaCommand.mockReturnValue(streamer as any);
+    execa.mockReturnValue(streamer as unknown as ReturnType<typeof execa>);
 
     const promise = execCommandCountLines('some command', []);
 
@@ -60,7 +60,7 @@ describe('execCommandCountLines', () => {
 
   it('counts lines, none', async () => {
     const streamer = createExecaStreamer();
-    execaCommand.mockReturnValue(streamer as any);
+    execa.mockReturnValue(streamer as unknown as ReturnType<typeof execa>);
 
     const promise = execCommandCountLines('some command', []);
 

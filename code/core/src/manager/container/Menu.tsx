@@ -122,6 +122,7 @@ export const useMenu = ({
       id: 'S',
       title: 'Show sidebar',
       onClick: () => api.toggleNav(),
+      closeOnClick: true,
       active: isNavShown,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.toggleNav} /> : null,
       icon: isNavShown ? <CheckIcon /> : <></>,

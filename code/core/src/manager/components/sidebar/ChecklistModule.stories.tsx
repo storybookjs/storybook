@@ -37,26 +37,28 @@ const meta = preview.meta({
 });
 
 export const Default = meta.story({
-  play: () => {
-    setTimeout(() => {
-      mockStore.setState({
-        loaded: true,
-        muted: false,
-        accepted: ['controls'],
-        done: ['install-storybook', 'render-component', 'viewports'],
-        skipped: ['more-components', 'more-stories'],
-      });
-    }, 4000);
-    setTimeout(() => {
-      mockStore.setState({
-        loaded: true,
-        muted: false,
-        accepted: ['controls'],
-        done: ['install-storybook', 'render-component', 'viewports'],
-        skipped: ['more-components', 'more-stories', 'install-vitest'],
-      });
-    }, 8000);
-  },
+  play: () =>
+    new Promise((resolve) => {
+      setTimeout(() => {
+        mockStore.setState({
+          loaded: true,
+          muted: false,
+          accepted: ['controls'],
+          done: ['install-storybook', 'render-component', 'viewports'],
+          skipped: ['more-components', 'more-stories'],
+        });
+      }, 4000);
+      setTimeout(() => {
+        mockStore.setState({
+          loaded: true,
+          muted: false,
+          accepted: ['controls'],
+          done: ['install-storybook', 'render-component', 'viewports'],
+          skipped: ['more-components', 'more-stories', 'install-vitest'],
+        });
+        resolve(void 0);
+      }, 8000);
+    }),
 });
 
 export const Narrow = meta.story({

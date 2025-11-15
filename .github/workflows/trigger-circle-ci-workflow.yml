@@ -25,11 +25,11 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           PR_REF_NAME: ${{ github.event.pull_request.head.ref }}
         run: |
-          if  [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ]; then
+          if [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ]; then
             export BRANCH=pull/${{ github.event.pull_request.number }}/head
-            elif [ "${{ github.event_name }}" = "push" ]; then
+          elif [ "${{ github.event_name }}" = "push" ]; then
             export BRANCH="$REF_NAME"
-            else
+          else
             export BRANCH="$PR_REF_NAME"
           fi
           echo "$BRANCH"
@@ -41,14 +41,43 @@ jobs:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
-        run: echo "workflow=normal" >> $GITHUB_ENV
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:docs'))
-        run: echo "workflow=docs" >> $GITHUB_ENV
-      - if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'ci:merged')
-        run: echo "workflow=merged" >> $GITHUB_ENV
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
-        run: echo "workflow=daily" >> $GITHUB_ENV
+      # We must reset the workflow because it is reused in future runs even if the workflow should not be triggered.
+      # E.g. if "ci:normal" was set in a previous run, but this new run only adds a "bug" label, CI would still end up having "ci:normal" in the environment variable.
+      - name: Reset workflow
+        run: echo "workflow=" >> $GITHUB_ENV
+      - name: Determine workflow from labels on pull_request_target labeled event
+        if: github.event_name == 'pull_request_target' && github.event.action == 'labeled'
+        run: |
+          case "${{ github.event.label.name }}" in
+            ci:normal) echo "workflow=normal" >> $GITHUB_ENV ;;
+            ci:docs) echo "workflow=docs" >> $GITHUB_ENV ;;
+            ci:merged) echo "workflow=merged" >> $GITHUB_ENV ;;
+            ci:daily) echo "workflow=daily" >> $GITHUB_ENV ;;
+          esac
+      - name: Determine workflow from labels on push event
+        if: github.event_name == 'push' && github.event.pull_request != null
+        run: |
+          LABELS=$(jq -r '.pull_request.labels[].name' <<<"${{ toJSON(github.event) }}")
+          for label in $LABELS; do
+            case "$label" in
+              ci:normal)
+                echo "workflow=normal" >> $GITHUB_ENV
+                break
+                ;;
+              ci:docs)
+                echo "workflow=docs" >> $GITHUB_ENV
+                break
+                ;;
+              ci:merged)
+                echo "workflow=merged" >> $GITHUB_ENV
+                break
+                ;;
+              ci:daily)
+                echo "workflow=daily" >> $GITHUB_ENV
+                break
+                ;;
+            esac
+          done
     outputs:
       workflow: ${{ env.workflow }}
       ghBaseBranch: ${{ github.event.pull_request.base.ref }}
@@ -59,10 +88,10 @@ jobs:
     needs: [get-branch, get-parameters]
     if: github.repository_owner == 'storybookjs' && needs.get-parameters.outputs.workflow != ''
     steps:
-      - name: Trigger Normal tests
+      - name: Trigger CircleCI workflow
         uses: fjogeleit/http-request-action@v1
         with:
-          url: 'https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline'
-          method: 'POST'
+          url: "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline"
+          method: "POST"
           customHeaders: '{"Content-Type": "application/json", "Circle-Token": "${{ secrets.CIRCLE_CI_TOKEN }}"}'
           data: '{ "branch": "${{needs.get-branch.outputs.branch}}", "parameters": ${{toJson(needs.get-parameters.outputs)}} }'

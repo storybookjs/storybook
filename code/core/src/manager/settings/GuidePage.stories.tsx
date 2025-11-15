@@ -32,7 +32,7 @@ const meta = preview.meta({
       loaded: true,
       muted: false,
       accepted: ['controls'],
-      done: ['add-component'],
+      done: ['render-component'],
       skipped: ['viewports'],
     });
   },

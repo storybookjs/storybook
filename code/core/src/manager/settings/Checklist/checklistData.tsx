@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { Link, SyntaxHighlighter, TourGuide } from 'storybook/internal/components';
+import { Link, SyntaxHighlighter } from 'storybook/internal/components';
 import {
   STORY_ARGS_UPDATED,
   STORY_FINISHED,
@@ -16,6 +16,8 @@ import type {
 
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
+
+import { TourGuide } from '../../components/TourGuide/TourGuide';
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',
@@ -246,9 +248,9 @@ export const checklistData: ChecklistData = {
           subscribe: ({ api, done }) => api.on(STORY_ARGS_UPDATED, done),
           content: () => (
             <p>
-              Storybook gets better as you add more components. Start with the easy ones, like
-              Button or Avatar, and work your way up to more complex components, like Select,
-              Autocomplete, or even full pages.
+              When you change the value of one of the inputs in the Controls table, the story
+              automatically updates to reflect that change. It&apos;s a great way to explore how a
+              component handles various inputs.
             </p>
           ),
         },
@@ -561,7 +563,7 @@ async play({ canvas, userEvent }) {
               </p>
               <p>
                 You can automate all of Storybook&apos;s tests by using Chromatic or by running the
-                <pre>vitest --project storybook</pre> command in your CI scripts.
+                <code>vitest --project storybook</code> command in your CI scripts.
               </p>
             </>
           ),
@@ -619,7 +621,7 @@ export default {
 }`}
               </CodeSnippet>
               <p>
-                That tag can also be applied in <pre>.storybook/preview.js</pre>, to generate
+                That tag can also be applied in <code>.storybook/preview.js</code>, to generate
                 documentation for all components.
               </p>
             </>
@@ -660,7 +662,7 @@ export default {
                 collaborative workflows.
               </p>
               <p>
-                Run <pre>npx storybook build</pre> in CI and deploy it using services like
+                Run <code>npx storybook build</code> in CI and deploy it using services like
                 Chromatic, Vercel, or Netlify.
               </p>
               <h4>Take it further</h4>

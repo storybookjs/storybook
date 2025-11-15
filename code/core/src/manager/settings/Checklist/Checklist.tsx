@@ -1,12 +1,6 @@
 import React, { createRef, useMemo } from 'react';
 
-import {
-  Button,
-  Collapsible,
-  ListboxItem,
-  TooltipNote,
-  WithTooltip,
-} from 'storybook/internal/components';
+import { Button, Collapsible, ListboxItem } from 'storybook/internal/components';
 
 import {
   CheckIcon,
@@ -214,7 +208,7 @@ const Actions = styled.div({
 
 const ToggleButton = styled(Button)({
   opacity: 'var(--toggle-button-opacity)',
-  transition: 'all var(--transition-duration, 0.2s)',
+  transition: 'opacity var(--transition-duration, 0.2s)',
 
   '&:hover, &:focus': {
     opacity: 1,
@@ -351,36 +345,26 @@ export const Checklist = ({
                                           data-target-id={`toggle-${item.id}`}
                                           variant="ghost"
                                           padding="small"
-                                          aria-label={item.label}
+                                          ariaLabel={`${isCollapsed ? 'Expand' : 'Collapse'} ${item.label}`}
                                         >
                                           <ChevronSmallDownIcon />
                                         </ToggleButton>
                                       )}
                                       {isLocked && (
-                                        <WithTooltip
-                                          as="div"
-                                          hasChrome={false}
-                                          placement="top"
-                                          trigger="hover"
-                                          tooltip={
-                                            <TooltipNote
-                                              note={`Complete ${isLockedBy.map((id) => `“${itemsById[id].label}”`).join(', ')} first`}
-                                            />
-                                          }
+                                        <Button
+                                          variant="ghost"
+                                          padding="small"
+                                          ariaLabel="Locked"
+                                          tooltip={`Complete ${isLockedBy.map((id) => `“${itemsById[id].label}”`).join(', ')} first`}
+                                          disabled
+                                          readOnly
                                         >
-                                          <Button
-                                            variant="ghost"
-                                            padding="small"
-                                            aria-label="Locked"
-                                            disabled
-                                            readOnly
-                                          >
-                                            <LockIcon />
-                                          </Button>
-                                        </WithTooltip>
+                                          <LockIcon />
+                                        </Button>
                                       )}
                                       {isOpen && !isLocked && item.action && (
                                         <Button
+                                          ariaLabel={false}
                                           variant="solid"
                                           size="small"
                                           onClick={(e) => {
@@ -396,6 +380,7 @@ export const Checklist = ({
                                       )}
                                       {isOpen && !isLocked && !item.action && !item.subscribe && (
                                         <Button
+                                          ariaLabel={false}
                                           variant="outline"
                                           size="small"
                                           onClick={(e) => {
@@ -409,26 +394,26 @@ export const Checklist = ({
                                       )}
                                       {isOpen && !isLocked && (
                                         <Button
+                                          ariaLabel={false}
                                           variant="ghost"
                                           size="small"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             skip(item.id);
                                           }}
-                                          aria-label="Skip"
                                         >
                                           Skip
                                         </Button>
                                       )}
                                       {((isAccepted && !isImmutable) || isSkipped) && !isLocked && (
                                         <Button
+                                          ariaLabel="Undo"
                                           variant="ghost"
                                           padding="small"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             reset(item.id);
                                           }}
-                                          aria-label="Undo"
                                         >
                                           <UndoIcon />
                                         </Button>

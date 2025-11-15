@@ -90,7 +90,7 @@ export const useMenu = ({
       onClick: () => api.changeSettingsTab('guide'),
       icon: <ListUnorderedIcon />,
       right: progress < 100 && (
-        <ListboxButton as="div" readOnly padding="none">
+        <ListboxButton as="div" readOnly padding="none" ariaLabel={`${progress}% completed`}>
           <ProgressCircle percentage={progress} running={false} size={16} width={1.5} />
           {progress}%
         </ListboxButton>

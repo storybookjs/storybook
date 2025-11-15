@@ -1,3 +1,4 @@
+import type { UniversalStore } from '../universal-store';
 import type { StoreOptions } from '../universal-store/types';
 
 export type TaskId = string;
@@ -37,3 +38,46 @@ export type ChecklistStore = {
 };
 
 export type ChecklistStoreEnvironment = 'server' | 'manager' | 'preview';
+
+export const createChecklistStore = (
+  universalChecklistStore: UniversalStore<StoreState, StoreEvent>
+) => ({
+  accept: (id: TaskId) => {
+    universalChecklistStore.setState((state) => ({
+      ...state,
+      accepted: state.accepted.includes(id) ? state.accepted : [...state.accepted, id],
+      skipped: state.skipped.filter((v) => v !== id),
+    }));
+  },
+  done: (id: TaskId) => {
+    universalChecklistStore.setState((state) => ({
+      ...state,
+      done: state.done.includes(id) ? state.done : [...state.done, id],
+      skipped: state.skipped.filter((v) => v !== id),
+    }));
+  },
+  skip: (id: TaskId) => {
+    universalChecklistStore.setState((state) => ({
+      ...state,
+      accepted: state.accepted.filter((v) => v !== id),
+      skipped: state.skipped.includes(id) ? state.skipped : [...state.skipped, id],
+    }));
+  },
+  reset: (id: TaskId) => {
+    universalChecklistStore.setState((state) => ({
+      ...state,
+      accepted: state.accepted.filter((v) => v !== id),
+      skipped: state.skipped.filter((v) => v !== id),
+    }));
+  },
+  mute: (value: boolean | Array<TaskId>) => {
+    universalChecklistStore.setState((state) => ({
+      ...state,
+      muted: Array.isArray(value)
+        ? Array.from(
+            new Set([...(Array.isArray(state.muted) ? state.muted : []), ...(value || [])])
+          )
+        : value,
+    }));
+  },
+});

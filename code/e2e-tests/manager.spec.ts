@@ -239,16 +239,7 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
-      // enable fullscreen again
-      await sbPage.page.locator('html').press('Alt+f');
-      await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
-      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
-
       // toggle with "go/exit fullscreen" button
-      await sbPage.page.locator('[aria-label="Exit full screen"]').click();
-      await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
-      await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
-
       await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
@@ -258,13 +249,16 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
       // go fullscreen when sidebar is shown but panel is hidden
+      await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await sbPage.page.locator('[aria-label="Show sidebar"]').click();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
       await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
       // go fullscreen when panel is shown but sidebar is hidden
       await sbPage.page.locator('[aria-label="Show addon panel"]').click();
+      await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
       await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();

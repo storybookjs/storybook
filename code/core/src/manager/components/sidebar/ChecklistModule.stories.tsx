@@ -37,7 +37,7 @@ const meta = preview.meta({
 });
 
 const play = () =>
-  new Promise((resolve) => {
+  new Promise<void>((resolve) => {
     setTimeout(() => {
       mockStore.setState({
         loaded: true,

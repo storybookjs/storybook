@@ -1,11 +1,8 @@
 import { ProjectType } from 'storybook/internal/cli';
-import { type JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, executeCommand } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
-
-// eslint-disable-next-line depend/ban-dependencies
-import execa from 'execa';
 
 import {
   executeAddonConfiguration,
@@ -24,7 +21,7 @@ import { FeatureCompatibilityService } from './services/FeatureCompatibilityServ
 import { TelemetryService } from './services/TelemetryService';
 
 /**
- * Main entry point for Storybook initialization (refactored)
+ * Main entry point for Storybook initialization
  *
  * This is a clean, command-based orchestration that replaces the monolithic 986-line implementation
  * with a modular, testable approach.
@@ -51,7 +48,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const { packageManager } = await executePreflightCheck(options);
 
   // Step 2: Detect project type
-  const projectType = await executeProjectDetection(packageManager, options);
+  const { projectType, language } = await executeProjectDetection(packageManager, options);
 
   // Step 3: Detect framework, renderer, and builder
   const { framework, builder, renderer } = await executeFrameworkDetection(
@@ -80,6 +77,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       options,
       dependencyCollector,
       selectedFeatures,
+      language,
     });
 
   // Step 6: Install all dependencies in a single operation
@@ -197,7 +195,10 @@ async function runStorybookDev(result: {
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
-    execa.command(`${storybookCommand} ${flags.join(' ')}`, {
+    const [command, ...args] = [...storybookCommand.split(' '), ...flags];
+    executeCommand({
+      command: command,
+      args,
       stdio: 'inherit',
     });
   } catch {

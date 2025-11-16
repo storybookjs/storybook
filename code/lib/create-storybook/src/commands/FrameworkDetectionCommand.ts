@@ -1,11 +1,13 @@
-import { type ProjectType, detectBuilder } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type ProjectType } from 'storybook/internal/cli';
+import { type JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
-import { SupportedFramework } from 'storybook/internal/types';
+import type { SupportedBuilder } from 'storybook/internal/types';
+import { type SupportedRenderer } from 'storybook/internal/types';
+import type { SupportedFramework } from 'storybook/internal/types';
 
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import type { CommandOptions } from '../generators/types';
+import { FrameworkDetectionService } from '../services/FrameworkDetectionService';
 
 export interface FrameworkDetectionResult {
   renderer: SupportedRenderer;
@@ -21,9 +23,12 @@ export interface FrameworkDetectionResult {
  */
 export class FrameworkDetectionCommand {
   /** Execute framework detection for the given project type */
+  constructor(
+    packageManager: JsPackageManager,
+    private frameworkDetectionService = new FrameworkDetectionService(packageManager)
+  ) {}
   async execute(
     projectType: ProjectType,
-    packageManager: JsPackageManager,
     options: CommandOptions
   ): Promise<FrameworkDetectionResult> {
     // Get generator for the project type
@@ -48,7 +53,7 @@ export class FrameworkDetectionCommand {
       }
     } else {
       // Detect builder from project configuration
-      builder = await detectBuilder(packageManager);
+      builder = await this.frameworkDetectionService.detectBuilder();
     }
 
     // Get framework and renderer from metadata
@@ -63,7 +68,7 @@ export class FrameworkDetectionCommand {
         framework = metadata.framework;
       }
     } else {
-      framework = this.getFramework(renderer, builder);
+      framework = this.frameworkDetectionService.detectFramework(renderer, builder);
     }
 
     if (framework) {
@@ -76,20 +81,6 @@ export class FrameworkDetectionCommand {
       builder,
     };
   }
-
-  private getFramework(renderer: SupportedRenderer, builder: SupportedBuilder): SupportedFramework {
-    if (Object.values(SupportedFramework).includes(renderer as any)) {
-      return renderer as any as SupportedFramework;
-    }
-
-    const maybeFramework = `${renderer}-${builder}`;
-
-    if (Object.values(SupportedFramework).includes(maybeFramework as SupportedFramework)) {
-      return maybeFramework as SupportedFramework;
-    }
-
-    throw new Error(`Could not find framework for renderer: ${renderer} and builder: ${builder}`);
-  }
 }
 
 export const executeFrameworkDetection = (
@@ -97,5 +88,5 @@ export const executeFrameworkDetection = (
   packageManager: JsPackageManager,
   options: CommandOptions
 ) => {
-  return new FrameworkDetectionCommand().execute(projectType, packageManager, options);
+  return new FrameworkDetectionCommand(packageManager).execute(projectType, options);
 };

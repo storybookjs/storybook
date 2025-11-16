@@ -414,7 +414,7 @@ describe('AddonVitestService', () => {
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
         args: ['playwright', 'install', 'chromium', '--with-deps'],
         signal: undefined,
-        stdio: 'ignore',
+        stdio: ['inherit', 'pipe', 'pipe'],
       });
     });
 

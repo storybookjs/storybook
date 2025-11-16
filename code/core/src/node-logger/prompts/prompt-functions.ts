@@ -138,26 +138,28 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
 
     return wrappedSpinner;
   } else {
+    const maybeLog = shouldLog('info') ? logger.log : (_: string) => {};
+
     return {
       start: (message) => {
         if (message) {
-          logger.log(message);
+          maybeLog(message);
         }
       },
       stop: (message) => {
         if (message) {
-          logger.log(message);
+          maybeLog(message);
         }
       },
       message: (message) => {
-        logger.log(message);
+        maybeLog(message);
       },
     };
   }
 };
 
 export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
-  if (isInteractiveTerminal() || shouldLog('info')) {
+  if (isInteractiveTerminal() && shouldLog('info')) {
     const task = getPromptProvider().taskLog(options);
 
     // Wrap the task log methods to handle console.log patching

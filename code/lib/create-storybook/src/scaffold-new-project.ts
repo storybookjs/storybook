@@ -1,13 +1,10 @@
 import { readdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
-import type { PackageManagerName } from 'storybook/internal/common';
+import { type PackageManagerName, executeCommand } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
-
-// eslint-disable-next-line depend/ban-dependencies
-import execa from 'execa';
 
 import type { CommandOptions } from './generators/types';
 
@@ -175,10 +172,11 @@ export const scaffoldNewProject = async (
   try {
     // Create new project in temp directory
     spinner.message(`Executing ${createScript}`);
-    await execa.command(createScript, {
+    await executeCommand({
+      command: createScript,
+      shell: true,
       stdio: 'pipe',
       cwd: targetDir,
-      cleanup: true,
     });
   } catch (e) {
     spinner.stop(

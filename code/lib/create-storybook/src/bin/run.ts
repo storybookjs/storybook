@@ -51,10 +51,7 @@ const createStorybookProgram = program
   .addOption(
     new Option('--type <type>', 'Add Storybook for a specific project type').choices(
       Object.values(ProjectType).filter(
-        (type) =>
-          type !== ProjectType.UNDETECTED &&
-          type !== ProjectType.NX &&
-          type !== ProjectType.UNSUPPORTED
+        (type) => ![ProjectType.UNDETECTED, ProjectType.UNSUPPORTED, ProjectType.NX].includes(type)
       )
     )
   )

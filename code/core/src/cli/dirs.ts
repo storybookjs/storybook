@@ -6,14 +6,36 @@ import { createGunzip } from 'node:zlib';
 
 import { temporaryDirectory, versions } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
-import type { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
+import { SupportedFramework, type SupportedRenderer } from 'storybook/internal/types';
 
 import getNpmTarballUrlDefault from 'get-npm-tarball-url';
 import { unpackTar } from 'modern-tar/fs';
 import invariant from 'tiny-invariant';
 
 import { resolvePackageDir } from '../shared/utils/module';
-import { externalFrameworks } from './project_types';
+
+type ExternalFramework = {
+  name: SupportedFramework;
+  packageName?: string;
+  frameworks?: string[];
+  renderer?: string;
+};
+
+const externalFrameworks: ExternalFramework[] = [
+  { name: SupportedFramework.QWIK, packageName: 'storybook-framework-qwik' },
+  {
+    name: SupportedFramework.SOLID,
+    packageName: 'storybook-solidjs-vite',
+    frameworks: ['storybook-solidjs-vite'],
+    renderer: 'storybook-solidjs-vite',
+  },
+  {
+    name: SupportedFramework.NUXT,
+    packageName: '@storybook-vue/nuxt',
+    frameworks: ['@storybook-vue/nuxt'],
+    renderer: '@storybook/vue3',
+  },
+];
 
 const resolveUsingBranchInstall = async (packageManager: JsPackageManager, request: string) => {
   const tempDirectory = await temporaryDirectory();

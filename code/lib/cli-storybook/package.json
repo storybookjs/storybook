@@ -56,7 +56,6 @@
     "cross-spawn": "^7.0.6",
     "empathic": "^2.0.0",
     "envinfo": "^7.14.0",
-    "execa": "^9.6.0",
     "globby": "^14.0.1",
     "leven": "^4.0.0",
     "p-limit": "^6.2.0",

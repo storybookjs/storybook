@@ -29,12 +29,6 @@ export enum PackageManagerName {
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
 
-export const COMMON_ENV_VARS = {
-  COREPACK_ENABLE_STRICT: '0',
-  COREPACK_ENABLE_AUTO_PIN: '0',
-  NO_UPDATE_NOTIFIER: 'true',
-};
-
 /**
  * Extract package name and version from input
  *

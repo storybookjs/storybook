@@ -1,5 +1,8 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import type { StoriesEntry, StorybookConfigRaw } from 'storybook/internal/types';
+import { type StoriesEntry, type StorybookConfigRaw } from 'storybook/internal/types';
+
+import { ProjectType } from '../../../core/src/cli/projectTypes';
+import { SupportedBuilder } from '../../../core/src/types/modules/builders';
 
 export type SkippableTask =
   | 'smoke-test'
@@ -90,7 +93,8 @@ export type Template = {
   };
   /** Additional options to pass to the initiate command when initializing Storybook. */
   initOptions?: {
-    builder?: string;
+    builder?: SupportedBuilder;
+    type?: ProjectType;
     [key: string]: unknown;
   };
   /**
@@ -187,7 +191,7 @@ export const baseTemplates = {
       extraDependencies: ['server-only', 'prop-types'],
     },
     initOptions: {
-      builder: 'webpack5',
+      builder: SupportedBuilder.WEBPACK5,
     },
     skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -212,7 +216,7 @@ export const baseTemplates = {
       extraDependencies: ['server-only', 'prop-types'],
     },
     initOptions: {
-      builder: 'webpack5',
+      builder: SupportedBuilder.WEBPACK5,
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -237,7 +241,7 @@ export const baseTemplates = {
       extraDependencies: ['server-only', 'prop-types'],
     },
     initOptions: {
-      builder: 'webpack5',
+      builder: SupportedBuilder.WEBPACK5,
     },
     skipTasks: ['bench', 'vitest-integration'],
   },
@@ -262,7 +266,7 @@ export const baseTemplates = {
       extraDependencies: ['server-only', 'prop-types'],
     },
     initOptions: {
-      builder: 'webpack5',
+      builder: SupportedBuilder.WEBPACK5,
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -567,6 +571,9 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.HTML,
+    },
   },
   'html-vite/default-ts': {
     name: 'HTML Latest (Vite | TypeScript)',
@@ -578,6 +585,9 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.HTML,
+    },
   },
   'html-rsbuild/default-ts': {
     name: 'HTML Latest (RSBuild | TypeScript)',
@@ -770,6 +780,9 @@ export const baseTemplates = {
       },
     },
     skipTasks: ['bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.REACT_NATIVE_WEB,
+    },
   },
   'react-native-web-vite/rn-cli-ts': {
     // NOTE: create-expo-app installs React 18.2.0. But yarn portal
@@ -789,6 +802,9 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.REACT_NATIVE_WEB,
+    },
   },
 } satisfies Record<string, BaseTemplates>;
 
@@ -853,6 +869,9 @@ const internalTemplates = {
     },
     isInternal: true,
     skipTasks: ['bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.SERVER,
+    },
   },
 } satisfies Record<`internal/${string}`, Template & { isInternal: true }>;
 

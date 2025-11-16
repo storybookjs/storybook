@@ -14,7 +14,10 @@ import { dedent } from 'ts-dedent';
 
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
 import storybookVersions from '../../code/core/src/common/versions';
-import { allTemplates as sandboxTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import {
+  type Template,
+  allTemplates as sandboxTemplates,
+} from '../../code/lib/cli-storybook/src/sandbox-templates';
 import {
   AFTER_DIR_NAME,
   BEFORE_DIR_NAME,
@@ -26,7 +29,6 @@ import { esMain } from '../utils/esmain';
 import type { OptionValues } from '../utils/options';
 import { createOptions } from '../utils/options';
 import { getStackblitzUrl, renderTemplate } from './utils/template';
-import type { GeneratorConfig } from './utils/types';
 import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
@@ -149,8 +151,34 @@ const addDocumentation = async (
   await writeFile(join(afterDir, 'README.md'), contents);
 };
 
+const toFlags = (opts: Record<string, any>): string[] => {
+  const result: string[] = [];
+  for (const [key, value] of Object.entries(opts)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+    if (typeof value === 'boolean') {
+      if (value) {
+        result.push(`--${key}`);
+      }
+    } else if (Array.isArray(value)) {
+      for (const v of value) {
+        result.push(`--${key} ${String(v)}`);
+      }
+    } else if (typeof value === 'string') {
+      // Normalize ProjectType-like values to lower-case for CLI
+      const val = key === 'type' ? value.toLowerCase() : value;
+      result.push(`--${key} ${val}`);
+    } else {
+      // Fallback: stringify
+      result.push(`--${key} ${JSON.stringify(value)}`);
+    }
+  }
+  return result;
+};
+
 const runGenerators = async (
-  generators: (GeneratorConfig & { dirName: string })[],
+  generators: (Template & { dirName: string })[],
   localRegistry = true,
   debug = false
 ) => {
@@ -163,19 +191,15 @@ const runGenerators = async (
   const limit = pLimit(1);
 
   const generationResults = await Promise.allSettled(
-    generators.map(({ dirName, name, script, expected, env }) =>
+    generators.map(({ dirName, name, script, env, initOptions }) =>
       limit(async () => {
         const baseDir = join(REPROS_DIRECTORY, dirName);
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
         try {
           let flags: string[] = ['--no-dev'];
-
-          if (expected.renderer === '@storybook/html') {
-            flags = ['--type html'];
-          } else if (expected.renderer === '@storybook/server') {
-            flags = ['--type server'];
-          } else if (expected.framework === '@storybook/react-native-web-vite') {
-            flags = ['--type react_native_web'];
+          // Build flags from template-provided initOptions instead of inferring from expected
+          if (initOptions && typeof initOptions === 'object') {
+            flags = [...flags, ...toFlags(initOptions as Record<string, any>)];
           }
 
           const time = process.hrtime();

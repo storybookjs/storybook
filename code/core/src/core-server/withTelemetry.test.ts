@@ -6,9 +6,9 @@ import { ErrorCollector, oneWayHash, telemetry } from 'storybook/internal/teleme
 
 import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry';
 
-vi.mock('storybook/internal/common');
-vi.mock('storybook/internal/telemetry');
-vi.mock('storybook/internal/node-logger');
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const cliOptions = {};
 
@@ -64,7 +64,11 @@ describe('withTelemetry', () => {
       expect(telemetry).toHaveBeenCalledTimes(2);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
-        expect.objectContaining({ eventType: 'dev', error }),
+        expect.objectContaining({
+          eventType: 'dev',
+          error: undefined, // error is only included when errorLevel === 'full'
+          isErrorInstance: true,
+        }),
         expect.objectContaining({})
       );
     });
@@ -118,8 +122,12 @@ describe('withTelemetry', () => {
       expect(telemetry).toHaveBeenCalledTimes(2);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
-        expect.objectContaining({ eventType: 'dev', error }),
-        expect.objectContaining({})
+        expect.objectContaining({
+          eventType: 'dev',
+          error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: true })
       );
     });
 
@@ -160,8 +168,12 @@ describe('withTelemetry', () => {
       expect(telemetry).toHaveBeenCalledTimes(2);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
-        expect.objectContaining({ eventType: 'dev', error }),
-        expect.objectContaining({})
+        expect.objectContaining({
+          eventType: 'dev',
+          error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: true })
       );
     });
 
@@ -204,8 +216,12 @@ describe('withTelemetry', () => {
       expect(telemetry).toHaveBeenCalledTimes(2);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
-        expect.objectContaining({ eventType: 'dev', error }),
-        expect.objectContaining({})
+        expect.objectContaining({
+          eventType: 'dev',
+          error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: true })
       );
     });
 
@@ -250,8 +266,12 @@ describe('withTelemetry', () => {
       expect(telemetry).toHaveBeenCalledTimes(2);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
-        expect.objectContaining({ eventType: 'dev', error }),
-        expect.objectContaining({})
+        expect.objectContaining({
+          eventType: 'dev',
+          error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: true })
       );
     });
 
@@ -299,12 +319,16 @@ describe('sendTelemetryError', () => {
     expect(telemetry).toHaveBeenCalledWith(
       'error',
       expect.objectContaining({
-        error: mockError,
+        error: undefined, // error is only included when errorLevel === 'full'
         eventType,
         isErrorInstance: true,
         errorHash: 'some-hash',
+        name: 'Error',
       }),
-      expect.any(Object)
+      expect.objectContaining({
+        enableCrashReports: false,
+        immediate: true,
+      })
     );
   });
 
@@ -321,12 +345,15 @@ describe('sendTelemetryError', () => {
     expect(telemetry).toHaveBeenCalledWith(
       'error',
       expect.objectContaining({
-        error: mockError,
+        error: undefined, // error is only included when errorLevel === 'full'
         eventType,
         isErrorInstance: false,
         errorHash: 'NO_MESSAGE',
       }),
-      expect.any(Object)
+      expect.objectContaining({
+        enableCrashReports: false,
+        immediate: true,
+      })
     );
   });
 
@@ -343,12 +370,16 @@ describe('sendTelemetryError', () => {
     expect(telemetry).toHaveBeenCalledWith(
       'error',
       expect.objectContaining({
-        error: mockError,
+        error: undefined, // error is only included when errorLevel === 'full'
         eventType,
         isErrorInstance: true,
         errorHash: 'EMPTY_MESSAGE',
+        name: 'Error',
       }),
-      expect.any(Object)
+      expect.objectContaining({
+        enableCrashReports: false,
+        immediate: true,
+      })
     );
   });
 });
@@ -373,7 +404,7 @@ describe('getErrorLevel', () => {
     expect(errorLevel).toBe('none');
   });
 
-  it('returns "full" when presetOptions is not provided', async () => {
+  it('returns "error" when presetOptions is not provided', async () => {
     const options: any = {
       cliOptions: {
         disableTelemetry: false,
@@ -384,7 +415,7 @@ describe('getErrorLevel', () => {
 
     const errorLevel = await getErrorLevel(options);
 
-    expect(errorLevel).toBe('full');
+    expect(errorLevel).toBe('error');
   });
 
   it('returns "full" when core.enableCrashReports is true', async () => {

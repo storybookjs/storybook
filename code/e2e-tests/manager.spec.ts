@@ -191,7 +191,7 @@ test.describe('Manager UI', () => {
         await sbPage.page.locator('[aria-label="Settings"]').click();
         await sbPage.page.locator('#list-item-A').click();
         await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
-        await sbPage.page.locator('[aria-label="Settings"]').click();
+        await sbPage.page.locator('html').press('Escape');
 
         // toggle with "Show addon panel" button
         await sbPage.page.locator('[aria-label="Show addon panel"]').click();

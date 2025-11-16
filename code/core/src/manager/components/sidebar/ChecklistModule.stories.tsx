@@ -36,31 +36,34 @@ const meta = preview.meta({
   },
 });
 
+const play = () =>
+  new Promise((resolve) => {
+    setTimeout(() => {
+      mockStore.setState({
+        loaded: true,
+        muted: false,
+        accepted: ['controls'],
+        done: ['render-component', 'viewports'],
+        skipped: ['more-components', 'more-stories'],
+      });
+    }, 3000);
+    setTimeout(() => {
+      mockStore.setState({
+        loaded: true,
+        muted: false,
+        accepted: ['controls'],
+        done: ['render-component', 'viewports'],
+        skipped: ['more-components', 'more-stories', 'install-vitest'],
+      });
+      resolve(void 0);
+    }, 4000);
+  });
+
 export const Default = meta.story({
-  play: () =>
-    new Promise((resolve) => {
-      setTimeout(() => {
-        mockStore.setState({
-          loaded: true,
-          muted: false,
-          accepted: ['controls'],
-          done: ['render-component', 'viewports'],
-          skipped: ['more-components', 'more-stories'],
-        });
-      }, 3000);
-      setTimeout(() => {
-        mockStore.setState({
-          loaded: true,
-          muted: false,
-          accepted: ['controls'],
-          done: ['render-component', 'viewports'],
-          skipped: ['more-components', 'more-stories', 'install-vitest'],
-        });
-        resolve(void 0);
-      }, 5000);
-    }),
+  play,
 });
 
 export const Narrow = meta.story({
   decorators: [(Story) => <div style={{ maxWidth: 200 }}>{Story()}</div>],
+  play,
 });

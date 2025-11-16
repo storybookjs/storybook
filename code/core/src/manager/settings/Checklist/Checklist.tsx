@@ -135,7 +135,7 @@ const ItemSummary = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(
 );
 
 const ItemHeading = styled.h4<{ skipped: boolean }>(({ theme, skipped }) => ({
-  color: skipped ? theme.color.mediumdark : theme.color.defaultText,
+  color: skipped ? theme.textMutedColor : theme.color.defaultText,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',

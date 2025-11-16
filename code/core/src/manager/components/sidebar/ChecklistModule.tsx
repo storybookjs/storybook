@@ -58,7 +58,7 @@ const useTransitionArray = <K, V>(
   options: { keyFn: (item: V) => K } & TransitionMapOptions<K>
 ) => {
   const keyFnRef = useRef(options.keyFn);
-  const { deleteItem, setItem, toggle, stateMap } = useTransitionMap<K>({
+  const { setItem, toggle, stateMap } = useTransitionMap<K>({
     allowMultiple: true,
     mountOnEnter: true,
     unmountOnExit: true,
@@ -69,13 +69,12 @@ const useTransitionArray = <K, V>(
   useEffect(() => {
     const keyFn = keyFnRef.current;
     array.forEach((task) => setItem(keyFn(task)));
-    return () => array.forEach((task) => deleteItem(keyFn(task)));
-  }, [array, deleteItem, setItem, keyFnRef]);
+  }, [array, setItem]);
 
   useEffect(() => {
     const keyFn = keyFnRef.current;
     array.forEach((task) => toggle(keyFn(task), subset.map(keyFn).includes(keyFn(task))));
-  }, [array, subset, toggle, keyFnRef]);
+  }, [array, subset, toggle]);
 
   return Array.from(stateMap).map(
     ([key, value]) => [array.find((item) => options.keyFn(item) === key)!, value] as const

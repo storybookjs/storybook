@@ -8299,7 +8299,7 @@ __metadata:
     "@storybook/react-vite": "workspace:*"
     "@types/node": "npm:^22.0.0"
     typescript: "npm:^5.8.3"
-    vite-plugin-rnw: "npm:^0.0.8"
+    vite-plugin-rnw: "npm:^0.0.10"
     vite-tsconfig-paths: "npm:^5.1.4"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -27979,9 +27979,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-rnw@npm:^0.0.8":
-  version: 0.0.8
-  resolution: "vite-plugin-rnw@npm:0.0.8"
+"vite-plugin-rnw@npm:^0.0.10":
+  version: 0.0.10
+  resolution: "vite-plugin-rnw@npm:0.0.10"
   dependencies:
     "@bunchtogether/vite-plugin-flow": "npm:^1.0.2"
     "@rolldown/pluginutils": "npm:1.0.0-beta.46"
@@ -27992,7 +27992,7 @@ __metadata:
     react-native-web: "*"
     typescript: ^5
     vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
-  checksum: 10c0/91dba6f09974ab3f8496e23f45866ef2fba297ab423622174e75e0cebfbfd36a547faf513de5f9bcaa22f8d88f6f222f4fac17bbb8107a4274e9529b14d18ab9
+  checksum: 10c0/a8d97b0475f7de5977f959d029a9a51fd534c6785a800c5aa733abbac8a635e7cbab831a4221b6e5bbc00d03d81c4046199ed3ff33cbe0f7eead6d93c205bed4
   languageName: node
   linkType: hard
 

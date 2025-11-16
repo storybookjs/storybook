@@ -21,6 +21,10 @@ import { ListboxButton, ListboxIcon, ProgressSpinner } from '../../components';
 import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList';
 import { useChecklist } from '../components/sidebar/useChecklist';
 
+export type MenuItem = NormalLink & {
+  closeOnClick?: boolean;
+};
+
 const Key = styled.span(({ theme }) => ({
   display: 'inline-flex',
   alignItems: 'center',
@@ -69,7 +73,7 @@ export const useMenu = ({
   isPanelShown: boolean;
   isNavShown: boolean;
   enableShortcuts: boolean;
-}): NormalLink[][] => {
+}): MenuItem[][] => {
   const shortcutKeys = api.getShortcutKeys();
   const { progress } = useChecklist();
 
@@ -78,6 +82,7 @@ export const useMenu = ({
       id: 'about',
       title: 'About your Storybook',
       onClick: () => api.changeSettingsTab('about'),
+      closeOnClick: true,
       icon: <InfoIcon />,
     }),
     [api]
@@ -88,6 +93,7 @@ export const useMenu = ({
       id: 'guide',
       title: 'Onboarding guide',
       onClick: () => api.changeSettingsTab('guide'),
+      closeOnClick: true,
       icon: <ListUnorderedIcon />,
       right: progress < 100 && (
         <ListboxButton as="div" readOnly padding="none" ariaLabel={`${progress}% completed`}>
@@ -104,6 +110,7 @@ export const useMenu = ({
       id: 'shortcuts',
       title: 'Keyboard shortcuts',
       onClick: () => api.changeSettingsTab('shortcuts'),
+      closeOnClick: true,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.shortcutsPage} /> : null,
       icon: <CommandIcon />,
     }),
@@ -115,6 +122,7 @@ export const useMenu = ({
       id: 'S',
       title: 'Show sidebar',
       onClick: () => api.toggleNav(),
+      closeOnClick: true,
       active: isNavShown,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.toggleNav} /> : null,
       icon: isNavShown ? <CheckIcon /> : <></>,
@@ -207,6 +215,7 @@ export const useMenu = ({
     return {
       id: 'documentation',
       title: 'Documentation',
+      closeOnClick: true,
       href: docsUrl,
       right: (
         <ListboxIcon>

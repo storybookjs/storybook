@@ -11,7 +11,7 @@ import { Checklist } from './Checklist';
 import { checklistData } from './checklistData';
 
 const accepted = ['controls'];
-const done = ['install-storybook', 'render-component', 'whats-new-storybook-10'];
+const done = ['render-component', 'whats-new-storybook-10'];
 const skipped = ['viewports'];
 
 const availableItems = checklistData.sections.flatMap(

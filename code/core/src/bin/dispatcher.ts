@@ -61,12 +61,16 @@ async function run() {
       const child = executeNodeCommand({
         scriptPath: join(resolvePackageDir(targetCli.pkg), 'dist/bin/index.js'),
         args: targetCli.args,
+        options: {
+          stdio: 'inherit',
+        },
       });
       child.on('exit', (code) => {
         process.exit(code);
       });
+      return;
     }
-  } catch (e) {
+  } catch {
     // the package couldn't be imported, use npx to install and run it instead
   }
 

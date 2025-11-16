@@ -26,7 +26,10 @@ export default {
   component: Ref,
   title: 'Sidebar/Refs',
   excludeStories: /.*Data$/,
-  parameters: { layout: 'fullscreen' },
+  parameters: {
+    layout: 'fullscreen',
+    chromatic: { ignoreSelectors: ['[role="dialog"] pre'] },
+  },
   globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn: any) => (

@@ -30,7 +30,7 @@ const meta = preview.meta({
       loaded: true,
       muted: false,
       accepted: ['controls'],
-      done: ['install-storybook', 'render-component'],
+      done: ['render-component'],
       skipped: ['more-components', 'more-stories'],
     });
   },
@@ -44,7 +44,7 @@ export const Default = meta.story({
           loaded: true,
           muted: false,
           accepted: ['controls'],
-          done: ['install-storybook', 'render-component', 'viewports'],
+          done: ['render-component', 'viewports'],
           skipped: ['more-components', 'more-stories'],
         });
       }, 3000);
@@ -53,7 +53,7 @@ export const Default = meta.story({
           loaded: true,
           muted: false,
           accepted: ['controls'],
-          done: ['install-storybook', 'render-component', 'viewports'],
+          done: ['render-component', 'viewports'],
           skipped: ['more-components', 'more-stories', 'install-vitest'],
         });
         resolve(void 0);

@@ -19,7 +19,7 @@ test.describe('addon-onboarding', () => {
     await sbPage.waitUntilLoaded();
 
     await expect(page.getByRole('heading', { name: 'Meet your new frontend' })).toBeVisible();
-    await page.locator('#storybook-addon-onboarding').getByRole('button').click();
+    await page.locator('#storybook-onboarding').getByRole('button').click();
 
     await expect(page.getByText('Interactive story playground')).toBeVisible();
     await page.getByLabel('Next').click();

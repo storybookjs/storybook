@@ -141,12 +141,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             variant={variant}
             size={size}
             padding={padding}
-            disabled={disabled}
+            disabled={disabled || readOnly}
             readOnly={readOnly}
             active={active}
             animating={isAnimating}
             animation={animation}
             onClick={handleClick}
+            role={readOnly ? 'presentation' : undefined}
             aria-label={ariaLabel !== false ? ariaLabel : undefined}
             aria-keyshortcuts={shortcutAttribute}
             {...ariaDescriptionAttrs}

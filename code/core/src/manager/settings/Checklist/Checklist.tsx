@@ -143,9 +143,21 @@ const ItemContent = styled.div(({ theme }) => ({
   padding: '0 15px 15px 15px',
   fontSize: theme.typography.size.s2,
 
+  code: {
+    fontSize: '0.9em',
+    backgroundColor: theme.background.app,
+    borderRadius: theme.appBorderRadius,
+    padding: '1px 3px',
+  },
+  img: {
+    width: '100%',
+  },
   p: {
     margin: 0,
     lineHeight: 1.4,
+  },
+  'ol, ul': {
+    paddingLeft: 30,
   },
 }));
 

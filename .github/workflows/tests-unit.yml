@@ -11,8 +11,21 @@ env:
   NODE_OPTIONS: "--max_old_space_size=4096"
 
 jobs:
+  debug:
+    runs-on: windows-11-arm
+    steps:
+      - name: Debug
+        run: |
+          echo "GitHub Repository Owner: ${{ github.repository_owner }}"
+          echo "GitHub Repository: ${{ github.repository }}"
+          echo "GitHub Ref: ${{ github.ref }}"
+          echo "GitHub Ref Name: ${{ github.ref_name }}"
+          echo "GitHub Base Ref: ${{ github.base_ref }}"
+          echo "GitHub Event: ${{ toJson(github.event) }}"
+          echo "GitHub Env: ${{ toJson(github.env) }}"
   build:
     name: Core Unit Tests, windows-latest
+    if: github.repository_owner == 'storybookjs'
     runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4

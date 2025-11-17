@@ -97,7 +97,12 @@ const SidebarMenuList: FC<{
                 {...(link.href && { as: 'a', href: link.href, target: '_blank' })}
                 ariaLabel={false}
                 id={`list-item-${link.id}`}
+                disabled={link.disabled}
                 onClick={(e) => {
+                  if (link.disabled) {
+                    e.preventDefault();
+                    return;
+                  }
                   link.onClick?.(e, {
                     id: link.id,
                     active: link.active,

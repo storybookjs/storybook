@@ -69,7 +69,7 @@ describe('AddonConfigurationCommand', () => {
       const addons: string[] = [];
       const options = {
         packageManager: PackageManagerName.NPM,
-        features: new Set<Feature>(),
+        features: [],
       };
 
       const result = await command.execute({
@@ -89,7 +89,7 @@ describe('AddonConfigurationCommand', () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
       const options = {
         packageManager: PackageManagerName.NPM,
-        features: new Set<Feature>(),
+        features: [],
         yes: true,
       };
 
@@ -112,7 +112,7 @@ describe('AddonConfigurationCommand', () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
       const options = {
         packageManager: PackageManagerName.NPM,
-        features: new Set<Feature>(),
+        features: [],
       };
       const error = new Error('Configuration failed');
 
@@ -136,7 +136,7 @@ describe('AddonConfigurationCommand', () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
       const options = {
         packageManager: PackageManagerName.NPM,
-        features: new Set<Feature>(),
+        features: [],
         yes: true,
       };
 

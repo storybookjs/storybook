@@ -57,27 +57,6 @@ const CardOutline = styled.div<{
     transition: 'box-shadow 1s',
   },
 
-  '&.enter': {
-    opacity: 0,
-    blockSize: 0,
-    contentVisibility: 'hidden',
-  },
-  '&.enter-active': {
-    opacity: 1,
-    blockSize: 'auto',
-    contentVisibility: 'visible',
-  },
-  '&.exit': {
-    opacity: 1,
-    blockSize: 'auto',
-    contentVisibility: 'visible',
-  },
-  '&.exit-active, &.exit-done': {
-    opacity: 0,
-    blockSize: 0,
-    contentVisibility: 'hidden',
-  },
-
   '&:before': {
     content: '""',
     display: animation === 'none' ? 'none' : 'block',

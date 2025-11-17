@@ -107,7 +107,7 @@ test.describe('Manager UI', () => {
       const sbPage = new SbPage(page, expect);
       await sbPage.navigateToStory('example/button', 'primary');
       await expect(page.getByRole('button', { name: 'Open in editor' })).toBeVisible();
-      await page.getByRole('button', { name: 'Share' }).click();
+      await page.getByRole('button', { name: 'Share', exact: true }).click();
       await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
       await page.getByRole('button', { name: /copy story link/i }).click();
 
@@ -120,7 +120,7 @@ test.describe('Manager UI', () => {
       test.skip(type !== 'build', 'These actions are only applicable in build mode');
       const sbPage = new SbPage(page, expect);
       await sbPage.navigateToStory('example/button', 'primary');
-      await page.getByRole('button', { name: 'Share' }).click();
+      await page.getByRole('button', { name: 'Share', exact: true }).click();
       await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
       await page.getByRole('button', { name: /copy story link/i }).click();
 

@@ -108,8 +108,7 @@ export const styles = (({ theme }: { theme: StorybookTheme }) => ({
   },
 
   '&[disabled]': {
-    cursor: 'not-allowed',
-    opacity: 0.5,
+    background: theme.base === 'light' ? theme.color.lighter : 'transparent',
   },
 
   '&:-webkit-autofill': { WebkitBoxShadow: `0 0 0 3em ${theme.color.lightest} inset` },

@@ -1,6 +1,6 @@
 {
   "name": "storybook-addon-pseudo-states",
-  "version": "10.1.0-alpha.0",
+  "version": "10.1.0-alpha.11",
   "description": "Storybook Pseudo-states addon: Manipulate CSS pseudo states",
   "keywords": [
     "storybook",
@@ -55,7 +55,7 @@
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "devDependencies": {
-    "@storybook/icons": "^1.6.0",
+    "@storybook/icons": "^2.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.8.3"

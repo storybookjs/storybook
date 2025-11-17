@@ -13,7 +13,13 @@ import { addons } from 'storybook/manager-api';
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { SidebarContextMenu } from './components/SidebarContextMenu';
 import { TestProviderRender } from './components/TestProviderRender';
-import { A11Y_PANEL_ID, ADDON_ID, COMPONENT_TESTING_PANEL_ID, TEST_PROVIDER_ID } from './constants';
+import {
+  A11Y_PANEL_ID,
+  ADDON_ID,
+  ADDON_TEST_CHANNEL,
+  COMPONENT_TESTING_PANEL_ID,
+  TEST_PROVIDER_ID,
+} from './constants';
 import { useTestProvider } from './use-test-provider-state';
 
 addons.register(ADDON_ID, (api) => {
@@ -42,6 +48,9 @@ addons.register(ADDON_ID, (api) => {
         ...state,
         indexUrl: new URL('index.json', window.location.href).toString(),
       }));
+      store.subscribe('TEST_RUN_COMPLETED', ({ payload }) => {
+        api.emit(ADDON_TEST_CHANNEL, { type: 'test-run-completed', payload });
+      });
     });
 
     addons.add(TEST_PROVIDER_ID, {

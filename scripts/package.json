@@ -56,7 +56,7 @@
     ]
   },
   "resolutions": {
-    "esbuild": "^0.25.3",
+    "esbuild": "^0.27.0",
     "serialize-javascript": "^3.1.0",
     "type-fest": "~2.19",
     "typescript": "^5.8.3"
@@ -108,7 +108,7 @@
     "ejs-lint": "^2.0.1",
     "empathic": "^2.0.0",
     "es-toolkit": "^1.36.0",
-    "esbuild": "^0.25.3",
+    "esbuild": "^0.27.0",
     "eslint": "^8.57.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-config-prettier": "^9.1.0",

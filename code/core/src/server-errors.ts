@@ -54,6 +54,7 @@ export enum Category {
 export class NxProjectDetectedError extends StorybookError {
   constructor() {
     super({
+      name: 'NxProjectDetectedError',
       category: Category.CLI_INIT,
       code: 1,
       documentation: 'https://nx.dev/nx-api/storybook#generating-storybook-configuration',
@@ -67,6 +68,7 @@ export class NxProjectDetectedError extends StorybookError {
 export class MissingFrameworkFieldError extends StorybookError {
   constructor() {
     super({
+      name: 'MissingFrameworkFieldError',
       category: Category.CORE_COMMON,
       code: 1,
       documentation:
@@ -82,6 +84,7 @@ export class MissingFrameworkFieldError extends StorybookError {
 export class InvalidFrameworkNameError extends StorybookError {
   constructor(public data: { frameworkName: string }) {
     super({
+      name: 'InvalidFrameworkNameError',
       category: Category.CORE_COMMON,
       code: 2,
       documentation:
@@ -98,6 +101,7 @@ export class InvalidFrameworkNameError extends StorybookError {
 export class CouldNotEvaluateFrameworkError extends StorybookError {
   constructor(public data: { frameworkName: string }) {
     super({
+      name: 'CouldNotEvaluateFrameworkError',
       category: Category.CORE_COMMON,
       code: 3,
       documentation: '',
@@ -114,6 +118,7 @@ export class CouldNotEvaluateFrameworkError extends StorybookError {
 export class ConflictingStaticDirConfigError extends StorybookError {
   constructor() {
     super({
+      name: 'ConflictingStaticDirConfigError',
       category: Category.CORE_SERVER,
       code: 1,
       documentation:
@@ -131,6 +136,7 @@ export class ConflictingStaticDirConfigError extends StorybookError {
 export class InvalidStoriesEntryError extends StorybookError {
   constructor() {
     super({
+      name: 'InvalidStoriesEntryError',
       category: Category.CORE_COMMON,
       code: 4,
       documentation:
@@ -147,6 +153,7 @@ export class InvalidStoriesEntryError extends StorybookError {
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({
+      name: 'WebpackMissingStatsError',
       category: Category.BUILDER_WEBPACK5,
       code: 1,
       documentation: [
@@ -167,6 +174,7 @@ export class WebpackInvocationError extends StorybookError {
     }
   ) {
     super({
+      name: 'WebpackInvocationError',
       category: Category.BUILDER_WEBPACK5,
       code: 2,
       message: data.error.message.trim(),
@@ -198,6 +206,7 @@ export class WebpackCompilationError extends StorybookError {
     });
 
     super({
+      name: 'WebpackCompilationError',
       category: Category.BUILDER_WEBPACK5,
       code: 3,
       // This error message is a followup of errors logged by Webpack to the user
@@ -216,6 +225,7 @@ export class MissingAngularJsonError extends StorybookError {
     }
   ) {
     super({
+      name: 'MissingAngularJsonError',
       category: Category.CLI_INIT,
       code: 2,
       documentation: 'https://storybook.js.org/docs/faq#error-no-angularjson-file-found?ref=error',
@@ -229,6 +239,7 @@ export class MissingAngularJsonError extends StorybookError {
 export class AngularLegacyBuildOptionsError extends StorybookError {
   constructor() {
     super({
+      name: 'AngularLegacyBuildOptionsError',
       category: Category.FRAMEWORK_ANGULAR,
       code: 1,
       documentation: [
@@ -252,6 +263,7 @@ export class CriticalPresetLoadError extends StorybookError {
     }
   ) {
     super({
+      name: 'CriticalPresetLoadError',
       category: Category.CORE_SERVER,
       code: 2,
       documentation: '',
@@ -270,6 +282,7 @@ export class CriticalPresetLoadError extends StorybookError {
 export class MissingBuilderError extends StorybookError {
   constructor() {
     super({
+      name: 'MissingBuilderError',
       category: Category.CORE_SERVER,
       code: 3,
       documentation: 'https://github.com/storybookjs/storybook/issues/24071',
@@ -290,6 +303,7 @@ export class MissingBuilderError extends StorybookError {
 export class GoogleFontsDownloadError extends StorybookError {
   constructor(public data: { fontFamily: string; url: string }) {
     super({
+      name: 'GoogleFontsDownloadError',
       category: Category.FRAMEWORK_NEXTJS,
       code: 1,
       documentation:
@@ -303,6 +317,7 @@ export class GoogleFontsDownloadError extends StorybookError {
 export class GoogleFontsLoadingError extends StorybookError {
   constructor(public data: { error: unknown | Error; url: string }) {
     super({
+      name: 'GoogleFontsLoadingError',
       category: Category.FRAMEWORK_NEXTJS,
       code: 2,
       documentation:
@@ -318,6 +333,7 @@ export class GoogleFontsLoadingError extends StorybookError {
 export class SvelteViteWithSvelteKitError extends StorybookError {
   constructor() {
     super({
+      name: 'SvelteViteWithSvelteKitError',
       category: Category.FRAMEWORK_SVELTE_VITE,
       code: 1,
       documentation:
@@ -332,6 +348,7 @@ export class SvelteViteWithSvelteKitError extends StorybookError {
 export class NoMatchingExportError extends StorybookError {
   constructor(public data: { error: unknown | Error }) {
     super({
+      name: 'NoMatchingExportError',
       category: Category.CORE_SERVER,
       code: 4,
       documentation: '',
@@ -367,6 +384,7 @@ export class MainFileMissingError extends StorybookError {
     };
     const { documentation, helperMessage } = map[data.source || 'storybook'];
     super({
+      name: 'MainFileMissingError',
       category: Category.CORE_SERVER,
       code: 6,
       documentation,
@@ -386,6 +404,7 @@ export class MainFileEvaluationError extends StorybookError {
     );
 
     super({
+      name: 'MainFileEvaluationError',
       category: Category.CORE_SERVER,
       code: 7,
       message: dedent`
@@ -405,6 +424,7 @@ export class StatusTypeIdMismatchError extends StorybookError {
     }
   ) {
     super({
+      name: 'StatusTypeIdMismatchError',
       category: Category.CORE_SERVER,
       code: 16,
       message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(
@@ -421,6 +441,7 @@ export class GenerateNewProjectOnInitError extends StorybookError {
     public data: { error: unknown | Error; packageManager: string; projectType: string }
   ) {
     super({
+      name: 'GenerateNewProjectOnInitError',
       category: Category.CLI_INIT,
       code: 3,
       documentation: '',
@@ -460,6 +481,7 @@ export class AddonVitestPostinstallError extends StorybookError {
 export class UpgradeStorybookToLowerVersionError extends StorybookError {
   constructor(public data: { beforeVersion: string; currentVersion: string }) {
     super({
+      name: 'UpgradeStorybookToLowerVersionError',
       category: Category.CLI_UPGRADE,
       code: 3,
       message: dedent`
@@ -480,6 +502,7 @@ export class UpgradeStorybookToLowerVersionError extends StorybookError {
 export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
   constructor() {
     super({
+      name: 'UpgradeStorybookUnknownCurrentVersionError',
       category: Category.CLI_UPGRADE,
       code: 5,
       message: dedent`
@@ -494,6 +517,7 @@ export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
 export class NoStatsForViteDevError extends StorybookError {
   constructor() {
     super({
+      name: 'NoStatsForViteDevError',
       category: Category.BUILDER_VITE,
       code: 1,
       message: dedent`
@@ -509,6 +533,7 @@ export class FindPackageVersionsError extends StorybookError {
     public data: { error: Error | unknown; packageName: string; packageManager: string }
   ) {
     super({
+      name: 'FindPackageVersionsError',
       category: Category.CLI,
       code: 1,
       message: dedent`
@@ -521,6 +546,7 @@ export class FindPackageVersionsError extends StorybookError {
 export class IncompatiblePostCssConfigError extends StorybookError {
   constructor(public data: { error: Error }) {
     super({
+      name: 'IncompatiblePostCssConfigError',
       category: Category.FRAMEWORK_NEXTJS,
       code: 3,
       message: dedent`
@@ -551,6 +577,7 @@ export class IncompatiblePostCssConfigError extends StorybookError {
 export class SavingGlobalSettingsFileError extends StorybookError {
   constructor(public data: { filePath: string; error: Error | unknown }) {
     super({
+      name: 'SavingGlobalSettingsFileError',
       category: Category.CORE_SERVER,
       code: 1,
       message: dedent`
@@ -563,6 +590,7 @@ export class SavingGlobalSettingsFileError extends StorybookError {
 export class CommonJsConfigNotSupportedError extends StorybookError {
   constructor() {
     super({
+      name: 'CommonJsConfigNotSupportedError',
       category: Category.CLI_AUTOMIGRATE,
       code: 1,
       documentation: 'https://storybook.js.org/docs/configure/overview?ref=error#es-modules',

@@ -267,7 +267,7 @@ A real-world example of a user profile card.
 This example demonstrates how to compose the Card component with other design system components to create a complete, functional UI element. It includes an avatar, user information, stats, and action buttons.
 </story_description>
 <story_code>
-import { Card, Avatar, Button } from '@storybook/design-system';
+import { Card } from '@storybook/design-system';
 
 const UserProfile = () => (
   <Card

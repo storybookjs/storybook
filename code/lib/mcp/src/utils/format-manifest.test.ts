@@ -223,39 +223,6 @@ describe('formatComponentManifest', () => {
 			`);
 		});
 
-		it('should use story import over component import when provided', () => {
-			const manifest: ComponentManifest = {
-				id: 'button',
-				name: 'Button',
-				path: 'src/components/Button.tsx',
-				import: 'import { Button } from "@/components";',
-				stories: [
-					{
-						name: 'WithCustomImport',
-						import: 'import { Button } from "@/custom-path";',
-						snippet: '<Button>Custom</Button>',
-					},
-				],
-			};
-
-			const result = formatComponentManifest(manifest);
-
-			expect(result).toMatchInlineSnapshot(`
-				"<component>
-				<id>button</id>
-				<name>Button</name>
-				<story>
-				<story_name>With Custom Import</story_name>
-				<story_code>
-				import { Button } from "@/custom-path";
-
-				<Button>Custom</Button>
-				</story_code>
-				</story>
-				</component>"
-			`);
-		});
-
 		it('should handle stories without description', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',

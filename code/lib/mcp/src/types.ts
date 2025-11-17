@@ -41,7 +41,6 @@ const JSDocTag = v.record(v.string(), v.array(v.string()));
 const BaseManifest = v.object({
 	name: v.string(),
 	description: v.optional(v.string()),
-	import: v.optional(v.string()),
 	jsDocTags: v.optional(JSDocTag),
 	error: v.optional(
 		v.object({
@@ -61,6 +60,7 @@ export const ComponentManifest = v.object({
 	id: v.string(),
 	path: v.string(),
 	summary: v.optional(v.string()),
+	import: v.optional(v.string()),
 	stories: v.optional(v.array(Story)),
 	// loose schema for react-docgen types, as they are pretty complex
 	reactDocgen: v.optional(v.custom<Documentation>(() => true)),

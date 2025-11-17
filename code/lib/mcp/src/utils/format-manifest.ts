@@ -38,9 +38,8 @@ export function formatComponentManifest(
 			}
 
 			storyParts.push('<story_code>');
-			const importStatement = story.import || componentManifest.import;
-			if (importStatement) {
-				storyParts.push(`${importStatement}\n`);
+			if (componentManifest.import) {
+				storyParts.push(`${componentManifest.import}\n`);
 			}
 			storyParts.push(dedent`${story.snippet}
 				</story_code>

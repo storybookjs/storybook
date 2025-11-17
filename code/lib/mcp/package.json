@@ -39,6 +39,7 @@
 		"valibot": "catalog:"
 	},
 	"devDependencies": {
+		"@tmcp/transport-stdio": "catalog:",
 		"@tsconfig/node-ts": "^23.6.1",
 		"@tsconfig/node24": "^24.0.1",
 		"@types/node": "catalog:",

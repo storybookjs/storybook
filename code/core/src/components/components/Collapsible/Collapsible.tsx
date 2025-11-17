@@ -10,42 +10,7 @@ import React, {
 
 import { styled } from 'storybook/theming';
 
-export const Collapsible = ({
-  children,
-  summary,
-  collapsed,
-  disabled,
-  state: providedState,
-  ...props
-}: {
-  children: ReactNode | ((state: ReturnType<typeof useCollapsible>) => ReactNode);
-  summary?: ReactNode | ((state: ReturnType<typeof useCollapsible>) => ReactNode);
-  collapsed?: boolean;
-  disabled?: boolean;
-  state?: ReturnType<typeof useCollapsible>;
-} & ComponentProps<typeof CollapsibleContent>) => {
-  const internalState = useCollapsible(collapsed, disabled);
-  const state = providedState || internalState;
-  return (
-    <>
-      {typeof summary === 'function' ? summary(state) : summary}
-      <CollapsibleContent
-        {...props}
-        id={state.contentId}
-        collapsed={state.isCollapsed}
-        aria-hidden={state.isCollapsed}
-      >
-        {typeof children === 'function' ? children(state) : children}
-      </CollapsibleContent>
-    </>
-  );
-};
-
-export const CollapsibleContent = ({ collapsed, ...props }: ComponentProps<typeof Content>) => (
-  <Content collapsed={collapsed} aria-hidden={collapsed} {...props} />
-);
-
-const Content = styled.div<{ collapsed?: boolean }>(({ collapsed = false }) => ({
+const CollapsibleContent = styled.div<{ collapsed?: boolean }>(({ collapsed = false }) => ({
   blockSize: collapsed ? 0 : 'auto',
   interpolateSize: 'allow-keywords',
   contentVisibility: collapsed ? 'hidden' : 'visible',
@@ -59,6 +24,42 @@ const Content = styled.div<{ collapsed?: boolean }>(({ collapsed = false }) => (
     transition: 'none',
   },
 }));
+
+export const Collapsible = Object.assign(
+  function Collapsible({
+    children,
+    summary,
+    collapsed,
+    disabled,
+    state: providedState,
+    ...props
+  }: {
+    children: ReactNode | ((state: ReturnType<typeof useCollapsible>) => ReactNode);
+    summary?: ReactNode | ((state: ReturnType<typeof useCollapsible>) => ReactNode);
+    collapsed?: boolean;
+    disabled?: boolean;
+    state?: ReturnType<typeof useCollapsible>;
+  } & ComponentProps<typeof CollapsibleContent>) {
+    const internalState = useCollapsible(collapsed, disabled);
+    const state = providedState || internalState;
+    return (
+      <>
+        {typeof summary === 'function' ? summary(state) : summary}
+        <CollapsibleContent
+          {...props}
+          id={state.contentId}
+          collapsed={state.isCollapsed}
+          aria-hidden={state.isCollapsed}
+        >
+          {typeof children === 'function' ? children(state) : children}
+        </CollapsibleContent>
+      </>
+    );
+  },
+  {
+    Content: CollapsibleContent,
+  }
+);
 
 export const useCollapsible = (collapsed?: boolean, disabled?: boolean) => {
   const [isCollapsed, setCollapsed] = useState(!!collapsed);

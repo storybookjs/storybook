@@ -1,6 +1,6 @@
 import React, { createRef, useMemo } from 'react';
 
-import { Button, Collapsible, ListboxItem } from 'storybook/internal/components';
+import { Button, Collapsible, Listbox } from 'storybook/internal/components';
 
 import {
   CheckIcon,
@@ -13,7 +13,7 @@ import {
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { FocusProxy, FocusTarget } from '../../components/FocusRing/FocusRing';
+import { Focus } from '../../components/Focus/Focus';
 import type { ChecklistItem, useChecklist } from '../../components/sidebar/useChecklist';
 import { useLocationHash } from '../../components/useLocationHash';
 
@@ -274,7 +274,7 @@ export const Checklist = ({
 
         return (
           <li key={id}>
-            <FocusProxy targetId={`toggle-${id}`}>
+            <Focus.Proxy targetId={`toggle-${id}`}>
               <Collapsible
                 collapsed={collapsed}
                 summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
@@ -319,13 +319,13 @@ export const Checklist = ({
                       const itemContent = content?.();
 
                       return (
-                        <ListboxItem as="li" key={item.id}>
-                          <FocusTarget
+                        <Listbox.Item as="li" key={item.id}>
+                          <Focus.Target
                             targetHash={item.id}
                             highlightDuration={2000}
                             outlineOffset={-2}
                           >
-                            <FocusProxy targetId={`toggle-${item.id}`} outlineOffset={-2}>
+                            <Focus.Proxy targetId={`toggle-${item.id}`} outlineOffset={-2}>
                               <Collapsible
                                 collapsed={isCollapsed}
                                 summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
@@ -424,15 +424,15 @@ export const Checklist = ({
                               >
                                 {itemContent && <ItemContent>{itemContent}</ItemContent>}
                               </Collapsible>
-                            </FocusProxy>
-                          </FocusTarget>
-                        </ListboxItem>
+                            </Focus.Proxy>
+                          </Focus.Target>
+                        </Listbox.Item>
                       );
                     }
                   )}
                 </Items>
               </Collapsible>
-            </FocusProxy>
+            </Focus.Proxy>
           </li>
         );
       })}

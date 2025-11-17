@@ -26,30 +26,13 @@ const slide = keyframes({
   },
 });
 
-interface CardProps extends ComponentProps<typeof Content> {
-  outlineAnimation?: 'none' | 'rainbow' | 'spin';
-  outlineColor?: keyof typeof color;
-  outlineStyles?: CSSObject;
-}
-
-export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
-  { outlineAnimation = 'none', outlineColor, outlineStyles, ...props },
-  ref
-) {
-  return (
-    <Outline animation={outlineAnimation} color={outlineColor} styles={outlineStyles} ref={ref}>
-      <Content {...props} />
-    </Outline>
-  );
-});
-
-export const Content = styled.div(({ theme }) => ({
+const CardContent = styled.div(({ theme }) => ({
   borderRadius: theme.appBorderRadius,
   backgroundColor: theme.background.content,
   position: 'relative',
 }));
 
-export const Outline = styled.div<{
+const CardOutline = styled.div<{
   animation?: 'none' | 'rainbow' | 'spin';
   color?: keyof typeof color;
   styles?: CSSObject;
@@ -131,3 +114,31 @@ export const Outline = styled.div<{
     ...(styles && typeof styles['&:before'] === 'object' ? styles['&:before'] : {}),
   },
 }));
+
+interface CardProps extends ComponentProps<typeof CardContent> {
+  outlineAnimation?: 'none' | 'rainbow' | 'spin';
+  outlineColor?: keyof typeof color;
+  outlineStyles?: CSSObject;
+}
+
+export const Card = Object.assign(
+  forwardRef<HTMLDivElement, CardProps>(function Card(
+    { outlineAnimation = 'none', outlineColor, outlineStyles, ...props },
+    ref
+  ) {
+    return (
+      <CardOutline
+        animation={outlineAnimation}
+        color={outlineColor}
+        styles={outlineStyles}
+        ref={ref}
+      >
+        <CardContent {...props} />
+      </CardOutline>
+    );
+  }),
+  {
+    Content: CardContent,
+    Outline: CardOutline,
+  }
+);

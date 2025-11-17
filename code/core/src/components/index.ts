@@ -43,15 +43,7 @@ export { createCopyToClipboardFunction } from './components/syntaxhighlighter/cl
 export { ActionBar } from './components/ActionBar/ActionBar';
 export { Collapsible } from './components/Collapsible/Collapsible';
 export { Card } from './components/Card/Card';
-export {
-  Listbox,
-  ListboxAction,
-  ListboxButton,
-  ListboxIcon,
-  ListboxItem,
-  ListboxHoverItem,
-  ListboxText,
-} from './components/Listbox/Listbox';
+export { Listbox } from './components/Listbox/Listbox';
 export { Modal, ModalDecorator } from './components/Modal/Modal';
 export { Spaced } from './components/spaced/Spaced';
 export { Placeholder } from './components/placeholder/placeholder';

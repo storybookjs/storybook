@@ -5,17 +5,7 @@ import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button';
 
-export const Listbox = styled.div(({ theme }) => ({
-  listStyle: 'none',
-  margin: 0,
-  padding: 4,
-
-  '& + *': {
-    borderTop: `1px solid ${theme.appBorderColor}`,
-  },
-}));
-
-export const ListboxItem = styled.div<{
+const ListboxItem = styled.div<{
   active?: boolean;
   showOnHover?: string;
   transitionStatus?: TransitionStatus;
@@ -63,7 +53,7 @@ export const ListboxItem = styled.div<{
   }
 );
 
-export const ListboxHoverItem = styled(ListboxItem)<{ targetId: string }>(({ targetId }) => ({
+const ListboxHoverItem = styled(ListboxItem)<{ targetId: string }>(({ targetId }) => ({
   gap: 0,
   [`& [data-target-id="${targetId}"]`]: {
     interpolateSize: 'allow-keywords',
@@ -80,13 +70,13 @@ export const ListboxHoverItem = styled(ListboxItem)<{ targetId: string }>(({ tar
   },
 }));
 
-export const ListboxButton = forwardRef<HTMLButtonElement, ComponentProps<typeof Button>>(
+const ListboxButton = forwardRef<HTMLButtonElement, ComponentProps<typeof Button>>(
   function ListboxButton({ padding = 'small', size = 'medium', variant = 'ghost', ...props }, ref) {
     return <Button {...props} variant={variant} padding={padding} size={size} ref={ref} />;
   }
 );
 
-export const ListboxAction = styled(ListboxButton)({
+const ListboxAction = styled(ListboxButton)({
   flex: '0 1 100%',
   textAlign: 'start',
   justifyContent: 'space-between',
@@ -97,7 +87,7 @@ export const ListboxAction = styled(ListboxButton)({
   },
 });
 
-export const ListboxText = styled.div({
+const ListboxText = styled.div({
   display: 'flex',
   alignItems: 'center',
   gap: 8,
@@ -125,7 +115,7 @@ export const ListboxText = styled.div({
   },
 });
 
-export const ListboxIcon = styled.div({
+const ListboxIcon = styled.div({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -134,3 +124,23 @@ export const ListboxIcon = styled.div({
   height: 14,
   color: 'var(--listbox-item-muted-color)',
 });
+
+export const Listbox = Object.assign(
+  styled.div(({ theme }) => ({
+    listStyle: 'none',
+    margin: 0,
+    padding: 4,
+
+    '& + *': {
+      borderTop: `1px solid ${theme.appBorderColor}`,
+    },
+  })),
+  {
+    Item: ListboxItem,
+    HoverItem: ListboxHoverItem,
+    Button: ListboxButton,
+    Action: ListboxAction,
+    Text: ListboxText,
+    Icon: ListboxIcon,
+  }
+);

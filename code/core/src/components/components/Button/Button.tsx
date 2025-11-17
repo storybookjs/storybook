@@ -147,7 +147,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             animating={isAnimating}
             animation={animation}
             onClick={handleClick}
-            role={readOnly ? 'presentation' : undefined}
             aria-label={!readOnly && ariaLabel !== false ? ariaLabel : undefined}
             aria-keyshortcuts={readOnly ? undefined : shortcutAttribute}
             {...(readOnly ? {} : ariaDescriptionAttrs)}

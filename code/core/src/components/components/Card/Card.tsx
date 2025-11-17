@@ -35,8 +35,7 @@ const CardContent = styled.div(({ theme }) => ({
 const CardOutline = styled.div<{
   animation?: 'none' | 'rainbow' | 'spin';
   color?: keyof typeof color;
-  styles?: CSSObject;
-}>(({ animation = 'none', color, styles, theme }) => ({
+}>(({ animation = 'none', color, theme }) => ({
   position: 'relative',
   width: '100%',
   padding: 1,
@@ -45,7 +44,6 @@ const CardOutline = styled.div<{
   borderRadius: theme.appBorderRadius + 1,
   boxShadow: `inset 0 0 0 1px ${(animation === 'none' && color && theme.color[color]) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
   transition: 'box-shadow 1s',
-  ...styles,
 
   '@supports (interpolate-size: allow-keywords)': {
     interpolateSize: 'allow-keywords',
@@ -96,21 +94,15 @@ const CardOutline = styled.div<{
 interface CardProps extends ComponentProps<typeof CardContent> {
   outlineAnimation?: 'none' | 'rainbow' | 'spin';
   outlineColor?: keyof typeof color;
-  outlineStyles?: CSSObject;
 }
 
 export const Card = Object.assign(
   forwardRef<HTMLDivElement, CardProps>(function Card(
-    { outlineAnimation = 'none', outlineColor, outlineStyles, ...props },
+    { outlineAnimation = 'none', outlineColor, ...props },
     ref
   ) {
     return (
-      <CardOutline
-        animation={outlineAnimation}
-        color={outlineColor}
-        styles={outlineStyles}
-        ref={ref}
-      >
+      <CardOutline animation={outlineAnimation} color={outlineColor} ref={ref}>
         <CardContent {...props} />
       </CardOutline>
     );

@@ -7,7 +7,7 @@ It enables a workflow where for each UI component created, the agent will automa
 The addon provides tools to improve agents' UI development capabilities, retrieve story URLs, and access component documentation.
 
 <div align="center">
-   <img src="https://storybook.js.org/embed/addon-mcp-claude-code-showcase.gif" alt="Storybook MCP Addon Demo" />
+   <img src="./addon-mcp-claude-code-showcase.gif" alt="Storybook MCP Addon Demo" />
 </div>
 
 ## Getting Started

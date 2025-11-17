@@ -3,7 +3,7 @@ import React, { useCallback } from 'react';
 import { type API } from 'storybook/manager-api';
 import { ThemeProvider, convert } from 'storybook/theming';
 
-import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
+import { ADDON_ONBOARDING_CHANNEL } from './constants';
 import { IntentSurvey } from './features/IntentSurvey/IntentSurvey';
 
 const theme = convert();
@@ -22,7 +22,7 @@ export default function Survey({ api }: { api: API }) {
 
   const complete = useCallback(
     (answers: Record<string, unknown>) => {
-      api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
+      api.emit(ADDON_ONBOARDING_CHANNEL, {
         answers,
         type: 'survey',
         userAgent,
@@ -33,7 +33,7 @@ export default function Survey({ api }: { api: API }) {
   );
 
   const dismiss = useCallback(() => {
-    api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
+    api.emit(ADDON_ONBOARDING_CHANNEL, {
       type: 'dismissSurvey',
     });
     disableOnboarding();

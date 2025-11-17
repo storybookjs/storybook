@@ -26,9 +26,9 @@ import { dedent } from 'ts-dedent';
 
 import {
   ADDON_ID,
+  ADDON_TEST_CHANNEL,
   COVERAGE_DIRECTORY,
   STORE_CHANNEL_EVENT_NAME,
-  STORYBOOK_ADDON_TEST_CHANNEL,
   storeOptions,
 } from './constants';
 import { log } from './logger';
@@ -36,15 +36,20 @@ import { runTestRunner } from './node/boot-test-runner';
 import type { CachedState, ErrorLike, StoreState } from './types';
 import type { StoreEvent } from './types';
 
-type Event = {
-  type: 'test-discrepancy';
-  payload: {
-    storyId: StoryId;
-    browserStatus: 'PASS' | 'FAIL';
-    cliStatus: 'FAIL' | 'PASS';
-    message: string;
-  };
-};
+type Event =
+  | {
+      type: 'test-discrepancy';
+      payload: {
+        storyId: StoryId;
+        browserStatus: 'PASS' | 'FAIL';
+        cliStatus: 'FAIL' | 'PASS';
+        message: string;
+      };
+    }
+  | {
+      type: 'test-run-completed';
+      payload: StoreState['currentRun'];
+    };
 
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
   const core = await options.presets.apply('core');
@@ -182,14 +187,16 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   if (!core.disableTelemetry) {
     const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
 
-    channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
-      telemetry('addon-test', {
-        ...event,
-        payload: {
-          ...event.payload,
-          storyId: oneWayHash(event.payload.storyId),
-        },
-      });
+    channel.on(ADDON_TEST_CHANNEL, (event: Event) => {
+      if (event.type !== 'test-run-completed') {
+        telemetry('addon-test', {
+          ...event,
+          payload: {
+            ...event.payload,
+            storyId: oneWayHash(event.payload.storyId),
+          },
+        });
+      }
     });
 
     store.subscribe('TOGGLE_WATCHING', async (event) => {

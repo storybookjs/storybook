@@ -3,7 +3,7 @@ import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import versions from '../../common/versions';
-import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from '../../onboarding/constants';
+import { ADDON_ONBOARDING_CHANNEL } from '../../onboarding/constants';
 
 type Event = {
   type: 'telemetry' | 'survey';
@@ -16,7 +16,7 @@ export function initOnboardingChannel(channel: Channel, options: Options, coreCo
     return channel;
   }
 
-  channel.on(STORYBOOK_ADDON_ONBOARDING_CHANNEL, ({ type, ...event }: Event) => {
+  channel.on(ADDON_ONBOARDING_CHANNEL, ({ type, ...event }: Event) => {
     if (type === 'telemetry') {
       telemetry('addon-onboarding', { ...event, addonVersion: versions.storybook });
     } else if (type === 'survey') {

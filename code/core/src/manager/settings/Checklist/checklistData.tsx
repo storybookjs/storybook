@@ -17,6 +17,16 @@ import type {
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
+import { ADDON_ID as ADDON_A11Y_ID } from '../../../../../addons/a11y/src/constants';
+import {
+  ADDON_ONBOARDING_CHANNEL,
+  ADDON_ID as ADDON_ONBOARDING_ID,
+} from '../../../../../addons/onboarding/src/constants';
+import {
+  ADDON_TEST_CHANNEL,
+  ADDON_ID as ADDON_TEST_ID,
+} from '../../../../../addons/vitest/src/constants';
+import { ADDON_ID as ADDON_DOCS_ID } from '../../../docs-tools/shared';
 import { TourGuide } from '../../components/TourGuide/TourGuide';
 
 const CodeWrapper = styled.div(({ theme }) => ({
@@ -119,10 +129,11 @@ export const checklistData: ChecklistData = {
         {
           id: 'guided-tour',
           label: 'Take the guided tour',
+
           available: ({ index }) => !!index && 'example-button--primary' in index,
           criteria: 'Guided tour is completed',
           subscribe: ({ api, accept }) =>
-            api.on('STORYBOOK_ADDON_ONBOARDING_CHANNEL', ({ step, type }) => {
+            api.on(ADDON_ONBOARDING_CHANNEL, ({ step, type }) => {
               if (type !== 'dismiss' && ['6:IntentSurvey', '7:FinishedOnboarding'].includes(step)) {
                 accept();
               }
@@ -142,14 +153,12 @@ export const checklistData: ChecklistData = {
         {
           id: 'onboarding-survey',
           label: 'Complete the onboarding survey',
+
           available: ({ index }) => !!index && 'example-button--primary' in index,
           afterCompletion: 'immutable',
           criteria: 'Onboarding survey is completed',
           subscribe: ({ api, accept }) =>
-            api.on(
-              'STORYBOOK_ADDON_ONBOARDING_CHANNEL',
-              ({ type }) => type === 'survey' && accept()
-            ),
+            api.on(ADDON_ONBOARDING_CHANNEL, ({ type }) => type === 'survey' && accept()),
           action: {
             label: 'Open',
             onClick: ({ api }) => {
@@ -320,7 +329,7 @@ export default {
           available: () => true, // TODO check for compatibility with the project
           criteria: '@storybook/addon-vitest registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
-            if (addons.experimental_getRegisteredAddons().includes('storybook/test')) {
+            if (addons.experimental_getRegisteredAddons().includes(ADDON_TEST_ID)) {
               done();
             }
           },
@@ -445,7 +454,7 @@ async play({ canvas, userEvent }) {
           afterCompletion: 'unavailable',
           criteria: '@storybook/addon-a11y registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
-            if (addons.experimental_getRegisteredAddons().includes('storybook/a11y')) {
+            if (addons.experimental_getRegisteredAddons().includes(ADDON_A11Y_ID)) {
               done();
             }
           },
@@ -469,7 +478,11 @@ async play({ canvas, userEvent }) {
           after: ['install-a11y'],
           label: 'Run accessibility tests',
           criteria: 'Accessibility tests are run from the test widget in the sidebar',
-          subscribe: ({ api, done }) => api.on('storybook/a11y/result', done), // TODO check test widget state
+          subscribe: ({ api, done }) =>
+            api.on(
+              ADDON_TEST_CHANNEL,
+              ({ type, payload }) => type === 'test-run-completed' && payload.config.a11y && done()
+            ),
           content: () => (
             <>
               <p>
@@ -534,7 +547,13 @@ async play({ canvas, userEvent }) {
           id: 'coverage',
           after: ['install-vitest'],
           label: 'Generate a coverage report',
-          criteria: 'Generate and view a coverage report',
+          criteria: 'Generate a coverage report',
+          subscribe: ({ api, done }) =>
+            api.on(
+              ADDON_TEST_CHANNEL,
+              ({ type, payload }) =>
+                type === 'test-run-completed' && payload.config.coverage && done()
+            ),
           content: () => (
             <>
               <p>
@@ -580,7 +599,7 @@ async play({ canvas, userEvent }) {
           afterCompletion: 'unavailable',
           criteria: '@storybook/addon-docs registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
-            if (addons.experimental_getRegisteredAddons().includes('storybook/docs')) {
+            if (addons.experimental_getRegisteredAddons().includes(ADDON_DOCS_ID)) {
               done();
             }
           },

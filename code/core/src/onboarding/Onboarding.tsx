@@ -10,7 +10,7 @@ import { HighlightElement } from '../../../core/src/manager/components/TourGuide
 import { TourGuide } from '../../../core/src/manager/components/TourGuide/TourGuide';
 import { Confetti } from './components/Confetti/Confetti';
 import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants';
-import { ADDON_CONTROLS_ID, STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
+import { ADDON_CONTROLS_ID, ADDON_ONBOARDING_CHANNEL } from './constants';
 import { IntentSurvey } from './features/IntentSurvey/IntentSurvey';
 import { SplashScreen } from './features/SplashScreen/SplashScreen';
 
@@ -84,7 +84,7 @@ export default function Onboarding({
   const disableOnboarding = useCallback(
     (dismissedStep?: StepKey) => {
       if (dismissedStep) {
-        api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
+        api.emit(ADDON_ONBOARDING_CHANNEL, {
           dismissedStep,
           type: 'dismiss',
           userAgent,
@@ -102,7 +102,7 @@ export default function Onboarding({
 
   const completeSurvey = useCallback(
     (answers: Record<string, unknown>) => {
-      api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
+      api.emit(ADDON_ONBOARDING_CHANNEL, {
         answers,
         type: 'survey',
         userAgent,
@@ -174,7 +174,7 @@ export default function Onboarding({
   }, [api]);
 
   useEffect(
-    () => api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, { step, type: 'telemetry', userAgent }),
+    () => api.emit(ADDON_ONBOARDING_CHANNEL, { step, type: 'telemetry', userAgent }),
     [api, step, userAgent]
   );
 

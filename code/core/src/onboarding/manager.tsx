@@ -5,7 +5,7 @@ import { STORY_SPECIFIED } from 'storybook/internal/core-events';
 
 import { addons, internal_universalChecklistStore as checklistStore } from 'storybook/manager-api';
 
-import { ADDON_CONTROLS_ID } from './constants';
+import { ADDON_CONTROLS_ID, ADDON_ID } from './constants';
 
 const Onboarding = lazy(() => import('./Onboarding'));
 const Survey = lazy(() => import('./Survey'));
@@ -25,7 +25,7 @@ const render = (node: React.ReactNode) => {
 // The addon is enabled only when:
 // 1. The onboarding query parameter is present
 // 2. The example button stories are present
-export default addons.register('storybook/onboarding', async (api) => {
+export default addons.register(ADDON_ID, async (api) => {
   const { path, queryParams } = api.getUrlState();
   const isOnboarding = path === '/onboarding' || queryParams.onboarding === 'true';
   const isSurvey = queryParams.onboarding === 'survey';

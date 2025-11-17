@@ -53,6 +53,11 @@ const ListboxItem = styled.div<{
   }
 );
 
+/**
+ * A Listbox item that shows/hides child elements on hover based on the targetId. Child elements
+ * must have a `data-target-id` attribute matching the `targetId` prop to be affected by the hover
+ * behavior.
+ */
 const ListboxHoverItem = styled(ListboxItem)<{ targetId: string }>(({ targetId }) => ({
   gap: 0,
   [`& [data-target-id="${targetId}"]`]: {

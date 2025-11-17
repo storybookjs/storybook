@@ -66,7 +66,7 @@ async function run() {
         },
       });
       child.on('exit', (code) => {
-        process.exit(code);
+        process.exit(code ?? 1);
       });
       return;
     }
@@ -79,8 +79,8 @@ async function run() {
     args: ['--yes', `${targetCli.pkg}@${versions[targetCli.pkg]}`, ...targetCli.args],
     stdio: 'inherit',
   });
-  child.on('exit', (code: number) => {
-    process.exit(code);
+  child.on('exit', (code) => {
+    process.exit(code ?? 1);
   });
 }
 

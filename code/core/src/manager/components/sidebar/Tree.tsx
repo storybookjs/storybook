@@ -288,7 +288,12 @@ const Node = React.memo<NodeProps>(function Node(props) {
       ? useContextMenu(item, statusLinks, api)
       : { node: null, onMouseEnter: () => {} };
 
-  if (item.type === 'story' || item.type === 'docs') {
+  if (
+    (item.type === 'story' &&
+      !('children' in item && item.children) &&
+      (!('subtype' in item) || item.subtype !== 'test')) ||
+    item.type === 'docs'
+  ) {
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryNode;
 
     const statusValue = getMostCriticalStatusValue(
@@ -520,7 +525,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
             setMobileMenuOpen(false);
           }
         }}
-        {...(item.type === 'docs' && { docsMode })}
       >
         {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
           item.name}

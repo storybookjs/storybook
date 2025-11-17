@@ -157,7 +157,7 @@
     "@typescript-eslint/parser": "^8.8.1",
     "@vitejs/plugin-react": "^4.3.2",
     "@vitejs/plugin-vue": "^4.4.0",
-    "@vitest/browser": "^4.0.10",
+    "@vitest/browser-playwright": "^4.0.10",
     "@vitest/coverage-istanbul": "^4.0.10",
     "@vitest/coverage-v8": "^4.0.10",
     "create-storybook": "workspace:*",

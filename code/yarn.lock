@@ -8668,7 +8668,7 @@ __metadata:
     "@typescript-eslint/parser": "npm:^8.8.1"
     "@vitejs/plugin-react": "npm:^4.3.2"
     "@vitejs/plugin-vue": "npm:^4.4.0"
-    "@vitest/browser": "npm:^4.0.10"
+    "@vitest/browser-playwright": "npm:^4.0.10"
     "@vitest/coverage-istanbul": "npm:^4.0.10"
     "@vitest/coverage-v8": "npm:^4.0.10"
     create-storybook: "workspace:*"
@@ -10494,6 +10494,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vitest/browser-playwright@npm:^4.0.10":
+  version: 4.0.10
+  resolution: "@vitest/browser-playwright@npm:4.0.10"
+  dependencies:
+    "@vitest/browser": "npm:4.0.10"
+    "@vitest/mocker": "npm:4.0.10"
+    tinyrainbow: "npm:^3.0.3"
+  peerDependencies:
+    playwright: "*"
+    vitest: 4.0.10
+  peerDependenciesMeta:
+    playwright:
+      optional: false
+  checksum: 10c0/914228451e98d507b1b13e8bb465a1c345f88517a9d914d61c8732ecd1e147d6896db305d038f4b267f969ae270a14ea710834ee95a9d07ab42149fb0b84bf99
+  languageName: node
+  linkType: hard
+
 "@vitest/browser@npm:4.0.1":
   version: 4.0.1
   resolution: "@vitest/browser@npm:4.0.1"
@@ -10512,7 +10529,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/browser@npm:^4.0.10":
+"@vitest/browser@npm:4.0.10":
   version: 4.0.10
   resolution: "@vitest/browser@npm:4.0.10"
   dependencies:

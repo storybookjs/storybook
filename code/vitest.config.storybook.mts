@@ -2,7 +2,7 @@ import { defaultExclude, defineProject } from 'vitest/config';
 
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 
-import { playwright } from '@vitest/browser/providers/playwright';
+import { playwright } from '@vitest/browser-playwright';
 import Inspect from 'vite-plugin-inspect';
 
 const extraPlugins: any[] = [];

@@ -1,24 +1,29 @@
 name: Trigger CircleCI workflow
 
 on:
-  # Temporarily using pull_request for experimentation - normally uses pull_request_target
-  # to trigger Circle CI API on forks as well.
-  pull_request:
+  # Use pull_request_target, as we don't need to check out the actual code of the fork in this script.
+  # And this is the only way to trigger the Circle CI API on forks as well.
+  pull_request_target:
     types: [opened, synchronize, labeled, reopened]
   push:
-    # For experimentation, trigger on pushes to any branch
-    # Normally this would only be next/main branches
+    # branches:
+    #   - next
+    #   - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
-  get-branch2:
+  get-branch:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
-      - id: get-branch2
+      - id: get-branch
         env:
           # Stored as environment variable to prevent script injection
           REF_NAME: ${{ github.ref_name }}
@@ -36,134 +41,75 @@ jobs:
     outputs:
       branch: ${{ env.branch }}
 
-  get-parameters2:
+  get-parameters:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
-    # NB: We'll set the job output from the final step (id: set_workflow).
     steps:
-      - name: Reset workflow (start clean)
+      - name: Determine workflow from labeled event
+        if: github.event_name == 'pull_request_target' && github.event.action == 'labeled'
         run: |
-          echo "Resetting workflow env"
-          # ensure workflow env var is empty for the job
-          echo "workflow=" >> $GITHUB_ENV
-
-      - name: Determine workflow from labels on pull_request labeled event
-        if: github.event_name == 'pull_request' && github.event.action == 'labeled'
-        run: |
-          echo "Labeled event detected"
-          echo "Added label: ${{ github.event.label.name }}"
+          echo "PR Labeled event detected with label: ${{ github.event.label.name }}"
           case "${{ github.event.label.name }}" in
             ci:normal) echo "workflow=normal" >> $GITHUB_ENV ;;
             ci:docs)   echo "workflow=docs" >> $GITHUB_ENV ;;
             ci:merged) echo "workflow=merged" >> $GITHUB_ENV ;;
             ci:daily)  echo "workflow=daily" >> $GITHUB_ENV ;;
             *)
-              echo "Label is not a ci: label — leaving workflow empty"
+              echo "Label '${{ github.event.label.name }}' is not a ci: label — leaving workflow empty"
               ;;
           esac
 
-      - name: Determine workflow from labels on push event
+      - name: Determine workflow from push events based on existing labels
         if: github.event_name == 'push'
         run: |
-          echo "Push event detected - checking for associated PR labels"
-          # For push events, we need to find the associated PR and get its labels via GitHub API
-          BRANCH_NAME="$GITHUB_REF_NAME"
-          echo "Current branch: $BRANCH_NAME"
-          echo "Repository: $GITHUB_REPOSITORY"
-          echo "Repository owner: $GITHUB_REPOSITORY_OWNER"
+          echo "Resolving PR number for ref: ${{ github.ref_name }}"
+          PR_NUMBER=$(gh pr list --head "${{ github.ref_name }}" --json number -q '.[0].number' 2>/dev/null || echo "")
+          echo "Found PR number: $PR_NUMBER"
 
-          # Try different head parameter formats
-          echo "Trying head=$GITHUB_REPOSITORY_OWNER:$BRANCH_NAME"
-          PR_DATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls?head=$GITHUB_REPOSITORY_OWNER:$BRANCH_NAME&state=open" 2>&1)
-          echo "API Response: $PR_DATA"
-
-          # If that didn't work, try without owner
-          if echo "$PR_DATA" | jq -e '. == [] or . == null' >/dev/null 2>&1; then
-            echo "Trying head=$BRANCH_NAME (same repo)"
-            PR_DATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-              "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls?head=$BRANCH_NAME&state=open" 2>&1)
-            echo "API Response: $PR_DATA"
+          # If PR number not found, try alternative methods
+          if [ -z "$PR_NUMBER" ]; then
+            echo "Trying alternative PR detection methods..."
+            # Try to find PR by checking recent PRs that might be associated with this branch
+            PR_NUMBER=$(gh pr list --state open --json number,headRefName -q ".[] | select(.headRefName == \"${{ github.ref_name }}\") | .number" 2>/dev/null || echo "")
+            echo "Alternative PR search found: $PR_NUMBER"
           fi
 
-          # Extract first PR from response
-          PR_DATA=$(echo "$PR_DATA" | jq -r '.[0]' 2>/dev/null || echo "null")
-
-          if [ "$PR_DATA" != "null" ] && [ "$PR_DATA" != "" ]; then
-            PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number' 2>/dev/null || echo "")
-            if [ -n "$PR_NUMBER" ]; then
-              echo "Found associated PR: #$PR_NUMBER"
-              # Get PR labels
-              LABELS=$(echo "$PR_DATA" | jq -r '.labels[].name' 2>/dev/null || echo "")
-              echo "PR labels: $LABELS"
-            else
-              echo "Could not extract PR number from: $PR_DATA"
-              LABELS=""
-            fi
+          if [ -n "$PR_NUMBER" ]; then
+            echo "Fetching labels for PR #$PR_NUMBER"
+            LABELS=$(gh pr view "$PR_NUMBER" --json labels -q ".labels[].name" 2>/dev/null || echo "")
+            echo "Fetched labels: $LABELS"
           else
-            echo "No associated PR found for branch $BRANCH_NAME"
-            echo "Final API response: $PR_DATA"
+            echo "No PR found for ref: ${{ github.ref_name }}; no labels detected."
             LABELS=""
           fi
+          echo "Detected PR labels: $LABELS"
 
-          for label in $LABELS; do
-            case "$label" in
-              ci:normal)
-                echo "Matched ci:normal"
-                echo "workflow=normal" >> $GITHUB_ENV
-                break
-                ;;
-              ci:docs)
-                echo "Matched ci:docs"
-                echo "workflow=docs" >> $GITHUB_ENV
-                break
-                ;;
-              ci:merged)
-                echo "Matched ci:merged"
-                echo "workflow=merged" >> $GITHUB_ENV
-                break
-                ;;
-              ci:daily)
-                echo "Matched ci:daily"
-                echo "workflow=daily" >> $GITHUB_ENV
-                break
-                ;;
-            esac
-          done
-
-      - name: Finalize workflow output and debug
-        id: set_workflow
-        run: |
-          echo "=== Finalize and debug workflow value ==="
-          # Show what was written into the $GITHUB_ENV file (last lines containing workflow)
-          echo "-- GITHUB_ENV contents for workflow --"
-          grep '^workflow=' $GITHUB_ENV || echo "(no workflow entry found in GITHUB_ENV)"
-
-          # The environment variable 'workflow' should now be available to steps.
-          echo "ENV workflow (the value we will publish): '${workflow}'"
-
-          # For extra safety convert literal 'workflow=' to empty string
-          # and set the job output explicitly via GITHUB_OUTPUT
-          # (this makes needs.get-parameters2.outputs.workflow deterministic)
-          # If workflow is unset, this will write an empty value which is what we want.
-          echo "workflow=${workflow}" >> $GITHUB_OUTPUT
-
-          if [ -z "${workflow}" ]; then
-            echo "FINAL STATE: no ci:* workflow selected (empty)"
-          else
-            echo "FINAL STATE: workflow='${workflow}'"
+          WORKFLOW=""
+          if echo "$LABELS" | grep -q "ci:merged"; then
+            WORKFLOW="merged"
+          elif echo "$LABELS" | grep -q "ci:normal"; then
+            WORKFLOW="normal"
+          elif echo "$LABELS" | grep -q "ci:docs"; then
+            WORKFLOW="docs"
+          elif echo "$LABELS" | grep -q "ci:daily"; then
+            WORKFLOW="daily"
           fi
 
-    # Make job outputs come from the step (set_workflow)
+          if [ -n "$WORKFLOW" ]; then
+            echo "Workflow detected: $WORKFLOW"
+            echo "workflow=$WORKFLOW" >> $GITHUB_ENV
+          else
+            echo "No ci:* label found in PR labels. Skipping CI trigger."
+          fi
     outputs:
-      workflow: ${{ steps.set_workflow.outputs.workflow }}
-      ghBaseBranch: ${{ github.event.pull_request && github.event.pull_request.base.ref || '' }}
-      ghPrNumber: ${{ github.event.pull_request && github.event.pull_request.number || '' }}
+      workflow: ${{ env.workflow }}
+      ghBaseBranch: ${{ github.event.pull_request.base.ref || github.ref_name }}
+      ghPrNumber: ${{ github.event.pull_request.number || '' }}
 
   trigger-circle-ci-workflow:
     runs-on: ubuntu-latest
-    needs: [get-branch2, get-parameters2]
-    if: github.repository_owner == 'storybookjs' && needs.get-parameters2.outputs.workflow != ''
+    needs: [get-branch, get-parameters]
+    if: github.repository_owner == 'storybookjs' && needs.get-parameters.outputs.workflow != ''
     steps:
       - name: Trigger CircleCI workflow
         uses: fjogeleit/http-request-action@v1
@@ -171,4 +117,4 @@ jobs:
           url: "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline"
           method: "POST"
           customHeaders: '{"Content-Type": "application/json", "Circle-Token": "${{ secrets.CIRCLE_CI_TOKEN }}"}'
-          data: '{ "branch": "${{needs.get-branch2.outputs.branch}}", "parameters": ${{toJson(needs.get-parameters2.outputs)}} }'
+          data: '{ "branch": "${{needs.get-branch.outputs.branch}}", "parameters": ${{toJson(needs.get-parameters.outputs)}} }'

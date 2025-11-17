@@ -174,7 +174,7 @@ export class UserPreferencesCommand {
 
     if (this.commandOptions.features) {
       logger.warn(dedent`
-        Skipping feature validation since the following features were explicitly selected:
+        Skipping feature validation as these features were explicitly selected:
         ${Array.from(this.commandOptions.features).join(', ')}
       `);
       return new Set(this.commandOptions.features);

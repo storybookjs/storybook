@@ -321,7 +321,7 @@ export const Checklist = ({
                       const isChecked = isAccepted || isDone;
                       const isCollapsed = isChecked && item.id !== locationHash;
                       const isLocked = isLockedBy.length > 0;
-                      const itemContent = content?.();
+                      const itemContent = content?.({ api });
 
                       return (
                         <Listbox.Item as="li" key={item.id}>

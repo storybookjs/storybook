@@ -78,7 +78,7 @@ export interface ChecklistData {
       }) => boolean;
 
       // Function returning content to display in the checklist item's collapsible area.
-      content?: () => React.ReactNode;
+      content?: (args: { api: API }) => React.ReactNode;
 
       // Action button to be displayed when item is not completed.
       action?: {

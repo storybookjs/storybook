@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Fragment, useState } from 'react';
 
 import { Button, Form, Modal } from 'storybook/internal/components';
 
@@ -189,7 +189,7 @@ export const IntentSurvey = ({
           {(Object.keys(formFields) as Array<keyof FormFields>).map((key) => {
             const field = formFields[key];
             return (
-              <React.Fragment key={key}>
+              <Fragment key={key}>
                 <Question>{field.label}</Question>
                 {field.type === 'checkbox' && (
                   <Row>
@@ -233,7 +233,7 @@ export const IntentSurvey = ({
                     ))}
                   </Form.Select>
                 )}
-              </React.Fragment>
+              </Fragment>
             );
           })}
 

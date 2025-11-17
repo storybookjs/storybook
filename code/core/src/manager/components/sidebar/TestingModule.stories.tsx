@@ -17,6 +17,11 @@ import { styled } from 'storybook/theming';
 import { internal_fullTestProviderStore } from '../../manager-stores.mock';
 import { TestingModule } from './TestingModule';
 
+const Wrapper = styled.div(({ theme }) => ({
+  maxWidth: 250,
+  '--card-box-shadow': `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app}`,
+}));
+
 const TestProvider = styled.div({
   padding: 8,
   fontSize: 12,
@@ -77,13 +82,12 @@ const meta = {
     successCount: 0,
   },
   decorators: [
-    (storyFn) => (
-      <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
-    ),
     (StoryFn) => (
-      <div style={{ maxWidth: 250 }}>
-        <StoryFn />
-      </div>
+      <ManagerContext.Provider value={managerContext}>
+        <Wrapper>
+          <StoryFn />
+        </Wrapper>
+      </ManagerContext.Provider>
     ),
   ],
 } satisfies Meta<typeof TestingModule>;

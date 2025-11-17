@@ -15,9 +15,7 @@ export default function Survey({ api }: { api: API }) {
   const disableOnboarding = useCallback(() => {
     // remove onboarding query parameter from current url
     const url = new URL(window.location.href);
-    // @ts-expect-error (not strict)
-    const path = decodeURIComponent(url.searchParams.get('path'));
-    url.search = `?path=${path}&onboarding=false`;
+    url.searchParams.set('onboarding', 'false');
     history.replaceState({}, '', url.href);
     api.setQueryParams({ onboarding: 'false' });
   }, [api]);

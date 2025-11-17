@@ -3,14 +3,7 @@ import { CheckIcon, EllipsisIcon, PlayAllHollowIcon } from '@storybook/icons';
 import { Badge, Form, ProgressSpinner } from '../..';
 import preview from '../../../../../.storybook/preview';
 import { Shortcut } from '../../../manager/container/Menu';
-import {
-  Listbox,
-  ListboxAction,
-  ListboxButton,
-  ListboxHoverItem,
-  ListboxItem,
-  ListboxText,
-} from './Listbox';
+import { Listbox } from './Listbox';
 
 const meta = preview.meta({
   component: Listbox,
@@ -22,68 +15,68 @@ export default meta;
 export const Default = meta.story({
   render: () => (
     <Listbox>
-      <ListboxItem>
-        <ListboxText>Text item</ListboxText>
-        <ListboxButton aria-label="Options">
+      <Listbox.Item>
+        <Listbox.Text>Text item</Listbox.Text>
+        <Listbox.Button aria-label="Options">
           <EllipsisIcon />
-        </ListboxButton>
-      </ListboxItem>
-      <ListboxItem>
-        <ListboxAction>Action item</ListboxAction>
-        <ListboxButton>
+        </Listbox.Button>
+      </Listbox.Item>
+      <Listbox.Item>
+        <Listbox.Action>Action item</Listbox.Action>
+        <Listbox.Button>
           <PlayAllHollowIcon />
           Cool
-        </ListboxButton>
-      </ListboxItem>
-      <ListboxHoverItem targetId="some-action">
-        <ListboxAction>Hover action</ListboxAction>
-        <ListboxButton data-target-id="some-action">
+        </Listbox.Button>
+      </Listbox.Item>
+      <Listbox.HoverItem targetId="some-action">
+        <Listbox.Action>Hover action</Listbox.Action>
+        <Listbox.Button data-target-id="some-action">
           <PlayAllHollowIcon />
           Cool
-        </ListboxButton>
-      </ListboxHoverItem>
-      <ListboxItem>
-        <ListboxText>With a button</ListboxText>
-        <ListboxButton variant="solid">Go</ListboxButton>
-      </ListboxItem>
-      <ListboxItem>
-        <ListboxAction>
+        </Listbox.Button>
+      </Listbox.HoverItem>
+      <Listbox.Item>
+        <Listbox.Text>With a button</Listbox.Text>
+        <Listbox.Button variant="solid">Go</Listbox.Button>
+      </Listbox.Item>
+      <Listbox.Item>
+        <Listbox.Action>
           With an inline button
-          <ListboxButton as="div" readOnly padding="none">
+          <Listbox.Button as="div" readOnly padding="none">
             <ProgressSpinner percentage={25} running={false} size={16} width={1.5} />
             25%
-          </ListboxButton>
-        </ListboxAction>
-      </ListboxItem>
-      <ListboxItem>
-        <ListboxAction>
+          </Listbox.Button>
+        </Listbox.Action>
+      </Listbox.Item>
+      <Listbox.Item>
+        <Listbox.Action>
           With a badge
           <Badge status="positive">Check it out</Badge>
-        </ListboxAction>
-      </ListboxItem>
-      <ListboxItem>
-        <ListboxAction as="label">
+        </Listbox.Action>
+      </Listbox.Item>
+      <Listbox.Item>
+        <Listbox.Action as="label">
           <Form.Checkbox />
-          <ListboxText>With a checkbox</ListboxText>
-        </ListboxAction>
-      </ListboxItem>
-      <ListboxItem active>
-        <ListboxAction>
+          <Listbox.Text>With a checkbox</Listbox.Text>
+        </Listbox.Action>
+      </Listbox.Item>
+      <Listbox.Item active>
+        <Listbox.Action>
           <CheckIcon />
-          <ListboxText>Active with an icon</ListboxText>
+          <Listbox.Text>Active with an icon</Listbox.Text>
           <Shortcut keys={['⌘', 'A']} />
-        </ListboxAction>
-      </ListboxItem>
-      <ListboxItem>
-        <ListboxText>
+        </Listbox.Action>
+      </Listbox.Item>
+      <Listbox.Item>
+        <Listbox.Text>
           Some very long text which will wrap when the container is too narrow
-        </ListboxText>
-      </ListboxItem>
-      <ListboxItem>
-        <ListboxText>
+        </Listbox.Text>
+      </Listbox.Item>
+      <Listbox.Item>
+        <Listbox.Text>
           <span>Some very long text which will ellipsize when the container is too narrow</span>
-        </ListboxText>
-      </ListboxItem>
+        </Listbox.Text>
+      </Listbox.Item>
     </Listbox>
   ),
 });
@@ -92,28 +85,28 @@ export const Groups = meta.story({
   render: () => (
     <>
       <Listbox>
-        <ListboxItem>
-          <ListboxAction>Alpha</ListboxAction>
-        </ListboxItem>
-        <ListboxItem>
-          <ListboxAction>Item</ListboxAction>
-        </ListboxItem>
+        <Listbox.Item>
+          <Listbox.Action>Alpha</Listbox.Action>
+        </Listbox.Item>
+        <Listbox.Item>
+          <Listbox.Action>Item</Listbox.Action>
+        </Listbox.Item>
       </Listbox>
       <Listbox>
-        <ListboxItem>
-          <ListboxAction>Bravo</ListboxAction>
-        </ListboxItem>
-        <ListboxItem>
-          <ListboxAction>Item</ListboxAction>
-        </ListboxItem>
+        <Listbox.Item>
+          <Listbox.Action>Bravo</Listbox.Action>
+        </Listbox.Item>
+        <Listbox.Item>
+          <Listbox.Action>Item</Listbox.Action>
+        </Listbox.Item>
       </Listbox>
       <Listbox>
-        <ListboxItem>
-          <ListboxAction>Charlie</ListboxAction>
-        </ListboxItem>
-        <ListboxItem>
-          <ListboxAction>Item</ListboxAction>
-        </ListboxItem>
+        <Listbox.Item>
+          <Listbox.Action>Charlie</Listbox.Action>
+        </Listbox.Item>
+        <Listbox.Item>
+          <Listbox.Action>Item</Listbox.Action>
+        </Listbox.Item>
       </Listbox>
     </>
   ),

@@ -1,16 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React, { useState } from 'react';
 
-import {
-  Button,
-  Listbox,
-  ListboxAction,
-  ListboxIcon,
-  ListboxItem,
-  ListboxText,
-  PopoverProvider,
-  ToggleButton,
-} from 'storybook/internal/components';
+import { Button, Listbox, PopoverProvider, ToggleButton } from 'storybook/internal/components';
 
 import { CloseIcon, CogIcon } from '@storybook/icons';
 
@@ -101,12 +92,17 @@ const SidebarMenuList: FC<{
       .flatMap((links) => (
         <Listbox as="ul" key={links.map((link) => link.id).join('_')}>
           {links.map((link) => (
-            <ListboxItem as="li" key={link.id} active={link.active}>
-              <ListboxAction
+            <Listbox.Item as="li" key={link.id} active={link.active}>
+              <Listbox.Action
                 {...(link.href && { as: 'a', href: link.href, target: '_blank' })}
                 ariaLabel={false}
                 id={`list-item-${link.id}`}
+                disabled={link.disabled}
                 onClick={(e) => {
+                  if (link.disabled) {
+                    e.preventDefault();
+                    return;
+                  }
                   link.onClick?.(e, {
                     id: link.id,
                     active: link.active,
@@ -119,13 +115,15 @@ const SidebarMenuList: FC<{
                   }
                 }}
               >
-                {(link.icon || link.input) && <ListboxIcon>{link.icon || link.input}</ListboxIcon>}
+                {(link.icon || link.input) && (
+                  <Listbox.Icon>{link.icon || link.input}</Listbox.Icon>
+                )}
                 {(link.title || link.center) && (
-                  <ListboxText>{link.title || link.center}</ListboxText>
+                  <Listbox.Text>{link.title || link.center}</Listbox.Text>
                 )}
                 {link.right}
-              </ListboxAction>
-            </ListboxItem>
+              </Listbox.Action>
+            </Listbox.Item>
           ))}
         </Listbox>
       ))}

@@ -4,7 +4,7 @@ import { styled } from 'storybook/theming';
 
 import { useLocationHash } from '../useLocationHash';
 
-export const FocusOutline = styled.div<{ active?: boolean; outlineOffset?: number }>(
+const FocusOutline = styled.div<{ active?: boolean; outlineOffset?: number }>(
   ({ theme, active = false, outlineOffset = 0 }) => ({
     width: '100%',
     borderRadius: 'inherit',
@@ -14,13 +14,13 @@ export const FocusOutline = styled.div<{ active?: boolean; outlineOffset?: numbe
   })
 );
 
-export const FocusProxy = styled(FocusOutline)<{ targetId: string }>(({ theme, targetId }) => ({
+const FocusProxy = styled(FocusOutline)<{ targetId: string }>(({ theme, targetId }) => ({
   [`&:has([data-target-id="${targetId}"]:focus-visible)`]: {
     outlineColor: theme.color.secondary,
   },
 }));
 
-export const FocusRing = ({
+const FocusRing = ({
   active = false,
   highlightDuration,
   nodeRef,
@@ -42,7 +42,7 @@ export const FocusRing = ({
   return <FocusOutline {...props} active={highlightDuration ? visible : active} ref={nodeRef} />;
 };
 
-export const FocusTarget = ({
+const FocusTarget = ({
   targetHash,
   highlightDuration,
   ...props
@@ -74,4 +74,11 @@ export const FocusTarget = ({
   }, [locationHash, targetHash, highlightDuration]);
 
   return <FocusRing {...props} active={active} nodeRef={nodeRef} tabIndex={-1} />;
+};
+
+export const Focus = {
+  Outline: FocusOutline,
+  Proxy: FocusProxy,
+  Ring: FocusRing,
+  Target: FocusTarget,
 };

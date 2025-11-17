@@ -1,3 +1,5 @@
+import type { PlayFunction } from 'storybook/internal/csf';
+
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
@@ -36,28 +38,31 @@ const meta = preview.meta({
   },
 });
 
-const play = () =>
-  new Promise<void>((resolve) => {
-    setTimeout(() => {
-      mockStore.setState({
-        loaded: true,
-        muted: false,
-        accepted: ['controls'],
-        done: ['render-component', 'viewports'],
-        skipped: ['more-components', 'more-stories'],
-      });
-    }, 3000);
-    setTimeout(() => {
-      mockStore.setState({
-        loaded: true,
-        muted: false,
-        accepted: ['controls'],
-        done: ['render-component', 'viewports'],
-        skipped: ['more-components', 'more-stories', 'install-vitest'],
-      });
-      resolve(void 0);
-    }, 4000);
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const play: PlayFunction = async ({ step }) => {
+  await wait(3000);
+  await step('Complete viewports task', () => {
+    mockStore.setState({
+      loaded: true,
+      muted: false,
+      accepted: ['controls'],
+      done: ['render-component', 'viewports'],
+      skipped: ['more-components', 'more-stories'],
+    });
   });
+
+  await wait(1000);
+  await step('Skip install-vitest task', () => {
+    mockStore.setState({
+      loaded: true,
+      muted: false,
+      accepted: ['controls'],
+      done: ['render-component', 'viewports'],
+      skipped: ['more-components', 'more-stories', 'install-vitest'],
+    });
+  });
+};
 
 export const Default = meta.story({
   play,

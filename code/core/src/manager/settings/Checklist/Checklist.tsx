@@ -1,6 +1,6 @@
 import React, { createRef, useMemo } from 'react';
 
-import { Button, Collapsible, ListboxItem } from 'storybook/internal/components';
+import { Button, Collapsible, Listbox } from 'storybook/internal/components';
 
 import {
   CheckIcon,
@@ -13,7 +13,7 @@ import {
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { FocusProxy, FocusTarget } from '../../components/FocusRing/FocusRing';
+import { Focus } from '../../components/Focus/Focus';
 import type { ChecklistItem, useChecklist } from '../../components/sidebar/useChecklist';
 import { useLocationHash } from '../../components/useLocationHash';
 
@@ -80,13 +80,6 @@ const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
       '--toggle-button-opacity': 1,
     },
 
-    h2: {
-      flex: 1,
-      margin: 0,
-      fontSize: 'inherit',
-      fontWeight: theme.typography.weight.bold,
-    },
-
     '&::after': {
       pointerEvents: 'none',
       position: 'absolute',
@@ -105,9 +98,13 @@ const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
   })
 );
 
-const SectionHeading = styled.h2({
+const SectionHeading = styled.h2(({ theme }) => ({
+  flex: 1,
+  margin: 0,
+  fontSize: 'inherit',
+  fontWeight: theme.typography.weight.bold,
   cursor: 'default',
-});
+}));
 
 const ItemSummary = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(
   ({ theme, isCollapsed, onClick }) => ({
@@ -125,16 +122,12 @@ const ItemSummary = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(
     '&:focus-visible': {
       outline: 'none',
     },
-
-    h4: {
-      flex: 1,
-      margin: 0,
-      fontSize: 'inherit',
-    },
   })
 );
 
-const ItemHeading = styled.h4<{ skipped: boolean }>(({ theme, skipped }) => ({
+const ItemHeading = styled.h3<{ skipped: boolean }>(({ theme, skipped }) => ({
+  flex: 1,
+  margin: 0,
   color: skipped ? theme.textMutedColor : theme.color.defaultText,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
@@ -274,7 +267,7 @@ export const Checklist = ({
 
         return (
           <li key={id}>
-            <FocusProxy targetId={`toggle-${id}`}>
+            <Focus.Proxy targetId={`toggle-${id}`}>
               <Collapsible
                 collapsed={collapsed}
                 summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
@@ -319,13 +312,13 @@ export const Checklist = ({
                       const itemContent = content?.();
 
                       return (
-                        <ListboxItem as="li" key={item.id}>
-                          <FocusTarget
+                        <Listbox.Item as="li" key={item.id}>
+                          <Focus.Target
                             targetHash={item.id}
                             highlightDuration={2000}
                             outlineOffset={-2}
                           >
-                            <FocusProxy targetId={`toggle-${item.id}`} outlineOffset={-2}>
+                            <Focus.Proxy targetId={`toggle-${item.id}`} outlineOffset={-2}>
                               <Collapsible
                                 collapsed={isCollapsed}
                                 summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
@@ -424,15 +417,15 @@ export const Checklist = ({
                               >
                                 {itemContent && <ItemContent>{itemContent}</ItemContent>}
                               </Collapsible>
-                            </FocusProxy>
-                          </FocusTarget>
-                        </ListboxItem>
+                            </Focus.Proxy>
+                          </Focus.Target>
+                        </Listbox.Item>
                       );
                     }
                   )}
                 </Items>
               </Collapsible>
-            </FocusProxy>
+            </Focus.Proxy>
           </li>
         );
       })}

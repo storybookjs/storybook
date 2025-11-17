@@ -26,34 +26,16 @@ const slide = keyframes({
   },
 });
 
-interface CardProps extends ComponentProps<typeof Content> {
-  outlineAnimation?: 'none' | 'rainbow' | 'spin';
-  outlineColor?: keyof typeof color;
-  outlineStyles?: CSSObject;
-}
-
-export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
-  { outlineAnimation = 'none', outlineColor, outlineStyles, ...props },
-  ref
-) {
-  return (
-    <Outline animation={outlineAnimation} color={outlineColor} styles={outlineStyles} ref={ref}>
-      <Content {...props} />
-    </Outline>
-  );
-});
-
-export const Content = styled.div(({ theme }) => ({
+const CardContent = styled.div(({ theme }) => ({
   borderRadius: theme.appBorderRadius,
   backgroundColor: theme.background.content,
   position: 'relative',
 }));
 
-export const Outline = styled.div<{
+const CardOutline = styled.div<{
   animation?: 'none' | 'rainbow' | 'spin';
   color?: keyof typeof color;
-  styles?: CSSObject;
-}>(({ animation = 'none', color, styles, theme }) => ({
+}>(({ animation = 'none', color, theme }) => ({
   position: 'relative',
   width: '100%',
   padding: 1,
@@ -62,38 +44,15 @@ export const Outline = styled.div<{
   borderRadius: theme.appBorderRadius + 1,
   boxShadow: `inset 0 0 0 1px ${(animation === 'none' && color && theme.color[color]) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
   transition: 'box-shadow 1s',
-  ...styles,
 
   '@supports (interpolate-size: allow-keywords)': {
     interpolateSize: 'allow-keywords',
-    overflow: 'hidden',
     transition: 'all var(--transition-duration, 0.2s), box-shadow 1s',
     transitionBehavior: 'allow-discrete',
   },
 
   '@media (prefers-reduced-motion: reduce)': {
     transition: 'box-shadow 1s',
-  },
-
-  '&.enter': {
-    opacity: 0,
-    blockSize: 0,
-    contentVisibility: 'hidden',
-  },
-  '&.enter-active': {
-    opacity: 1,
-    blockSize: 'auto',
-    contentVisibility: 'visible',
-  },
-  '&.exit': {
-    opacity: 1,
-    blockSize: 'auto',
-    contentVisibility: 'visible',
-  },
-  '&.exit-active, &.exit-done': {
-    opacity: 0,
-    blockSize: 0,
-    contentVisibility: 'hidden',
   },
 
   '&:before': {
@@ -127,7 +86,27 @@ export const Outline = styled.div<{
             `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
           : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
     }),
-
-    ...(styles && typeof styles['&:before'] === 'object' ? styles['&:before'] : {}),
   },
 }));
+
+interface CardProps extends ComponentProps<typeof CardContent> {
+  outlineAnimation?: 'none' | 'rainbow' | 'spin';
+  outlineColor?: keyof typeof color;
+}
+
+export const Card = Object.assign(
+  forwardRef<HTMLDivElement, CardProps>(function Card(
+    { outlineAnimation = 'none', outlineColor, ...props },
+    ref
+  ) {
+    return (
+      <CardOutline animation={outlineAnimation} color={outlineColor} ref={ref}>
+        <CardContent {...props} />
+      </CardOutline>
+    );
+  }),
+  {
+    Content: CardContent,
+    Outline: CardOutline,
+  }
+);

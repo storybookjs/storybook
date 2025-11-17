@@ -17,7 +17,7 @@ import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { ListboxButton, ListboxIcon, ProgressSpinner } from '../../components';
+import { Listbox, ProgressSpinner } from '../../components';
 import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList';
 import { useChecklist } from '../components/sidebar/useChecklist';
 
@@ -96,10 +96,10 @@ export const useMenu = ({
       closeOnClick: true,
       icon: <ListUnorderedIcon />,
       right: progress < 100 && (
-        <ListboxButton as="div" readOnly padding="none" ariaLabel={`${progress}% completed`}>
+        <Listbox.Button as="div" readOnly padding="none" ariaLabel={`${progress}% completed`}>
           <ProgressCircle percentage={progress} running={false} size={16} width={1.5} />
           {progress}%
-        </ListboxButton>
+        </Listbox.Button>
       ),
     }),
     [api, progress]
@@ -218,9 +218,9 @@ export const useMenu = ({
       closeOnClick: true,
       href: docsUrl,
       right: (
-        <ListboxIcon>
+        <Listbox.Icon>
           <ShareAltIcon />
-        </ListboxIcon>
+        </Listbox.Icon>
       ),
       icon: <DocumentIcon />,
     };

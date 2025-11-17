@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import React, { useCallback, useMemo } from 'react';
 
+import { Listbox, ProgressSpinner } from 'storybook/internal/components';
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
@@ -17,7 +18,6 @@ import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { Listbox, ProgressSpinner } from '../../components';
 import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList';
 import { useChecklist } from '../components/sidebar/useChecklist';
 

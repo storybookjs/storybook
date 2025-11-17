@@ -1,5 +1,6 @@
 import { posix, sep } from 'node:path';
 
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 function normalizePath(id: string) {

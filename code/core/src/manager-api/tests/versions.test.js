@@ -226,7 +226,7 @@ describe('versions API', () => {
       expect(api.getDocsUrl({ versioned: true })).toEqual('https://storybook.js.org/docs/8.0/');
     });
 
-    it('returns a Url with a renderer query param when "renderer" is true', async () => {
+    it('returns a url with a renderer query param when "renderer" is true', async () => {
       const store = createMockStore();
       const {
         init,
@@ -251,6 +251,58 @@ describe('versions API', () => {
       expect(api.getDocsUrl({ renderer: true })).toEqual(
         'https://storybook.js.org/docs/?renderer=vue'
       );
+    });
+
+    it('returns a url with assets path when "asset" is true', async () => {
+      const store = createMockStore();
+      const {
+        init,
+        api,
+        state: initialState,
+      } = initVersions({
+        store,
+      });
+
+      await init();
+
+      store.setState({
+        ...initialState,
+        versions: {
+          ...initialState.versions,
+          current: { version: '7.2.5' },
+          latest: { version: '7.6.10' },
+        },
+      });
+
+      expect(api.getDocsUrl({ asset: true, versioned: true })).toEqual(
+        'https://storybook.js.org/docs-assets/7.2/'
+      );
+    });
+
+    it('returns a url with subpath when provided', async () => {
+      const store = createMockStore();
+      const {
+        init,
+        api,
+        state: initialState,
+      } = initVersions({
+        store,
+      });
+
+      await init();
+
+      store.setState({
+        ...initialState,
+        versions: {
+          ...initialState.versions,
+          current: { version: '7.2.5' },
+          latest: { version: '7.6.10' },
+        },
+      });
+
+      expect(
+        api.getDocsUrl({ asset: true, versioned: true, subpath: 'api/doc-block-controls.png' })
+      ).toEqual('https://storybook.js.org/docs-assets/7.2/api/doc-block-controls.png');
     });
   });
 

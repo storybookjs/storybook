@@ -49,7 +49,6 @@ const CardOutline = styled.div<{
 
   '@supports (interpolate-size: allow-keywords)': {
     interpolateSize: 'allow-keywords',
-    overflow: 'hidden',
     transition: 'all var(--transition-duration, 0.2s), box-shadow 1s',
     transitionBehavior: 'allow-discrete',
   },

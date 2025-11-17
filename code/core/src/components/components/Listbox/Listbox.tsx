@@ -15,6 +15,7 @@ const ListboxItem = styled.div<{
     alignItems: 'center',
     justifyContent: 'space-between',
     flex: '0 0 auto',
+    overflow: 'hidden',
     gap: 4,
 
     fontSize: theme.typography.size.s1,
@@ -24,7 +25,6 @@ const ListboxItem = styled.div<{
 
     '@supports (interpolate-size: allow-keywords)': {
       interpolateSize: 'allow-keywords',
-      overflow: 'hidden',
       transition: 'all var(--transition-duration, 0.2s)',
       transitionBehavior: 'allow-discrete',
     },
@@ -56,11 +56,13 @@ const ListboxItem = styled.div<{
 const ListboxHoverItem = styled(ListboxItem)<{ targetId: string }>(({ targetId }) => ({
   gap: 0,
   [`& [data-target-id="${targetId}"]`]: {
-    interpolateSize: 'allow-keywords',
     inlineSize: 'auto',
     marginLeft: 4,
     opacity: 1,
-    transition: 'all 150ms',
+    '@supports (interpolate-size: allow-keywords)': {
+      interpolateSize: 'allow-keywords',
+      transition: 'all var(--transition-duration, 0.2s)',
+    },
   },
   [`&:not(:hover, :has(:focus-visible)) [data-target-id="${targetId}"]`]: {
     inlineSize: 0,

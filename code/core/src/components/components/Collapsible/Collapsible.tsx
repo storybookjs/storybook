@@ -12,13 +12,16 @@ import { styled } from 'storybook/theming';
 
 const CollapsibleContent = styled.div<{ collapsed?: boolean }>(({ collapsed = false }) => ({
   blockSize: collapsed ? 0 : 'auto',
-  interpolateSize: 'allow-keywords',
   contentVisibility: collapsed ? 'hidden' : 'visible',
   transform: collapsed ? 'translateY(-10px)' : 'translateY(0)',
   opacity: collapsed ? 0 : 1,
   overflow: 'hidden',
-  transition: 'all var(--transition-duration, 0.2s)',
-  transitionBehavior: 'allow-discrete',
+
+  '@supports (interpolate-size: allow-keywords)': {
+    interpolateSize: 'allow-keywords',
+    transition: 'all var(--transition-duration, 0.2s)',
+    transitionBehavior: 'allow-discrete',
+  },
 
   '@media (prefers-reduced-motion: reduce)': {
     transition: 'none',

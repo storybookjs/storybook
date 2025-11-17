@@ -329,17 +329,19 @@ export async function runFixes({
             break;
           }
         } else if (promptType === 'auto') {
-          const shouldRun = await prompt.confirm(
-            {
-              message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
-              initialValue: f.defaultSelected ?? true,
-            },
-            {
-              onCancel: () => {
-                throw new Error();
-              },
-            }
-          );
+          const shouldRun = yes
+            ? true
+            : await prompt.confirm(
+                {
+                  message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
+                  initialValue: f.defaultSelected ?? true,
+                },
+                {
+                  onCancel: () => {
+                    throw new Error();
+                  },
+                }
+              );
           runAnswer = { fix: shouldRun };
         } else if (promptType === 'notification') {
           const shouldContinue = await prompt.confirm(

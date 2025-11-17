@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-themes",
-  "version": "10.1.0-alpha.10",
+  "version": "10.1.0-alpha.11",
   "description": "Storybook Themes addon: Switch between themes from the toolbar",
   "keywords": [
     "css",
@@ -61,7 +61,7 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@storybook/icons": "^1.6.0",
+    "@storybook/icons": "^2.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.8.3"
@@ -72,7 +72,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae17",
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l",
   "storybook": {
     "displayName": "Themes",
     "unsupportedFrameworks": [

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-links",
-  "version": "10.1.0-alpha.10",
+  "version": "10.1.0-alpha.11",
   "description": "Storybook Links: Link stories together to build demos and prototypes with your UI components",
   "keywords": [
     "storybook",
@@ -71,7 +71,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae17",
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l",
   "storybook": {
     "displayName": "Links",
     "icon": "https://user-images.githubusercontent.com/263385/101991673-48355c80-3c7c-11eb-9b6e-b627c96a75f6.png",

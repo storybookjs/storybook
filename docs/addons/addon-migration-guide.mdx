@@ -57,7 +57,7 @@ Here are the changes in version 10.0 that impact addon development.
 
 ### ESM-only builds
 
-Storybook 10 requires all addons to be built as ESM-only. This change simplifies the build process and reduces maintenance overhead. You'll need to make many changes to `tsup.config.ts`, so it can be easier to copy the reference file in the [`addon-kit` repository](https://github.com/storybookjs/addon-kit/blob/esm-only/tsup.config.ts).
+Storybook 10 requires all addons to be built as ESM-only. This change simplifies the build process and reduces maintenance overhead. You'll need to make many changes to `tsup.config.ts`, so it can be easier to copy the reference file in the [`addon-kit` repository](https://github.com/storybookjs/addon-kit/blob/main/tsup.config.ts).
 
 This update brings the following changes:
 * The Node target moves from Node 20.0 to Node 20.19
@@ -104,7 +104,7 @@ export default defineConfig(async (options) => {
 +   const packageJson = (
 +     await import("./package.json", { with: { type: "json" } })
 +   ).default;
-+ 
++
   const {
     bundler: {
 -      exportEntries = [],
@@ -131,7 +131,7 @@ export default defineConfig(async (options) => {
   };
 
   const configs: Options[] = [];
-- 
+-
 -   // export entries are entries meant to be manually imported by the user
 -   // they are not meant to be loaded by the manager or preview
 -   // they'll be usable in both node and browser environments, depending on which features and modules they depend on
@@ -220,17 +220,25 @@ Next, update the `exports` field in your `package.json` to remove mentions of CJ
   },
 ```
 
-Update `tsconfig.json` to use `esnext` modules.
+Update `tsconfig.json`.
 
 ```diff title="tsconfig.json"
 {
   "compilerOptions": {
-    // ...
--    "module": "preserve",
-+    "module": "esnext",
-    // ...
--    "lib": ["es2023", "dom", "dom.iterable"],
+    // …
++    "moduleResolution": "bundler",
+    // …
+-    "module": "commonjs",
++    "module": "preserve",
+    // …
+-    "target": "ES2020",
++    "target": "esnext",
+    // …
+-    "lib": ["es2020", "dom", "dom.iterable"],
 +    "lib": ["esnext", "dom", "dom.iterable"],
+    // …
+-    "rootDir": "./src",
++    "rootDir": ".",
   },
 -  "include": ["src/**/*"]
 +  "include": ["src/**/*", "tsup.config.ts"]
@@ -289,7 +297,7 @@ With CSF Factories, users can chain their preview configuration and benefit from
 - export default {};
 + import { definePreviewAddon } from "storybook/internal/csf";
 + import addonAnnotations from "./preview";
-+ 
++
 + export default () => definePreviewAddon(addonAnnotations);
 ```
 
@@ -353,7 +361,7 @@ For a full list of changes, please visit the [Migration.md](https://github.com/s
 
 ## Migration example
 
-For a complete example of an addon updated to support Storybook 10.0, refer to the [Addon Kit migration PR](https://github.com/storybookjs/addon-kit/pull/82). 
+For a complete example of an addon updated to support Storybook 10.0, refer to the [Addon Kit migration PR](https://github.com/storybookjs/addon-kit/pull/82).
 Once merged, it will demonstrate all the necessary and recommended changes for Storybook 10.
 
 ## Releasing

@@ -1,5 +1,3 @@
-import { join, relative, resolve } from 'node:path';
-
 import {
   getProjectRoot,
   loadAllPresets,
@@ -11,6 +9,8 @@ import { oneWayHash } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
+
+import { join, relative, resolve } from 'pathe';
 
 import { resolvePackageDir } from '../shared/utils/module';
 

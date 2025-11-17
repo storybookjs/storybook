@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components-vite",
-  "version": "10.0.0-rc.1",
+  "version": "10.1.0-alpha.11",
   "description": "Storybook for Web Components and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -65,5 +65,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

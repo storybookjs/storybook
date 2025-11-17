@@ -1,8 +1,8 @@
 import { builtinModules } from 'node:module';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import * as esbuild from 'esbuild';
-import { pathToFileURL } from 'node:url';
 
 export type EntryType = 'node' | 'browser' | 'runtime' | 'globalizedRuntime';
 
@@ -57,6 +57,7 @@ export const getExternal = async (cwd: string) => {
 
   const runtimeExternalInclude: string[] = [
     'react',
+    'use-sync-external-store',
     'react-dom',
     'react-dom/client',
     '@storybook/icons',

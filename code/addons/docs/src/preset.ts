@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
+import { type CsfEnricher } from 'storybook/internal/types';
 
 import type { CsfPluginOptions } from '@storybook/csf-plugin';
 
@@ -40,6 +41,8 @@ async function webpack(
   const { module = {} } = webpackConfig;
 
   const { csfPluginOptions = {}, mdxPluginOptions = {} } = options;
+
+  const enrichCsf = await options.presets.apply('experimental_enrichCsf');
 
   const rehypeSlug = (await import('rehype-slug')).default;
   const rehypeExternalLinks = (await import('rehype-external-links')).default;
@@ -100,7 +103,12 @@ async function webpack(
       ...(webpackConfig.plugins || []),
 
       ...(csfPluginOptions
-        ? [(await import('@storybook/csf-plugin')).webpack(csfPluginOptions)]
+        ? [
+            (await import('@storybook/csf-plugin')).webpack({
+              ...csfPluginOptions,
+              enrichCsf,
+            }),
+          ]
         : []),
     ],
     resolve: {
@@ -205,10 +213,9 @@ export const resolvedReact = async (existing: any) => ({
 });
 
 const optimizeViteDeps = [
-  '@mdx-js/react',
   '@storybook/addon-docs',
   '@storybook/addon-docs/blocks',
-  'markdown-to-jsx',
+  '@storybook/addon-docs > @mdx-js/react',
 ];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };

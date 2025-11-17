@@ -1,14 +1,14 @@
 import type { FC } from 'react';
 import React, { useEffect } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 
 import { CloseAltIcon } from '@storybook/icons';
 
 import type { Step, TooltipRenderProps } from 'react-joyride';
 import { color, styled } from 'storybook/theming';
 
-import { Button } from '../../components/Button/Button';
+import { Button as OnboardingButton } from '../../components/Button/Button';
 
 const TooltipBody = styled.div`
   padding: 15px;
@@ -129,9 +129,15 @@ export const Tooltip: FC<TooltipProps> = ({
       <Wrapper>
         <TooltipHeader>
           {step.title && <TooltipTitle>{step.title}</TooltipTitle>}
-          <IconButton {...closeProps} onClick={closeProps.onClick as any} variant="solid">
+          <Button
+            {...closeProps}
+            onClick={closeProps.onClick as any}
+            variant="solid"
+            padding="small"
+            ariaLabel="Close"
+          >
             <CloseAltIcon />
-          </IconButton>
+          </Button>
         </TooltipHeader>
         <TooltipContent>{step.content}</TooltipContent>
       </Wrapper>
@@ -140,13 +146,13 @@ export const Tooltip: FC<TooltipProps> = ({
           {index + 1} of {size}
         </Count>
         {!step.hideNextButton && (
-          <Button
+          <OnboardingButton
             {...primaryProps}
             onClick={step.onNextButtonClick || primaryProps.onClick}
             variant="white"
           >
             {index + 1 === size ? 'Done' : 'Next'}
-          </Button>
+          </OnboardingButton>
         )}
       </TooltipFooter>
     </TooltipBody>

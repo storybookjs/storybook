@@ -65,6 +65,11 @@ export type Template = {
    */
   skipTasks?: SkippableTask[];
   /**
+   * Should the sandbox be type checked after build. Not part of skipTasks as the default answer
+   * will be 'no', at least initially
+   */
+  typeCheck?: boolean;
+  /**
    * Set this only while developing a newly created framework, to avoid using it in CI. NOTE: Make
    * sure to always add a TODO comment to remove this flag in a subsequent PR.
    */
@@ -342,7 +347,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDependencies: ['prop-types', '@types/prop-types'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
@@ -351,6 +356,7 @@ export const baseTemplates = {
       },
     },
     skipTasks: ['bench'],
+    typeCheck: true,
   },
   'react-vite/prerelease-ts': {
     name: 'React Prerelease (Vite | TypeScript)',
@@ -615,7 +621,7 @@ export const baseTemplates = {
     modifications: {
       extraDependencies: ['preact-render-to-string'],
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'bench'],
   },
   'preact-vite/default-ts': {
     name: 'Preact Latest (Vite | TypeScript)',
@@ -628,7 +634,7 @@ export const baseTemplates = {
     modifications: {
       extraDependencies: ['preact-render-to-string'],
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'bench'],
   },
   'qwik-vite/default-ts': {
     name: 'Qwik CLI Latest (Vite | TypeScript)',
@@ -773,13 +779,6 @@ const internalTemplates = {
     isInternal: true,
     skipTasks: ['bench', 'vitest-integration'],
   },
-  // 'internal/pnp': {
-  //   ...baseTemplates['cra/default-ts'],
-  //   name: 'PNP (cra/default-ts)',
-  //   script: 'yarn create react-app . --use-pnp',
-  //   isInternal: true,
-  //   inDevelopment: true,
-  // },
 } satisfies Record<`internal/${string}`, Template & { isInternal: true }>;
 
 const benchTemplates = {
@@ -798,6 +797,7 @@ const benchTemplates = {
       'chromatic',
       'vitest-integration',
     ],
+    typeCheck: false,
   },
   'bench/react-webpack-18-ts': {
     ...baseTemplates['react-webpack/18-ts'],
@@ -831,6 +831,7 @@ const benchTemplates = {
       'chromatic',
       'vitest-integration',
     ],
+    typeCheck: false,
   },
   'bench/react-vite-default-ts-test-build': {
     ...baseTemplates['react-vite/default-ts'],
@@ -847,6 +848,7 @@ const benchTemplates = {
       'e2e-tests-dev',
       'vitest-integration',
     ],
+    typeCheck: false,
   },
   'bench/react-webpack-18-ts-test-build': {
     ...baseTemplates['react-webpack/18-ts'],

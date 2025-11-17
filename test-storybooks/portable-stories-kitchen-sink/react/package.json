@@ -75,10 +75,10 @@
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^5.0.4",
-    "@vitest/browser": "^4.0.0",
-    "@vitest/browser-playwright": "^4.0.0",
-    "@vitest/coverage-v8": "^4.0.0",
-    "@vitest/ui": "^4.0.0",
+    "@vitest/browser": "4.0.4",
+    "@vitest/browser-playwright": "4.0.4",
+    "@vitest/coverage-v8": "4.0.4",
+    "@vitest/ui": "4.0.4",
     "cypress": "^15.5.0",
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -90,6 +90,6 @@
     "storybook": "^10.0.0",
     "typescript": "^5.8.3",
     "vite": "^7.1.12",
-    "vitest": "^4.0.0"
+    "vitest": "4.0.4"
   }
 }

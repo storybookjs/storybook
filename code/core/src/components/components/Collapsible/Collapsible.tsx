@@ -1,5 +1,6 @@
 import React, {
   type ComponentProps,
+  type ReactNode,
   type SyntheticEvent,
   useCallback,
   useEffect,
@@ -17,8 +18,8 @@ export const Collapsible = ({
   state: providedState,
   ...props
 }: {
-  children: React.ReactNode | ((state: ReturnType<typeof useCollapsible>) => React.ReactNode);
-  summary?: React.ReactNode | ((state: ReturnType<typeof useCollapsible>) => React.ReactNode);
+  children: ReactNode | ((state: ReturnType<typeof useCollapsible>) => ReactNode);
+  summary?: ReactNode | ((state: ReturnType<typeof useCollapsible>) => ReactNode);
   collapsed?: boolean;
   disabled?: boolean;
   state?: ReturnType<typeof useCollapsible>;

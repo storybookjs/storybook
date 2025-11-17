@@ -28,7 +28,6 @@ export interface UserPreferencesResult {
 
 export interface UserPreferencesOptions {
   skipPrompt?: boolean;
-  yes?: boolean;
   framework: SupportedFramework | null;
   builder: SupportedBuilder;
   projectType: ProjectType;
@@ -63,7 +62,7 @@ export class UserPreferencesCommand {
   ): Promise<UserPreferencesResult> {
     // Display version information
     const isInteractive = process.stdout.isTTY && !isCI();
-    const skipPrompt = !isInteractive || !!options.yes;
+    const skipPrompt = !isInteractive || !!this.commandOptions.yes;
 
     const isTestFeatureAvailable = await this.isTestFeatureAvailable(
       packageManager,

@@ -59,7 +59,6 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 4: Get user preferences and feature selections (with framework/builder for validation)
   const { newUser, selectedFeatures } = await executeUserPreferences(packageManager, {
-    yes: options.yes,
     options,
     framework,
     builder,

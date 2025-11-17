@@ -2,12 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProjectType, globalSettings } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { isCI } from 'storybook/internal/common';
+import { PackageManagerName, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import type { SupportedBuilder } from 'storybook/internal/types';
 import { Feature } from 'storybook/internal/types';
 
 import type { DependencyCollector } from '../dependency-collector';
+import type { CommandOptions } from '../generators/types';
 import { UserPreferencesCommand } from './UserPreferencesCommand';
 
 vi.mock('storybook/internal/cli', async () => {
@@ -49,13 +50,12 @@ describe('UserPreferencesCommand', () => {
     } as unknown as DependencyCollector;
 
     // Provide required CommandOptions to avoid undefined access
-    const commandOptions = {
-      packageManager: 'npm' as const,
-      features: undefined as unknown as Set<Feature>,
+    const commandOptions: CommandOptions = {
+      packageManager: PackageManagerName.NPM,
       disableTelemetry: true,
-    } as any;
+    };
 
-    command = new UserPreferencesCommand(mockDependencyCollector, commandOptions, undefined as any);
+    command = new UserPreferencesCommand(mockDependencyCollector, commandOptions);
     mockPackageManager = {} as Partial<JsPackageManager> as JsPackageManager;
 
     // Mock globalSettings
@@ -101,7 +101,6 @@ describe('UserPreferencesCommand', () => {
   describe('execute', () => {
     it('should return recommended config for new users in non-interactive mode', async () => {
       const result = await command.execute(mockPackageManager, {
-        yes: true,
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,

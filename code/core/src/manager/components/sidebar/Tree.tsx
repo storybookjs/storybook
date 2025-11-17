@@ -393,7 +393,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
   }
 
   const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const [itemIcon, itemColor] = statusMapping[itemStatus];
+  const [itemIcon, itemColor] = getStatus(theme, itemStatus);
   const itemStatusButton = itemIcon ? (
     <StatusButton
       ariaLabel={`Test status: ${itemStatus.replace('status-value:', '')}`}
@@ -415,7 +415,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     const { children = [] } = item;
     const BranchNode = { component: ComponentNode, group: GroupNode, story: StoryNode }[item.type];
     const status = getMostCriticalStatusValue([itemStatus, groupStatus?.[item.id]]);
-    const color = status ? statusMapping[status][1] : null;
+    const color = status ? getStatus(theme, status)[1] : null;
     const showBranchStatus = status === 'status-value:error' || status === 'status-value:warning';
 
     return (

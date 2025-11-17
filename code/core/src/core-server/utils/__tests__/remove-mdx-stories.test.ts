@@ -7,6 +7,7 @@ import { type StoriesEntry } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { glob as globOriginal } from 'glob';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import { removeMDXEntries } from '../remove-mdx-entries';

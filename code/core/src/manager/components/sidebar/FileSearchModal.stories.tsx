@@ -41,6 +41,9 @@ export const InitialState: Story = {
     searchResults: null,
   },
 };
+export const InitialStateLight = Object.assign({}, InitialState, {
+  globals: { sb_theme: 'light' },
+});
 
 export const Loading: Story = {
   args: {
@@ -51,6 +54,7 @@ export const Loading: Story = {
     searchResults: null,
   },
 };
+export const LoadingLight = Object.assign({}, Loading, { globals: { sb_theme: 'light' } });
 
 export const LoadingWithPreviousResults: Story = {
   args: {
@@ -61,6 +65,9 @@ export const LoadingWithPreviousResults: Story = {
     searchResults: WithResults.args.searchResults,
   },
 };
+export const LoadingWithPreviousResultsLight = Object.assign({}, LoadingWithPreviousResults, {
+  globals: { sb_theme: 'light' },
+});
 
 export const Empty: Story = {
   args: {
@@ -71,6 +78,7 @@ export const Empty: Story = {
     searchResults: [],
   },
 };
+export const EmptyLight = Object.assign({}, Empty, { globals: { sb_theme: 'light' } });
 
 export const WithSearchResults: Story = {
   args: {
@@ -99,6 +107,9 @@ export const WithSearchResults: Story = {
     });
   },
 };
+export const WithSearchResultsLight = Object.assign({}, WithSearchResults, {
+  globals: { sb_theme: 'light' },
+});
 
 export const WithSearchResultsAndError: Story = {
   args: {
@@ -109,6 +120,9 @@ export const WithSearchResultsAndError: Story = {
     searchResults: WithResults.args.searchResults,
   },
 };
+export const WithSearchResultsAndErrorLight = Object.assign({}, WithSearchResultsAndError, {
+  globals: { sb_theme: 'light' },
+});
 
 export const WithSearchResultsAndMultiLineError: Story = {
   args: {
@@ -122,3 +136,8 @@ export const WithSearchResultsAndMultiLineError: Story = {
     searchResults: WithResults.args.searchResults,
   },
 };
+export const WithSearchResultsAndMultiLineErrorLight = Object.assign(
+  {},
+  WithSearchResultsAndMultiLineError,
+  { globals: { sb_theme: 'light' } }
+);

@@ -81,18 +81,25 @@ export default async function postInstall(options: PostinstallOptions) {
     force: options.packageManager,
   });
 
-  const info = await getStorybookInfo(options);
-  const allDeps = packageManager.getAllDependencies();
-  // only install these dependencies if they are not already installed
-  const dependencies = ['vitest', '@vitest/browser', 'playwright'].filter((p) => !allDeps[p]);
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
   const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
-  const isVitest3_2OrNewer = vitestVersionSpecifier
-    ? satisfies(vitestVersionSpecifier, '>=3.2.0')
-    : true;
+  const isVitest3_2To4 = vitestVersionSpecifier
+    ? satisfies(vitestVersionSpecifier, '>=3.2.0 <4.0.0')
+    : false;
   const isVitest4OrNewer = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=4.0.0')
     : true;
+
+  const info = await getStorybookInfo(options);
+  const allDeps = packageManager.getAllDependencies();
+  // only install these dependencies if they are not already installed
+  const dependencies = [
+    'vitest',
+    'playwright',
+    isVitest4OrNewer ? '@vitest/browser-playwright' : '@vitest/browser',
+  ];
+
+  const uniqueDependencies = dependencies.filter((p) => !allDeps[p]);
 
   const mainJsPath = getInterpretedFile(resolve(options.configDir, 'main')) as string;
   const config = await readConfig(mainJsPath);
@@ -264,7 +271,7 @@ export default async function postInstall(options: PostinstallOptions) {
     );
     try {
       const storybookVersion = await packageManager.getInstalledVersion('storybook');
-      dependencies.push(`@storybook/nextjs-vite@^${storybookVersion}`);
+      uniqueDependencies.push(`@storybook/nextjs-vite@^${storybookVersion}`);
     } catch (e) {
       console.error('Failed to install @storybook/nextjs-vite. Please install it manually');
     }
@@ -282,10 +289,10 @@ export default async function postInstall(options: PostinstallOptions) {
         Read more about Vitest coverage providers at https://vitest.dev/guide/coverage.html#coverage-providers
       `
     );
-    dependencies.push(`@vitest/coverage-v8`); // Version specifier is added below
+    uniqueDependencies.push(`@vitest/coverage-v8`); // Version specifier is added below
   }
 
-  const versionedDependencies = dependencies.map((p) => {
+  const versionedDependencies = uniqueDependencies.map((p) => {
     if (p.includes('vitest')) {
       return vitestVersionSpecifier ? `${p}@${vitestVersionSpecifier}` : p;
     }
@@ -379,9 +386,20 @@ export default async function postInstall(options: PostinstallOptions) {
   if (fileExtension === 'ts' && !vitestShimFile) {
     await writeFile(
       'vitest.shims.d.ts',
-      '/// <reference types="@vitest/browser/providers/playwright" />'
+      isVitest4OrNewer
+        ? '/// <reference types="@vitest/browser-playwright" />'
+        : '/// <reference types="@vitest/browser/providers/playwright" />'
     );
   }
+
+  const getTemplateName = () => {
+    if (isVitest4OrNewer) {
+      return 'vitest.config.4.template.ts';
+    } else if (isVitest3_2To4) {
+      return 'vitest.config.3.2.template.ts';
+    }
+    return 'vitest.config.template.ts';
+  };
 
   // If there's an existing workspace file, we update that file to include the Storybook Addon Vitest plugin.
   // We assume the existing workspaces include the Vite(st) config, so we won't add it.
@@ -427,16 +445,11 @@ export default async function postInstall(options: PostinstallOptions) {
   else if (rootConfig) {
     let target, updated;
     const configFile = await fs.readFile(rootConfig, 'utf8');
-    const hasProjectsConfig = configFile.includes('projects:');
     const configFileHasTypeReference = configFile.match(
       /\/\/\/\s*<reference\s+types=["']vitest\/config["']\s*\/>/
     );
 
-    const templateName =
-      // Checking for Vitest 4 not necessary because a workspace file doesn't exist in Vitest 4
-      hasProjectsConfig || isVitest3_2OrNewer
-        ? 'vitest.config.3.2.template.ts'
-        : 'vitest.config.template.ts';
+    const templateName = getTemplateName();
 
     if (templateName) {
       const configTemplate = await loadTemplate(templateName, {
@@ -455,11 +468,14 @@ export default async function postInstall(options: PostinstallOptions) {
       logger.plain(`  ${rootConfig}`);
 
       const formattedContent = await formatFileContent(rootConfig, generate(target).code);
+      // Only add triple slash reference to vite.config files, not vitest.config files
+      // vitest.config files already have the vitest/config types available
+      const shouldAddReference = !configFileHasTypeReference && !vitestConfigFile;
       await writeFile(
         rootConfig,
-        configFileHasTypeReference
-          ? formattedContent
-          : '/// <reference types="vitest/config" />\n' + formattedContent
+        shouldAddReference
+          ? '/// <reference types="vitest/config" />\n' + formattedContent
+          : formattedContent
       );
     } else {
       logErrors(
@@ -476,16 +492,6 @@ export default async function postInstall(options: PostinstallOptions) {
   // If there's no existing Vitest/Vite config, we create a new Vitest config file.
   else {
     const newConfigFile = resolve(`vitest.config.${fileExtension}`);
-
-    const getTemplateName = () => {
-      if (isVitest4OrNewer) {
-        return 'vitest.config.4.template.ts';
-      }
-      if (isVitest3_2OrNewer) {
-        return 'vitest.config.3.2.template.ts';
-      }
-      return 'vitest.config.template.ts';
-    };
 
     const configTemplate = await loadTemplate(getTemplateName(), {
       CONFIG_DIR: options.configDir,

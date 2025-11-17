@@ -3,11 +3,10 @@ import React, { useRef } from 'react';
 import {
   Button,
   Form,
-  IconButton,
   ListItem,
   TooltipLinkList,
   TooltipNote,
-  WithTooltip,
+  TooltipProvider,
 } from 'storybook/internal/components';
 import type { API_PreparedIndexEntry } from 'storybook/internal/types';
 
@@ -51,17 +50,17 @@ const Actions = styled.div(({ theme }) => ({
 const TagRow = styled.div({
   display: 'flex',
 
-  '& button': {
+  '& button:last-of-type': {
     width: 64,
     maxWidth: 64,
     marginLeft: 4,
     paddingLeft: 0,
     paddingRight: 0,
     fontWeight: 'normal',
-    transition: 'all 150ms',
+    transition: 'max-width 150ms',
   },
-  '&:not(:hover)': {
-    '& button': {
+  '&:not(:hover):not(:focus-within)': {
+    '& button:last-of-type': {
       marginLeft: 0,
       maxWidth: 0,
       opacity: 0,
@@ -148,15 +147,10 @@ export const TagsFilterPanel = ({
       id: `filter-${type}-${id}`,
       content: (
         <TagRow>
-          <WithTooltip
-            delayShow={1000}
-            hasChrome={false}
-            style={{ minWidth: 0, flex: 1 }}
-            tooltip={<TooltipNote note={toggleTagLabel} />}
-            trigger="hover"
-          >
+          <TooltipProvider delayShow={1000} tooltip={<TooltipNote note={toggleTagLabel} />}>
             <ListItem
-              as="label"
+              style={{ minWidth: 0, flex: 1 }}
+              onClick={() => onToggle(!isChecked)}
               icon={
                 <>
                   {isExcluded ? <DeleteIcon /> : isIncluded ? null : icon}
@@ -164,6 +158,8 @@ export const TagsFilterPanel = ({
                     checked={isChecked}
                     onChange={() => onToggle(!isChecked)}
                     data-tag={title}
+                    aria-hidden={true}
+                    tabIndex={-1}
                   />
                 </>
               }
@@ -176,22 +172,15 @@ export const TagsFilterPanel = ({
               }
               right={isExcluded ? <s>{count}</s> : <span>{count}</span>}
             />
-          </WithTooltip>
-          <WithTooltip
-            delayShow={1000}
-            hasChrome={false}
-            tooltip={<TooltipNote note={invertButtonLabel} />}
-            trigger="hover"
+          </TooltipProvider>
+          <Button
+            variant="ghost"
+            size="medium"
+            onClick={() => onToggle(true, !isExcluded)}
+            ariaLabel={invertButtonLabel}
           >
-            <Button
-              variant="ghost"
-              size="medium"
-              onClick={() => onToggle(true, !isExcluded)}
-              aria-label={invertButtonLabel}
-            >
-              {isExcluded ? 'Include' : 'Exclude'}
-            </Button>
-          </WithTooltip>
+            {isExcluded ? 'Include' : 'Exclude'}
+          </Button>
         </TagRow>
       ),
     };
@@ -213,56 +202,56 @@ export const TagsFilterPanel = ({
         title: 'Learn how to add tags',
         icon: <DocumentIcon />,
         right: <ShareAltIcon />,
-        href: api.getDocsUrl({ subpath: 'writing-stories/tags#filtering-by-custom-tags' }),
+        href: api.getDocsUrl({ subpath: 'writing-stories/tags#custom-tags' }),
       },
     ]);
   }
 
-  const filtersLabel =
-    includedFilters.size === 0 && excludedFilters.size === 0 ? 'Select all' : 'Clear filters';
+  const isNothingSelectedYet = includedFilters.size === 0 && excludedFilters.size === 0;
+  const filtersLabel = isNothingSelectedYet ? 'Select all' : 'Clear filters';
 
   return (
     <Wrapper ref={ref}>
       {Object.keys(filtersById).length > 0 && (
         <Actions>
-          {includedFilters.size === 0 && excludedFilters.size === 0 ? (
-            <IconButton
+          {isNothingSelectedYet ? (
+            <Button
+              ariaLabel={false}
+              variant="ghost"
+              padding="small"
               id="select-all"
-              aria-label={filtersLabel}
               key="select-all"
               onClick={() => setAllFilters(true)}
             >
               <BatchAcceptIcon />
               {filtersLabel}
-            </IconButton>
+            </Button>
           ) : (
-            <IconButton
+            <Button
+              ariaLabel={false}
+              variant="ghost"
+              padding="small"
               id="deselect-all"
-              aria-label={filtersLabel}
               key="deselect-all"
               onClick={() => setAllFilters(false)}
             >
               <SweepIcon />
               {filtersLabel}
-            </IconButton>
+            </Button>
           )}
           {hasDefaultSelection && (
-            <WithTooltip
-              delayShow={1000}
-              hasChrome={false}
-              tooltip={<TooltipNote note="Reset to default selection" />}
-              trigger="hover"
+            <Button
+              id="reset-filters"
+              key="reset-filters"
+              onClick={resetFilters}
+              ariaLabel="Reset filters"
+              variant="ghost"
+              padding="small"
+              tooltip="Reset to default selection"
+              disabled={isDefaultSelection}
             >
-              <IconButton
-                id="reset-filters"
-                key="reset-filters"
-                onClick={resetFilters}
-                aria-label="Reset filters"
-                disabled={isDefaultSelection}
-              >
-                <UndoIcon />
-              </IconButton>
-            </WithTooltip>
+              <UndoIcon />
+            </Button>
           )}
         </Actions>
       )}

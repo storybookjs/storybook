@@ -178,6 +178,7 @@ export default function Onboarding({ api }: { api: API }) {
       setShowConfetti(true);
       setStep('5:StoryCreated');
       setTimeout(() => api.clearNotification('save-story-success'));
+      setTimeout(() => setShowConfetti(false), 10000);
     });
   }, [api]);
 

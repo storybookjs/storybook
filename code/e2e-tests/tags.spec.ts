@@ -136,13 +136,13 @@ test.describe('tags', () => {
         await expect(page.locator('#storybook-explorer-menu')).toBeVisible();
 
         // Open Tag filters tooltip
-        await page.locator('[title="Tag filters"]').click();
-        const tooltip = page.locator('[data-testid="tooltip"]');
-        await expect(tooltip).toBeVisible();
+        await page.locator('[aria-label="Tag filters"]').click();
+        const tagFilterPopover = page.getByRole('dialog', { name: 'Tag filters' });
+        await expect(tagFilterPopover).toBeVisible();
 
         // No checkbox selected by default and "Select all tags" is shown
-        await expect(tooltip.locator('#select-all')).toBeVisible();
-        await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+        await expect(tagFilterPopover.locator('#select-all')).toBeVisible();
+        await expect(tagFilterPopover.locator('input[type="checkbox"]:checked')).toHaveCount(0);
 
         // Select the dev-only tag
         await page.getByText('dev-only', { exact: true }).click();
@@ -152,11 +152,11 @@ test.describe('tags', () => {
         await expect(stories).toHaveCount(1);
 
         // Clear selection
-        await expect(tooltip.locator('#deselect-all')).toBeVisible();
-        await tooltip.locator('#deselect-all').click();
+        await expect(tagFilterPopover.locator('#deselect-all')).toBeVisible();
+        await tagFilterPopover.locator('#deselect-all').click();
 
         // Checkboxes are not selected anymore
-        await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+        await expect(tagFilterPopover.locator('input[type="checkbox"]:checked')).toHaveCount(0);
       });
     });
   });

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte",
-  "version": "10.0.0-beta.8",
+  "version": "10.1.0-alpha.11",
   "description": "Storybook Svelte renderer: Develop, document, and test UI components in isolation.",
   "keywords": [
     "storybook",
@@ -61,7 +61,6 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.0",
     "@testing-library/svelte": "^5.2.4",
-    "expect-type": "^1.1.0",
     "svelte": "^5.39.5",
     "svelte-check": "^4.3.2",
     "sveltedoc-parser": "^4.2.1",
@@ -75,5 +74,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

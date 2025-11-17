@@ -26,6 +26,7 @@ import type { Presets } from 'storybook/internal/types';
 import { match } from 'micromatch';
 import { dirname, join, normalize, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
+import semver from 'semver';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
@@ -97,6 +98,16 @@ const mdxStubPlugin: Plugin = {
   },
 };
 
+export const checkIsVitest4orHigher = async () => {
+  const vitestVersion = await import('vitest/package.json', { with: { type: 'json' } }).then(
+    (pkg) => {
+      return pkg.default.version;
+    }
+  );
+
+  return semver.major(vitestVersion) >= 4;
+};
+
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   const finalOptions = {
     ...defaultOptions,
@@ -122,6 +133,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   // We signal the test runner that we are not running it via Storybook
   // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
   const isVitestStorybook = optionalEnvToBoolean(process.env.VITEST_STORYBOOK);
+
+  const isVitest4OrHigher = await checkIsVitest4orHigher();
 
   const directories = {
     configDir: finalOptions.configDir,
@@ -174,6 +187,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   if (finalOptions.disableAddonDocs) {
     plugins.push(mdxStubPlugin);
   }
+
+  const addonVitestPath = dirname(
+    fileURLToPath(import.meta.resolve('@storybook/addon-vitest/package.json'))
+  );
 
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
@@ -278,8 +295,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
               }
             : {}),
 
-          // @ts-expect-error: browser config requires `instances` property in Vitest 4
-          // It will be set to optional in the next version of Vitest
           browser: {
             commands: {
               getInitialGlobals: () => {
@@ -309,6 +324,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         ),
 
         resolve: {
+          alias: {
+            '@storybook/addon-vitest/internal/vitest-context': isVitest4OrHigher
+              ? join(addonVitestPath, 'dist/vitest-plugin/vitest-context.js')
+              : join(addonVitestPath, 'dist/vitest-plugin/vitest-context-legacy.js'),
+          },
           conditions: [
             'storybook',
             'stories',
@@ -327,6 +347,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             '@storybook/addon-vitest/internal/setup-file',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
+            '@storybook/addon-vitest/internal/vitest-context',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
               ? ['react-dom/test-utils']
               : []),

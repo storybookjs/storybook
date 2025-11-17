@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "10.0.0-beta.8",
+  "version": "10.1.0-alpha.11",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -95,7 +95,8 @@
     "@types/babel__traverse@npm:^7.18.0": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
     "@types/node": "^22.0.0",
     "@types/react": "^18.0.0",
-    "esbuild": "^0.25.3",
+    "aria-query@5.3.0": "^5.3.0",
+    "esbuild": "^0.27.0",
     "playwright": "1.52.0",
     "playwright-core": "1.52.0",
     "react": "^18.2.0",
@@ -104,14 +105,13 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@chromatic-com/storybook": "^4.1.1",
+    "@chromatic-com/storybook": "^4.1.2",
     "@nx/vite": "20.8.2",
     "@nx/workspace": "20.8.2",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "workspace:*",
-    "@storybook/addon-designs": "10.0.3--canary.67522d1.0",
+    "@storybook/addon-designs": "^11.0.1",
     "@storybook/addon-docs": "workspace:*",
-    "@storybook/addon-jest": "workspace:*",
     "@storybook/addon-links": "workspace:*",
     "@storybook/addon-onboarding": "workspace:*",
     "@storybook/addon-themes": "workspace:*",
@@ -157,14 +157,14 @@
     "@typescript-eslint/parser": "^8.8.1",
     "@vitejs/plugin-react": "^4.3.2",
     "@vitejs/plugin-vue": "^4.4.0",
-    "@vitest/browser": "^4.0.0-beta.13",
-    "@vitest/coverage-istanbul": "^4.0.0-beta.13",
-    "@vitest/coverage-v8": "^4.0.0-beta.13",
+    "@vitest/browser": "^4.0.10",
+    "@vitest/coverage-istanbul": "^4.0.10",
+    "@vitest/coverage-v8": "^4.0.10",
     "create-storybook": "workspace:*",
     "cross-env": "^7.0.3",
     "danger": "^13.0.4",
     "es-toolkit": "^1.36.0",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
     "esbuild-loader": "^4.3.0",
     "eslint": "8.57.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
@@ -212,8 +212,11 @@
     "uuid": "^11.1.0",
     "vite": "^7.0.4",
     "vite-plugin-inspect": "^11.0.0",
-    "vitest": "^4.0.0-beta.13",
+    "vitest": "^4.0.10",
     "wait-on": "^8.0.3"
+  },
+  "devDependencies": {
+    "react-popper-tooltip": "^4.4.2"
   },
   "dependenciesMeta": {
     "ejs": {
@@ -239,7 +242,7 @@
       "built": false
     }
   },
-  "packageManager": "yarn@4.9.1",
+  "packageManager": "yarn@4.10.3",
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"

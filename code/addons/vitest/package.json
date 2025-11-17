@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "10.0.0-beta.8",
+  "version": "10.1.0-alpha.11",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -46,6 +46,8 @@
     "./internal/global-setup": "./dist/vitest-plugin/global-setup.js",
     "./internal/setup-file": "./dist/vitest-plugin/setup-file.js",
     "./internal/test-utils": "./dist/vitest-plugin/test-utils.js",
+    "./internal/vitest-context": "./dist/vitest-plugin/vitest-context.js",
+    "./internal/vitest-context-legacy": "./dist/vitest-plugin/vitest-context-legacy.js",
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
     "./postinstall": "./dist/postinstall.js",
@@ -73,7 +75,7 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.6.0",
+    "@storybook/icons": "^2.0.0",
     "prompts": "^2.4.0",
     "ts-dedent": "^2.2.0"
   },
@@ -82,8 +84,8 @@
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.0.0",
     "@types/semver": "^7",
-    "@vitest/browser": "^4.0.0-beta.13",
-    "@vitest/runner": "^4.0.0-beta.13",
+    "@vitest/browser-playwright": "^4.0.1",
+    "@vitest/runner": "^4.0.1",
     "boxen": "^8.0.1",
     "empathic": "^2.0.0",
     "es-toolkit": "^1.36.0",
@@ -101,7 +103,7 @@
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
     "typescript": "^5.8.3",
-    "vitest": "^4.0.0-beta.13"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "@vitest/browser": "^3.0.0 || ^4.0.0",
@@ -110,13 +112,7 @@
     "vitest": "^3.0.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {
-    "@vitest/browser": {
-      "optional": true
-    },
     "@vitest/runner": {
-      "optional": true
-    },
-    "vitest": {
       "optional": true
     }
   },

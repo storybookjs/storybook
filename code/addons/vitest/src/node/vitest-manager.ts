@@ -164,9 +164,19 @@ export class VitestManager {
   }
 
   private updateLastChanged(filepath: string) {
-    this.vitest!.projects.forEach((project) => {
-      const mods = project.vite.moduleGraph.getModulesByFile(filepath);
-      mods?.forEach((mod) => project.vite.moduleGraph.invalidateModule(mod));
+    this.vitest!.projects.forEach(({ browser, vite, server }) => {
+      if (server) {
+        const serverMods = server.moduleGraph.getModulesByFile(filepath);
+        serverMods?.forEach((mod: any) => server.moduleGraph.invalidateModule(mod));
+      }
+      if (vite) {
+        const serverMods = vite.moduleGraph.getModulesByFile(filepath);
+        serverMods?.forEach((mod) => vite.moduleGraph.invalidateModule(mod));
+      }
+      if (browser) {
+        const browserMods = browser.vite.moduleGraph.getModulesByFile(filepath);
+        browserMods?.forEach((mod) => browser.vite.moduleGraph.invalidateModule(mod));
+      }
     });
   }
 

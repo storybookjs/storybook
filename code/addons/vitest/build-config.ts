@@ -22,6 +22,16 @@ const config: BuildEntries = {
         entryPoint: './src/vitest-plugin/test-utils.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./internal/vitest-context'],
+        entryPoint: './src/vitest-plugin/vitest-context.ts',
+        dts: false,
+      },
+      {
+        exportEntries: ['./internal/vitest-context-legacy'],
+        entryPoint: './src/vitest-plugin/vitest-context-legacy.ts',
+        dts: false,
+      },
     ],
     node: [
       {

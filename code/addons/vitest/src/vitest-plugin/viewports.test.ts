@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { page } from '@vitest/browser/context';
+// @ts-expect-error - This is an internal alias that will be resolved by the vitest plugin at runtime
+import { page } from '@storybook/addon-vitest/internal/vitest-context';
+
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import {
@@ -10,7 +12,7 @@ import {
   setViewport,
 } from './viewports';
 
-vi.mock('@vitest/browser/context', () => ({
+vi.mock('@storybook/addon-vitest/internal/vitest-context', () => ({
   page: {
     viewport: vi.fn(),
   },

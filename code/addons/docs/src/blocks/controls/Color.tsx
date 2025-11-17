@@ -1,12 +1,12 @@
 import type { ChangeEvent, FC, FocusEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Form, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { Button, Form, PopoverProvider } from 'storybook/internal/components';
 
 import { MarkupIcon } from '@storybook/icons';
 
 import convert from 'color-convert';
-import { debounce } from 'es-toolkit/compat';
+import { debounce } from 'es-toolkit/function';
 import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
 import { styled } from 'storybook/theming';
 
@@ -16,19 +16,6 @@ import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types
 const Wrapper = styled.div({
   position: 'relative',
   maxWidth: 250,
-  '&[aria-readonly="true"]': {
-    opacity: 0.5,
-  },
-});
-
-const PickerTooltip = styled(WithTooltip)({
-  position: 'absolute',
-  zIndex: 1,
-  top: 4,
-  left: 4,
-  '[aria-readonly=true] &': {
-    cursor: 'not-allowed',
-  },
 });
 
 const TooltipContent = styled.div({
@@ -46,10 +33,6 @@ const TooltipContent = styled.div({
   },
 });
 
-const Note = styled(TooltipNote)(({ theme }) => ({
-  fontFamily: theme.typography.fonts.base,
-}));
-
 const Swatches = styled.div({
   display: 'grid',
   gridTemplateColumns: 'repeat(9, 16px)',
@@ -59,32 +42,46 @@ const Swatches = styled.div({
   width: 200,
 });
 
-const SwatchColor = styled.div<{ active?: boolean }>(({ theme, active }) => ({
-  width: 16,
-  height: 16,
-  boxShadow: active
-    ? `${theme.appBorderColor} 0 0 0 1px inset, ${theme.textMutedColor}50 0 0 0 4px`
-    : `${theme.appBorderColor} 0 0 0 1px inset`,
-  borderRadius: theme.appBorderRadius,
-}));
-
 const swatchBackground = `url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill-opacity=".05"><path d="M8 0h8v8H8zM0 8h8v8H0z"/></svg>')`;
 
-type SwatchProps = { value: string } & React.ComponentProps<typeof SwatchColor>;
-const Swatch = ({ value, style, ...props }: SwatchProps) => {
-  const backgroundImage = `linear-gradient(${value}, ${value}), ${swatchBackground}, linear-gradient(#fff, #fff)`;
-  return <SwatchColor {...props} style={{ ...style, backgroundImage }} />;
-};
+const SwatchColor = styled(Button)<{ selected?: boolean; value: string }>(
+  ({ value, selected, theme }) => ({
+    width: 16,
+    height: 16,
+    boxShadow: selected
+      ? `${theme.appBorderColor} 0 0 0 1px inset, ${theme.textMutedColor}50 0 0 0 4px`
+      : `${theme.appBorderColor} 0 0 0 1px inset`,
+    border: 'none',
+    borderRadius: theme.appBorderRadius,
+    '&, &:hover': {
+      background: 'unset',
+      backgroundColor: 'unset',
+      backgroundImage: `linear-gradient(${value}, ${value}), ${swatchBackground}, linear-gradient(hsl(0 0 100 / .4), hsl(0 0 100 / .4))`,
+    },
+  })
+);
 
-const Input = styled(Form.Input)(({ theme, readOnly }) => ({
+const Input = styled(Form.Input)(({ theme }) => ({
   width: '100%',
   paddingLeft: 30,
   paddingRight: 30,
   boxSizing: 'border-box',
   fontFamily: theme.typography.fonts.base,
+
+  '[aria-readonly="true"] > &': {
+    background: theme.base === 'light' ? theme.color.lighter : 'transparent',
+  },
 }));
 
-const ToggleIcon = styled(MarkupIcon)(({ theme }) => ({
+const PopoverTrigger = styled(SwatchColor)<{ disabled: boolean }>(({ disabled }) => ({
+  position: 'absolute',
+  top: 4,
+  left: 4,
+  zIndex: 1,
+  cursor: disabled ? 'not-allowed' : 'pointer',
+}));
+
+const CycleColorSpaceButton = styled(Button)(({ theme }) => ({
   position: 'absolute',
   zIndex: 1,
   top: 6,
@@ -378,16 +375,27 @@ export const ColorControl: FC<ColorControlProps> = ({
   const { presets, addPreset } = usePresets(presetColors ?? [], color, colorSpace);
   const Picker = ColorPicker[colorSpace];
 
-  const readonly = !!argType?.table?.readonly;
+  const readOnly = !!argType?.table?.readonly;
+  const controlId = getControlId(name);
 
   return (
-    <Wrapper aria-readonly={readonly}>
-      <PickerTooltip
-        startOpen={startOpen}
-        trigger={readonly ? null : undefined}
-        closeOnOutsideClick
+    <Wrapper>
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
+      <Input
+        id={controlId}
+        value={value}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => updateValue(e.target.value)}
+        onFocus={(e: FocusEvent<HTMLInputElement>) => e.target.select()}
+        readOnly={readOnly}
+        placeholder="Choose color..."
+      />
+      <PopoverProvider
+        defaultVisible={startOpen}
+        visible={readOnly ? false : undefined}
         onVisibleChange={() => color && addPreset(color)}
-        tooltip={
+        popover={
           <TooltipContent>
             <Picker
               color={realValue === 'transparent' ? '#000000' : realValue}
@@ -396,41 +404,52 @@ export const ColorControl: FC<ColorControlProps> = ({
             {presets.length > 0 && (
               <Swatches>
                 {presets.map((preset, index: number) => (
-                  <WithTooltip
+                  <SwatchColor
                     key={`${preset?.value || index}-${index}`}
-                    hasChrome={false}
-                    tooltip={<Note note={preset?.keyword || preset?.value || ''} />}
-                  >
-                    <Swatch
-                      value={preset?.[colorSpace] || ''}
-                      active={
-                        !!(
-                          color &&
-                          preset &&
-                          preset[colorSpace] &&
-                          id(preset[colorSpace] || '') === id(color[colorSpace])
-                        )
-                      }
-                      onClick={() => preset && updateValue(preset.value || '')}
-                    />
-                  </WithTooltip>
+                    variant="ghost"
+                    padding="small"
+                    size="small"
+                    ariaLabel="Pick this color"
+                    tooltip={preset?.keyword || preset?.value || ''}
+                    value={preset?.value || ''}
+                    selected={
+                      !!(
+                        color &&
+                        preset &&
+                        preset[colorSpace] &&
+                        id(preset[colorSpace] || '') === id(color[colorSpace])
+                      )
+                    }
+                    onClick={() => preset && updateValue(preset.value || '')}
+                  />
                 ))}
               </Swatches>
             )}
           </TooltipContent>
         }
       >
-        <Swatch value={realValue} style={{ margin: 4 }} />
-      </PickerTooltip>
-      <Input
-        id={getControlId(name)}
-        value={value}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => updateValue(e.target.value)}
-        onFocus={(e: FocusEvent<HTMLInputElement>) => e.target.select()}
-        readOnly={readonly}
-        placeholder="Choose color..."
-      />
-      {value ? <ToggleIcon onClick={cycleColorSpace} /> : null}
+        <PopoverTrigger
+          variant="ghost"
+          padding="small"
+          size="small"
+          ariaLabel="Open color picker"
+          value={realValue}
+          style={{ margin: 4 }}
+          disabled={readOnly}
+        />
+      </PopoverProvider>
+      {value ? (
+        <CycleColorSpaceButton
+          variant="ghost"
+          padding="small"
+          size="small"
+          ariaLabel="Cycle through color spaces"
+          disabled={readOnly}
+          onClick={readOnly ? undefined : cycleColorSpace}
+        >
+          <MarkupIcon />
+        </CycleColorSpaceButton>
+      ) : null}
     </Wrapper>
   );
 };

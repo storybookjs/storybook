@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.0.0-beta.8",
+  "version": "10.1.0-alpha.11",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -54,18 +54,20 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/react-dom-shim": "workspace:*"
+    "@storybook/react-dom-shim": "workspace:*",
+    "react-docgen": "^8.0.2"
   },
   "devDependencies": {
     "@types/babel-plugin-react-docgen": "^4.2.3",
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^1.0.6",
     "@types/node": "^22.0.0",
-    "@types/semver": "^7.3.4",
     "acorn": "^7.4.1",
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",
     "babel-plugin-react-docgen": "^4.2.1",
+    "comment-parser": "^1.4.1",
+    "empathic": "^2.0.0",
     "es-toolkit": "^1.36.0",
     "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
@@ -73,7 +75,6 @@
     "prop-types": "^15.7.2",
     "react-element-to-jsx-string": "npm:@7rulnik/react-element-to-jsx-string@15.0.1",
     "require-from-string": "^2.0.2",
-    "semver": "^7.3.7",
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19"
   },
@@ -91,5 +92,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

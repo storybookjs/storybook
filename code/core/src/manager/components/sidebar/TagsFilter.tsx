@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Badge, IconButton, WithTooltip } from 'storybook/internal/components';
+import { Badge, Button, PopoverProvider } from 'storybook/internal/components';
 import type {
   API_PreparedIndexEntry,
   StoryIndex,
@@ -27,6 +27,31 @@ const BUILT_IN_TAGS = new Set([
   'test-fn',
 ]);
 
+// Temporary to prevent regressions until TagFilterPanel can be refactored.
+const StyledIconButton = styled(Button)<{ active: boolean }>(({ active, theme }) => ({
+  '&:focus-visible': {
+    outlineOffset: 4,
+  },
+  ...(active && {
+    background: theme.background.hoverable,
+    color: theme.color.secondary,
+  }),
+}));
+
+// Immutable set operations
+const add = (set: Set<string>, id: string) => {
+  const copy = new Set(set);
+  copy.add(id);
+  return copy;
+};
+const remove = (set: Set<string>, id: string) => {
+  const copy = new Set(set);
+  copy.delete(id);
+  return copy;
+};
+const equal = (left: Set<string>, right: Set<string>) =>
+  left.size === right.size && new Set([...left, ...right]).size === left.size;
+
 const Wrapper = styled.div({
   position: 'relative',
 });
@@ -45,8 +70,8 @@ const TagSelected = styled(Badge)(({ theme }) => ({
   lineHeight: 'px',
   boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
   fontSize: theme.typography.size.s1 - 1,
-  background: theme.color.secondary,
-  color: theme.color.lightest,
+  background: theme.barSelectedColor,
+  color: theme.color.inverseText,
 }));
 
 export interface TagsFilterProps {
@@ -58,17 +83,20 @@ export interface TagsFilterProps {
 
 export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFilterProps) => {
   const filtersById = useMemo<{ [id: string]: Filter }>(() => {
-    const userTagsCounts = Object.values(indexJson.entries).reduce((acc, entry) => {
-      entry.tags?.forEach((tag: Tag) => {
-        if (!BUILT_IN_TAGS.has(tag)) {
-          acc.set(tag, (acc.get(tag) || 0) + 1);
-        }
-      });
-      return acc;
-    }, new Map<Tag, number>());
+    const userTagsCounts = Object.values(indexJson.entries).reduce<{ [key: Tag]: number }>(
+      (acc, entry) => {
+        entry.tags?.forEach((tag: Tag) => {
+          if (!BUILT_IN_TAGS.has(tag)) {
+            acc[tag] = (acc[tag] || 0) + 1;
+          }
+        });
+        return acc;
+      },
+      {}
+    );
 
     const userFilters = Object.fromEntries(
-      userTagsCounts.entries().map(([tag, count]) => {
+      Object.entries(userTagsCounts).map(([tag, count]) => {
         const filterFn = (entry: API_PreparedIndexEntry, excluded?: boolean) =>
           excluded ? !entry.tags?.includes(tag) : !!entry.tags?.includes(tag);
         return [tag, { id: tag, type: 'tag', title: tag, count, filterFn }];
@@ -163,19 +191,18 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
 
   const toggleFilter = useCallback(
     (id: string, selected: boolean, excluded?: boolean) => {
-      const set = new Set([id]);
       if (excluded === true) {
-        setExcludedFilters(excludedFilters.union(set));
-        setIncludedFilters(includedFilters.difference(set));
+        setExcludedFilters(add(excludedFilters, id));
+        setIncludedFilters(remove(includedFilters, id));
       } else if (excluded === false) {
-        setIncludedFilters(includedFilters.union(set));
-        setExcludedFilters(excludedFilters.difference(set));
+        setIncludedFilters(add(includedFilters, id));
+        setExcludedFilters(remove(excludedFilters, id));
       } else if (selected) {
-        setIncludedFilters(includedFilters.union(set));
-        setExcludedFilters(excludedFilters.difference(set));
+        setIncludedFilters(add(includedFilters, id));
+        setExcludedFilters(remove(excludedFilters, id));
       } else {
-        setIncludedFilters(includedFilters.difference(set));
-        setExcludedFilters(excludedFilters.difference(set));
+        setIncludedFilters(remove(includedFilters, id));
+        setExcludedFilters(remove(excludedFilters, id));
       }
     },
     [includedFilters, excludedFilters]
@@ -207,13 +234,12 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
   }
 
   return (
-    <WithTooltip
+    <PopoverProvider
       placement="bottom"
-      trigger="click"
       onVisibleChange={setExpanded}
-      // render the tooltip in the mobile menu (so that the stacking context is correct) and fallback to document.body on desktop
-      portalContainer="#storybook-mobile-menu"
-      tooltip={() => (
+      offset={8}
+      padding={0}
+      popover={() => (
         <TagsFilterPanel
           api={api}
           filtersById={filtersById}
@@ -224,20 +250,24 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
           resetFilters={resetFilters}
           isDevelopment={isDevelopment}
           isDefaultSelection={
-            includedFilters.symmetricDifference(defaultIncluded).size === 0 &&
-            excludedFilters.symmetricDifference(defaultExcluded).size === 0
+            equal(includedFilters, defaultIncluded) && equal(excludedFilters, defaultExcluded)
           }
           hasDefaultSelection={defaultIncluded.size > 0 || defaultExcluded.size > 0}
         />
       )}
-      closeOnOutsideClick
     >
-      <Wrapper>
-        <IconButton key="tags" title="Tag filters" active={tagsActive} onClick={handleToggleExpand}>
-          <FilterIcon />
-        </IconButton>
+      <StyledIconButton
+        key="tags"
+        ariaLabel="Tag filters"
+        ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
+        variant="ghost"
+        padding="small"
+        active={tagsActive}
+        onClick={handleToggleExpand}
+      >
+        <FilterIcon />
         {includedFilters.size + excludedFilters.size > 0 && <TagSelected />}
-      </Wrapper>
-    </WithTooltip>
+      </StyledIconButton>
+    </PopoverProvider>
   );
 };

@@ -42,6 +42,9 @@ const Container = styled.div(({ theme }) => ({
 const managerContext: any = {
   state: {},
   api: {
+    getDocsUrl: fn(({ subpath }) => `https://storybook.js.org/docs/${subpath}`).mockName(
+      'api::getDocsUrl'
+    ),
     getData: fn().mockName('api::getData'),
     getIndex: fn().mockName('api::getIndex'),
     getUrlState: fn().mockName('api::getUrlState'),

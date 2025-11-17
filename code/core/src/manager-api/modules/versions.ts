@@ -50,7 +50,12 @@ export interface SubAPI {
    *
    * @returns {string} The URL of the Storybook Manager documentation.
    */
-  getDocsUrl: (options: { subpath?: string; versioned?: boolean; renderer?: boolean }) => string;
+  getDocsUrl: (options: {
+    assets?: boolean;
+    subpath?: string;
+    versioned?: boolean;
+    renderer?: boolean;
+  }) => string;
   /**
    * Checks if an update is available for the Storybook Manager.
    *
@@ -89,12 +94,12 @@ export const init: ModuleFn = ({ store }) => {
       return latest as API_Version;
     },
     // TODO: Move this to it's own "info" module later
-    getDocsUrl: ({ subpath, versioned, renderer }) => {
+    getDocsUrl: ({ assets, subpath, versioned, renderer }) => {
       const {
         versions: { latest, current },
       } = store.getState();
 
-      let url = 'https://storybook.js.org/docs/';
+      let url = `https://storybook.js.org/${assets ? 'docs-assets' : 'docs'}/`;
 
       if (versioned && current?.version && latest?.version) {
         const versionDiff = semver.diff(latest.version, current.version);

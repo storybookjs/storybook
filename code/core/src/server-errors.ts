@@ -458,6 +458,7 @@ export class GenerateNewProjectOnInitError extends StorybookError {
 export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError {
   constructor(public data: { reasons: string[] }) {
     super({
+      name: 'AddonVitestPostinstallPrerequisiteCheckError',
       category: Category.CLI_INIT,
       isHandledError: true,
       code: 4,
@@ -470,6 +471,7 @@ export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError
 export class AddonVitestPostinstallError extends StorybookError {
   constructor(public data: { errors: string[] }) {
     super({
+      name: 'AddonVitestPostinstallError',
       category: Category.CLI_INIT,
       isHandledError: true,
       code: 5,
@@ -607,6 +609,7 @@ export class CommonJsConfigNotSupportedError extends StorybookError {
 export class AutomigrateError extends StorybookError {
   constructor(public data: { errors: Array<Error | unknown> }) {
     super({
+      name: 'AutomigrateError',
       category: Category.CLI_AUTOMIGRATE,
       code: 2,
       message: dedent`

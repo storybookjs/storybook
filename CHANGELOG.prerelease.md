@@ -1,3 +1,33 @@
+## 10.1.0-alpha.11
+
+- Maintenance: Enable syntax minification for dead code elimination - [#33001](https://github.com/storybookjs/storybook/pull/33001), thanks @mrginglymus!
+- React Native Web: Fix react native resuables and nativewind - [#33056](https://github.com/storybookjs/storybook/pull/33056), thanks @dannyhw!
+- UI: Add VRTs to FileSearchModal in light theme - [#33022](https://github.com/storybookjs/storybook/pull/33022), thanks @Sidnioulz!
+- WebComponents: Fix `custom-elements.json` not being loaded - [#33045](https://github.com/storybookjs/storybook/pull/33045), thanks @ndelangen!
+
+## 10.1.0-alpha.10
+
+- Core: Significantly improve Storybook's own accessibility - [#32458](https://github.com/storybookjs/storybook/pull/32458), thanks @Sidnioulz!
+
+## 10.1.0-alpha.9
+
+- Core: Improve globbing using dynamic CWD - [#32990](https://github.com/storybookjs/storybook/pull/32990), thanks @ia319!
+
+## 10.1.0-alpha.8
+
+- ESLint: Only apply csf-strict rules on stories files - [#31963](https://github.com/storybookjs/storybook/pull/31963), thanks @cylewaitforit!
+- Middleware: Prepend `file://` to middleware `import` for Windows support - [#32955](https://github.com/storybookjs/storybook/pull/32955), thanks @ndelangen!
+- Next.js: Update SWC loader to support new wasm detection - [#33003](https://github.com/storybookjs/storybook/pull/33003), thanks @yannbf!
+- React Native Web: Update vite-plugin-rnw for overall improvements - [#32991](https://github.com/storybookjs/storybook/pull/32991), thanks @dannyhw!
+
+## 10.1.0-alpha.7
+
+- CSF: Fix export interface declaration for NextPreview - [#32914](https://github.com/storybookjs/storybook/pull/32914), thanks @icopp!
+- Controls: Add range validation in Number Control - [#32539](https://github.com/storybookjs/storybook/pull/32539), thanks @ia319!
+- Fix: Export interface declaration for ReactMeta - [#32915](https://github.com/storybookjs/storybook/pull/32915), thanks @icopp!
+- React: Improve error messages in component manifest - [#32954](https://github.com/storybookjs/storybook/pull/32954), thanks @kasperpeulen!
+- Vitest Addon: Add support for Preact - [#32948](https://github.com/storybookjs/storybook/pull/32948), thanks @yannbf!
+
 ## 10.1.0-alpha.6
 
 - Core: Add reentry guard to focus patch - [#32655](https://github.com/storybookjs/storybook/pull/32655), thanks @ia319!

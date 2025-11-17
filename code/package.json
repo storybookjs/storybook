@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "10.1.0-alpha.6",
+  "version": "10.1.0-alpha.11",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -97,7 +97,7 @@
     "@types/react": "^18.0.0",
     "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
     "aria-query@5.3.0": "^5.3.0",
-    "esbuild": "^0.25.3",
+    "esbuild": "^0.27.0",
     "playwright": "1.52.0",
     "playwright-core": "1.52.0",
     "react": "^18.2.0",
@@ -165,7 +165,7 @@
     "cross-env": "^7.0.3",
     "danger": "^13.0.4",
     "es-toolkit": "^1.36.0",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
     "esbuild-loader": "^4.3.0",
     "eslint": "8.57.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
@@ -215,6 +215,9 @@
     "vite-plugin-inspect": "^11.0.0",
     "vitest": "^3.2.4",
     "wait-on": "^8.0.3"
+  },
+  "devDependencies": {
+    "react-popper-tooltip": "^4.4.2"
   },
   "dependenciesMeta": {
     "ejs": {

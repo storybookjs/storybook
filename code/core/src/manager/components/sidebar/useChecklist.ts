@@ -66,6 +66,23 @@ const checkAvailable = (
   return true;
 };
 
+const checkSkipped = (
+  item: RawItemWithSection,
+  itemsById: Record<RawItemWithSection['id'], RawItemWithSection>,
+  skipped: string[]
+) => {
+  const isSkipped = skipped.includes(item.id);
+  if (isSkipped) {
+    return true;
+  }
+  for (const afterId of item.after ?? []) {
+    if (itemsById[afterId] && checkSkipped(itemsById[afterId], itemsById, skipped)) {
+      return true;
+    }
+  }
+  return false;
+};
+
 export const useChecklist = () => {
   const api = useStorybookApi();
   const index = useStoryIndex();
@@ -88,7 +105,7 @@ export const useChecklist = () => {
       const isAccepted = accepted.includes(item.id);
       const isDone = done.includes(item.id);
       const isCompleted = isAccepted || isDone;
-      const isSkipped = skipped.includes(item.id);
+      const isSkipped = checkSkipped(item, itemsById, skipped);
       const isMuted = Array.isArray(muted) ? muted.includes(item.id) : !!muted;
 
       const isAvailable = isCompleted

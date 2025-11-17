@@ -9,6 +9,9 @@ const meta = preview.meta({
   component: Particles,
   parameters: {
     layout: 'centered',
+    chromatic: {
+      disableSnapshot: true,
+    },
   },
   args: {
     anchor: SomeComponent,

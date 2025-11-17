@@ -80,13 +80,6 @@ const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
       '--toggle-button-opacity': 1,
     },
 
-    h2: {
-      flex: 1,
-      margin: 0,
-      fontSize: 'inherit',
-      fontWeight: theme.typography.weight.bold,
-    },
-
     '&::after': {
       pointerEvents: 'none',
       position: 'absolute',
@@ -105,9 +98,13 @@ const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
   })
 );
 
-const SectionHeading = styled.h2({
+const SectionHeading = styled.h2(({ theme }) => ({
+  flex: 1,
+  margin: 0,
+  fontSize: 'inherit',
+  fontWeight: theme.typography.weight.bold,
   cursor: 'default',
-});
+}));
 
 const ItemSummary = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(
   ({ theme, isCollapsed, onClick }) => ({
@@ -125,16 +122,12 @@ const ItemSummary = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(
     '&:focus-visible': {
       outline: 'none',
     },
-
-    h4: {
-      flex: 1,
-      margin: 0,
-      fontSize: 'inherit',
-    },
   })
 );
 
-const ItemHeading = styled.h4<{ skipped: boolean }>(({ theme, skipped }) => ({
+const ItemHeading = styled.h3<{ skipped: boolean }>(({ theme, skipped }) => ({
+  flex: 1,
+  margin: 0,
   color: skipped ? theme.textMutedColor : theme.color.defaultText,
   overflow: 'hidden',
   textOverflow: 'ellipsis',

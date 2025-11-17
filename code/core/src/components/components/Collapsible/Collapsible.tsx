@@ -4,10 +4,10 @@ import React, {
   type SyntheticEvent,
   useCallback,
   useEffect,
-  useId,
   useState,
 } from 'react';
 
+import { useId } from '@react-aria/utils';
 import { styled } from 'storybook/theming';
 
 const CollapsibleContent = styled.div<{ collapsed?: boolean }>(({ collapsed = false }) => ({

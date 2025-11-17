@@ -103,12 +103,12 @@ export class GeneratorExecutionCommand {
       framework: frameworkInfo.framework,
       renderer: frameworkInfo.renderer,
       linkable: !!options.linkable,
-      pnp: options.usePnp as boolean,
-      yes: options.yes as boolean,
+      pnp: !!options.usePnp,
+      yes: !!options.yes,
       projectType,
       features: selectedFeatures,
       dependencyCollector: this.dependencyCollector,
-    } as GeneratorOptions;
+    } satisfies GeneratorOptions;
 
     if (frameworkOptions.skipGenerator) {
       if (generatorModule.postConfigure) {

@@ -59,7 +59,7 @@
       "configurations": {
         "production": {}
       },
-      "inputs": ["default", "^production", "{workspaceRoot}/../scripts/prepare/check.ts"],
+      "inputs": ["default", "^production"],
       "dependsOn": ["build"],
       "cache": true
     },

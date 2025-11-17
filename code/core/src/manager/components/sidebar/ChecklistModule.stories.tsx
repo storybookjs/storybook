@@ -23,7 +23,7 @@ const meta = preview.meta({
   decorators: [
     (Story) => (
       <ManagerContext.Provider value={managerContext}>
-        <div style={{ maxWidth: 300 }}>{Story()}</div>
+        <div style={{ width: 300, height: 150 }}>{Story()}</div>
       </ManagerContext.Provider>
     ),
   ],
@@ -69,6 +69,6 @@ export const Default = meta.story({
 });
 
 export const Narrow = meta.story({
-  decorators: [(Story) => <div style={{ maxWidth: 200 }}>{Story()}</div>],
+  decorators: [(Story) => <div style={{ width: 200, height: 150 }}>{Story()}</div>],
   play,
 });

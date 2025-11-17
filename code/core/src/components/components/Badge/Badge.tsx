@@ -53,7 +53,7 @@ const BadgeWrapper = styled.div<BadgeProps>(
       case 'neutral': {
         return {
           color: theme.fgColor.muted,
-          background: theme.base === 'light' ? theme.background.app : theme.barBg,
+          background: theme.base === 'dark' ? theme.barBg : theme.background.app,
           boxShadow: `inset 0 0 0 1px ${transparentize(0.8, theme.textMutedColor)}`,
         };
       }

@@ -53,7 +53,7 @@ describe('remove-mdx-stories', () => {
     await expect(() => removeMDXEntries(Object.keys(list), { configDir })).rejects
       .toThrowErrorMatchingInlineSnapshot(`
     [SB_CORE-COMMON_0004 (InvalidStoriesEntryError): Storybook could not index your stories.
-Your main configuration somehow does not contain a 'stories' field, or it resolved to an empty array.
+Your main configuration does not contain a 'stories' field, or it resolved to an empty array.
 
 Please check your main configuration file and make sure it exports a 'stories' field that is not an empty array.
 

@@ -5,7 +5,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import { CallStates } from '../../instrumenter/types';
 import { getCalls } from '../mocks';
 import { Interaction } from './Interaction';
-import SubnavStories from './Subnav.stories';
+import ToolbarStories from './Toolbar.stories';
 
 type Story = StoryObj<typeof Interaction>;
 
@@ -14,8 +14,8 @@ export default {
   component: Interaction,
   args: {
     callsById: new Map(getCalls(CallStates.DONE).map((call) => [call.id, call])),
-    controls: SubnavStories.args.controls,
-    controlStates: SubnavStories.args.controlStates,
+    controls: ToolbarStories.args.controls,
+    controlStates: ToolbarStories.args.controlStates,
   },
 } as Meta<typeof Interaction>;
 
@@ -62,7 +62,7 @@ export const WithParent: Story = {
 };
 
 export const Disabled: Story = {
-  args: { ...Done.args, controlStates: { ...SubnavStories.args.controlStates, goto: false } },
+  args: { ...Done.args, controlStates: { ...ToolbarStories.args.controlStates, goto: false } },
 };
 
 export const Hovered: Story = {

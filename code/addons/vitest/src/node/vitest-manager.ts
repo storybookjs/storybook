@@ -13,6 +13,7 @@ import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/ty
 
 import * as find from 'empathic/find';
 import path, { dirname, join, normalize } from 'pathe';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import { COVERAGE_DIRECTORY } from '../constants';

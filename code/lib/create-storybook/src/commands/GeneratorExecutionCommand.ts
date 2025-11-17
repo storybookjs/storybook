@@ -108,7 +108,7 @@ export class GeneratorExecutionCommand {
       projectType,
       features: selectedFeatures,
       dependencyCollector: this.dependencyCollector,
-    } satisfies GeneratorOptions;
+    } as GeneratorOptions;
 
     if (frameworkOptions.skipGenerator) {
       if (generatorModule.postConfigure) {

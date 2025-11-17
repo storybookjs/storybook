@@ -86,8 +86,6 @@ const CardOutline = styled.div<{
             `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
           : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
     }),
-
-    ...(styles && typeof styles['&:before'] === 'object' ? styles['&:before'] : {}),
   },
 }));
 

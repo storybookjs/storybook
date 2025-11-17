@@ -141,15 +141,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             variant={variant}
             size={size}
             padding={padding}
-            disabled={disabled}
+            disabled={disabled || readOnly}
             readOnly={readOnly}
             active={active}
             animating={isAnimating}
             animation={animation}
             onClick={handleClick}
-            aria-label={ariaLabel !== false ? ariaLabel : undefined}
-            aria-keyshortcuts={shortcutAttribute}
-            {...ariaDescriptionAttrs}
+            role={readOnly ? 'presentation' : undefined}
+            aria-label={!readOnly && ariaLabel !== false ? ariaLabel : undefined}
+            aria-keyshortcuts={readOnly ? undefined : shortcutAttribute}
+            {...(readOnly ? {} : ariaDescriptionAttrs)}
             {...props}
           />
         </InteractiveTooltipWrapper>

@@ -11,6 +11,7 @@ const ignoreList = [
       `Support for defaultProps will be removed from function components in a future major release`
     ),
   (error: any) => error.message.match(/Browserslist: .* is outdated. Please run:/),
+  (error: any) => error.message.includes('The data in this module is over two months old.'),
   (error: any) => error.message.includes('Consider adding an error boundary'),
   (error: any) =>
     error.message.includes('react-async-component-lifecycle-hooks') &&

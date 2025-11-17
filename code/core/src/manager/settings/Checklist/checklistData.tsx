@@ -19,14 +19,14 @@ import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
 import { ADDON_ID as ADDON_A11Y_ID } from '../../../../../addons/a11y/src/constants';
 import {
-  ADDON_ONBOARDING_CHANNEL,
-  ADDON_ID as ADDON_ONBOARDING_ID,
-} from '../../../../../addons/onboarding/src/constants';
-import {
   ADDON_TEST_CHANNEL,
   ADDON_ID as ADDON_TEST_ID,
 } from '../../../../../addons/vitest/src/constants';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../../docs-tools/shared';
+import {
+  ADDON_ONBOARDING_CHANNEL,
+  ADDON_ID as ADDON_ONBOARDING_ID,
+} from '../../../onboarding/constants';
 import { TourGuide } from '../../components/TourGuide/TourGuide';
 
 const CodeWrapper = styled.div(({ theme }) => ({

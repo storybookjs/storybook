@@ -25,5 +25,5 @@ export default async function postinstall(options: PostinstallOptions) {
     configDir: options.configDir,
   });
 
-  await jsPackageManager.runPackageCommand('storybook', args);
+  await jsPackageManager.runPackageCommand({ args });
 }

@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import type { Feature } from 'storybook/internal/types';
 
 import { AddonConfigurationCommand } from './AddonConfigurationCommand';
 

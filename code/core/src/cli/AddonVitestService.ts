@@ -115,7 +115,7 @@ export class AddonVitestService {
   async installPlaywright(
     packageManager: JsPackageManager,
     options: { yes?: boolean } = {}
-  ): Promise<string[]> {
+  ): Promise<{ errors: string[] }> {
     const errors: string[] = [];
 
     const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
@@ -162,7 +162,7 @@ export class AddonVitestService {
       }
     }
 
-    return errors;
+    return { errors };
   }
 
   /**

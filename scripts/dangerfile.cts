@@ -1,11 +1,9 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-import { danger, fail } from 'danger';
+const { join } = require('path');
+const { danger, fail } = require('danger');
 
 const intersection = (a: readonly string[], b: readonly string[]) => a.filter((v) => b.includes(v));
 
-const pkg = JSON.parse(readFileSync(join(import.meta.dirname, '../package.json'), 'utf-8'));
+const pkg = require(join(__dirname, '../package.json'));
 
 const Versions = {
   PATCH: 'PATCH',

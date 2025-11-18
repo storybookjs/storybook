@@ -196,6 +196,7 @@ describe('getUIBuildingInstructionsTool', () => {
 		expect(collectTelemetrySpy).toHaveBeenCalledWith({
 			event: 'tool:getUIBuildingInstructions',
 			server,
+			toolset: 'dev',
 		});
 	});
 

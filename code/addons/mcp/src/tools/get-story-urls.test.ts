@@ -279,6 +279,7 @@ describe('getStoryUrlsTool', () => {
 		expect(collectTelemetrySpy).toHaveBeenCalledWith({
 			event: 'tool:getStoryUrls',
 			server,
+			toolset: 'dev',
 			inputStoryCount: 1,
 			outputStoryCount: 1,
 		});

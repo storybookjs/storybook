@@ -32,6 +32,7 @@ export async function addGetUIBuildingInstructionsTool(
 					await collectTelemetry({
 						event: 'tool:getUIBuildingInstructions',
 						server,
+						toolset: 'dev',
 					});
 				}
 

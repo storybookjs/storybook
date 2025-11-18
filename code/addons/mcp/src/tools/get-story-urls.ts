@@ -83,6 +83,7 @@ export async function addGetStoryUrlsTool(
 					await collectTelemetry({
 						event: 'tool:getStoryUrls',
 						server,
+						toolset: 'dev',
 						inputStoryCount: input.stories.length,
 						outputStoryCount: foundStoryCount,
 					});

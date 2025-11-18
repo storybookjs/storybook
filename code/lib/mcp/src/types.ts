@@ -26,13 +26,12 @@ export interface StorybookContext extends Record<string, unknown> {
 	}) => void | Promise<void>;
 	/**
 	 * Optional handler called when get-component-documentation tool is invoked.
-	 * Receives the context, input parameters, and the found components.
+	 * Receives the context, input parameters, and the found component (if any).
 	 */
 	onGetComponentDocumentation?: (params: {
 		context: StorybookContext;
-		input: { componentIds: string[] };
-		foundComponents: ComponentManifest[];
-		notFoundIds: string[];
+		input: { componentId: string };
+		foundComponent?: ComponentManifest;
 	}) => void | Promise<void>;
 }
 

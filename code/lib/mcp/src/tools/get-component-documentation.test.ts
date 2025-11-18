@@ -58,7 +58,7 @@ describe('getComponentDocumentationTool', () => {
 			params: {
 				name: GET_TOOL_NAME,
 				arguments: {
-					componentIds: ['button'],
+					componentId: 'button',
 				},
 			},
 		};
@@ -79,88 +79,6 @@ describe('getComponentDocumentationTool', () => {
 			</story_description>
 			<story_code>
 			const Primary = () => <Button variant="primary">Click Me</Button>
-			</story_code>
-			</story>
-			</component>",
-			      "type": "text",
-			    },
-			  ],
-			}
-		`);
-	});
-
-	it('should return formatted documentation for multiple components', async () => {
-		const request = {
-			jsonrpc: '2.0' as const,
-			id: 1,
-			method: 'tools/call',
-			params: {
-				name: GET_TOOL_NAME,
-				arguments: {
-					componentIds: ['button', 'card', 'input'],
-				},
-			},
-		};
-
-		const response = await server.receive(request);
-
-		expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "<component>
-			<id>button</id>
-			<name>Button</name>
-			<story>
-			<story_name>Primary</story_name>
-			<story_description>
-			The primary button variant.
-			</story_description>
-			<story_code>
-			const Primary = () => <Button variant="primary">Click Me</Button>
-			</story_code>
-			</story>
-			</component>",
-			      "type": "text",
-			    },
-			    {
-			      "text": "<component>
-			<id>card</id>
-			<name>Card</name>
-			<description>
-			A container component for grouping related content.
-			</description>
-			<story>
-			<story_name>Basic</story_name>
-			<story_description>
-			A basic card with content.
-			</story_description>
-			<story_code>
-			const Basic = () => (
-			  <Card>
-			    <h3>Title</h3>
-			    <p>Content</p>
-			  </Card>
-			)
-			</story_code>
-			</story>
-			</component>",
-			      "type": "text",
-			    },
-			    {
-			      "text": "<component>
-			<id>input</id>
-			<name>Input</name>
-			<description>
-			A text input component with validation support.
-			</description>
-			<story>
-			<story_name>Basic</story_name>
-			<story_description>
-			A basic text input.
-			</story_description>
-			<story_code>
-			const Basic = () => <Input label="Name" placeholder="Enter name" />
 			</story_code>
 			</story>
 			</component>",
@@ -179,7 +97,7 @@ describe('getComponentDocumentationTool', () => {
 			params: {
 				name: GET_TOOL_NAME,
 				arguments: {
-					componentIds: ['nonexistent'],
+					componentId: 'nonexistent',
 				},
 			},
 		};
@@ -190,77 +108,11 @@ describe('getComponentDocumentationTool', () => {
 			{
 			  "content": [
 			    {
-			      "text": "Error: Component not found: nonexistent",
+			      "text": "Component not found: "nonexistent". Use the list-all-components tool to see available components.",
 			      "type": "text",
 			    },
 			  ],
 			  "isError": true,
-			}
-		`);
-	});
-
-	it('should return partial results and a warning when some components are not found', async () => {
-		const request = {
-			jsonrpc: '2.0' as const,
-			id: 1,
-			method: 'tools/call',
-			params: {
-				name: GET_TOOL_NAME,
-				arguments: {
-					componentIds: ['button', 'nonexistent', 'card'],
-				},
-			},
-		};
-
-		const response = await server.receive(request);
-		expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "<component>
-			<id>button</id>
-			<name>Button</name>
-			<story>
-			<story_name>Primary</story_name>
-			<story_description>
-			The primary button variant.
-			</story_description>
-			<story_code>
-			const Primary = () => <Button variant="primary">Click Me</Button>
-			</story_code>
-			</story>
-			</component>",
-			      "type": "text",
-			    },
-			    {
-			      "text": "<component>
-			<id>card</id>
-			<name>Card</name>
-			<description>
-			A container component for grouping related content.
-			</description>
-			<story>
-			<story_name>Basic</story_name>
-			<story_description>
-			A basic card with content.
-			</story_description>
-			<story_code>
-			const Basic = () => (
-			  <Card>
-			    <h3>Title</h3>
-			    <p>Content</p>
-			  </Card>
-			)
-			</story_code>
-			</story>
-			</component>",
-			      "type": "text",
-			    },
-			    {
-			      "text": "Warning: Component not found: nonexistent",
-			      "type": "text",
-			    },
-			  ],
 			}
 		`);
 	});
@@ -280,7 +132,7 @@ describe('getComponentDocumentationTool', () => {
 			params: {
 				name: GET_TOOL_NAME,
 				arguments: {
-					componentIds: ['button'],
+					componentId: 'button',
 				},
 			},
 		};
@@ -310,7 +162,7 @@ describe('getComponentDocumentationTool', () => {
 			params: {
 				name: GET_TOOL_NAME,
 				arguments: {
-					componentIds: ['button', 'card', 'non-existent'],
+					componentId: 'button',
 				},
 			},
 		};
@@ -325,12 +177,8 @@ describe('getComponentDocumentationTool', () => {
 			context: expect.objectContaining({
 				onGetComponentDocumentation: handler,
 			}),
-			input: { componentIds: ['button', 'card', 'non-existent'] },
-			foundComponents: [
-				expect.objectContaining({ id: 'button', name: 'Button' }),
-				expect.objectContaining({ id: 'card', name: 'Card' }),
-			],
-			notFoundIds: ['non-existent'],
+			input: { componentId: 'button' },
+			foundComponent: expect.objectContaining({ id: 'button', name: 'Button' }),
 		});
 	});
 
@@ -379,7 +227,7 @@ describe('getComponentDocumentationTool', () => {
 			params: {
 				name: GET_TOOL_NAME,
 				arguments: {
-					componentIds: ['button'],
+					componentId: 'button',
 				},
 			},
 		};

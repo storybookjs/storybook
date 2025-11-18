@@ -193,12 +193,12 @@ Returns a list of all available UI components in your component library. Useful 
 
 #### 4. Get Component Documentation (`get-component-documentation`)
 
-Retrieves detailed documentation for specific components, including:
+Retrieves detailed documentation for a specific component, including:
 
 - Component documentation
 - Usage examples
 
-The agent provides component IDs to retrieve their documentation.
+The agent provides a component ID to retrieve its documentation. To get documentation for multiple components, call this tool multiple times.
 
 ## Contributing
 

@@ -65,10 +65,10 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
           justifyContent: 'space-between',
           paddingInlineStart: 0,
           paddingInlineEnd: 10,
-          // A11y: the tools must be before the tab list in the DOM for correct tab order.
+          // A11y: the tab list must be before the tools in the DOM for correct tab order.
           // This lets us control order without adding a wrapper div, leading to better flex
           // behavior on tools for our callees (e.g. containerType: 'inline-size' in a11y-addon).
-          '> *:not(:last-child)': {
+          '> *:not(:first-child)': {
             order: 2,
           },
           '> *': {
@@ -78,8 +78,8 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
           gap: 0,
         }}
       >
-        {tools}
         {hasContent ? tabListChild : <div />}
+        {tools}
       </Bar>
       {hasContent ? tabPanelChildren : EmptyContent}
     </Container>

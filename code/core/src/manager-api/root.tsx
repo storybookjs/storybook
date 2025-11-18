@@ -55,7 +55,6 @@ import * as globals from './modules/globals';
 import * as layout from './modules/layout';
 import * as notifications from './modules/notifications';
 import * as openInEditor from './modules/open-in-editor';
-import * as openInIsolation from './modules/open-in-isolation';
 import * as provider from './modules/provider';
 import * as refs from './modules/refs';
 import * as settings from './modules/settings';
@@ -107,7 +106,6 @@ export type API = addons.SubAPI &
   url.SubAPI &
   whatsnew.SubAPI &
   openInEditor.SubAPI &
-  openInIsolation.SubAPI &
   Other;
 
 interface Other {
@@ -183,7 +181,6 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
       version,
       whatsnew,
       openInEditor,
-      openInIsolation,
     ].map((m) =>
       m.init({ ...routeData, ...optionsData, ...apiData, state: this.state, fullAPI: this.api })
     );

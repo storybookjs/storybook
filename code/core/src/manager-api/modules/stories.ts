@@ -1,4 +1,5 @@
 import { logger } from 'storybook/internal/client-logger';
+import { getStoryHref } from 'storybook/internal/components';
 import {
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
@@ -284,6 +285,17 @@ export interface SubAPI {
    * @returns {Promise<void>} A promise that resolves when the state has been updated.
    */
   experimental_setFilter: (addonId: string, filterFunction: API_FilterFunction) => Promise<void>;
+  /**
+   * Opens a story in isolation mode in a new tab/window.
+   *
+   * @param {string} storyId - The ID of the story to open.
+   * @param {string | null | undefined} refId - The ID of the ref for the story. Pass null/undefined
+   *   for local stories.
+   * @param {'story' | 'docs'} viewMode - The view mode to open the story in. Defaults to current
+   *   view mode.
+   * @returns {void}
+   */
+  openInIsolation: (storyId: string, refId?: string | null, viewMode?: 'story' | 'docs') => void;
 }
 
 const removedOptions = ['enableShortcuts', 'theme', 'showRoots'];
@@ -695,6 +707,32 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       });
 
       provider.channel?.emit(SET_FILTER, { id });
+    },
+
+    openInIsolation: (storyId: string, refId?: string | null, viewMode?: 'story' | 'docs') => {
+      const { location } = global.document;
+      const { refs, customQueryParams, viewMode: currentViewMode } = store.getState();
+
+      // Get the ref object from refs map using refId
+      const ref = refId ? refs[refId] : null;
+
+      let baseUrl = `${location.origin}${location.pathname}`;
+
+      if (!baseUrl.endsWith('/')) {
+        baseUrl += '/';
+      }
+
+      const iframeUrl = ref
+        ? `${ref.url}/iframe.html`
+        : (global.PREVIEW_URL as string) || `${baseUrl}iframe.html`;
+
+      const storyViewMode = viewMode ?? currentViewMode;
+
+      const href = getStoryHref(iframeUrl, storyId, {
+        ...customQueryParams,
+        ...(storyViewMode && { viewMode: storyViewMode }),
+      });
+      global.window.open(href, '_blank', 'noopener,noreferrer');
     },
   };
 

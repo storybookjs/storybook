@@ -95,6 +95,7 @@ function ShareMenu({
   const enableShortcuts = !!shortcutKeys;
   const [copied, setCopied] = useState(false);
   const copyStoryLink = shortcutKeys?.copyStoryLink;
+  const openInIsolation = shortcutKeys?.openInIsolation;
 
   const links = useMemo(() => {
     const copyTitle = copied ? 'Copied!' : 'Copy story link';
@@ -113,8 +114,9 @@ function ShareMenu({
         },
         {
           id: 'open-new-tab',
-          title: 'Open in isolation mode',
+          title: 'Open in isolation',
           icon: <BugIcon />,
+          right: enableShortcuts ? <Shortcut keys={openInIsolation} /> : null,
           onClick: () => {
             const href = getStoryHref(baseUrl, storyId, queryParams);
             window.open(href, '_blank', 'noopener,noreferrer');

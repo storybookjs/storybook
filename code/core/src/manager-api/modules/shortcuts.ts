@@ -1,3 +1,4 @@
+import { getStoryHref } from 'storybook/internal/components';
 import {
   FORCE_REMOUNT,
   PREVIEW_KEYDOWN,
@@ -14,7 +15,7 @@ import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut';
 import type { ModuleFn } from '../lib/types';
 import { focusableUIElements } from './layout';
 
-const { navigator, document } = global;
+const { navigator, document, PREVIEW_URL } = global;
 
 export const isMacLike = () =>
   navigator && navigator.platform ? !!navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) : false;
@@ -114,6 +115,7 @@ export interface API_Shortcuts {
   remount: API_KeyCollection;
   openInEditor: API_KeyCollection;
   copyStoryLink: API_KeyCollection;
+  openInIsolation: API_KeyCollection;
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: API_KeyCollection;
 }
@@ -153,6 +155,7 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   remount: ['alt', 'R'],
   openInEditor: ['alt', 'shift', 'E'],
   copyStoryLink: ['alt', 'shift', 'L'],
+  openInIsolation: ['alt', 'shift', 'I'],
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
 });
@@ -247,6 +250,9 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       const {
         ui: { enableShortcuts },
         storyId,
+        refId,
+        refs,
+        customQueryParams,
       } = store.getState();
       if (!enableShortcuts) {
         return;
@@ -395,6 +401,26 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
               file: fullAPI.getCurrentStoryData().importPath,
             });
           }
+          break;
+        }
+        case 'openInIsolation': {
+          const { location } = document;
+          // @ts-expect-error (non strict)
+          const ref = refs[refId];
+          let baseUrl = `${location.origin}${location.pathname}`;
+
+          if (!baseUrl.endsWith('/')) {
+            baseUrl += '/';
+          }
+
+          const href = getStoryHref(
+            ref ? `${ref.url}/iframe.html` : (PREVIEW_URL as string) || `${baseUrl}iframe.html`,
+            storyId,
+            Object.fromEntries(
+              Object.entries(customQueryParams).filter(([, value]) => value !== undefined)
+            ) as Record<string, string>
+          );
+          window.open(href, '_blank', 'noopener,noreferrer');
           break;
         }
         // TODO: bring this back once we want to add shortcuts for this

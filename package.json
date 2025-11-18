@@ -1,5 +1,20 @@
 {
-  "name": "@storybook/root",
+  "name": "@storybook/super-root",
+  "private": true,
+  "type": "module",
+  "workspaces": {
+    "packages": [
+      "code",
+      "code/core",
+      "code/addons/*",
+      "code/frameworks/*",
+      "code/lib/*",
+      "code/builders/*",
+      "code/presets/*",
+      "code/renderers/*",
+      "scripts"
+    ]
+  },
   "scripts": {
     "ci-tests": "cd code; yarn ci-tests",
     "get-report-message": "cd scripts; yarn get-report-message",
@@ -25,5 +40,26 @@
   "packageManager": "yarn@4.10.3",
   "engines": {
     "node": ">=22.0.0"
+  },
+  "resolutions": {
+    "@babel/runtime": "latest",
+    "@babel/traverse": "latest",
+    "@babel/types": "^7.28.4",
+    "@playwright/test": "1.52.0",
+    "@testing-library/user-event@npm:^14.4.0": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
+    "@testing-library/user-event@npm:^14.6.1": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
+    "@types/babel__traverse@npm:*": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
+    "@types/babel__traverse@npm:^7.18.0": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.0.0",
+    "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
+    "aria-query@5.3.0": "^5.3.0",
+    "esbuild": "^0.27.0",
+    "playwright": "1.52.0",
+    "playwright-core": "1.52.0",
+    "react": "^18.2.0",
+    "serialize-javascript": "^3.1.0",
+    "type-fest": "~2.19",
+    "typescript": "^5.8.3"
   }
 }

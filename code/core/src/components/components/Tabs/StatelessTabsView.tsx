@@ -2,7 +2,7 @@ import type { FC, ReactNode } from 'react';
 import React from 'react';
 
 import { Tabs } from 'react-aria-components/patched-dist/Tabs';
-import { styled } from 'storybook/theming';
+import { type CSSObject, styled } from 'storybook/theming';
 
 import { Bar } from '../Bar/Bar';
 import { EmptyTabContent } from './EmptyTabContent';
@@ -74,7 +74,7 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
           '> *': {
             flexShrink: 0,
           },
-          ...barInnerStyle,
+          ...(barInnerStyle as CSSObject),
           gap: 0,
         }}
       >

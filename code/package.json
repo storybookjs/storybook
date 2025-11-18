@@ -12,17 +12,6 @@
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
   },
-  "workspaces": {
-    "packages": [
-      "./core",
-      "addons/*",
-      "frameworks/*",
-      "lib/*",
-      "builders/*",
-      "presets/*",
-      "renderers/*"
-    ]
-  },
   "scripts": {
     "affected:test": "nx show projects --affected -t test | xargs -I # echo --project # | xargs yarn test:watch",
     "await-serve-storybooks": "wait-on http://localhost:8001",
@@ -84,27 +73,6 @@
     "opera >= 117",
     "node >= 20"
   ],
-  "resolutions": {
-    "@babel/runtime": "latest",
-    "@babel/traverse": "latest",
-    "@babel/types": "^7.28.4",
-    "@playwright/test": "1.52.0",
-    "@testing-library/user-event@npm:^14.4.0": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
-    "@testing-library/user-event@npm:^14.6.1": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
-    "@types/babel__traverse@npm:*": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
-    "@types/babel__traverse@npm:^7.18.0": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
-    "@types/node": "^22.0.0",
-    "@types/react": "^18.0.0",
-    "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
-    "aria-query@5.3.0": "^5.3.0",
-    "esbuild": "^0.27.0",
-    "playwright": "1.52.0",
-    "playwright-core": "1.52.0",
-    "react": "^18.2.0",
-    "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19",
-    "typescript": "^5.8.3"
-  },
   "dependencies": {
     "@chromatic-com/storybook": "^4.1.2",
     "@nx/vite": "20.8.2",
@@ -203,6 +171,7 @@
     "process": "^0.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-popper-tooltip": "^4.4.2",
     "rimraf": "^6.0.1",
     "slash": "^5.0.0",
     "sort-package-json": "^2.14.0",
@@ -215,9 +184,6 @@
     "vite-plugin-inspect": "^11.0.0",
     "vitest": "^3.2.4",
     "wait-on": "^8.0.3"
-  },
-  "devDependencies": {
-    "react-popper-tooltip": "^4.4.2"
   },
   "dependenciesMeta": {
     "ejs": {
@@ -243,7 +209,6 @@
       "built": false
     }
   },
-  "packageManager": "yarn@4.10.3",
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"

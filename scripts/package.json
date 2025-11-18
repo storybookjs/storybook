@@ -55,12 +55,6 @@
       "yarn lint:package"
     ]
   },
-  "resolutions": {
-    "esbuild": "^0.27.0",
-    "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19",
-    "typescript": "^5.9.3"
-  },
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",

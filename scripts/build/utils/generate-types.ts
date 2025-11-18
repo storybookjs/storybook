@@ -29,7 +29,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
       return limited(async () => {
         let timer: ReturnType<typeof setTimeout> | undefined;
         const dtsProcess = spawn(
-          `"${join(import.meta.dirname, '..', '..', 'node_modules', '.bin', 'jiti')}"`,
+          `"${join(import.meta.dirname, '..', '..', '..', 'node_modules', '.bin', 'jiti')}"`,
           [`"${join(import.meta.dirname, 'dts-process.ts')}"`, `"${entryPoint}"`],
           {
             shell: true,
@@ -65,7 +65,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
 
               dtsProcess.kill(408); // timed out
               resolve(void 0);
-            }, 120000);
+            }, 1200000);
           }),
         ]);
 

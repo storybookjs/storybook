@@ -1,4 +1,18 @@
-// @ts-ignore
+/**
+ * IMPORTANT: This file has unique constraints due to how Danger.js executes it.
+ *
+ * Restrictions:
+ * - NO TypeScript: This file runs without any transpilation/transformation
+ * - NO external dependencies: Scripts dependencies are not installed in CI
+ * - NO Node.js built-ins: Even `fs` and other core modules don't work in Danger's runtime
+ * - MUST use `import` for Danger API: The Danger runtime only processes `import` statements,
+ *   not `require()`. These imports get compiled to global references by Danger.js
+ * - CAN use `require()` for local files: Works for things like package.json
+ *
+ * Why: We want Danger to run as fast as possible in CI without installing dependencies
+ * or running build processes.
+ */
+
 import { danger, fail } from 'danger';
 
 /**

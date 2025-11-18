@@ -199,7 +199,7 @@ jobs:
                 clone_options: --depth 1 --verbose
             - restore_cache:
                 keys:
-                    - build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+                    - build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
                 name: Restore Yarn cache
             - run:
                 command: |
@@ -216,7 +216,7 @@ jobs:
             - store_artifacts:
                 path: code/bench/esbuild-metafiles
             - save_cache:
-                key: build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+                key: build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
                 name: Save Yarn cache
                 paths:
                     - ~/.yarn/berry/cache
@@ -247,7 +247,7 @@ jobs:
                 workflow-name: << pipeline.parameters.workflow >>
             - restore_cache:
                 keys:
-                    - build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+                    - build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
                 name: Restore Yarn cache
             - run:
                 command: |
@@ -534,7 +534,7 @@ jobs:
                 clone_options: --depth 1 --verbose
             - restore_cache:
                 keys:
-                    - prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+                    - prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
                 name: Restore Yarn cache
             - run:
                 command: |
@@ -542,7 +542,7 @@ jobs:
                     yarn install
                 name: Install
             - save_cache:
-                key: prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+                key: prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
                 name: Save Yarn cache
                 paths:
                     - ~/.yarn/berry/cache

@@ -75,10 +75,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@babel/core": "^7.24.4",
     "@babel/plugin-syntax-bigint": "^7.8.3",

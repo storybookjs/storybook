@@ -1,0 +1,95 @@
+# copied from https://github.com/nrwl/nx-cloud-workflows/blob/main/launch-templates/linux.yaml
+# see https://github.com/nrwl/nx/blob/master/.nx/workflows/agents.yaml for inspiration
+linux-init-steps: &linux-init-steps
+  - name: Checkout
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
+  - name: Restore Node Modules Cache
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
+    inputs:
+      key: 'yarn.lock|.yarn/patches/**'
+      paths: |
+        ~/.yarn/berry
+        node_modules
+        code/node_modules
+        code/addons/*/node_modules
+        code/frameworks/*/node_modules
+        code/lib/*/node_modules
+        code/builders/*/node_modules
+        code/presets/*/node_modules
+        code/renderers/*/node_modules
+        scripts/node_modules
+      base-branch: 'next'
+  - name: Install Node
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
+  - name: Install Node Modules
+    script: |
+      yarn install --immutable
+
+linux-browsers-init-steps: &linux-browsers-init-steps
+  - name: Checkout
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
+  - name: Restore Node Modules Cache
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
+    inputs:
+      key: 'yarn.lock|.yarn/patches/**'
+      paths: |
+        ~/.yarn/berry
+        node_modules
+        code/node_modules
+        code/addons/*/node_modules
+        code/frameworks/*/node_modules
+        code/lib/*/node_modules
+        code/builders/*/node_modules
+        code/presets/*/node_modules
+        code/renderers/*/node_modules
+        scripts/node_modules
+      base-branch: 'next'
+  - name: Restore Browser Binary Cache
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
+    inputs:
+      key: '"browsers"|yarn.lock|.yarn/patches/**'
+      paths: |
+        ~/.cache/Cypress
+        ~/.cache/ms-playwright
+      base-branch: 'next'
+  - name: Install Node
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
+  - name: Install Node Modules
+    script: |
+      yarn install --immutable
+  - name: Install Browsers
+    script: |
+      yarn exec cypress install
+      yarn exec playwright install --with-deps
+  - name: Verify
+    script: |
+      echo "node:         $(node --version)"
+      echo "yarn:         $(yarn --version)"
+      echo "home:         $HOME"
+      git diff --exit-code
+      yarn dedupe --check
+
+common-env-vars: &common-env-vars
+  STORYBOOK_DISABLE_TELEMETRY: true
+  IN_STORYBOOK_SANDBOX: true
+  SANDBOX_ROOT: ../storybook-sandboxes
+  CI: true
+  NODE_OPTIONS: --max_old_space_size=6144
+
+launch-templates:
+  linux-js:
+    # see for options: https://nx.dev/docs/reference/nx-cloud/launch-templates#launch-templatestemplate-nameresource-class
+    resource-class: 'docker_linux_amd64/extra_large+'
+    image: 'ubuntu22.04-node20.19-v2'
+    init-steps: *linux-init-steps
+    env: *common-env-vars
+  linux-browsers-js:
+    resource-class: 'docker_linux_amd64/extra_large+'
+    image: 'ubuntu22.04-node20.19-v2'
+    init-steps: *linux-browsers-init-steps
+    env: *common-env-vars
+  windows-js:
+    resource-class: 'windows/medium'
+    image: 'windows-2022'
+    # TODO init-steps:
+    env: *common-env-vars

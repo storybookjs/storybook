@@ -1,0 +1,26 @@
+{
+  "name": "react-webpack/prerelease-ts",
+  "projectType": "application",
+  "implicitDependencies": [
+    "core",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
+    "addon-onboarding",
+    "react-webpack5"
+  ],
+  "targets": {
+    "sandbox": { "options": { "dir": "react-webpack-prerelease-ts" } },
+    "prepare-sandbox": {},
+    "dev": {},
+    "build": { "options": { "dir": "react-webpack-prerelease-ts" } },
+    "prepare-build-sandbox": {},
+    "chromatic": {},
+    "serve": {},
+    "e2e-tests-dev": {},
+    "test-runner": {},
+    "test-runner-dev": {}
+  },
+  "tags": ["ci:daily"]
+}

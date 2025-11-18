@@ -1,3 +1,6 @@
+import waitOn from 'wait-on';
+
+import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
 import { PORT } from './serve';
@@ -10,15 +13,20 @@ export const testRunnerBuild: Task & { port: number } = {
   async ready() {
     return false;
   },
-  async run({ sandboxDir, junitFilename }, { dryRun, debug }) {
+  async run({ sandboxDir, junitFilename, key, selectedTask }, { dryRun, debug }) {
+    const port =
+      this.port ?? getPort({ key, selectedTask: selectedTask === 'test-runner' ? 'serve' : 'dev' });
+
     const execOptions = { cwd: sandboxDir };
     const flags = [
-      `--url http://127.0.0.1:${this.port}`,
+      `--url http://localhost:${port}`,
       '--junit',
       '--maxWorkers=2',
       '--failOnConsole',
       '--index-json',
     ];
+
+    await waitOn({ resources: [`http://localhost:${port}`], interval: 16, timeout: 200000 });
 
     await exec(
       `yarn test-storybook ${flags.join(' ')}`,

@@ -9,7 +9,7 @@ interface LoaderOptions {
 }
 
 const nextImageLoaderStub: RawLoaderDefinition<LoaderOptions> = async function NextImageLoader(
-  content
+  content: Uint8Array
 ) {
   const { filename, nextConfig } = this.getOptions();
   const opts = {

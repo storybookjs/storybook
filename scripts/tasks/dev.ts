@@ -2,25 +2,28 @@ import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
 import { now, saveBench } from '../bench/utils';
+import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
-  : 6006;
+  : undefined;
 
 export const dev: Task = {
   description: 'Run the sandbox in development mode',
   service: true,
   dependsOn: ['sandbox'],
-  async ready() {
-    return (await detectFreePort(PORT)) !== PORT;
+  async ready({ key }) {
+    const port = PORT ?? getPort({ selectedTask: 'dev', key });
+    return (await detectFreePort(port)) !== port;
   },
-  async run({ sandboxDir, selectedTask }, { dryRun, debug }) {
+  async run({ sandboxDir, key }, { dryRun, debug }) {
     const controller = new AbortController();
-    const devCommand = `yarn storybook --port ${PORT}${selectedTask === 'dev' ? '' : ' --ci'}`;
-    const start = now();
+    const port = PORT ?? getPort({ selectedTask: 'dev', key });
+    const devCommand = `yarn storybook --port ${port}`;
 
+    const start = now();
     exec(
       devCommand,
       { cwd: sandboxDir },
@@ -32,10 +35,18 @@ export const dev: Task = {
       }
     });
     const [devPreviewResponsive, devManagerResponsive] = await Promise.all([
-      waitOn({ resources: [`http://localhost:${PORT}/iframe.html`], interval: 16 }).then(() => {
+      waitOn({
+        resources: [`http://localhost:${port}/iframe.html`],
+        interval: 16,
+        timeout: 200000,
+      }).then(() => {
         return now() - start;
       }),
-      waitOn({ resources: [`http://localhost:${PORT}/index.html`], interval: 16 }).then(() => {
+      waitOn({
+        resources: [`http://localhost:${port}/index.html`],
+        interval: 16,
+        timeout: 200000,
+      }).then(() => {
         return now() - start;
       }),
     ]);

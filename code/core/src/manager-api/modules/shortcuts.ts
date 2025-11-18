@@ -1,4 +1,3 @@
-import { getStoryHref } from 'storybook/internal/components';
 import {
   FORCE_REMOUNT,
   PREVIEW_KEYDOWN,
@@ -15,7 +14,7 @@ import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut';
 import type { ModuleFn } from '../lib/types';
 import { focusableUIElements } from './layout';
 
-const { navigator, document, PREVIEW_URL } = global;
+const { navigator, document } = global;
 
 export const isMacLike = () =>
   navigator && navigator.platform ? !!navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) : false;
@@ -250,9 +249,6 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       const {
         ui: { enableShortcuts },
         storyId,
-        refId,
-        refs,
-        customQueryParams,
       } = store.getState();
       if (!enableShortcuts) {
         return;
@@ -404,23 +400,8 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           break;
         }
         case 'openInIsolation': {
-          const { location } = document;
-          // @ts-expect-error (non strict)
-          const ref = refs[refId];
-          let baseUrl = `${location.origin}${location.pathname}`;
-
-          if (!baseUrl.endsWith('/')) {
-            baseUrl += '/';
-          }
-
-          const href = getStoryHref(
-            ref ? `${ref.url}/iframe.html` : (PREVIEW_URL as string) || `${baseUrl}iframe.html`,
-            storyId,
-            Object.fromEntries(
-              Object.entries(customQueryParams).filter(([, value]) => value !== undefined)
-            ) as Record<string, string>
-          );
-          window.open(href, '_blank', 'noopener,noreferrer');
+          const { refId, storyId } = store.getState();
+          fullAPI.openInIsolation(storyId, refId);
           break;
         }
         // TODO: bring this back once we want to add shortcuts for this

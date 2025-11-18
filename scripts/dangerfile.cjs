@@ -1,9 +1,19 @@
+
 const { join } = require('path');
 const { danger, fail } = require('danger');
 
-const intersection = (a: readonly string[], b: readonly string[]) => a.filter((v) => b.includes(v));
+/**
+ * Returns the intersection of two arrays
+ * @template T
+ * @param {ReadonlyArray<T>} a - First array
+ * @param {ReadonlyArray<T>} b - Second array
+ * @returns {T[]} Array containing elements present in both arrays
+ */
+function intersection(a, b) {
+  return a.filter((v) => b.includes(v));
+}
 
-const pkg = require(join(__dirname, '../package.json'));
+const pkg = require(join(__dirname, '../code/package.json'));
 
 const Versions = {
   PATCH: 'PATCH',
@@ -15,11 +25,21 @@ const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
 
 const { labels } = danger.github.issue;
 
+/**
+ * @typedef {Object} PrLogConfig
+ * @property {string[]} skipLabels - Labels to skip in PR log
+ * @property {Array<[string, string]>} validLabels - Valid labels with their display names
+ */
+
+/** @type {PrLogConfig | undefined} */
 const prLogConfig = pkg['pr-log'];
 
 const branchVersion = Versions.MINOR;
 
-const checkRequiredLabels = (labels: string[]) => {
+/**
+ * @param {string[]} labels
+ */
+const checkRequiredLabels = (labels) => {
   const forbiddenLabels = [
     'ci: do not merge',
     'in progress',
@@ -29,13 +49,13 @@ const checkRequiredLabels = (labels: string[]) => {
 
   const requiredLabels = [
     ...(prLogConfig?.skipLabels ?? []),
-    ...(prLogConfig?.validLabels ?? []).map(([label]: [string]) => label),
+    ...(prLogConfig?.validLabels ?? []).map(([label]) => label),
   ];
 
   const blockingLabels = intersection(forbiddenLabels, labels);
   if (blockingLabels.length > 0) {
     fail(
-      `PR is marked with ${blockingLabels.map((label: string) => `"${label}"`).join(', ')} label${
+      `PR is marked with ${blockingLabels.map((label) => `"${label}"`).join(', ')} label${
         blockingLabels.length > 1 ? 's' : ''
       }.`
     );
@@ -56,7 +76,10 @@ const checkRequiredLabels = (labels: string[]) => {
   }
 };
 
-const checkPrTitle = (title: string) => {
+/**
+ * @param {string} title
+ */
+const checkPrTitle = (title) => {
   const match = title.match(/^[A-Z].+:\s[A-Z].+$/);
   if (!match) {
     fail(

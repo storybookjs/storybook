@@ -62,7 +62,6 @@ export async function doInitiate(options: CommandOptions): Promise<
     options,
     framework,
     builder,
-    dependencyCollector,
     projectType,
   });
 

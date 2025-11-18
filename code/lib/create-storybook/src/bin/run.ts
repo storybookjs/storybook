@@ -26,8 +26,11 @@ const createStorybookProgram = program
     optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
   )
   .addOption(
-    new Option('--features <list...>', 'Storybook features').choices(Object.values(Feature))
+    new Option('--features <list...>', 'Storybook features')
+      .choices(Object.values(Feature))
+      .default(undefined)
   )
+  .option('--no-features', 'Disable all features (overrides --features)')
   .option('--debug', 'Get more logs in debug mode')
   .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
   .option('-f --force', 'Force add Storybook')
@@ -112,6 +115,12 @@ createStorybookProgram
     options.debug = options.debug ?? false;
     options.dev = options.dev ?? isNeitherCiNorSandbox;
 
+    if (options.features === false) {
+      // Ensure features are treated as empty when --no-features is set
+      options.features = [];
+    }
+
+    console.log('features', options.features);
     await initiate(options as CommandOptions).catch(() => process.exit(1));
   })
   .version(String(version))

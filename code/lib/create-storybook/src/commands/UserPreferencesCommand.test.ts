@@ -7,7 +7,6 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import type { SupportedBuilder } from 'storybook/internal/types';
 import { Feature } from 'storybook/internal/types';
 
-import type { DependencyCollector } from '../dependency-collector';
 import type { CommandOptions } from '../generators/types';
 import { UserPreferencesCommand } from './UserPreferencesCommand';
 
@@ -35,27 +34,15 @@ interface CommandWithPrivates {
 describe('UserPreferencesCommand', () => {
   let command: UserPreferencesCommand;
   let mockPackageManager: JsPackageManager;
-  let mockDependencyCollector: DependencyCollector;
 
   beforeEach(() => {
-    // Create mock dependency collector
-    mockDependencyCollector = {
-      addDevDependencies: vi.fn(),
-      addDependencies: vi.fn(),
-      getAllPackages: vi.fn().mockReturnValue({ dependencies: [], devDependencies: [] }),
-      hasPackages: vi.fn().mockReturnValue(false),
-      merge: vi.fn(),
-      validate: vi.fn().mockReturnValue({ valid: true, errors: [] }),
-      getVersionConflicts: vi.fn().mockReturnValue([]),
-    } as unknown as DependencyCollector;
-
     // Provide required CommandOptions to avoid undefined access
     const commandOptions: CommandOptions = {
       packageManager: PackageManagerName.NPM,
       disableTelemetry: true,
     };
 
-    command = new UserPreferencesCommand(mockDependencyCollector, commandOptions);
+    command = new UserPreferencesCommand(commandOptions);
     mockPackageManager = {} as Partial<JsPackageManager> as JsPackageManager;
 
     // Mock globalSettings

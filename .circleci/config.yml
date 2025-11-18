@@ -925,7 +925,7 @@ jobs:
                         shell: bash.exe
     test-init-features:
         executor:
-            class: medium+
+            class: small
             name: sb_node_22_browsers
         steps:
             - git-shallow-clone/checkout_advanced:

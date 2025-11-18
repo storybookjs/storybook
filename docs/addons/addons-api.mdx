@@ -165,6 +165,76 @@ This method allows you to register a handler function called whenever the user n
 
 {/* prettier-ignore-end */}
 
+### api.openInIsolation(storyId, refId?, viewMode?)
+
+Opens a story in isolation mode in a new tab/window. This allows you to programmatically open stories in the same way as the "Open in isolation" button in the share menu.
+
+- `storyId`: The ID of the story to open (required)
+- `refId`: The ID of the ref for external stories. Pass `null`/`undefined` for local stories (optional)
+- `viewMode`: The view mode to open the story in. Can be `'story'` or `'docs'` (optional, defaults to current view mode)
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-openinisolation.md" />
+
+{/* prettier-ignore-end */}
+
+### api.openInEditor(payload)
+
+Opens a file in the configured code editor. Useful for "Edit in IDE" functionality in addons.
+
+- `payload.file`: The file path to open (required)
+- `payload.line`: Optional line number to jump to
+- `payload.column`: Optional column number to jump to
+
+Returns a Promise that resolves with information about whether the operation was successful.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-openineditor.md" />
+
+{/* prettier-ignore-end */}
+
+### api.getCurrentStoryData()
+
+Returns the current story's data, including its ID, kind, name, and parameters.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-getcurrentstorydata.md" />
+
+{/* prettier-ignore-end */}
+
+### api.toggleFullscreen(toggled?)
+
+Toggles the fullscreen mode of the Storybook UI. Pass `true` to enable fullscreen, `false` to disable, or omit to toggle the current state.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-togglefullscreen.md" />
+
+{/* prettier-ignore-end */}
+
+### api.togglePanel(toggled?)
+
+Toggles the visibility of the addon panel. Pass `true` to show the panel, `false` to hide, or omit to toggle the current state.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-togglepanel.md" />
+
+{/* prettier-ignore-end */}
+
+### api.addNotification(notification)
+
+Displays a notification in the Storybook UI. The notification object should contain `id`, `content`, and optionally `duration` and `icon`.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addons-api-addnotification.md" />
+
+{/* prettier-ignore-end */}
+
 ### addons.setConfig(config)
 
 This method allows you to override the default Storybook UI configuration (e.g., set up a [theme](../configure/user-interface/theming.mdx) or hide UI elements):

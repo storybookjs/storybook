@@ -666,6 +666,33 @@ test('Does not rewrite scoped package subpath (valid bare specifier)', () => {
   );
 });
 
+test('Does not rewrite unscoped package subpath (valid bare specifier)', () => {
+  const code = dedent`
+    import { Button } from 'ui/components';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code, 'pkg')).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "ui/components",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from \"ui/components\";",
+      ],
+    }
+  `
+  );
+});
+
 // Merging imports from same package
 
 test('Merges multiple imports from the same package (defaults and named)', () => {

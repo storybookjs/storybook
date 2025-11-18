@@ -49,19 +49,19 @@ export function validPackageName(name: string) {
   if (encodeURIComponent(name) !== name) {
     const nameMatch = name.match(scopedPackagePattern);
     if (nameMatch) {
-      const user = nameMatch[1];
+      const org = nameMatch[1];
       const pkg = nameMatch[2];
 
       if (pkg.startsWith('.')) {
         return false;
       }
 
-      if (encodeURIComponent(user) === user && encodeURIComponent(pkg) === pkg) {
+      if (encodeURIComponent(org) === org && encodeURIComponent(pkg) === pkg) {
         return true;
       }
     }
     return false;
   }
 
-  return false;
+  return true;
 }

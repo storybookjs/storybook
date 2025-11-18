@@ -51,7 +51,8 @@ describe('writeFileWithRetry', () => {
       .mockRejectedValueOnce(error)
       .mockRejectedValueOnce(error)
       .mockRejectedValueOnce(error)
-      .mockRejectedValueOnce(error);
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce(undefined);
 
     let complete = false;
     const result = writeFileWithRetry(filename, 'foo', { flush: true }).finally(

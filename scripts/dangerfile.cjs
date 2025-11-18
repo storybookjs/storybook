@@ -1,6 +1,5 @@
-
-const { join } = require('path');
-const { danger, fail } = require('danger');
+// @ts-ignore
+import { danger, fail } from 'danger';
 
 /**
  * Returns the intersection of two arrays
@@ -13,7 +12,7 @@ function intersection(a, b) {
   return a.filter((v) => b.includes(v));
 }
 
-const pkg = require(join(__dirname, '../code/package.json'));
+const pkg = require('../code/package.json');
 
 const Versions = {
   PATCH: 'PATCH',
@@ -25,13 +24,6 @@ const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
 
 const { labels } = danger.github.issue;
 
-/**
- * @typedef {Object} PrLogConfig
- * @property {string[]} skipLabels - Labels to skip in PR log
- * @property {Array<[string, string]>} validLabels - Valid labels with their display names
- */
-
-/** @type {PrLogConfig | undefined} */
 const prLogConfig = pkg['pr-log'];
 
 const branchVersion = Versions.MINOR;

@@ -1,13 +1,12 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import { danger, fail } from 'danger';
-import pkg from '../code/package.json' assert { type: 'json' };
 
-const intersection = (a: readonly string[], b: readonly string[]) =>
-  a.filter((v) => b.includes(v));
+const pkg = JSON.parse(await readFile(join(import.meta.dirname, '../package.json'), 'utf-8'));
 
-type PrLogConfig = {
-  skipLabels?: string[];
-  validLabels?: [string, string][];
-};
+const intersection = (a: readonly string[], b: readonly string[]) => a.filter((v) => b.includes(v));
+
 const prLogConfig = pkg['pr-log'];
 
 const Versions = {
@@ -30,7 +29,7 @@ const checkRequiredLabels = (labels: string[]) => {
 
   const requiredLabels = [
     ...(prLogConfig?.skipLabels ?? []),
-    ...(prLogConfig?.validLabels ?? []).map(([label]) => label),
+    ...(prLogConfig?.validLabels ?? []).map(([label]: [string]) => label),
   ];
 
   const blockingLabels = intersection(forbiddenLabels, labels);

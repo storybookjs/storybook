@@ -164,7 +164,7 @@ const OpenGuideAction = ({ children }: { children?: React.ReactNode }) => {
   );
 };
 
-export const ChecklistModule = () => {
+export const ChecklistWidget = () => {
   const api = useStorybookApi();
   const { loaded, accepted, done, skipped, allItems, nextItems, progress, accept, mute } =
     useChecklist();

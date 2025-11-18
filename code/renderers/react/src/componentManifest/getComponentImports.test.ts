@@ -585,6 +585,87 @@ test('Non-relative import remains unchanged even if packageName provided', () =>
   );
 });
 
+test('Rewrites tilde-prefixed source to packageName', () => {
+  const code = dedent`
+    import { Button } from '~/components/Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code, 'pkg')).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "~/components/Button",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from \"pkg\";",
+      ],
+    }
+  `
+  );
+});
+
+test('Rewrites hash-prefixed source to packageName', () => {
+  const code = dedent`
+    import Btn from '#Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Btn/>;
+  `;
+  expect(getImports(code, 'my-package')).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Btn",
+          "importId": "#Button",
+          "importName": "default",
+          "localImportName": "Btn",
+        },
+      ],
+      "imports": [
+        "import { Btn } from "my-package";",
+      ],
+    }
+  `
+  );
+});
+
+test('Does not rewrite scoped package subpath (valid bare specifier)', () => {
+  const code = dedent`
+    import { Button } from '@scope/ui/components';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code, 'pkg')).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "@scope/ui/components",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from \"@scope/ui/components\";",
+      ],
+    }
+  `
+  );
+});
+
 // Merging imports from same package
 
 test('Merges multiple imports from the same package (defaults and named)', () => {

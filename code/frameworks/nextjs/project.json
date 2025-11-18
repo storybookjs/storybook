@@ -1,8 +1,10 @@
 {
   "name": "nextjs",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {
-    "build": {}
-  }
+    "build": {},
+    "check": {}
+  },
+  "tags": ["ci:normal"]
 }

@@ -180,7 +180,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench)
-                    cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
                 name: Install sandbox dependencies
             - run:
                 command: yarn task --task bench --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench) --no-link --start-from=never --junit
@@ -199,10 +199,11 @@ jobs:
                 clone_options: --depth 1 --verbose
             - restore_cache:
                 keys:
-                    - build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+                    - build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
                 name: Restore Yarn cache
             - run:
                 command: |
+                    yarn
                     yarn task --task compile --start-from=auto --no-link --debug
                     git diff --exit-code
                     yarn dedupe --check
@@ -216,12 +217,13 @@ jobs:
             - store_artifacts:
                 path: code/bench/esbuild-metafiles
             - save_cache:
-                key: build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+                key: build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
                 name: Save Yarn cache
                 paths:
                     - ~/.yarn/berry/cache
             - persist_to_workspace:
                 paths:
+                    - node_modules
                     - code/node_modules
                     - code/addons
                     - scripts/node_modules
@@ -247,10 +249,11 @@ jobs:
                 workflow-name: << pipeline.parameters.workflow >>
             - restore_cache:
                 keys:
-                    - build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+                    - build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
                 name: Restore Yarn cache
             - run:
                 command: |
+                    yarn
                     yarn task --task compile --start-from=auto --no-link --debug
                 name: Compile
             - run:
@@ -279,7 +282,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
-                    cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
                 name: Install sandbox dependencies
             - run:
                 command: yarn task --task check-sandbox --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox) --no-link --start-from=never --junit
@@ -320,7 +323,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
-                    cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
                 name: Install sandbox dependencies
             - run:
                 command: yarn task --task chromatic --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic) --no-link --start-from=never --junit
@@ -370,7 +373,7 @@ jobs:
                     if [[ $TEMPLATE != bench/* ]]; then
                       yarn --cwd scripts jiti ./event-log-checker.ts build $TEMPLATE
                     fi
-                    cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && rm -rf node_modules
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && rm -rf node_modules
                 environment:
                     STORYBOOK_TELEMETRY_DEBUG: 1
                     STORYBOOK_TELEMETRY_URL: http://localhost:6007/event-log
@@ -399,7 +402,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
-                    cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
                 name: Install sandbox dependencies
             - run:
                 command: |
@@ -429,7 +432,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
-                    cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
                 name: Install sandbox dependencies
             - run:
                 command: |
@@ -527,22 +530,21 @@ jobs:
             - cancel-workflow-on-failure
     pretty-docs:
         executor:
-            class: medium
+            class: medium+
             name: sb_node_22_classic
         steps:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - restore_cache:
                 keys:
-                    - prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+                    - prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
                 name: Restore Yarn cache
             - run:
-                command: |
-                    cd scripts
-                    yarn install
-                name: Install
+                  command: |
+                      yarn install
+                  name: Install
             - save_cache:
-                key: prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+                key: prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
                 name: Save Yarn cache
                 paths:
                     - ~/.yarn/berry/cache
@@ -1028,7 +1030,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
-                    cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
                 name: Install sandbox dependencies
             - start-event-collector
             - run:
@@ -1100,7 +1102,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
-                    cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
                 name: Install sandbox dependencies
             - start-event-collector
             - run:

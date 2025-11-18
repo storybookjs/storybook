@@ -1,0 +1,12 @@
+{
+  "name": "portable-stories-kitchen-sink/react",
+  "projectType": "application",
+  "targets": {
+    "jest": {},
+    "vitest": {},
+    "playwright-ct": {},
+    "cypress": {},
+    "e2e-ui": {}
+  },
+  "tags": ["ci:normal"]
+}

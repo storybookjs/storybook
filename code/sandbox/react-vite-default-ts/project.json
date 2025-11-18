@@ -1,12 +1,41 @@
 {
   "name": "react-vite/default-ts",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-vite"],
+  "implicitDependencies": [
+    "core",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
+    "addon-onboarding",
+    "react-vite"
+  ],
   "targets": {
-    "sandbox": {},
-    "sb:dev": {},
-    "sb:build": {}
+    "sandbox": {
+      "options": {
+        "dir": "react-vite-default-ts"
+      }
+    },
+    "prepared-sandbox": {},
+    "dev": {},
+    "check-sandbox": {},
+    "vitest-integration": {},
+    "build-sandbox": {
+      "options": {
+        "dir": "react-vite-default-ts"
+      }
+    },
+    "prepared-build-sandbox": {},
+    "chromatic": {},
+    "serve": {},
+    "e2e-tests": {},
+    "e2e-tests-dev": {},
+    "test-runner": {},
+    "test-runner-dev": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": [
+    "ci:normal",
+    "ci:merged",
+    "ci:daily"
+  ]
 }

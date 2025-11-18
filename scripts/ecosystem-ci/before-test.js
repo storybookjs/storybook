@@ -11,6 +11,8 @@ import { fileURLToPath } from 'node:url';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
+import { SANDBOX_DIRECTORY } from '../utils/constants';
+
 const filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(filename);
 
@@ -18,8 +20,8 @@ const sandbox = process.argv[2] ?? 'react-vite/default-ts';
 
 const rootPackageJsonPath = resolve(__dirname, '../../package.json');
 const sandboxPackageJsonPath = resolve(
-  __dirname,
-  `../../sandbox/${sandbox.replace('/', '-')}/package.json`
+  SANDBOX_DIRECTORY,
+  `${sandbox.replace('/', '-')}/package.json`
 );
 
 const rootPackageJson = JSON.parse(await readFile(rootPackageJsonPath, 'utf-8'));

@@ -18,15 +18,13 @@ test-results
 /.npmrc
 tsconfig.vitest-temp.json
 
+.env.local
+
 # Yarn stuff
-/**/.yarn/*
-!/**/.yarn/releases
-!/**/.yarn/plugins
-!/**/.yarn/sdks
-!/**/.yarn/versions
-!/**/.yarn/patches
+.yarn/cache/
+.yarn/install-state.gz
+.pnp.data.json
 /**/.pnp.*
-!/node_modules
 
 # test-storybooks
 test-storybooks/ember-cli/ember-output
@@ -55,14 +53,11 @@ code/playwright/.cache/
 code/bench-results/
 
 /packs
-code/.nx/cache
-code/.nx/workspace-data
 .vite-inspect
 .nx/cache
 .nx/workspace-data
 !**/fixtures/**/yarn.lock
 code/core/report
-node_modules/.svelte2tsx-language-server-files
 
 *storybook.log
 

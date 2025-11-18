@@ -5,7 +5,7 @@ import { Item } from '@react-stately/collections';
 import type { TabListState } from '@react-stately/tabs';
 import { useTabListState } from '@react-stately/tabs';
 import type { Key } from '@react-types/shared';
-import { styled } from 'storybook/theming';
+import { type CSSObject, styled } from 'storybook/theming';
 
 import { Bar } from '../Bar/Bar';
 import { EmptyTabContent } from './EmptyTabContent';
@@ -150,7 +150,7 @@ export const TabsView: FC<TabsViewProps> = ({
           '> *': {
             flexShrink: 0,
           },
-          ...barInnerStyle,
+          ...(barInnerStyle as CSSObject),
           gap: 0,
         }}
       >

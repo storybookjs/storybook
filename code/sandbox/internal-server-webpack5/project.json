@@ -1,12 +1,35 @@
 {
   "name": "internal/server-webpack5",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "server-webpack5"],
+  "implicitDependencies": [
+    "core",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
+    "addon-onboarding",
+    "server-webpack5"
+  ],
   "targets": {
-    "sandbox": {},
-    "sb:dev": {},
-    "sb:build": {}
+    "sandbox": {
+      "options": {
+        "dir": "internal-server-webpack5"
+      }
+    },
+    "prepared-sandbox": {},
+    "dev": {},
+    "build-sandbox": {
+      "options": {
+        "dir": "internal-server-webpack5"
+      }
+    },
+    "prepared-build-sandbox": {},
+    "chromatic": {},
+    "serve": {},
+    "e2e-tests": {},
+    "e2e-tests-dev": {},
+    "test-runner": {},
+    "test-runner-dev": {}
   },
   "tags": []
 }

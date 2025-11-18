@@ -51,7 +51,6 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "svelte-check",
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {

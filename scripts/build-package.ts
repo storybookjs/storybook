@@ -21,10 +21,10 @@ import prompts from 'prompts';
 import windowSize from 'window-size';
 
 import { findMostMatchText } from './utils/diff';
-import { getWorkspaces } from './utils/workspace';
+import { getCodeWorkspaces } from './utils/workspace';
 
 async function run() {
-  const packages = (await getWorkspaces()).filter(({ name }) => name !== '@storybook/root');
+  const packages = (await getCodeWorkspaces()).filter(({ name }) => name !== '@storybook/root');
   const packageTasks = packages
     .map((pkg) => {
       let suffix = pkg.name.replace('@storybook/', '');

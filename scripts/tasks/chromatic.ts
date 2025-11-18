@@ -13,11 +13,11 @@ export const chromatic: Task = {
     const token = process.env[tokenEnvVarName];
 
     await exec(
-      `npx chromatic \
+      `yarn dlx chromatic \
           --debug \
           --exit-zero-on-changes \
           --storybook-build-dir=${builtSandboxDir} \
-          --junit-report=${junitFilename} \
+          ${junitFilename ? `--junit-report=${junitFilename}` : ''} \
           --projectToken=${token}`,
       { cwd: sandboxDir },
       { dryRun, debug }

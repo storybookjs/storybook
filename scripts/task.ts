@@ -39,8 +39,6 @@ import { findMostMatchText } from './utils/diff';
 import type { OptionValues } from './utils/options';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
-const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
-
 export const extraAddons = ['@storybook/addon-a11y'];
 
 export type Path = string;
@@ -149,6 +147,12 @@ export const options = createOptions({
     type: 'boolean',
     description: 'Build code and link for local development?',
     inverse: true,
+    promptType: false,
+  },
+  dir: {
+    type: 'string',
+    description: 'Name of sandbox directory',
+    required: false,
     promptType: false,
   },
   prod: {
@@ -387,10 +391,11 @@ async function run() {
   }
 
   const finalTask = tasks[taskKey];
-  const { template: templateKey } = optionValues;
+  const { template: templateKey, dir } = optionValues;
   const template = TEMPLATES[templateKey];
 
-  const templateSandboxDir = templateKey && join(sandboxDir, templateKey.replace('/', '-'));
+  const templateSandboxDir =
+    templateKey && join(SANDBOX_DIRECTORY, dir ?? templateKey.replace('/', '-'));
   const details: TemplateDetails = {
     key: templateKey,
     template,
@@ -433,8 +438,8 @@ async function run() {
     }
     tasksThatDepend
       .get(task)
-      .filter((t) => !t.service)
-      .forEach(setUnready);
+      ?.filter((t) => !t.service)
+      ?.forEach(setUnready);
   }
 
   // NOTE: we don't include services in the first unready task. We only need to rewind back to a
@@ -443,11 +448,7 @@ async function run() {
   if (startFrom === 'auto') {
     // Don't reset anything!
   } else if (startFrom === 'never') {
-    if (!firstUnready) {
-      throw new Error(`Task ${taskKey} is ready`);
-    }
-
-    if (firstUnready !== finalTask) {
+    if (firstUnready && firstUnready !== finalTask) {
       throw new Error(`Task ${getTaskKey(firstUnready)} was not ready`);
     }
   } else if (startFrom) {
@@ -495,8 +496,10 @@ async function run() {
     const task = sortedTasks[i];
     const status = statuses.get(task);
 
-    let shouldRun = status === 'unready';
-    if (status === 'notserving') {
+    let shouldRun = status === 'unready' || finalTask === task;
+
+    // Don't run services in NX, as NX starts them up itself
+    if (!process.env.NX_RUN && status === 'notserving') {
       shouldRun =
         finalTask === task ||
         !!tasksThatDepend.get(task).find((t) => statuses.get(t) === 'unready');

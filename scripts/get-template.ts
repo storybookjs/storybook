@@ -15,7 +15,7 @@ import {
 import { SANDBOX_DIRECTORY } from './utils/constants';
 import { esMain } from './utils/esmain';
 
-const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
+const sandboxDir = SANDBOX_DIRECTORY;
 
 type Template = Pick<TTemplate, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
 export type TemplateKey = keyof typeof allTemplates;

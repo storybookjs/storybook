@@ -17,7 +17,7 @@ steps:
       name: Install sandbox dependencies
       command: |
         TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
-        cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+        cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
   - start-event-collector
   - run:
       name: Running Test Runner

@@ -1,0 +1,52 @@
+common-js-init-steps: &common-js-init-steps
+  - name: Checkout
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
+  - name: Restore Node Modules Cache
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
+    inputs:
+      key: 'package-lock.json|yarn.lock|pnpm-lock.yaml|patches/**|.yarn/patches/**'
+      paths: 'node_modules'
+      base-branch: 'next'
+  - name: Restore Browser Binary Cache
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
+    inputs:
+      key: 'package-lock.json|yarn.lock|pnpm-lock.yaml|"browsers"'
+      paths: |
+        '../.cache/Cypress'
+      base-branch: 'next'
+  - name: Install Node
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
+  - name: Install Node Modules
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node-modules/main.yaml'
+  - name: Install Browsers (if needed)
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-browsers/main.yaml'
+
+launch-templates:
+  linux-small-js:
+    resource-class: 'docker_linux_amd64/small'
+    image: 'ubuntu22.04-node20.19-v2'
+    init-steps: *common-js-init-steps
+  linux-medium-js:
+    resource-class: 'docker_linux_amd64/medium'
+    image: 'ubuntu22.04-node20.19-v2'
+    init-steps: *common-js-init-steps
+  linux-medium-plus-js:
+    resource-class: 'docker_linux_amd64/medium+'
+    image: 'ubuntu22.04-node20.19-v2'
+    init-steps: *common-js-init-steps
+  linux-large-js:
+    resource-class: 'docker_linux_amd64/large'
+    image: 'ubuntu22.04-node20.19-v2'
+    init-steps: *common-js-init-steps
+  linux-large-plus-js:
+    resource-class: 'docker_linux_amd64/large+'
+    image: 'ubuntu22.04-node20.19-v2'
+    init-steps: *common-js-init-steps
+  linux-extra-large-js:
+    resource-class: 'docker_linux_amd64/extra_large'
+    image: 'ubuntu22.04-node20.19-v2'
+    init-steps: *common-js-init-steps
+  my-linux-extra-large-plus-js:
+    resource-class: 'docker_linux_amd64/extra_large+'
+    image: 'ubuntu22.04-node20.19-v2'
+    init-steps: *common-js-init-steps

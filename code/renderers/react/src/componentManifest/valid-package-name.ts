@@ -63,5 +63,5 @@ export function validPackageName(name: string) {
     return false;
   }
 
-  return false;
+  return true;
 }

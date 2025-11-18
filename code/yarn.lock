@@ -2114,7 +2114,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@clack/prompts@npm:^1.0.0-alpha.6":
+"@clack/prompts@npm:1.0.0-alpha.6":
   version: 1.0.0-alpha.6
   resolution: "@clack/prompts@npm:1.0.0-alpha.6"
   dependencies:
@@ -25933,7 +25933,7 @@ __metadata:
     "@babel/parser": "npm:^7.26.9"
     "@babel/traverse": "npm:^7.26.9"
     "@babel/types": "npm:^7.26.8"
-    "@clack/prompts": "npm:^1.0.0-alpha.6"
+    "@clack/prompts": "npm:1.0.0-alpha.6"
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@discoveryjs/json-ext": "npm:^0.5.3"
     "@emotion/cache": "npm:^11.14.0"

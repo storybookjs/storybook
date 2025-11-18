@@ -110,7 +110,7 @@ async function generateFrameworksFile(prettierConfig: prettier.Options | null): 
   };
 
   const coreFrameworks = readFrameworks.sort().map(formatFramework).join(',\n');
-  const communityFrameworks = thirdPartyFrameworks.map(formatFramework).join(',\n');
+  const communityFrameworks = thirdPartyFrameworks.sort().map(formatFramework).join(',\n');
 
   await writeFile(
     destination,

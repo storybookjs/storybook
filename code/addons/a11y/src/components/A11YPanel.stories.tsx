@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../.storybook/preview';
@@ -175,7 +175,11 @@ export const ReadyWithResults = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByRole('button', { name: /Rerun accessibility scan/ }));
+    const btn = await waitFor(
+      () => canvas.findByRole('button', { name: /Rerun accessibility scan/ }),
+      { timeout: 3000 }
+    );
+    await userEvent.click(btn);
     expect(context.handleManual).toHaveBeenCalled();
   },
 });

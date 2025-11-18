@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useEffect } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { ToggleButton } from 'storybook/internal/components';
 
 import { OutlineIcon } from '@storybook/icons';
 
@@ -19,7 +19,7 @@ export const OutlineSelector = memo(function OutlineSelector() {
       updateGlobals({
         [PARAM_KEY]: !isActive,
       }),
-    [isActive]
+    [isActive, updateGlobals]
   );
 
   useEffect(() => {
@@ -33,13 +33,17 @@ export const OutlineSelector = memo(function OutlineSelector() {
   }, [toggleOutline, api]);
 
   return (
-    <IconButton
+    <ToggleButton
       key="outline"
-      active={isActive}
-      title="Apply outlines to the preview"
+      padding="small"
+      variant="ghost"
+      pressed={isActive}
+      ariaLabel="Outline tool"
+      ariaDescription="When enabled, this tool displays the outline of every element in the preview area, which helps understand their layout."
+      tooltip="Toggle outline"
       onClick={toggleOutline}
     >
       <OutlineIcon />
-    </IconButton>
+    </ToggleButton>
   );
 });

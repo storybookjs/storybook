@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-onboarding",
-  "version": "10.1.0-alpha.7",
+  "version": "10.1.0-alpha.11",
   "description": "Storybook Onboarding: Help new users learn how to write stories",
   "keywords": [
     "storybook",
@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@neoconfetti/react": "^1.0.0",
-    "@storybook/icons": "^1.6.0",
+    "@storybook/icons": "^2.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-joyride": "^2.8.2",

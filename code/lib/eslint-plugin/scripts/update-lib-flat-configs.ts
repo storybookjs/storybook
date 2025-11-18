@@ -75,7 +75,7 @@ const FLAT_CONFIG_DIR = path.resolve(import.meta.dirname, '../src/configs/flat')
 
 export async function update() {
   // setup config directory
-  await fs.mkdir(FLAT_CONFIG_DIR);
+  await fs.mkdir(FLAT_CONFIG_DIR, { recursive: true }).catch(() => {});
 
   // Update/add rule files
   await Promise.all(

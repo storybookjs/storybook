@@ -1,0 +1,35 @@
+# see https://github.com/nrwl/nx/blob/master/.nx/workflows/dynamic-changesets.yaml for inspiration
+distribute-on:
+  default: 19 linux-browsers-js, 1 linux-js
+
+assignment-rules:
+  - targets:
+      - build
+    projects:
+      - core
+    run-on:
+      - agent: linux-js
+        parallelism: 1
+  - targets:
+      - build
+      - check
+      - lint
+      - pretty-docs
+      - knip
+    run-on:
+      - agent: linux-js
+        parallelism: 6
+#  - targets:
+#      - e2e-tests
+#      - e2e-tests-dev
+#      - test-runner
+#      - test-runner-dev
+#      - check-sandbox
+#    run-on:
+#      - agent: linux-browsers-js
+#        parallelism: 2
+  - targets:
+      - "*"
+    run-on:
+      - agent: linux-browsers-js
+        parallelism: 1

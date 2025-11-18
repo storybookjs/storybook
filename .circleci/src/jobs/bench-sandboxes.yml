@@ -17,7 +17,7 @@ steps:
       name: Install sandbox dependencies
       command: |
         TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench)
-        cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+        cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
   - run:
       name: Running Bench
       command: yarn task --task bench --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench) --no-link --start-from=never --junit

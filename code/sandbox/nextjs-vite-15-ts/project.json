@@ -1,0 +1,27 @@
+{
+  "name": "nextjs-vite/15-ts",
+  "projectType": "application",
+  "implicitDependencies": [
+    "core",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
+    "addon-onboarding",
+    "nextjs-vite"
+  ],
+  "targets": {
+    "sandbox": { "options": { "dir": "nextjs-vite-15-ts" } },
+    "prepare-sandbox": {},
+    "dev": {},
+    "vitest-integration": {},
+    "build": { "options": { "dir": "nextjs-vite-15-ts" } },
+    "prepare-build-sandbox": {},
+    "chromatic": {},
+    "serve": {},
+    "e2e-tests-dev": {},
+    "test-runner": {},
+    "test-runner-dev": {}
+  },
+  "tags": ["ci:merged", "ci:daily"]
+}

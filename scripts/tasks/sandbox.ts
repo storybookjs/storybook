@@ -1,4 +1,4 @@
-import { access, rm } from 'node:fs/promises';
+import { access, cp, rm } from 'node:fs/promises';
 import path, { join } from 'node:path';
 import { promisify } from 'node:util';
 
@@ -6,6 +6,7 @@ import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task, TaskKey } from '../task';
+import { ROOT_DIRECTORY } from '../utils/constants';
 
 const logger = console;
 
@@ -52,6 +53,10 @@ export const sandbox: Task = {
     return isSelectedTaskAfterSandboxCreation && pathExists(sandboxDir);
   },
   async run(details, options) {
+    if ((await pathExists(details.sandboxDir)) && process.env.SKIP_SANDBOX) {
+      console.log('Skipping recreating sandbox due to SKIP_SANDBOX env variable.');
+      return;
+    }
     if (options.link && details.template.inDevelopment) {
       logger.log(
         `The ${options.template} has inDevelopment property enabled, therefore the sandbox for that template cannot be linked. Enabling --no-link mode..`
@@ -173,6 +178,39 @@ export const sandbox: Task = {
     await runMigrations(details, options);
 
     await extendPreview(details, options);
+
+    logger.info('✅ Moving sandbox to cache directory');
+    const sandboxDir = join(details.sandboxDir);
+    const cacheDir = join(ROOT_DIRECTORY, 'sandbox', details.key.replace('/', '-'));
+
+    if (sandboxDir !== cacheDir) {
+      logger.info(`✅ Removing cache directory ${cacheDir}`);
+      await rm(cacheDir, { recursive: true, force: true });
+
+      logger.info(`✅ Copy ${sandboxDir} to cache directory`);
+      await cp(sandboxDir, cacheDir, {
+        recursive: true,
+        force: true,
+        filter: (src) => {
+          // For NX we remove node_modules to keep the remote cache small and fast
+          // node_modules are already cached in the global yarn cache
+          if (process.env.NX_CLI_SET === 'true') {
+            const name = path.basename(src);
+            return (
+              name !== 'node_modules' &&
+              !(name === 'cache' && path.basename(path.dirname(src)) === '.yarn')
+            );
+          }
+          return true;
+        },
+      });
+    } else {
+      if (process.env.NX_CLI_SET === 'true') {
+        logger.info(`✅ Removing node_modules from cache directory ${cacheDir}`);
+        await rm(path.join(cacheDir, 'node_modules'), { force: true, recursive: true });
+        await rm(path.join(cacheDir, '.yarn', 'cache'), { force: true, recursive: true });
+      }
+    }
 
     logger.info(`✅ Storybook sandbox created at ${details.sandboxDir}`);
   },

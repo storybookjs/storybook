@@ -1,12 +1,28 @@
 {
   "name": "svelte-vite/default-ts",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "svelte-vite"],
+  "implicitDependencies": [
+    "core",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
+    "addon-onboarding",
+    "svelte-vite"
+  ],
   "targets": {
-    "sandbox": {},
-    "sb:dev": {},
-    "sb:build": {}
+    "sandbox": { "options": { "dir": "svelte-vite-default-ts" } },
+    "prepare-sandbox": {},
+    "dev": {},
+    "vitest-integration": {},
+    "build": { "options": { "dir": "svelte-vite-default-ts" } },
+    "prepare-build-sandbox": {},
+    "chromatic": {},
+    "serve": {},
+    "e2e-tests": {},
+    "e2e-tests-dev": {},
+    "test-runner": {},
+    "test-runner-dev": {}
   },
   "tags": ["ci:normal", "ci:merged", "ci:daily"]
 }

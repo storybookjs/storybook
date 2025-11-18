@@ -1,0 +1,218 @@
+{
+  "$schema": "./node_modules/nx/schemas/workspace-schema.json",
+  "nxCloudId": "606dc2e0c2e8d5671d813305",
+  "defaultBase": "next",
+  "parallel": 8,
+  "pluginsConfig": {
+    "@nx/js": {
+      "analyzeSourceFiles": false
+    }
+  },
+  "defaultProject": "react-vite/default-ts",
+  "useInferencePlugins": false,
+  "tasksRunnerOptions": {
+    "default": {
+      "options": {
+        "canTrackAnalytics": false,
+        "showUsageWarnings": true
+      }
+    }
+  },
+  "tui": {
+    "autoExit": true
+  },
+  "targetDefaults": {
+    "compile": {
+      "dependsOn": ["^compile"],
+      "command": "yarn exec jiti ./scripts/build/build-package.ts --cwd {projectRoot}",
+      "configurations": { "production": { "args": "--prod" } },
+      "cache": true,
+      "inputs": ["production", "^production"],
+      "outputs": [
+        "{projectRoot}/dist",
+        "{workspaceRoot}/code/bench/esbuild-metafiles/{projectName}"
+      ]
+    },
+    "check": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "command": "yarn exec jiti ./scripts/check/check-package.ts --cwd {projectRoot}",
+      "cache": true,
+      "inputs": ["default", "^production"],
+      "configurations": { "production": {} }
+    },
+    "publish": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "command": "yarn workspace @storybook/scripts local-registry --publish",
+      "cache": true,
+      "inputs": ["all-production"],
+      "outputs": ["{workspaceRoot}/.verdaccio-cache"],
+      "configurations": { "production": {} }
+    },
+    "run-registry": {
+      "dependsOn": [{ "projects": ["scripts"], "target": "publish" }],
+      "command": "yarn workspace @storybook/scripts local-registry --open",
+      "continuous": true,
+      "configurations": { "production": {} }
+    },
+    "sandbox": {
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
+      "command": "yarn task sandbox -s task --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "outputs": ["{workspaceRoot}/sandbox/{options.dir}"],
+      "configurations": { "production": {} }
+    },
+    "prepare-sandbox": {
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
+      "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
+      "cache": false,
+      "configurations": { "production": {} }
+    },
+    "check-sandbox": {
+      "dependsOn": ["prepare-sandbox"],
+      "command": "yarn task check-sandbox -s task --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "configurations": { "production": {} }
+    },
+    "build": {
+      "dependsOn": ["prepare-sandbox"],
+      "command": "yarn task build -s task --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "outputs": ["{workspaceRoot}/sandbox/{options.dir}/storybook-static"],
+      "configurations": { "production": {} }
+    },
+    "prepare-build-sandbox": {
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }, "build"],
+      "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
+      "cache": false,
+      "configurations": { "production": {} }
+    },
+    "dev": {
+      "dependsOn": ["prepare-sandbox"],
+      "command": "yarn task dev -s task --debug --no-link --template={projectName}",
+      "continuous": true,
+      "configurations": { "production": {} }
+    },
+    "vitest-integration": {
+      "dependsOn": ["prepare-sandbox"],
+      "command": "yarn task vitest-integration -s task --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "configurations": { "production": {} }
+    },
+    "chromatic": {
+      "dependsOn": ["prepare-build-sandbox"],
+      "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "configurations": { "production": {} }
+    },
+    "serve": {
+      "dependsOn": ["prepare-build-sandbox"],
+      "command": "yarn task serve -s task --debug --no-link --template={projectName}",
+      "continuous": true,
+      "configurations": { "production": {} }
+    },
+    "e2e-tests": {
+      "dependsOn": ["serve"],
+      "command": "yarn task e2e-tests --junit -s task --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "outputs": ["{workspaceRoot}/test-results"],
+      "configurations": { "production": {} }
+    },
+    "test-runner": {
+      "dependsOn": ["serve"],
+      "command": "yarn task test-runner --junit -s task --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "outputs": ["{workspaceRoot}/test-results"],
+      "configurations": { "production": {} }
+    },
+    "e2e-tests-dev": {
+      "dependsOn": ["dev"],
+      "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "outputs": ["{workspaceRoot}/test-results"],
+      "configurations": { "production": {} }
+    },
+    "test-runner-dev": {
+      "dependsOn": ["dev"],
+      "command": "yarn task test-runner-dev --junit -s task --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "outputs": ["{workspaceRoot}/test-results"],
+      "configurations": { "production": {} }
+    },
+
+    "e2e-ui": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn --no-immutable && yarn playwright-e2e"
+      },
+      "inputs": ["default", "^production"],
+      "outputs": ["{workspaceRoot}/test-results"],
+      "configurations": { "production": {} }
+    },
+    "jest": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn jest" },
+      "cache": true,
+      "inputs": ["default", "^production"],
+      "outputs": ["{workspaceRoot}/test-results"],
+      "configurations": { "production": {} }
+    },
+    "vitest": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn vitest" },
+      "cache": true,
+      "inputs": ["default", "^production"],
+      "outputs": ["{workspaceRoot}/test-results"],
+      "configurations": { "production": {} }
+    },
+    "playwright-ct": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn playwright-ct" },
+      "cache": true,
+      "inputs": ["default", "^production"],
+      "outputs": ["{workspaceRoot}/test-results"],
+      "configurations": { "production": {} }
+    },
+    "cypress": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn cypress" },
+      "cache": true,
+      "inputs": ["default", "^production"],
+      "outputs": ["{workspaceRoot}/test-results"],
+      "configurations": { "production": {} }
+    }
+  },
+  "namedInputs": {
+    "sharedGlobals": [
+      "{workspaceRoot}/code/tsconfig.json",
+      "{workspaceRoot}/scripts/**/*",
+      "{workspaceRoot}/.github/workflows/nx.yml",
+      "{workspaceRoot}/.nx/workflows/*"
+    ],
+    "default": ["sharedGlobals", "{projectRoot}/**/*"],
+    "production": [
+      "sharedGlobals",
+      "{projectRoot}/**/*",
+      "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+    ],
+    "all-production": [
+      "sharedGlobals",
+      "{workspaceRoot}/code/**/*",
+      "!{workspaceRoot}/code/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+    ]
+  }
+}

@@ -1,3 +1,5 @@
+import { C } from 'vitest/dist/chunks/reporters.d.BFLkQcL6.js';
+
 import type { ComponentProps } from 'react';
 import React from 'react';
 
@@ -172,37 +174,72 @@ export const checklistData: ChecklistData = {
           },
         },
         {
-          id: 'whats-new-storybook-10',
-          label: "See what's new",
-          criteria: "What's New page is opened",
-          action: {
-            label: 'Go',
-            onClick: ({ api, accept }) => {
-              api.navigate('/settings/whats-new');
-              accept();
-            },
-          },
-        },
-        {
           id: 'render-component',
           label: 'Render a component',
           criteria: 'A story finished rendering successfully',
           subscribe: ({ api, done }) =>
             api.on(STORY_FINISHED, ({ status }) => status === 'success' && done()),
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
-                A story captures the rendered state of a UI component. It's an object with
-                annotations that describe the component's behavior and appearance given a set of
-                arguments.
+                Storybook renders your components in isolation, using stories. That allows you to
+                work on the bit of UI you need, without worrying about the rest of the app.
               </p>
               <p>
-                Storybook uses the generic term arguments (args for short) when talking about
-                React's props, Vue's props, Angular's @Input, and other similar concepts.
+                Rendering your components can often require{' '}
+                <Link
+                  href={api.getDocsUrl({ subpath: 'writing-stories/decorators', renderer: true })}
+                  target="_blank"
+                >
+                  setting up surrounding context in decorators
+                </Link>{' '}
+                or{' '}
+                <Link
+                  href={api.getDocsUrl({ subpath: 'configure/styling-and-css', renderer: true })}
+                  target="_blank"
+                >
+                  applying global styles
+                </Link>
+                . Once you&apos;ve got it working for one component, you&apos;re ready to make
+                Storybook the home for all of your UI.
               </p>
               <p>
-                We define stories according to the Component Story Format (CSF), an ES6 module-based
-                standard that is easy to write and portable between tools.
+                Stories are written in CSF, a format specifically designed to help with UI
+                development. Here&apos;s an example:
+              </p>
+              {/* TODO: Non-React snippets? TS vs. JS? */}
+              <CodeSnippet language="typescript">
+                {`// Button.stories.ts
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
+ 
+import { Button } from './Button';
+ 
+const meta = {
+  // 👇 The component you're working on
+  component: Button,
+} satisfies Meta<typeof Button>;
+ 
+export default meta;
+// 👇 Type helper to reduce boilerplate 
+type Story = StoryObj<typeof meta>;
+
+// 👇 A story named Primary that renders \`<Button primary label="Button" />\`
+export const Primary: Story = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+};`}
+              </CodeSnippet>
+              <p>
+                <Link
+                  href={api.getDocsUrl({ subpath: 'writing-stories', renderer: true })}
+                  target="_blank"
+                  withArrow
+                >
+                  Learn more about stories
+                </Link>
               </p>
             </>
           ),
@@ -211,12 +248,30 @@ export const checklistData: ChecklistData = {
           id: 'more-components',
           after: ['render-component'],
           label: 'Add 5 components',
-          content: () => (
-            <p>
-              Storybook gets better as you add more components. Start with the easy ones, like
-              Button or Avatar, and work your way up to more complex components, like Select,
-              Autocomplete, or even full pages.
-            </p>
+          content: ({ api }) => (
+            <>
+              <p>
+                Storybook gets better as you add more components. Start with the easy ones, like
+                Button or Avatar, and work your way up to more complex components, like Select,
+                Autocomplete, or even full pages.
+              </p>
+              <img
+                src={api.getDocsUrl({ subpath: 'onboarding/sidebar-components.png', asset: true })}
+                alt="Components in the sidebar"
+              />
+              <p>
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'get-started/whats-a-story#create-a-new-story',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                  withArrow
+                >
+                  Learn how to add components without writing any code
+                </Link>
+              </p>
+            </>
           ),
           criteria: 'At least 5 components exist in the index',
           subscribe: subscribeToIndex((entries) => {
@@ -232,10 +287,31 @@ export const checklistData: ChecklistData = {
           id: 'more-stories',
           after: ['render-component'],
           label: 'Add 20 stories',
-          content: () => (
-            <p>
-              More stories for your components means better documentation and more test coverage.
-            </p>
+          content: ({ api }) => (
+            <>
+              <p>
+                More stories for your components means better documentation and more test coverage.
+              </p>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'onboarding/sidebar-many-stories.png',
+                  asset: true,
+                })}
+                alt="Stories in the sidebar"
+              />
+              <p>
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'essentials/controls#creating-and-editing-stories-from-controls',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                  withArrow
+                >
+                  Learn how to use Controls to add stories without writing any code
+                </Link>
+              </p>
+            </>
           ),
           criteria: 'At least 20 stories exist in the index',
           subscribe: subscribeToIndex((entries) => {
@@ -245,6 +321,18 @@ export const checklistData: ChecklistData = {
             );
             return stories.length >= 20;
           }),
+        },
+        {
+          id: 'whats-new-storybook-10',
+          label: "See what's new",
+          criteria: "What's New page is opened",
+          action: {
+            label: 'Go',
+            onClick: ({ api, accept }) => {
+              api.navigate('/settings/whats-new');
+              accept();
+            },
+          },
         },
       ],
     },
@@ -256,15 +344,36 @@ export const checklistData: ChecklistData = {
         {
           id: 'controls',
           after: ['render-component'],
-          label: 'Update a story with Controls',
+          label: 'Change a story with Controls',
           criteria: 'Story args are updated',
           subscribe: ({ api, done }) => api.on(STORY_ARGS_UPDATED, done),
-          content: () => (
-            <p>
-              When you change the value of one of the inputs in the Controls table, the story
-              automatically updates to reflect that change. It&apos;s a great way to explore how a
-              component handles various inputs.
-            </p>
+          content: ({ api }) => (
+            <>
+              <p>
+                When you change the value of one of the inputs in the Controls table, the story
+                automatically updates to reflect that change. It&apos;s a great way to explore how a
+                component handles various inputs.
+              </p>
+              <img
+                src={api.getDocsUrl({ subpath: 'api/doc-block-controls.png', asset: true })}
+                alt="Screenshot of Controls block"
+              />
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({ subpath: 'essentials/controls', renderer: true })}
+                  target="_blank"
+                >
+                  Controls documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>How to use the Controls panel to edit or save a new story</li>
+                <li>How to configure the table</li>
+              </ul>
+            </>
           ),
         },
         {
@@ -274,31 +383,45 @@ export const checklistData: ChecklistData = {
           criteria: 'Viewport global is updated',
           subscribe: ({ api, done }) =>
             api.on(UPDATE_GLOBALS, ({ globals }) => globals?.viewport && done()),
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
                 Many UI components need to be responsive to the viewport size. Storybook has
                 built-in support for previewing stories in various device sizes.
               </p>
-              <Link
-                href="https://storybook.js.org/docs/essentials/viewport#defining-the-viewport-for-a-story"
-                target="_blank"
-                withArrow
-              >
-                Learn more
-              </Link>
+              <img
+                src={api.getDocsUrl({ subpath: 'onboarding/viewports-menu.png', asset: true })}
+                alt="Screenshot of Viewports menu"
+              />
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({ subpath: 'essentials/viewport', renderer: true })}
+                  target="_blank"
+                >
+                  Viewports documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>How to configure which viewports are available</li>
+                <li>
+                  How to force a story to <em>always</em> render in a specific viewport
+                </li>
+              </ul>
             </>
           ),
         },
         {
           id: 'organize-stories',
           after: ['render-component'],
-          label: 'Get organized',
+          label: 'Group your components',
           criteria: 'A root node exists in the index',
           subscribe: subscribeToIndex((entries) =>
             Object.values(entries).some(({ title }) => title.includes('/'))
           ),
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
                 It&apos;s helpful for projects to organize their sidebar into groups. We&apos;re big
@@ -307,7 +430,7 @@ export const checklistData: ChecklistData = {
                 everyone use your Storybook more effectively.
               </p>
               <p>You can create a section like so:</p>
-              <CodeSnippet language="jsx">
+              <CodeSnippet language="typescript">
                 {`// Button.stories.js
 
 export default {
@@ -316,6 +439,29 @@ export default {
 +  title: 'Atoms/Button',
 }`}
               </CodeSnippet>
+              <p>Which would look like:</p>
+              <img
+                src={api.getDocsUrl({ subpath: 'onboarding/sidebar-with-groups.png', asset: true })}
+                alt="Grouped components in the sidebar"
+              />
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-stories/naming-components-and-hierarchy',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                >
+                  story organization documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>The full hierarchy available</li>
+                <li>How to configure the sorting of your stories</li>
+              </ul>
             </>
           ),
         },
@@ -337,14 +483,35 @@ export default {
               done();
             }
           },
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
-                More stories for your components means better documentation and more test coverage.
-                Add the Vitest addon to your Storybook project to get started:
+                Run this command to install the Vitest addon, enabling you to run component tests on
+                your stories inside Storybook’s UI:
               </p>
               <CodeSnippet language="bash">{`npx storybook add @storybook/addon-vitest`}</CodeSnippet>
-              <p>Restart your Storybook after installing the addon.</p>
+              <p>
+                <em>Restart your Storybook after installing the addon.</em>
+              </p>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'writing-tests/testing-ui-overview.png',
+                  asset: true,
+                })}
+                alt="Storybook app with story status indicators, testing widget, and addon panel annotated"
+              />
+              <p>
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-tests/integrations/vitest-addon',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                  withArrow
+                >
+                  Learn more about the Vitest addon
+                </Link>
+              </p>
             </>
           ),
         },
@@ -393,23 +560,52 @@ export default {
                 ],
               }),
           },
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
                 Stories make great test cases. You can quickly test all of your stories directly
                 from the test widget, at the bottom of the sidebar.
               </p>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'onboarding/test-widget-with-failures.png',
+                  asset: true,
+                })}
+                alt="Test widget showing test failures"
+              />
+
               <p>
                 Use the menu on a story or component to see details about a test failure or run
                 tests for just that selection.
               </p>
-              <Link
-                href="https://storybook.js.org/docs/writing-tests/interaction-testing#running-interaction-tests"
-                target="_blank"
-                withArrow
-              >
-                Learn more
-              </Link>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'writing-tests/context-menu.png',
+                  asset: true,
+                })}
+                alt="Screenshot of story sidebar item with open menu"
+              />
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-tests#component-tests',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                >
+                  component testing documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>About helpful features, like watch mode and sidebar filtering</li>
+                <li>How to run tests via CLI and in CI</li>
+                <li>
+                  About other capabilities, like accessibility checks and code coverage reporting
+                </li>
+              </ul>
             </>
           ),
         },
@@ -425,30 +621,80 @@ export default {
                 (tags?.includes('play-fn') || tags?.includes('test-fn'))
             )
           ),
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
                 When you need to test non-visual or particularly complex behavior of a component,
                 add a play function.
               </p>
-              <CodeSnippet language="jsx">
-                {`// Button.stories.js
+              <CodeSnippet language="typescript">
+                {`// Button.stories.ts
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
+import { expect, fn } from 'storybook/test';
+ 
+import { Button } from './Button';
+ 
+const meta = {
+  component: Button,
+  args: {
+    // 👇 Provide a mock function to spy on
+    onClick: fn(),
+  },
+} satisfies Meta<typeof Button>;
+ 
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-async play({ canvas, userEvent }) {
-  // Simulate behavior and make assertions
-}`}
+export const Disabled: Story = {
+  args: {
+    disabled: true,
+    label: 'Button',
+  },
+  play: async function({ args, canvas, userEvent }) {
+    const button = canvas.getByRole('button', { name: /button/i });
+		
+    // 👇 Simulate behavior
+    await userEvent.click(button);
+    
+    // 👇 Make assertions
+    await expect(button).toBeDisabled();
+    await expect(args.onClick).not.toHaveBeenCalled();
+  }
+};`}
               </CodeSnippet>
               <p>
                 You can interact with and debug each step defined in a play function within the
                 Interactions panel.
               </p>
-              <Link
-                href="https://storybook.js.org/docs/writing-stories/play-function"
-                target="_blank"
-                withArrow
-              >
-                Learn more
-              </Link>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'writing-tests/interaction-test-pass.png',
+                  asset: true,
+                })}
+                alt="Storybook with a LoginForm component and passing interactions in the Interactions panel"
+              />
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-tests/interaction-testing',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                >
+                  interaction testing documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>
+                  The full <code>play</code> function API
+                </li>
+                <li>How to run code before and after tests</li>
+                <li>How to group interactions into steps</li>
+              </ul>
             </>
           ),
         },
@@ -462,7 +708,7 @@ async play({ canvas, userEvent }) {
               done();
             }
           },
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
                 Accessibility tests help ensure your UI is usable by everyone, no matter their
@@ -473,7 +719,21 @@ async play({ canvas, userEvent }) {
                 set it up, enabling you to run accessibility checks alongside your component tests:
               </p>
               <CodeSnippet language="bash">{`npx storybook add @storybook/addon-a11y`}</CodeSnippet>
-              <p>Restart your Storybook after installing the addon.</p>
+              <p>
+                <em>Restart your Storybook after installing the addon.</em>
+              </p>
+              <p>
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-tests/accessibility-testing',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                  withArrow
+                >
+                  Learn more about the Accessibility addon
+                </Link>
+              </p>
             </>
           ),
         },
@@ -487,19 +747,49 @@ async play({ canvas, userEvent }) {
               ADDON_TEST_CHANNEL,
               ({ type, payload }) => type === 'test-run-completed' && payload.config.a11y && done()
             ),
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
                 Expand the test widget, check the Accessibility checkbox, and click the Run
                 component tests button.
               </p>
-              <Link
-                href="https://storybook.js.org/docs/writing-tests/accessibility-testing#run-accessibility-tests"
-                target="_blank"
-                withArrow
-              >
-                Learn more
-              </Link>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'writing-tests/test-widget-a11y-enabled.png',
+                  asset: true,
+                })}
+                alt="Testing widget with accessibility activated"
+              />
+              <p>
+                If there are any failures, you can use the Accessibility panel to debug any
+                violations.
+              </p>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'writing-tests/addon-a11y-debug-violations.png',
+                  asset: true,
+                })}
+                alt="Storybook app with accessibility panel open, showing violations and an interactive popover on the violating elements in the preview"
+              />
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-tests/accessibility-testing',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                >
+                  accessibility testing documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>The recommended workflow</li>
+                <li>How to run accessibility tests via CLI and in CI</li>
+                <li>How to configure accessibility checks</li>
+              </ul>
             </>
           ),
         },
@@ -514,7 +804,7 @@ async play({ canvas, userEvent }) {
               done();
             }
           },
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>Visual tests verify the appearance of your UI components.</p>
               <p>
@@ -523,7 +813,21 @@ async play({ canvas, userEvent }) {
                 Chromatic account):
               </p>
               <CodeSnippet language="bash">{`npx storybook add @chromatic-com/storybook`}</CodeSnippet>
-              <p>Restart your Storybook after installing the addon.</p>
+              <p>
+                <em>Restart your Storybook after installing the addon.</em>
+              </p>
+              <p>
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-tests/visual-testing',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                  withArrow
+                >
+                  Learn more about the Visual Tests addon
+                </Link>
+              </p>
             </>
           ),
         },
@@ -534,16 +838,45 @@ async play({ canvas, userEvent }) {
           criteria:
             'Visual tests are run from the test widget in the sidebar or the Visual Tests panel',
           subscribe: ({ api, done }) => api.on('chromaui/addon-visual-tests/startBuild', done),
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>Expand the test widget and click the Run visual tests button.</p>
-              <Link
-                href="https://storybook.js.org/docs/writing-tests/visual-testing"
-                target="_blank"
-                withArrow
-              >
-                Learn more
-              </Link>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'writing-tests/test-widget-expanded-with-vta.png',
+                  asset: true,
+                })}
+                alt="Expanded testing widget, showing the Visual tests section"
+              />
+              <p>
+                You can use the Visual tests panel to verify the resulting diffs as either an
+                unexpected change which needs fixed or an expected change which can then be accepted
+                and become the new baseline.
+              </p>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'writing-tests/vta-run-from-panel.png',
+                  asset: true,
+                })}
+                alt="Visual tests addon panel showing a diff from the baseline"
+              />
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-tests/visual-testing',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                >
+                  visual testing documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>How to automate your visual tests in CI</li>
+              </ul>
             </>
           ),
         },
@@ -558,12 +891,12 @@ async play({ canvas, userEvent }) {
               ({ type, payload }) =>
                 type === 'test-run-completed' && payload.config.coverage && done()
             ),
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
-                Coverage reports show you which code is &mdash; and, more importantly &mdash;
-                isn&apos;t executed while running your component tests. You use it to be sure
-                you&apos;re testing the right things.
+                Coverage reports show you which code is&mdash;and, more importantly&mdash;isn&apos;t
+                executed while running your component tests. You use it to be sure you&apos;re
+                testing the right things.
               </p>
               <p>
                 To generate a coverage report, expand the test widget in the sidebar and check the
@@ -571,6 +904,31 @@ async play({ canvas, userEvent }) {
                 interactive report, which you can view by clicking the results summary in the test
                 widget.
               </p>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'writing-tests/test-widget-coverage-summary.png',
+                  asset: true,
+                })}
+                alt="Test widget with coverage summary"
+              />
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-tests/test-coverage',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                >
+                  test coverage documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>How to automate reporting in CI</li>
+                <li>How to configure the coverage results</li>
+              </ul>
             </>
           ),
         },
@@ -578,7 +936,7 @@ async play({ canvas, userEvent }) {
           id: 'ci-tests',
           label: 'Automate tests in CI',
           criteria: 'Have a CI workflow that runs component tests, either with Vitest or Chromatic',
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
                 Automating component tests in CI is the best tool ensuring the quality and
@@ -588,6 +946,32 @@ async play({ canvas, userEvent }) {
                 You can automate all of Storybook&apos;s tests by using Chromatic or by running the
                 <code>vitest --project storybook</code> command in your CI scripts.
               </p>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'writing-tests/test-ci-workflow-pr-status-checks.png',
+                  asset: true,
+                })}
+                alt='GitHub pull request status checks, with a failing "UI Tests / test" check'
+              />
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-tests/in-ci',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                >
+                  testing in CI documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>How to test in your CI platform (GitHub Actions, Circle CI, etc.)</li>
+                <li>How to debug test failures in a published Storybook</li>
+                <li>How to run your other Vitest tests alongside your Storybook tests</li>
+              </ul>
             </>
           ),
         },
@@ -607,14 +991,28 @@ async play({ canvas, userEvent }) {
               done();
             }
           },
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
                 Storybook Docs transforms your Storybook stories into component documentation. Add
                 the Docs addon to your Storybook project to get started:
               </p>
               <CodeSnippet language="bash">{`npx storybook add @storybook/addon-docs`}</CodeSnippet>
-              <p>Restart your Storybook after installing the addon.</p>
+              <p>
+                <em>Restart your Storybook after installing the addon.</em>
+              </p>
+              <p>
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-docs',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                  withArrow
+                >
+                  Learn more about Storybook Docs
+                </Link>
+              </p>
             </>
           ),
         },
@@ -628,15 +1026,15 @@ async play({ canvas, userEvent }) {
               ({ id, tags }) => !id.startsWith('example-') && tags?.includes('autodocs')
             )
           ),
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
                 Add the autodocs tag to a component&apos;s meta to automatically generate
                 documentation for that component, complete with examples, source code, an API table,
                 and a description.
               </p>
-              <CodeSnippet language="jsx">
-                {`// Button.stories.js
+              <CodeSnippet language="typescript">
+                {`// Button.stories.ts
 
 export default {
   component: Button,
@@ -644,9 +1042,35 @@ export default {
 }`}
               </CodeSnippet>
               <p>
-                That tag can also be applied in <code>.storybook/preview.js</code>, to generate
-                documentation for all components.
+                That tag can also be applied in <code>.storybook/preview.ts</code>, to generate
+                documentation for <em>all</em> components.
               </p>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'writing-docs/autodocs.png',
+                  asset: true,
+                })}
+                alt="Storybook autodocs page, showing a title, description, primary story, controls table, and additional stories"
+              />
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-docs/autodocs',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                >
+                  autodocs documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>How to generate a table of contents</li>
+                <li>How to enhance your component documentation with JSDoc comments</li>
+                <li>How to customize the generated page</li>
+              </ul>
             </>
           ),
         },
@@ -660,7 +1084,7 @@ export default {
               ({ id, type }) => type === 'docs' && !id.startsWith('example-')
             )
           ),
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
                 You can use MDX (markdown + React components) to provide an introduction to your
@@ -668,9 +1092,55 @@ export default {
                 documentation for your components.
               </p>
               <p>
-                For a start, create an introduction.mdx file and (using markdown and
-                Storybook&apos;s doc blocks) write a usage guide for your project.
+                For a start, create an <code>introduction.mdx</code> file and (using markdown and
+                Storybook&apos;s{' '}
+                <Link
+                  href={api.getDocsUrl({ subpath: 'writing-docs/doc-blocks', renderer: true })}
+                  target="_blank"
+                >
+                  doc blocks
+                </Link>
+                ) write a usage guide for your project.
               </p>
+              <CodeSnippet language="jsx">
+                {`{ /* introduction.mdx */ }
+import { Meta, Title, Subtitle, Description } from '@storybook/addon-docs/blocks';
+
+<Meta title="Get started" />
+ 
+<Title>Get started with My Awesome Project</Title>
+
+<Subtitle>It's really awesome</Subtitle>
+
+<Description>
+  My Awesome Project is designed to work with Your Awesome Project seamlessly.
+  Follow this guide and you'll be ready in no time.
+</Description>
+
+## Install
+
+\`\`\`sh
+npm install @my/awesome-project
+\`\`\``}
+              </CodeSnippet>
+              <strong>Take it further</strong>
+              <p>
+                Read the{' '}
+                <Link
+                  href={api.getDocsUrl({
+                    subpath: 'writing-docs/mdx',
+                    renderer: true,
+                  })}
+                  target="_blank"
+                >
+                  MDX documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>How to reference stories in your content</li>
+                <li>How to import and display markdown files, such as READMEs</li>
+              </ul>
             </>
           ),
         },
@@ -678,21 +1148,42 @@ export default {
           id: 'publish-storybook',
           label: 'Publish your Storybook to share',
           criteria: "Have some form of `storybook build` in the project's CI config",
-          content: () => (
+          content: ({ api }) => (
             <>
               <p>
                 Publishing your Storybook is easy and unlocks super clear review cycles and other
                 collaborative workflows.
               </p>
               <p>
-                Run <code>npx storybook build</code> in CI and deploy it using services like
-                Chromatic, Vercel, or Netlify.
+                Run <code>npx storybook build</code> in CI and deploy it using services like{' '}
+                <Link href="https://chromatic.com" target="_blank">
+                  Chromatic
+                </Link>
+                ,{' '}
+                <Link href="https://vercel.com" target="_blank" rel="noopener noreferrer">
+                  Vercel
+                </Link>
+                , or{' '}
+                <Link href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">
+                  Netlify
+                </Link>
+                .
               </p>
-              <h4>Take it further</h4>
+              <img
+                src={api.getDocsUrl({
+                  subpath: 'sharing/prbadge-publish.png',
+                  asset: true,
+                })}
+                alt="PR check for publish action"
+              />
+              <strong>Take it further</strong>
               <p>
                 Read the{' '}
                 <Link
-                  href="https://storybook.js.org/docs/sharing/publish-storybook"
+                  href={api.getDocsUrl({
+                    subpath: 'sharing/publish-storybook',
+                    renderer: true,
+                  })}
                   target="_blank"
                 >
                   publishing documentation

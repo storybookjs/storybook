@@ -150,14 +150,20 @@ const ItemContent = styled.div(({ theme }) => ({
     padding: '1px 3px',
   },
   img: {
-    width: '100%',
+    maxWidth: '100%',
+    margin: '15px auto',
   },
   p: {
     margin: 0,
     lineHeight: 1.4,
   },
   'ol, ul': {
-    paddingLeft: 30,
+    paddingLeft: 25,
+    listStyleType: 'disc',
+
+    'li::marker': {
+      color: theme.color.medium,
+    },
   },
 }));
 

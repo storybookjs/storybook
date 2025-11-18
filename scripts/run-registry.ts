@@ -143,7 +143,7 @@ const publish = async (packages: { name: string; location: string }[], url: stri
         () =>
           new Promise((resolve, reject) => {
             const loggedLocation = location.replace(resolvePath(join(__dirname, '..')), '.');
-            const resolvedLocation = resolvePath('../code', location);
+            const resolvedLocation = resolvePath('..', location);
 
             logger.log(`🛫 publishing ${name} (${loggedLocation})`);
 

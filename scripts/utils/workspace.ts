@@ -2,7 +2,7 @@
 import { execaCommand } from 'execa';
 import memoize from 'memoizerific';
 
-import { CODE_DIRECTORY } from './constants';
+import { ROOT_DIRECTORY } from './constants';
 
 export type Workspace = { name: string; location: string };
 
@@ -10,7 +10,7 @@ export async function getWorkspaces(includePrivate = true) {
   const { stdout } = await execaCommand(
     `yarn workspaces list --json ${includePrivate ? '' : '--no-private'}`,
     {
-      cwd: CODE_DIRECTORY,
+      cwd: ROOT_DIRECTORY,
       shell: true,
     }
   );

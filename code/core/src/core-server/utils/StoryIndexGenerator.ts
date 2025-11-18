@@ -24,7 +24,6 @@ import type {
 
 import * as find from 'empathic/find';
 import picocolors from 'picocolors';
-// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';

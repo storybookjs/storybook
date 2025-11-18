@@ -4,7 +4,6 @@ import { basename, join, relative, resolve } from 'node:path';
 import { commonGlobOptions } from 'storybook/internal/common';
 import type { NormalizedStoriesSpecifier, Path } from 'storybook/internal/types';
 
-// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import Watchpack from 'watchpack';
 

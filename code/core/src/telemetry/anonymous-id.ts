@@ -3,7 +3,6 @@ import { relative } from 'node:path';
 import { getProjectRoot } from 'storybook/internal/common';
 
 import { execSync } from 'child_process';
-// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import { oneWayHash } from './one-way-hash';

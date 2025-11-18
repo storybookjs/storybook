@@ -11,7 +11,6 @@ import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
 import { toImportFn } from '@storybook/core-webpack';
 
-// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import type { BuilderOptions } from '../types';

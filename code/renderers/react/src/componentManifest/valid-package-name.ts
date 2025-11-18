@@ -1,5 +1,5 @@
 // inspired by https://github.com/npm/validate-npm-package-name/blob/main/lib/index.js
-const scopedPackagePattern = new RegExp(/^(?:@([^/]+)\/)?([^/]+)(?:\/(.+))?$/);
+const scopedPackagePattern = new RegExp('^(?:@([^/]+?)[/])?([^/]+?)$');
 
 export function stripSubpath(name: string): string {
   const parts = name.split('/');

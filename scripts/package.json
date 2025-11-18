@@ -59,7 +59,7 @@
     "esbuild": "^0.27.0",
     "serialize-javascript": "^3.1.0",
     "type-fest": "~2.19",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
@@ -149,7 +149,7 @@
     "playwright": "1.52.0",
     "playwright-core": "1.52.0",
     "polka": "^1.0.0-next.28",
-    "prettier": "^3.5.3",
+    "prettier": "^3.6.2",
     "prettier-plugin-brace-style": "^0.7.2",
     "prettier-plugin-css-order": "^2.1.2",
     "prettier-plugin-curly": "^0.3.2",
@@ -175,7 +175,7 @@
     "trash": "^7.2.0",
     "ts-dedent": "^2.2.0",
     "type-fest": "~2.19",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "uuid": "^9.0.1",
     "vitest": "^3.2.4",
     "wait-on": "^8.0.3",

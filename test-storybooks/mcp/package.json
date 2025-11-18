@@ -5,8 +5,8 @@
 	"description": "The Storybook used to test the MCP packages in the MCP monorepo",
 	"scripts": {
 		"build-storybook": "storybook build",
-		"storybook": "storybook dev --port 6006 --loglevel debug",
-		"typecheck": "tsc --noEmit"
+		"storybook": "storybook dev --port 6006 --loglevel debug --no-open",
+		"typecheck": "tsc"
 	},
 	"devDependencies": {
 		"@storybook/addon-docs": "catalog:",
@@ -14,9 +14,10 @@
 		"@storybook/react-vite": "catalog:",
 		"@types/react": "^18.2.65",
 		"@types/react-dom": "^18.2.21",
-		"@vitejs/plugin-react": "^4.7.0",
+		"@vitejs/plugin-react": "^5.1.1",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"storybook": "catalog:"
+		"storybook": "catalog:",
+		"vite": "catalog:"
 	}
 }

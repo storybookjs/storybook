@@ -10,26 +10,10 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
 
 // Mock dependencies
-vi.mock('./telemetry.ts', () => ({
-	collectTelemetry: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock('./tools/get-story-urls.ts', () => ({
-	addGetStoryUrlsTool: vi.fn().mockResolvedValue(undefined),
-	GET_STORY_URLS_TOOL_NAME: 'get_story_urls',
-}));
-
-vi.mock('./tools/get-ui-building-instructions.ts', () => ({
-	addGetUIBuildingInstructionsTool: vi.fn().mockResolvedValue(undefined),
-	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME: 'get_ui_building_instructions',
-}));
-
-vi.mock('@storybook/mcp', () => ({
-	addListAllComponentsTool: vi.fn().mockResolvedValue(undefined),
-	addGetComponentDocumentationTool: vi.fn().mockResolvedValue(undefined),
-	LIST_TOOL_NAME: 'list-all-components',
-	GET_TOOL_NAME: 'get-component-documentation',
-}));
+vi.mock('./telemetry.ts', { spy: true });
+vi.mock('./tools/get-story-urls.ts', { spy: true });
+vi.mock('./tools/get-ui-building-instructions.ts', { spy: true });
+vi.mock('@storybook/mcp', { spy: true });
 
 // Test helpers to reduce boilerplate
 function createMockIncomingMessage(options: {
@@ -339,17 +323,17 @@ describe('mcpServerHandler', () => {
 		const { addListAllComponentsTool, addGetComponentDocumentationTool } =
 			await import('@storybook/mcp');
 
-		const applyMock = vi.fn((key: string, defaultValue?: any) => {
+		const applyMock = vi.fn(async (key: string, defaultValue?: any) => {
 			if (key === 'dev') {
-				return Promise.resolve({ disableTelemetry: false });
+				return { disableTelemetry: false };
 			}
 			if (key === 'features') {
-				return Promise.resolve({ experimentalComponentsManifest: true });
+				return { experimentalComponentsManifest: true };
 			}
 			if (key === 'experimental_componentManifestGenerator') {
-				return Promise.resolve(vi.fn());
+				return vi.fn();
 			}
-			return Promise.resolve(defaultValue);
+			return defaultValue;
 		});
 
 		const mockOptions = createMockOptions({
@@ -368,10 +352,7 @@ describe('mcpServerHandler', () => {
 			res: response,
 			options: mockOptions as any,
 			addonOptions: {
-				toolsets: {
-					dev: true,
-					docs: true,
-				},
+				toolsets: { dev: true, docs: true },
 			},
 		});
 

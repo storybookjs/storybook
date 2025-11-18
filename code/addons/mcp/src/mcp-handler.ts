@@ -38,10 +38,7 @@ const initializeMCPServer = async (options: Options) => {
 
 	server.on('initialize', async () => {
 		if (!options.disableTelemetry) {
-			await collectTelemetry({
-				event: 'session:initialized',
-				server,
-			});
+			await collectTelemetry({ event: 'session:initialized', server });
 		}
 	});
 

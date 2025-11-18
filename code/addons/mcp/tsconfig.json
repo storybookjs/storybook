@@ -1,24 +1,5 @@
 {
-	"compilerOptions": {
-		"esModuleInterop": true,
-		"skipLibCheck": true,
-		"target": "es2023", // Node 20 according to https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping#node-20
-		"allowJs": true,
-		"resolveJsonModule": true,
-		"moduleDetection": "force",
-		"moduleResolution": "bundler",
-		"module": "preserve",
-		"jsx": "react",
-		"isolatedModules": true,
-		"verbatimModuleSyntax": true,
-		"allowImportingTsExtensions": true,
-		"noEmit": true,
-		"strict": true,
-		"noUncheckedIndexedAccess": true,
-		"noImplicitOverride": true,
-		"noImplicitAny": true,
-		"lib": ["esnext", "dom", "dom.iterable"],
-		"types": ["./src/types.d.ts"]
-	},
-	"include": ["src/**/*", "tsdown.config.ts"]
+	"extends": ["../../tsconfig.json"],
+	"include": ["src/**/*", "**/*.ts"],
+	"exclude": ["dist"]
 }

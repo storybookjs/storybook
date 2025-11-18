@@ -29,6 +29,7 @@ async function serveMcp(port: number, manifestPath: string) {
 	});
 }
 
+// @ts-ignore
 if (import.meta.main) {
 	const args = parseArgs({
 		options: {

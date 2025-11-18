@@ -29,8 +29,8 @@
 		"dev": "node --watch ./serve.ts",
 		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-mcp",
 		"publint": "publint",
-		"test": "vitest",
-		"typecheck": "tsc --noEmit"
+		"test": "cd ../.. && pnpm vitest --project=@storybook/mcp",
+		"typecheck": "tsc"
 	},
 	"dependencies": {
 		"@tmcp/adapter-valibot": "catalog:",
@@ -40,15 +40,7 @@
 	},
 	"devDependencies": {
 		"@tmcp/transport-stdio": "catalog:",
-		"@tsconfig/node-ts": "^23.6.1",
-		"@tsconfig/node24": "^24.0.1",
-		"@types/node": "catalog:",
-		"@vitest/coverage-v8": "catalog:",
-		"publint": "catalog:",
 		"react-docgen": "^8.0.2",
-		"srvx": "^0.8.16",
-		"tsdown": "catalog:",
-		"typescript": "catalog:",
-		"vitest": "catalog:"
+		"srvx": "^0.8.16"
 	}
 }

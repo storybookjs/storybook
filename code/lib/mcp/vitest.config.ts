@@ -1,3 +1,10 @@
-import sharedVitestConfig from '../../vitest-shared.config.ts';
+import { mergeConfig } from 'vite';
+import { defineProject } from 'vitest/config';
+import vitestConfig from '../../vitest.config.ts';
 
-export default sharedVitestConfig;
+export default mergeConfig(
+	vitestConfig,
+	defineProject({
+		test: {},
+	}),
+);

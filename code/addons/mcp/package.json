@@ -26,12 +26,11 @@
 	],
 	"scripts": {
 		"prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
-		"build": "tsdown --config ../../tsdown.config.ts",
-		"dev": "pnpm run build -- --watch",
+		"build": "tsdown",
 		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp",
 		"publint": "publint",
-		"test": "vitest",
-		"typecheck": "tsc --noEmit"
+		"test": "cd ../.. && pnpm vitest --project=@storybook/addon-mcp",
+		"typecheck": "tsc"
 	},
 	"dependencies": {
 		"@storybook/mcp": "workspace:*",
@@ -41,15 +40,8 @@
 		"valibot": "catalog:"
 	},
 	"devDependencies": {
-		"@types/node": "catalog:",
-		"@vitest/coverage-v8": "catalog:",
-		"publint": "catalog:",
 		"storybook": "catalog:",
-		"ts-dedent": "^2.2.0",
-		"tsdown": "catalog:",
-		"typescript": "catalog:",
-		"vite": "^7.0.5",
-		"vitest": "catalog:"
+		"ts-dedent": "^2.2.0"
 	},
 	"peerDependencies": {
 		"storybook": "^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0"

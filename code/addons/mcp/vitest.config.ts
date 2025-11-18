@@ -1,25 +1,13 @@
-import sharedVitestConfig from '../../vitest-shared.config.ts';
-import { mergeConfig } from 'vitest/config';
+import { mergeConfig } from 'vite';
 
-export default mergeConfig(sharedVitestConfig, {
-	test: {
-		setupFiles: ['./vitest.setup.ts'],
-		coverage: {
-			include: ['src'],
+import { defineProject } from 'vitest/config';
+import vitestConfig from '../../vitest.config.ts';
+
+export default mergeConfig(
+	vitestConfig,
+	defineProject({
+		test: {
+			setupFiles: ['./vitest.setup.ts'],
 		},
-	},
-	plugins: [
-		// handle markdown files in Vitest
-		{
-			name: 'md-loader',
-			transform(code: string, id: string) {
-				if (id.endsWith('.md')) {
-					return {
-						code: `export default ${JSON.stringify(code)};`,
-						map: null,
-					};
-				}
-			},
-		},
-	],
-});
+	}),
+);

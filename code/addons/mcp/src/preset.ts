@@ -1,6 +1,6 @@
 import { mcpServerHandler } from './mcp-handler.ts';
 import type { PresetProperty } from 'storybook/internal/types';
-import { AddonOptions, type AddonOptionsInput } from './types.ts';
+import { AddonOptions } from './types.ts';
 import * as v from 'valibot';
 import { isManifestAvailable } from './tools/is-manifest-available.ts';
 import htmlTemplate from './template.html';
@@ -8,8 +8,10 @@ import htmlTemplate from './template.html';
 export const experimental_devServer: PresetProperty<
 	'experimental_devServer'
 > = async (app, options) => {
+	// There is error handling here. The can make the whole storybook app crash with.
+	// ValiError: Invalid type: Expected boolean but received "false"
 	const addonOptions = v.parse(AddonOptions, {
-		toolsets: (options as AddonOptionsInput).toolsets ?? {},
+		toolsets: 'toolsets' in options ? options.toolsets : {},
 	});
 
 	app!.post('/mcp', (req, res) =>
@@ -23,10 +25,8 @@ export const experimental_devServer: PresetProperty<
 
 	const shouldRedirect = await isManifestAvailable(options);
 
-	app!.get('/mcp', async (req, res) => {
-		const acceptHeader = req.headers['accept'] || '';
-
-		if (acceptHeader.includes('text/html')) {
+	app!.use('/mcp', (req, res) => {
+		if (req.method === 'GET' && req.headers['accept']?.includes('text/html')) {
 			// Browser request - send HTML with redirect
 			res.writeHead(200, { 'Content-Type': 'text/html' });
 
@@ -40,11 +40,7 @@ export const experimental_devServer: PresetProperty<
 			);
 			res.end(html);
 		} else {
-			// Non-browser request (API, curl, etc.) - send plain text
-			res.writeHead(200, { 'Content-Type': 'text/plain' });
-			res.end(
-				'Storybook MCP server successfully running via @storybook/addon-mcp',
-			);
+			return mcpServerHandler({ req, res, options, addonOptions });
 		}
 	});
 	return app;

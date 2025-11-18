@@ -59,8 +59,8 @@ To mock imports in Storybook, use Storybook's mocking features. ALWAYS mock exte
 ```js
 import { sb } from 'storybook/test';
 
-// Full mock (replaces with empty fn functions)
-sb.mock(import('some-library'));
+// Prefer spy mocks (keeps functions, but allows to override them and spy on them)
+sb.mock(import('some-library'), { spy: true });
 ```
 
 2. **Specify mock values in stories**:
@@ -90,7 +90,6 @@ Before doing this ensure you have mocked the import in the preview file.
 
 - **Node.js 20+**, **TypeScript 4.9+**, **Vite 5+**
 - React Native uses `.rnstorybook` directory
-- `afterEach` hook is now stable (was `experimental_afterEach`)
 
 ## Story Linking Agent Behavior
 

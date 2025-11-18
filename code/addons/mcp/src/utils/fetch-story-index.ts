@@ -21,7 +21,7 @@ export async function fetchStoryIndex(origin: string): Promise<StoryIndex> {
 		);
 	}
 
-	const index: StoryIndex = await response.json();
+	const index = (await response.json()) as StoryIndex;
 
 	logger.debug('Story index entries found:', Object.keys(index.entries).length);
 

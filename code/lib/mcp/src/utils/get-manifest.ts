@@ -6,7 +6,7 @@ import * as v from 'valibot';
  */
 export class ManifestGetError extends Error {
 	public readonly url: string;
-	public readonly cause?: Error;
+	public override readonly cause?: Error;
 
 	constructor(message: string, url?: string, cause?: Error) {
 		super(message);

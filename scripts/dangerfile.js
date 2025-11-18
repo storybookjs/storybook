@@ -1,13 +1,32 @@
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+/**
+ * IMPORTANT: This file has unique constraints due to how Danger.js executes it.
+ *
+ * Restrictions:
+ * - NO TypeScript: This file runs without any transpilation/transformation
+ * - NO external dependencies: Scripts dependencies are not installed in CI
+ * - NO Node.js built-ins: Even `fs` and other core modules don't work in Danger's runtime
+ * - MUST use `import` for Danger API: The Danger runtime only processes `import` statements,
+ *   not `require()`. These imports get compiled to global references by Danger.js
+ * - CAN use `require()` for local files: Works for things like package.json
+ *
+ * Why: We want Danger to run as fast as possible in CI without installing dependencies
+ * or running build processes.
+ */
 
 import { danger, fail } from 'danger';
 
-const pkg = JSON.parse(await readFile(join(import.meta.dirname, '../package.json'), 'utf-8'));
+/**
+ * Returns the intersection of two arrays
+ * @template T
+ * @param {ReadonlyArray<T>} a - First array
+ * @param {ReadonlyArray<T>} b - Second array
+ * @returns {T[]} Array containing elements present in both arrays
+ */
+function intersection(a, b) {
+  return a.filter((v) => b.includes(v));
+}
 
-const intersection = (a: readonly string[], b: readonly string[]) => a.filter((v) => b.includes(v));
-
-const prLogConfig = pkg['pr-log'];
+const pkg = require('../code/package.json');
 
 const Versions = {
   PATCH: 'PATCH',
@@ -17,9 +36,16 @@ const Versions = {
 
 const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
 
+const { labels } = danger.github.issue;
+
+const prLogConfig = pkg['pr-log'];
+
 const branchVersion = Versions.MINOR;
 
-const checkRequiredLabels = (labels: string[]) => {
+/**
+ * @param {string[]} labels
+ */
+const checkRequiredLabels = (labels) => {
   const forbiddenLabels = [
     'ci: do not merge',
     'in progress',
@@ -29,13 +55,13 @@ const checkRequiredLabels = (labels: string[]) => {
 
   const requiredLabels = [
     ...(prLogConfig?.skipLabels ?? []),
-    ...(prLogConfig?.validLabels ?? []).map(([label]: [string]) => label),
+    ...(prLogConfig?.validLabels ?? []).map(([label]) => label),
   ];
 
   const blockingLabels = intersection(forbiddenLabels, labels);
   if (blockingLabels.length > 0) {
     fail(
-      `PR is marked with ${blockingLabels.map((label: string) => `"${label}"`).join(', ')} label${
+      `PR is marked with ${blockingLabels.map((label) => `"${label}"`).join(', ')} label${
         blockingLabels.length > 1 ? 's' : ''
       }.`
     );
@@ -56,7 +82,10 @@ const checkRequiredLabels = (labels: string[]) => {
   }
 };
 
-const checkPrTitle = (title: string) => {
+/**
+ * @param {string} title
+ */
+const checkPrTitle = (title) => {
   const match = title.match(/^[A-Z].+:\s[A-Z].+$/);
   if (!match) {
     fail(
@@ -73,7 +102,6 @@ Bad examples:
 };
 
 if (prLogConfig) {
-  const { labels } = danger.github.issue;
   checkRequiredLabels(labels.map((l) => l.name));
   checkPrTitle(danger.github.pr.title);
 }

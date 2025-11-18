@@ -27,4 +27,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: --dangerfile scripts/dangerfile.ts
+          args: --dangerfile scripts/dangerfile.js

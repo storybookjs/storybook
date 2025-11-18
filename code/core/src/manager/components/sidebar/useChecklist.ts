@@ -52,14 +52,14 @@ const useStoryIndex = () => {
 
 const checkAvailable = (
   item: RawItemWithSection,
-  context: { api: API; index: API_IndexHash | undefined; item: RawItemWithSection },
-  itemsById: Record<RawItemWithSection['id'], RawItemWithSection>
+  itemsById: Record<RawItemWithSection['id'], RawItemWithSection>,
+  context: { api: API; index: API_IndexHash | undefined; item: RawItemWithSection }
 ) => {
   if (item.available && !item.available(context)) {
     return false;
   }
   for (const afterId of item.after ?? []) {
-    if (itemsById[afterId] && !checkAvailable(itemsById[afterId], context, itemsById)) {
+    if (itemsById[afterId] && !checkAvailable(itemsById[afterId], itemsById, context)) {
       return false;
     }
   }
@@ -69,14 +69,17 @@ const checkAvailable = (
 const checkSkipped = (
   item: RawItemWithSection,
   itemsById: Record<RawItemWithSection['id'], RawItemWithSection>,
-  skipped: string[]
+  state: { accepted: string[]; done: string[]; skipped: string[] }
 ) => {
-  const isSkipped = skipped.includes(item.id);
-  if (isSkipped) {
+  if (
+    state.skipped.includes(item.id) &&
+    !state.accepted.includes(item.id) &&
+    !state.done.includes(item.id)
+  ) {
     return true;
   }
   for (const afterId of item.after ?? []) {
-    if (itemsById[afterId] && checkSkipped(itemsById[afterId], itemsById, skipped)) {
+    if (itemsById[afterId] && checkSkipped(itemsById[afterId], itemsById, state)) {
       return true;
     }
   }
@@ -105,12 +108,12 @@ export const useChecklist = () => {
       const isAccepted = accepted.includes(item.id);
       const isDone = done.includes(item.id);
       const isCompleted = isAccepted || isDone;
-      const isSkipped = checkSkipped(item, itemsById, skipped);
+      const isSkipped = !isCompleted && checkSkipped(item, itemsById, { accepted, done, skipped });
       const isMuted = Array.isArray(muted) ? muted.includes(item.id) : !!muted;
 
       const isAvailable = isCompleted
         ? item.afterCompletion !== 'unavailable'
-        : checkAvailable(item, { api, index, item }, itemsById);
+        : checkAvailable(item, itemsById, { api, index, item });
       const isOpen = !isAccepted && !isDone && !isSkipped && isAvailable;
       const isLockedBy =
         item.after?.filter((id) => !accepted.includes(id) && !done.includes(id)) ?? [];

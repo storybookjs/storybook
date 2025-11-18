@@ -101,7 +101,7 @@ const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
 const SectionHeading = styled.h2(({ theme }) => ({
   flex: 1,
   margin: 0,
-  fontSize: 'inherit',
+  fontSize: theme.typography.size.s3,
   fontWeight: theme.typography.weight.bold,
   cursor: 'default',
 }));
@@ -133,6 +133,7 @@ const ItemHeading = styled.h3<{ skipped: boolean }>(({ theme, skipped }) => ({
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
   fontSize: theme.typography.size.s2,
+  fontWeight: theme.typography.weight.bold,
 }));
 
 const ItemContent = styled.div(({ theme }) => ({
@@ -140,7 +141,7 @@ const ItemContent = styled.div(({ theme }) => ({
   flexDirection: 'column',
   alignItems: 'flex-start',
   gap: 8,
-  padding: '0 15px 15px 15px',
+  padding: '0 15px 15px 41px',
   fontSize: theme.typography.size.s2,
 
   code: {
@@ -150,14 +151,20 @@ const ItemContent = styled.div(({ theme }) => ({
     padding: '1px 3px',
   },
   img: {
-    width: '100%',
+    maxWidth: '100%',
+    margin: '15px auto',
   },
   p: {
     margin: 0,
     lineHeight: 1.4,
   },
   'ol, ul': {
-    paddingLeft: 30,
+    paddingLeft: 25,
+    listStyleType: 'disc',
+
+    'li::marker': {
+      color: theme.color.medium,
+    },
   },
 }));
 

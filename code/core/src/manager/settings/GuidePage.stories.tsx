@@ -10,6 +10,11 @@ import { GuidePage } from './GuidePage';
 const managerContext: any = {
   state: {},
   api: {
+    getDocsUrl: fn(
+      ({ asset, subpath }) =>
+        // TODO: Remove hard-coded version. Should be `major.minor` of latest release.
+        `https://storybook.js.org/${asset ? 'docs-assets/10.0' : 'docs'}/${subpath}`
+    ).mockName('api::getDocsUrl'),
     getData: fn().mockName('api::getData'),
     getIndex: fn().mockName('api::getIndex'),
     getUrlState: fn().mockName('api::getUrlState'),

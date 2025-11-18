@@ -137,14 +137,12 @@ const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
 
 const title = (progress: number) => {
   switch (true) {
-    case progress < 25:
-      return 'Getting started';
     case progress < 50:
-      return 'Making progress';
+      return 'Get started';
     case progress < 75:
-      return 'Getting close';
+      return 'Level up';
     default:
-      return 'Almost there';
+      return 'Become an expert';
   }
 };
 

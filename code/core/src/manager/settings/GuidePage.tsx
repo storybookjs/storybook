@@ -42,8 +42,8 @@ export const GuidePage = () => {
       <Intro>
         <h1>Guide</h1>
         <p>
-          Learn the basics. Set up Storybook. You know the drill. This isn't your first time setting
-          up software so get to it!
+          Whether you&apos;re just getting started or looking for ways to level up, this checklist
+          will help you make the most of your Storybook.
         </p>
       </Intro>
       <Checklist {...checklist} />

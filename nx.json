@@ -3,16 +3,7 @@
   "extends": "nx/presets/npm.json",
   "nxCloudAccessToken": "NGVmYTkxMmItYzY3OS00MjkxLTk1ZDktZDFmYTFmNmVlNGY4fHJlYWQ=",
   "defaultBase": "next",
-  "useLegacyCache": true,
   "parallel": 8,
-  "plugins": [
-    {
-      "plugin": "@nx/vite/plugin",
-      "options": {
-        "testTargetName": "test"
-      }
-    }
-  ],
   "tasksRunnerOptions": {
     "default": {
       "options": {
@@ -36,20 +27,23 @@
       },
       "inputs": ["production", "^production"],
       "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/dist", "{workspaceRoot}/bench/esbuild-metafiles/{projectName}"],
+      "outputs": [
+        "{projectRoot}/dist",
+        "{workspaceRoot}/code/bench/esbuild-metafiles/{projectName}"
+      ],
       "cache": true
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "{workspaceRoot}",
+        "cwd": "{workspaceRoot}/code",
         "command": "yarn vitest watch --project={projectName}"
       },
       "dependsOn": ["build"],
       "inputs": [
         "default",
         "^production",
-        "{workspaceRoot}/{vitest.workspace.ts,vitest.helpers.ts,vitest-setup.ts}"
+        "{workspaceRoot}/code/{vitest.workspace.ts,vitest.helpers.ts,vitest-setup.ts}"
       ],
       "cache": true
     },
@@ -57,7 +51,7 @@
       "configurations": {
         "production": {}
       },
-      "inputs": ["default", "^production", "{workspaceRoot}/../scripts/prepare/check.ts"],
+      "inputs": ["default", "^production"],
       "dependsOn": ["build"],
       "cache": true
     },
@@ -99,7 +93,7 @@
     "sb:serve": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "{workspaceRoot}",
+        "cwd": "{workspaceRoot}/code",
         "command": "yarn http-server ../{projectRoot}/storybook-static",
         "args": "--port 8001"
       },
@@ -108,7 +102,7 @@
   },
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "sharedGlobals": ["{workspaceRoot}/tsconfig.json"],
+    "sharedGlobals": ["{workspaceRoot}/code/tsconfig.json", "{workspaceRoot}/scripts/**/*"],
     "production": [
       "default",
       "!{projectRoot}/src/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",

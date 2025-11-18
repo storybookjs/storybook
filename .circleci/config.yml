@@ -203,6 +203,7 @@ jobs:
                 name: Restore Yarn cache
             - run:
                 command: |
+                    yarn
                     yarn task --task compile --start-from=auto --no-link --debug
                     git diff --exit-code
                     yarn dedupe --check
@@ -251,6 +252,7 @@ jobs:
                 name: Restore Yarn cache
             - run:
                 command: |
+                    yarn
                     yarn task --task compile --start-from=auto --no-link --debug
                 name: Compile
             - run:
@@ -278,6 +280,7 @@ jobs:
                 at: .
             - run:
                 command: |
+                    yarn
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
                     cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies

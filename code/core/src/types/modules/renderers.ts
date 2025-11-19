@@ -12,4 +12,5 @@ export type SupportedRenderers =
   | 'web-components'
   | 'server'
   | 'solid'
+  | 'stencil'
   | 'nuxt';

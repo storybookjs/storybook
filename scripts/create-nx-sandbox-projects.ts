@@ -19,7 +19,7 @@ const projectJson = (name: string, framework: string, tags: string[]) => ({
     'links',
     'onboarding',
     'blocks',
-    ...(!['storybook-framework-qwik', 'storybook-solidjs-vite'].includes(framework)
+    ...(!['storybook-framework-qwik', 'storybook-solidjs-vite', '@stencil/storybook-plugin'].includes(framework)
       ? [framework]
       : []),
   ],

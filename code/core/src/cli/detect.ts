@@ -135,6 +135,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
   switch (projectType) {
     case ProjectType.REACT_NATIVE_AND_RNW:
     case ProjectType.REACT_NATIVE_WEB:
+    case ProjectType.STENCIL:
       return CoreBuilder.Vite;
     case ProjectType.REACT_SCRIPTS:
     case ProjectType.ANGULAR:

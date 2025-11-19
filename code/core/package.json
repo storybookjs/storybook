@@ -118,6 +118,10 @@
       "default": "./dist/manager/globals.js"
     },
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
+    "./internal/mocking-utils": {
+      "types": "./dist/mocking-utils/index.d.ts",
+      "default": "./dist/mocking-utils/index.js"
+    },
     "./internal/node-logger": {
       "types": "./dist/node-logger/index.d.ts",
       "default": "./dist/node-logger/index.js"
@@ -175,9 +179,7 @@
     "./viewport": {
       "types": "./dist/viewport/index.d.ts",
       "default": "./dist/viewport/index.js"
-    },
-    "./webpack/loaders/storybook-mock-transform-loader": "./dist/core-server/presets/webpack/loaders/storybook-mock-transform-loader.js",
-    "./webpack/loaders/webpack-automock-loader": "./dist/core-server/presets/webpack/loaders/webpack-automock-loader.js"
+    }
   },
   "bin": "./dist/bin/dispatcher.js",
   "files": [
@@ -200,7 +202,6 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "3.2.4",
-    "@vitest/mocker": "3.2.4",
     "@vitest/spy": "3.2.4",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
     "recast": "^0.23.5",
@@ -215,7 +216,7 @@
     "@babel/parser": "^7.26.9",
     "@babel/traverse": "^7.26.9",
     "@babel/types": "^7.26.8",
-    "@clack/prompts": "^1.0.0-alpha.0",
+    "@clack/prompts": "1.0.0-alpha.6",
     "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
     "@emotion/cache": "^11.14.0",
@@ -260,12 +261,10 @@
     "@yarnpkg/fslib": "2.10.3",
     "@yarnpkg/libzip": "2.3.0",
     "ansi-to-html": "^0.7.2",
-    "boxen": "^8.0.1",
     "browser-dtector": "^3.4.0",
     "bundle-require": "^5.1.0",
     "camelcase": "^8.0.0",
     "chai": "^5.1.1",
-    "cli-table3": "^0.6.1",
     "commander": "^14.0.1",
     "comment-parser": "^1.4.1",
     "copy-to-clipboard": "^3.3.1",
@@ -309,7 +308,6 @@
     "polka": "^1.0.0-next.28",
     "prettier": "^3.5.3",
     "pretty-hrtime": "^1.0.3",
-    "prompts": "^2.4.0",
     "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
     "react-aria-components": "patch:react-aria-components@npm%3A1.12.2#~/.yarn/patches/react-aria-components-npm-1.12.2-6c5dcdafab.patch",

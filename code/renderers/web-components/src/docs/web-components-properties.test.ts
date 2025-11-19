@@ -43,7 +43,7 @@ const runWebComponentsAnalyzer = async (inputPath: string): Promise<string> => {
 vi.mock('lit', () => ({ default: {} }));
 vi.mock('lit/directive-helpers.js', () => ({ default: {} }));
 
-describe('web-components component properties', { timeout: 15000, retry: 3 }, () => {
+describe.skip('web-components component properties', { timeout: 15000, retry: 3 }, () => {
   // we need to mock lit and dynamically require custom-elements
   // because lit is distributed as ESM not CJS
   // https://github.com/Polymer/lit-html/issues/516

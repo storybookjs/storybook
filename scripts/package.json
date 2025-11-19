@@ -37,7 +37,7 @@
   "scripts": {
     "bench-packages": "jiti ./bench/bench-packages.ts",
     "build-package": "jiti ./build-package.ts",
-    "check": "jiti ./check/check-package.ts",
+    "check": "yarn jiti ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",
     "docs:codemod": "jiti ./snippets/codemod.ts",
     "docs:prettier:check": "cd ../docs && prettier --check ./_snippets",

@@ -25,8 +25,13 @@
           "args": "--reset --optimized"
         }
       },
-      "inputs": ["production", "^production"],
-      "dependsOn": ["^build"],
+      "inputs": [
+        "production",
+        "^production"
+      ],
+      "dependsOn": [
+        "^build"
+      ],
       "outputs": [
         "{projectRoot}/dist",
         "{workspaceRoot}/code/bench/esbuild-metafiles/{projectName}"
@@ -39,7 +44,9 @@
         "cwd": "{workspaceRoot}/code",
         "command": "yarn vitest watch --project={projectName}"
       },
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "inputs": [
         "default",
         "^production",
@@ -51,8 +58,13 @@
       "configurations": {
         "production": {}
       },
-      "inputs": ["default", "^production"],
-      "dependsOn": ["build"],
+      "inputs": [
+        "default",
+        "^production"
+      ],
+      "dependsOn": [
+        "build"
+      ],
       "cache": true
     },
     "sandbox": {
@@ -62,12 +74,16 @@
           "runtime": "storybook --version"
         }
       ],
-      "outputs": ["{workspaceRoot}/../{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/../{projectRoot}"
+      ],
       "options": {
         "cwd": "{workspaceRoot}",
         "command": "yarn task sandbox -s sandbox --template={projectName}"
       },
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": true
     },
     "sb:dev": {
@@ -77,7 +93,9 @@
         "command": "yarn storybook",
         "args": "--ci"
       },
-      "dependsOn": ["sandbox"]
+      "dependsOn": [
+        "sandbox"
+      ]
     },
     "sb:build": {
       "executor": "nx:run-commands",
@@ -85,10 +103,16 @@
         "cwd": "{workspaceRoot}/../{projectRoot}",
         "command": "yarn build-storybook"
       },
-      "inputs": ["^production"],
-      "outputs": ["{workspaceRoot}/../{projectRoot}/storybook-static"],
+      "inputs": [
+        "^production"
+      ],
+      "outputs": [
+        "{workspaceRoot}/../{projectRoot}/storybook-static"
+      ],
       "cache": true,
-      "dependsOn": ["sandbox"]
+      "dependsOn": [
+        "sandbox"
+      ]
     },
     "sb:serve": {
       "executor": "nx:run-commands",
@@ -97,12 +121,20 @@
         "command": "yarn http-server ../{projectRoot}/storybook-static",
         "args": "--port 8001"
       },
-      "dependsOn": ["sb:build"]
+      "dependsOn": [
+        "sb:build"
+      ]
     }
   },
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "sharedGlobals": ["{workspaceRoot}/code/tsconfig.json", "{workspaceRoot}/scripts/**/*"],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
+    "sharedGlobals": [
+      "{workspaceRoot}/code/tsconfig.json",
+      "{workspaceRoot}/scripts/**/*"
+    ],
     "production": [
       "default",
       "!{projectRoot}/src/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
@@ -111,5 +143,6 @@
       "!{projectRoot}/.eslintrc.{json,js}",
       "!{projectRoot}/src/test-setup.[jt]s"
     ]
-  }
+  },
+  "nxCloudId": "691dbcdcb2822ca4fdc727c4"
 }

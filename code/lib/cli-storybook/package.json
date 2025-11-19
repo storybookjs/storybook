@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "10.1.0-alpha.10",
+  "version": "10.1.0-alpha.13",
   "description": "Storybook CLI: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -56,7 +56,6 @@
     "cross-spawn": "^7.0.6",
     "empathic": "^2.0.0",
     "envinfo": "^7.14.0",
-    "execa": "^9.6.0",
     "globby": "^14.0.1",
     "leven": "^4.0.0",
     "p-limit": "^6.2.0",
@@ -69,5 +68,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae17"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

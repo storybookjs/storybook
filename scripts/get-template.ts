@@ -1,4 +1,4 @@
-import { access, readFile, readdir } from 'node:fs/promises';
+import { access, readFile, readdir, writeFile } from 'node:fs/promises';
 
 import { program } from 'commander';
 import picocolors from 'picocolors';
@@ -106,8 +106,9 @@ type TaskKey = keyof typeof tasksMap;
 const tasks = Object.keys(tasksMap) as TaskKey[];
 
 const CONFIG_YML_FILE = '../.circleci/config.yml';
+const WORKFLOWS_DIR = '../.circleci/src/workflows';
 
-async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey) {
+async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey, fix: boolean = false) {
   const configYml = await readFile(CONFIG_YML_FILE, 'utf-8');
   const data = yaml.parse(configYml);
 
@@ -116,6 +117,12 @@ async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey) {
   const scripts = scriptName ? [scriptName] : tasks;
   const summary = [];
   let isIncorrect = false;
+  const fixes: Array<{
+    cadence: string;
+    job: string;
+    oldParallelism: number;
+    newParallelism: number;
+  }> = [];
 
   cadences.forEach((cad) => {
     summary.push(`\n${picocolors.bold(cad)}`);
@@ -145,6 +152,12 @@ async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey) {
               `(should be ${newParallelism})`
             )}`
           );
+          fixes.push({
+            cadence: cad,
+            job: tasksMap[script],
+            oldParallelism: currentParallelism,
+            newParallelism,
+          });
           isIncorrect = true;
         } else {
           summary.push(
@@ -160,17 +173,131 @@ async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey) {
   });
 
   if (isIncorrect) {
-    summary.unshift(
-      'The parellism count is incorrect for some jobs in .circleci/config.yml, you have to update them:'
-    );
-    throw new Error(summary.concat('\n').join('\n'));
+    if (fix) {
+      // Apply fixes to individual workflow files
+      const fixesByFile: Record<
+        string,
+        Array<{ job: string; oldParallelism: number; newParallelism: number }>
+      > = {};
+
+      // Group fixes by workflow file
+      fixes.forEach(({ cadence: fixCadence, job, oldParallelism, newParallelism }) => {
+        const workflowFile = `${fixCadence}.yml`;
+        if (!fixesByFile[workflowFile]) {
+          fixesByFile[workflowFile] = [];
+        }
+        fixesByFile[workflowFile].push({ job, oldParallelism, newParallelism });
+      });
+
+      // Apply fixes to each workflow file
+      for (const [workflowFile, fileFixes] of Object.entries(fixesByFile)) {
+        const workflowPath = `${WORKFLOWS_DIR}/${workflowFile}`;
+        let workflowContent = await readFile(workflowPath, 'utf-8');
+
+        // Apply fixes using string manipulation to preserve comments and formatting
+        fileFixes.forEach(({ job, newParallelism }) => {
+          // Find the job definition in the YAML content
+          const jobRegex = new RegExp(`^\\s*-\\s+${job}:\\s*$`, 'm');
+          const jobMatch = workflowContent.match(jobRegex);
+
+          if (jobMatch) {
+            const jobStartIndex = jobMatch.index!;
+            const jobStartLine = workflowContent.substring(0, jobStartIndex).split('\n').length - 1;
+            const lines = workflowContent.split('\n');
+
+            // Find the parallelism line for this job
+            let parallelismLineIndex = -1;
+            let indentLevel = 0;
+
+            for (let i = jobStartLine + 1; i < lines.length; i++) {
+              const line = lines[i];
+              const trimmedLine = line.trim();
+
+              // If we hit another job or top-level key, stop looking
+              if (
+                trimmedLine.startsWith('- ') ||
+                (trimmedLine && !line.startsWith(' ') && !trimmedLine.startsWith('#'))
+              ) {
+                break;
+              }
+
+              // Track indentation level
+              if (trimmedLine && !trimmedLine.startsWith('#')) {
+                const currentIndent = line.length - line.trimStart().length;
+                if (indentLevel === 0) {
+                  indentLevel = currentIndent;
+                }
+              }
+
+              // Look for parallelism line
+              if (trimmedLine.startsWith('parallelism:')) {
+                parallelismLineIndex = i;
+                break;
+              }
+            }
+
+            if (parallelismLineIndex !== -1) {
+              // Update existing parallelism line
+              const indent = lines[parallelismLineIndex].match(/^(\s*)/)?.[1] || '';
+              lines[parallelismLineIndex] = `${indent}parallelism: ${newParallelism}`;
+            } else {
+              // Add parallelism line after the job name
+              const indent = lines[jobStartLine].match(/^(\s*)/)?.[1] || '';
+              const jobIndent = indent + '  ';
+              lines.splice(jobStartLine + 1, 0, `${jobIndent}parallelism: ${newParallelism}`);
+            }
+
+            workflowContent = lines.join('\n');
+          }
+        });
+
+        // Write the updated workflow file back with preserved comments and formatting
+        await writeFile(workflowPath, workflowContent, 'utf-8');
+      }
+
+      summary.unshift(
+        `🔧 ${picocolors.green('Fixed')} parallelism counts for ${fixes.length} job${fixes.length === 1 ? '' : 's'} in workflow files:`
+      );
+      summary.push('');
+      summary.push('✅ The parallelism of the following jobs was fixed:');
+      fixes.forEach(({ job, oldParallelism, newParallelism, cadence }) => {
+        summary.push(`  - ${cadence}/${job}: ${oldParallelism} → ${newParallelism}`);
+      });
+      summary.push('');
+      summary.push(
+        `${picocolors.yellow('⚠️  Important:')} You must regenerate the main config file by running:`
+      );
+      summary.push('');
+      summary.push(
+        `${picocolors.cyan('  circleci config pack .circleci/src > .circleci/config.yml')}`
+      );
+      summary.push(`${picocolors.cyan('  circleci config validate .circleci/config.yml')}`);
+      summary.push('');
+      summary.push(
+        `${picocolors.gray('See .circleci/README.md for more details about the packing process.')}`
+      );
+      console.log(summary.concat('\n').join('\n'));
+    } else {
+      summary.unshift(
+        'The parallelism count is incorrect for some jobs in .circleci/config.yml, you have to update them:'
+      );
+      summary.push('');
+      summary.push(
+        `${picocolors.yellow('💡 Tip:')} Use the ${picocolors.cyan('--fix')} flag to automatically fix these issues.`
+      );
+      summary.push('');
+      summary.push(
+        `${picocolors.gray('Note: The fix will update the workflow files in .circleci/src/workflows/ and you will need to regenerate the main config.yml file. See .circleci/README.md for details.')}`
+      );
+      throw new Error(summary.concat('\n').join('\n'));
+    }
   } else {
     summary.unshift('✅  The parallelism count is correct for all jobs in .circleci/config.yml:');
     console.log(summary.concat('\n').join('\n'));
   }
 
   const inDevelopmentTemplates = Object.entries(allTemplates)
-    .filter(([_, t]) => t.inDevelopment)
+    .filter(([, t]) => t.inDevelopment)
     .map(([k]) => k);
 
   if (inDevelopmentTemplates.length > 0) {
@@ -182,16 +309,21 @@ async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey) {
   }
 }
 
-type RunOptions = { cadence?: Cadence; task?: TaskKey; check: boolean };
-async function run({ cadence, task, check }: RunOptions) {
-  if (check) {
+type RunOptions = {
+  cadence?: Cadence;
+  task?: TaskKey;
+  check: boolean;
+  fix: boolean;
+};
+async function run({ cadence, task, check, fix }: RunOptions) {
+  if (check || fix) {
     if (task && !tasks.includes(task)) {
       throw new Error(
         dedent`The "${task}" task you provided is not valid. Valid tasks (found in .circleci/config.yml) are:
         ${tasks.map((v) => `- ${v}`).join('\n')}`
       );
     }
-    await checkParallelism(cadence as Cadence, task);
+    await checkParallelism(cadence as Cadence, task, fix);
     return;
   }
 
@@ -214,11 +346,8 @@ if (esMain(import.meta.url)) {
     .description('Retrieve the template to run for a given cadence and task')
     .option('--cadence <cadence>', 'Which cadence you want to run the script for')
     .option('--task <task>', 'Which task you want to run the script for')
-    .option(
-      '--check',
-      'Throws an error when the parallelism counts for tasks are incorrect',
-      false
-    );
+    .option('--check', 'Throws an error when the parallelism counts for tasks are incorrect', false)
+    .option('--fix', 'Automatically fix parallelism counts in workflow files', false);
 
   program.parse(process.argv);
 

@@ -138,19 +138,21 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
 
     return wrappedSpinner;
   } else {
+    const maybeLog = shouldLog('info') ? logger.log : (_: string) => {};
+
     return {
       start: (message) => {
         if (message) {
-          logger.log(message);
+          maybeLog(message);
         }
       },
       stop: (message) => {
         if (message) {
-          logger.log(message);
+          maybeLog(message);
         }
       },
       message: (message) => {
-        logger.log(message);
+        maybeLog(message);
       },
     };
   }

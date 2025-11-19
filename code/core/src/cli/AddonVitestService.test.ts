@@ -381,7 +381,7 @@ describe('AddonVitestService', () => {
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockResolvedValue(undefined);
 
-      const errors = await service.installPlaywright(mockPackageManager);
+      const { errors } = await service.installPlaywright(mockPackageManager);
 
       expect(errors).toEqual([]);
       expect(prompt.confirm).toHaveBeenCalledWith({
@@ -424,7 +424,7 @@ describe('AddonVitestService', () => {
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(error);
 
-      const errors = await service.installPlaywright(mockPackageManager);
+      const { errors } = await service.installPlaywright(mockPackageManager);
 
       expect(errors).toEqual(['Error stack trace']);
     });
@@ -435,7 +435,7 @@ describe('AddonVitestService', () => {
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(error);
 
-      const errors = await service.installPlaywright(mockPackageManager);
+      const { errors } = await service.installPlaywright(mockPackageManager);
 
       expect(errors).toEqual(['Installation failed']);
     });
@@ -444,7 +444,7 @@ describe('AddonVitestService', () => {
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue('String error');
 
-      const errors = await service.installPlaywright(mockPackageManager);
+      const { errors } = await service.installPlaywright(mockPackageManager);
 
       expect(errors).toEqual(['String error']);
     });
@@ -452,7 +452,7 @@ describe('AddonVitestService', () => {
     it('should skip installation when user declines', async () => {
       vi.mocked(prompt.confirm).mockResolvedValue(false);
 
-      const errors = await service.installPlaywright(mockPackageManager);
+      const { errors } = await service.installPlaywright(mockPackageManager);
 
       expect(errors).toEqual([]);
       expect(prompt.executeTaskWithSpinner).not.toHaveBeenCalled();

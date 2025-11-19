@@ -7,7 +7,6 @@ import { getProjectRoot } from '../utils/paths';
 import { BUNProxy } from './BUNProxy';
 import type { JsPackageManager } from './JsPackageManager';
 import { PackageManagerName } from './JsPackageManager';
-import { COMMON_ENV_VARS } from './JsPackageManager';
 import { NPMProxy } from './NPMProxy';
 import { PNPMProxy } from './PNPMProxy';
 import { Yarn1Proxy } from './Yarn1Proxy';
@@ -166,7 +165,7 @@ export class JsPackageManagerFactory {
   private static PROXY_MAP: Record<PackageManagerName, PackageManagerProxy> = {
     npm: NPMProxy,
     pnpm: PNPMProxy,
-    yarn1: Yarn1Proxy,
+    yarn: Yarn1Proxy,
     yarn2: Yarn2Proxy,
     bun: BUNProxy,
   };
@@ -207,10 +206,7 @@ function hasNPM(cwd?: string) {
       command: 'npm',
       args: ['--version'],
       cwd,
-      env: {
-        ...process.env,
-        ...COMMON_ENV_VARS,
-      },
+      env: process.env,
     });
     return true;
   } catch (err) {
@@ -224,10 +220,7 @@ function hasBun(cwd?: string) {
       command: 'bun',
       args: ['--version'],
       cwd,
-      env: {
-        ...process.env,
-        ...COMMON_ENV_VARS,
-      },
+      env: process.env,
     });
     return true;
   } catch (err) {
@@ -241,10 +234,7 @@ function hasPNPM(cwd?: string) {
       command: 'pnpm',
       args: ['--version'],
       cwd,
-      env: {
-        ...process.env,
-        ...COMMON_ENV_VARS,
-      },
+      env: process.env,
     });
 
     return true;
@@ -261,7 +251,6 @@ function getYarnVersion(cwd?: string): 1 | 2 | undefined {
       cwd,
       env: {
         ...process.env,
-        ...COMMON_ENV_VARS,
       },
     });
     return /^1\.+/.test(yarnVersion.trim()) ? 1 : 2;

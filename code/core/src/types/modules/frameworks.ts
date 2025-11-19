@@ -16,11 +16,11 @@ export enum SupportedFramework {
   VUE3_VITE = 'vue3-vite',
   WEB_COMPONENTS_VITE = 'web-components-vite',
   // COMMUNITY
-  QWIK = 'qwik',
-  SOLID = 'solid',
-  NUXT = 'nuxt',
-  REACT_RSBUILD = 'react-rsbuild',
-  VUE3_RSBUILD = 'vue3-rsbuild',
   HTML_RSBUILD = 'html-rsbuild',
+  NUXT = 'nuxt',
+  QWIK = 'qwik',
+  REACT_RSBUILD = 'react-rsbuild',
+  SOLID = 'solid',
+  VUE3_RSBUILD = 'vue3-rsbuild',
   WEB_COMPONENTS_RSBUILD = 'web-components-rsbuild',
 }

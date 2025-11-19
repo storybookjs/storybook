@@ -9,15 +9,6 @@ import type { CommandOptions, GeneratorModule, GeneratorOptions } from '../gener
 import { AddonService } from '../services';
 import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
 
-export type GeneratorExecutionResult = (
-  | ReturnType<typeof baseGenerator>
-  | {
-      shouldRunDev?: boolean;
-      configDir?: string;
-      storybookCommand?: string;
-    }
-) & { extraAddons: string[] };
-
 type ExecuteProjectGeneratorOptions = {
   projectType: ProjectType;
   language: SupportedLanguage;
@@ -112,8 +103,8 @@ export class GeneratorExecutionCommand {
       framework: frameworkInfo.framework,
       renderer: frameworkInfo.renderer,
       linkable: !!options.linkable,
-      pnp: options.usePnp as boolean,
-      yes: options.yes as boolean,
+      pnp: !!options.usePnp,
+      yes: !!options.yes,
       projectType,
       features: selectedFeatures,
       dependencyCollector: this.dependencyCollector,

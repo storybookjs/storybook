@@ -1,4 +1,4 @@
-import type { PackageManagerName } from 'storybook/internal/common';
+import { PackageManagerName } from 'storybook/internal/common';
 import { HandledError, JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
 import {
   CLI_COLORS,
@@ -430,7 +430,10 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       await rootPackageManager.installDependencies();
     }
 
-    if (rootPackageManager.type !== 'yarn1' && rootPackageManager.isStorybookInMonorepo()) {
+    if (
+      rootPackageManager.type !== PackageManagerName.YARN1 &&
+      rootPackageManager.isStorybookInMonorepo()
+    ) {
       logger.warn(
         `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
       );

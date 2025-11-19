@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
+import { executeCommand, executeNodeCommand } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { join } from 'pathe';
@@ -53,26 +53,34 @@ async function run() {
           args,
         } as const);
 
-  let command;
   try {
     const { default: targetCliPackageJson } = await import(`${targetCli.pkg}/package.json`, {
       with: { type: 'json' },
     });
     if (targetCliPackageJson.version === versions[targetCli.pkg]) {
-      command = [
-        'node',
-        join(resolvePackageDir(targetCli.pkg), 'dist/bin/index.js'),
-        ...targetCli.args,
-      ];
+      const child = executeNodeCommand({
+        scriptPath: join(resolvePackageDir(targetCli.pkg), 'dist/bin/index.js'),
+        args: targetCli.args,
+        options: {
+          stdio: 'inherit',
+        },
+      });
+      child.on('exit', (code) => {
+        process.exit(code ?? 1);
+      });
+      return;
     }
-  } catch (e) {
+  } catch {
     // the package couldn't be imported, use npx to install and run it instead
   }
-  command ??= ['npx', '--yes', `${targetCli.pkg}@${versions[targetCli.pkg]}`, ...targetCli.args];
 
-  const child = spawn(command[0], command.slice(1), { stdio: 'inherit' });
+  const child = executeCommand({
+    command: 'npx',
+    args: ['--yes', `${targetCli.pkg}@${versions[targetCli.pkg]}`, ...targetCli.args],
+    stdio: 'inherit',
+  });
   child.on('exit', (code) => {
-    process.exit(code);
+    process.exit(code ?? 1);
   });
 }
 

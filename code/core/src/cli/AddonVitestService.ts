@@ -38,15 +38,15 @@ export interface AddonVitestCompatibilityOptions {
  */
 export class AddonVitestService {
   readonly supportedFrameworks: SupportedFramework[] = [
+    SupportedFramework.HTML_VITE,
     SupportedFramework.NEXTJS_VITE,
+    SupportedFramework.PREACT_VITE,
+    SupportedFramework.REACT_NATIVE_WEB_VITE,
     SupportedFramework.REACT_VITE,
     SupportedFramework.SVELTE_VITE,
-    SupportedFramework.VUE3_VITE,
-    SupportedFramework.PREACT_VITE,
-    SupportedFramework.HTML_VITE,
-    SupportedFramework.WEB_COMPONENTS_VITE,
     SupportedFramework.SVELTEKIT,
-    SupportedFramework.REACT_NATIVE_WEB_VITE,
+    SupportedFramework.VUE3_VITE,
+    SupportedFramework.WEB_COMPONENTS_VITE,
   ];
   /**
    * Collect all dependencies needed for @storybook/addon-vitest
@@ -115,7 +115,7 @@ export class AddonVitestService {
   async installPlaywright(
     packageManager: JsPackageManager,
     options: { yes?: boolean } = {}
-  ): Promise<string[]> {
+  ): Promise<{ errors: string[] }> {
     const errors: string[] = [];
 
     const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
@@ -162,7 +162,7 @@ export class AddonVitestService {
       }
     }
 
-    return errors;
+    return { errors };
   }
 
   /**

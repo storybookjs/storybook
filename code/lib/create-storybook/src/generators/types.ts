@@ -118,7 +118,7 @@ export interface GeneratorModule {
 export type CommandOptions = {
   packageManager: PackageManagerName;
   usePnp?: boolean;
-  features: Set<Feature>;
+  features?: Array<Feature>;
   type?: ProjectType;
   force?: any;
   html?: boolean;

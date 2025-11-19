@@ -44,10 +44,10 @@ export class AddonConfigurationCommand {
     configDir,
     dependencyInstallationResult,
   }: ExecuteAddonConfigurationParams): Promise<ExecuteAddonConfigurationResult> {
-    if (
-      dependencyInstallationResult.status === 'failed' &&
-      this.getAddonsWithInstructions(addons).length > 0
-    ) {
+    const areDependenciesInstalled =
+      dependencyInstallationResult.status === 'success' && !options.skipInstall;
+
+    if (!areDependenciesInstalled && this.getAddonsWithInstructions(addons).length > 0) {
       this.logManualAddonInstructions(addons);
       return { status: 'failed' };
     }

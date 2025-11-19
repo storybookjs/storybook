@@ -1,5 +1,5 @@
 import { cache } from 'storybook/internal/common';
-import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
@@ -17,7 +17,7 @@ export const notify = async () => {
 
   cache.set(TELEMETRY_KEY_NOTIFY_DATE, Date.now());
 
-  logger.log(
+  logger.info(
     dedent`
     Attention: Storybook now collects completely anonymous telemetry regarding usage. This information is used to shape Storybook's roadmap and prioritize features. You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
     https://storybook.js.org/telemetry

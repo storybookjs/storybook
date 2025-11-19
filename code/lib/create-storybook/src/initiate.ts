@@ -1,11 +1,8 @@
 import { ProjectType } from 'storybook/internal/cli';
-import { type JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, executeCommand } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
-
-// eslint-disable-next-line depend/ban-dependencies
-import execa from 'execa';
 
 import {
   executeAddonConfiguration,
@@ -62,11 +59,9 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 4: Get user preferences and feature selections (with framework/builder for validation)
   const { newUser, selectedFeatures } = await executeUserPreferences(packageManager, {
-    yes: options.yes,
     options,
     framework,
     builder,
-    dependencyCollector,
     projectType,
   });
 
@@ -198,7 +193,10 @@ async function runStorybookDev(result: {
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
-    execa.command(`${storybookCommand} ${flags.join(' ')}`, {
+    const [command, ...args] = [...storybookCommand.split(' '), ...flags];
+    executeCommand({
+      command: command,
+      args,
       stdio: 'inherit',
     });
   } catch {

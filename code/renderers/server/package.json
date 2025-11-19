@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server",
-  "version": "10.1.0-alpha.10",
+  "version": "10.1.0-alpha.13",
   "description": "Storybook Server renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -58,5 +58,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae17"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

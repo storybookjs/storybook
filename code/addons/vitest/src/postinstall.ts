@@ -139,9 +139,12 @@ export default async function postInstall(options: PostinstallOptions) {
   // Install Playwright browser binaries using AddonVitestService
   if (!options.skipDependencyManagement) {
     if (!options.skipInstall) {
-      const playwrightErrors = await addonVitestService.installPlaywright(packageManager, {
-        yes: options.yes,
-      });
+      const { errors: playwrightErrors } = await addonVitestService.installPlaywright(
+        packageManager,
+        {
+          yes: options.yes,
+        }
+      );
       errors.push(...playwrightErrors);
     } else {
       logger.warn(dedent`

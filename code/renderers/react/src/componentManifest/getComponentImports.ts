@@ -269,7 +269,6 @@ export const getImports = ({
     order: number;
   };
 
-  const isRelative = (id: string) => id.startsWith('.') || id === '.';
 
   const withSource = components
     .filter((c) => Boolean(c.importId))

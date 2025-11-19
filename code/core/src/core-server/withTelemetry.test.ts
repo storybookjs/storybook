@@ -31,6 +31,14 @@ describe('withTelemetry', () => {
     expect(telemetry).toHaveBeenCalledTimes(0);
   });
 
+  it('disable telementry when --no-version-updates flag is enabled in cliOptions', async () => {
+    const run = vi.fn();
+
+    await withTelemetry('dev', { cliOptions: { versionUpdates: false } }, run);
+
+    expect(telemetry).toHaveBeenCalledTimes(0);
+  });
+
   describe('when command fails', () => {
     const error = new Error('An Error!');
     const run = vi.fn(async () => {

@@ -23,8 +23,8 @@ import {
   ADDON_ID as ADDON_ONBOARDING_ID,
 } from '../../../../../addons/onboarding/src/constants';
 import {
-  ADDON_TEST_CHANNEL,
   ADDON_ID as ADDON_TEST_ID,
+  STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../../addons/vitest/src/constants';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../../docs-tools/shared';
 import { TourGuide } from '../../components/TourGuide/TourGuide';
@@ -742,7 +742,7 @@ export const Disabled: Story = {
           criteria: 'Accessibility tests are run from the test widget in the sidebar',
           subscribe: ({ api, done }) =>
             api.on(
-              ADDON_TEST_CHANNEL,
+              STORYBOOK_ADDON_TEST_CHANNEL,
               ({ type, payload }) => type === 'test-run-completed' && payload.config.a11y && done()
             ),
           content: ({ api }) => (
@@ -885,7 +885,7 @@ export const Disabled: Story = {
           criteria: 'Generate a coverage report',
           subscribe: ({ api, done }) =>
             api.on(
-              ADDON_TEST_CHANNEL,
+              STORYBOOK_ADDON_TEST_CHANNEL,
               ({ type, payload }) =>
                 type === 'test-run-completed' && payload.config.coverage && done()
             ),

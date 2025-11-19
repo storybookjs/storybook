@@ -22,8 +22,8 @@ import {
 } from 'storybook/manager-api';
 
 import {
-  ADDON_TEST_CHANNEL,
   STATUS_TYPE_ID_COMPONENT_TEST,
+  STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/vitest/src/constants';
 import { EVENTS } from '../../instrumenter/EVENTS';
 import {
@@ -382,7 +382,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           () =>
             setResultMismatch((currentValue) => {
               if (!currentValue) {
-                emit(ADDON_TEST_CHANNEL, {
+                emit(STORYBOOK_ADDON_TEST_CHANNEL, {
                   type: 'test-discrepancy',
                   payload: {
                     browserStatus: browserTestStatus === CallStates.DONE ? 'PASS' : 'FAIL',

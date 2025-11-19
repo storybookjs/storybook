@@ -27,6 +27,10 @@ const ignoreList = [
     error.message.includes(
       "importMetaResolve from within Storybook is being used in a Vitest test, but it shouldn't be. Please report this at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml"
     ),
+  (error: any) =>
+    error.message.includes('<Pressable> child must forward its ref to a DOM element.'),
+  (error: any) =>
+    error.message.includes('<Focusable> child must forward its ref to a DOM element.'),
 ];
 
 const throwMessage = (type: any, message: any) => {
@@ -90,6 +94,7 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
       info: vi.fn(),
       trace: vi.fn(),
       debug: vi.fn(),
+      verbose: vi.fn(),
       logBox: vi.fn(),
       intro: vi.fn(),
       outro: vi.fn(),

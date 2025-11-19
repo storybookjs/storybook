@@ -83,12 +83,12 @@ export async function generateBundle({
     ignoreAnnotations: true,
     splitting: true,
     metafile: true,
-    keepNames: true, // required to show correct error messages based on class names
     outbase: 'src',
     outdir: 'dist',
     treeShaking: true,
     color: true,
     external,
+    minifySyntax: true,
     define: {
       /*
        * We need to disable the default behavior of replacing process.env.NODE_ENV with "development"

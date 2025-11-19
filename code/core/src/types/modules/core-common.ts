@@ -352,7 +352,13 @@ export interface ComponentManifest {
   description?: string;
   import?: string;
   summary?: string;
-  examples: { name: string; snippet?: string; error?: { name: string; message: string } }[];
+  stories: {
+    name: string;
+    snippet?: string;
+    description?: string;
+    summary?: string;
+    error?: { name: string; message: string };
+  }[];
   jsDocTags: Record<string, string[]>;
   error?: { name: string; message: string };
 }
@@ -381,7 +387,7 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
-  componentManifestGenerator?: ComponentManifestGenerator;
+  experimental_componentManifestGenerator?: ComponentManifestGenerator;
   experimental_enrichCsf?: CsfEnricher;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;

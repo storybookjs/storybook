@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.1.0-alpha.1",
+  "version": "10.1.0-alpha.12",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -67,6 +67,7 @@
     "acorn-walk": "^7.2.0",
     "babel-plugin-react-docgen": "^4.2.1",
     "comment-parser": "^1.4.1",
+    "empathic": "^2.0.0",
     "es-toolkit": "^1.36.0",
     "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
@@ -91,5 +92,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

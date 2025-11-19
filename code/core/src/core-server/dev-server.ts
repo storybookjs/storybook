@@ -144,7 +144,7 @@ export async function storybookDevServer(options: Options) {
   if (features?.experimentalComponentsManifest) {
     app.use('/manifests/components.json', async (req, res) => {
       try {
-        const componentManifestGenerator: ComponentManifestGenerator = await options.presets.apply(
+        const componentManifestGenerator = await options.presets.apply(
           'experimental_componentManifestGenerator'
         );
         const indexGenerator = await initializedStoryIndexGenerator;
@@ -169,7 +169,7 @@ export async function storybookDevServer(options: Options) {
 
     app.get('/manifests/components.html', async (req, res) => {
       try {
-        const componentManifestGenerator: ComponentManifestGenerator = await options.presets.apply(
+        const componentManifestGenerator = await options.presets.apply(
           'experimental_componentManifestGenerator'
         );
         const indexGenerator = await initializedStoryIndexGenerator;
@@ -191,7 +191,8 @@ export async function storybookDevServer(options: Options) {
         // logger?.error?.(e instanceof Error ? e : String(e));
         res.statusCode = 500;
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.end(`<pre>${e instanceof Error ? e.toString() : String(e)}</pre>`);
+        invariant(e instanceof Error);
+        res.end(`<pre>${e.stack}</pre>`);
       }
     });
   }

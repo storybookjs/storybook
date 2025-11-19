@@ -46,6 +46,13 @@ type ControlsBlockParameters = {
     | {
         pinned: string[];
         fallback?: 'none' | 'alpha' | 'requiredFirst';
+        group?:
+          | 'none'
+          | 'alpha'
+          | {
+              pinned: string[];
+              fallback?: 'none' | 'alpha';
+            };
       };
 };
 
@@ -74,6 +81,13 @@ type ArgTypesBlockParameters = {
     | {
         pinned: string[];
         fallback?: 'none' | 'alpha' | 'requiredFirst';
+        group?:
+          | 'none'
+          | 'alpha'
+          | {
+              pinned: string[];
+              fallback?: 'none' | 'alpha';
+            };
       };
 };
 

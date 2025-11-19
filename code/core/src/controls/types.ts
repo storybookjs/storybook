@@ -49,6 +49,13 @@ export interface ControlsParameters {
       | {
           pinned: string[];
           fallback?: 'none' | 'alpha' | 'requiredFirst';
+          group?:
+            | 'none'
+            | 'alpha'
+            | {
+                pinned: string[];
+                fallback?: 'none' | 'alpha';
+              };
         };
   };
 }

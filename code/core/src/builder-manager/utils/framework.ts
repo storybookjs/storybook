@@ -1,9 +1,6 @@
 import { sep } from 'node:path';
 
-import {
-  extractProperRendererNameFromFramework,
-  getFrameworkName,
-} from 'storybook/internal/common';
+import { extractRenderer, getFrameworkName } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
 interface PropertyObject {
@@ -36,11 +33,10 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   const { builder } = await options.presets.apply('core');
 
   const frameworkName = await getFrameworkName(options);
-  const rendererName = await extractProperRendererNameFromFramework(frameworkName);
+  const rendererName = await extractRenderer(frameworkName);
 
   if (rendererName) {
-    globals.STORYBOOK_RENDERER =
-      (await extractProperRendererNameFromFramework(frameworkName)) ?? undefined;
+    globals.STORYBOOK_RENDERER = rendererName ?? undefined;
   }
 
   const resolvedPreviewBuilder = pluckNameFromConfigProperty(builder);

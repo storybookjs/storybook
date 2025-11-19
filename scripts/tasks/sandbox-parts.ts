@@ -8,12 +8,12 @@ import { isFunction } from 'es-toolkit/predicate';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
+import { SupportedLanguage } from '../../code/core/dist/types';
 import { babelParse, types as t } from '../../code/core/src/babel';
-import { detectLanguage } from '../../code/core/src/cli/detect';
-import { SupportedLanguage } from '../../code/core/src/cli/project_types';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
 import storybookPackages from '../../code/core/src/common/versions';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
@@ -23,6 +23,7 @@ import {
   writeConfig,
 } from '../../code/core/src/csf-tools';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
 import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
@@ -196,7 +197,12 @@ export const init: Task['run'] = async (
 
   await executeCLIStep(steps.init, {
     cwd,
-    optionValues: { debug, yes: true, 'skip-install': true, ...extra },
+    optionValues: {
+      loglevel: debug ? 'debug' : 'info',
+      yes: true,
+      ...extra,
+      ...(template.initOptions || {}),
+    },
     dryRun,
     debug,
   });
@@ -592,11 +598,13 @@ export const addStories: Task['run'] = async (
   const mainConfig = await readConfig({ fileName: 'main', cwd });
   const packageManager = JsPackageManagerFactory.getPackageManager({}, sandboxDir);
 
+  // Package manager types differ slightly due to private methods and compilation differences of types
+  const projectTypeService = new ProjectTypeService(packageManager as any);
+
   // Ensure that we match the right stories in the stories directory
   updateStoriesField(
     mainConfig,
-    (await detectLanguage(packageManager as any as Parameters<typeof detectLanguage>[0])) ===
-      SupportedLanguage.JAVASCRIPT
+    (await projectTypeService.detectLanguage()) === SupportedLanguage.JAVASCRIPT
   );
 
   const isCoreRenderer =

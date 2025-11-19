@@ -259,11 +259,15 @@
     "targets": {
       "lint": {
         "command": "yarn lint",
-        "dependsOn": ["^build"]
+        "dependsOn": [
+          "^build"
+        ]
       },
       "test": {
         "command": "yarn test",
-        "dependsOn": ["^build"]
+        "dependsOn": [
+          "^build"
+        ]
       }
     }
   },

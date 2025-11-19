@@ -172,13 +172,13 @@ export const ChecklistWidget = () => {
   const [items, setItems] = useState<ChecklistItem[]>([]);
 
   useEffect(() => {
-    setItems((current) => {
-      current.forEach((item) => {
-        item.isCompleted = accepted.includes(item.id) || done.includes(item.id);
-        item.isSkipped = skipped.includes(item.id);
-      });
-      return current;
-    });
+    setItems((current) =>
+      current.map((item) => ({
+        ...item,
+        isCompleted: accepted.includes(item.id) || done.includes(item.id),
+        isSkipped: skipped.includes(item.id),
+      }))
+    );
     const timeout = setTimeout(setItems, 2000, nextItems);
     return () => clearTimeout(timeout);
   }, [accepted, done, skipped, nextItems]);

@@ -5,8 +5,22 @@
   "type": "module",
   "nx": {
     "name": "scripts",
-    "includedScripts": [],
+    "includedScripts": [
+      "check"
+    ],
     "targets": {
+      "test": {
+        "cache": true,
+        "command": "yarn test",
+        "dependsOn": [        {
+          "projects": ["core"],
+          "target": "build",
+          "params": "ignore"
+        }],
+        "inputs": [
+          "default"
+        ]
+      },
       "pretty-docs": {
         "cache": true,
         "command": "yarn docs:prettier:check",

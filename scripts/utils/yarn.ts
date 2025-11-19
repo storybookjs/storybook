@@ -103,7 +103,11 @@ export const addWorkaroundResolutions = async ({
           react: packageJson.dependencies.react,
           'react-dom': packageJson.dependencies['react-dom'],
         }
-      : {};
+      : key === 'react-rsbuild/default-ts'
+        ? {
+            'react-docgen': '^8.0.2',
+          }
+        : {};
 
   packageJson.resolutions = {
     ...packageJson.resolutions,

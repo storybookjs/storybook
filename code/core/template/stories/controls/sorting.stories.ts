@@ -32,3 +32,9 @@ export const None = { parameters: { controls: { sort: 'none' } } };
 export const Alpha = { parameters: { controls: { sort: 'alpha' } } };
 
 export const RequiredFirst = { parameters: { controls: { sort: 'requiredFirst' } } };
+
+export const Pinned = { parameters: { controls: { sort: { pinned: ['z', 'a', 'style'] } } } };
+
+export const PinnedWithFallback = {
+  parameters: { controls: { sort: { pinned: ['z', 'a'], fallback: 'alpha' } } },
+};

@@ -4,6 +4,13 @@ export default {
   args: { onClick: () => console.log('clicked!') },
   parameters: {
     chromatic: { disable: true },
+    docs: {
+      controls: {
+        sort: {
+          pinned: ['onClick', 'label'],
+        },
+      },
+    },
   },
 };
 

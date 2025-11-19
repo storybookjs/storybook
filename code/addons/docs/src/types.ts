@@ -39,7 +39,14 @@ type ControlsBlockParameters = {
   include?: string[] | RegExp;
 
   /** Controls sorting order */
-  sort?: 'none' | 'alpha' | 'requiredFirst';
+  sort?:
+    | 'none'
+    | 'alpha'
+    | 'requiredFirst'
+    | {
+        pinned: string[];
+        fallback?: 'none' | 'alpha' | 'requiredFirst';
+      };
 };
 
 type ArgTypesBlockParameters = {
@@ -60,7 +67,14 @@ type ArgTypesBlockParameters = {
    *
    * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-argtypes#sort
    */
-  sort?: 'none' | 'alpha' | 'requiredFirst';
+  sort?:
+    | 'none'
+    | 'alpha'
+    | 'requiredFirst'
+    | {
+        pinned: string[];
+        fallback?: 'none' | 'alpha' | 'requiredFirst';
+      };
 };
 
 type CanvasBlockParameters = {

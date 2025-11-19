@@ -46,7 +46,8 @@ export const Controls: FC<ControlsProps> = (props) => {
   const context = useContext(DocsContext);
   const { story } = context.resolveOf(of || 'story', ['story']);
   const { parameters, argTypes, component, subcomponents } = story;
-  const controlsParameters = parameters.docs?.controls || ({} as ControlsParameters);
+  const controlsParameters =
+    parameters.docs?.controls || parameters.controls || ({} as ControlsParameters);
 
   const include = props.include ?? controlsParameters.include;
   const exclude = props.exclude ?? controlsParameters.exclude;

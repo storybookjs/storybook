@@ -271,10 +271,12 @@ const groupRows = (rows: ArgType, sort: SortType | SortCustom): Sections => {
   let finalRows =
     toPin.length === 0
       ? Object.entries(rows)
-      : toPin
-          .map((name) => pinned.get(name))
-          .filter((entry): entry is [string, ArgType] => entry !== undefined)
-          .concat(unpinned);
+      : [
+          ...toPin
+            .map((name) => pinned.get(name))
+            .filter((entry): entry is [string, ArgType] => entry !== undefined),
+          ...unpinned,
+        ];
 
   if (toPin.length === 0 && sortFn) {
     finalRows = finalRows.sort((a, b) => sortFn(a[1], b[1]));

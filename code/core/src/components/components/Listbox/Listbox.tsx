@@ -7,7 +7,6 @@ import { Button } from '../Button/Button';
 
 const ListboxItem = styled.div<{
   active?: boolean;
-  showOnHover?: string;
   transitionStatus?: TransitionStatus;
 }>(
   ({ active, theme }) => ({

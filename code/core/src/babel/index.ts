@@ -37,5 +37,5 @@ export {
 };
 
 export type { BabelFile, NodePath } from '@babel/core';
-export type { GeneratorOptions } from '@babel/generator';
+export type { GeneratorOptions, GeneratorResult } from '@babel/generator';
 export type { Options as RecastOptions } from 'recast';

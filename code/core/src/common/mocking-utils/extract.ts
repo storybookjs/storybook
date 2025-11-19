@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { generate, parser, types as t } from 'storybook/internal/babel';
+import { type GeneratorResult, generate, parser, types as t } from 'storybook/internal/babel';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig } from 'storybook/internal/types';
@@ -51,7 +51,7 @@ export const babelParser = (code: string): t.Program => {
 };
 
 /** Utility to rewrite sb.mock(import('...'), ...) to sb.mock('...', ...) */
-export function rewriteSbMockImportCalls(code: string) {
+export function rewriteSbMockImportCalls(code: string): GeneratorResult {
   const ast = babelParser(code);
 
   walk(ast as any, {

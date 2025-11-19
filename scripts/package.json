@@ -5,9 +5,6 @@
   "type": "module",
   "nx": {
     "name": "scripts",
-    "includedScripts": [
-      "check"
-    ],
     "targets": {
       "test": {
         "cache": true,

@@ -3,10 +3,15 @@ import { relative } from 'node:path';
 
 import type { BuilderStats } from 'storybook/internal/types';
 
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import type { Plugin } from 'vite';
 
-import { SB_VIRTUAL_FILES, getOriginalVirtualModuleId } from '../virtual-file-names';
+import {
+  SB_VIRTUAL_FILES,
+  getOriginalVirtualModuleId,
+  getResolvedVirtualModuleId,
+} from '../virtual-file-names';
 
 /*
  * Reason, Module are copied from chromatic types

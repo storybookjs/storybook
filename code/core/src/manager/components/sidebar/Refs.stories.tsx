@@ -1,9 +1,11 @@
+/* eslint-disable local-rules/no-uncategorized-errors */
 import React from 'react';
 
-import type { StoryAnnotations } from 'storybook/internal/csf';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
 import { fn, userEvent, within } from 'storybook/test';
+import { dedent } from 'ts-dedent';
 
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';
@@ -22,22 +24,24 @@ const managerContext = {
   },
 } as any;
 
-export default {
+const meta = {
   component: Ref,
   title: 'Sidebar/Refs',
   excludeStories: /.*Data$/,
   parameters: { layout: 'fullscreen' },
   globals: { sb_theme: 'side-by-side' },
   decorators: [
-    (storyFn: any) => (
+    (storyFn) => (
       <ManagerContext.Provider value={managerContext}>
         <IconSymbols />
         {storyFn()}
       </ManagerContext.Provider>
     ),
-    (storyFn: any) => <div style={{ padding: '0 20px', maxWidth: '230px' }}>{storyFn()}</div>,
+    (storyFn) => <div style={{ padding: '0 20px', maxWidth: '230px' }}>{storyFn()}</div>,
   ],
-};
+} satisfies Meta<typeof Ref>;
+
+export default meta;
 
 const { menu } = standardHeaderData;
 const filteredIndex = mockDataset.withRoot;
@@ -49,7 +53,16 @@ export const loadingData = { menu, filteredIndex: {} };
 // @ts-expect-error (non strict)
 const indexError: Error = (() => {
   try {
-    throw new Error('There was a severe problem');
+    const err = new Error('There was a severe problem');
+    err.stack = dedent`
+      at errorStory (/sb-preview/file.js:000:0001)
+      at hookified (/sb-preview/file.js:000:0001)
+      at defaultDecorateStory (/sb-preview/file.js:000:0001)
+      at jsxDecorator (/assets/file.js:000:0001)
+      at hookified (/sb-preview/file.js:000:0001)
+      at decorateStory (/sb-preview/file.js:000:0001)
+    `;
+    throw err;
   } catch (e) {
     return e;
   }
@@ -282,7 +295,7 @@ export const ErroredMobile = () => (
   />
 );
 ErroredMobile.globals = { sb_theme: 'stacked', viewport: { value: 'mobile1' } };
-export const ErroredWithErrorOpen: StoryAnnotations = {
+export const ErroredWithErrorOpen: StoryObj = {
   render: () => Errored(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -290,7 +303,7 @@ export const ErroredWithErrorOpen: StoryAnnotations = {
     await userEvent.click(button);
   },
 };
-export const ErroredMobileWithErrorOpen: StoryAnnotations = {
+export const ErroredMobileWithErrorOpen: StoryObj = {
   render: () => ErroredMobile(),
   globals: { sb_theme: 'stacked', viewport: { value: 'mobile1' } },
   play: async ({ canvasElement }) => {
@@ -299,7 +312,7 @@ export const ErroredMobileWithErrorOpen: StoryAnnotations = {
     await userEvent.click(button);
   },
 };
-export const ErroredWithIndicatorOpen: StoryAnnotations = {
+export const ErroredWithIndicatorOpen: StoryObj = {
   render: () => Errored(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -307,7 +320,7 @@ export const ErroredWithIndicatorOpen: StoryAnnotations = {
     await userEvent.click(button);
   },
 };
-export const ErroredMobileWithIndicatorOpen: StoryAnnotations = {
+export const ErroredMobileWithIndicatorOpen: StoryObj = {
   render: () => ErroredMobile(),
   globals: { sb_theme: 'stacked', viewport: { value: 'mobile1' } },
   play: async ({ canvasElement }) => {

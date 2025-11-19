@@ -10,29 +10,38 @@ import type { ChecklistItem } from '../../components/sidebar/useChecklist';
 import { Checklist } from './Checklist';
 import { checklistData } from './checklistData';
 
-const accepted = ['controls'];
-const done = ['render-component', 'whats-new-storybook-10'];
-const skipped = ['viewports'];
+const values: Record<string, 'accepted' | 'done' | 'skipped'> = {
+  controls: 'accepted',
+  'render-component': 'done',
+  'whats-new-storybook-10': 'done',
+  viewports: 'skipped',
+};
 
 const availableItems = checklistData.sections.flatMap(
   ({ id: sectionId, title: sectionTitle, items }, sectionIndex) =>
-    items.map<ChecklistItem>((item, itemIndex) => ({
-      ...item,
-      itemIndex,
-      sectionId,
-      sectionIndex,
-      sectionTitle,
-      isAvailable: true,
-      isOpen: !accepted.includes(item.id) && !done.includes(item.id) && !skipped.includes(item.id),
-      isLockedBy: [],
-      isImmutable: false,
-      isCompleted: accepted.includes(item.id) || done.includes(item.id),
-      isReady: true,
-      isAccepted: accepted.includes(item.id),
-      isDone: done.includes(item.id),
-      isSkipped: skipped.includes(item.id),
-      isMuted: false,
-    }))
+    items.map<ChecklistItem>((item, itemIndex) => {
+      const itemValue = values[item.id];
+      const isAccepted = itemValue === 'accepted';
+      const isDone = itemValue === 'done';
+      const isSkipped = itemValue === 'skipped';
+      return {
+        ...item,
+        itemIndex,
+        sectionId,
+        sectionIndex,
+        sectionTitle,
+        isAvailable: true,
+        isOpen: !isAccepted && !isDone && !isSkipped,
+        isLockedBy: [],
+        isImmutable: false,
+        isCompleted: isAccepted || isDone,
+        isReady: true,
+        isAccepted,
+        isDone,
+        isSkipped,
+        isMuted: false,
+      };
+    })
 );
 
 const Container = styled.div(({ theme }) => ({

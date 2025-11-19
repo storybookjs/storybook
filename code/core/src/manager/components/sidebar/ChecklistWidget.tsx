@@ -166,8 +166,7 @@ const OpenGuideAction = ({ children }: { children?: React.ReactNode }) => {
 
 export const ChecklistWidget = () => {
   const api = useStorybookApi();
-  const { loaded, accepted, done, skipped, allItems, nextItems, progress, accept, mute } =
-    useChecklist();
+  const { loaded, allItems, nextItems, progress, accept, mute, values } = useChecklist();
 
   const [items, setItems] = useState<ChecklistItem[]>([]);
 
@@ -175,13 +174,13 @@ export const ChecklistWidget = () => {
     setItems((current) =>
       current.map((item) => ({
         ...item,
-        isCompleted: accepted.includes(item.id) || done.includes(item.id),
-        isSkipped: skipped.includes(item.id),
+        isCompleted: values[item.id] === 'accepted' || values[item.id] === 'done',
+        isSkipped: values[item.id] === 'skipped',
       }))
     );
     const timeout = setTimeout(setItems, 2000, nextItems);
     return () => clearTimeout(timeout);
-  }, [accepted, done, skipped, nextItems]);
+  }, [nextItems, values]);
 
   const transitionItems = useTransitionArray(allItems, items, {
     keyFn: (item) => item.id,

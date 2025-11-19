@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ComponentProps } from 'react';
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
@@ -11,16 +11,9 @@ import { isPropValid, styled } from 'storybook/theming';
 import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper';
 import { useAriaDescription } from './helpers/useAriaDescription';
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  as?: 'a' | 'button' | 'div' | 'label' | typeof Slot;
+export interface ButtonProps extends Omit<ComponentProps<typeof StyledButton>, 'as'> {
+  as?: ComponentProps<typeof StyledButton>['as'] | typeof Slot;
   asChild?: boolean;
-  size?: 'small' | 'medium';
-  padding?: 'small' | 'medium' | 'none';
-  variant?: 'outline' | 'solid' | 'ghost';
-  active?: boolean;
-  disabled?: boolean;
-  readOnly?: boolean;
-  animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
 
   /**
    * A concise action label for the button announced by screen readers. Needed for buttons without
@@ -163,12 +156,16 @@ Button.displayName = 'Button';
 
 const StyledButton = styled('button', {
   shouldForwardProp: (prop) => isPropValid(prop),
-})<
-  Omit<ButtonProps, 'ariaLabel'> & {
-    animating: boolean;
-    animation: ButtonProps['animation'];
-  }
->(
+})<{
+  size?: 'small' | 'medium';
+  padding?: 'small' | 'medium' | 'none';
+  variant?: 'outline' | 'solid' | 'ghost';
+  active?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
+  animating?: boolean;
+  animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
+}>(
   ({
     theme,
     variant,

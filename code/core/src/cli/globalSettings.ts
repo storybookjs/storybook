@@ -18,8 +18,7 @@ const userSettingSchema = z.object({
   checklist: z
     .object({
       muted: z.union([z.boolean(), z.array(z.string())]).optional(),
-      accepted: z.array(z.string()),
-      skipped: z.array(z.string()),
+      values: z.record(z.enum(['accepted', 'done', 'skipped'])).optional(),
     })
     .optional(),
 });

@@ -31,9 +31,12 @@ const meta = preview.meta({
     mockStore.setState({
       loaded: true,
       muted: false,
-      accepted: ['controls'],
-      done: ['render-component'],
-      skipped: ['more-components', 'more-stories'],
+      values: {
+        controls: 'accepted',
+        'render-component': 'done',
+        'more-components': 'skipped',
+        'more-stories': 'skipped',
+      },
     });
   },
 });
@@ -46,9 +49,13 @@ const play: PlayFunction = async ({ step }) => {
     mockStore.setState({
       loaded: true,
       muted: false,
-      accepted: ['controls'],
-      done: ['render-component', 'viewports'],
-      skipped: ['more-components', 'more-stories'],
+      values: {
+        controls: 'accepted',
+        'render-component': 'done',
+        viewports: 'done',
+        'more-components': 'skipped',
+        'more-stories': 'skipped',
+      },
     });
   });
 
@@ -57,9 +64,14 @@ const play: PlayFunction = async ({ step }) => {
     mockStore.setState({
       loaded: true,
       muted: false,
-      accepted: ['controls'],
-      done: ['render-component', 'viewports'],
-      skipped: ['more-components', 'more-stories', 'install-vitest'],
+      values: {
+        controls: 'accepted',
+        'render-component': 'done',
+        viewports: 'done',
+        'more-components': 'skipped',
+        'more-stories': 'skipped',
+        'install-vitest': 'skipped',
+      },
     });
   });
 };

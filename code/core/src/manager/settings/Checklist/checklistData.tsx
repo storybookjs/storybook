@@ -1,5 +1,3 @@
-import { C } from 'vitest/dist/chunks/reporters.d.BFLkQcL6.js';
-
 import type { ComponentProps } from 'react';
 import React from 'react';
 
@@ -21,14 +19,11 @@ import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
 import { ADDON_ID as ADDON_A11Y_ID } from '../../../../../addons/a11y/src/constants';
 import {
-  ADDON_TEST_CHANNEL,
   ADDON_ID as ADDON_TEST_ID,
+  STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../../addons/vitest/src/constants';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../../docs-tools/shared';
-import {
-  ADDON_ONBOARDING_CHANNEL,
-  ADDON_ID as ADDON_ONBOARDING_ID,
-} from '../../../onboarding/constants';
+import { ADDON_ONBOARDING_CHANNEL } from '../../../onboarding/constants';
 import { TourGuide } from '../../components/TourGuide/TourGuide';
 
 const CodeWrapper = styled.div(({ theme }) => ({
@@ -740,7 +735,7 @@ export const Disabled: Story = {
           criteria: 'Accessibility tests are run from the test widget in the sidebar',
           subscribe: ({ api, done }) =>
             api.on(
-              ADDON_TEST_CHANNEL,
+              STORYBOOK_ADDON_TEST_CHANNEL,
               ({ type, payload }) => type === 'test-run-completed' && payload.config.a11y && done()
             ),
           content: ({ api }) => (
@@ -883,7 +878,7 @@ export const Disabled: Story = {
           criteria: 'Generate a coverage report',
           subscribe: ({ api, done }) =>
             api.on(
-              ADDON_TEST_CHANNEL,
+              STORYBOOK_ADDON_TEST_CHANNEL,
               ({ type, payload }) =>
                 type === 'test-run-completed' && payload.config.coverage && done()
             ),

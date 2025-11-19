@@ -26,9 +26,9 @@ import { dedent } from 'ts-dedent';
 
 import {
   ADDON_ID,
-  ADDON_TEST_CHANNEL,
   COVERAGE_DIRECTORY,
   STORE_CHANNEL_EVENT_NAME,
+  STORYBOOK_ADDON_TEST_CHANNEL,
   storeOptions,
 } from './constants';
 import { log } from './logger';
@@ -187,7 +187,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   if (!core.disableTelemetry) {
     const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
 
-    channel.on(ADDON_TEST_CHANNEL, (event: Event) => {
+    channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
       if (event.type !== 'test-run-completed') {
         telemetry('addon-test', {
           ...event,

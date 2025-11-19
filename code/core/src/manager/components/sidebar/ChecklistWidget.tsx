@@ -303,7 +303,8 @@ export const ChecklistWidget = () => {
                       <Listbox.Button
                         data-target-id={item.id}
                         ariaLabel={false}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           item.action?.onClick({
                             api,
                             accept: () => accept(item.id),

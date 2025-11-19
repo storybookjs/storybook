@@ -3,7 +3,7 @@ name: nx
 on:
   push:
     branches:
-      - main
+      - next
   pull_request:
 
 permissions:

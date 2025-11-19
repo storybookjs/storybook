@@ -25,7 +25,7 @@ jobs:
       # Run this command as early as possible, before dependencies are installed
       # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
       # Uncomment this line to enable task distribution
-      - run: yarn dlx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="build"
+      - run: yarn dlx nx start-ci-run --distribute-on="10 linux-large-js" --stop-agents-after="build,check"
 
       # Cache node_modules
       - uses: actions/setup-node@v4

@@ -20,17 +20,18 @@ describe('getManifest', () => {
 	});
 
 	describe('error cases', () => {
-		it('should throw ManifestGetError when request is not provided', async () => {
+		it('should throw ManifestGetError when request is not provided and using default provider', async () => {
 			await expect(getManifest()).rejects.toThrow(ManifestGetError);
 			await expect(getManifest()).rejects.toThrow(
-				'The request is required but was not provided in the context',
+				"You must either pass the original request forward to the server context, or set a custom manifestProvider that doesn't need the request",
 			);
 		});
-
-		it('should throw ManifestGetError when request is undefined', async () => {
+		it('should throw ManifestGetError when request is undefined and using default provider', async () => {
 			await expect(getManifest(undefined)).rejects.toThrow(ManifestGetError);
+			await expect(getManifest(undefined)).rejects.toThrow(
+				"You must either pass the original request forward to the server context, or set a custom manifestProvider that doesn't need the request",
+			);
 		});
-
 		it('should throw ManifestGetError when fetch fails with 404', async () => {
 			global.fetch = vi.fn().mockResolvedValue({
 				ok: false,
@@ -219,6 +220,35 @@ describe('getManifest', () => {
 			expect(result).toEqual(validManifest);
 			expect(manifestProvider).toHaveBeenCalledExactlyOnceWith(
 				request,
+				'./manifests/components.json',
+			);
+			// fetch should not be called when manifestProvider is used
+			expect(global.fetch).not.toHaveBeenCalled();
+		});
+
+		it('should allow manifestProvider to work without request', async () => {
+			const validManifest: ComponentManifestMap = {
+				v: 1,
+				components: {
+					button: {
+						id: 'button',
+						path: 'src/components/Button.tsx',
+						name: 'Button',
+						description: 'A button component',
+					},
+				},
+			};
+
+			// Custom provider that doesn't need the request
+			const manifestProvider = vi
+				.fn()
+				.mockResolvedValue(JSON.stringify(validManifest));
+
+			const result = await getManifest(undefined, manifestProvider);
+
+			expect(result).toEqual(validManifest);
+			expect(manifestProvider).toHaveBeenCalledExactlyOnceWith(
+				undefined,
 				'./manifests/components.json',
 			);
 			// fetch should not be called when manifestProvider is used

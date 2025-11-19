@@ -64,20 +64,18 @@ export const errorToMCPContent = (error: unknown): MCPErrorResult => {
 /**
  * Gets a component manifest from a request or using a custom provider
  *
- * @param request - The HTTP request to get the manifest for
+ * @param request - The HTTP request to get the manifest for (optional when using custom manifestProvider)
  * @param manifestProvider - Optional custom function to get the manifest
  * @returns A promise that resolves to the parsed ComponentManifestMap
  * @throws {ManifestGetError} If getting the manifest fails or the response is invalid
  */
 export async function getManifest(
 	request?: Request,
-	manifestProvider?: (request: Request, path: string) => Promise<string>,
+	manifestProvider?: (
+		request: Request | undefined,
+		path: string,
+	) => Promise<string>,
 ): Promise<ComponentManifestMap> {
-	if (!request) {
-		throw new ManifestGetError(
-			'The request is required but was not provided in the context',
-		);
-	}
 	try {
 		// Use custom manifestProvider if provided, otherwise fallback to default
 		const manifestString = await (manifestProvider ?? defaultManifestProvider)(
@@ -89,7 +87,9 @@ export async function getManifest(
 		const manifest = v.parse(ComponentManifestMap, manifestData);
 
 		if (Object.keys(manifest.components).length === 0) {
-			const url = getManifestUrlFromRequest(request, MANIFEST_PATH);
+			const url = request
+				? getManifestUrlFromRequest(request, MANIFEST_PATH)
+				: 'Unknown manifest source';
 			throw new ManifestGetError(`No components found in the manifest`, url);
 		}
 
@@ -100,9 +100,12 @@ export async function getManifest(
 		}
 
 		// Wrap network errors and other unexpected errors
+		const url = request
+			? getManifestUrlFromRequest(request, MANIFEST_PATH)
+			: 'Unknown manifest source';
 		throw new ManifestGetError(
 			`Failed to get manifest: ${error instanceof Error ? error.message : String(error)}`,
-			getManifestUrlFromRequest(request, MANIFEST_PATH),
+			url,
 			error instanceof Error ? error : undefined,
 		);
 	}
@@ -125,9 +128,14 @@ function getManifestUrlFromRequest(request: Request, path: string): string {
  * replacing /mcp with the provided path
  */
 async function defaultManifestProvider(
-	request: Request,
+	request: Request | undefined,
 	path: string,
 ): Promise<string> {
+	if (!request) {
+		throw new ManifestGetError(
+			"Request is required when using the default manifest provider. You must either pass the original request forward to the server context, or set a custom manifestProvider that doesn't need the request.",
+		);
+	}
 	const manifestUrl = getManifestUrlFromRequest(request, path);
 	const response = await fetch(manifestUrl);
 

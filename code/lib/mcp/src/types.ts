@@ -15,10 +15,14 @@ export interface StorybookContext extends Record<string, unknown> {
 	 * If provided, this function will be called instead of the default fetch-based provider.
 	 * The function receives the request object and a path to the manifest file,
 	 * and should return the manifest as a string.
-	 * The default provider constructs the manifest URL from the request origin,
-	 * replacing /mcp with /manifests/components.json
+	 * The default provider requires a request object and constructs the manifest URL from the request origin,
+	 * replacing /mcp with /manifests/components.json.
+	 * Custom providers can use the request parameter to determine the manifest source, or ignore it entirely.
 	 */
-	manifestProvider?: (request: Request, path: string) => Promise<string>;
+	manifestProvider?: (
+		request: Request | undefined,
+		path: string,
+	) => Promise<string>;
 	/**
 	 * Optional handler called when list-all-components tool is invoked.
 	 * Receives the context and the component manifest.

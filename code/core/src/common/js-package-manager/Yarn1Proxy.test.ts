@@ -5,7 +5,7 @@ import { prompt } from 'storybook/internal/node-logger';
 import { dedent } from 'ts-dedent';
 
 import { executeCommand } from '../utils/command';
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import { Yarn1Proxy } from './Yarn1Proxy';
 
 vi.mock('storybook/internal/node-logger', () => ({
@@ -47,7 +47,7 @@ describe('Yarn 1 Proxy', () => {
   });
 
   it('type should be yarn1', () => {
-    expect(yarn1Proxy.type).toEqual('yarn1');
+    expect(yarn1Proxy.type).toEqual(PackageManagerName.YARN1);
   });
 
   describe('installDependencies', () => {

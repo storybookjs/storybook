@@ -165,7 +165,7 @@ export class JsPackageManagerFactory {
   private static PROXY_MAP: Record<PackageManagerName, PackageManagerProxy> = {
     npm: NPMProxy,
     pnpm: PNPMProxy,
-    yarn1: Yarn1Proxy,
+    yarn: Yarn1Proxy,
     yarn2: Yarn2Proxy,
     bun: BUNProxy,
   };

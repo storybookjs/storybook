@@ -41,7 +41,9 @@ export class PreflightCheckCommand {
       // which doesn't get fixed anymore in yarn1.
       // We will fallback to npm in this case.
       if (
-        options.packageManager ? options.packageManager === 'yarn1' : packageManagerType === 'yarn1'
+        options.packageManager
+          ? options.packageManager === PackageManagerName.YARN1
+          : packageManagerType === PackageManagerName.YARN1
       ) {
         logger.warn('Empty directory with yarn1 is unsupported. Falling back to npm.');
         packageManagerType = PackageManagerName.NPM;

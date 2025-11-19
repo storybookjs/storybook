@@ -124,20 +124,13 @@ function resolveCommand(command: string): string {
     // can be added here as needed. Do NOT list native executables.
   ]);
 
-  // If not Windows → return as-is
-
-  // If not Windows → return as-is
   if (process.platform !== 'win32') {
     return command;
   }
 
-  // If the command is in our shim list → append .cmd
-
-  // If the command is in our shim list → append .cmd
   if (WINDOWS_SHIM_COMMANDS.has(command)) {
     return `${command}.cmd`;
   }
 
-  // Default: return as-is (covers git, node, bun, bunx, etc)
   return command;
 }

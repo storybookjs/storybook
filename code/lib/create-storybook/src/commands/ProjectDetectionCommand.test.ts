@@ -51,7 +51,7 @@ describe('ProjectDetectionCommand', () => {
 
     options = {
       packageManager: PackageManagerName.NPM,
-      features: undefined as unknown as Set<Feature>,
+      features: undefined as unknown as Array<Feature>,
     };
 
     command = new ProjectDetectionCommand(options, mockPackageManager);

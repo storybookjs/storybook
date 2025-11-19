@@ -197,7 +197,7 @@ const runGenerators = async (
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
         try {
           let flags: string[] = ['--no-dev'];
-          // Build flags from template-provided initOptions instead of inferring from expected
+
           if (initOptions && typeof initOptions === 'object') {
             flags = [...flags, ...toFlags(initOptions as Record<string, any>)];
           }

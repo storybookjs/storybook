@@ -28,7 +28,6 @@ export interface UserPreferencesResult {
 
 export interface UserPreferencesOptions {
   skipPrompt?: boolean;
-  yes?: boolean;
   framework: SupportedFramework | null;
   builder: SupportedBuilder;
   projectType: ProjectType;
@@ -49,7 +48,6 @@ export class UserPreferencesCommand {
   private telemetryService: TelemetryService;
 
   constructor(
-    private dependencyCollector: DependencyCollector,
     private commandOptions: CommandOptions,
     private featureService = new FeatureCompatibilityService()
   ) {
@@ -63,7 +61,7 @@ export class UserPreferencesCommand {
   ): Promise<UserPreferencesResult> {
     // Display version information
     const isInteractive = process.stdout.isTTY && !isCI();
-    const skipPrompt = !isInteractive || !!options.yes;
+    const skipPrompt = !isInteractive || !!this.commandOptions.yes;
 
     const isTestFeatureAvailable = await this.isTestFeatureAvailable(
       packageManager,
@@ -73,6 +71,15 @@ export class UserPreferencesCommand {
 
     // Get new user preference
     const newUser = await this.promptNewUser(skipPrompt);
+
+    const commandOptionsFeatures = this.handleCommandOptionsFeatureFlag();
+
+    if (commandOptionsFeatures) {
+      return {
+        newUser,
+        selectedFeatures: commandOptionsFeatures,
+      };
+    }
 
     // Get install type
     const installType: InstallType =
@@ -88,6 +95,23 @@ export class UserPreferencesCommand {
     );
 
     return { newUser, selectedFeatures };
+  }
+
+  private handleCommandOptionsFeatureFlag(): Set<Feature> | null {
+    if (this.commandOptions.features && this.commandOptions.features?.length > 0) {
+      logger.warn(dedent`
+        Skipping feature validation as these features were explicitly selected:
+        ${Array.from(this.commandOptions.features).join(', ')}
+      `);
+      return new Set(this.commandOptions.features);
+    } else if (this.commandOptions.features?.length === 0) {
+      logger.warn(dedent`
+        All features have been disabled via --no-features flag.
+      `);
+      return new Set();
+    }
+
+    return null;
   }
 
   /** Prompt user about onboarding */
@@ -172,14 +196,6 @@ export class UserPreferencesCommand {
   ): Set<Feature> {
     const features = new Set<Feature>();
 
-    if (this.commandOptions.features) {
-      logger.warn(dedent`
-        Skipping feature validation since the following features were explicitly selected:
-        ${Array.from(this.commandOptions.features).join(', ')}
-      `);
-      return new Set(this.commandOptions.features);
-    }
-
     if (installType === 'recommended') {
       features.add(Feature.DOCS);
       features.add(Feature.A11Y);
@@ -214,14 +230,7 @@ export class UserPreferencesCommand {
 
 export const executeUserPreferences = (
   packageManager: JsPackageManager,
-  {
-    dependencyCollector,
-    options,
-    ...restOptions
-  }: UserPreferencesOptions & { dependencyCollector: DependencyCollector; options: CommandOptions }
+  { options, ...restOptions }: UserPreferencesOptions & { options: CommandOptions }
 ) => {
-  return new UserPreferencesCommand(dependencyCollector, options).execute(
-    packageManager,
-    restOptions
-  );
+  return new UserPreferencesCommand(options).execute(packageManager, restOptions);
 };

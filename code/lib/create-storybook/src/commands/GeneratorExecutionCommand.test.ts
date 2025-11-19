@@ -93,7 +93,6 @@ describe('GeneratorExecutionCommand', () => {
       ]);
       const options = {
         skipInstall: false,
-        features: selectedFeatures,
         packageManager: PackageManagerName.NPM,
       };
 
@@ -115,7 +114,6 @@ describe('GeneratorExecutionCommand', () => {
       vi.mocked(generatorRegistry.get).mockReturnValue(undefined);
       const selectedFeatures = new Set([]);
       const options = {
-        features: selectedFeatures,
         packageManager: PackageManagerName.NPM,
       };
 
@@ -144,7 +142,6 @@ describe('GeneratorExecutionCommand', () => {
         linkable: true,
         usePnp: true,
         yes: true,
-        features: selectedFeatures,
         packageManager: PackageManagerName.NPM,
       };
 

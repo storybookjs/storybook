@@ -61,12 +61,16 @@ async function run() {
       const child = executeNodeCommand({
         scriptPath: join(resolvePackageDir(targetCli.pkg), 'dist/bin/index.js'),
         args: targetCli.args,
+        options: {
+          stdio: 'inherit',
+        },
       });
       child.on('exit', (code) => {
-        process.exit(code);
+        process.exit(code ?? 1);
       });
+      return;
     }
-  } catch (e) {
+  } catch {
     // the package couldn't be imported, use npx to install and run it instead
   }
 
@@ -75,8 +79,8 @@ async function run() {
     args: ['--yes', `${targetCli.pkg}@${versions[targetCli.pkg]}`, ...targetCli.args],
     stdio: 'inherit',
   });
-  child.on('exit', (code: number) => {
-    process.exit(code);
+  child.on('exit', (code) => {
+    process.exit(code ?? 1);
   });
 }
 

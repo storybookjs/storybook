@@ -11,7 +11,11 @@
     "targets": {
       "test": {
         "cache": true,
-        "command": "yarn test",
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "{projectRoot}",
+          "command": "yarn test",
+        },
         "dependsOn": [        {
           "projects": ["core"],
           "target": "build",

@@ -18,7 +18,7 @@ import { styled } from 'storybook/theming';
 
 import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store';
 import { NotificationList } from '../notifications/NotificationList';
-import { TestingModule } from './TestingModule';
+import { TestingWidget } from './TestingWidget';
 
 // This ID is used dynamically add/remove space at the bottom to prevent overlapping the main sidebar content.
 const SIDEBAR_BOTTOM_SPACER_ID = 'sidebar-bottom-spacer';
@@ -142,7 +142,7 @@ export const SidebarBottomBase = ({
       <Content id={SIDEBAR_BOTTOM_WRAPPER_ID} ref={wrapperRef}>
         <NotificationList notifications={notifications} clearNotification={api.clearNotification} />
         {isDevelopment && (
-          <TestingModule
+          <TestingWidget
             {...{
               registeredTestProviders,
               testProviderStates,

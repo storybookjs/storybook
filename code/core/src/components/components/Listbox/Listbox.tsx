@@ -133,10 +133,11 @@ const ListboxIcon = styled.div({
 });
 
 export const Listbox = Object.assign(
-  styled.div(({ theme }) => ({
+  styled.div(({ theme, onClick }) => ({
     listStyle: 'none',
     margin: 0,
     padding: 4,
+    cursor: onClick ? 'pointer' : 'default',
 
     '& + *': {
       borderTop: `1px solid ${theme.appBorderColor}`,

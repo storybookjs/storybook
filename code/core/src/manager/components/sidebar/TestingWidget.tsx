@@ -127,7 +127,7 @@ interface TestingModuleProps {
   successCount: number;
 }
 
-export const TestingModule = ({
+export const TestingWidget = ({
   registeredTestProviders,
   testProviderStates,
   hasStatuses,

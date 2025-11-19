@@ -12,7 +12,7 @@ import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { useLayout } from '../layout/LayoutProvider';
-import { ChecklistModule } from './ChecklistModule';
+import { ChecklistWidget } from './ChecklistWidget';
 import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
 import { Explorer } from './Explorer';
 import type { HeadingProps } from './Heading';
@@ -166,7 +166,7 @@ export const Sidebar = React.memo(function Sidebar({
               isLoading={isLoading}
               onMenuClick={onMenuClick}
             />
-            {!isLoading && global.CONFIG_TYPE === 'DEVELOPMENT' && <ChecklistModule />}
+            {!isLoading && global.CONFIG_TYPE === 'DEVELOPMENT' && <ChecklistWidget />}
           </div>
           <Search
             dataset={dataset}

@@ -15,7 +15,7 @@ import { expect, fireEvent, fn, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { internal_fullTestProviderStore } from '../../manager-stores.mock';
-import { TestingModule } from './TestingModule';
+import { TestingWidget } from './TestingWidget';
 
 const Wrapper = styled.div(({ theme }) => ({
   maxWidth: 250,
@@ -65,8 +65,8 @@ const managerContext: any = {
 };
 
 const meta = {
-  component: TestingModule,
-  title: 'Sidebar/TestingModule',
+  component: TestingWidget,
+  title: 'Sidebar/TestingWidget',
   args: {
     registeredTestProviders,
     testProviderStates,
@@ -90,7 +90,7 @@ const meta = {
       </ManagerContext.Provider>
     ),
   ],
-} satisfies Meta<typeof TestingModule>;
+} satisfies Meta<typeof TestingWidget>;
 
 export default meta;
 

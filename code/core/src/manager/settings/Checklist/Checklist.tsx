@@ -61,7 +61,7 @@ const Items = styled.ol(({ theme }) => ({
 }));
 
 const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
-  ({ theme, progress, isCollapsed }) => ({
+  ({ theme, progress, isCollapsed, onClick }) => ({
     position: 'relative',
     fontWeight: 'bold',
     display: 'flex',
@@ -72,6 +72,7 @@ const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
     borderBottomLeftRadius: isCollapsed ? 7 : 0,
     borderBottomRightRadius: isCollapsed ? 7 : 0,
     transition: 'border-radius var(--transition-duration, 0.2s)',
+    cursor: onClick ? 'pointer' : 'default',
     '--toggle-button-rotate': isCollapsed ? '0deg' : '180deg',
     '--toggle-button-opacity': 0,
 
@@ -103,7 +104,6 @@ const SectionHeading = styled.h2(({ theme }) => ({
   margin: 0,
   fontSize: theme.typography.size.s3,
   fontWeight: theme.typography.weight.bold,
-  cursor: 'default',
 }));
 
 const ItemSummary = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(

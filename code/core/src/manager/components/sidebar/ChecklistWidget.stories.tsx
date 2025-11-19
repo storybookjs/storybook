@@ -5,7 +5,7 @@ import { fn } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock';
-import { ChecklistModule } from './ChecklistModule';
+import { ChecklistWidget } from './ChecklistWidget';
 
 const managerContext: any = {
   state: {},
@@ -19,7 +19,7 @@ const managerContext: any = {
 };
 
 const meta = preview.meta({
-  component: ChecklistModule,
+  component: ChecklistWidget,
   decorators: [
     (Story) => (
       <ManagerContext.Provider value={managerContext}>

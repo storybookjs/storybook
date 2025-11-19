@@ -5,13 +5,16 @@ import { parseArgs } from 'node:util';
 
 async function serveMcp(port: number, manifestPath: string) {
 	const storybookMcpHandler = await createStorybookMcpHandler({
-		source: manifestPath,
-		manifestProvider: async (source) => {
-			if (source.startsWith('http://') || source.startsWith('https://')) {
-				const res = await fetch(source);
+		// Use the local fixture file via manifestProvider
+		manifestProvider: async () => {
+			if (
+				manifestPath.startsWith('http://') ||
+				manifestPath.startsWith('https://')
+			) {
+				const res = await fetch(manifestPath);
 				return await res.text();
 			}
-			return await fs.readFile(source, 'utf-8');
+			return await fs.readFile(manifestPath, 'utf-8');
 		},
 	});
 

@@ -29,7 +29,7 @@ export async function addGetComponentDocumentationTool(
 		async (input: GetComponentDocumentationInput) => {
 			try {
 				const manifest = await getManifest(
-					server.ctx.custom?.source,
+					server.ctx.custom?.request,
 					server.ctx.custom?.manifestProvider,
 				);
 

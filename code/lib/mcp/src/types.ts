@@ -3,19 +3,22 @@ import * as v from 'valibot';
 
 /**
  * Custom context passed to MCP server and tools.
- * Contains the source URL for getting component manifests.
+ * Contains the request object and optional manifest provider.
  */
 export interface StorybookContext extends Record<string, unknown> {
 	/**
-	 * The URL of the remote manifest to get component data from.
+	 * The incoming HTTP request being processed.
 	 */
-	source?: string;
+	request?: Request;
 	/**
 	 * Optional function to provide custom manifest retrieval logic.
-	 * If provided, this function will be called instead of using fetch.
-	 * The function receives the source URL and should return the manifest as a string.
+	 * If provided, this function will be called instead of the default fetch-based provider.
+	 * The function receives the request object and a path to the manifest file,
+	 * and should return the manifest as a string.
+	 * The default provider constructs the manifest URL from the request origin,
+	 * replacing /mcp with /manifests/components.json
 	 */
-	manifestProvider?: (source: string) => Promise<string>;
+	manifestProvider?: (request: Request, path: string) => Promise<string>;
 	/**
 	 * Optional handler called when list-all-components tool is invoked.
 	 * Receives the context and the component manifest.

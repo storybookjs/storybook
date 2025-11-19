@@ -16,6 +16,9 @@ export {
 	GET_TOOL_NAME,
 } from './tools/get-component-documentation.ts';
 
+// Export manifest constants
+export { MANIFEST_PATH } from './utils/get-manifest.ts';
+
 // Export types for reuse
 export type { StorybookContext } from './types.ts';
 
@@ -94,7 +97,7 @@ export const createStorybookMcpHandler = async (
 
 	return (async (req, context) => {
 		return await transport.respond(req, {
-			source: context?.source ?? options.source,
+			request: req,
 			manifestProvider: context?.manifestProvider ?? options.manifestProvider,
 			onListAllComponents:
 				context?.onListAllComponents ?? options.onListAllComponents,

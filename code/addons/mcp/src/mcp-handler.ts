@@ -96,8 +96,7 @@ export const mcpServerHandler = async ({
 		toolsets: getToolsets(webRequest, addonOptions),
 		origin: origin!,
 		disableTelemetry,
-		// Source URL for component manifest tools - points to the manifest endpoint
-		source: `${origin}/manifests/components.json`,
+		request: webRequest,
 		// Telemetry handlers for component manifest tools
 		...(!disableTelemetry && {
 			onListAllComponents: async ({ manifest }) => {

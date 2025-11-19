@@ -61,7 +61,10 @@ describe('listAllComponentsTool', () => {
 			},
 		};
 
-		const response = await server.receive(request);
+		const mockHttpRequest = new Request('https://example.com/mcp');
+		const response = await server.receive(request, {
+			custom: { request: mockHttpRequest },
+		});
 
 		expect(response.result).toMatchInlineSnapshot(`
 			{
@@ -115,7 +118,10 @@ describe('listAllComponentsTool', () => {
 			},
 		};
 
-		const response = await server.receive(request);
+		const mockHttpRequest = new Request('https://example.com/mcp');
+		const response = await server.receive(request, {
+			custom: { request: mockHttpRequest },
+		});
 
 		expect(response.result).toMatchInlineSnapshot(`
 			{
@@ -143,7 +149,10 @@ describe('listAllComponentsTool', () => {
 			},
 		};
 
-		const response = await server.receive(request);
+		const mockHttpRequest = new Request('https://example.com/mcp');
+		const response = await server.receive(request, {
+			custom: { request: mockHttpRequest },
+		});
 
 		expect(response.result).toMatchInlineSnapshot(`
 			{
@@ -171,12 +180,16 @@ describe('listAllComponentsTool', () => {
 			},
 		};
 
-		// Pass the handler in the context for this specific request
-		await server.receive(request, { custom: { onListAllComponents: handler } });
+		const mockHttpRequest = new Request('https://example.com/mcp');
+		// Pass the handler and request in the context for this specific request
+		await server.receive(request, {
+			custom: { request: mockHttpRequest, onListAllComponents: handler },
+		});
 
 		expect(handler).toHaveBeenCalledTimes(1);
 		expect(handler).toHaveBeenCalledWith({
 			context: expect.objectContaining({
+				request: mockHttpRequest,
 				onListAllComponents: handler,
 			}),
 			manifest: smallManifestFixture,

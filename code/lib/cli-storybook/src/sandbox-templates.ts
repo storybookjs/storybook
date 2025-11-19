@@ -175,6 +175,28 @@ export const baseTemplates = {
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+  },
+  'nextjs/15-ts': {
+    name: 'Next.js v15 (Webpack | TypeScript)',
+    script:
+      'npx create-next-app@^15.5 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+    expected: {
+      framework: '@storybook/nextjs',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-webpack5',
+    },
+    modifications: {
+      useCsfFactory: true,
+      mainConfig: {
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+          experimentalTestSyntax: true,
+        },
+      },
+      extraDependencies: ['server-only', 'prop-types'],
+    },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
   'nextjs/default-ts': {
@@ -225,6 +247,29 @@ export const baseTemplates = {
     name: 'Next.js v14 (Vite | TypeScript)',
     script:
       'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+    expected: {
+      framework: '@storybook/nextjs-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      mainConfig: {
+        framework: '@storybook/nextjs-vite',
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+          experimentalTestSyntax: true,
+        },
+      },
+      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
+  'nextjs-vite/15-ts': {
+    name: 'Next.js v15 (Vite | TypeScript)',
+    script:
+      'npx create-next-app@^15 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
@@ -728,13 +773,6 @@ const internalTemplates = {
     isInternal: true,
     skipTasks: ['bench', 'vitest-integration'],
   },
-  // 'internal/pnp': {
-  //   ...baseTemplates['cra/default-ts'],
-  //   name: 'PNP (cra/default-ts)',
-  //   script: 'yarn create react-app . --use-pnp',
-  //   isInternal: true,
-  //   inDevelopment: true,
-  // },
 } satisfies Record<`internal/${string}`, Template & { isInternal: true }>;
 
 const benchTemplates = {
@@ -851,6 +889,8 @@ export const merged: TemplateKey[] = [
   ...normal,
   'react-webpack/18-ts',
   'react-webpack/17-ts',
+  'nextjs/15-ts',
+  'nextjs-vite/15-ts',
   'preact-vite/default-ts',
   'html-vite/default-ts',
 ];
@@ -863,6 +903,8 @@ export const daily: TemplateKey[] = [
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
+  'nextjs-vite/14-ts',
+  'nextjs/14-ts',
   'vue3-vite/default-js',
   'lit-vite/default-js',
   'svelte-vite/default-js',

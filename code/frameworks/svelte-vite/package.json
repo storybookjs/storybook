@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte-vite",
-  "version": "10.0.0-beta.10",
+  "version": "10.1.0-alpha.1",
   "description": "Storybook for Svelte and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

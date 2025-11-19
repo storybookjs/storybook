@@ -368,7 +368,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       return parameters || undefined;
     },
     jumpToComponent: (direction) => {
-      const { index, storyId, refs, refId } = store.getState();
+      const { filteredIndex, storyId, refs, refId } = store.getState();
       const story = api.getData(storyId, refId);
 
       // cannot navigate when there's no current selection
@@ -376,7 +376,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return;
       }
 
-      const hash = refId ? refs[refId].index || {} : index;
+      const hash = refId ? refs[refId].filteredIndex || {} : filteredIndex;
 
       if (!hash) {
         return;
@@ -389,7 +389,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
     },
     jumpToStory: (direction) => {
-      const { index, storyId, refs, refId } = store.getState();
+      const { filteredIndex, storyId, refs, refId } = store.getState();
       const story = api.getData(storyId, refId);
 
       // cannot navigate when there's no current selection
@@ -397,7 +397,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return;
       }
 
-      const hash = story.refId ? refs[story.refId].index : index;
+      const hash = story.refId ? refs[story.refId].filteredIndex : filteredIndex;
 
       if (!hash) {
         return;
@@ -425,49 +425,50 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
     selectStory: (titleOrId = undefined, name = undefined, options = {}) => {
       const { ref } = options;
-      const { storyId, index, refs } = store.getState();
+      const { storyId, index, filteredIndex, refs, settings } = store.getState();
 
-      const hash = ref ? refs[ref].index : index;
+      const gotoStory = (entry?: API_HashEntry) => {
+        if (entry?.type === 'docs' || entry?.type === 'story') {
+          store.setState({ settings: { ...settings, lastTrackedStoryId: entry.id } });
+          navigate(`/${entry.type}/${entry.refId ? `${entry.refId}_${entry.id}` : entry.id}`);
+          return true;
+        }
+        return false;
+      };
 
       const kindSlug = storyId?.split('--', 2)[0];
-
-      if (!hash) {
+      const hash = ref ? refs[ref].index : index;
+      const filteredHash = ref ? refs[ref].filteredIndex : filteredIndex;
+      if (!hash || !filteredHash) {
         return;
       }
 
       if (!name) {
-        // Find the entry (group, component or story) that is referred to
+        // Find the entry (group, component, story or docs) that is referred to
         const entry = titleOrId ? hash[titleOrId] || hash[sanitize(titleOrId)] : hash[kindSlug];
 
         if (!entry) {
           throw new Error(`Unknown id or title: '${titleOrId}'`);
         }
 
-        store.setState({
-          settings: { ...store.getState().settings, lastTrackedStoryId: entry.id },
-        });
-
-        // We want to navigate to the first ancestor entry that is a leaf
-        const leafEntry = api.findLeafEntry(hash, entry.id);
-        const fullId = leafEntry.refId ? `${leafEntry.refId}_${leafEntry.id}` : leafEntry.id;
-        navigate(`/${leafEntry.type}/${fullId}`);
+        if (!gotoStory(entry)) {
+          // If the entry is not a story or docs, find the first descendant entry that is
+          gotoStory(api.findLeafEntry(filteredHash, entry.id));
+        }
       } else if (!titleOrId) {
+        // Navigate to a named story/docs within the current component (i.e. "kind")
         // This is a slugified version of the kind, but that's OK, our toId function is idempotent
-        const id = toId(kindSlug, name);
-
-        api.selectStory(id, undefined, options);
+        gotoStory(hash[toId(kindSlug, name)]);
       } else {
         const id = ref ? `${ref}_${toId(titleOrId, name)}` : toId(titleOrId, name);
         if (hash[id]) {
-          api.selectStory(id, undefined, options);
+          gotoStory(hash[id]);
         } else {
           // Support legacy API with component permalinks, where kind is `x/y` but permalink is 'z'
           const entry = hash[sanitize(titleOrId)];
           if (entry?.type === 'component') {
-            const foundId = entry.children.find((childId: any) => hash[childId].name === name);
-            if (foundId) {
-              api.selectStory(foundId, undefined, options);
-            }
+            const foundId = entry.children.find((childId) => hash[childId].name === name);
+            gotoStory(foundId ? hash[foundId] : undefined);
           }
         }
       }
@@ -478,7 +479,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return entry;
       }
 
-      const childStoryId = entry.children[0];
+      const childStoryId = entry.children.find((childId) => index[childId]) || entry.children[0];
       return api.findLeafEntry(index, childStoryId);
     },
     findLeafStoryId(index, storyId) {

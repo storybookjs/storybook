@@ -15,7 +15,6 @@
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "file:../../code/addons/a11y",
     "@storybook/addon-docs": "file:../../code/addons/docs",
-    "@storybook/addon-jest": "file:../../code/addons/jest",
     "@storybook/addon-links": "file:../../code/addons/links",
     "@storybook/addon-themes": "file:../../code/addons/themes",
     "@storybook/addon-vitest": "file:../../code/addons/vitest",
@@ -55,7 +54,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@chromatic-com/storybook": "^4.1.1",
+    "@chromatic-com/storybook": "^4.1.2",
     "@eslint/js": "^9.29.0",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "9.1.0-alpha.6",

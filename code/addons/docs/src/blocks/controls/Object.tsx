@@ -5,7 +5,7 @@ import { Button, Form, IconButton } from 'storybook/internal/components';
 
 import { AddIcon, EyeCloseIcon, EyeIcon, SubtractIcon } from '@storybook/icons';
 
-import { cloneDeep } from 'es-toolkit/compat';
+import { cloneDeep } from 'es-toolkit/object';
 import { type Theme, styled, useTheme } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';

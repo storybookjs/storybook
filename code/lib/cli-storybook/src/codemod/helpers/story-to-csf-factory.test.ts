@@ -10,6 +10,7 @@ import { storyToCsfFactory } from './story-to-csf-factory';
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
+    log: vi.fn(),
     warn: vi.fn(),
   },
 }));
@@ -34,11 +35,13 @@ describe('stories codemod', () => {
         transform(dedent`
             const meta = { title: 'Component' };
             export default meta;
+            export const A = {};
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
 
         const meta = preview.meta({ title: 'Component' });
+        export const A = meta.story();
       `);
     });
 
@@ -46,6 +49,7 @@ describe('stories codemod', () => {
       await expect(
         transform(dedent`
             export default { title: 'Component' };
+            export const A = {};
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
@@ -53,6 +57,8 @@ describe('stories codemod', () => {
         const meta = preview.meta({
           title: 'Component',
         });
+
+        export const A = meta.story();
       `);
     });
 
@@ -61,11 +67,13 @@ describe('stories codemod', () => {
         transform(dedent`
             const componentMeta = { title: 'Component' };
             export default componentMeta;
+            export const A = {};
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from '#.storybook/preview';
 
         const componentMeta = preview.meta({ title: 'Component' });
+        export const A = componentMeta.story();
       `);
     });
 
@@ -349,6 +357,7 @@ describe('stories codemod', () => {
                 source: dedent`
                   import preview, { extra } from '../../../.storybook/preview';
                   export default {};
+                  export const A = {};
                 `,
                 path: 'Component.stories.tsx',
               },
@@ -359,6 +368,7 @@ describe('stories codemod', () => {
           import preview, { extra } from '#.storybook/preview';
 
           const meta = preview.meta({});
+          export const A = meta.story();
         `);
 
         await expect(
@@ -369,6 +379,7 @@ describe('stories codemod', () => {
                 source: dedent`
                   import preview, { extra } from '#.storybook/preview';
                   export default {};
+                  export const A = {};
                 `,
                 path: 'Component.stories.tsx',
               },
@@ -379,6 +390,7 @@ describe('stories codemod', () => {
           import preview, { extra } from '../../preview';
 
           const meta = preview.meta({});
+          export const A = meta.story();
         `);
       } finally {
         relativeMock.mockRestore();
@@ -666,6 +678,24 @@ describe('stories codemod', () => {
       // expect(transformed).toContain('C = meta.story');
     });
 
+    it('should bail transformation when no stories can be transformed', async () => {
+      const source = dedent`
+        export default {
+          title: 'Component',
+        };
+      `;
+      const transformed = await transform(source);
+      const formattedSource = await formatFileContent('Component.stories.tsx', source);
+      expect(transformed).toEqual(formattedSource);
+
+      expect(transformed).not.toContain('preview.meta');
+      expect(transformed).not.toContain('meta.story');
+
+      expect(vi.mocked(logger.warn).mock.calls[0][0]).toMatchInlineSnapshot(
+        `Skipping codemod for Component.stories.tsx: no stories were transformed. Either there are no stories, file has been already transformed or some stories are written in an unsupported format.`
+      );
+    });
+
     it('should bail transformation and warn if some stories are not transformed to avoid mixed CSF formats', async () => {
       const source = dedent`
         export default {
@@ -700,7 +730,7 @@ describe('stories codemod', () => {
       const formattedSource = await formatFileContent('Component.stories.tsx', source);
       expect(transformed).toEqual(formattedSource);
 
-      expect(logger.warn).not.toHaveBeenCalled();
+      expect(logger.log).not.toHaveBeenCalled();
     });
   });
 });

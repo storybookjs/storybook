@@ -1,12 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import {
-  babelParser,
-  extractMockCalls,
-  getAutomockCode,
-  getRealPath,
-  rewriteSbMockImportCalls,
-} from 'storybook/internal/mocking-utils';
+import { mockingUtils } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { CoreConfig } from 'storybook/internal/types';
 
@@ -56,7 +50,12 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       },
 
       buildStart() {
-        mockCalls = extractMockCalls(options, babelParser, viteConfig.root, findMockRedirect);
+        mockCalls = mockingUtils.extractMockCalls(
+          options,
+          mockingUtils.babelParser,
+          viteConfig.root,
+          findMockRedirect
+        );
       },
 
       configureServer(server) {
@@ -65,7 +64,12 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             // Store the old mocks before updating
             const oldMockCalls = mockCalls;
             // Re-extract mocks to get the latest list
-            mockCalls = extractMockCalls(options, babelParser, viteConfig.root, findMockRedirect);
+            mockCalls = mockingUtils.extractMockCalls(
+              options,
+              mockingUtils.babelParser,
+              viteConfig.root,
+              findMockRedirect
+            );
 
             // Invalidate the preview file
             const previewMod = server.moduleGraph.getModuleById(options.previewConfigPath);
@@ -103,11 +107,11 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
         handler(id) {
           const preserveSymlinks = viteConfig.resolve.preserveSymlinks;
 
-          const idNorm = getRealPath(id, preserveSymlinks);
+          const idNorm = mockingUtils.getRealPath(id, preserveSymlinks);
           const cleanId = getCleanId(idNorm);
 
           for (const call of mockCalls) {
-            const callNorm = getRealPath(call.absolutePath, preserveSymlinks);
+            const callNorm = mockingUtils.getRealPath(call.absolutePath, preserveSymlinks);
 
             if (callNorm !== idNorm && call.path !== cleanId) {
               continue;
@@ -127,8 +131,8 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
           for (const call of mockCalls) {
             const preserveSymlinks = viteConfig.resolve.preserveSymlinks;
 
-            const idNorm = getRealPath(id, preserveSymlinks);
-            const callNorm = getRealPath(call.absolutePath, preserveSymlinks);
+            const idNorm = mockingUtils.getRealPath(id, preserveSymlinks);
+            const callNorm = mockingUtils.getRealPath(call.absolutePath, preserveSymlinks);
 
             if (viteConfig.command !== 'serve') {
               if (callNorm !== idNorm) {
@@ -144,7 +148,11 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
 
             try {
               if (!call.redirectPath) {
-                const automockedCode = getAutomockCode(code, call.spy, babelParser as any);
+                const automockedCode = mockingUtils.getAutomockCode(
+                  code,
+                  call.spy,
+                  mockingUtils.babelParser as any
+                );
 
                 return {
                   code: automockedCode.toString(),
@@ -165,7 +173,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       transform(code, id) {
         if (id === normalizedPreviewConfigPath) {
           try {
-            return rewriteSbMockImportCalls(code);
+            return mockingUtils.rewriteSbMockImportCalls(code);
           } catch (e) {
             logger.debug(`Could not transform sb.mock(import(...)) calls in ${id}: ${e}`);
             return null;

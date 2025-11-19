@@ -1,4 +1,4 @@
-import { rewriteSbMockImportCalls } from 'storybook/internal/mocking-utils';
+import { mockingUtils } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import type { LoaderDefinition } from 'webpack';
@@ -17,7 +17,7 @@ const storybookMockTransformLoader: LoaderDefinition = function mockTransformLoa
   const callback = this.async();
 
   try {
-    const result = rewriteSbMockImportCalls(source);
+    const result = mockingUtils.rewriteSbMockImportCalls(source);
     callback(null, result.code, result.map || undefined, meta);
   } catch (error) {
     const filePath = this.resourcePath;

@@ -41,7 +41,7 @@ interface ExtractMockCallsOptions {
  * @param code - The code to parse.
  * @returns The parsed code.
  */
-export const babelParser = (code: string) => {
+export const babelParser = (code: string): t.Program => {
   return parser.parse(code, {
     sourceType: 'module',
     // Enable plugins to handle modern JavaScript features, including TSX.

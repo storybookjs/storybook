@@ -76,10 +76,6 @@ const config: BuildEntries = {
         entryPoint: './src/cli/index.ts',
         exportEntries: ['./internal/cli'],
       },
-      {
-        exportEntries: ['./internal/mocking-utils'],
-        entryPoint: './src/mocking-utils/index.ts',
-      },
     ],
     browser: [
       {

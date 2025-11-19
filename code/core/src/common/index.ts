@@ -1,3 +1,4 @@
+import * as mockingUtils from './mocking-utils/index';
 import versions from './versions';
 
 /// <reference types="@types/compression" />
@@ -48,6 +49,8 @@ export * from '../shared/utils/module';
 export * from './utils/get-addon-names';
 export * from './utils/utils';
 export * from './utils/command';
+
+export { mockingUtils };
 
 export { versions };
 

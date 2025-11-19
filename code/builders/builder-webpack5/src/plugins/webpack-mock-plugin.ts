@@ -1,13 +1,7 @@
 import { dirname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  babelParser,
-  extractMockCalls,
-  getIsExternal,
-  resolveExternalModule,
-  resolveWithExtensions,
-} from 'storybook/internal/mocking-utils';
+import { mockingUtils } from 'storybook/internal/common';
 
 import { findMockRedirect } from '@vitest/mocker/redirect';
 import type { Compiler } from 'webpack';
@@ -88,10 +82,10 @@ export class WebpackMockPlugin {
         const path = resource.request;
         const importer = resource.context;
 
-        const isExternal = getIsExternal(path, importer);
+        const isExternal = mockingUtils.getIsExternal(path, importer);
         const absolutePath = isExternal
-          ? resolveExternalModule(path, importer)
-          : resolveWithExtensions(path, importer);
+          ? mockingUtils.resolveExternalModule(path, importer)
+          : mockingUtils.resolveWithExtensions(path, importer);
 
         if (this.mockMap.has(absolutePath)) {
           resource.request = this.mockMap.get(absolutePath)!.replacementResource;
@@ -127,9 +121,9 @@ export class WebpackMockPlugin {
     const logger = compiler.getInfrastructureLogger(PLUGIN_NAME);
 
     // Use extractMockCalls to get all mocks from the transformed preview file
-    const mocks = extractMockCalls(
+    const mocks = mockingUtils.extractMockCalls(
       { previewConfigPath, configDir: dirname(previewConfigPath) },
-      babelParser,
+      mockingUtils.babelParser,
       compiler.context,
       findMockRedirect
     );

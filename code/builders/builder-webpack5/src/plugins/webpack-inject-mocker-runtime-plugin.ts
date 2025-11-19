@@ -1,4 +1,4 @@
-import { getMockerRuntime } from 'storybook/internal/mocking-utils';
+import { mockingUtils } from 'storybook/internal/common';
 
 // HtmlWebpackPlugin is a standard part of Storybook's Webpack setup.
 // We can assume it's available as a dependency.
@@ -52,7 +52,7 @@ export class WebpackInjectMockerRuntimePlugin {
         PLUGIN_NAME,
         (data, cb) => {
           try {
-            const runtimeScriptContent = getMockerRuntime();
+            const runtimeScriptContent = mockingUtils.getMockerRuntime();
             const runtimeAssetName = 'mocker-runtime-injected.js';
 
             // Use the documented `emitAsset` method to add the pre-bundled runtime script

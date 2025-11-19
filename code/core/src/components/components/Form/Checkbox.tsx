@@ -5,8 +5,7 @@ import { color, styled } from 'storybook/theming';
 const Input = styled.input(({ theme }) => ({
   appearance: 'none',
   backgroundColor: theme.input.background,
-  border: `1px solid ${theme.base == 'dark' ? 'hsl(0 0 100 / 0.4)' : 'hsl(0 0 0 / 0.44)'}`,
-  //border: `1px solid ${theme.input.border}`,
+  border: `1px solid ${theme.base === 'dark' ? 'hsl(0 0 100 / 0.4)' : 'hsl(0 0 0 / 0.44)'}`,
   borderRadius: 2,
   display: 'grid',
   flexShrink: 0,

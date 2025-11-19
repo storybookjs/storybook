@@ -35,7 +35,7 @@ export const create = (
   const base = themes[vars.base] ? vars.base : preferredColorScheme;
   const inherit: ThemeVars = {
     ...themes[preferredColorScheme],
-  ...(themes[vars.base] || {}),
+    ...(themes[vars.base] || {}),
     ...vars,
     base,
   };

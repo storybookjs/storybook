@@ -253,7 +253,7 @@ export const init: Task['run'] = async (
 function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
   // NOTE: the test regexp here will apply whether the path is symlink-preserved or otherwise
   const require = createRequire(import.meta.url);
-  const esbuildLoaderPath = require.resolve('../../code/node_modules/esbuild-loader');
+  const esbuildLoaderPath = require.resolve('../../node_modules/esbuild-loader');
   const webpackFinalCode = `
   (config) => ({
     ...config,

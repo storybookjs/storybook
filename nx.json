@@ -1,9 +1,13 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "extends": "nx/presets/npm.json",
   "nxCloudAccessToken": "NGVmYTkxMmItYzY3OS00MjkxLTk1ZDktZDFmYTFmNmVlNGY4fHJlYWQ=",
   "defaultBase": "next",
   "parallel": 8,
+  "pluginsConfig": {
+    "@nx/js": {
+      "analyzeSourceFiles": false
+    }
+  },
   "tasksRunnerOptions": {
     "default": {
       "options": {

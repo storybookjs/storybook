@@ -1,0 +1,994 @@
+import { beforeEach, expect, test, vi } from 'vitest';
+
+import { loadCsf } from 'storybook/internal/csf-tools';
+
+import { vol } from 'memfs';
+import { dedent } from 'ts-dedent';
+
+import { fsMocks } from './fixtures';
+import { getImports as buildImports, getComponentData } from './getComponentImports';
+
+beforeEach(() => {
+  vi.spyOn(process, 'cwd').mockReturnValue('/app');
+  vol.fromJSON(fsMocks, '/app');
+});
+
+const getImports = (code: string, packageName?: string, storyFilePath?: string) =>
+  getComponentData({
+    csf: loadCsf(code, { makeTitle: (t?: string) => t ?? 'title' }).parse(),
+    packageName,
+    storyFilePath,
+  });
+
+test('Get imports from multiple components', () => {
+  const code = dedent`
+    import type { Meta } from '@storybook/react';
+    import { ButtonGroup } from '@design-system/button-group';
+    import { Button } from '@design-system/button';
+
+    const meta: Meta<typeof Button> = {
+      component: Button,
+      args: {
+        children: 'Click me'
+      }
+    };
+    export default meta;
+    export const Default: Story = <ButtonGroup><Button>Click me</Button></ButtonGroup>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "@design-system/button",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+        {
+          "componentName": "ButtonGroup",
+          "importId": "@design-system/button-group",
+          "importName": "ButtonGroup",
+          "localImportName": "ButtonGroup",
+        },
+      ],
+      "imports": [
+        "import { Button } from "@design-system/button";",
+        "import { ButtonGroup } from "@design-system/button-group";",
+      ],
+    }
+  `
+  );
+});
+
+test('Namespace import with member usage', () => {
+  const code = dedent`
+    import * as Accordion from '@ds/accordion';
+
+    const meta = {};
+    export default meta;
+    export const S = <Accordion.Root>Hi</Accordion.Root>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Accordion.Root",
+          "importId": "@ds/accordion",
+          "importName": "Root",
+          "localImportName": "Accordion",
+          "namespace": "Accordion",
+        },
+      ],
+      "imports": [
+        "import * as Accordion from "@ds/accordion";",
+      ],
+    }
+  `
+  );
+});
+
+test('Named import used as namespace object', () => {
+  const code = dedent`
+    import { Accordion } from '@ds/accordion';
+
+    const meta = {};
+    export default meta;
+    export const S = <Accordion.Root>Hi</Accordion.Root>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Accordion.Root",
+          "importId": "@ds/accordion",
+          "importName": "Accordion",
+          "localImportName": "Accordion",
+        },
+      ],
+      "imports": [
+        "import { Accordion } from "@ds/accordion";",
+      ],
+    }
+  `
+  );
+});
+
+test('Default import', () => {
+  const code = dedent`
+    import Button from '@ds/button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "@ds/button",
+          "importName": "default",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import Button from "@ds/button";",
+      ],
+    }
+  `
+  );
+});
+
+test('Alias named import and meta.component inclusion', () => {
+  const code = dedent`
+    import DefaultComponent, { Button as Btn, Other } from '@ds/button';
+
+    const meta = { component: Btn };
+    export default meta;
+    export const S = <Other><Btn/></Other>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Btn",
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localImportName": "Btn",
+        },
+        {
+          "componentName": "Other",
+          "importId": "@ds/button",
+          "importName": "Other",
+          "localImportName": "Other",
+        },
+      ],
+      "imports": [
+        "import { Button as Btn, Other } from "@ds/button";",
+      ],
+    }
+  `
+  );
+});
+
+test('Strip unused specifiers from the same import statement', () => {
+  const code = dedent`
+    import { Button as Btn, useSomeHook } from '@ds/button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Btn/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Btn",
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localImportName": "Btn",
+        },
+      ],
+      "imports": [
+        "import { Button as Btn } from "@ds/button";",
+      ],
+    }
+  `
+  );
+});
+
+test('Meta component with member and star import', () => {
+  const code = dedent`
+    import * as Accordion from '@ds/accordion';
+
+    const meta = { component: Accordion.Root };
+    export default meta;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Accordion.Root",
+          "importId": "@ds/accordion",
+          "importName": "Root",
+          "localImportName": "Accordion",
+          "namespace": "Accordion",
+        },
+      ],
+      "imports": [
+        "import * as Accordion from "@ds/accordion";",
+      ],
+    }
+  `
+  );
+});
+
+test('Keeps multiple named specifiers and drops unused ones from same import', () => {
+  const code = dedent`
+    import { Button, ButtonGroup, useHook } from '@ds/button';
+
+    const meta = {};
+    export default meta;
+    export const S = <div><Button/><ButtonGroup/></div>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+        {
+          "componentName": "ButtonGroup",
+          "importId": "@ds/button",
+          "importName": "ButtonGroup",
+          "localImportName": "ButtonGroup",
+        },
+      ],
+      "imports": [
+        "import { Button, ButtonGroup } from "@ds/button";",
+      ],
+    }
+  `
+  );
+});
+
+test('Mixed default + named import: keep only default when only default used', () => {
+  const code = dedent`
+    import Button, { useHook } from '@ds/button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "@ds/button",
+          "importName": "default",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import Button from "@ds/button";",
+      ],
+    }
+  `
+  );
+});
+
+test('Mixed default + named import: keep only named when only named (alias) used', () => {
+  const code = dedent`
+    import Button, { Button as Btn } from '@ds/button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Btn/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Btn",
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localImportName": "Btn",
+        },
+      ],
+      "imports": [
+        "import { Button as Btn } from "@ds/button";",
+      ],
+    }
+  `
+  );
+});
+
+test('Per-specifier type import is dropped when mixing with value specifiers', () => {
+  const code = dedent`
+    import type { Meta } from '@storybook/react';
+    import { type Meta as M, Button } from '@ds/button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from "@ds/button";",
+      ],
+    }
+  `
+  );
+});
+
+test('Namespace import used for multiple members kept once', () => {
+  const code = dedent`
+    import * as DS from '@ds/ds';
+
+    const meta = {};
+    export default meta;
+    export const S = <div><DS.A/><DS.B/></div>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "DS.A",
+          "importId": "@ds/ds",
+          "importName": "A",
+          "localImportName": "DS",
+          "namespace": "DS",
+        },
+        {
+          "componentName": "DS.B",
+          "importId": "@ds/ds",
+          "importName": "B",
+          "localImportName": "DS",
+          "namespace": "DS",
+        },
+      ],
+      "imports": [
+        "import * as DS from "@ds/ds";",
+      ],
+    }
+  `
+  );
+});
+
+test('Default import kept when referenced only via meta.component', () => {
+  const code = dedent`
+    import Button from '@ds/button';
+
+    const meta = { component: Button };
+    export default meta;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "@ds/button",
+          "importName": "default",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import Button from "@ds/button";",
+      ],
+    }
+  `
+  );
+});
+
+test('Side-effect-only import is ignored', () => {
+  const code = dedent`
+    import '@ds/global.css';
+    import { Button } from '@ds/button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from "@ds/button";",
+      ],
+    }
+  `
+  );
+});
+
+// New tests for packageName behavior
+
+test('Converts default relative import to import override when provided', () => {
+  const code = dedent`
+    import Header from './Header';
+
+    const meta = {};
+    export default meta;
+    export const S = <Header/>;
+  `;
+  expect(
+    getImports(code, 'my-package', '/app/src/stories/Header.stories.tsx')
+  ).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Header",
+          "importId": "./Header",
+          "importName": "default",
+          "importOverride": "import { Header } from '@design-system/components/Header';",
+          "localImportName": "Header",
+          "path": "./src/stories/Header.tsx",
+          "reactDocgen": {
+            "data": {
+              "actualName": "",
+              "definedInFile": "./src/stories/Header.tsx",
+              "description": "@import import { Header } from '@design-system/components/Header';",
+              "exportName": "default",
+              "methods": [],
+              "props": {
+                "onCreateAccount": {
+                  "description": "",
+                  "required": false,
+                  "tsType": {
+                    "name": "signature",
+                    "raw": "() => void",
+                    "signature": {
+                      "arguments": [],
+                      "return": {
+                        "name": "void",
+                      },
+                    },
+                    "type": "function",
+                  },
+                },
+                "onLogin": {
+                  "description": "",
+                  "required": false,
+                  "tsType": {
+                    "name": "signature",
+                    "raw": "() => void",
+                    "signature": {
+                      "arguments": [],
+                      "return": {
+                        "name": "void",
+                      },
+                    },
+                    "type": "function",
+                  },
+                },
+                "onLogout": {
+                  "description": "",
+                  "required": false,
+                  "tsType": {
+                    "name": "signature",
+                    "raw": "() => void",
+                    "signature": {
+                      "arguments": [],
+                      "return": {
+                        "name": "void",
+                      },
+                    },
+                    "type": "function",
+                  },
+                },
+                "user": {
+                  "description": "",
+                  "required": false,
+                  "tsType": {
+                    "name": "User",
+                  },
+                },
+              },
+            },
+            "type": "success",
+          },
+        },
+      ],
+      "imports": [
+        "import { Header } from "@design-system/components/Header";",
+      ],
+    }
+  `
+  );
+});
+
+test('Keeps relative import when packageName is missing', () => {
+  const code = dedent`
+    import { Button } from './components/Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "./components/Button",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from "./components/Button";",
+      ],
+    }
+  `
+  );
+});
+
+test('Non-relative import remains unchanged even if packageName provided', () => {
+  const code = dedent`
+    import { Button } from '@ds/button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code, 'my-package')).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from "@ds/button";",
+      ],
+    }
+  `
+  );
+});
+
+test('Rewrites tilde-prefixed source to packageName', () => {
+  const code = dedent`
+    import { Button } from '~/components/Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code, 'pkg')).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "~/components/Button",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from \"pkg\";",
+      ],
+    }
+  `
+  );
+});
+
+test('Rewrites hash-prefixed source to packageName', () => {
+  const code = dedent`
+    import Btn from '#Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Btn/>;
+  `;
+  expect(getImports(code, 'my-package')).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Btn",
+          "importId": "#Button",
+          "importName": "default",
+          "localImportName": "Btn",
+        },
+      ],
+      "imports": [
+        "import { Btn } from "my-package";",
+      ],
+    }
+  `
+  );
+});
+
+test('Does not rewrite scoped package subpath (valid bare specifier)', () => {
+  const code = dedent`
+    import { Button } from '@scope/ui/components';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code, 'pkg')).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "@scope/ui/components",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from \"@scope/ui/components\";",
+      ],
+    }
+  `
+  );
+});
+
+test('Does not rewrite unscoped package subpath (valid bare specifier)', () => {
+  const code = dedent`
+    import { Button } from 'ui/components';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  expect(getImports(code, 'pkg')).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "ui/components",
+          "importName": "Button",
+          "localImportName": "Button",
+        },
+      ],
+      "imports": [
+        "import { Button } from \"ui/components\";",
+      ],
+    }
+  `
+  );
+});
+
+// Merging imports from same package
+
+test('Merges multiple imports from the same package (defaults and named)', () => {
+  const code = dedent`
+    import { CopilotIcon } from '@primer/octicons-react';
+    import { Banner } from "@primer/react";
+    import Link from "@primer/react";
+    import { Dialog } from "@primer/react";
+    import { Stack } from "@primer/react";
+    import { Heading } from "@primer/react";
+
+    const meta = {};
+    export default meta;
+    export const S = <div><Link/><Heading/><Banner/><Dialog/><Stack/><CopilotIcon/></div>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Banner",
+          "importId": "@primer/react",
+          "importName": "Banner",
+          "localImportName": "Banner",
+        },
+        {
+          "componentName": "CopilotIcon",
+          "importId": "@primer/octicons-react",
+          "importName": "CopilotIcon",
+          "localImportName": "CopilotIcon",
+        },
+        {
+          "componentName": "Dialog",
+          "importId": "@primer/react",
+          "importName": "Dialog",
+          "localImportName": "Dialog",
+        },
+        {
+          "componentName": "Heading",
+          "importId": "@primer/react",
+          "importName": "Heading",
+          "localImportName": "Heading",
+        },
+        {
+          "componentName": "Link",
+          "importId": "@primer/react",
+          "importName": "default",
+          "localImportName": "Link",
+        },
+        {
+          "componentName": "Stack",
+          "importId": "@primer/react",
+          "importName": "Stack",
+          "localImportName": "Stack",
+        },
+      ],
+      "imports": [
+        "import Link, { Banner, Dialog, Heading, Stack } from "@primer/react";",
+        "import { CopilotIcon } from "@primer/octicons-react";",
+      ],
+    }
+  `
+  );
+});
+
+test('Handle namespace with default and separates named for same package', () => {
+  const code = dedent`
+    import * as PR from '@primer/react';
+    import { Banner } from '@primer/react';
+    import Link from '.';
+
+    const meta = {};
+    export default meta;
+    export const S = <div><Link/><PR.Box/><Banner/></div>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Banner",
+          "importId": "@primer/react",
+          "importName": "Banner",
+          "localImportName": "Banner",
+        },
+        {
+          "componentName": "Link",
+          "importId": ".",
+          "importName": "default",
+          "localImportName": "Link",
+        },
+        {
+          "componentName": "PR.Box",
+          "importId": "@primer/react",
+          "importName": "Box",
+          "localImportName": "PR",
+          "namespace": "PR",
+        },
+      ],
+      "imports": [
+        "import * as PR from "@primer/react";",
+        "import { Banner } from "@primer/react";",
+        "import Link from ".";",
+      ],
+    }
+  `
+  );
+});
+
+test('Component not imported returns undefined importId and importName', () => {
+  const code = dedent`
+    const meta = {};
+    export default meta;
+    export const S = <Missing/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Missing",
+        },
+      ],
+      "imports": [],
+    }
+  `
+  );
+});
+
+test('Namespace component not imported returns undefined importId and importName', () => {
+  const code = dedent`
+    const meta = {};
+    export default meta;
+    export const S = <PR.Box/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "PR.Box",
+        },
+      ],
+      "imports": [],
+    }
+  `
+  );
+});
+
+test('Filters out locally defined components', () => {
+  const code = dedent`
+    const Local = () => <div/>;
+
+    const meta = { component: Local };
+    export default meta;
+    export const S = <Local/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [],
+      "imports": [],
+    }
+    `
+  );
+});
+
+test('importOverride: default override forces default import (keeps local name)', () => {
+  const code = dedent`
+    import { Button } from './Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
+  const base = getComponentData({
+    csf,
+    packageName: 'my-package',
+    storyFilePath: '/app/src/stories/Button.stories.tsx',
+  });
+  const patched = base.components.map((c) =>
+    c.componentName === 'Button' ? { ...c, importOverride: "import Button from '@pkg/button';" } : c
+  );
+  const out = buildImports({ components: patched, packageName: 'my-package' });
+  expect(out).toMatchInlineSnapshot(`
+    [
+      "import Button from \"@pkg/button\";",
+    ]
+  `);
+});
+
+test('importOverride: named override aliases imported to local name', () => {
+  const code = dedent`
+    import Button from './Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
+  const base = getComponentData({
+    csf,
+    packageName: 'pkg',
+    storyFilePath: '/app/src/stories/Button.stories.tsx',
+  });
+  const patched = base.components.map((c) =>
+    c.componentName === 'Button'
+      ? { ...c, importOverride: "import { DSButton } from '@pkg/button';" }
+      : c
+  );
+  const out = buildImports({ components: patched, packageName: 'pkg' });
+  expect(out).toMatchInlineSnapshot(`
+    [
+      "import { DSButton as Button } from \"@pkg/button\";",
+    ]
+  `);
+});
+
+test('importOverride: uses namespace override as-is', () => {
+  const code = dedent`
+    import * as UI from './ui';
+
+    const meta = {};
+    export default meta;
+    export const S = <UI.Button/>;
+  `;
+  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
+  const discovered = getComponentData({
+    csf,
+    packageName: 'pkg',
+    storyFilePath: '/app/src/stories/ui.stories.tsx',
+  });
+  const patched = discovered.components.map((c) =>
+    c.componentName === 'UI.Button' ? { ...c, importOverride: "import * as UI from '@pkg/ui';" } : c
+  );
+  const out = buildImports({ components: patched, packageName: 'pkg' });
+  expect(out).toMatchInlineSnapshot(`
+    [
+      "import * as UI from \"@pkg/ui\";",
+    ]
+  `);
+});
+
+test('importOverride: malformed string is ignored and behavior falls back', () => {
+  const code = dedent`
+    import { Header } from './Header';
+
+    const meta = {};
+    export default meta;
+    export const S = <Header/>;
+  `;
+  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
+  const base = getComponentData({
+    csf,
+    packageName: 'pkg',
+    storyFilePath: '/app/src/stories/Header.stories.tsx',
+  });
+  const patched = base.components.map((c) =>
+    c.componentName === 'Header' ? { ...c, importOverride: 'import oops not valid' } : c
+  );
+  const out = buildImports({ components: patched, packageName: 'pkg' });
+  expect(out).toMatchInlineSnapshot(`
+    [
+      "import { Header } from \"pkg\";",
+    ]
+  `);
+});
+
+test('importOverride: merges multiple components into a single declaration per source', () => {
+  const code = dedent`
+    import Button from './Button';
+    import { Header } from './Header';
+
+    const meta = {};
+    export default meta;
+    export const A = <Button/>;
+    export const B = <Header/>;
+  `;
+  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
+  const base = getComponentData({
+    csf,
+    packageName: 'pkg',
+    storyFilePath: '/app/src/stories/multi.stories.tsx',
+  });
+  const patched = base.components.map((c) =>
+    c.componentName === 'Button'
+      ? { ...c, importOverride: "import { DSButton } from '@ds/ui';" }
+      : c.componentName === 'Header'
+        ? { ...c, importOverride: "import { Header } from '@ds/ui';" }
+        : c
+  );
+  const out = buildImports({ components: patched, packageName: 'pkg' });
+  expect(out).toMatchInlineSnapshot(`
+    [
+      "import { DSButton as Button, Header } from \"@ds/ui\";",
+    ]
+  `);
+});

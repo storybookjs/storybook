@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "10.1.0-alpha.0",
+  "version": "10.1.0-alpha.12",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -73,7 +73,7 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.6.0",
+    "@storybook/icons": "^2.0.0",
     "prompts": "^2.4.0",
     "ts-dedent": "^2.2.0"
   },

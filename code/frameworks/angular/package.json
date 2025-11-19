@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "10.1.0-alpha.0",
+  "version": "10.1.0-alpha.12",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -122,5 +122,5 @@
     "access": "public"
   },
   "builders": "builders.json",
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

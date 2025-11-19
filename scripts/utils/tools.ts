@@ -13,6 +13,7 @@ import * as prettier from 'prettier';
 import prettyTime from 'pretty-hrtime';
 import * as rollup from 'rollup';
 import * as rpd from 'rollup-plugin-dts';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import sortPackageJson from 'sort-package-json';
 import { dedent } from 'ts-dedent';

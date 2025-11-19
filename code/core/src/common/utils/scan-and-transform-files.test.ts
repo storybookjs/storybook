@@ -6,14 +6,10 @@ import { scanAndTransformFiles } from './scan-and-transform-files';
 // Mock dependencies
 const mocks = vi.hoisted(() => {
   return {
-    prompts: vi.fn(),
     commonGlobOptions: vi.fn(),
-  };
-});
-
-vi.mock('prompts', () => {
-  return {
-    default: mocks.prompts,
+    promptText: vi.fn(),
+    globby: vi.fn(),
+    loggerLog: vi.fn(),
   };
 });
 
@@ -21,7 +17,18 @@ vi.mock('./common-glob-options', () => ({
   commonGlobOptions: mocks.commonGlobOptions,
 }));
 
-vi.mock('globby', () => ({ globby: vi.fn() }));
+vi.mock('storybook/internal/node-logger', () => ({
+  logger: {
+    log: mocks.loggerLog,
+  },
+  prompt: {
+    text: mocks.promptText,
+  },
+}));
+
+vi.mock('globby', () => ({
+  globby: mocks.globby,
+}));
 
 describe('scanAndTransformFiles', () => {
   const mockTransformFn = vi.fn();
@@ -36,14 +43,9 @@ describe('scanAndTransformFiles', () => {
     vi.spyOn(paths, 'getProjectRoot').mockReturnValue('/mock/project/root');
 
     // Setup mock implementations
-    mocks.prompts.mockResolvedValue({ glob: '**/*.{js,ts}' });
-
-    // Setup globby mock
-    vi.doMock('globby', async () => {
-      return {
-        globby: vi.fn().mockResolvedValue(mockFiles),
-      };
-    });
+    mocks.promptText.mockResolvedValue('**/*.{js,ts}');
+    mocks.commonGlobOptions.mockReturnValue({ cwd: '/mock/project/root' });
+    mocks.globby.mockResolvedValue(mockFiles);
 
     // Setup transform function mock
     mockTransformFn.mockResolvedValue(mockErrors);
@@ -57,12 +59,10 @@ describe('scanAndTransformFiles', () => {
       transformOptions: mockTransformOptions,
     });
 
-    // Verify prompts was called with the right arguments
-    expect(mocks.prompts).toHaveBeenCalledWith({
-      type: 'text',
-      name: 'glob',
+    // Verify prompt.text was called with the right arguments
+    expect(mocks.promptText).toHaveBeenCalledWith({
       message: 'Enter a custom glob pattern to scan (or press enter to use default):',
-      initial: '**/*.{mjs,cjs,js,jsx,ts,tsx,mdx}',
+      initialValue: '**/*.{mjs,cjs,js,jsx,ts,tsx,mdx}',
     });
 
     // Verify commonGlobOptions was called
@@ -85,12 +85,10 @@ describe('scanAndTransformFiles', () => {
       transformOptions: mockTransformOptions,
     });
 
-    // Verify prompts was called with the custom options
-    expect(mocks.prompts).toHaveBeenCalledWith({
-      type: 'text',
-      name: 'glob',
+    // Verify prompt.text was called with the custom options
+    expect(mocks.promptText).toHaveBeenCalledWith({
       message: 'Custom prompt message',
-      initial: '**/*.custom',
+      initialValue: '**/*.custom',
     });
   });
 

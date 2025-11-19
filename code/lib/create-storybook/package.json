@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "10.1.0-alpha.11",
+  "version": "10.1.0-alpha.12",
   "description": "Storybook installer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -48,14 +48,10 @@
   "devDependencies": {
     "@types/prompts": "^2.0.9",
     "@types/semver": "^7.3.4",
-    "boxen": "^8.0.1",
     "commander": "^14.0.1",
     "empathic": "^2.0.0",
-    "execa": "^5.0.0",
-    "ora": "^5.4.1",
     "picocolors": "^1.1.0",
     "process-ancestry": "^0.0.2",
-    "prompts": "^2.4.0",
     "react": "^18.2.0",
     "tiny-invariant": "^1.3.1",
     "ts-dedent": "^2.0.0",

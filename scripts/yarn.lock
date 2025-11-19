@@ -1579,7 +1579,7 @@ __metadata:
     eslint-config-airbnb-typescript: "npm:^18.0.0"
     eslint-config-prettier: "npm:^9.1.0"
     eslint-plugin-compat: "npm:^6.0.2"
-    eslint-plugin-depend: "npm:^1.3.1"
+    eslint-plugin-depend: "npm:^1.4.0"
     eslint-plugin-eslint-comments: "npm:^3.2.0"
     eslint-plugin-file-progress: "npm:^1.4.0"
     eslint-plugin-html: "npm:^6.2.0"
@@ -1619,7 +1619,7 @@ __metadata:
     prettier-plugin-brace-style: "npm:^0.7.2"
     prettier-plugin-css-order: "npm:^2.1.2"
     prettier-plugin-curly: "npm:^0.3.2"
-    prettier-plugin-jsdoc: "npm:^1.3.2"
+    prettier-plugin-jsdoc: "npm:^1.5.0"
     prettier-plugin-merge: "npm:^0.7.3"
     pretty-bytes: "npm:^6.1.1"
     pretty-hrtime: "npm:^1.0.3"
@@ -5272,14 +5272,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-depend@npm:^1.3.1":
-  version: 1.3.1
-  resolution: "eslint-plugin-depend@npm:1.3.1"
+"eslint-plugin-depend@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "eslint-plugin-depend@npm:1.4.0"
   dependencies:
     empathic: "npm:^2.0.0"
-    module-replacements: "npm:^2.8.0"
+    module-replacements: "npm:^2.10.1"
     semver: "npm:^7.6.3"
-  checksum: 10c0/09f3394997924d57fd44f09319ebb244a616a922a71667b47cf869834a744353d03db18abbfa403804e49dcc0fba40b4d791551b9aecf73fcd7d4eee8be74274
+  checksum: 10c0/3b642fe8f09dd583f520474f4b3d1897dca398bab8e723e5b1dd8b2de0acb6e49c9b021887a5edf4ac2621dcb8cae93316d42fafaab1f0460a5762955c820908
   languageName: node
   linkType: hard
 
@@ -9091,10 +9091,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"module-replacements@npm:^2.8.0":
-  version: 2.9.0
-  resolution: "module-replacements@npm:2.9.0"
-  checksum: 10c0/a6bb343575a921b4ca719b308ca2d464d8f6b78fca46e7a03f3fc9b7e5c749acbd16ceb8e1505fb58f9760baee483ce0a9b706b8ffa460e47ee293ef0b94f254
+"module-replacements@npm:^2.10.1":
+  version: 2.10.1
+  resolution: "module-replacements@npm:2.10.1"
+  checksum: 10c0/b117a9058a77f4085f83aaaf9a3ae146f539d0c0c81473df74b64540704e33d2af76dff1bc09d365c77ebe54025942a0e907f570bc8332dbcbfa3182a57621c2
   languageName: node
   linkType: hard
 
@@ -10270,16 +10270,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier-plugin-jsdoc@npm:^1.3.2":
-  version: 1.3.2
-  resolution: "prettier-plugin-jsdoc@npm:1.3.2"
+"prettier-plugin-jsdoc@npm:^1.5.0":
+  version: 1.5.0
+  resolution: "prettier-plugin-jsdoc@npm:1.5.0"
   dependencies:
     binary-searching: "npm:^2.0.5"
     comment-parser: "npm:^1.4.0"
     mdast-util-from-markdown: "npm:^2.0.0"
   peerDependencies:
     prettier: ^3.0.0
-  checksum: 10c0/53d15897b75077f172d52e61e17e7f39314c9268e6c65128f825e56fd7b59669b06a286a88bec6742149b456b7c3d8f88ca0c2ab7797a623c0524c821e2d2f60
+  checksum: 10c0/574340657c87769e6b4dbbe08557136365f7e289514d9ecdec71a09f29e3192f68c09877eda77997c43fc64861d40ad8cf8dd3e741dddd104b570b0727dc9f7e
   languageName: node
   linkType: hard
 

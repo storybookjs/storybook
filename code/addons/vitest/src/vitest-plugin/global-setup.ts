@@ -47,7 +47,6 @@ const startStorybookIfNotRunning = async () => {
     storybookProcess = spawn(storybookScript, [], {
       stdio: process.env.DEBUG === 'storybook' ? 'pipe' : 'ignore',
       cwd: process.cwd(),
-      shell: true,
     });
 
     storybookProcess.on('error', (error) => {

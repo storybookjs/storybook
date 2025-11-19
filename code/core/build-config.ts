@@ -77,14 +77,8 @@ const config: BuildEntries = {
         exportEntries: ['./internal/cli'],
       },
       {
-        entryPoint: './src/core-server/presets/webpack/loaders/webpack-automock-loader.ts',
-        exportEntries: ['./webpack/loaders/webpack-automock-loader'],
-        dts: false,
-      },
-      {
-        entryPoint: './src/core-server/presets/webpack/loaders/storybook-mock-transform-loader.ts',
-        exportEntries: ['./webpack/loaders/storybook-mock-transform-loader'],
-        dts: false,
+        exportEntries: ['./internal/mocking-utils'],
+        entryPoint: './src/mocking-utils/index.ts',
       },
     ],
     browser: [

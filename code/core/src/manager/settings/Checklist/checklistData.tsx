@@ -1,5 +1,3 @@
-import { C } from 'vitest/dist/chunks/reporters.d.BFLkQcL6.js';
-
 import type { ComponentProps } from 'react';
 import React from 'react';
 

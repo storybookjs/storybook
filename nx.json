@@ -38,102 +38,21 @@
       ],
       "cache": true
     },
-    "test": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "{workspaceRoot}/code",
-        "command": "yarn vitest watch --project={projectName}"
-      },
-      "dependsOn": [
-        "build"
-      ],
-      "inputs": [
-        "default",
-        "^production",
-        "{workspaceRoot}/code/{vitest.workspace.ts,vitest.helpers.ts,vitest-setup.ts}"
-      ],
-      "cache": true
-    },
     "check": {
       "configurations": {
         "production": {}
       },
-      "inputs": [
-        "default",
-        "^production"
-      ],
-      "dependsOn": [
-        "build"
-      ],
+      "inputs": ["default", "^production"],
+      "dependsOn": ["build"],
       "cache": true
-    },
-    "sandbox": {
-      "executor": "nx:run-commands",
-      "inputs": [
-        {
-          "runtime": "storybook --version"
-        }
-      ],
-      "outputs": [
-        "{workspaceRoot}/../{projectRoot}"
-      ],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task sandbox -s sandbox --template={projectName}"
-      },
-      "dependsOn": [
-        "^build"
-      ],
-      "cache": true
-    },
-    "sb:dev": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "{workspaceRoot}/../{projectRoot}",
-        "command": "yarn storybook",
-        "args": "--ci"
-      },
-      "dependsOn": [
-        "sandbox"
-      ]
-    },
-    "sb:build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "{workspaceRoot}/../{projectRoot}",
-        "command": "yarn build-storybook"
-      },
-      "inputs": [
-        "^production"
-      ],
-      "outputs": [
-        "{workspaceRoot}/../{projectRoot}/storybook-static"
-      ],
-      "cache": true,
-      "dependsOn": [
-        "sandbox"
-      ]
-    },
-    "sb:serve": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "{workspaceRoot}/code",
-        "command": "yarn http-server ../{projectRoot}/storybook-static",
-        "args": "--port 8001"
-      },
-      "dependsOn": [
-        "sb:build"
-      ]
     }
   },
   "namedInputs": {
-    "default": [
-      "{projectRoot}/**/*",
-      "sharedGlobals"
-    ],
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "sharedGlobals": [
       "{workspaceRoot}/code/tsconfig.json",
-      "{workspaceRoot}/scripts/**/*"
+      "{workspaceRoot}/scripts/**/*",
+      "{workspaceRoot}/.github/workflows/nx.yml"
     ],
     "production": [
       "default",

@@ -64,6 +64,7 @@
   "devDependencies": {
     "@nx/workspace": "^22.0.4",
     "@playwright/test": "^1.52.0",
-    "nx": "^22.0.4"
+    "nx": "^22.0.4",
+    "jiti": "^2.4.2"
   }
 }

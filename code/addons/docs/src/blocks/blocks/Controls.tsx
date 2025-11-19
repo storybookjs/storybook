@@ -9,7 +9,7 @@ import type { ModuleExports } from 'storybook/internal/types';
 import { filterArgTypes } from 'storybook/preview-api';
 import type { PropDescriptor } from 'storybook/preview-api';
 
-import type { SortType } from '../components';
+import type { SortCustom, SortType } from '../components';
 import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
 import { DocsContext } from './DocsContext';
 import { useArgs } from './useArgs';
@@ -19,7 +19,7 @@ import { getComponentName } from './utils';
 type ControlsParameters = {
   include?: PropDescriptor;
   exclude?: PropDescriptor;
-  sort?: SortType;
+  sort?: SortType | SortCustom;
 };
 
 type ControlsProps = ControlsParameters & {

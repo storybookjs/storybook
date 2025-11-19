@@ -183,6 +183,10 @@ export enum ArgsTableError {
 }
 
 export type SortType = 'alpha' | 'requiredFirst' | 'none';
+export type SortCustom = {
+  pinned: string[];
+  fallback?: SortType;
+};
 type SortFn = (a: ArgType, b: ArgType) => number;
 
 const sortFns: Record<SortType, SortFn | null> = {
@@ -202,7 +206,7 @@ export interface ArgsTableOptionProps {
   inTabPanel?: boolean;
   initialExpandedArgs?: boolean;
   isLoading?: boolean;
-  sort?: SortType;
+  sort?: SortType | SortCustom;
 }
 interface ArgsTableDataProps {
   rows: ArgTypes;
@@ -233,14 +237,50 @@ type Sections = {
   sections: Record<string, Section>;
 };
 
-const groupRows = (rows: ArgType, sort: SortType): Sections => {
+const groupRows = (rows: ArgType, sort: SortType | SortCustom): Sections => {
   const sections: Sections = { ungrouped: [], ungroupedSubsections: {}, sections: {} };
 
   if (!rows) {
     return sections;
   }
 
-  Object.entries(rows).forEach(([key, row]) => {
+  // Pin specified args to the top
+  const toPin = typeof sort === 'object' && Array.isArray(sort.pinned) ? sort.pinned : [];
+  const pinned = new Map<string, [string, ArgType]>();
+  const unpinned: [string, ArgType][] = [];
+
+  const sortFn =
+    typeof sort === 'object' ? (sort.fallback ? sortFns[sort.fallback] : undefined) : sortFns[sort];
+
+  if (toPin.length > 0) {
+    Object.entries(rows).forEach(([key, row]) => {
+      const pinnedIndex = toPin.indexOf(row.name);
+      if (pinnedIndex !== -1) {
+        pinned.set(row.name, [key, row]);
+      } else {
+        unpinned.push([key, row]);
+      }
+    });
+
+    // Sort unpinned
+    if (sortFn && unpinned.length > 0) {
+      unpinned.sort((a, b) => sortFn(a[1], b[1]));
+    }
+  }
+
+  let finalRows =
+    toPin.length === 0
+      ? Object.entries(rows)
+      : toPin
+          .map((name) => pinned.get(name))
+          .filter((entry): entry is [string, ArgType] => entry !== undefined)
+          .concat(unpinned);
+
+  if (toPin.length === 0 && sortFn) {
+    finalRows = finalRows.sort((a, b) => sortFn(a[1], b[1]));
+  }
+
+  finalRows.forEach(([key, row]) => {
     const { category, subcategory } = row?.table || {};
     if (category) {
       const section = sections.sections[category] || { ungrouped: [], subsections: {} };
@@ -261,40 +301,7 @@ const groupRows = (rows: ArgType, sort: SortType): Sections => {
     }
   });
 
-  // apply sort
-  const sortFn = sortFns[sort];
-
-  const sortSubsection = (record: Record<string, Subsection>) => {
-    if (!sortFn) {
-      return record;
-    }
-    return Object.keys(record).reduce<Record<string, Subsection>>(
-      (acc, cur) => ({
-        ...acc,
-        [cur]: record[cur].sort(sortFn),
-      }),
-      {}
-    );
-  };
-
-  const sorted = {
-    ungrouped: sortFn ? sections.ungrouped.sort(sortFn) : sections.ungrouped,
-    ungroupedSubsections: sortSubsection(sections.ungroupedSubsections),
-    sections: Object.keys(sections.sections).reduce<Record<string, Section>>(
-      (acc, cur) => ({
-        ...acc,
-        [cur]: {
-          ungrouped: sortFn
-            ? sections.sections[cur].ungrouped.sort(sortFn)
-            : sections.sections[cur].ungrouped,
-          subsections: sortSubsection(sections.sections[cur].subsections),
-        },
-      }),
-      {}
-    ),
-  };
-
-  return sorted;
+  return sections;
 };
 
 /**

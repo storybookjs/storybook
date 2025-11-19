@@ -205,12 +205,9 @@ export const getComponents = ({
 
       try {
         if (component.importId && !component.importId.startsWith('.') && storyFilePath) {
-          const realPath = cachedResolveImport(component.importId, {
-            basedir: dirname(storyFilePath),
-          });
-          if (realPath.includes('node_modules')) {
-            isPackage = true;
-          }
+          // throws when it can not be resolved
+          cachedResolveImport(component.importId, { basedir: dirname(storyFilePath) });
+          isPackage = true;
         }
       } catch {}
 
@@ -219,13 +216,9 @@ export const getComponents = ({
       if (path) {
         const reactDocgen = getReactDocgen(path, componentWithPackage);
         return {
-        return {
           ...componentWithPackage,
           path,
           reactDocgen,
-          importOverride:
-            reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
-        };
           importOverride:
             reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
         };

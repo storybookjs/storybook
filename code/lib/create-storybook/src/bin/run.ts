@@ -120,7 +120,6 @@ createStorybookProgram
       options.features = [];
     }
 
-    console.log('features', options.features);
     await initiate(options as CommandOptions).catch(() => process.exit(1));
   })
   .version(String(version))

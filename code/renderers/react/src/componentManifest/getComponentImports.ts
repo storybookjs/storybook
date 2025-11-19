@@ -219,10 +219,13 @@ export const getComponents = ({
       if (path) {
         const reactDocgen = getReactDocgen(path, componentWithPackage);
         return {
+        return {
           ...componentWithPackage,
           path,
-          isPackage,
           reactDocgen,
+          importOverride:
+            reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
+        };
           importOverride:
             reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
         };

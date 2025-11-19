@@ -1,5 +1,11 @@
-// It ensures that vite converts cjs deps into esm without vite having to find them during startup and then having to log a message about them and restart
-// TODO: Many of the deps might be prebundled now though, so probably worth trying to remove and see what happens
+/**
+ * @deprecated This list is no longer used by Storybook's Vite builder. Vite now automatically
+ *   discovers and optimizes dependencies based on entry points. If you need to manually specify
+ *   dependencies for optimization, use the `viteFinal` config in your `.storybook/main.js` to add
+ *   them to `optimizeDeps.include`.
+ *
+ *   This export is kept for backwards compatibility but may be removed in a future version.
+ */
 export const INCLUDE_CANDIDATES = [
   '@ampproject/remapping',
   '@base2/pretty-print-object',

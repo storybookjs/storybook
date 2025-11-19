@@ -724,6 +724,17 @@ export const addStories: Task['run'] = async (
       .filter((addon: string) =>
         Object.keys(storybookPackages).find((pkg: string) => pkg === `@storybook/addon-${addon}`)
       )
+      .filter((addon: string) => {
+        // RSBUILD frameworks are not configured to ignore docs addon stories, which are React based
+        if (
+          template.expected.framework === 'storybook-vue3-rsbuild' ||
+          template.expected.framework === 'storybook-web-components-rsbuild' ||
+          template.expected.framework === 'storybook-html-rsbuild'
+        ) {
+          return addon !== 'docs';
+        }
+        return true;
+      })
       .map(async (addon) => workspacePath('addon', `@storybook/addon-${addon}`))
   );
 

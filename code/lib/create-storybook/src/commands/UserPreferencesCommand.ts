@@ -9,7 +9,6 @@ import { Feature } from 'storybook/internal/types';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { DependencyCollector } from '../dependency-collector';
 import type { CommandOptions } from '../generators/types';
 import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
 import { TelemetryService } from '../services/TelemetryService';
@@ -199,7 +198,7 @@ export class UserPreferencesCommand {
     if (installType === 'recommended') {
       features.add(Feature.DOCS);
       features.add(Feature.A11Y);
-      // Don't install test in CI but install in non-TTY environments like agentic installs
+
       if (isTestFeatureAvailable) {
         features.add(Feature.TEST);
       }

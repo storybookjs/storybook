@@ -16,11 +16,14 @@
           "cwd": "{projectRoot}",
           "command": "yarn test"
         },
-        "dependsOn": [        {
-          "projects": ["core"],
-          "target": "build",
-          "params": "ignore"
-        }],
+        "dependsOn": [
+          {
+            "projects": [
+              "core"
+            ],
+            "target": "build"
+          }
+        ],
         "inputs": [
           "default"
         ]

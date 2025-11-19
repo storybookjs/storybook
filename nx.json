@@ -43,6 +43,11 @@
       "cache": true
     },
     "check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn check"
+      },
       "configurations": {
         "production": {}
       },

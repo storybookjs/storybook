@@ -8912,6 +8912,7 @@ __metadata:
   resolution: "@storybook/super-root@workspace:."
   dependencies:
     "@nx/workspace": "npm:^22.0.4"
+    "@playwright/test": "npm:^1.52.0"
     nx: "npm:^22.0.4"
   languageName: unknown
   linkType: soft

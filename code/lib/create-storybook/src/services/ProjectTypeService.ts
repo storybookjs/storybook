@@ -10,6 +10,7 @@ import { SupportedLanguage } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import semver from 'semver';
+import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types';
 
@@ -177,7 +178,15 @@ export class ProjectTypeService {
       // prompting handled by command layer
 
       if (detectedType === ProjectType.UNDETECTED || detectedType === null) {
-        logger.error('Storybook failed to detect your project type');
+        logger.error(dedent`
+          Unable to initialize Storybook in this directory.
+
+          Storybook couldn't detect a supported framework or configuration for your project. Make sure you're inside a framework project (e.g., React, Vue, Svelte, Angular, Next.js) and that its dependencies are installed.
+
+          Tips:
+          - Run init in an empty directory or create a new framework app first.
+          - If this directory contains unrelated files, try a new directory for Storybook.
+        `);
         throw new HandledError('Storybook failed to detect your project type');
       }
 
@@ -222,14 +231,21 @@ export class ProjectTypeService {
       getModulePackageJSONVersion('eslint-plugin-storybook'),
     ]);
 
+    const satisfies = (version: string | null, range: string) => {
+      if (!version) {
+        return false;
+      }
+      return semver.satisfies(version, range, { includePrerelease: true });
+    };
+
     if (isTypescriptDirectDependency && typescriptVersion) {
       if (
-        semver.gte(typescriptVersion, '4.9.0') &&
+        satisfies(typescriptVersion, '>=4.9.0') &&
         (!prettierVersion || semver.gte(prettierVersion, '2.8.0')) &&
         (!babelPluginTransformTypescriptVersion ||
-          semver.gte(babelPluginTransformTypescriptVersion, '7.20.0')) &&
-        (!typescriptEslintParserVersion || semver.gte(typescriptEslintParserVersion, '5.44.0')) &&
-        (!eslintPluginStorybookVersion || semver.gte(eslintPluginStorybookVersion, '0.6.8'))
+          satisfies(babelPluginTransformTypescriptVersion, '>=7.20.0')) &&
+        (!typescriptEslintParserVersion || satisfies(typescriptEslintParserVersion, '>=5.44.0')) &&
+        (!eslintPluginStorybookVersion || satisfies(eslintPluginStorybookVersion, '>=0.6.8'))
       ) {
         language = SupportedLanguage.TYPESCRIPT;
       } else {

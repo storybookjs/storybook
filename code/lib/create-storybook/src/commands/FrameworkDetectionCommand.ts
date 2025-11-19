@@ -22,7 +22,6 @@ export interface FrameworkDetectionResult {
  * overridden builder configuration.
  */
 export class FrameworkDetectionCommand {
-  /** Execute framework detection for the given project type */
   constructor(
     packageManager: JsPackageManager,
     private frameworkDetectionService = new FrameworkDetectionService(packageManager)

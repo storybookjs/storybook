@@ -498,7 +498,7 @@ Specify preset color swatches for the color picker control. The color value may 
 
 #### `sort`
 
-Type: `'none' | 'alpha' | 'requiredFirst'`
+Type: `'none' | 'alpha' | 'requiredFirst' | 'SortCustom'`
 
 Default: `'none'`
 
@@ -507,6 +507,18 @@ Specifies how the controls are sorted.
 * **none**: Unsorted, displayed in the same order the arg types are processed in
 * **alpha**: Sorted alphabetically, by the arg type's name
 * **requiredFirst**: Same as `alpha`, with any required arg types displayed first
+* **SortCustom**: A custom sort object allowing pinning controls, providing a fallback type, and a group sort option.
+
+```json
+{
+	"pinned": ["controlName1", "controlName2"],
+	"fallback": "alpha" | "requiredFirst" | "none",
+	"groupSort": "alpha" | "none" | {
+		"pinned": ["groupName1", "groupName2"],
+		"fallback": "alpha" | "none"
+	}
+}
+```
 
 #### `disableSaveFromUI`
 

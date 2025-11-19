@@ -223,6 +223,7 @@ jobs:
                     - ~/.yarn/berry/cache
             - persist_to_workspace:
                 paths:
+                    - node_modules
                     - code/node_modules
                     - code/addons
                     - scripts/node_modules

@@ -14,7 +14,7 @@
         "executor": "nx:run-commands",
         "options": {
           "cwd": "{projectRoot}",
-          "command": "yarn test",
+          "command": "yarn test"
         },
         "dependsOn": [        {
           "projects": ["core"],

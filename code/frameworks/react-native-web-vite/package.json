@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-native-web-vite",
-  "version": "10.1.0-alpha.3",
+  "version": "10.1.0-alpha.12",
   "description": "Storybook for React Native Web and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -56,7 +56,7 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
-    "vite-plugin-rnw": "^0.0.6",
+    "vite-plugin-rnw": "^0.0.10",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
@@ -74,5 +74,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

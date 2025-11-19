@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "10.1.0-alpha.3",
+  "version": "10.1.0-alpha.12",
   "description": "A Storybook builder to dev and build with Vite",
   "keywords": [
     "storybook",
@@ -69,5 +69,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

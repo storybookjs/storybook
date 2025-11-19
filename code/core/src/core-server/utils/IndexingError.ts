@@ -1,3 +1,4 @@
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 export class IndexingError extends Error {

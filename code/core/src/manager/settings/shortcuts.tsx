@@ -118,7 +118,7 @@ const shortcutLabels = {
   togglePanel: 'Toggle addons',
   panelPosition: 'Toggle addons orientation',
   toggleNav: 'Toggle sidebar',
-  toolbar: 'Toggle canvas toolbar',
+  toolbar: 'Toggle toolbar',
   search: 'Focus search',
   focusNav: 'Focus sidebar',
   focusIframe: 'Focus canvas',
@@ -131,7 +131,7 @@ const shortcutLabels = {
   aboutPage: 'Go to about page',
   collapseAll: 'Collapse all items on sidebar',
   expandAll: 'Expand all items on sidebar',
-  remount: 'Remount component',
+  remount: 'Reload story',
   openInEditor: 'Open story in editor',
   copyStoryLink: 'Copy story link to clipboard',
   // TODO: bring this back once we want to add shortcuts for this
@@ -338,6 +338,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
         {layout}
         <Button
+          ariaLabel={false}
           variant="outline"
           size="small"
           id="restoreDefaultsHotkeys"

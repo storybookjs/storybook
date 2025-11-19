@@ -40,6 +40,7 @@ export class AddonVitestService {
   readonly supportedFrameworks: SupportedFramework[] = [
     SupportedFramework.HTML_VITE,
     SupportedFramework.NEXTJS_VITE,
+    SupportedFramework.SOLID,
     SupportedFramework.PREACT_VITE,
     SupportedFramework.REACT_NATIVE_WEB_VITE,
     SupportedFramework.REACT_VITE,

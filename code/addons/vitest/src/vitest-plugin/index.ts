@@ -7,6 +7,7 @@ import type { ViteUserConfig } from 'vitest/config';
 import {
   DEFAULT_FILES_PATTERN,
   getInterpretedFile,
+  loadPreviewOrConfigFile,
   normalizeStories,
   optionalEnvToBoolean,
   resolvePathInStorybookCache,
@@ -21,7 +22,7 @@ import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 import { oneWayHash } from 'storybook/internal/telemetry';
-import type { Presets } from 'storybook/internal/types';
+import type { Presets, PreviewAnnotation } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
 import { dirname, join, normalize, relative, resolve, sep } from 'pathe';
@@ -74,6 +75,55 @@ const getStoryGlobsAndFiles = async (
       new Map(matchingStoryFiles.map(([specifier, cache]) => [specifier, cache]))
     ),
   };
+};
+
+/**
+ * Process a preview annotation to get its absolute file path. Preview annotations can be strings or
+ * objects with absolute/bare paths.
+ */
+const processPreviewAnnotation = (path: PreviewAnnotation, projectRoot: string): string => {
+  // If entry is an object, take the absolute specifier
+  if (typeof path === 'object') {
+    // Handle Nuxt workaround case
+    if (path.bare != null && path.absolute === '') {
+      return path.bare;
+    }
+    return normalize(path.absolute);
+  }
+
+  // If it's already an absolute path, return it
+  if (path.startsWith('/') || path.match(/^[a-zA-Z]:/)) {
+    return normalize(path);
+  }
+
+  // Resolve relative paths relative to project root
+  return normalize(resolve(projectRoot, path));
+};
+
+/**
+ * Collects all preview annotation files from presets and user's preview file. These files need to
+ * be included as entries so Vite can optimize their dependencies.
+ */
+const getPreviewAnnotations = async (
+  presets: Presets,
+  configDir: string,
+  projectRoot: string
+): Promise<string[]> => {
+  // Get preview annotations from presets (addons, renderers, frameworks)
+  const previewAnnotations = await presets.apply<PreviewAnnotation[]>('previewAnnotations', [], {});
+
+  // Get user's preview file
+  const previewOrConfigFile = loadPreviewOrConfigFile({ configDir });
+
+  // Combine all preview annotations
+  const allPreviewAnnotations = [...previewAnnotations, previewOrConfigFile].filter(
+    (entry): entry is PreviewAnnotation => entry !== undefined
+  );
+
+  // Process each annotation to get absolute paths
+  return allPreviewAnnotations.map((annotation) =>
+    processPreviewAnnotation(annotation, projectRoot)
+  );
 };
 
 /**
@@ -136,7 +186,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   const stories = await presets.apply('stories', []);
 
   const [
-    { storiesGlobs },
+    { storiesGlobs, storiesFiles },
     framework,
     storybookEnv,
     viteConfigFromStorybook,
@@ -145,6 +195,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     core,
     extraOptimizeDeps,
     features,
+    previewAnnotations,
   ] = await Promise.all([
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
@@ -155,6 +206,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     presets.apply('core'),
     presets.apply('optimizeViteDeps', []),
     presets.apply('features', {}),
+    getPreviewAnnotations(presets, finalOptions.configDir, WORKING_DIR),
   ]);
 
   const pluginsToIgnore = [
@@ -320,6 +372,13 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         },
 
         optimizeDeps: {
+          // Include both story files and preview annotation files as entries.
+          // Vite will automatically discover and optimize dependencies from these entry points.
+          // This prevents hard reloads caused by runtime dependency discovery.
+          entries: [
+            ...storiesFiles.map((file) => relative(finalOptions.vitestRoot, file)),
+            ...previewAnnotations.map((file) => relative(finalOptions.vitestRoot, file)),
+          ],
           include: [
             ...extraOptimizeDeps,
             '@storybook/addon-vitest/internal/setup-file',

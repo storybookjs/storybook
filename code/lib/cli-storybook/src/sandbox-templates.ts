@@ -1,5 +1,8 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import type { StoriesEntry, StorybookConfigRaw } from 'storybook/internal/types';
+import { type StoriesEntry, type StorybookConfigRaw } from 'storybook/internal/types';
+
+import { ProjectType } from '../../../core/src/cli/projectTypes';
+import { SupportedBuilder } from '../../../core/src/types/modules/builders';
 
 export type SkippableTask =
   | 'smoke-test'
@@ -86,6 +89,12 @@ export type Template = {
     extraDependencies?: string[];
     editAddons?: (addons: string[]) => string[];
     useCsfFactory?: boolean;
+  };
+  /** Additional options to pass to the initiate command when initializing Storybook. */
+  initOptions?: {
+    builder?: SupportedBuilder;
+    type?: ProjectType;
+    [key: string]: unknown;
   };
   /**
    * Flag to indicate that this template is a secondary template, which is used mainly to test
@@ -180,7 +189,10 @@ export const baseTemplates = {
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
-    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+    initOptions: {
+      builder: SupportedBuilder.WEBPACK5,
+    },
+    skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration'],
   },
   'nextjs/15-ts': {
     name: 'Next.js v15 (Webpack | TypeScript)',
@@ -201,6 +213,9 @@ export const baseTemplates = {
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
+    },
+    initOptions: {
+      builder: SupportedBuilder.WEBPACK5,
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -224,6 +239,9 @@ export const baseTemplates = {
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
+    initOptions: {
+      builder: SupportedBuilder.WEBPACK5,
+    },
     skipTasks: ['bench', 'vitest-integration'],
   },
   'nextjs/prerelease': {
@@ -246,6 +264,9 @@ export const baseTemplates = {
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
+    initOptions: {
+      builder: SupportedBuilder.WEBPACK5,
+    },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
   'nextjs-vite/14-ts': {
@@ -267,7 +288,7 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
       },
-      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
+      extraDependencies: ['server-only', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -290,7 +311,7 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
       },
-      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
+      extraDependencies: ['server-only', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -313,7 +334,7 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
       },
-      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
+      extraDependencies: ['server-only', 'vite', 'prop-types'],
     },
     skipTasks: ['bench'],
   },
@@ -520,6 +541,9 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.HTML,
+    },
   },
   'html-vite/default-ts': {
     name: 'HTML Latest (Vite | TypeScript)',
@@ -531,6 +555,9 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.HTML,
+    },
   },
   'svelte-vite/default-js': {
     name: 'Svelte Latest (Vite | JavaScript)',
@@ -695,6 +722,9 @@ export const baseTemplates = {
       },
     },
     skipTasks: ['bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.REACT_NATIVE_WEB,
+    },
   },
   'react-native-web-vite/rn-cli-ts': {
     // NOTE: create-expo-app installs React 18.2.0. But yarn portal
@@ -714,6 +744,9 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.REACT_NATIVE_WEB,
+    },
   },
 } satisfies Record<string, BaseTemplates>;
 
@@ -778,6 +811,9 @@ const internalTemplates = {
     },
     isInternal: true,
     skipTasks: ['bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.SERVER,
+    },
   },
 } satisfies Record<`internal/${string}`, Template & { isInternal: true }>;
 

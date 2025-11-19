@@ -257,7 +257,9 @@ export async function baseGenerator(
       ]
     : [];
 
-  taskLog.message(`- Configuring main.js`);
+  const configurationFileExtension = language === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
+
+  taskLog.message(`- Configuring main.${configurationFileExtension}`);
   await configureMain({
     framework: frameworkPackagePath,
     features,
@@ -273,7 +275,7 @@ export async function baseGenerator(
     ...extraMain,
   });
 
-  taskLog.message(`- Configuring preview.js`);
+  taskLog.message(`- Configuring preview.${configurationFileExtension}`);
 
   await configurePreview({
     frameworkPreviewParts: _options.frameworkPreviewParts,

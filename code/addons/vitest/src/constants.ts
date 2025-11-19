@@ -18,19 +18,6 @@ export const DOCUMENTATION_FATAL_ERROR_LINK = `${DOCUMENTATION_LINK}#what-happen
 
 export const COVERAGE_DIRECTORY = 'coverage';
 
-export const SUPPORTED_FRAMEWORKS = [
-  '@storybook/nextjs',
-  '@storybook/nextjs-vite',
-  '@storybook/react-vite',
-  '@storybook/preact-vite',
-  '@storybook/svelte-vite',
-  '@storybook/vue3-vite',
-  '@storybook/html-vite',
-  '@storybook/web-components-vite',
-  '@storybook/sveltekit',
-  '@storybook/react-native-web-vite',
-];
-
 export const storeOptions = {
   id: ADDON_ID,
   initialState: {

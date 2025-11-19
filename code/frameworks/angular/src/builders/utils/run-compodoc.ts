@@ -22,6 +22,7 @@ export const runCompodoc = (
   return new Observable<void>((observer) => {
     const tsConfigPath = toRelativePath(tsconfig);
     const finalCompodocArgs = [
+      'compodoc',
       ...(hasTsConfigArg(compodocArgs) ? [] : ['-p', tsConfigPath]),
       ...(hasOutputArg(compodocArgs) ? [] : ['-d', `${context.workspaceRoot || '.'}`]),
       ...compodocArgs,
@@ -30,16 +31,16 @@ export const runCompodoc = (
     const packageManager = JsPackageManagerFactory.getPackageManager();
 
     try {
-      const stdout = packageManager.runPackageCommandSync(
-        'compodoc',
-        finalCompodocArgs,
-        context.workspaceRoot,
-        'inherit'
-      );
-
-      context.logger.info(stdout);
-      observer.next();
-      observer.complete();
+      packageManager
+        .runPackageCommand({
+          args: finalCompodocArgs,
+          cwd: context.workspaceRoot,
+        })
+        .then((result) => {
+          context.logger.info(result.stdout);
+          observer.next();
+          observer.complete();
+        });
     } catch (e) {
       context.logger.error(e);
       observer.error();

@@ -28,7 +28,7 @@ export default preview;
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+// Replace your-framework with nextjs or nextjs-vite
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({
@@ -45,7 +45,7 @@ export default definePreview({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+// Replace your-framework with nextjs or nextjs-vite
 import { definePreview } from '@storybook/your-framework';
 
 export default definePreview({

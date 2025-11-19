@@ -87,13 +87,13 @@ export async function initializeChecklist() {
       saveProjectState({ values: projectValues } as Pick<StoreState, 'values'>);
       saveUserState({ muted: state.muted, values: userValues });
 
-      const { muted, values } = state;
-      const changedProperties = Object.entries({ muted, values }).filter(
-        ([key, value]) => !equals(value, previousState[key as keyof StoreState])
+      const changedValues = Object.entries(state.values).filter(
+        ([key, value]) => value !== previousState.values[key]
       );
-
-      console.log('changedProperties', changedProperties);
-      telemetry('onboarding-checklist', Object.fromEntries(changedProperties));
+      telemetry('onboarding-checklist', {
+        ...(!equals(state.muted, previousState.muted) ? { muted: state.muted } : {}),
+        ...(changedValues.length > 0 ? { values: Object.fromEntries(changedValues) } : {}),
+      });
     });
   } catch (err) {
     logger.error('Failed to initialize checklist');

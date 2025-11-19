@@ -328,7 +328,6 @@ export const Search = React.memo<SearchProps>(function Search({
         openMenu,
         closeMenu,
         inputValue,
-        clearSelection,
         getInputProps,
         getItemProps,
         getLabelProps,

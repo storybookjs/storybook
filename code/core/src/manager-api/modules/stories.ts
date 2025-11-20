@@ -709,7 +709,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       provider.channel?.emit(SET_FILTER, { id });
     },
 
-    openInIsolation: (storyId: string, refId?: string | null, viewMode?: 'story' | 'docs') => {
+    openInIsolation: (storyId, refId, viewMode) => {
       const { location } = global.document;
       const { refs, customQueryParams, viewMode: currentViewMode } = store.getState();
 

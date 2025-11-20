@@ -94,9 +94,7 @@ export async function storybookDevServer(options: Options) {
     await Promise.resolve();
 
   if (!options.ignorePreview) {
-    if (!options.quiet) {
-      logger.info('=> Starting preview..');
-    }
+    logger.debug('Starting preview..');
     previewResult = await previewBuilder
       .start({
         startTime: process.hrtime(),
@@ -106,7 +104,7 @@ export async function storybookDevServer(options: Options) {
         channel: serverChannel,
       })
       .catch(async (e: any) => {
-        logger.error('=> Failed to build the preview');
+        logger.error('Failed to build the preview');
         process.exitCode = 1;
 
         await managerBuilder?.bail().catch();

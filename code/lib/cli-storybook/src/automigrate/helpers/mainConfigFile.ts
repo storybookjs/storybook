@@ -3,11 +3,9 @@ import { dirname, isAbsolute, join, normalize } from 'node:path';
 import {
   JsPackageManagerFactory,
   builderPackages,
-  extractProperFrameworkName,
+  extractFrameworkPackageName,
   frameworkPackages,
   getStorybookInfo,
-  loadMainConfig,
-  rendererPackages,
 } from 'storybook/internal/common';
 import type { PackageManagerName } from 'storybook/internal/common';
 import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
@@ -17,7 +15,6 @@ import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { dedent } from 'ts-dedent';
 
 import { getStoriesPathsFromConfig } from '../../util';
 
@@ -35,7 +32,7 @@ export const getFrameworkPackageName = (mainConfig?: StorybookConfigRaw) => {
     return null;
   }
 
-  return extractProperFrameworkName(packageNameOrPath);
+  return extractFrameworkPackageName(packageNameOrPath);
 };
 
 /**
@@ -83,7 +80,9 @@ export const getBuilderPackageName = (mainConfig?: StorybookConfigRaw) => {
 
   const normalizedPath = normalize(packageNameOrPath).replace(new RegExp(/\\/, 'g'), '/');
 
-  return builderPackages.find((pkg) => normalizedPath.endsWith(pkg)) || packageNameOrPath;
+  return (
+    Object.keys(builderPackages).find((pkg) => normalizedPath.endsWith(pkg)) || packageNameOrPath
+  );
 };
 
 /**
@@ -100,30 +99,6 @@ export const getFrameworkOptions = (
     : (mainConfig?.framework?.options ?? null);
 };
 
-/**
- * Returns a renderer package name given a framework package name.
- *
- * @param frameworkPackageName - The package name of the framework to lookup.
- * @returns - The corresponding package name in `rendererPackages`. If not found, returns null.
- */
-export const getRendererPackageNameFromFramework = (frameworkPackageName: string) => {
-  if (frameworkPackageName) {
-    if (Object.keys(rendererPackages).includes(frameworkPackageName)) {
-      // at some point in 6.4 we introduced a framework field, but filled with a renderer package
-      return frameworkPackageName;
-    }
-
-    if (Object.values(rendererPackages).includes(frameworkPackageName)) {
-      // for scenarios where the value is e.g. "react" instead of "@storybook/react"
-      return Object.keys(rendererPackages).find(
-        (k) => rendererPackages[k] === frameworkPackageName
-      );
-    }
-  }
-
-  return null;
-};
-
 export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
   cwd,
@@ -136,23 +111,15 @@ export const getStorybookData = async ({
 }) => {
   logger.debug('Getting Storybook info...');
   const {
+    mainConfig,
     mainConfigPath: mainConfigPath,
-    version: storybookVersionSpecifier,
     configDir: configDirFromScript,
     previewConfigPath,
-  } = await getStorybookInfo(userDefinedConfigDir);
+  } = await getStorybookInfo(userDefinedConfigDir, cwd);
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
   logger.debug('Loading main config...');
-  let mainConfig: StorybookConfigRaw;
-  try {
-    mainConfig = (await loadMainConfig({ configDir, cwd })) as StorybookConfigRaw;
-  } catch (err) {
-    throw new Error(
-      dedent`Unable to find or evaluate ${picocolors.blue(mainConfigPath)}: ${String(err)}`
-    );
-  }
 
   const workingDir = isAbsolute(configDir)
     ? dirname(configDir)
@@ -178,7 +145,6 @@ export const getStorybookData = async ({
   return {
     configDir,
     mainConfig,
-    storybookVersionSpecifier,
     storybookVersion,
     mainConfigPath,
     previewConfigPath,

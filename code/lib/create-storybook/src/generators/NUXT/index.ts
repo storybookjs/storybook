@@ -1,45 +1,43 @@
-import { baseGenerator } from '../baseGenerator';
-import type { Generator } from '../types';
+import { ProjectType } from 'storybook/internal/cli';
+import { logger } from 'storybook/internal/node-logger';
+import {
+  Feature,
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
-const generator: Generator = async (packageManager, npmOptions, options) => {
-  const extraStories = options.features.includes('docs') ? ['../components/**/*.mdx'] : [];
+import { defineGeneratorModule } from '../modules/GeneratorModule';
 
-  extraStories.push('../components/**/*.stories.@(js|jsx|ts|tsx|mdx)');
+export default defineGeneratorModule({
+  metadata: {
+    projectType: ProjectType.NUXT,
+    renderer: SupportedRenderer.VUE3,
+    framework: SupportedFramework.NUXT,
+    builderOverride: SupportedBuilder.VITE,
+  },
+  configure: async (packageManager, context) => {
+    const extraStories = context.features.has(Feature.DOCS) ? ['../components/**/*.mdx'] : [];
+    extraStories.push('../components/**/*.stories.@(js|jsx|ts|tsx|mdx)');
 
-  await baseGenerator(
-    packageManager,
-    {
-      ...npmOptions,
-    },
-    options,
-    'vue3',
-    {
-      extraPackages: async () => {
-        return ['@nuxtjs/storybook'];
-      },
+    // Nuxt requires special handling - always install dependencies even with skipInstall
+    // This is handled here to ensure Nuxt modules work correctly
+    logger.info(
+      'Note: Nuxt requires dependency installation to configure modules. Dependencies will be installed even if --skip-install is specified.'
+    );
+
+    // Add nuxtjs/storybook to nuxt.config.js
+    await packageManager.runPackageCommand({
+      args: ['nuxi', 'module', 'add', '@nuxtjs/storybook', '--skipInstall'],
+    });
+
+    return {
+      extraPackages: ['@nuxtjs/storybook'],
       installFrameworkPackages: false,
       componentsDestinationPath: './components',
       extraMain: {
         stories: extraStories,
       },
-    },
-    'nuxt'
-  );
-
-  if (npmOptions.skipInstall === true) {
-    console.log(
-      'The --skip-install flag is not supported for generating Storybook for Nuxt. We will continue to install dependencies.'
-    );
-    await packageManager.installDependencies();
-  }
-
-  // Add nuxtjs/storybook to nuxt.config.js
-  await packageManager.runPackageCommand('nuxi', [
-    'module',
-    'add',
-    '@nuxtjs/storybook',
-    '--skipInstall',
-  ]);
-};
-
-export default generator;
+    };
+  },
+});

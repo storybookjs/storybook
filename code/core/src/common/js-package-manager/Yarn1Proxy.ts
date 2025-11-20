@@ -6,9 +6,13 @@ import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
+// eslint-disable-next-line depend/ban-dependencies
+import type { ExecaChildProcess } from 'execa';
 
+import type { ExecuteCommandOptions } from '../utils/command';
+import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 import { parsePackageData } from './util';
@@ -31,7 +35,7 @@ export type Yarn1ListOutput = {
 const YARN1_ERROR_REGEX = /^error\s(.*)$/gm;
 
 export class Yarn1Proxy extends JsPackageManager {
-  readonly type = 'yarn1';
+  readonly type = PackageManagerName.YARN1;
 
   installArgs: string[] | undefined;
 
@@ -46,31 +50,16 @@ export class Yarn1Proxy extends JsPackageManager {
     return `yarn ${command}`;
   }
 
-  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
-    return `npx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
-  }
-
-  public runPackageCommandSync(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ): string {
-    return this.executeCommandSync({
+  public runPackageCommand({
+    args,
+    ...options
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+    const [command, ...rest] = args;
+    return executeCommand({
       command: `yarn`,
-      args: ['exec', command, ...args],
-      cwd,
-      stdio,
+      args: ['exec', command, '--', ...rest],
+      ...options,
     });
-  }
-
-  public runPackageCommand(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ) {
-    return this.executeCommand({ command: `yarn`, args: ['exec', command, ...args], cwd, stdio });
   }
 
   public runInternalCommand(
@@ -79,7 +68,12 @@ export class Yarn1Proxy extends JsPackageManager {
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
   ) {
-    return this.executeCommand({ command: `yarn`, args: [command, ...args], cwd, stdio });
+    return executeCommand({
+      command: `yarn`,
+      args: [command, ...args],
+      cwd: cwd ?? this.cwd,
+      stdio,
+    });
   }
 
   public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
@@ -94,7 +88,7 @@ export class Yarn1Proxy extends JsPackageManager {
   }
 
   public async getRegistryURL() {
-    const childProcess = await this.executeCommand({
+    const childProcess = await executeCommand({
       command: 'yarn',
       args: ['config', 'get', 'registry'],
     });
@@ -110,7 +104,7 @@ export class Yarn1Proxy extends JsPackageManager {
     }
 
     try {
-      const process = this.executeCommand({
+      const process = executeCommand({
         command: 'yarn',
         args: yarnArgs.concat(pattern),
         env: {
@@ -138,7 +132,7 @@ export class Yarn1Proxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
-    return this.executeCommand({
+    return executeCommand({
       command: 'yarn',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       stdio: prompt.getPreferredStdio(),
@@ -153,7 +147,7 @@ export class Yarn1Proxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
-    return this.executeCommand({
+    return executeCommand({
       command: 'yarn',
       args: ['add', ...this.getInstallArgs(), ...args],
       stdio: prompt.getPreferredStdio(),
@@ -167,7 +161,7 @@ export class Yarn1Proxy extends JsPackageManager {
   ): Promise<T extends true ? string[] : string> {
     const args = [fetchAllVersions ? 'versions' : 'version', '--json'];
     try {
-      const process = this.executeCommand({
+      const process = executeCommand({
         command: 'yarn',
         args: ['info', packageName, ...args],
       });

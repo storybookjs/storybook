@@ -11,7 +11,7 @@ const VERSION = 1;
 
 const statusValue = z
   .strictObject({
-    status: z.enum(['open', 'accepted', 'done', 'skipped']),
+    status: z.enum(['open', 'accepted', 'done', 'skipped']).optional(),
     mutedAt: z.number().optional(),
   })
   .optional();

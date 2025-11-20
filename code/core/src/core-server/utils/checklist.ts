@@ -4,6 +4,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { dequal as deepEqual } from 'dequal';
+import { toMerged } from 'es-toolkit/object';
 
 import { globalSettings } from '../../cli';
 import {
@@ -29,7 +30,7 @@ export async function initializeChecklist() {
       globalSettings().then(({ value, save }) => {
         const state = {
           items: value.checklist?.items ?? {},
-          widget: value.checklist?.widget ?? { disable: false },
+          widget: value.checklist?.widget ?? {},
         };
         const setState = ({
           items = state.items,
@@ -55,10 +56,7 @@ export async function initializeChecklist() {
     store.setState(
       (value) =>
         ({
-          ...value,
-          ...userState,
-          ...projectState,
-          items: { ...value.items, ...userState.items, ...projectState.items },
+          ...toMerged(value, toMerged(userState, projectState)),
           loaded: true,
         }) satisfies StoreState
     );
@@ -67,11 +65,17 @@ export async function initializeChecklist() {
       // Split values into project-local (done) and user-local (accepted, skipped) persistence
       const projectValues: Partial<StoreState['items']> = {};
       const userValues: Partial<StoreState['items']> = {};
-      Object.entries(state.items).forEach(([id, item]) => {
-        if (item.status === 'done') {
-          projectValues[id as keyof StoreState['items']] = item;
-        } else if (item.status === 'accepted' || item.status === 'skipped') {
-          userValues[id as keyof StoreState['items']] = item;
+      Object.entries(state.items).forEach(([id, { status, mutedAt }]) => {
+        if (status === 'done') {
+          projectValues[id as keyof StoreState['items']] = { status };
+        } else if (status === 'accepted' || status === 'skipped') {
+          userValues[id as keyof StoreState['items']] = { status };
+        }
+        if (mutedAt) {
+          userValues[id as keyof StoreState['items']] = {
+            ...userValues[id as keyof StoreState['items']],
+            mutedAt,
+          };
         }
       });
       saveProjectState({ items: projectValues as StoreState['items'] });

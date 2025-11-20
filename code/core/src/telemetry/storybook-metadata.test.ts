@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getStorybookInfo, isCI, loadMainConfig } from 'storybook/internal/common';
+import { getStorybookInfo, isCI } from 'storybook/internal/common';
 import {
   type PackageJson,
   type StorybookConfig,
@@ -14,15 +14,6 @@ import {
 
 import { detect } from 'package-manager-detector';
 
-import { frameworkToBuilder } from '../../common/utils/framework';
-import { getAddonNames } from '../../common/utils/get-addon-names';
-import { extractFrameworkPackageName } from '../../common/utils/get-framework-name';
-import { extractRenderer } from '../../common/utils/get-renderer-name';
-import {
-  builderPackages,
-  frameworkPackages,
-  rendererPackages,
-} from '../../common/utils/get-storybook-info';
 import { type Settings, globalSettings } from '../cli/globalSettings';
 import { getMonorepoType } from '../telemetry/get-monorepo-type';
 import {
@@ -99,11 +90,13 @@ const originalSep = path.sep;
 describe('storybook-metadata', () => {
   let cwdSpy: MockInstance;
   beforeEach(() => {
+    // @ts-expect-error the property is read only but we can change it for testing purposes
     path.sep = originalSep;
   });
 
   afterEach(() => {
     cwdSpy?.mockRestore();
+    // @ts-expect-error the property is read only but we can change it for testing purposes
     path.sep = originalSep;
   });
 
@@ -133,6 +126,7 @@ describe('storybook-metadata', () => {
     });
 
     it('Windows paths', () => {
+      // @ts-expect-error the property is read only but we can change it for testing purposes
       path.sep = '\\';
       const cwdMockPath = `C:\\Users\\username\\storybook-app`;
       cwdSpy = vi.spyOn(process, `cwd`).mockReturnValueOnce(cwdMockPath);
@@ -143,6 +137,7 @@ describe('storybook-metadata', () => {
     });
 
     it('Linux paths', () => {
+      // @ts-expect-error the property is read only but we can change it for testing purposes
       path.sep = '/';
       const cwdMockPath = `/Users/username/storybook-app`;
       cwdSpy = vi.spyOn(process, `cwd`).mockReturnValue(cwdMockPath);
@@ -238,6 +233,7 @@ describe('storybook-metadata', () => {
       });
 
       it('should sanitize pnp paths for local frameworks', async () => {
+        // @ts-expect-error the property is read only but we can change it for testing purposes
         path.sep = '/';
         cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/Users/foo/my-projects');
 
@@ -264,6 +260,7 @@ describe('storybook-metadata', () => {
       });
 
       it('should sanitize pnp paths for local frameworks on Windows', async () => {
+        // @ts-expect-error the property is read only but we can change it for testing purposes
         path.sep = '\\';
         cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('C:\\Users\\foo\\my-project');
 

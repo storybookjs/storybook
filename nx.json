@@ -88,8 +88,7 @@
       "configurations": {
         "production": { "command": "yarn workspace @storybook/scripts local-registry --open" }
       },
-      "continuous": true,
-      "cache": true
+      "continuous": true
     },
     "sandbox": {
       "executor": "nx:run-commands",

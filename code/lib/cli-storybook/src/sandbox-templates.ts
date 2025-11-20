@@ -600,7 +600,7 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      extraDependencies: ['@angular/forms@latest']
+      extraDependencies: ['@angular/forms@latest'],
     },
     expected: {
       framework: '@storybook/angular',

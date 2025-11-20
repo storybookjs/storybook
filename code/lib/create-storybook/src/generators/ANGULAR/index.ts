@@ -86,11 +86,30 @@ export default defineGeneratorModule({
       copyTemplate(templateDir, root || undefined);
     }
 
+    const toDevkitVersion = (ngRange?: string | null) => {
+      if (!ngRange) {
+        return undefined;
+      }
+      const min = semver.minVersion(ngRange);
+
+      if (!min) {
+        return undefined;
+      }
+      const pre = min.prerelease && min.prerelease.length > 0 ? `-${min.prerelease.join('.')}` : '';
+      // devkit follows 0.<major*100 + minor>.<patch>
+      const devkitMinor = min.major * 100 + min.minor;
+      const versionCore = `0.${devkitMinor}.${min.patch}${pre}`;
+      const hasCaret = ngRange.trim().startsWith('^');
+      return hasCaret ? `^${versionCore}` : versionCore;
+    };
+
+    const devkitVersion = toDevkitVersion(angularVersion);
+
     const extraAngularDeps = [
       angularVersion
         ? `@angular-devkit/build-angular@${angularVersion}`
         : '@angular-devkit/build-angular',
-      angularVersion ? `@angular-devkit/architect@${angularVersion}` : '@angular-devkit/architect',
+      devkitVersion ? `@angular-devkit/architect@${devkitVersion}` : '@angular-devkit/architect',
       angularVersion ? `@angular-devkit/core@${angularVersion}` : '@angular-devkit/core',
       angularVersion
         ? `@angular/platform-browser-dynamic@${angularVersion}`

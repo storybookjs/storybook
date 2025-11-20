@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
   # To test fixes on push rather than wait for the scheduling, do the following:
   # 1. Uncomment the lines below and add your branch.
-  # push:
-  #   branches:
-  #     - <your-branch-name>
+  push:
+    branches:
+      - valentin/add-solid-to-supported-frameworks-for-addon-vitest
   # 2. Change the "ref" value to <your-branch-name> in the actions/checkout step below.
   # 3. Comment out the whole "generate-main" job starting at line 77
   # 4. 👉 DON'T FORGET TO UNDO THE STEPS BEFORE YOU MERGE YOUR CHANGES!
@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: next
+          ref: valentin/add-solid-to-supported-frameworks-for-addon-vitest
 
       - uses: actions/setup-node@v4
         with:

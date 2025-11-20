@@ -1,5 +1,24 @@
 # @storybook/addon-mcp
 
+## 0.1.4
+
+### Patch Changes
+
+- [#78](https://github.com/storybookjs/mcp/pull/78) [`f40da8f`](https://github.com/storybookjs/mcp/commit/f40da8fde7302619f5c5c08bd5958f23ad0e32a2) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Add toolset to telemetry payload
+
+- [#56](https://github.com/storybookjs/mcp/pull/56) [`edcbf4e`](https://github.com/storybookjs/mcp/commit/edcbf4e7a5d85db1f7aeb1d54b90d0d1801774c1) Thanks [@JReinhold](https://github.com/JReinhold)! - improve html bundling
+
+- [#86](https://github.com/storybookjs/mcp/pull/86) [`94c01d2`](https://github.com/storybookjs/mcp/commit/94c01d2c162b5f6a20268957a17eedf7beeb7156) Thanks [@JReinhold](https://github.com/JReinhold)! - Docs toolset: output markdown instead of XML, configurable via experimentalOutput: 'markdown' | 'xml' addon option
+
+- [#84](https://github.com/storybookjs/mcp/pull/84) [`47ab165`](https://github.com/storybookjs/mcp/commit/47ab1659b65aa2879267e664bd0b569b2fdb4fa2) Thanks [@JReinhold](https://github.com/JReinhold)! - improve handling of disableTelemetry option
+
+- [#70](https://github.com/storybookjs/mcp/pull/70) [`cf4ef86`](https://github.com/storybookjs/mcp/commit/cf4ef8697c84102bd274809ec749beb41ebdb98a) Thanks [@kasperpeulen](https://github.com/kasperpeulen)! - Handle GET responses in the MCP server
+
+- [#59](https://github.com/storybookjs/mcp/pull/59) [`ed0fe09`](https://github.com/storybookjs/mcp/commit/ed0fe09eb2f33b723f50e18fe6e3f6e1ba3d3f80) Thanks [@JReinhold](https://github.com/JReinhold)! - Allow Storybook 10.1.0 prerelases as peer dependencies
+
+- Updated dependencies [[`94c01d2`](https://github.com/storybookjs/mcp/commit/94c01d2c162b5f6a20268957a17eedf7beeb7156), [`9f75d0f`](https://github.com/storybookjs/mcp/commit/9f75d0f0d9c2e24e6ec4078526a6876ebc31f6bb), [`5d18405`](https://github.com/storybookjs/mcp/commit/5d1840506f2ee4f1ae1f757ff133108a046cfc5d), [`a9321a3`](https://github.com/storybookjs/mcp/commit/a9321a33e6ec907eacd876d7ede368fc672d95c6), [`77536a7`](https://github.com/storybookjs/mcp/commit/77536a71812fe111f6b60c84bd2c26cb0eb00bc5), [`cddbf34`](https://github.com/storybookjs/mcp/commit/cddbf34a0c99296856ecfed2c24cf689fcb2fd2a)]:
+  - @storybook/mcp@0.1.0
+
 ## 0.1.4-next.2
 
 ### Patch Changes

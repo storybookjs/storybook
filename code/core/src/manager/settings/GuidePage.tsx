@@ -49,7 +49,7 @@ export const GuidePage = () => {
       <Checklist {...checklist} />
       {checklist.openItems.length === 0 ? (
         <center>Your work here is done!</center>
-      ) : checklist.widget.disable ? (
+      ) : checklist.widget.disable || checklist.openItems.every((item) => item.isMuted) ? (
         <center>
           Want to see this in the sidebar?{' '}
           <Link onClick={() => checklist.disable(false)}>Show in sidebar</Link>

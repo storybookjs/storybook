@@ -35,9 +35,9 @@ const meta = preview.meta({
       items: {
         ...initialState.items,
         controls: { status: 'accepted' },
-        'render-component': { status: 'done' },
-        'more-components': { status: 'skipped' },
-        'more-stories': { status: 'skipped' },
+        renderComponent: { status: 'done' },
+        moreComponents: { status: 'skipped' },
+        moreStories: { status: 'skipped' },
       },
     });
   },
@@ -54,27 +54,27 @@ const play: PlayFunction = async ({ step }) => {
       items: {
         ...initialState.items,
         controls: { status: 'accepted' },
-        'render-component': { status: 'done' },
+        renderComponent: { status: 'done' },
         viewports: { status: 'done' },
-        'more-components': { status: 'skipped' },
-        'more-stories': { status: 'skipped' },
+        moreComponents: { status: 'skipped' },
+        moreStories: { status: 'skipped' },
       },
     });
   });
 
   await wait(1000);
-  await step('Skip install-vitest task', () => {
+  await step('Skip installVitest task', () => {
     mockStore.setState({
       loaded: true,
       widget: {},
       items: {
         ...initialState.items,
         controls: { status: 'accepted' },
-        'render-component': { status: 'done' },
+        renderComponent: { status: 'done' },
         viewports: { status: 'done' },
-        'more-components': { status: 'skipped' },
-        'more-stories': { status: 'skipped' },
-        'install-vitest': { status: 'skipped' },
+        moreComponents: { status: 'skipped' },
+        moreStories: { status: 'skipped' },
+        installVitest: { status: 'skipped' },
       },
     });
   });

@@ -123,7 +123,7 @@ const meta = {
       items: {
         ...initialState.items,
         controls: { status: 'accepted' },
-        'render-component': { status: 'done' },
+        renderComponent: { status: 'done' },
         viewports: { status: 'skipped' },
       },
     });

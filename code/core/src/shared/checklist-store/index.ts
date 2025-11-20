@@ -9,12 +9,10 @@ export type ChecklistState = NonNullable<
 >;
 
 /** Store uses initialState to ensure all items are present */
-export type StoreState = Required<
-  Omit<ChecklistState, 'items'> & {
-    items: NonNullable<Required<ChecklistState['items']>>;
-    loaded: boolean;
-  }
->;
+export type StoreState = Required<Omit<ChecklistState, 'items'>> & {
+  items: NonNullable<Required<ChecklistState['items']>>;
+  loaded?: boolean;
+};
 
 export type ItemId = keyof StoreState['items'];
 export type ItemState = StoreState['items'][keyof StoreState['items']];

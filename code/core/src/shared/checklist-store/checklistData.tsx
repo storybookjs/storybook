@@ -140,7 +140,7 @@ export const checklistData = {
       title: 'Storybook basics',
       items: [
         {
-          id: 'guided-tour',
+          id: 'guidedTour',
           label: 'Take the guided tour',
           available: ({ index }) =>
             !!index &&
@@ -166,7 +166,7 @@ export const checklistData = {
           },
         },
         {
-          id: 'onboarding-survey',
+          id: 'onboardingSurvey',
           label: 'Complete the onboarding survey',
           available: () => addons.experimental_getRegisteredAddons().includes(ADDON_ONBOARDING_ID),
           afterCompletion: 'immutable',
@@ -182,7 +182,7 @@ export const checklistData = {
           },
         },
         {
-          id: 'render-component',
+          id: 'renderComponent',
           label: 'Render a component',
           criteria: 'A story finished rendering successfully',
           subscribe: ({ api, done }) =>
@@ -253,8 +253,8 @@ export const Primary: Story = {
           ),
         },
         {
-          id: 'more-components',
-          after: ['render-component'],
+          id: 'moreComponents',
+          after: ['renderComponent'],
           label: 'Add 5 components',
           content: ({ api }) => (
             <>
@@ -292,8 +292,8 @@ export const Primary: Story = {
           }),
         },
         {
-          id: 'more-stories',
-          after: ['render-component'],
+          id: 'moreStories',
+          after: ['renderComponent'],
           label: 'Add 20 stories',
           content: ({ api }) => (
             <>
@@ -331,7 +331,7 @@ export const Primary: Story = {
           }),
         },
         {
-          id: 'whats-new-storybook-10',
+          id: 'whatsNewStorybook10',
           label: "See what's new",
           criteria: "What's New page is opened",
           action: {
@@ -351,7 +351,7 @@ export const Primary: Story = {
       items: [
         {
           id: 'controls',
-          after: ['render-component'],
+          after: ['renderComponent'],
           label: 'Change a story with Controls',
           criteria: 'Story args are updated',
           subscribe: ({ api, done }) => api.on(STORY_ARGS_UPDATED, done),
@@ -386,7 +386,7 @@ export const Primary: Story = {
         },
         {
           id: 'viewports',
-          after: ['render-component'],
+          after: ['renderComponent'],
           label: 'Check responsiveness with Viewports',
           criteria: 'Viewport global is updated',
           subscribe: ({ api, done }) =>
@@ -422,8 +422,8 @@ export const Primary: Story = {
           ),
         },
         {
-          id: 'organize-stories',
-          after: ['render-component'],
+          id: 'organizeStories',
+          after: ['renderComponent'],
           label: 'Group your components',
           criteria: 'A root node exists in the index',
           subscribe: subscribeToIndex((entries) =>
@@ -481,7 +481,7 @@ export default {
       title: 'Testing',
       items: [
         {
-          id: 'install-vitest',
+          id: 'installVitest',
           label: 'Install Vitest addon',
           afterCompletion: 'unavailable',
           available: () => true, // TODO check for compatibility with the project
@@ -524,8 +524,8 @@ export default {
           ),
         },
         {
-          id: 'run-tests',
-          after: ['install-vitest'],
+          id: 'runTests',
+          after: ['installVitest'],
           label: 'Test your components',
           criteria: 'Component tests are run from the test widget in the sidebar',
           subscribe: ({ done }) =>
@@ -618,8 +618,8 @@ export default {
           ),
         },
         {
-          id: 'write-interactions',
-          after: ['render-component'],
+          id: 'writeInteractions',
+          after: ['renderComponent'],
           label: 'Test functionality with interactions',
           criteria: 'At least one story with a play or test function',
           subscribe: subscribeToIndex((entries) =>
@@ -707,7 +707,7 @@ export const Disabled: Story = {
           ),
         },
         {
-          id: 'install-a11y',
+          id: 'installA11y',
           label: 'Install Accessibility addon',
           afterCompletion: 'unavailable',
           criteria: '@storybook/addon-a11y registered in .storybook/main.js|ts',
@@ -746,8 +746,8 @@ export const Disabled: Story = {
           ),
         },
         {
-          id: 'accessibility-tests',
-          after: ['install-a11y'],
+          id: 'accessibilityTests',
+          after: ['installA11y'],
           label: 'Run accessibility tests',
           criteria: 'Accessibility tests are run from the test widget in the sidebar',
           subscribe: ({ api, done }) =>
@@ -802,7 +802,7 @@ export const Disabled: Story = {
           ),
         },
         {
-          id: 'install-chromatic',
+          id: 'installChromatic',
           label: 'Install Visual Tests addon',
           afterCompletion: 'unavailable',
           available: () => true, // TODO check for compatibility with the project (not React Native)
@@ -840,8 +840,8 @@ export const Disabled: Story = {
           ),
         },
         {
-          id: 'visual-tests',
-          after: ['install-chromatic'],
+          id: 'visualTests',
+          after: ['installChromatic'],
           label: 'Run visual tests',
           criteria:
             'Visual tests are run from the test widget in the sidebar or the Visual Tests panel',
@@ -890,7 +890,7 @@ export const Disabled: Story = {
         },
         {
           id: 'coverage',
-          after: ['install-vitest'],
+          after: ['installVitest'],
           label: 'Generate a coverage report',
           criteria: 'Generate a coverage report',
           subscribe: ({ api, done }) =>
@@ -941,7 +941,7 @@ export const Disabled: Story = {
           ),
         },
         {
-          id: 'ci-tests',
+          id: 'ciTests',
           label: 'Automate tests in CI',
           criteria: 'Have a CI workflow that runs component tests, either with Vitest or Chromatic',
           content: ({ api }) => (
@@ -990,7 +990,7 @@ export const Disabled: Story = {
       title: 'Document',
       items: [
         {
-          id: 'install-docs',
+          id: 'installDocs',
           label: 'Install Docs addon',
           afterCompletion: 'unavailable',
           criteria: '@storybook/addon-docs registered in .storybook/main.js|ts',
@@ -1026,7 +1026,7 @@ export const Disabled: Story = {
         },
         {
           id: 'autodocs',
-          after: ['install-docs'],
+          after: ['installDocs'],
           label: 'Automatically document your components',
           criteria: 'At least one component with the autodocs tag applied',
           subscribe: subscribeToIndex((entries) =>
@@ -1083,8 +1083,8 @@ export default {
           ),
         },
         {
-          id: 'mdx-docs',
-          after: ['install-docs'],
+          id: 'mdxDocs',
+          after: ['installDocs'],
           label: 'Custom content with MDX',
           criteria: 'At least one MDX page',
           subscribe: subscribeToIndex((entries) =>
@@ -1153,7 +1153,7 @@ npm install @my/awesome-project
           ),
         },
         {
-          id: 'publish-storybook',
+          id: 'publishStorybook',
           label: 'Publish your Storybook to share',
           criteria: "Have some form of `storybook build` in the project's CI config",
           content: ({ api }) => (

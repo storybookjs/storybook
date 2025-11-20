@@ -27,10 +27,10 @@ export async function initializeChecklist() {
     });
 
     const [[userState, saveUserState], [projectState, saveProjectState]] = await Promise.all([
-      globalSettings().then(({ value, save }) => {
+      globalSettings().then((settings) => {
         const state = {
-          items: value.checklist?.items ?? {},
-          widget: value.checklist?.widget ?? {},
+          items: settings.value.checklist?.items ?? {},
+          widget: settings.value.checklist?.widget ?? {},
         };
         const setState = ({
           items = state.items,
@@ -39,8 +39,8 @@ export async function initializeChecklist() {
           items?: typeof state.items;
           widget?: typeof state.widget;
         }) => {
-          value.checklist = { items, widget };
-          save();
+          settings.value.checklist = { items, widget };
+          settings.save();
         };
         return [state, setState] as const;
       }),

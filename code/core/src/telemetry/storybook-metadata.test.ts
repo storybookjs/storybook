@@ -40,19 +40,25 @@ const mainJsMock: StorybookConfig = {
   stories: [],
 };
 
+const defaultInfo = {
+  framework: SupportedFramework.REACT_VITE,
+  renderer: SupportedRenderer.REACT,
+  builder: SupportedBuilder.VITE,
+  frameworkPackage: '@storybook/react-vite',
+  rendererPackage: '@storybook/react',
+  builderPackage: '@storybook/builder-vite',
+  addons: [],
+  mainConfig: {
+    stories: [],
+  },
+  mainConfigPath: '',
+  previewConfigPath: '',
+  managerConfigPath: '',
+  version: 'x.x.x',
+};
+
 beforeEach(() => {
-  vi.mocked(getStorybookInfo).mockImplementation(async () => ({
-    framework: SupportedFramework.REACT_VITE,
-    renderer: SupportedRenderer.REACT,
-    builder: SupportedBuilder.VITE,
-    addons: [],
-    mainConfig: {
-      stories: [],
-    },
-    mainConfigPath: '',
-    previewConfigPath: '',
-    managerConfigPath: '',
-  }));
+  vi.mocked(getStorybookInfo).mockImplementation(async () => defaultInfo);
 
   vi.mocked(detect).mockImplementation(async () => ({
     name: 'yarn',
@@ -187,6 +193,12 @@ describe('storybook-metadata', () => {
       });
 
       it('should parse pnp paths for unknown frameworks', async () => {
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          frameworkPackage:
+            '/Users/foo/my-project/.yarn/__virtual__/@storybook-react-vite-virtual-769c990b9/0/cache/@storybook-react-rust-npm-7.1.0-alpha.38-512b-a23.zip/node_modules/storybook-react-rust' as any,
+        }));
+
         const unixResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
@@ -225,6 +237,11 @@ describe('storybook-metadata', () => {
         path.sep = '/';
         cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/Users/foo/my-projects');
 
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          frameworkPackage: '/Users/foo/my-projects/.storybook/some-local-framework' as any,
+        }));
+
         const unixResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
@@ -240,10 +257,18 @@ describe('storybook-metadata', () => {
         expect(unixResult.framework).toEqual({
           name: '$SNIP/.storybook/some-local-framework',
         });
+      });
 
+      it('should sanitize pnp paths for local frameworks on Windows', async () => {
         // @ts-expect-error the property is read only but we can change it for testing purposes
         path.sep = '\\';
         cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('C:\\Users\\foo\\my-project');
+
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          frameworkPackage: 'C:\\Users\\foo\\my-project\\.storybook\\some-local-framework' as any,
+        }));
+
         const windowsResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
@@ -259,49 +284,6 @@ describe('storybook-metadata', () => {
         expect(windowsResult.framework).toEqual({
           name: '$SNIP\\.storybook\\some-local-framework',
         });
-      });
-    });
-
-    it('should return frameworkOptions from mainjs', async () => {
-      const reactResult = await computeStorybookMetadata({
-        packageJson: packageJsonMock,
-        packageJsonPath,
-        configDir: '.storybook',
-        mainConfig: {
-          ...mainJsMock,
-          framework: {
-            name: '@storybook/react-vite',
-            options: {
-              strictMode: false,
-            },
-          },
-        },
-      });
-
-      expect(reactResult.framework).toEqual({
-        name: '@storybook/react-vite',
-        options: { strictMode: false },
-      });
-
-      const angularResult = await computeStorybookMetadata({
-        packageJson: packageJsonMock,
-        packageJsonPath,
-        configDir: '.storybook',
-        mainConfig: {
-          ...mainJsMock,
-          framework: {
-            name: '@storybook/angular',
-            options: {
-              enableIvy: true,
-              enableNgcc: true,
-            },
-          },
-        },
-      });
-
-      expect(angularResult.framework).toEqual({
-        name: '@storybook/angular',
-        options: { enableIvy: true, enableNgcc: true },
       });
     });
 

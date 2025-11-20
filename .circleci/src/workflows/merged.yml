@@ -34,11 +34,11 @@ jobs:
       requires:
         - unit-tests
   - create-sandboxes:
-      parallelism: 19
+      parallelism: 21
       requires:
         - build
   - chromatic-sandboxes:
-      parallelism: 16
+      parallelism: 18
       requires:
         - create-sandboxes
   - e2e-production:
@@ -50,7 +50,7 @@ jobs:
       requires:
         - create-sandboxes
   - test-runner-production:
-      parallelism: 14
+      parallelism: 16
       requires:
         - create-sandboxes
   - vitest-integration:

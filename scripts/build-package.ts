@@ -24,7 +24,6 @@ import { findMostMatchText } from './utils/diff';
 import { getWorkspaces } from './utils/workspace';
 
 async function run() {
-  console.log(1);
   const packages = (await getWorkspaces()).filter(({ name }) => name !== '@storybook/root');
   const packageTasks = packages
     .map((pkg) => {

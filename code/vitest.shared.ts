@@ -1,17 +1,6 @@
 import { resolve } from 'node:path';
 
-import { defineConfig, defineWorkspace } from 'vitest/config';
-
-export default defineWorkspace([
-  'vitest-storybook.config.mts',
-  'addons/*/vitest.config.ts',
-  'frameworks/*/vitest.config.ts',
-  'lib/*/vitest.config.ts',
-  'core/vitest.config.ts',
-  'builders/*/vitest.config.ts',
-  'presets/*/vitest.config.ts',
-  'renderers/*/vitest.config.ts',
-]);
+import { defineConfig } from 'vitest/config';
 
 /**
  * CircleCI reports the wrong number of threads to Node.js, so we need to set it manually. Unit

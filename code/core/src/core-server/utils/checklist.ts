@@ -7,6 +7,7 @@ import { dequal as deepEqual } from 'dequal';
 
 import { globalSettings } from '../../cli';
 import {
+  type ChecklistState,
   type StoreEvent,
   type StoreState,
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
@@ -25,11 +26,10 @@ export async function initializeChecklist() {
     });
 
     const [[userState, saveUserState], [projectState, saveProjectState]] = await Promise.all([
-      globalSettings().then((settings) => {
-        const checklist = settings.value.checklist;
+      globalSettings().then(({ value, save }) => {
         const state = {
-          items: checklist?.items ?? {},
-          widget: checklist?.widget ?? { disable: false },
+          items: value.checklist?.items ?? {},
+          widget: value.checklist?.widget ?? { disable: false },
         };
         const setState = ({
           items = state.items,
@@ -38,15 +38,16 @@ export async function initializeChecklist() {
           items?: typeof state.items;
           widget?: typeof state.widget;
         }) => {
-          settings.value.checklist = { items: items as StoreState['items'], widget };
-          settings.save();
+          value.checklist = { items, widget };
+          save();
         };
         return [state, setState] as const;
       }),
 
-      cache.get<Pick<StoreState, 'items'>>('state').then((cachedState) => {
+      cache.get<Pick<ChecklistState, 'items'>>('state').then((cachedState) => {
         const state = { items: cachedState?.items ?? {} };
-        const setState = ({ items }: Pick<StoreState, 'items'>) => cache.set('state', { items });
+        const setState = ({ items }: Pick<ChecklistState, 'items'>) =>
+          cache.set('state', { items });
         return [state, setState] as const;
       }),
     ]);

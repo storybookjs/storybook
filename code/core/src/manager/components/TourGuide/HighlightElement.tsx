@@ -72,7 +72,7 @@ export function HighlightElement({
 }: {
   targetSelector: string;
   pulsating?: boolean;
-}): JSX.Element | null {
+}) {
   useEffect(() => {
     const element = document.querySelector<HTMLElement>(targetSelector);
     if (!element || !element.parentElement) {

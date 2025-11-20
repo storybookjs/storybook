@@ -26,8 +26,12 @@ const projectJson = (name: string, framework: string, tags: string[]) => ({
         outputPath: name.replaceAll('/', '-'),
       },
     },
-    'sb:dev': {},
-    'sb:build': {},
+    'build-sandbox': {
+      options: {
+        outputPath: name.replaceAll('/', '-'),
+      },
+    },
+    chromatic: {},
   },
   tags,
 });

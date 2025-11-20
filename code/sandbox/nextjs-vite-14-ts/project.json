@@ -1,15 +1,26 @@
 {
   "name": "nextjs-vite/14-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "nextjs-vite"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "nextjs-vite"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "nextjs-vite-14-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "nextjs-vite-14-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:daily"]
+  "tags": [
+    "ci:daily"
+  ]
 }

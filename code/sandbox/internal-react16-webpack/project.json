@@ -1,15 +1,26 @@
 {
   "name": "internal/react16-webpack",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-webpack5"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "react-webpack5"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "internal-react16-webpack"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "internal-react16-webpack"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:daily"]
+  "tags": [
+    "ci:daily"
+  ]
 }

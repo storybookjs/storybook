@@ -1,15 +1,28 @@
 {
   "name": "bench/react-vite-default-ts-test-build",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-vite"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "react-vite"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "bench-react-vite-default-ts-test-build"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "bench-react-vite-default-ts-test-build"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": [
+    "ci:normal",
+    "ci:merged",
+    "ci:daily"
+  ]
 }

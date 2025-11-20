@@ -1,15 +1,26 @@
 {
   "name": "nextjs/prerelease",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "nextjs"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "nextjs"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "nextjs-prerelease"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "nextjs-prerelease"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:daily"]
+  "tags": [
+    "ci:daily"
+  ]
 }

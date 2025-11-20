@@ -1,15 +1,27 @@
 {
   "name": "react-webpack/18-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-webpack5"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "react-webpack5"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "react-webpack-18-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "react-webpack-18-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:merged", "ci:daily"]
+  "tags": [
+    "ci:merged",
+    "ci:daily"
+  ]
 }

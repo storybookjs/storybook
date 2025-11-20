@@ -1,15 +1,26 @@
 {
   "name": "react-native-web-vite/expo-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-native-web-vite"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "react-native-web-vite"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "react-native-web-vite-expo-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "react-native-web-vite-expo-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:daily"]
+  "tags": [
+    "ci:daily"
+  ]
 }

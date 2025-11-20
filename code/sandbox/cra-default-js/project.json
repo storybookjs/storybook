@@ -1,15 +1,24 @@
 {
   "name": "cra/default-js",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-webpack5"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "react-webpack5"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "cra-default-js"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "cra-default-js"
+      }
+    },
+    "chromatic": {}
   },
   "tags": []
 }

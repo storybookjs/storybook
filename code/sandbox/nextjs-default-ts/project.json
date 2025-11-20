@@ -1,15 +1,28 @@
 {
   "name": "nextjs/default-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "nextjs"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "nextjs"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "nextjs-default-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "nextjs-default-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": [
+    "ci:normal",
+    "ci:merged",
+    "ci:daily"
+  ]
 }

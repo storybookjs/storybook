@@ -1,15 +1,26 @@
 {
   "name": "lit-vite/default-js",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "web-components-vite"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "web-components-vite"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "lit-vite-default-js"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "lit-vite-default-js"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:daily"]
+  "tags": [
+    "ci:daily"
+  ]
 }

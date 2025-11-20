@@ -1,15 +1,26 @@
 {
   "name": "react-vite/prerelease-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-vite"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "react-vite"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "react-vite-prerelease-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "react-vite-prerelease-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:daily"]
+  "tags": [
+    "ci:daily"
+  ]
 }

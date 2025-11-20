@@ -1,15 +1,24 @@
 {
   "name": "ember/default-js",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "ember"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "ember"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "ember-default-js"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "ember-default-js"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": []
 }

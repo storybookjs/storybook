@@ -1,15 +1,26 @@
 {
   "name": "react-webpack/prerelease-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-webpack5"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "react-webpack5"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "react-webpack-prerelease-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "react-webpack-prerelease-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:daily"]
+  "tags": [
+    "ci:daily"
+  ]
 }

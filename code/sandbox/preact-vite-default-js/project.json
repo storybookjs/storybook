@@ -1,15 +1,26 @@
 {
   "name": "preact-vite/default-js",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "preact-vite"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "preact-vite"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "preact-vite-default-js"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "preact-vite-default-js"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:daily"]
+  "tags": [
+    "ci:daily"
+  ]
 }

@@ -1,15 +1,24 @@
 {
   "name": "internal/server-webpack5",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "server-webpack5"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "server-webpack5"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "internal-server-webpack5"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "internal-server-webpack5"
+      }
+    },
+    "chromatic": {}
   },
   "tags": []
 }

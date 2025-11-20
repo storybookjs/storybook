@@ -1,15 +1,28 @@
 {
   "name": "svelte-kit/skeleton-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "sveltekit"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "sveltekit"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "svelte-kit-skeleton-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "svelte-kit-skeleton-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": [
+    "ci:normal",
+    "ci:merged",
+    "ci:daily"
+  ]
 }

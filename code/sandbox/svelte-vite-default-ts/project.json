@@ -1,15 +1,28 @@
 {
   "name": "svelte-vite/default-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "svelte-vite"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "svelte-vite"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "svelte-vite-default-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "svelte-vite-default-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": [
+    "ci:normal",
+    "ci:merged",
+    "ci:daily"
+  ]
 }

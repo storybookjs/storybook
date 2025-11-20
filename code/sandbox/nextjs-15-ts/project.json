@@ -1,15 +1,27 @@
 {
   "name": "nextjs/15-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "nextjs"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "nextjs"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "nextjs-15-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "nextjs-15-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:merged", "ci:daily"]
+  "tags": [
+    "ci:merged",
+    "ci:daily"
+  ]
 }

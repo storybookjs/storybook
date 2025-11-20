@@ -1,15 +1,25 @@
 {
   "name": "qwik-vite/default-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "qwik-vite-default-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "qwik-vite-default-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:daily"]
+  "tags": [
+    "ci:daily"
+  ]
 }

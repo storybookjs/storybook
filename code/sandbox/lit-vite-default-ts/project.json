@@ -1,15 +1,28 @@
 {
   "name": "lit-vite/default-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "web-components-vite"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "web-components-vite"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "lit-vite-default-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "lit-vite-default-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": [
+    "ci:normal",
+    "ci:merged",
+    "ci:daily"
+  ]
 }

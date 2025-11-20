@@ -1,15 +1,24 @@
 {
   "name": "ember/3-js",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "ember"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "ember"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "ember-3-js"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "ember-3-js"
+      }
+    },
+    "chromatic": {}
   },
   "tags": []
 }

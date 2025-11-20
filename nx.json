@@ -94,9 +94,7 @@
     "sandbox": {
       "executor": "nx:run-commands",
       "inputs": [
-        {
-          "runtime": "git rev-parse HEAD"
-        }
+        "^production"
       ],
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}"],
       "options": {
@@ -110,6 +108,34 @@
           "target": "run-registry"
         }
       ],
+      "cache": true
+    },
+    "build-sandbox": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "^production"
+      ],
+      "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}/storybook-static"],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "yarn task build -s build --no-link --template={projectName}",
+        "forwardAllArgs": false
+      },
+      "dependsOn": ["sandbox"],
+      "cache": true
+    },
+    "chromatic": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "^production"
+      ],
+      "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}/storybook-static"],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "yarn task chromatic -s chromatic --no-link --template={projectName}",
+        "forwardAllArgs": false
+      },
+      "dependsOn": ["build-sandbox"],
       "cache": true
     }
   },

@@ -1,15 +1,27 @@
 {
   "name": "angular-cli/default-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "angular"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "angular"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "angular-cli-default-ts"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "angular-cli-default-ts"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": [
+    "ci:merged",
+    "ci:daily"
+  ]
 }

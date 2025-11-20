@@ -1,15 +1,26 @@
 {
   "name": "vue3-vite/default-js",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "vue3-vite"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding",
+    "vue3-vite"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "vue3-vite-default-js"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "vue3-vite-default-js"
+      }
+    },
+    "chromatic": {}
   },
-  "tags": ["ci:daily"]
+  "tags": [
+    "ci:daily"
+  ]
 }

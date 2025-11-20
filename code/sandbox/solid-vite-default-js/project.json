@@ -1,15 +1,23 @@
 {
   "name": "solid-vite/default-js",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding"],
+  "implicitDependencies": [
+    "core",
+    "addon-links",
+    "addon-onboarding"
+  ],
   "targets": {
     "sandbox": {
       "options": {
         "outputPath": "solid-vite-default-js"
       }
     },
-    "sb:dev": {},
-    "sb:build": {}
+    "build-sandbox": {
+      "options": {
+        "outputPath": "solid-vite-default-js"
+      }
+    },
+    "chromatic": {}
   },
   "tags": []
 }

@@ -269,14 +269,12 @@ describe('versions API', () => {
         ...initialState,
         versions: {
           ...initialState.versions,
-          current: { version: '7.2.5' },
-          latest: { version: '7.6.10' },
+          current: { version: '7.6.1' },
+          latest: { version: '7.6.1' },
         },
       });
 
-      expect(api.getDocsUrl({ asset: true, versioned: true })).toEqual(
-        'https://storybook.js.org/docs-assets/7.2/'
-      );
+      expect(api.getDocsUrl({ asset: true })).toEqual('https://storybook.js.org/docs-assets/7.6/');
     });
 
     it('returns a url with subpath when provided', async () => {
@@ -300,9 +298,9 @@ describe('versions API', () => {
         },
       });
 
-      expect(
-        api.getDocsUrl({ asset: true, versioned: true, subpath: 'api/doc-block-controls.png' })
-      ).toEqual('https://storybook.js.org/docs-assets/7.2/api/doc-block-controls.png');
+      expect(api.getDocsUrl({ asset: true, subpath: 'api/doc-block-controls.png' })).toEqual(
+        'https://storybook.js.org/docs-assets/7.2/api/doc-block-controls.png'
+      );
     });
   });
 

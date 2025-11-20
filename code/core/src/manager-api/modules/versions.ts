@@ -106,7 +106,9 @@ export const init: ModuleFn = ({ store }) => {
 
       let url = `https://storybook.js.org/${asset ? 'docs-assets' : 'docs'}/`;
 
-      if (versioned && current?.version && latest?.version) {
+      if (asset && current?.version) {
+        url += `${semver.major(current.version)}.${semver.minor(current.version)}/`;
+      } else if (versioned && current?.version && latest?.version) {
         const versionDiff = semver.diff(latest.version, current.version);
         const isLatestDocs =
           versionDiff === 'patch' ||

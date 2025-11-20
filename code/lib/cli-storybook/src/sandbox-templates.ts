@@ -106,7 +106,7 @@ export type Template = {
 };
 
 type BaseTemplates = Template & {
-  name: `${string} ${`v${number}` | 'Latest' | 'Prerelease'} (${'Webpack' | 'Vite' | 'RSBuild'} | ${
+  name: `${string} ${`v${number}` | 'Latest' | 'Prerelease'} (${'Webpack' | 'Vite' | 'RsBuild'} | ${
     | 'JavaScript'
     | 'TypeScript'})`;
 };
@@ -483,7 +483,7 @@ export const baseTemplates = {
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
   'react-rsbuild/default-ts': {
-    name: 'React Latest (RSBuild | TypeScript)',
+    name: 'React Latest (RsBuild | TypeScript)',
     script: 'yarn create rsbuild -d {{beforeDir}} -t react-ts --tools eslint',
     expected: {
       framework: 'storybook-react-rsbuild',
@@ -492,6 +492,12 @@ export const baseTemplates = {
     },
     modifications: {
       extraDependencies: ['prop-types', 'storybook-react-rsbuild@^3.0.0-beta.1'],
+      useCsfFactory: true,
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
       skipMocking: true,
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
@@ -537,7 +543,7 @@ export const baseTemplates = {
     skipTasks: ['bench'],
   },
   'vue3-rsbuild/default-ts': {
-    name: 'Vue Latest (RSBuild | TypeScript)',
+    name: 'Vue Latest (RsBuild | TypeScript)',
     script: 'yarn create rsbuild -d {{beforeDir}} -t vue-ts --tools eslint',
     expected: {
       framework: 'storybook-vue3-rsbuild',
@@ -546,6 +552,12 @@ export const baseTemplates = {
     },
     modifications: {
       extraDependencies: ['storybook-vue3-rsbuild@^3.0.0-beta.1'],
+      useCsfFactory: true,
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
       skipMocking: true,
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
@@ -589,7 +601,7 @@ export const baseTemplates = {
     },
   },
   'html-rsbuild/default-ts': {
-    name: 'HTML Latest (RSBuild | TypeScript)',
+    name: 'HTML Latest (RsBuild | TypeScript)',
     script: 'yarn create rsbuild -d {{beforeDir}} -t vanilla-ts --tools eslint',
     expected: {
       framework: 'storybook-html-rsbuild',
@@ -598,6 +610,12 @@ export const baseTemplates = {
     },
     modifications: {
       extraDependencies: ['storybook-html-rsbuild@^3.0.0-beta.1'],
+      useCsfFactory: true,
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
       skipMocking: true,
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
@@ -688,7 +706,7 @@ export const baseTemplates = {
     skipTasks: ['smoke-test', 'e2e-tests', 'bench', 'vitest-integration'],
   },
   'lit-rsbuild/default-ts': {
-    name: 'Web Components Latest (RSBuild | TypeScript)',
+    name: 'Web Components Latest (RsBuild | TypeScript)',
     script: 'yarn create rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
     expected: {
       framework: 'storybook-web-components-rsbuild',
@@ -697,6 +715,12 @@ export const baseTemplates = {
     },
     modifications: {
       extraDependencies: ['storybook-web-components-rsbuild@^3.0.0-beta.1'],
+      useCsfFactory: true,
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
       skipMocking: true,
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],

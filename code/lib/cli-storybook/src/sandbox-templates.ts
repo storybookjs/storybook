@@ -481,19 +481,9 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
-  'solid-vite/default-js': {
-    name: 'SolidJS Latest (Vite | JavaScript)',
-    script: 'npx degit solidjs/templates/js {{beforeDir}}',
-    expected: {
-      framework: 'storybook-solidjs-vite',
-      renderer: 'storybook-solidjs-vite',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-  },
   'solid-vite/default-ts': {
     name: 'SolidJS Latest (Vite | TypeScript)',
-    script: 'npx degit solidjs/templates/ts {{beforeDir}}',
+    script: 'yarn create solid {{beforeDir}} --vanilla --ts --template=with-vitest',
     expected: {
       framework: 'storybook-solidjs-vite',
       renderer: 'storybook-solidjs-vite',
@@ -945,6 +935,7 @@ export const merged: TemplateKey[] = [
   'nextjs-vite/15-ts',
   'preact-vite/default-ts',
   'html-vite/default-ts',
+  'solid-vite/default-ts',
 ];
 
 export const daily: TemplateKey[] = [

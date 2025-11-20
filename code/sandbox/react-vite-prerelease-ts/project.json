@@ -1,15 +1,15 @@
 {
-  "name": "react-vite/default-ts",
+  "name": "react-vite/prerelease-ts",
   "projectType": "application",
   "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-vite"],
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "react-vite-default-ts"
+        "outputPath": "react-vite-prerelease-ts"
       }
     },
     "sb:dev": {},
     "sb:build": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": ["ci:daily"]
 }

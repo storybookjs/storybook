@@ -1,11 +1,11 @@
 {
-  "name": "html-vite/default-ts",
+  "name": "nextjs-vite/15-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "html-vite"],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "nextjs-vite"],
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "html-vite-default-ts"
+        "outputPath": "nextjs-vite-15-ts"
       }
     },
     "sb:dev": {},

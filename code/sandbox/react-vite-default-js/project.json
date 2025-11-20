@@ -1,10 +1,13 @@
 {
   "name": "react-vite/default-js",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-vite"],
   "targets": {
-    "sandbox": {},
+    "sandbox": {
+      "options": {
+        "outputPath": "react-vite-default-js"
+      }
+    },
     "sb:dev": {},
     "sb:build": {}
   },

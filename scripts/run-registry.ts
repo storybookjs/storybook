@@ -170,7 +170,7 @@ const run = async () => {
   logger.log(`📐 reading version of storybook`);
   logger.log(`🚛 listing storybook packages`);
 
-  if (!process.env.CI) {
+  if (opts.publish) {
     // when running e2e locally, clear cache to avoid EPUBLISHCONFLICT errors
     const verdaccioCache = resolvePath(__dirname, '..', '.verdaccio-cache');
     if (await pathExists(verdaccioCache)) {

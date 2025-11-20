@@ -1,0 +1,15 @@
+{
+  "name": "react-native-web-vite/rn-cli-ts",
+  "projectType": "application",
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-native-web-vite"],
+  "targets": {
+    "sandbox": {
+      "options": {
+        "outputPath": "react-native-web-vite-rn-cli-ts"
+      }
+    },
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": []
+}

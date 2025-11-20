@@ -1,10 +1,13 @@
 {
   "name": "svelte-vite/default-js",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "implicitDependencies": ["core", "addon-links", "addon-onboarding", "svelte-vite"],
   "targets": {
-    "sandbox": {},
+    "sandbox": {
+      "options": {
+        "outputPath": "svelte-vite-default-js"
+      }
+    },
     "sb:dev": {},
     "sb:build": {}
   },

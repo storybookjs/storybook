@@ -16,6 +16,7 @@
     ]
   },
   "scripts": {
+    "check": "nx run-many -t build,check,test,pretty-docs,lint,publish,run-registry -c production",
     "ci-tests": "cd code; yarn ci-tests",
     "get-report-message": "cd scripts; yarn get-report-message",
     "get-sandbox-dir": "cd scripts; yarn get-sandbox-dir",
@@ -28,10 +29,11 @@
     "svelte-ecosystem-ci:before-test": "node ./scripts/ecosystem-ci/before-test.js svelte-kit/skeleton-ts && cd ./sandbox/svelte-kit-skeleton-ts && yarn install",
     "svelte-ecosystem-ci:build": "yarn task --task install && yarn --cwd code build svelte && yarn task --task sandbox --template svelte-kit/skeleton-ts --start-from=compile --no-link --skip-cache",
     "svelte-ecosystem-ci:test": "yarn task --task test-runner --template svelte-kit/skeleton-ts --start-from=build --no-link --skip-cache && yarn task --task vitest-integration --template svelte-kit/skeleton-ts --start-from vitest-integration --no-link --skip-cache",
-    "task": "echo 'Installing Script Dependencies...'; cd scripts; yarn install >/dev/null; cd ..; yarn --cwd=./scripts task",
+    "task": "yarn --cwd=./scripts task",
     "test": "cd code; yarn test",
     "test:watch": "cd code; yarn test:watch",
     "upload-bench": "cd scripts; yarn upload-bench",
+    "fix:sandbox-output": "node ./update-sandbox-output-paths.js",
     "vite-ecosystem-ci:before-test": "node ./scripts/ecosystem-ci/before-test.js react-vite/default-ts && cd ./sandbox/react-vite-default-ts && yarn install",
     "vite-ecosystem-ci:build": "yarn task --task sandbox --template react-vite/default-ts --start-from=install --skip-cache",
     "vite-ecosystem-ci:test": "yarn task --task test-runner-dev --template react-vite/default-ts --start-from=dev && yarn task --task test-runner --template react-vite/default-ts --start-from=build && yarn task --task vitest-integration --template react-vite/default-ts --start-from vitest-integration"

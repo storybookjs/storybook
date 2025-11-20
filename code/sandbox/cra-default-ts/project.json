@@ -1,12 +1,15 @@
 {
   "name": "cra/default-ts",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-webpack5"],
   "targets": {
-    "sandbox": {},
+    "sandbox": {
+      "options": {
+        "outputPath": "cra-default-ts"
+      }
+    },
     "sb:dev": {},
     "sb:build": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": []
 }

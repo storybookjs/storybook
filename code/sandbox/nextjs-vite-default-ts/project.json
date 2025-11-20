@@ -1,11 +1,11 @@
 {
-  "name": "angular-cli/default-ts",
+  "name": "nextjs-vite/default-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "angular"],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "nextjs-vite"],
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "angular-cli-default-ts"
+        "outputPath": "nextjs-vite-default-ts"
       }
     },
     "sb:dev": {},

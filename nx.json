@@ -57,6 +57,60 @@
         }
       ],
       "cache": true
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo ''"
+      },
+      "configurations": {
+        "production": { "command": "yarn workspace @storybook/scripts local-registry --publish" }
+      },
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "build"
+        }
+      ],
+      "inputs": [
+        "{workspaceRoot}/code/**/*",
+        "!{workspaceRoot}/code/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+      ],
+      "outputs": ["{workspaceRoot}/.verdaccio-cache"],
+      "cache": true
+    },
+    "run-registry": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo ''"
+      },
+      "dependsOn": ["publish"],
+      "configurations": {
+        "production": { "command": "yarn workspace @storybook/scripts local-registry --open" }
+      },
+      "continuous": true,
+      "cache": true
+    },
+    "sandbox": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        {
+          "runtime": "git rev-parse HEAD"
+        }
+      ],
+      "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}"],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "yarn task sandbox -s sandbox --no-link --template={projectName}",
+        "forwardAllArgs": false
+      },
+      "dependsOn": [
+        {
+          "projects": ["scripts"],
+          "target": "run-registry"
+        }
+      ],
+      "cache": true
     }
   },
   "namedInputs": {

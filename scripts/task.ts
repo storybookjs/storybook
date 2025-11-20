@@ -452,7 +452,11 @@ async function run() {
     }
   } else if (startFrom) {
     // set to reset back to a specific task
-    if (firstUnready && sortedTasks.indexOf(tasks[startFrom]) > sortedTasks.indexOf(firstUnready)) {
+    if (
+      startFrom !== taskKey &&
+      firstUnready &&
+      sortedTasks.indexOf(tasks[startFrom]) > sortedTasks.indexOf(firstUnready)
+    ) {
       throw new Error(
         `Task ${getTaskKey(firstUnready)} was not ready, earlier than your request ${startFrom}.`
       );
@@ -495,7 +499,8 @@ async function run() {
     const task = sortedTasks[i];
     const status = statuses.get(task);
 
-    let shouldRun = status === 'unready';
+    let shouldRun = startFrom === taskKey ? finalTask === task : status === 'unready';
+
     if (status === 'notserving') {
       shouldRun =
         finalTask === task ||

@@ -1,10 +1,13 @@
 {
   "name": "bench/react-vite-default-ts",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "implicitDependencies": ["core", "addon-links", "addon-onboarding", "react-vite"],
   "targets": {
-    "sandbox": {},
+    "sandbox": {
+      "options": {
+        "outputPath": "bench-react-vite-default-ts"
+      }
+    },
     "sb:dev": {},
     "sb:build": {}
   },

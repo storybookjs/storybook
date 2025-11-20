@@ -1,12 +1,15 @@
 {
-  "name": "nextjs/default-js",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "name": "nextjs/15-ts",
   "projectType": "application",
   "implicitDependencies": ["core", "addon-links", "addon-onboarding", "nextjs"],
   "targets": {
-    "sandbox": {},
+    "sandbox": {
+      "options": {
+        "outputPath": "nextjs-15-ts"
+      }
+    },
     "sb:dev": {},
     "sb:build": {}
   },
-  "tags": ["ci:daily"]
+  "tags": ["ci:merged", "ci:daily"]
 }

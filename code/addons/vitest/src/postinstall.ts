@@ -294,7 +294,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const versionedDependencies = uniqueDependencies.map((p) => {
     if (p.includes('vitest')) {
-      return vitestVersionSpecifier ? `${p}@${vitestVersionSpecifier}` : p;
+      return vitestVersionSpecifier ? `${p}@${vitestVersionSpecifier.split('::')[0]}` : p;
     }
 
     return p;

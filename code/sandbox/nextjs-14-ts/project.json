@@ -1,11 +1,11 @@
 {
-  "name": "vue3-vite/default-js",
+  "name": "nextjs/14-ts",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "vue3-vite"],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "nextjs"],
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "vue3-vite-default-js"
+        "outputPath": "nextjs-14-ts"
       }
     },
     "sb:dev": {},

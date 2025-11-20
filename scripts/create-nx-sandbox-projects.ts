@@ -11,20 +11,21 @@ const projectJson = (name: string, framework: string, tags: string[]) => ({
   name,
   projectType: 'application',
   implicitDependencies: [
-    'cli',
-    'test',
-    'essentials',
-    'interactions',
-    'addon-vitest',
-    'links',
-    'onboarding',
-    'blocks',
+    'core',
+    'addon-links',
+    'addon-onboarding',
     ...(!['storybook-framework-qwik', 'storybook-solidjs-vite'].includes(framework)
       ? [framework]
       : []),
   ],
   targets: {
-    sandbox: {},
+    sandbox: {
+      options: {
+        // Ensure Nx sandboxes write to a stable, slash-free folder name
+        // e.g. "react-vite/default-ts" -> "react-vite-default-ts"
+        outputPath: name.replaceAll('/', '-'),
+      },
+    },
     'sb:dev': {},
     'sb:build': {},
   },
@@ -45,14 +46,9 @@ Object.entries(allTemplates).forEach(([key, value]) => {
   ];
   ensureDirectoryExistence(full);
   console.log(full);
-  writeFileSync(
-    full,
-    '// auto-generated from scripts/create-nx-sandbox-projects.ts\n' +
-      JSON.stringify(projectJson(key, framework, tags), null, 2),
-    {
-      encoding: 'utf-8',
-    }
-  );
+  writeFileSync(full, JSON.stringify(projectJson(key, framework, tags), null, 2), {
+    encoding: 'utf-8',
+  });
 });
 
 function ensureDirectoryExistence(filePath: string): void {

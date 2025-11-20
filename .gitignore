@@ -20,11 +20,11 @@ tsconfig.vitest-temp.json
 
 # Yarn stuff
 .yarn
-!/.yarn/releases
-!/.yarn/plugins
-!/.yarn/sdks
-!/.yarn/versions
-!/.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+!.yarn/patches
 /**/.pnp.*
 
 # test-storybooks

@@ -21,7 +21,7 @@ import type { InstallationMetadata } from './types';
 
 export enum PackageManagerName {
   NPM = 'npm',
-  YARN1 = 'yarn',
+  YARN1 = 'yarn1',
   YARN2 = 'yarn2',
   PNPM = 'pnpm',
   BUN = 'bun',

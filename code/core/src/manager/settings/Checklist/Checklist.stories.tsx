@@ -6,11 +6,11 @@ import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
+import { checklistData } from '../../../shared/checklist-store/checklistData';
 import type { ChecklistItem } from '../../components/sidebar/useChecklist';
 import { Checklist } from './Checklist';
-import { checklistData } from './checklistData';
 
-const values: Record<string, 'accepted' | 'done' | 'skipped'> = {
+const values: Record<string, 'open' | 'accepted' | 'done' | 'skipped'> = {
   controls: 'accepted',
   'render-component': 'done',
   'whats-new-storybook-10': 'done',
@@ -21,6 +21,7 @@ const availableItems = checklistData.sections.flatMap(
   ({ id: sectionId, title: sectionTitle, items }, sectionIndex) =>
     items.map<ChecklistItem>((item, itemIndex) => {
       const itemValue = values[item.id];
+      const isOpen = itemValue === 'open';
       const isAccepted = itemValue === 'accepted';
       const isDone = itemValue === 'done';
       const isSkipped = itemValue === 'skipped';
@@ -31,11 +32,11 @@ const availableItems = checklistData.sections.flatMap(
         sectionIndex,
         sectionTitle,
         isAvailable: true,
-        isOpen: !isAccepted && !isDone && !isSkipped,
-        isLockedBy: [],
+        isLockedBy: undefined,
         isImmutable: false,
         isCompleted: isAccepted || isDone,
         isReady: true,
+        isOpen,
         isAccepted,
         isDone,
         isSkipped,

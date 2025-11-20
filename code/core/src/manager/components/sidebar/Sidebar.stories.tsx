@@ -118,10 +118,12 @@ const meta = {
     internal_fullStatusStore.unset();
     internal_universalChecklistStore.setState({
       loaded: true,
-      muted: false,
-      accepted: ['controls'],
-      done: ['render-component'],
-      skipped: ['viewports'],
+      widget: {},
+      values: {
+        controls: { status: 'accepted' },
+        'render-component': { status: 'done' },
+        viewports: { status: 'skipped' },
+      },
     });
   },
 } satisfies Meta<typeof Sidebar>;

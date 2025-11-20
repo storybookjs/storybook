@@ -519,6 +519,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     if (lastBraceIndex !== -1) {
       // Insert before the last }
       const before = args.slice(0, lastBraceIndex).trimEnd();
+      console.log(before);
       const needsComma = before.endsWith('{') || before.endsWith(',') ? '' : ',';
       const after = args.slice(lastBraceIndex);
       return `storybookTest(${before}${needsComma}\n  tags: {\n    include: ['vitest']\n  }\n${after})`;

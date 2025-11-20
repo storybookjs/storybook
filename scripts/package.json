@@ -3,6 +3,10 @@
   "version": "7.0.0-alpha.16",
   "private": true,
   "type": "module",
+  "bin": {
+    "build-package": "./build/build-package.ts",
+    "check-package": "./check/check-package.ts"
+  },
   "nx": {
     "name": "scripts",
     "targets": {

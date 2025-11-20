@@ -188,7 +188,7 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "yarn exec jiti ../../scripts/check/check-package.ts",
+    "check": "tsc",
     "prep": "jiti ../../scripts/build/build-package.ts"
   },
   "dependencies": {

@@ -43,8 +43,10 @@
       "cache": true
     },
     "check": {
-      "configurations": {
-        "production": {}
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn exec jiti $(yarn workspace @storybook/scripts bin check-package)"
       },
       "inputs": ["default", "^production"],
       "dependsOn": ["build"],

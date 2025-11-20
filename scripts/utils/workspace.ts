@@ -14,7 +14,9 @@ export async function getWorkspaces(includePrivate = true) {
       shell: true,
     }
   );
-  return JSON.parse(`[${stdout.split('\n').join(',')}]`) as Workspace[];
+  return JSON.parse(`[${stdout.split('\n').join(',')}]`).filter(
+    ({ name }: any) => name !== '@storybook/scripts' && name !== '@storybook/super-root'
+  ) as Workspace[];
 }
 
 const getWorkspacesMemo = memoize(1)(getWorkspaces);

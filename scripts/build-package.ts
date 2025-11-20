@@ -24,6 +24,7 @@ import { findMostMatchText } from './utils/diff';
 import { getWorkspaces } from './utils/workspace';
 
 async function run() {
+  console.log(1);
   const packages = (await getWorkspaces()).filter(({ name }) => name !== '@storybook/root');
   const packageTasks = packages
     .map((pkg) => {
@@ -95,6 +96,8 @@ async function run() {
   let selection = Object.keys(tasks)
     .map((key) => tasks[key])
     .filter((item) => !['watch', 'prod'].includes(item.name) && item.value === true);
+
+  console.log(selection);
 
   // user has passed invalid package name(s) - try to guess the correct package name(s)
   if ((!selection.length && main.args.length >= 1) || selection.length !== main.args.length) {

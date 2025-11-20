@@ -54,7 +54,6 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "yarn exec jiti ../../../scripts/check/check-package.ts",
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {

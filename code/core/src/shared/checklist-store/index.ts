@@ -1,40 +1,38 @@
 import type { UniversalStore } from '../universal-store';
 import type { StoreOptions } from '../universal-store/types';
 
-export type TaskId = string;
+export type ItemId = string;
+
+export type ItemStatus = 'accepted' | 'done' | 'skipped';
 
 export type StoreState = {
   loaded: boolean;
-  muted: boolean | Array<TaskId>;
-  accepted: Array<TaskId>;
-  done: Array<TaskId>;
-  skipped: Array<TaskId>;
+  muted: boolean | Array<ItemId>;
+  values: Record<ItemId, ItemStatus>;
 };
 
 export type StoreEvent =
-  | { type: 'accept'; payload: TaskId }
-  | { type: 'done'; payload: TaskId }
-  | { type: 'skip'; payload: TaskId }
-  | { type: 'reset'; payload: TaskId }
-  | { type: 'mute'; payload: boolean | Array<TaskId> };
+  | { type: 'accept'; payload: ItemId }
+  | { type: 'done'; payload: ItemId }
+  | { type: 'skip'; payload: ItemId }
+  | { type: 'reset'; payload: ItemId }
+  | { type: 'mute'; payload: boolean | Array<ItemId> };
 
 export const UNIVERSAL_CHECKLIST_STORE_OPTIONS: StoreOptions<StoreState> = {
   id: 'storybook/checklist',
   initialState: {
     loaded: false,
     muted: false,
-    accepted: [],
-    done: [],
-    skipped: [],
+    values: {},
   } as StoreState,
 } as const;
 
 export type ChecklistStore = {
-  accept: (id: TaskId) => void;
-  done: (id: TaskId) => void;
-  skip: (id: TaskId) => void;
-  reset: (id: TaskId) => void;
-  mute: (value: boolean | Array<TaskId>) => void;
+  accept: (id: ItemId) => void;
+  done: (id: ItemId) => void;
+  skip: (id: ItemId) => void;
+  reset: (id: ItemId) => void;
+  mute: (value: boolean | Array<ItemId>) => void;
 };
 
 export type ChecklistStoreEnvironment = 'server' | 'manager' | 'preview';
@@ -42,35 +40,32 @@ export type ChecklistStoreEnvironment = 'server' | 'manager' | 'preview';
 export const createChecklistStore = (
   universalChecklistStore: UniversalStore<StoreState, StoreEvent>
 ) => ({
-  accept: (id: TaskId) => {
+  accept: (id: ItemId) => {
     universalChecklistStore.setState((state) => ({
       ...state,
-      accepted: state.accepted.includes(id) ? state.accepted : [...state.accepted, id],
-      skipped: state.skipped.filter((v) => v !== id),
+      values: { ...state.values, [id]: 'accepted' },
     }));
   },
-  done: (id: TaskId) => {
+  done: (id: ItemId) => {
     universalChecklistStore.setState((state) => ({
       ...state,
-      done: state.done.includes(id) ? state.done : [...state.done, id],
-      skipped: state.skipped.filter((v) => v !== id),
+      values: { ...state.values, [id]: 'done' },
     }));
   },
-  skip: (id: TaskId) => {
+  skip: (id: ItemId) => {
     universalChecklistStore.setState((state) => ({
       ...state,
-      accepted: state.accepted.filter((v) => v !== id),
-      skipped: state.skipped.includes(id) ? state.skipped : [...state.skipped, id],
+      values: { ...state.values, [id]: 'skipped' },
     }));
   },
-  reset: (id: TaskId) => {
-    universalChecklistStore.setState((state) => ({
-      ...state,
-      accepted: state.accepted.filter((v) => v !== id),
-      skipped: state.skipped.filter((v) => v !== id),
-    }));
+  reset: (id: ItemId) => {
+    universalChecklistStore.setState((state) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { [id]: _, ...rest } = state.values;
+      return { ...state, values: rest };
+    });
   },
-  mute: (value: boolean | Array<TaskId>) => {
+  mute: (value: boolean | Array<ItemId>) => {
     universalChecklistStore.setState((state) => ({
       ...state,
       muted: Array.isArray(value)

@@ -123,13 +123,15 @@ Options include:
 | `-s`, `--skip-install`   | Skips the dependency installation step. Used only when you need to configure Storybook manually.<br />`storybook init --skip-install`                                                          |
 | `-t`, `--type`           | Defines the [framework](../configure/integration/frameworks.mdx) to use for your Storybook instance.<br />`storybook init --type solid`                                                        |
 | `-y`, `--yes`            | Skips interactive prompts and automatically installs Storybook per specified version, including all features.<br />`storybook init --yes`                                                      |
-| `--features [...values]` | Use these features when installing, skipping the prompt. Supported values are `docs`, `test` and `a11y`, space separated.<br />`storybook init --features docs test a11y`                                   |
+| `--features [...values]` | Use these features when installing, skipping the prompt. Supported values are `docs`, `test`, and `a11y`, space separated.<br />`storybook init --features docs test a11y`                                   |
 | `--package-manager`      | Sets the package manager to use when installing Storybook.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook init --package-manager pnpm`                     |
 | `--use-pnp`              | Enables [Plug'n'Play](https://yarnpkg.com/features/pnp) support for Yarn. This option is only available when using Yarn as your package manager.<br />`storybook init --use-pnp`               |
 | `-p`, `--parser`         | Sets the [jscodeshift parser](https://github.com/facebook/jscodeshift#parser).<br />Available parsers include `babel`, `babylon`, `flow`, `ts`, and `tsx`.<br />`storybook init --parser tsx`  |
 | `--debug`                | Outputs more logs in the CLI to assist debugging.<br />`storybook init --debug`                                                                                                                |
 | `--disable-telemetry`    | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook init --disable-telemetry`                                               |
 | `--enable-crash-reports` | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook init --enable-crash-reports` |
+| `--loglevel <level>`     | Controls level of logging during initialization.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`<br />`storybook init --loglevel debug`                  |
+| `--logfile [path]`       | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided.<br />`storybook init --logfile /tmp/debug-storybook.log`         |
 | `--no-dev`               | Complete the initialization of Storybook without running the Storybook dev server.<br />`storybook init --no-dev`                                                                              |
 
 ### `add`
@@ -149,6 +151,8 @@ Options include:
 | `--package-manager`        | Sets the package manager to use when installing the addon.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook add [addon] --package-manager pnpm` |
 | `-s`, `--skip-postinstall` | Skips post-install configuration. Used only when you need to configure the addon yourself.<br />`storybook add [addon] --skip-postinstall`                                        |
 | `--debug`                  | Outputs more logs in the CLI to assist debugging.<br />`storybook add --debug`                                                                                                    |
+| `--loglevel <level>`      | Controls level of logging during addon installation.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`<br />`storybook add [addon] --loglevel debug`    |
+| `--logfile [path]`        | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided.<br />`storybook add [addon] --logfile /tmp/debug-storybook.log` |
 
 ### `remove`
 
@@ -365,11 +369,13 @@ Options include:
 | `-s`, `--skip-install`   | Skips the dependency installation step. Used only when you need to configure Storybook manually.<br />`create storybook --skip-install`                                                          |
 | `-t`, `--type`           | Defines the [framework](../configure/integration/frameworks.mdx) to use for your Storybook instance.<br />`create storybook --type solid`                                                        |
 | `-y`, `--yes`            | Skips interactive prompts and automatically installs Storybook per specified version, including all features.<br />`create storybook --yes`                                                      |
-| `--features [...values]` | Use these features when installing, skipping the prompt. Supported values are `docs`, `test` and `a11y`, space separated.<br />`create storybook --features docs test a11y`                                   |
+| `--features [...values]` | Use these features when installing, skipping the prompt. Supported values are `docs`, `test`, and `a11y`, space separated.<br />`create storybook --features docs test a11y`                     |
 | `--package-manager`      | Sets the package manager to use when installing Storybook.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`create storybook --package-manager pnpm`                     |
 | `--use-pnp`              | Enables [Plug'n'Play](https://yarnpkg.com/features/pnp) support for Yarn. This option is only available when using Yarn as your package manager.<br />`create storybook --use-pnp`               |
 | `-p`, `--parser`         | Sets the [jscodeshift parser](https://github.com/facebook/jscodeshift#parser).<br />Available parsers include `babel`, `babylon`, `flow`, `ts`, and `tsx`.<br />`create storybook --parser tsx`  |
 | `--debug`                | Outputs more logs in the CLI to assist debugging.<br />`create storybook --debug`                                                                                                                |
 | `--disable-telemetry`    | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`create storybook --disable-telemetry`                                               |
 | `--enable-crash-reports` | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`create storybook --enable-crash-reports` |
+| `--loglevel <level>`     | Controls level of logging during initialization.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`<br />`storybook init --loglevel debug`                    |
+| `--logfile [path]`       | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided.<br />`storybook init --logfile /tmp/debug-storybook.log`         |
 | `--no-dev`               | Complete the initialization of Storybook without running the Storybook dev server.<br />`create storybook --no-dev`                                                                              |

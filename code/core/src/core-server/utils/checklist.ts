@@ -5,6 +5,7 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 import { globalSettings } from '../../cli';
 import {
+  type ItemStatus,
   type StoreEvent,
   type StoreState,
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
@@ -39,41 +40,60 @@ export async function initializeChecklist() {
 
     const [[userState, saveUserState], [projectState, saveProjectState]] = await Promise.all([
       globalSettings().then((settings) => {
+        const checklist = settings.value.checklist;
         const state = {
-          muted: settings.value.checklist?.muted ?? false,
-          accepted: settings.value.checklist?.accepted ?? [],
-          skipped: settings.value.checklist?.skipped ?? [],
+          muted: checklist?.muted ?? false,
+          values: checklist?.values ?? {},
         };
         const setState = ({
-          muted = false,
-          accepted = [],
-          skipped = [],
-        }: NonNullable<typeof settings.value.checklist>) => {
-          settings.value.checklist = { muted, accepted, skipped };
+          muted = state.muted,
+          values = state.values,
+        }: {
+          muted?: boolean | string[];
+          values?: Record<string, ItemStatus>;
+        }) => {
+          settings.value.checklist = { muted, values };
           settings.save();
         };
         return [state, setState] as const;
       }),
 
-      cache.get<Pick<StoreState, 'done'>>('state').then((cachedState) => {
-        const state = { done: cachedState?.done ?? [] };
-        const setState = ({ done }: Pick<StoreState, 'done'>) => cache.set('state', { done });
+      cache.get<Pick<StoreState, 'values'>>('state').then((cachedState) => {
+        const state = { values: cachedState?.values ?? {} };
+        const setState = ({ values }: Pick<StoreState, 'values'>) => cache.set('state', { values });
         return [state, setState] as const;
       }),
     ]);
 
-    store.setState((value) => ({ ...value, ...userState, ...projectState, loaded: true }));
+    store.setState((value) => ({
+      ...value,
+      muted: userState.muted,
+      values: { ...userState.values, ...projectState.values },
+      loaded: true,
+    }));
 
     store.onStateChange((state: StoreState, previousState: StoreState) => {
-      saveProjectState(state);
-      saveUserState(state);
+      // Split values into user (accepted, skipped) and project (done) for storage
+      const userValues: Record<string, Extract<ItemStatus, 'accepted' | 'skipped'>> = {};
+      const projectValues: Record<string, Extract<ItemStatus, 'done'>> = {};
 
-      const { muted, accepted, skipped, done } = state;
-      const changedProperties = Object.entries({ muted, accepted, skipped, done }).filter(
-        ([key, value]) => !equals(value, previousState[key as keyof StoreState])
+      Object.entries(state.values).forEach(([id, value]) => {
+        if (value === 'accepted' || value === 'skipped') {
+          userValues[id] = value;
+        } else if (value === 'done') {
+          projectValues[id] = value;
+        }
+      });
+      saveProjectState({ values: projectValues } as Pick<StoreState, 'values'>);
+      saveUserState({ muted: state.muted, values: userValues });
+
+      const changedValues = Object.entries(state.values).filter(
+        ([key, value]) => value !== previousState.values[key]
       );
-
-      telemetry('onboarding-checklist', Object.fromEntries(changedProperties));
+      telemetry('onboarding-checklist', {
+        ...(!equals(state.muted, previousState.muted) ? { muted: state.muted } : {}),
+        ...(changedValues.length > 0 ? { values: Object.fromEntries(changedValues) } : {}),
+      });
     });
   } catch (err) {
     logger.error('Failed to initialize checklist');

@@ -9,6 +9,11 @@ const DEFAULT_SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
 
 const VERSION = 1;
 
+const statusValue = z.strictObject({
+  status: z.enum(['open', 'accepted', 'done', 'skipped']),
+  mutedAt: z.number().optional(),
+});
+
 const userSettingSchema = z.object({
   version: z.number(),
   // NOTE: every key (and subkey) below must be optional, for forwards compatibility reasons
@@ -18,12 +23,30 @@ const userSettingSchema = z.object({
   checklist: z
     .object({
       items: z
-        .record(
-          z.strictObject({
-            status: z.enum(['open', 'accepted', 'done', 'skipped']),
-            mutedAt: z.number().optional(),
-          })
-        )
+        .object({
+          'guided-tour': statusValue,
+          'onboarding-survey': statusValue,
+          'render-component': statusValue,
+          'more-components': statusValue,
+          'more-stories': statusValue,
+          'whats-new-storybook-10': statusValue,
+          controls: statusValue,
+          viewports: statusValue,
+          'organize-stories': statusValue,
+          'install-vitest': statusValue,
+          'run-tests': statusValue,
+          'write-interactions': statusValue,
+          'install-a11y': statusValue,
+          'accessibility-tests': statusValue,
+          'install-chromatic': statusValue,
+          'visual-tests': statusValue,
+          coverage: statusValue,
+          'ci-tests': statusValue,
+          'install-docs': statusValue,
+          autodocs: statusValue,
+          'mdx-docs': statusValue,
+          'publish-storybook': statusValue,
+        })
         .optional(),
       widget: z.object({ disable: z.boolean().optional() }).optional(),
     })

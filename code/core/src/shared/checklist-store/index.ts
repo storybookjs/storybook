@@ -9,8 +9,8 @@ export type StoreState = Required<
   }
 >;
 
-export type ItemId = string;
-export type ItemState = StoreState['items'][ItemId];
+export type ItemId = keyof StoreState['items'];
+export type ItemState = StoreState['items'][keyof StoreState['items']];
 
 export type StoreEvent =
   | { type: 'accept'; payload: ItemId }

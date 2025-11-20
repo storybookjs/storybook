@@ -24,7 +24,7 @@
     "generate-sandboxes": "yarn --cwd ../scripts generate-sandboxes",
     "github-release": "github-release-from-changelog",
     "i": "yarn --cwd .. i",
-    "knip": "../scripts/node_modules/.bin/knip --config ../scripts/knip.config.ts",
+    "knip": "../node_modules/.bin/knip --config ../scripts/knip.config.ts",
     "lint": "yarn lint:js && yarn lint:other",
     "lint:ejs": "ejslint **/*.ejs",
     "lint:js": "yarn lint:js:cmd . --quiet",

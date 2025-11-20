@@ -36,8 +36,8 @@ jobs:
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: yarn nx-cloud record -- echo Hello World
-      - run: yarn nx run-many --parallel=3  -t build,check,test,pretty-docs,lint,publish,run-registry -c production
-      - run: yarn nx run-many -t sandbox -c production -p tag:ci:daily --parallel=1
+      - run: yarn nx run-many --parallel=4  -t build,check,test,pretty-docs,lint,publish,run-registry -c production
+      - run: yarn nx run-many -t sandbox -c production -p tag:ci:normal --parallel=1
         if: always()
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
       - run: yarn nx fix-ci

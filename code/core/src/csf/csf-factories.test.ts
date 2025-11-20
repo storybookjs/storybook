@@ -75,3 +75,30 @@ describe('test function', () => {
     expect(testFn).toHaveBeenCalled();
   });
 });
+
+describe('play exposure and fallback', () => {
+  test('meta.play is callable when defined on meta', async () => {
+    const p = vi.fn(async () => {});
+    const metaWithPlay = preview.meta({ play: p, render: () => null });
+    expect(typeof metaWithPlay.play).toBe('function');
+    await metaWithPlay.play({} as any);
+    expect(p).toHaveBeenCalled();
+  });
+
+  test("story.play falls back to meta's play when story has none", async () => {
+    const p = vi.fn(async () => {});
+    const metaWithPlay = preview.meta({ play: p, render: () => null });
+    const Story = metaWithPlay.story({});
+    expect(typeof Story.play).toBe('function');
+    await Story.play({} as any);
+    expect(p).toHaveBeenCalled();
+  });
+
+  test('story.composed.play exists when meta defines play', async () => {
+    const p = vi.fn(async () => {});
+    const metaWithPlay = preview.meta({ play: p, render: () => null });
+    const Story = metaWithPlay.story({});
+    // composed.play should exist and be callable
+    expect(typeof (Story.composed as any).play).toBe('function');
+  });
+});

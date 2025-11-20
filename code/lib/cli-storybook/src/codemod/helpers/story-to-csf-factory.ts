@@ -239,6 +239,47 @@ export async function storyToCsfFactory(
     },
   });
 
+  // Normalize play access for meta and stories:
+  // - meta.input.play(...) -> meta.play(...)
+  // - Story.input.play(...) -> Story.play(...)
+  traverse(csf._ast, {
+    MemberExpression(pathME) {
+      const obj = pathME.node.object;
+      const prop = pathME.node.property;
+
+      if (!t.isIdentifier(prop, { name: 'play' })) {
+        return;
+      }
+
+      // meta.input.play -> meta.play
+
+      // meta.input.play -> meta.play
+      if (
+        t.isMemberExpression(obj) &&
+        t.isIdentifier(obj.object) &&
+        t.isIdentifier(obj.property, { name: 'input' }) &&
+        obj.object.name === metaVariableName
+      ) {
+        pathME.replaceWith(
+          t.memberExpression(t.identifier(metaVariableName), t.identifier('play'))
+        );
+        return;
+      }
+
+      // Story.input.play -> Story.play (only for known story exports)
+      if (
+        t.isMemberExpression(obj) &&
+        t.isIdentifier(obj.object) &&
+        t.isIdentifier(obj.property, { name: 'input' })
+      ) {
+        const storyName = obj.object.name;
+        if (storyExportDecls.has(storyName)) {
+          pathME.replaceWith(t.memberExpression(t.identifier(storyName), t.identifier('play')));
+        }
+      }
+    },
+  });
+
   // If no stories were transformed, bail early to avoid having a mixed CSF syntax and therefore a broken indexer.
   if (transformedStoryExports.size === 0) {
     logger.warn(

@@ -85,6 +85,8 @@ export interface Meta<
   input: TInput;
   // composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;
+  // Expose play from meta for ergonomic access (runtime reads from input)
+  play: TInput['play'];
 
   story(
     input?: () => TRenderer['storyResult']
@@ -110,6 +112,9 @@ function defineMeta<
     _tag: 'Meta',
     input,
     preview,
+    get play() {
+      return input?.play as TInput['play'];
+    },
     // @ts-expect-error hard
     story(
       story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}
@@ -125,18 +130,23 @@ export interface Story<
     TRenderer,
     TRenderer['args']
   >,
+  MInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
+    TRenderer,
+    TRenderer['args']
+  >,
 > {
   readonly _tag: 'Story';
   input: TInput;
   composed: Pick<
     ComposedStoryFn<TRenderer>,
-    'argTypes' | 'parameters' | 'id' | 'tags' | 'globals'
+    'argTypes' | 'parameters' | 'id' | 'tags' | 'globals' | 'play'
   > & {
     args: TRenderer['args'];
     name: string;
   };
   meta: Meta<TRenderer>;
-  play: TInput['play'];
+  // If story doesn't define play, fall back to meta's play type
+  play: TInput['play'] extends undefined ? MInput['play'] : TInput['play'];
   run: (
     context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>,
     testName?: string
@@ -160,7 +170,8 @@ export function isStory<TRenderer extends Renderer>(input: unknown): input is St
 function defineStory<
   TRenderer extends Renderer,
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
->(input: TInput, meta: Meta<TRenderer>): Story<TRenderer, TInput> {
+  MInput extends ComponentAnnotations<TRenderer, TRenderer['args']>
+>(input: TInput, meta: Meta<TRenderer, MInput>): Story<TRenderer, TInput, MInput> {
   let composed: ComposedStoryFn<TRenderer>;
   const compose = () => {
     if (!composed) {
@@ -185,8 +196,8 @@ function defineStory<
     __children,
     get composed() {
       const composed = compose();
-      const { args, argTypes, parameters, id, tags, globals, storyName: name } = composed;
-      return { args, argTypes, parameters, id, tags, name, globals };
+      const { args, argTypes, parameters, id, tags, globals, storyName: name, play } = composed as any;
+      return { args, argTypes, parameters, id, tags, name, globals, play } as any;
     },
     get play() {
       return input.play ?? meta.input?.play ?? (async () => {});

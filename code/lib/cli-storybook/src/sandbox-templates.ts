@@ -491,7 +491,6 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      useCsfFactory: true,
       extraDependencies: ['prop-types', 'storybook-react-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },
@@ -546,7 +545,6 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      useCsfFactory: true,
       extraDependencies: ['storybook-vue3-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },
@@ -599,7 +597,6 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      useCsfFactory: true,
       extraDependencies: ['storybook-html-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },
@@ -699,7 +696,6 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      useCsfFactory: true,
       extraDependencies: ['storybook-web-components-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },

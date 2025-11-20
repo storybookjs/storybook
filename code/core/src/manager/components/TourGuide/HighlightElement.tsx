@@ -66,6 +66,17 @@ const findScrollableAncestors = (element: HTMLElement) => {
   return scrollableAncestors;
 };
 
+/**
+ * Highlights a DOM element on the page by creating a visual overlay. The overlay automatically
+ * updates its position when the element moves or scrolls, and can optionally display a pulsating
+ * animation effect.
+ *
+ * @param props - Component props
+ * @param props.targetSelector - CSS selector string to identify the element to highlight
+ * @param props.pulsating - Optional flag to enable a pulsating animation effect
+ * @returns Returns null (it doesn't render in place, it appends to the body)
+ * @todo Use createPortal to render the overlay in the body and avoid manually setting styles
+ */
 export function HighlightElement({
   targetSelector,
   pulsating = false,

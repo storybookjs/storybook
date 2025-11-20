@@ -89,7 +89,6 @@ describe('GeneratorExecutionCommand', () => {
         '@chromatic-com/storybook',
         '@storybook/addon-vitest',
         '@storybook/addon-docs',
-        '@storybook/addon-onboarding',
       ]);
       const options = {
         skipInstall: false,

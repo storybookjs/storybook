@@ -64,11 +64,6 @@ describe('AddonService', () => {
       expect(addons).toContain('@storybook/addon-docs');
     });
 
-    it('should add onboarding addon for onboarding feature', () => {
-      const addons = manager.getAddonsForFeatures(new Set([Feature.ONBOARDING]));
-      expect(addons).toContain('@storybook/addon-onboarding');
-    });
-
     it('should add a11y addon for a11y feature', () => {
       const addons = manager.getAddonsForFeatures(new Set([Feature.A11Y]));
       expect(addons).toContain('@storybook/addon-a11y');
@@ -81,7 +76,6 @@ describe('AddonService', () => {
       expect(addons).toContain('@storybook/addon-docs');
       expect(addons).toContain('@chromatic-com/storybook');
       expect(addons).toContain('@storybook/addon-vitest');
-      expect(addons).toContain('@storybook/addon-onboarding');
       expect(addons).toContain('@storybook/addon-a11y');
     });
   });

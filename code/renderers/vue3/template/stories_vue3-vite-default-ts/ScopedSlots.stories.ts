@@ -1,4 +1,3 @@
-import type { Channel } from 'storybook/internal/channels';
 import {
   RESET_STORY_ARGS,
   STORY_ARGS_UPDATED,

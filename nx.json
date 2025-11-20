@@ -29,13 +29,8 @@
           "args": "--reset --optimized"
         }
       },
-      "inputs": [
-        "production",
-        "^production"
-      ],
-      "dependsOn": [
-        "^build"
-      ],
+      "inputs": ["production", "^production"],
+      "dependsOn": ["^build"],
       "outputs": [
         "{projectRoot}/dist",
         "{workspaceRoot}/code/bench/esbuild-metafiles/{projectName}"
@@ -48,8 +43,16 @@
         "cwd": "{projectRoot}",
         "command": "yarn exec jiti $(yarn workspace @storybook/scripts bin check-package)"
       },
+      "configurations": {
+        "production": {}
+      },
       "inputs": ["default", "^production"],
-      "dependsOn": ["build"],
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "build"
+        }
+      ],
       "cache": true
     }
   },

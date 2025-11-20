@@ -213,60 +213,27 @@
   "nx": {
     "name": "root",
     "includedScripts": [],
-    "implicitDependencies": [
-      "core",
-      "core-webpack",
-      "csf-plugin",
-      "react-dom-shim",
-      "svelte",
-      "vue3",
-      "web-components",
-      "preact",
-      "html",
-      "builder-webpack5",
-      "react-webpack",
-      "server",
-      "builder-vite",
-      "server-webpack",
-      "create-storybook",
-      "codemod",
-      "react",
-      "addon-onboarding",
-      "addon-links",
-      "ember",
-      "svelte-vite",
-      "vue3-vite",
-      "html-vite",
-      "web-components-vite",
-      "react-vite",
-      "react-webpack5",
-      "nextjs",
-      "preact-vite",
-      "sveltekit",
-      "angular",
-      "server-webpack5",
-      "eslint-plugin",
-      "addon-vitest",
-      "addon-a11y",
-      "addon-docs",
-      "storybook-addon-pseudo-states",
-      "addon-themes",
-      "create-react-app",
-      "nextjs-vite",
-      "cli",
-      "react-native-web-vite"
-    ],
     "targets": {
       "lint": {
         "command": "yarn lint",
         "dependsOn": [
-          "^build"
+          {
+            "projects": [
+              "*"
+            ],
+            "target": "build"
+          }
         ]
       },
       "test": {
         "command": "yarn test",
         "dependsOn": [
-          "^build"
+          {
+            "projects": [
+              "*"
+            ],
+            "target": "build"
+          }
         ]
       }
     }

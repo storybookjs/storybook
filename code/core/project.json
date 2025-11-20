@@ -4,13 +4,6 @@
   "projectType": "library",
   "targets": {
     "build": {},
-    "check": {
-      "dependsOn": [
-        {
-          "projects": ["core", "react-vite"],
-          "target": "build"
-        }
-      ]
-    }
+    "check": {}
   }
 }

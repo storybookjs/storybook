@@ -1,17 +1,9 @@
 {
   "name": "angular",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {
     "build": {},
-    "check": {
-      "command": "echo '\"nx check angular\" can only run with the parameter \"-c production\", we need to expand code/storybook/storybook/scripts/prepare/check.ts'",
-      "configurations": {
-        "production": {
-          "cwd": "{projectRoot}",
-          "command": "yarn check"
-        }
-      }
-    }
+    "check": {}
   }
 }

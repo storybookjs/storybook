@@ -10,6 +10,7 @@
   "nx": {
     "name": "scripts",
     "targets": {
+      "includedScripts": [],
       "test": {
         "cache": true,
         "executor": "nx:run-commands",
@@ -35,6 +36,45 @@
         "inputs": [
           "{workspaceRoot}/docs/**/*"
         ]
+      },
+      "run-registry": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "echo ''"
+        },
+        "dependsOn": ["publish"],
+        "configurations": {
+          "production": {
+            "cwd": "{projectRoot}",
+            "command": "yarn local-registry --open"
+          }
+        },
+        "continuous": true,
+        "cache": true
+      },
+      "publish": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "echo ''"
+        },
+        "configurations": {
+          "production": {
+            "cwd": "{projectRoot}",
+            "command": "yarn local-registry --publish"
+          }
+        },
+        "dependsOn": [
+          {
+            "projects": [
+              "*"
+            ],
+            "target": "build"
+          }
+        ],
+        "outputs": [
+          "{workspaceRoot}/.verdaccio-cache"
+        ],
+        "cache": true
       }
     }
   },

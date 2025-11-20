@@ -12,11 +12,6 @@ import { expect, within } from 'storybook/test';
 
 import MySlotComponent from './MySlotComponent.vue';
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __STORYBOOK_ADDONS_CHANNEL__: Channel;
-}
-
 const meta = {
   component: MySlotComponent,
   args: {

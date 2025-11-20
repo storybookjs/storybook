@@ -1,9 +1,21 @@
 {
   "name": "svelte",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {
     "build": {},
-    "check": {}
+    "check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "svelte-check"
+      },
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "build"
+        }
+      ]
+    }
   }
 }

@@ -16,6 +16,9 @@
       }
     }
   },
+  "tui": {
+    "autoExit": true
+  },
   "targetDefaults": {
     "build": {
       "executor": "nx:run-commands",

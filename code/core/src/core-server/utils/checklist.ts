@@ -65,16 +65,16 @@ export async function initializeChecklist() {
       }),
     ]);
 
-    store.setState((value) => ({
-      ...value,
-      muted:
-        userState.widget.disable === true ||
-        Object.entries(userState.values)
-          .filter(([_, value]) => value.mutedAt)
-          .map(([id]) => id),
-      values: { ...userState.values, ...projectState.values },
-      loaded: true,
-    }));
+    store.setState(
+      (value) =>
+        ({
+          ...value,
+          ...userState,
+          ...projectState,
+          values: { ...value.values, ...userState.values, ...projectState.values },
+          loaded: true,
+        }) satisfies StoreState
+    );
 
     store.onStateChange((state: StoreState, previousState: StoreState) => {
       // Split values into project-local (done) and user-local (accepted, skipped) persistence

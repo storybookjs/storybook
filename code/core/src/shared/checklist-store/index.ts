@@ -4,10 +4,10 @@ import type { StoreOptions } from '../universal-store/types';
 import { initialState } from './checklistData.state';
 
 export type StoreState = Required<
-  Awaited<ReturnType<typeof globalSettings>>['value']['checklist']
-> & {
-  loaded: boolean;
-};
+  Awaited<ReturnType<typeof globalSettings>>['value']['checklist'] & {
+    loaded: boolean;
+  }
+>;
 
 export type ItemId = string;
 export type ItemState = StoreState['values'][ItemId];

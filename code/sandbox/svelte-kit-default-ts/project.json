@@ -1,6 +1,6 @@
 {
   "name": "svelte-kit/default-ts",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "implicitDependencies": ["core", "addon-links", "addon-onboarding", "sveltekit"],
   "targets": {

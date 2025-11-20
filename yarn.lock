@@ -8918,6 +8918,7 @@ __metadata:
     "@playwright/test": "npm:^1.52.0"
     jiti: "npm:^2.4.2"
     nx: "npm:^22.0.4"
+    prettier: "npm:^3.6.2"
   languageName: unknown
   linkType: soft
 

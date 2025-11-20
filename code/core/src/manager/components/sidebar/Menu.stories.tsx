@@ -31,6 +31,8 @@ const managerContext: any = {
     getUrlState: fn().mockName('api::getUrlState'),
     navigate: fn().mockName('api::navigate'),
     on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
+    once: fn().mockName('api::once'),
   },
 };
 

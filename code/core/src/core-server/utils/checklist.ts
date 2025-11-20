@@ -4,8 +4,8 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { globalSettings } from '../../cli';
+import type { ItemState } from '../../shared/checklist-store';
 import {
-  type ItemStatus,
   type StoreEvent,
   type StoreState,
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
@@ -42,17 +42,17 @@ export async function initializeChecklist() {
       globalSettings().then((settings) => {
         const checklist = settings.value.checklist;
         const state = {
-          muted: checklist?.muted ?? false,
           values: checklist?.values ?? {},
+          widget: checklist?.widget ?? { disable: false },
         };
         const setState = ({
-          muted = state.muted,
           values = state.values,
+          widget = state.widget,
         }: {
-          muted?: boolean | string[];
-          values?: Record<string, ItemStatus>;
+          values?: typeof state.values;
+          widget?: typeof state.widget;
         }) => {
-          settings.value.checklist = { muted, values };
+          settings.value.checklist = { values, widget };
           settings.save();
         };
         return [state, setState] as const;
@@ -67,32 +67,35 @@ export async function initializeChecklist() {
 
     store.setState((value) => ({
       ...value,
-      muted: userState.muted,
+      muted:
+        userState.widget.disable === true ||
+        Object.entries(userState.values)
+          .filter(([_, value]) => value.mutedAt)
+          .map(([id]) => id),
       values: { ...userState.values, ...projectState.values },
       loaded: true,
     }));
 
     store.onStateChange((state: StoreState, previousState: StoreState) => {
-      // Split values into user (accepted, skipped) and project (done) for storage
-      const userValues: Record<string, Extract<ItemStatus, 'accepted' | 'skipped'>> = {};
-      const projectValues: Record<string, Extract<ItemStatus, 'done'>> = {};
-
+      // Split values into project-local (done) and user-local (accepted, skipped) persistence
+      const projectValues: Record<string, ItemState> = {};
+      const userValues: Record<string, ItemState> = {};
       Object.entries(state.values).forEach(([id, value]) => {
-        if (value === 'accepted' || value === 'skipped') {
-          userValues[id] = value;
-        } else if (value === 'done') {
+        if (value.status === 'done') {
           projectValues[id] = value;
+        } else if (value.status === 'accepted' || value.status === 'skipped') {
+          userValues[id] = value;
         }
       });
-      saveProjectState({ values: projectValues } as Pick<StoreState, 'values'>);
-      saveUserState({ muted: state.muted, values: userValues });
+      saveProjectState({ values: projectValues });
+      saveUserState({ values: userValues, widget: state.widget });
 
       const changedValues = Object.entries(state.values).filter(
         ([key, value]) => value !== previousState.values[key]
       );
       telemetry('onboarding-checklist', {
-        ...(!equals(state.muted, previousState.muted) ? { muted: state.muted } : {}),
         ...(changedValues.length > 0 ? { values: Object.fromEntries(changedValues) } : {}),
+        ...(!equals(state.widget, previousState.widget) ? { widget: state.widget } : {}),
       });
     });
   } catch (err) {

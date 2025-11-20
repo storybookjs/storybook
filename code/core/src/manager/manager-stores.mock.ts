@@ -5,7 +5,6 @@ import {
 import * as testUtils from 'storybook/test';
 
 import {
-  type ChecklistStore,
   type StoreEvent,
   type StoreState,
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
@@ -61,6 +60,4 @@ export const internal_universalChecklistStore = new experimental_MockUniversalSt
   testUtils
 ) as unknown as UniversalStore<StoreState, StoreEvent>;
 
-export const internal_checklistStore: ChecklistStore = createChecklistStore(
-  internal_universalChecklistStore
-);
+export const internal_checklistStore = createChecklistStore(internal_universalChecklistStore);

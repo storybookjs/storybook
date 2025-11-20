@@ -31,10 +31,10 @@ addons.register(ADDON_ID, async (api) => {
   const isSurvey = queryParams.onboarding === 'survey';
 
   const hasCompletedSurvey = await new Promise<boolean>((resolve) => {
-    const unsubscribe = checklistStore.onStateChange(({ loaded, accepted }) => {
+    const unsubscribe = checklistStore.onStateChange(({ loaded, values }) => {
       if (loaded) {
         unsubscribe();
-        resolve(accepted.includes('onboarding-survey'));
+        resolve(values['onboarding-survey'].status === 'accepted');
       }
     });
   });

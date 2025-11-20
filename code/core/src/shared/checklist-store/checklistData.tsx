@@ -17,17 +17,18 @@ import type {
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
-import { ADDON_ID as ADDON_A11Y_ID } from '../../../../../addons/a11y/src/constants';
+import { ADDON_ID as ADDON_A11Y_ID } from '../../../../addons/a11y/src/constants';
 import {
   ADDON_ONBOARDING_CHANNEL,
   ADDON_ID as ADDON_ONBOARDING_ID,
-} from '../../../../../addons/onboarding/src/constants';
+} from '../../../../addons/onboarding/src/constants';
 import {
   ADDON_ID as ADDON_TEST_ID,
   STORYBOOK_ADDON_TEST_CHANNEL,
-} from '../../../../../addons/vitest/src/constants';
-import { ADDON_ID as ADDON_DOCS_ID } from '../../../docs-tools/shared';
-import { TourGuide } from '../../components/TourGuide/TourGuide';
+} from '../../../../addons/vitest/src/constants';
+import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
+import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
+import type { initialState } from './checklistData.state';
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',
@@ -49,58 +50,68 @@ const CodeSnippet = (props: ComponentProps<typeof SyntaxHighlighter>) => (
   </ThemeProvider>
 );
 
+type ItemId = keyof (typeof initialState)['values'];
+
 export interface ChecklistData {
-  sections: {
+  sections: readonly {
     id: string;
     title: string;
-    items: {
-      // Unique identifier for persistence. Update when making significant changes.
-      id: string;
+    items: readonly {
+      /** Unique identifier for persistence. Update when making significant changes. */
+      id: ItemId;
 
-      // Display name. Keep it short and actionable (with a verb).
+      /** Display name. Keep it short and actionable (with a verb). */
       label: string;
 
-      // Description of the criteria that must be met to complete the item.
+      /** Description of the criteria that must be met to complete the item. */
       criteria: string;
 
-      // Items that must be completed before this item can be completed (locked until then).
-      after?: string[];
+      /** Items that must be completed before this item can be completed (locked until then). */
+      after?: readonly ItemId[];
 
-      // What to do after the item is completed (prevent undo or hide the item).
+      /** What to do after the item is completed (prevent undo or hide the item). */
       afterCompletion?: 'immutable' | 'unavailable';
 
-      // Function to check if the item should be available (displayed in the checklist).
-      // Called any time the index is updated.
+      /**
+       * Function to check if the item should be available (displayed in the checklist). Called any
+       * time the index is updated.
+       */
       available?: (args: {
         api: API;
         index: API_IndexHash | undefined;
         item: ChecklistData['sections'][number]['items'][number];
       }) => boolean;
 
-      // Function returning content to display in the checklist item's collapsible area.
+      /** Function returning content to display in the checklist item's collapsible area. */
       content?: (args: { api: API }) => React.ReactNode;
 
-      // Action button to be displayed when item is not completed.
+      /** Action button to be displayed when item is not completed. */
       action?: {
         label: string;
         onClick: (args: { api: API; accept: () => void }) => void;
       };
 
-      // Function to subscribe to events and update the item's state.
-      // May return a function to unsubscribe once the item is completed.
+      /**
+       * Function to subscribe to events and update the item's state. May return a function to
+       * unsubscribe once the item is completed.
+       */
       subscribe?: (args: {
         api: API;
         item: ChecklistData['sections'][number]['items'][number];
 
-        // Call this to complete the item and persist to user-local storage.
-        // This is preferred when dealing with user-specific criteria (e.g. learning goals).
+        /**
+         * Call this to complete the item and persist to user-local storage. This is preferred when
+         * dealing with user-specific criteria (e.g. learning goals).
+         */
         accept: () => void;
 
-        // Call this to complete the item and persist to project-local storage.
-        // This is preferred when dealing with project-specific criteria (e.g. component count).
+        /**
+         * Call this to complete the item and persist to project-local storage. This is preferred
+         * when dealing with project-specific criteria (e.g. component count).
+         */
         done: () => void;
 
-        // Call this to skip the item and persist to user-local storage.
+        /** Call this to skip the item and persist to user-local storage. */
         skip: () => void;
       }) => void | (() => void);
     }[];
@@ -120,7 +131,7 @@ const subscribeToIndex: (
     }
   };
 
-export const checklistData: ChecklistData = {
+export const checklistData = {
   sections: [
     {
       id: 'basics',
@@ -155,10 +166,7 @@ export const checklistData: ChecklistData = {
         {
           id: 'onboarding-survey',
           label: 'Complete the onboarding survey',
-          available: ({ index }) =>
-            !!index &&
-            'example-button--primary' in index &&
-            addons.experimental_getRegisteredAddons().includes(ADDON_ONBOARDING_ID),
+          available: () => addons.experimental_getRegisteredAddons().includes(ADDON_ONBOARDING_ID),
           afterCompletion: 'immutable',
           criteria: 'Onboarding survey is completed',
           subscribe: ({ api, accept }) =>
@@ -1198,4 +1206,4 @@ npm install @my/awesome-project
       ],
     },
   ],
-};
+} as const satisfies ChecklistData;

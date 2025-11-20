@@ -1,5 +1,4 @@
 import {
-  type ChecklistStore,
   type StoreEvent,
   type StoreState,
   createChecklistStore,
@@ -12,4 +11,4 @@ export const universalChecklistStore = UniversalStore.create<StoreState, StoreEv
   leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
 });
 
-export const checklistStore: ChecklistStore = createChecklistStore(universalChecklistStore);
+export const checklistStore = createChecklistStore(universalChecklistStore);

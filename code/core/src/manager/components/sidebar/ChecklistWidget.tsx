@@ -174,8 +174,8 @@ export const ChecklistWidget = () => {
     setItems((current) =>
       current.map((item) => ({
         ...item,
-        isCompleted: values[item.id] === 'accepted' || values[item.id] === 'done',
-        isSkipped: values[item.id] === 'skipped',
+        isCompleted: values[item.id].status === 'accepted' || values[item.id].status === 'done',
+        isSkipped: values[item.id].status === 'skipped',
       }))
     );
     const timeout = setTimeout(setItems, 2000, nextItems);

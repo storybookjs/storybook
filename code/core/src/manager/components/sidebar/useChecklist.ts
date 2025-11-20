@@ -14,9 +14,9 @@ import {
   useStorybookState,
 } from 'storybook/manager-api';
 
-import type { ItemStatus } from '../../../shared/checklist-store';
-import type { ChecklistData } from '../../settings/Checklist/checklistData';
-import { checklistData } from '../../settings/Checklist/checklistData';
+import type { ItemState } from '../../../shared/checklist-store';
+import type { ChecklistData } from '../../../shared/checklist-store/checklistData';
+import { checklistData } from '../../../shared/checklist-store/checklistData';
 
 type RawItemWithSection = ChecklistData['sections'][number]['items'][number] & {
   itemIndex: number;
@@ -28,7 +28,7 @@ type RawItemWithSection = ChecklistData['sections'][number]['items'][number] & {
 export type ChecklistItem = RawItemWithSection & {
   isAvailable: boolean;
   isOpen: boolean;
-  isLockedBy: string[];
+  isLockedBy: string | undefined;
   isImmutable: boolean;
   isReady: boolean;
   isCompleted: boolean;
@@ -70,10 +70,10 @@ const checkAvailable = (
 const checkSkipped = (
   item: RawItemWithSection,
   itemsById: Record<RawItemWithSection['id'], RawItemWithSection>,
-  values: Record<string, ItemStatus>
+  values: Record<string, ItemState>
 ) => {
   const itemValue = values[item.id];
-  if (itemValue === 'skipped') {
+  if (itemValue.status === 'skipped') {
     return true;
   }
   for (const afterId of item.after ?? []) {
@@ -84,13 +84,35 @@ const checkSkipped = (
   return false;
 };
 
+const getAncestorIds = (
+  item: RawItemWithSection,
+  itemsById: Record<RawItemWithSection['id'], RawItemWithSection>
+): string[] => {
+  if (!item.after || item.after.length === 0) {
+    return [];
+  }
+  return item.after.flatMap((afterId) => {
+    const afterItem = itemsById[afterId];
+    return afterItem ? [...getAncestorIds(afterItem, itemsById), afterId] : [];
+  });
+};
+
+const checkLockedBy = (
+  item: RawItemWithSection,
+  itemsById: Record<RawItemWithSection['id'], RawItemWithSection>,
+  values: Record<string, ItemState>
+): string | undefined =>
+  getAncestorIds(item, itemsById).find(
+    (id) => values[id].status !== 'accepted' && values[id].status !== 'done'
+  );
+
 export const useChecklist = () => {
   const api = useStorybookApi();
   const index = useStoryIndex();
   const [checklistState] = experimental_useUniversalStore(universalChecklistStore);
-  const { loaded, muted, values } = checklistState;
+  const { loaded, widget, values } = checklistState;
 
-  const itemsById = useMemo<Record<RawItemWithSection['id'], RawItemWithSection>>(() => {
+  const itemsById = useMemo<Record<string, RawItemWithSection>>(() => {
     return Object.fromEntries(
       checklistData.sections.flatMap(
         ({ items, id: sectionId, title: sectionTitle }, sectionIndex) =>
@@ -103,21 +125,20 @@ export const useChecklist = () => {
 
   const allItems = useMemo(() => {
     return Object.values(itemsById).map<ChecklistItem>((item) => {
-      const itemValue = values[item.id];
-      const isAccepted = itemValue === 'accepted';
-      const isDone = itemValue === 'done';
+      const { status, mutedAt } = values[item.id];
+      const isOpen = status === 'open';
+      const isAccepted = status === 'accepted';
+      const isDone = status === 'done';
       const isCompleted = isAccepted || isDone;
       const isSkipped = !isCompleted && checkSkipped(item, itemsById, values);
-      const isMuted = Array.isArray(muted) ? muted.includes(item.id) : !!muted;
+      const isMuted = !!mutedAt || !!widget.disable;
 
       const isAvailable = isCompleted
         ? item.afterCompletion !== 'unavailable'
         : checkAvailable(item, itemsById, { api, index, item });
-      const isOpen = !isAccepted && !isDone && !isSkipped && isAvailable;
-      const isLockedBy =
-        item.after?.filter((id) => values[id] !== 'accepted' && values[id] !== 'done') ?? [];
+      const isLockedBy = checkLockedBy(item, itemsById, values);
       const isImmutable = isCompleted && item.afterCompletion === 'immutable';
-      const isReady = isOpen && !isMuted && isLockedBy.length === 0;
+      const isReady = isOpen && isAvailable && !isMuted && !isLockedBy;
 
       return {
         ...item,
@@ -133,7 +154,7 @@ export const useChecklist = () => {
         isMuted,
       };
     });
-  }, [itemsById, values, muted, api, index]);
+  }, [itemsById, values, widget, api, index]);
 
   const itemCollections = useMemo(() => {
     const availableItems = allItems.filter((item) => item.isAvailable);
@@ -174,7 +195,7 @@ export const useChecklist = () => {
       }
 
       const subscribed = subscriptions.has(item.id);
-      if (item.isOpen && !subscribed) {
+      if (item.isOpen && item.isAvailable && !subscribed) {
         subscriptions.set(
           item.id,
           item.subscribe({
@@ -185,7 +206,7 @@ export const useChecklist = () => {
             skip: () => checklistStore.skip(item.id),
           })
         );
-      } else if (subscribed && !item.isOpen) {
+      } else if (subscribed && !(item.isOpen && item.isAvailable)) {
         const unsubscribe = subscriptions.get(item.id);
         subscriptions.delete(item.id);
         if (typeof unsubscribe === 'function') {

@@ -17,8 +17,15 @@ const userSettingSchema = z.object({
   init: z.object({ skipOnboarding: z.boolean().optional() }).optional(),
   checklist: z
     .object({
-      muted: z.union([z.boolean(), z.array(z.string())]).optional(),
-      values: z.record(z.enum(['accepted', 'done', 'skipped'])).optional(),
+      values: z
+        .record(
+          z.strictObject({
+            status: z.enum(['open', 'accepted', 'done', 'skipped']),
+            mutedAt: z.number().optional(),
+          })
+        )
+        .optional(),
+      widget: z.object({ disable: z.boolean().optional() }).optional(),
     })
     .optional(),
 });

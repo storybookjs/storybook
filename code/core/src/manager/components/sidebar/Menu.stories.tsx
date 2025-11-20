@@ -50,10 +50,12 @@ const meta = {
   beforeEach: async () => {
     mockStore.setState({
       loaded: true,
-      muted: false,
-      accepted: ['controls'],
-      done: ['render-component'],
-      skipped: ['viewports'],
+      widget: {},
+      values: {
+        controls: { status: 'accepted' },
+        'render-component': { status: 'done' },
+        viewports: { status: 'skipped' },
+      },
     });
   },
 } satisfies Meta<typeof SidebarMenu>;

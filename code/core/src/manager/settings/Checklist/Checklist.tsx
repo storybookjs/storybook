@@ -24,10 +24,6 @@ type ChecklistSection = {
   progress: number;
 };
 
-type ChecklistItemWithRef = ChecklistItem & {
-  nodeRef: React.RefObject<HTMLLIElement>;
-};
-
 const Sections = styled.ol(({ theme }) => ({
   listStyle: 'none',
   display: 'flex',
@@ -244,8 +240,8 @@ export const Checklist = ({
   const { itemsById, sectionsById } = useMemo(
     () =>
       availableItems.reduce<{
-        itemsById: Record<ChecklistItem['id'], ChecklistItem>;
-        sectionsById: Record<ChecklistSection['id'], ChecklistSection>;
+        itemsById: Record<string, ChecklistItem>;
+        sectionsById: Record<string, ChecklistSection>;
       }>(
         (acc, item) => {
           acc.itemsById[item.id] = item;
@@ -262,10 +258,7 @@ export const Checklist = ({
   const sections = useMemo(
     () =>
       Object.values(sectionsById).map(({ id, title, itemIds }) => {
-        const items = itemIds.map<ChecklistItemWithRef>((id) => ({
-          ...itemsById[id],
-          nodeRef: createRef<HTMLLIElement>(),
-        }));
+        const items = itemIds.map<ChecklistItem>((id) => itemsById[id]);
         const progress =
           (items.reduce((acc, item) => (item.isOpen ? acc : acc + 1), 0) / items.length) * 100;
         return { id, title, items, progress };
@@ -274,7 +267,10 @@ export const Checklist = ({
   );
 
   const next = useMemo(
-    () => Object.values(sections).findIndex(({ items }) => items.some((it) => it.isOpen)),
+    () =>
+      Object.values(sections).findIndex(({ items }) =>
+        items.some((item) => item.isOpen && item.isAvailable)
+      ),
     [sections]
   );
 
@@ -327,7 +323,7 @@ export const Checklist = ({
                     }) => {
                       const isChecked = isAccepted || isDone;
                       const isCollapsed = isChecked && item.id !== locationHash;
-                      const isLocked = isLockedBy.length > 0;
+                      const isLocked = !!isLockedBy;
                       const itemContent = content?.({ api });
 
                       return (
@@ -367,7 +363,7 @@ export const Checklist = ({
                                           variant="ghost"
                                           padding="small"
                                           ariaLabel="Locked"
-                                          tooltip={`Complete ${isLockedBy.map((id) => `“${itemsById[id].label}”`).join(', ')} first`}
+                                          tooltip={`Complete “${itemsById[isLockedBy].label}” first`}
                                           disabled
                                           readOnly
                                         >

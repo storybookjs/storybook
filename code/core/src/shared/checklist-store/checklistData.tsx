@@ -3,6 +3,7 @@ import React from 'react';
 
 import { Link, SyntaxHighlighter } from 'storybook/internal/components';
 import {
+  PREVIEW_INITIALIZED,
   STORY_ARGS_UPDATED,
   STORY_FINISHED,
   STORY_INDEX_INVALIDATED,
@@ -127,6 +128,7 @@ const subscribeToIndex: (
     if (check()) {
       done();
     } else {
+      api.once(PREVIEW_INITIALIZED, () => check() && done());
       return api.on(STORY_INDEX_INVALIDATED, () => check() && done());
     }
   };

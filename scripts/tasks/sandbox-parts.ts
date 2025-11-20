@@ -367,7 +367,6 @@ function addStoriesEntry(
 
   // When skipMocking is true and we're linking core template stories, exclude any stories
   // with "mocking" in their file name (not related to docs filtering).
-  console.log('skipMocking', skipMocking, path);
   const files =
     skipMocking && path === 'core' ? basePattern.replace('**/*', '**/!(*Mocking)*') : basePattern;
 

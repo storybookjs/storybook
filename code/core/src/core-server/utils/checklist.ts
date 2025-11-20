@@ -77,7 +77,7 @@ export async function initializeChecklist() {
       saveUserState({ items: userValues, widget: state.widget });
 
       const changedValues = Object.entries(state.items).filter(
-        ([key, value]) => value !== previousState.items[key as keyof typeof previousState.items]
+        ([key, value]) => value !== previousState.items[key as keyof typeof state.items]
       );
       telemetry('onboarding-checklist', {
         ...(changedValues.length > 0 ? { items: Object.fromEntries(changedValues) } : {}),

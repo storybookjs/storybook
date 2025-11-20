@@ -9,10 +9,12 @@ const DEFAULT_SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
 
 const VERSION = 1;
 
-const statusValue = z.strictObject({
-  status: z.enum(['open', 'accepted', 'done', 'skipped']),
-  mutedAt: z.number().optional(),
-});
+const statusValue = z
+  .strictObject({
+    status: z.enum(['open', 'accepted', 'done', 'skipped']),
+    mutedAt: z.number().optional(),
+  })
+  .optional();
 
 const userSettingSchema = z.object({
   version: z.number(),

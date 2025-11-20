@@ -6,12 +6,10 @@ import {
 	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
 } from './get-ui-building-instructions.ts';
 import type { AddonContext } from '../types.ts';
-import * as telemetry from '../telemetry.ts';
 import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls.ts';
 
 describe('getUIBuildingInstructionsTool', () => {
 	let server: McpServer<any, AddonContext>;
-	let collectTelemetrySpy: any;
 
 	beforeEach(async () => {
 		const adapter = new ValibotJsonSchemaAdapter();
@@ -47,10 +45,6 @@ describe('getUIBuildingInstructionsTool', () => {
 		);
 
 		await addGetUIBuildingInstructionsTool(server);
-
-		// Mock collectTelemetry
-		collectTelemetrySpy = vi.spyOn(telemetry, 'collectTelemetry');
-		collectTelemetrySpy.mockResolvedValue(undefined);
 	});
 
 	it('should return UI building instructions with framework placeholders replaced', async () => {
@@ -166,6 +160,8 @@ describe('getUIBuildingInstructionsTool', () => {
 	});
 
 	it('should collect telemetry when enabled', async () => {
+		const { telemetry } = await import('storybook/internal/telemetry');
+
 		const mockOptions = {
 			presets: {
 				apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
@@ -193,11 +189,14 @@ describe('getUIBuildingInstructionsTool', () => {
 			custom: testContext,
 		});
 
-		expect(collectTelemetrySpy).toHaveBeenCalledWith({
-			event: 'tool:getUIBuildingInstructions',
-			server,
-			toolset: 'dev',
-		});
+		expect(telemetry).toHaveBeenCalledWith(
+			'addon-mcp',
+			expect.objectContaining({
+				event: 'tool:getUIBuildingInstructions',
+				mcpSessionId: 'test-session',
+				toolset: 'dev',
+			}),
+		);
 	});
 
 	it('should handle missing options in context', async () => {

@@ -8,9 +8,7 @@ import {
 import type { AddonContext } from '../types.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
 import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
-import * as telemetry from '../telemetry.ts';
 
-// Mock CSF utilities
 vi.mock('storybook/internal/csf', () => ({
 	storyNameFromExport: (exportName: string) => exportName,
 }));
@@ -18,7 +16,6 @@ vi.mock('storybook/internal/csf', () => ({
 describe('getStoryUrlsTool', () => {
 	let server: McpServer<any, AddonContext>;
 	let fetchStoryIndexSpy: any;
-	let collectTelemetrySpy: any;
 	const testContext: AddonContext = {
 		origin: 'http://localhost:6006',
 		options: {} as any,
@@ -63,10 +60,6 @@ describe('getStoryUrlsTool', () => {
 		// Mock fetchStoryIndex to return the fixture
 		fetchStoryIndexSpy = vi.spyOn(fetchStoryIndex, 'fetchStoryIndex');
 		fetchStoryIndexSpy.mockResolvedValue(smallStoryIndexFixture);
-
-		// Mock collectTelemetry
-		collectTelemetrySpy = vi.spyOn(telemetry, 'collectTelemetry');
-		collectTelemetrySpy.mockResolvedValue(undefined);
 	});
 
 	it('should return story URL for a valid story', async () => {
@@ -248,6 +241,8 @@ describe('getStoryUrlsTool', () => {
 	});
 
 	it('should collect telemetry when enabled', async () => {
+		const { telemetry } = await import('storybook/internal/telemetry');
+
 		const telemetryContext = {
 			origin: 'http://localhost:6006',
 			options: {} as any,
@@ -276,13 +271,16 @@ describe('getStoryUrlsTool', () => {
 			custom: telemetryContext,
 		});
 
-		expect(collectTelemetrySpy).toHaveBeenCalledWith({
-			event: 'tool:getStoryUrls',
-			server,
-			toolset: 'dev',
-			inputStoryCount: 1,
-			outputStoryCount: 1,
-		});
+		expect(telemetry).toHaveBeenCalledWith(
+			'addon-mcp',
+			expect.objectContaining({
+				event: 'tool:getStoryUrls',
+				mcpSessionId: 'test-session',
+				toolset: 'dev',
+				inputStoryCount: 1,
+				outputStoryCount: 1,
+			}),
+		);
 	});
 
 	it('should handle missing origin in context', async () => {

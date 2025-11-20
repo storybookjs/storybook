@@ -20,8 +20,12 @@ let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
 // Promise that ensures single initialization, even with concurrent requests
 let initialize: Promise<McpServer<any, AddonContext>> | undefined;
+let disableTelemetry: boolean | undefined;
 
 const initializeMCPServer = async (options: Options) => {
+	const core = await options.presets.apply('core', {});
+	disableTelemetry = core?.disableTelemetry ?? false;
+
 	const server = new McpServer(
 		{
 			name: pkgJson.name,
@@ -36,11 +40,11 @@ const initializeMCPServer = async (options: Options) => {
 		},
 	).withContext<AddonContext>();
 
-	server.on('initialize', async () => {
-		if (!options.disableTelemetry) {
+	if (!disableTelemetry) {
+		server.on('initialize', async () => {
 			await collectTelemetry({ event: 'session:initialized', server });
-		}
-	});
+		});
+	}
 
 	// Register dev addon tools
 	await addGetStoryUrlsTool(server);
@@ -80,8 +84,6 @@ export const mcpServerHandler = async ({
 	options,
 	addonOptions,
 }: McpServerHandlerParams) => {
-	const disableTelemetry = options.disableTelemetry ?? false;
-
 	// Initialize MCP server and transport on first request, with concurrency safety
 	if (!initialize) {
 		initialize = initializeMCPServer(options);
@@ -95,7 +97,7 @@ export const mcpServerHandler = async ({
 		options,
 		toolsets: getToolsets(webRequest, addonOptions),
 		origin: origin!,
-		disableTelemetry,
+		disableTelemetry: disableTelemetry!,
 		request: webRequest,
 		// Telemetry handlers for component manifest tools
 		...(!disableTelemetry && {

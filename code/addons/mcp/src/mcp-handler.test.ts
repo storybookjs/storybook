@@ -1,19 +1,12 @@
 // oxlint-disable typescript-eslint(unbound-method) -- I'm unsure how to fix this properly
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
 	incomingMessageToWebRequest,
 	webResponseToServerResponse,
-	mcpServerHandler,
 	getToolsets,
 } from './mcp-handler.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
-
-// Mock dependencies
-vi.mock('./telemetry.ts', { spy: true });
-vi.mock('./tools/get-story-urls.ts', { spy: true });
-vi.mock('./tools/get-ui-building-instructions.ts', { spy: true });
-vi.mock('@storybook/mcp', { spy: true });
 
 // Test helpers to reduce boilerplate
 function createMockIncomingMessage(options: {
@@ -207,6 +200,15 @@ describe('mcp-handler conversion utilities', () => {
 });
 
 describe('mcpServerHandler', () => {
+	let mcpServerHandler: any;
+
+	beforeEach(async () => {
+		// Reset modules and get fresh handler for each test to avoid state pollution
+		vi.resetModules();
+		const handler = await import('./mcp-handler.ts');
+		mcpServerHandler = handler.mcpServerHandler;
+	});
+
 	function createMockOptions(overrides = {}) {
 		return {
 			port: 6006,
@@ -277,13 +279,18 @@ describe('mcpServerHandler', () => {
 	});
 
 	it('should respect disableTelemetry setting', async () => {
-		const { collectTelemetry } = await import('./telemetry.ts');
-		vi.mocked(collectTelemetry).mockClear();
+		const { telemetry } = await import('storybook/internal/telemetry');
+		vi.mocked(telemetry).mockClear();
 
 		const mockOptions = createMockOptions({
 			port: 6007,
 			presets: {
-				apply: vi.fn().mockResolvedValue({ disableTelemetry: true }),
+				apply: vi.fn(async (key: string) => {
+					if (key === 'core') {
+						return { disableTelemetry: true };
+					}
+					return {};
+				}),
 			},
 		});
 		const mockReq = createMockIncomingMessage({
@@ -293,11 +300,6 @@ describe('mcpServerHandler', () => {
 			body: createMCPInitializeRequest(),
 		});
 		const { response } = createMockServerResponse();
-
-		// Reset module state by clearing transport
-		const handler = await import('./mcp-handler.ts');
-		(handler as any).transport = undefined;
-		(handler as any).origin = undefined;
 
 		await mcpServerHandler({
 			req: mockReq,
@@ -313,18 +315,14 @@ describe('mcpServerHandler', () => {
 
 		// Verify handler completes successfully when telemetry is disabled
 		expect(response.end).toHaveBeenCalled();
+
+		// Verify telemetry was NOT called when disabled
+		expect(telemetry).not.toHaveBeenCalled();
 	});
 
 	it('should register tools from @storybook/mcp when feature flag and generator are enabled', async () => {
-		// Force module reload to get fresh state
-		vi.resetModules();
-
-		const { mcpServerHandler: freshHandler } = await import('./mcp-handler.ts');
-		const { addListAllComponentsTool, addGetComponentDocumentationTool } =
-			await import('@storybook/mcp');
-
 		const applyMock = vi.fn(async (key: string, defaultValue?: any) => {
-			if (key === 'dev') {
+			if (key === 'core') {
 				return { disableTelemetry: false };
 			}
 			if (key === 'features') {
@@ -340,44 +338,56 @@ describe('mcpServerHandler', () => {
 			port: 6008,
 			presets: { apply: applyMock },
 		});
-		const mockReq = createMockIncomingMessage({
+
+		// First, initialize the MCP server
+		const initReq = createMockIncomingMessage({
 			method: 'POST',
 			headers: { 'content-type': 'application/json', host: 'localhost:6008' },
 			body: createMCPInitializeRequest(),
 		});
-		const { response } = createMockServerResponse();
+		const { response: initResponse } = createMockServerResponse();
 
-		await freshHandler({
-			req: mockReq,
-			res: response,
+		await mcpServerHandler({
+			req: initReq,
+			res: initResponse,
 			options: mockOptions as any,
 			addonOptions: {
 				toolsets: { dev: true, docs: true },
 			},
 		});
 
-		// Verify component tools were registered
-		expect(addListAllComponentsTool).toHaveBeenCalledExactlyOnceWith(
-			expect.objectContaining({
-				tool: expect.any(Function),
-			}),
-			expect.any(Function),
-		);
-		expect(addGetComponentDocumentationTool).toHaveBeenCalledExactlyOnceWith(
-			expect.objectContaining({
-				tool: expect.any(Function),
-			}),
-			expect.any(Function),
-		);
+		// Then, list tools to verify component manifest tools are registered
+		const listToolsReq = createMockIncomingMessage({
+			method: 'POST',
+			headers: { 'content-type': 'application/json', host: 'localhost:6008' },
+			body: {
+				jsonrpc: '2.0',
+				id: 2,
+				method: 'tools/list',
+				params: {},
+			},
+		});
+		const { response: listResponse, getResponseData } =
+			createMockServerResponse();
 
-		// Verify the 'enabled' callbacks matches the truthy addon options
-		const listToolEnabledCallback = vi.mocked(addListAllComponentsTool).mock
-			.calls[0]?.[1];
-		const getToolEnabledCallback = vi.mocked(addGetComponentDocumentationTool)
-			.mock.calls[0]?.[1];
+		await mcpServerHandler({
+			req: listToolsReq,
+			res: listResponse,
+			options: mockOptions as any,
+			addonOptions: {
+				toolsets: { dev: true, docs: true },
+			},
+		});
 
-		expect(listToolEnabledCallback?.()).toBe(true);
-		expect(getToolEnabledCallback?.()).toBe(true);
+		// Parse the SSE response
+		const { body } = getResponseData();
+		const responseText = body.replace(/^data: /, '').trim();
+		const parsedResponse = JSON.parse(responseText);
+
+		// Verify component manifest tools are included
+		const toolNames = parsedResponse.result.tools.map((t: any) => t.name);
+		expect(toolNames).toContain('list-all-components');
+		expect(toolNames).toContain('get-component-documentation');
 	});
 });
 

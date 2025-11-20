@@ -1,7 +1,17 @@
 {
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
-		"jsx": "react"
+		"jsx": "react",
+		"lib": [
+			"es2024",
+			"ESNext.Array",
+			"ESNext.Collection",
+			"ESNext.Iterator",
+			"ESNext.Promise",
+			"DOM",
+			"DOM.AsyncIterable",
+			"DOM.Iterable"
+		]
 	},
 	"include": ["stories/**/*", "**/*.ts"]
 }

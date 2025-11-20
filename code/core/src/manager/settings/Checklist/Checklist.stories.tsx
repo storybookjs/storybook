@@ -10,10 +10,10 @@ import { checklistData } from '../../../shared/checklist-store/checklistData';
 import type { ChecklistItem } from '../../components/sidebar/useChecklist';
 import { Checklist } from './Checklist';
 
-const values: Record<string, 'open' | 'accepted' | 'done' | 'skipped'> = {
+const values: Record<string, 'accepted' | 'done' | 'skipped'> = {
   controls: 'accepted',
-  'render-component': 'done',
-  'whats-new-storybook-10': 'done',
+  renderComponent: 'done',
+  whatsNewStorybook10: 'done',
   viewports: 'skipped',
 };
 
@@ -21,10 +21,10 @@ const availableItems = checklistData.sections.flatMap(
   ({ id: sectionId, title: sectionTitle, items }, sectionIndex) =>
     items.map<ChecklistItem>((item, itemIndex) => {
       const itemValue = values[item.id];
-      const isOpen = itemValue === 'open';
       const isAccepted = itemValue === 'accepted';
       const isDone = itemValue === 'done';
       const isSkipped = itemValue === 'skipped';
+      const isOpen = !isAccepted && !isDone && !isSkipped;
       return {
         ...item,
         itemIndex,

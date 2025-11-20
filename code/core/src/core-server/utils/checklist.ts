@@ -4,6 +4,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { dequal as deepEqual } from 'dequal';
+import { throttle } from 'es-toolkit/function';
 import { toMerged } from 'es-toolkit/object';
 
 import { globalSettings } from '../../cli';
@@ -28,6 +29,7 @@ export async function initializeChecklist() {
 
     const [[userState, saveUserState], [projectState, saveProjectState]] = await Promise.all([
       globalSettings().then((settings) => {
+        const save = throttle(() => settings.save(), 1000);
         const state = {
           items: settings.value.checklist?.items ?? {},
           widget: settings.value.checklist?.widget ?? {},
@@ -40,7 +42,7 @@ export async function initializeChecklist() {
           widget?: typeof state.widget;
         }) => {
           settings.value.checklist = { items, widget };
-          settings.save();
+          save();
         };
         return [state, setState] as const;
       }),

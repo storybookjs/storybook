@@ -630,6 +630,10 @@ export const baseTemplates = {
     name: 'Angular CLI Prerelease (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    modifications: {
+      // Angular 21 has introduced a peer dependency requirement on standard-schema via @angular/forms`
+      extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
+    },
     expected: {
       framework: '@storybook/angular',
       renderer: '@storybook/angular',
@@ -641,6 +645,9 @@ export const baseTemplates = {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    modifications: {
+      extraDependencies: ['@angular/forms@latest'],
+    },
     expected: {
       framework: '@storybook/angular',
       renderer: '@storybook/angular',

@@ -176,7 +176,7 @@
     "eslint-plugin-eslint-comments": "^3.2.0",
     "eslint-plugin-file-progress": "^1.4.0",
     "eslint-plugin-html": "^6.2.0",
-    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-import-x": "^4.16.1",
     "eslint-plugin-json": "^4.0.0",
     "eslint-plugin-json-files": "^4.1.0",
     "eslint-plugin-jsx-a11y": "^6.8.0",

@@ -10,6 +10,7 @@ import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
+import { initialState } from '../../../shared/checklist-store/checklistData.state';
 import {
   internal_fullStatusStore,
   internal_universalChecklistStore,
@@ -120,6 +121,7 @@ const meta = {
       loaded: true,
       widget: {},
       items: {
+        ...initialState.items,
         controls: { status: 'accepted' },
         'render-component': { status: 'done' },
         viewports: { status: 'skipped' },

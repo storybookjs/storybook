@@ -10,6 +10,7 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
+import { initialState } from '../../../shared/checklist-store/checklistData.state';
 import { useMenu } from '../../container/Menu';
 import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
@@ -52,6 +53,7 @@ const meta = {
       loaded: true,
       widget: {},
       items: {
+        ...initialState.items,
         controls: { status: 'accepted' },
         'render-component': { status: 'done' },
         viewports: { status: 'skipped' },

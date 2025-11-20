@@ -18,6 +18,7 @@ const managerContext = {
   api: {
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
+    once: fn().mockName('api::once'),
     emit: fn().mockName('api::emit'),
     getElements: fn(() => ({})).mockName('api::getElements'),
     getShortcutKeys: fn(() => ({})).mockName('api::getShortcutKeys'),

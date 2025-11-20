@@ -2,17 +2,22 @@ import fs from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import { throttle } from 'es-toolkit/function';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
+
+import { invariant } from '../common/utils/utils';
 
 const DEFAULT_SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
 
 const VERSION = 1;
 
-const statusValue = z.strictObject({
-  status: z.enum(['open', 'accepted', 'done', 'skipped']),
-  mutedAt: z.number().optional(),
-});
+const statusValue = z
+  .strictObject({
+    status: z.enum(['open', 'accepted', 'done', 'skipped']).optional(),
+    mutedAt: z.number().optional(),
+  })
+  .optional();
 
 const userSettingSchema = z.object({
   version: z.number(),
@@ -24,28 +29,28 @@ const userSettingSchema = z.object({
     .object({
       items: z
         .object({
-          'guided-tour': statusValue,
-          'onboarding-survey': statusValue,
-          'render-component': statusValue,
-          'more-components': statusValue,
-          'more-stories': statusValue,
-          'whats-new-storybook-10': statusValue,
-          controls: statusValue,
-          viewports: statusValue,
-          'organize-stories': statusValue,
-          'install-vitest': statusValue,
-          'run-tests': statusValue,
-          'write-interactions': statusValue,
-          'install-a11y': statusValue,
-          'accessibility-tests': statusValue,
-          'install-chromatic': statusValue,
-          'visual-tests': statusValue,
-          coverage: statusValue,
-          'ci-tests': statusValue,
-          'install-docs': statusValue,
+          accessibilityTests: statusValue,
           autodocs: statusValue,
-          'mdx-docs': statusValue,
-          'publish-storybook': statusValue,
+          ciTests: statusValue,
+          controls: statusValue,
+          coverage: statusValue,
+          guidedTour: statusValue,
+          installA11y: statusValue,
+          installChromatic: statusValue,
+          installDocs: statusValue,
+          installVitest: statusValue,
+          mdxDocs: statusValue,
+          moreComponents: statusValue,
+          moreStories: statusValue,
+          onboardingSurvey: statusValue,
+          organizeStories: statusValue,
+          publishStorybook: statusValue,
+          renderComponent: statusValue,
+          runTests: statusValue,
+          viewports: statusValue,
+          visualTests: statusValue,
+          whatsNewStorybook10: statusValue,
+          writeInteractions: statusValue,
         })
         .optional(),
       widget: z.object({ disable: z.boolean().optional() }).optional(),
@@ -101,7 +106,8 @@ export class Settings {
   }
 
   /** Save settings to the file */
-  async save(): Promise<void> {
+  save = throttle(async (): Promise<void> => {
+    invariant(this.filePath, 'No file path to save settings to');
     try {
       await fs.mkdir(dirname(this.filePath), { recursive: true });
       await fs.writeFile(this.filePath, JSON.stringify(this.value, null, 2));
@@ -110,5 +116,5 @@ export class Settings {
         Unable to save global settings file to ${this.filePath}
         ${err && `Reason: ${(err as Error).message ?? err}`}`);
     }
-  }
+  }, 1000);
 }

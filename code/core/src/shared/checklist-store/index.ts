@@ -3,11 +3,16 @@ import type { UniversalStore } from '../universal-store';
 import type { StoreOptions } from '../universal-store/types';
 import { initialState } from './checklistData.state';
 
-export type StoreState = Required<
-  Awaited<ReturnType<typeof globalSettings>>['value']['checklist'] & {
-    loaded: boolean;
-  }
+/** ChecklistState is the persisted state, which may be incomplete */
+export type ChecklistState = NonNullable<
+  Awaited<ReturnType<typeof globalSettings>>['value']['checklist']
 >;
+
+/** Store uses initialState to ensure all items are present */
+export type StoreState = Required<Omit<ChecklistState, 'items'>> & {
+  items: NonNullable<Required<ChecklistState['items']>>;
+  loaded?: boolean;
+};
 
 export type ItemId = keyof StoreState['items'];
 export type ItemState = StoreState['items'][keyof StoreState['items']];

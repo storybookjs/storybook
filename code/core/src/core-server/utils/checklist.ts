@@ -4,9 +4,11 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { dequal as deepEqual } from 'dequal';
+import { toMerged } from 'es-toolkit/object';
 
 import { globalSettings } from '../../cli';
 import {
+  type ChecklistState,
   type StoreEvent,
   type StoreState,
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
@@ -26,10 +28,9 @@ export async function initializeChecklist() {
 
     const [[userState, saveUserState], [projectState, saveProjectState]] = await Promise.all([
       globalSettings().then((settings) => {
-        const checklist = settings.value.checklist;
         const state = {
-          items: checklist?.items ?? {},
-          widget: checklist?.widget ?? { disable: false },
+          items: settings.value.checklist?.items ?? {},
+          widget: settings.value.checklist?.widget ?? {},
         };
         const setState = ({
           items = state.items,
@@ -38,15 +39,16 @@ export async function initializeChecklist() {
           items?: typeof state.items;
           widget?: typeof state.widget;
         }) => {
-          settings.value.checklist = { items: items as StoreState['items'], widget };
+          settings.value.checklist = { items, widget };
           settings.save();
         };
         return [state, setState] as const;
       }),
 
-      cache.get<Pick<StoreState, 'items'>>('state').then((cachedState) => {
+      cache.get<Pick<ChecklistState, 'items'>>('state').then((cachedState) => {
         const state = { items: cachedState?.items ?? {} };
-        const setState = ({ items }: Pick<StoreState, 'items'>) => cache.set('state', { items });
+        const setState = ({ items }: Pick<ChecklistState, 'items'>) =>
+          cache.set('state', { items });
         return [state, setState] as const;
       }),
     ]);
@@ -54,10 +56,7 @@ export async function initializeChecklist() {
     store.setState(
       (value) =>
         ({
-          ...value,
-          ...userState,
-          ...projectState,
-          items: { ...value.items, ...userState.items, ...projectState.items },
+          ...toMerged(value, toMerged(userState, projectState)),
           loaded: true,
         }) satisfies StoreState
     );
@@ -66,18 +65,24 @@ export async function initializeChecklist() {
       // Split values into project-local (done) and user-local (accepted, skipped) persistence
       const projectValues: Partial<StoreState['items']> = {};
       const userValues: Partial<StoreState['items']> = {};
-      Object.entries(state.items).forEach(([id, item]) => {
-        if (item.status === 'done') {
-          projectValues[id as keyof StoreState['items']] = item;
-        } else if (item.status === 'accepted' || item.status === 'skipped') {
-          userValues[id as keyof StoreState['items']] = item;
+      Object.entries(state.items).forEach(([id, { status, mutedAt }]) => {
+        if (status === 'done') {
+          projectValues[id as keyof StoreState['items']] = { status };
+        } else if (status === 'accepted' || status === 'skipped') {
+          userValues[id as keyof StoreState['items']] = { status };
+        }
+        if (mutedAt) {
+          userValues[id as keyof StoreState['items']] = {
+            ...userValues[id as keyof StoreState['items']],
+            mutedAt,
+          };
         }
       });
       saveProjectState({ items: projectValues as StoreState['items'] });
       saveUserState({ items: userValues, widget: state.widget });
 
       const changedValues = Object.entries(state.items).filter(
-        ([key, value]) => value !== previousState.items[key as keyof typeof previousState.items]
+        ([key, value]) => value !== previousState.items[key as keyof typeof state.items]
       );
       telemetry('onboarding-checklist', {
         ...(changedValues.length > 0 ? { items: Object.fromEntries(changedValues) } : {}),

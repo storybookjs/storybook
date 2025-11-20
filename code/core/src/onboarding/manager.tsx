@@ -34,7 +34,7 @@ export default addons.register(ADDON_ID, async (api) => {
     const unsubscribe = checklistStore.onStateChange(({ loaded, items }) => {
       if (loaded) {
         unsubscribe();
-        resolve(items['onboarding-survey'].status === 'accepted');
+        resolve(items.onboardingSurvey.status === 'accepted');
       }
     });
   });

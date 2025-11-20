@@ -6,7 +6,6 @@ import { telemetry } from 'storybook/internal/telemetry';
 import { dequal as deepEqual } from 'dequal';
 
 import { globalSettings } from '../../cli';
-import type { ItemState } from '../../shared/checklist-store';
 import {
   type StoreEvent,
   type StoreState,
@@ -39,7 +38,7 @@ export async function initializeChecklist() {
           items?: typeof state.items;
           widget?: typeof state.widget;
         }) => {
-          settings.value.checklist = { items: items, widget };
+          settings.value.checklist = { items: items as StoreState['items'], widget };
           settings.save();
         };
         return [state, setState] as const;
@@ -65,20 +64,20 @@ export async function initializeChecklist() {
 
     store.onStateChange((state: StoreState, previousState: StoreState) => {
       // Split values into project-local (done) and user-local (accepted, skipped) persistence
-      const projectValues: Record<string, ItemState> = {};
-      const userValues: Record<string, ItemState> = {};
+      const projectValues: Partial<StoreState['items']> = {};
+      const userValues: Partial<StoreState['items']> = {};
       Object.entries(state.items).forEach(([id, item]) => {
         if (item.status === 'done') {
-          projectValues[id] = item;
+          projectValues[id as keyof StoreState['items']] = item;
         } else if (item.status === 'accepted' || item.status === 'skipped') {
-          userValues[id] = item;
+          userValues[id as keyof StoreState['items']] = item;
         }
       });
-      saveProjectState({ items: projectValues });
+      saveProjectState({ items: projectValues as StoreState['items'] });
       saveUserState({ items: userValues, widget: state.widget });
 
       const changedValues = Object.entries(state.items).filter(
-        ([key, value]) => value !== previousState.items[key]
+        ([key, value]) => value !== previousState.items[key as keyof typeof previousState.items]
       );
       telemetry('onboarding-checklist', {
         ...(changedValues.length > 0 ? { items: Object.fromEntries(changedValues) } : {}),

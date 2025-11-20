@@ -71,7 +71,7 @@ const useTransitionArray = <K, V>(
   }, [array, subset, toggle]);
 
   return Array.from(stateMap).map(
-    ([key, value]) => [array.find((item) => options.keyFn(item) === key)!, value] as const
+    ([key, value]) => [array.find((item) => keyFnRef.current(item) === key)!, value] as const
   );
 };
 

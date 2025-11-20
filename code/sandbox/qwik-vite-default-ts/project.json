@@ -17,7 +17,9 @@
         "outputPath": "qwik-vite-default-ts"
       }
     },
-    "chromatic": {}
+    "chromatic": {},
+    "serve": {},
+    "e2e-tests": {}
   },
   "tags": [
     "ci:daily"

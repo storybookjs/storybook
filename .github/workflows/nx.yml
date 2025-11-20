@@ -23,7 +23,7 @@ jobs:
       # Run this command as early as possible, before dependencies are installed
       # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
       # Uncomment this line to enable task distribution
-      - run: yarn dlx nx start-ci-run --distribute-on="15 linux-extra-large-plus-js" --stop-agents-after="build,check,test,pretty-docs,lint,publish,run-registry,sandbox,build-sandbox,chromatic"
+      - run: yarn dlx nx start-ci-run --distribute-on="15 linux-extra-large-plus-js" --stop-agents-after="build,check,test,pretty-docs,lint,publish,run-registry,sandbox,build-sandbox,e2e-tests"
 
       # Cache node_modules
       - uses: actions/setup-node@v4
@@ -36,9 +36,7 @@ jobs:
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: yarn nx-cloud record -- echo Hello World
-      - run: yarn nx run-many --parallel=1 -t build,check,test,pretty-docs,lint,publish,test -c production
-      - run: yarn nx run-many --parallel=1 -t sandbox,build-sandbox,chromatic -c production -p tag:ci:normal
-        if: always()
+      - run: yarn nx run-many --parallel=1 -t build,check,test,pretty-docs,lint,publish,test,sandbox,build-sandbox,e2e-tests -c production -p="$(nx show projects --type=lib | tr '\n' ','),tag:ci:normal"
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
       - run: yarn nx fix-ci
         if: always()

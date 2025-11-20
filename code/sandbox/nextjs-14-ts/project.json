@@ -18,7 +18,9 @@
         "outputPath": "nextjs-14-ts"
       }
     },
-    "chromatic": {}
+    "chromatic": {},
+    "serve": {},
+    "e2e-tests": {}
   },
   "tags": [
     "ci:daily"

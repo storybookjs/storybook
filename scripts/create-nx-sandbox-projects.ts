@@ -32,6 +32,8 @@ const projectJson = (name: string, framework: string, tags: string[]) => ({
       },
     },
     chromatic: {},
+    serve: {},
+    'e2e-tests': {},
   },
   tags,
 });

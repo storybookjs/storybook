@@ -17,7 +17,9 @@
         "outputPath": "solid-vite-default-js"
       }
     },
-    "chromatic": {}
+    "chromatic": {},
+    "serve": {},
+    "e2e-tests": {}
   },
   "tags": []
 }

@@ -61,7 +61,7 @@
     "publish": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo ''"
+        "command": "yarn workspace @storybook/scripts local-registry --publish"
       },
       "configurations": {
         "production": { "command": "yarn workspace @storybook/scripts local-registry --publish" }
@@ -82,7 +82,7 @@
     "run-registry": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo ''"
+        "command": "yarn workspace @storybook/scripts local-registry --open"
       },
       "dependsOn": ["publish"],
       "configurations": {
@@ -92,9 +92,7 @@
     },
     "sandbox": {
       "executor": "nx:run-commands",
-      "inputs": [
-        "^production"
-      ],
+      "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}"],
       "options": {
         "cwd": "{workspaceRoot}",
@@ -111,9 +109,7 @@
     },
     "build-sandbox": {
       "executor": "nx:run-commands",
-      "inputs": [
-        "^production"
-      ],
+      "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}/storybook-static"],
       "options": {
         "cwd": "{workspaceRoot}",
@@ -125,9 +121,7 @@
     },
     "chromatic": {
       "executor": "nx:run-commands",
-      "inputs": [
-        "^production"
-      ],
+      "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}/storybook-static"],
       "options": {
         "cwd": "{workspaceRoot}",
@@ -135,6 +129,28 @@
         "forwardAllArgs": false
       },
       "dependsOn": ["build-sandbox"],
+      "cache": true
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "inputs": ["^production"],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "yarn task serve -s serve --no-link --template={projectName}",
+        "forwardAllArgs": false
+      },
+      "continuous": true,
+      "dependsOn": ["build-sandbox"]
+    },
+    "e2e-tests": {
+      "executor": "nx:run-commands",
+      "inputs": ["^production"],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "yarn task e2e-tests -s e2e-tests --no-link --template={projectName}",
+        "forwardAllArgs": false
+      },
+      "dependsOn": ["serve"],
       "cache": true
     }
   },

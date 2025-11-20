@@ -18,7 +18,9 @@
         "outputPath": "react-vite-prerelease-ts"
       }
     },
-    "chromatic": {}
+    "chromatic": {},
+    "serve": {},
+    "e2e-tests": {}
   },
   "tags": [
     "ci:daily"

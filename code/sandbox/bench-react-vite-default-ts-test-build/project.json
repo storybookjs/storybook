@@ -18,7 +18,9 @@
         "outputPath": "bench-react-vite-default-ts-test-build"
       }
     },
-    "chromatic": {}
+    "chromatic": {},
+    "serve": {},
+    "e2e-tests": {}
   },
   "tags": [
     "ci:normal",

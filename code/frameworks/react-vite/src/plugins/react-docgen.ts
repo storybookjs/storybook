@@ -50,6 +50,7 @@ export async function reactDocgen({
   let matchPath: TsconfigPaths.MatchPath | undefined;
 
   if (tsconfig.resultType === 'success') {
+    logger.debug('Using tsconfig paths for react-docgen');
     matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
       'browser',
       'module',

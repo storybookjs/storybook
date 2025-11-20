@@ -3,6 +3,8 @@ import { experimental_UniversalStore } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
+import { dequal as deepEqual } from 'dequal';
+
 import { globalSettings } from '../../cli';
 import type { ItemState } from '../../shared/checklist-store';
 import {
@@ -10,21 +12,6 @@ import {
   type StoreState,
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
 } from '../../shared/checklist-store';
-
-const equals = <T>(a: T, b: T): boolean => {
-  if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every((value, index) => equals(value, b[index]));
-  }
-  if (a && b && typeof a === 'object' && typeof b === 'object') {
-    const aKeys = Object.keys(a);
-    const bKeys = Object.keys(b);
-    return (
-      aKeys.length === bKeys.length &&
-      aKeys.every((key) => equals(a[key as keyof T], b[key as keyof T]))
-    );
-  }
-  return a === b;
-};
 
 export async function initializeChecklist() {
   try {
@@ -95,7 +82,7 @@ export async function initializeChecklist() {
       );
       telemetry('onboarding-checklist', {
         ...(changedValues.length > 0 ? { items: Object.fromEntries(changedValues) } : {}),
-        ...(!equals(state.widget, previousState.widget) ? { widget: state.widget } : {}),
+        ...(!deepEqual(state.widget, previousState.widget) ? { widget: state.widget } : {}),
       });
     });
   } catch (err) {

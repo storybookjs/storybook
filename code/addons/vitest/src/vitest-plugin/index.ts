@@ -24,7 +24,7 @@ import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
-import { join, normalize, relative, resolve, sep } from 'pathe';
+import { dirname, join, normalize, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
@@ -229,6 +229,14 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);
 
+      const resolvedSetupFile = (() => {
+        try {
+          return fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/setup-file'));
+        } catch {
+          return undefined;
+        }
+      })();
+
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
@@ -337,6 +345,16 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             : {}),
           FEATURES: JSON.stringify(features),
         },
+
+        ...(resolvedSetupFile
+          ? {
+              server: {
+                fs: {
+                  allow: [dirname(resolvedSetupFile)],
+                },
+              },
+            }
+          : {}),
       };
 
       // Merge config from storybook with the plugin config

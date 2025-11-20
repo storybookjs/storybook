@@ -5,6 +5,7 @@ import { AngularJSON, ProjectType, copyTemplate } from 'storybook/internal/cli';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
+import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
@@ -85,11 +86,39 @@ export default defineGeneratorModule({
       copyTemplate(templateDir, root || undefined);
     }
 
+    const toDevkitVersion = (ngRange?: string | null) => {
+      if (!ngRange) {
+        return undefined;
+      }
+      const min = semver.minVersion(ngRange);
+
+      if (!min) {
+        return undefined;
+      }
+      const pre = min.prerelease && min.prerelease.length > 0 ? `-${min.prerelease.join('.')}` : '';
+      // devkit follows 0.<major*100 + minor>.<patch>
+      const devkitMinor = min.major * 100 + min.minor;
+      const versionCore = `0.${devkitMinor}.${min.patch}${pre}`;
+      const hasCaret = ngRange.trim().startsWith('^');
+      return hasCaret ? `^${versionCore}` : versionCore;
+    };
+
+    const devkitVersion = toDevkitVersion(angularVersion);
+
+    const extraAngularDeps = [
+      angularVersion
+        ? `@angular-devkit/build-angular@${angularVersion}`
+        : '@angular-devkit/build-angular',
+      devkitVersion ? `@angular-devkit/architect@${devkitVersion}` : '@angular-devkit/architect',
+      angularVersion ? `@angular-devkit/core@${angularVersion}` : '@angular-devkit/core',
+      angularVersion
+        ? `@angular/platform-browser-dynamic@${angularVersion}`
+        : '@angular/platform-browser-dynamic',
+    ];
+
     return {
       extraPackages: [
-        angularVersion
-          ? `@angular-devkit/build-angular@${angularVersion}`
-          : '@angular-devkit/build-angular',
+        ...extraAngularDeps,
         ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
       ],
       addScripts: false, // Handled above based on project count

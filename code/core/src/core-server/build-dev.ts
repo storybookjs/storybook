@@ -12,7 +12,7 @@ import {
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';
-import { deprecate, logger } from 'storybook/internal/node-logger';
+import { deprecate, logger, prompt } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
@@ -20,7 +20,6 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
-import prompts from 'prompts';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
@@ -68,11 +67,12 @@ export async function buildDevStandalone(
   ]);
 
   if (!options.ci && !options.smokeTest && options.port != null && port !== options.port) {
-    const { shouldChangePort } = await prompts({
-      type: 'confirm',
-      initial: true,
-      name: 'shouldChangePort',
-      message: `Port ${options.port} is not available. Would you like to run Storybook on port ${port} instead?`,
+    const shouldChangePort = await prompt.confirm({
+      message: dedent`
+        Port ${options.port} is not available. 
+        Would you like to run Storybook on port ${port} instead?
+      `,
+      initialValue: true,
     });
     if (!shouldChangePort) {
       process.exit(1);

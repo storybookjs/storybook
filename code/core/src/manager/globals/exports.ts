@@ -649,5 +649,13 @@ export default {
     'stringifyQuery',
     'useNavigate',
   ],
-  'storybook/internal/types': ['Addon_TypesEnum'],
+  'storybook/internal/types': [
+    'Addon_TypesEnum',
+    'CoreWebpackCompiler',
+    'Feature',
+    'SupportedBuilder',
+    'SupportedFramework',
+    'SupportedLanguage',
+    'SupportedRenderer',
+  ],
 } as const;

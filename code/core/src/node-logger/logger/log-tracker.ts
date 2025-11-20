@@ -3,7 +3,6 @@ import path, { join } from 'node:path';
 
 import { isCI } from 'storybook/internal/common';
 
-import { cleanLog } from '../../../../lib/cli-storybook/src/automigrate/helpers/cleanLog';
 import type { LogLevel } from './logger';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,6 +15,7 @@ export interface LogEntry {
 }
 
 const DEBUG_LOG_FILE_NAME = 'debug-storybook.log';
+const DEFAULT_LOG_FILE_PATH = join(process.cwd(), DEBUG_LOG_FILE_NAME);
 
 /**
  * Tracks and manages logs for Storybook CLI operations. Provides functionality to collect, store
@@ -24,18 +24,12 @@ const DEBUG_LOG_FILE_NAME = 'debug-storybook.log';
 class LogTracker {
   /** Array to store log entries */
   #logs: LogEntry[] = [];
-  /** Path where log file will be written */
-  #logFilePath = '';
   /**
    * Flag indicating if logs should be written to file it is enabled either by users providing the
-   * `--write-logs` flag to a CLI command or when we explicitly enable it by calling
+   * `--logfile` flag to a CLI command or when we explicitly enable it by calling
    * `logTracker.enableLogWriting()` e.g. in automigrate or doctor command when there are issues
    */
   #shouldWriteLogsToFile = false;
-
-  constructor() {
-    this.#logFilePath = join(process.cwd(), DEBUG_LOG_FILE_NAME);
-  }
 
   /** Enables writing logs to file. */
   enableLogWriting(): void {
@@ -45,11 +39,6 @@ class LogTracker {
   /** Returns whether logs should be written to file. */
   get shouldWriteLogsToFile(): boolean {
     return this.#shouldWriteLogsToFile;
-  }
-
-  /** Returns the configured log file path. */
-  get logFilePath(): string {
-    return this.#logFilePath;
   }
 
   /** Returns a copy of all stored logs. */
@@ -68,7 +57,7 @@ class LogTracker {
     this.#logs.push({
       timestamp: new Date(),
       level,
-      message: cleanLog(message),
+      message,
       metadata,
     });
   }
@@ -85,7 +74,9 @@ class LogTracker {
    * @returns The path where logs were written, by default is debug-storybook.log in current working
    *   directory
    */
-  async writeToFile(filePath: string = this.#logFilePath): Promise<string> {
+  async writeToFile(filePath: string | boolean | undefined): Promise<string> {
+    const logFilePath = typeof filePath === 'string' ? filePath : DEFAULT_LOG_FILE_PATH;
+
     const logContent = this.#logs
       .map((log) => {
         const timestamp =
@@ -96,10 +87,10 @@ class LogTracker {
       })
       .join('\n');
 
-    await fs.writeFile(filePath, logContent, 'utf-8');
+    await fs.writeFile(logFilePath, logContent, 'utf-8');
     this.#logs = [];
 
-    return isCI() ? filePath : path.relative(process.cwd(), filePath);
+    return isCI() ? logFilePath : path.relative(process.cwd(), logFilePath);
   }
 }
 

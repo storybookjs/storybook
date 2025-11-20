@@ -43,7 +43,7 @@ export function npmAuth(opts: AuthOptions & { outputDir?: string }): Promise<voi
           base += '/';
         }
         writeFileSync(path, `registry=${registry}\n${base}:_authToken=${res.token}`);
-        // eslint-disable-next-line no-console
+
         console.log('Done');
         resolve();
       }

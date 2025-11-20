@@ -467,18 +467,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   );
 
   const shouldUseCsf4 = template.expected.framework === '@storybook/react-vite';
-  if (shouldUseCsf4) {
-    await writeFile(
-      setupFilePath,
-      dedent`import { beforeAll } from 'vitest'
-      import { setProjectAnnotations } from '${storybookPackage}'
-      import projectAnnotations from './preview'
-
-      // setProjectAnnotations still kept to support non-CSF4 story tests
-      setProjectAnnotations(projectAnnotations.composed)
-      `
-    );
-  } else {
+  if (!shouldUseCsf4) {
     await writeFile(
       setupFilePath,
       dedent`import { beforeAll } from 'vitest'

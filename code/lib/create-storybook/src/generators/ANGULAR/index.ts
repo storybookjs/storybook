@@ -5,6 +5,7 @@ import { AngularJSON, ProjectType, copyTemplate } from 'storybook/internal/cli';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
+import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
@@ -85,11 +86,20 @@ export default defineGeneratorModule({
       copyTemplate(templateDir, root || undefined);
     }
 
+    const extraAngularDeps = [
+      angularVersion
+        ? `@angular-devkit/build-angular@${angularVersion}`
+        : '@angular-devkit/build-angular',
+      angularVersion ? `@angular-devkit/architect@${angularVersion}` : '@angular-devkit/architect',
+      angularVersion ? `@angular-devkit/core@${angularVersion}` : '@angular-devkit/core',
+      angularVersion
+        ? `@angular/platform-browser-dynamic@${angularVersion}`
+        : '@angular/platform-browser-dynamic',
+    ];
+
     return {
       extraPackages: [
-        angularVersion
-          ? `@angular-devkit/build-angular@${angularVersion}`
-          : '@angular-devkit/build-angular',
+        ...extraAngularDeps,
         ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
       ],
       addScripts: false, // Handled above based on project count

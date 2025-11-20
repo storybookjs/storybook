@@ -57,7 +57,7 @@ test.describe('module-mocking', () => {
   test('should assert that utils import is mocked', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.navigateToStory('core/module-mocking', 'basic');
+    await sbPage.navigateToStory('core/moduleMocking', 'basic');
 
     await sbPage.viewAddonPanel('Actions');
     const logItem = sbPage.panelContent().filter({

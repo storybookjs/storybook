@@ -353,15 +353,28 @@ function updateStoriesField(mainConfig: ConfigFile, isJs: boolean) {
 }
 
 // Add a stories field entry for the passed symlink
-function addStoriesEntry(mainConfig: ConfigFile, path: string, disableDocs: boolean) {
+function addStoriesEntry(
+  mainConfig: ConfigFile,
+  path: string,
+  disableDocs: boolean,
+  skipMocking: boolean
+) {
   const stories = mainConfig.getFieldValue(['stories']) as string[];
+
+  const basePattern = disableDocs
+    ? '**/*.stories.@(js|jsx|mjs|ts|tsx)'
+    : '**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))';
+
+  // When skipMocking is true and we're linking core template stories, exclude any stories
+  // with "mocking" in their file name (not related to docs filtering).
+  console.log('skipMocking', skipMocking, path);
+  const files =
+    skipMocking && path === 'core' ? basePattern.replace('**/*', '**/!(*Mocking)*') : basePattern;
 
   const entry = {
     directory: slash(join('../template-stories', path)),
     titlePrefix: slash(path),
-    files: disableDocs
-      ? '**/*.stories.@(js|jsx|mjs|ts|tsx)'
-      : '**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))',
+    files,
   };
 
   mainConfig.setFieldValue(['stories'], [...stories, entry]);
@@ -379,7 +392,14 @@ async function linkPackageStories(
     cwd,
     linkInDir,
     disableDocs,
-  }: { mainConfig: ConfigFile; cwd: string; linkInDir?: string; disableDocs: boolean },
+    skipMocking,
+  }: {
+    mainConfig: ConfigFile;
+    cwd: string;
+    linkInDir?: string;
+    disableDocs: boolean;
+    skipMocking: boolean;
+  },
   variant?: string
 ) {
   const storiesFolderName = variant ? getStoriesFolderWithVariant(variant) : 'stories';
@@ -397,7 +417,7 @@ async function linkPackageStories(
   await ensureSymlinkOrCopy(source, target);
 
   if (!linkInDir) {
-    addStoriesEntry(mainConfig, packageDir, disableDocs);
+    addStoriesEntry(mainConfig, packageDir, disableDocs, skipMocking);
   }
 
   // Add `previewAnnotation` entries of the form
@@ -591,6 +611,7 @@ export const addStories: Task['run'] = async (
   { addon: extraAddons, disableDocs }
 ) => {
   logger.log('💃 Adding stories');
+  const skipMocking = template.modifications?.skipMocking;
   const cwd = sandboxDir;
   const storiesPath =
     (await findFirstPath([join('src', 'stories'), 'stories'], { cwd })) || 'stories';
@@ -629,6 +650,7 @@ export const addStories: Task['run'] = async (
       cwd,
       linkInDir: resolve(cwd, storiesPath),
       disableDocs,
+      skipMocking,
     });
 
     if (
@@ -643,6 +665,7 @@ export const addStories: Task['run'] = async (
           cwd,
           linkInDir: resolve(cwd, storiesPath),
           disableDocs,
+          skipMocking,
         },
         sandboxSpecificStoriesFolder
       );
@@ -661,6 +684,7 @@ export const addStories: Task['run'] = async (
         cwd,
         linkInDir: resolve(cwd, storiesPath),
         disableDocs,
+        skipMocking,
       });
     }
 
@@ -676,6 +700,7 @@ export const addStories: Task['run'] = async (
           cwd,
           linkInDir: resolve(cwd, storiesPath),
           disableDocs,
+          skipMocking,
         },
         sandboxSpecificStoriesFolder
       );
@@ -689,12 +714,14 @@ export const addStories: Task['run'] = async (
       mainConfig,
       cwd,
       disableDocs,
+      skipMocking,
     });
 
     await linkPackageStories(await workspacePath('addon test package', '@storybook/addon-vitest'), {
       mainConfig,
       cwd,
       disableDocs,
+      skipMocking,
     });
   }
 
@@ -741,7 +768,7 @@ export const addStories: Task['run'] = async (
   if (isCoreRenderer) {
     const existingStories = await filterExistsInCodeDir(addonDirs, join('template', 'stories'));
     for (const packageDir of existingStories) {
-      await linkPackageStories(packageDir, { mainConfig, cwd, disableDocs });
+      await linkPackageStories(packageDir, { mainConfig, cwd, disableDocs, skipMocking });
     }
 
     // Add some extra settings (see above for what these do)

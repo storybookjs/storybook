@@ -40,8 +40,7 @@
 		"valibot": "catalog:"
 	},
 	"devDependencies": {
-		"storybook": "catalog:",
-		"ts-dedent": "^2.2.0"
+		"storybook": "catalog:"
 	},
 	"peerDependencies": {
 		"storybook": "^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0"

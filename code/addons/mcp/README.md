@@ -50,6 +50,7 @@ export default {
 					dev: true, // Tools for story URL retrieval and UI building instructions (default: true)
 					docs: true, // Tools for component manifest and documentation (default: true, requires experimental feature)
 				},
+				experimentalFormat: 'markdown', // Output format: 'markdown' (default) or 'xml'
 			},
 		},
 	],

@@ -178,7 +178,7 @@ describe('bin.ts stdio MCP server', () => {
 				content: [
 					{
 						type: 'text',
-						text: expect.stringContaining('<components>'),
+						text: expect.stringContaining('# Components'),
 					},
 				],
 			},

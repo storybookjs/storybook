@@ -58,11 +58,12 @@ export async function addGetComponentDocumentationTool(
 					foundComponent: component,
 				});
 
+				const format = server.ctx.custom?.format ?? 'markdown';
 				return {
 					content: [
 						{
 							type: 'text' as const,
-							text: formatComponentManifest(component),
+							text: formatComponentManifest(component, format),
 						},
 					],
 				};

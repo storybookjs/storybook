@@ -111,7 +111,7 @@ describe('createStorybookMcpHandler', () => {
 		expect(result.content).toHaveLength(1);
 		expect((result.content as any)[0]).toMatchObject({
 			type: 'text',
-			text: expect.stringContaining('<component>'),
+			text: expect.stringContaining('# Components'),
 		});
 	});
 

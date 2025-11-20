@@ -12,6 +12,8 @@ export const experimental_devServer: PresetProperty<
 	// ValiError: Invalid type: Expected boolean but received "false"
 	const addonOptions = v.parse(AddonOptions, {
 		toolsets: 'toolsets' in options ? options.toolsets : {},
+		experimentalFormat:
+			'experimentalFormat' in options ? options.experimentalFormat : 'markdown',
 	});
 
 	app!.post('/mcp', (req, res) =>

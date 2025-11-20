@@ -70,29 +70,11 @@ describe('listAllComponentsTool', () => {
 			{
 			  "content": [
 			    {
-			      "text": "<components>
-			<component>
-			<id>button</id>
-			<name>Button</name>
-			<summary>
-			A simple button component
-			</summary>
-			</component>
-			<component>
-			<id>card</id>
-			<name>Card</name>
-			<summary>
-			A container component for grouping related content.
-			</summary>
-			</component>
-			<component>
-			<id>input</id>
-			<name>Input</name>
-			<summary>
-			A text input component with validation support.
-			</summary>
-			</component>
-			</components>",
+			      "text": "# Components
+
+			- Button (button): A simple button component
+			- Card (card): A container component for grouping related content.
+			- Input (input): A text input component with validation support.",
 			      "type": "text",
 			    },
 			  ],
@@ -194,5 +176,55 @@ describe('listAllComponentsTool', () => {
 			}),
 			manifest: smallManifestFixture,
 		});
+	});
+
+	it('should format components as XML when format is "xml"', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: LIST_TOOL_NAME,
+				arguments: {},
+			},
+		};
+
+		const mockHttpRequest = new Request('https://example.com/mcp');
+		const response = await server.receive(request, {
+			custom: { request: mockHttpRequest, format: 'xml' as const },
+		});
+
+		expect(response.result).toMatchInlineSnapshot(`
+			{
+			  "content": [
+			    {
+			      "text": "<components>
+			<component>
+			<id>button</id>
+			<name>Button</name>
+			<summary>
+			A simple button component
+			</summary>
+			</component>
+			<component>
+			<id>card</id>
+			<name>Card</name>
+			<summary>
+			A container component for grouping related content.
+			</summary>
+			</component>
+			<component>
+			<id>input</id>
+			<name>Input</name>
+			<summary>
+			A text input component with validation support.
+			</summary>
+			</component>
+			</components>",
+			      "type": "text",
+			    },
+			  ],
+			}
+		`);
 	});
 });

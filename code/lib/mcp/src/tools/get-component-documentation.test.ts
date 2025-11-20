@@ -72,19 +72,19 @@ describe('getComponentDocumentationTool', () => {
 			{
 			  "content": [
 			    {
-			      "text": "<component>
-			<id>button</id>
-			<name>Button</name>
-			<story>
-			<story_name>Primary</story_name>
-			<story_description>
+			      "text": "# Button
+
+			ID: button
+
+			## Stories
+
+			### Primary
+
 			The primary button variant.
-			</story_description>
-			<story_code>
+
+			\`\`\`
 			const Primary = () => <Button variant="primary">Click Me</Button>
-			</story_code>
-			</story>
-			</component>",
+			\`\`\`",
 			      "type": "text",
 			    },
 			  ],
@@ -255,31 +255,67 @@ describe('getComponentDocumentationTool', () => {
 			{
 			  "content": [
 			    {
+			      "text": "# Button
+
+			ID: button
+
+			A button component
+
+			## Props
+
+			\`\`\`
+			export type Props = {
+			  /**
+			    Button style variant
+			  */
+			  variant?: "primary" | "secondary" = "primary";
+			  /**
+			    Disable the button
+			  */
+			  disabled?: boolean;
+			}
+			\`\`\`",
+			      "type": "text",
+			    },
+			  ],
+			}
+		`);
+	});
+
+	it('should format component as XML when format is "xml"', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: GET_TOOL_NAME,
+				arguments: {
+					componentId: 'button',
+				},
+			},
+		};
+
+		const mockHttpRequest = new Request('https://example.com/mcp');
+		const response = await server.receive(request, {
+			custom: { request: mockHttpRequest, format: 'xml' as const },
+		});
+
+		expect(response.result).toMatchInlineSnapshot(`
+			{
+			  "content": [
+			    {
 			      "text": "<component>
 			<id>button</id>
 			<name>Button</name>
-			<description>
-			A button component
-			</description>
-			<props>
-			<prop>
-			<prop_name>variant</prop_name>
-			<prop_description>
-			Button style variant
-			</prop_description>
-			<prop_type>"primary" | "secondary"</prop_type>
-			<prop_required>false</prop_required>
-			<prop_default>"primary"</prop_default>
-			</prop>
-			<prop>
-			<prop_name>disabled</prop_name>
-			<prop_description>
-			Disable the button
-			</prop_description>
-			<prop_type>boolean</prop_type>
-			<prop_required>false</prop_required>
-			</prop>
-			</props>
+			<story>
+			<story_name>Primary</story_name>
+			<story_description>
+			The primary button variant.
+			</story_description>
+			<story_code>
+			const Primary = () => <Button variant="primary">Click Me</Button>
+			</story_code>
+			</story>
 			</component>",
 			      "type": "text",
 			    },

@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`formatComponentManifest > formats all full fixtures 1`] = `
+exports[`XmlFormatter - formatComponentManifest > formats all full fixtures 1`] = `
 "<component>
 <id>button</id>
 <name>Button</name>
@@ -154,7 +154,7 @@ The content of the button
 </component>"
 `;
 
-exports[`formatComponentManifest > formats all full fixtures 2`] = `
+exports[`XmlFormatter - formatComponentManifest > formats all full fixtures 2`] = `
 "<component>
 <id>card</id>
 <name>Card</name>
@@ -360,7 +360,7 @@ Callback function when the card is clicked (requires clickable=true)
 </component>"
 `;
 
-exports[`formatComponentManifest > formats all full fixtures 3`] = `
+exports[`XmlFormatter - formatComponentManifest > formats all full fixtures 3`] = `
 "<component>
 <id>input</id>
 <name>Input</name>
@@ -533,7 +533,7 @@ Callback function when the input value changes
 </component>"
 `;
 
-exports[`formatComponentManifestMapToList > formats the full manifest fixture 1`] = `
+exports[`XmlFormatter - formatComponentManifestMapToList > formats the full manifest fixture 1`] = `
 "<components>
 <component>
 <id>button</id>

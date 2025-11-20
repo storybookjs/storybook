@@ -321,30 +321,12 @@ describe('MCP Endpoint E2E Tests', () => {
 				{
 				  "content": [
 				    {
-				      "text": "<components>
-				<component>
-				<id>example-button</id>
-				<name>Button</name>
-				<summary>
-				A customizable button component for user interactions.
-				</summary>
-				</component>
-				<component>
-				<id>header</id>
-				<name>Header</name>
-				</component>
-				<component>
-				<id>page</id>
-				<name>Page</name>
-				</component>
-				<component>
-				<id>other-ui-card</id>
-				<name>Card</name>
-				<summary>
-				Card component with title, image, content, and action button
-				</summary>
-				</component>
-				</components>",
+				      "text": "# Components
+
+				- Button (example-button): A customizable button component for user interactions.
+				- Header (header)
+				- Page (page)
+				- Card (other-ui-card): Card component with title, image, content, and action button",
 				      "type": "text",
 				    },
 				  ],
@@ -362,9 +344,9 @@ describe('MCP Endpoint E2E Tests', () => {
 			});
 
 			const listText = listResponse.result.content[0].text;
-			const idMatch = listText.match(/<id>([^<]+)<\/id>/);
+			// Match markdown format: - ComponentName (component-id)
+			const idMatch = listText.match(/- \w+ \(([^)]+)\)/);
 			expect(idMatch).toBeTruthy();
-
 			const componentId = idMatch![1];
 
 			// Now get documentation for that component
@@ -379,89 +361,72 @@ describe('MCP Endpoint E2E Tests', () => {
 				{
 				  "content": [
 				    {
-				      "text": "<component>
-				<id>example-button</id>
-				<name>Button</name>
-				<description>
+				      "text": "# Button
+
+				ID: example-button
+
 				Primary UI component for user interaction
-				</description>
-				<story>
-				<story_name>Primary</story_name>
-				<story_code>
+
+				## Stories
+
+				### Primary
+
+				\`\`\`
 				import { Button } from "@my-org/my-component-library";
 
 				const Primary = () => <Button onClick={fn()} primary label="Button"></Button>;
-				</story_code>
-				</story>
-				<story>
-				<story_name>Secondary</story_name>
-				<story_code>
+				\`\`\`
+
+				### Secondary
+
+				\`\`\`
 				import { Button } from "@my-org/my-component-library";
 
 				const Secondary = () => <Button onClick={fn()} label="Button"></Button>;
-				</story_code>
-				</story>
-				<story>
-				<story_name>Large</story_name>
-				<story_code>
+				\`\`\`
+
+				### Large
+
+				\`\`\`
 				import { Button } from "@my-org/my-component-library";
 
 				const Large = () => <Button onClick={fn()} size="large" label="Button"></Button>;
-				</story_code>
-				</story>
-				<story>
-				<story_name>Small</story_name>
-				<story_code>
+				\`\`\`
+
+				### Small
+
+				\`\`\`
 				import { Button } from "@my-org/my-component-library";
 
 				const Small = () => <Button onClick={fn()} size="small" label="Button"></Button>;
-				</story_code>
-				</story>
-				<props>
-				<prop>
-				<prop_name>primary</prop_name>
-				<prop_description>
-				Is this the principal call to action on the page?
-				</prop_description>
-				<prop_type>boolean</prop_type>
-				<prop_required>false</prop_required>
-				<prop_default>false</prop_default>
-				</prop>
-				<prop>
-				<prop_name>backgroundColor</prop_name>
-				<prop_description>
-				What background color to use
-				</prop_description>
-				<prop_type>string</prop_type>
-				<prop_required>false</prop_required>
-				</prop>
-				<prop>
-				<prop_name>size</prop_name>
-				<prop_description>
-				How large should the button be?
-				</prop_description>
-				<prop_type>'small' | 'medium' | 'large'</prop_type>
-				<prop_required>false</prop_required>
-				<prop_default>'medium'</prop_default>
-				</prop>
-				<prop>
-				<prop_name>label</prop_name>
-				<prop_description>
-				Button contents
-				</prop_description>
-				<prop_type>string</prop_type>
-				<prop_required>true</prop_required>
-				</prop>
-				<prop>
-				<prop_name>onClick</prop_name>
-				<prop_description>
-				Optional click handler
-				</prop_description>
-				<prop_type>() => void</prop_type>
-				<prop_required>false</prop_required>
-				</prop>
-				</props>
-				</component>",
+				\`\`\`
+
+				## Props
+
+				\`\`\`
+				export type Props = {
+				  /**
+				    Is this the principal call to action on the page?
+				  */
+				  primary?: boolean = false;
+				  /**
+				    What background color to use
+				  */
+				  backgroundColor?: string;
+				  /**
+				    How large should the button be?
+				  */
+				  size?: 'small' | 'medium' | 'large' = 'medium';
+				  /**
+				    Button contents
+				  */
+				  label: string;
+				  /**
+				    Optional click handler
+				  */
+				  onClick?: () => void;
+				}
+				\`\`\`",
 				      "type": "text",
 				    },
 				  ],

@@ -2,7 +2,6 @@ import fs from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { throttle } from 'es-toolkit/function';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
@@ -106,7 +105,7 @@ export class Settings {
   }
 
   /** Save settings to the file */
-  save = throttle(async (): Promise<void> => {
+  async save(): Promise<void> {
     invariant(this.filePath, 'No file path to save settings to');
     try {
       await fs.mkdir(dirname(this.filePath), { recursive: true });
@@ -116,5 +115,5 @@ export class Settings {
         Unable to save global settings file to ${this.filePath}
         ${err && `Reason: ${(err as Error).message ?? err}`}`);
     }
-  }, 1000);
+  }
 }

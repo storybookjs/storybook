@@ -48,6 +48,11 @@ export interface SubAPI {
   /**
    * Returns the URL of the Storybook documentation for the current version.
    *
+   * @param options - The options for the documentation URL.
+   * @param options.asset - Links to the docs-assets directory instead of docs.
+   * @param options.subpath - The subpath of the documentation URL.
+   * @param options.versioned - Whether to include the versioned path.
+   * @param options.renderer - Whether to include the renderer path.
    * @returns {string} The URL of the Storybook Manager documentation.
    */
   getDocsUrl: (options: {

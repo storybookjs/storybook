@@ -3,28 +3,14 @@ import { experimental_UniversalStore } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
+import { dequal as deepEqual } from 'dequal';
+
 import { globalSettings } from '../../cli';
-import type { ItemState } from '../../shared/checklist-store';
 import {
   type StoreEvent,
   type StoreState,
   UNIVERSAL_CHECKLIST_STORE_OPTIONS,
 } from '../../shared/checklist-store';
-
-const equals = <T>(a: T, b: T): boolean => {
-  if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every((value, index) => equals(value, b[index]));
-  }
-  if (a && b && typeof a === 'object' && typeof b === 'object') {
-    const aKeys = Object.keys(a);
-    const bKeys = Object.keys(b);
-    return (
-      aKeys.length === bKeys.length &&
-      aKeys.every((key) => equals(a[key as keyof T], b[key as keyof T]))
-    );
-  }
-  return a === b;
-};
 
 export async function initializeChecklist() {
   try {
@@ -42,60 +28,60 @@ export async function initializeChecklist() {
       globalSettings().then((settings) => {
         const checklist = settings.value.checklist;
         const state = {
-          values: checklist?.values ?? {},
+          items: checklist?.items ?? {},
           widget: checklist?.widget ?? { disable: false },
         };
         const setState = ({
-          values = state.values,
+          items = state.items,
           widget = state.widget,
         }: {
-          values?: typeof state.values;
+          items?: typeof state.items;
           widget?: typeof state.widget;
         }) => {
-          settings.value.checklist = { values, widget };
+          settings.value.checklist = { items: items as StoreState['items'], widget };
           settings.save();
         };
         return [state, setState] as const;
       }),
 
-      cache.get<Pick<StoreState, 'values'>>('state').then((cachedState) => {
-        const state = { values: cachedState?.values ?? {} };
-        const setState = ({ values }: Pick<StoreState, 'values'>) => cache.set('state', { values });
+      cache.get<Pick<StoreState, 'items'>>('state').then((cachedState) => {
+        const state = { items: cachedState?.items ?? {} };
+        const setState = ({ items }: Pick<StoreState, 'items'>) => cache.set('state', { items });
         return [state, setState] as const;
       }),
     ]);
 
-    store.setState((value) => ({
-      ...value,
-      muted:
-        userState.widget.disable === true ||
-        Object.entries(userState.values)
-          .filter(([_, value]) => value.mutedAt)
-          .map(([id]) => id),
-      values: { ...userState.values, ...projectState.values },
-      loaded: true,
-    }));
+    store.setState(
+      (value) =>
+        ({
+          ...value,
+          ...userState,
+          ...projectState,
+          items: { ...value.items, ...userState.items, ...projectState.items },
+          loaded: true,
+        }) satisfies StoreState
+    );
 
     store.onStateChange((state: StoreState, previousState: StoreState) => {
       // Split values into project-local (done) and user-local (accepted, skipped) persistence
-      const projectValues: Record<string, ItemState> = {};
-      const userValues: Record<string, ItemState> = {};
-      Object.entries(state.values).forEach(([id, value]) => {
-        if (value.status === 'done') {
-          projectValues[id] = value;
-        } else if (value.status === 'accepted' || value.status === 'skipped') {
-          userValues[id] = value;
+      const projectValues: Partial<StoreState['items']> = {};
+      const userValues: Partial<StoreState['items']> = {};
+      Object.entries(state.items).forEach(([id, item]) => {
+        if (item.status === 'done') {
+          projectValues[id as keyof StoreState['items']] = item;
+        } else if (item.status === 'accepted' || item.status === 'skipped') {
+          userValues[id as keyof StoreState['items']] = item;
         }
       });
-      saveProjectState({ values: projectValues });
-      saveUserState({ values: userValues, widget: state.widget });
+      saveProjectState({ items: projectValues as StoreState['items'] });
+      saveUserState({ items: userValues, widget: state.widget });
 
-      const changedValues = Object.entries(state.values).filter(
-        ([key, value]) => value !== previousState.values[key]
+      const changedValues = Object.entries(state.items).filter(
+        ([key, value]) => value !== previousState.items[key as keyof typeof previousState.items]
       );
       telemetry('onboarding-checklist', {
-        ...(changedValues.length > 0 ? { values: Object.fromEntries(changedValues) } : {}),
-        ...(!equals(state.widget, previousState.widget) ? { widget: state.widget } : {}),
+        ...(changedValues.length > 0 ? { items: Object.fromEntries(changedValues) } : {}),
+        ...(!deepEqual(state.widget, previousState.widget) ? { widget: state.widget } : {}),
       });
     });
   } catch (err) {

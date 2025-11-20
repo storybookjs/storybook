@@ -4,6 +4,7 @@ import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview';
+import { initialState } from '../../shared/checklist-store/checklistData.state';
 import { internal_universalChecklistStore as mockStore } from '../manager-stores.mock';
 import { GuidePage } from './GuidePage';
 
@@ -36,7 +37,8 @@ const meta = preview.meta({
     mockStore.setState({
       loaded: true,
       widget: {},
-      values: {
+      items: {
+        ...initialState.items,
         controls: { status: 'accepted' },
         'render-component': { status: 'done' },
         viewports: { status: 'skipped' },

@@ -6,6 +6,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 
+import { initialState } from '../../shared/checklist-store/checklistData.state';
 import { internal_universalChecklistStore as mockStore } from '../manager-stores.mock';
 import { Shortcut } from './Menu';
 
@@ -30,7 +31,8 @@ export default {
     mockStore.setState({
       loaded: true,
       widget: {},
-      values: {
+      items: {
+        ...initialState.items,
         controls: { status: 'accepted' },
         'render-component': { status: 'done' },
         viewports: { status: 'skipped' },

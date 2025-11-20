@@ -5,7 +5,7 @@ export const initialState = {
   widget: {
     disable: false,
   },
-  values: {
+  items: {
     'guided-tour': {
       status: 'open',
       mutedAt: undefined,

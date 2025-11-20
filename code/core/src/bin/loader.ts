@@ -38,10 +38,7 @@ export function resolveWithExtension(importPath: string, currentFilePath: string
   }
 
   deprecate(dedent`One or more extensionless imports detected: "${importPath}" in file "${currentFilePath}".
-    For maximum compatibility, you should add an explicit file extension to this import.
-    Storybook will attempt to resolve it automatically, but this may change in the future.
-    If adding the extension results in an error from TypeScript, we recommend setting moduleResolution to "bundler" in tsconfig.json
-    or alternatively look into the allowImportingTsExtensions option.`);
+    For maximum compatibility, you should add an explicit file extension to this import. Storybook will attempt to resolve it automatically, but this may change in the future. If adding the extension results in an error from TypeScript, we recommend setting moduleResolution to "bundler" in tsconfig.json or alternatively look into the allowImportingTsExtensions option.`);
 
   // Resolve the import path relative to the current file
   const currentDir = path.dirname(currentFilePath);

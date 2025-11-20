@@ -31,18 +31,10 @@ async function runStoriesCodemod(options: {
       });
     }
 
-    logger.log('\n🛠️  Applying codemod on your stories, this might take some time...');
+    logger.step('Applying codemod on your stories, this might take some time...');
 
-    // TODO: Move the csf-2-to-3 codemod into automigrations
-    await packageManager.executeCommand({
-      command: packageManager.getRemoteRunCommand('storybook', [
-        'migrate',
-        'csf-2-to-3',
-        `--glob='${globString}'`,
-      ]),
-      args: [],
-      stdio: 'ignore',
-      ignoreError: true,
+    await packageManager.runPackageCommand({
+      args: ['storybook', 'migrate', 'csf-2-to-3', `--glob="${globString}"`],
     });
 
     await runCodemod(globString, (info) => storyToCsfFactory(info, codemodOptions), {
@@ -88,8 +80,8 @@ export const csfFactories: CommandFix = {
     const { packageJson } = packageManager.primaryPackageJson;
 
     if (useSubPathImports && !packageJson.imports?.['#*']) {
-      logger.log(
-        `🗺️ Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
+      logger.step(
+        `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
       );
       packageJson.imports = {
         ...packageJson.imports,
@@ -106,14 +98,14 @@ export const csfFactories: CommandFix = {
       previewConfigPath: previewConfigPath!,
     });
 
-    logger.log('\n🛠️  Applying codemod on your main config...');
+    logger.step('Applying codemod on your main config...');
     const frameworkPackage =
       getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
     await runCodemod(mainConfigPath, (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage }, { dryRun })
     );
 
-    logger.log('\n🛠️  Applying codemod on your preview config...');
+    logger.step('Applying codemod on your preview config...');
     await runCodemod(previewConfigPath, (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage }, { dryRun })
     );

@@ -500,7 +500,7 @@ export const baseTemplates = {
       },
       skipMocking: true,
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'solid-vite/default-js': {
     name: 'SolidJS Latest (Vite | JavaScript)',
@@ -559,7 +559,7 @@ export const baseTemplates = {
       },
       skipMocking: true,
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   // 'nuxt-vite/default-ts': {
   //   name: 'Nuxt v3 (Vite | TypeScript)',
@@ -611,7 +611,7 @@ export const baseTemplates = {
       extraDependencies: ['storybook-html-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'svelte-vite/default-js': {
     name: 'Svelte Latest (Vite | JavaScript)',
@@ -710,7 +710,7 @@ export const baseTemplates = {
       extraDependencies: ['storybook-web-components-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'preact-vite/default-js': {
     name: 'Preact Latest (Vite | JavaScript)',

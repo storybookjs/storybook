@@ -50,7 +50,7 @@ jobs:
       requires:
         - create-sandboxes
   - e2e-dev:
-      parallelism: 32
+      parallelism: 28
       requires:
         - create-sandboxes
   - test-runner-production:

@@ -30,7 +30,7 @@ export default {
     mockStore.setState({
       loaded: true,
       widget: {},
-      values: {
+      items: {
         controls: { status: 'accepted' },
         'render-component': { status: 'done' },
         viewports: { status: 'skipped' },

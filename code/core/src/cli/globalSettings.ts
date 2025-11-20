@@ -17,7 +17,7 @@ const userSettingSchema = z.object({
   init: z.object({ skipOnboarding: z.boolean().optional() }).optional(),
   checklist: z
     .object({
-      values: z
+      items: z
         .record(
           z.strictObject({
             status: z.enum(['open', 'accepted', 'done', 'skipped']),

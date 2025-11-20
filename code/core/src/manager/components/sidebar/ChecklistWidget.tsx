@@ -166,27 +166,28 @@ const OpenGuideAction = ({ children }: { children?: React.ReactNode }) => {
 
 export const ChecklistWidget = () => {
   const api = useStorybookApi();
-  const { loaded, allItems, nextItems, progress, accept, mute, values } = useChecklist();
+  const { loaded, allItems, nextItems, progress, accept, mute, items } = useChecklist();
+  const [renderItems, setItems] = useState<ChecklistItem[]>([]);
 
-  const [items, setItems] = useState<ChecklistItem[]>([]);
+  const hasItems = renderItems.length > 0;
+  const transitionItems = useTransitionArray(allItems, renderItems, {
+    keyFn: (item) => item.id,
+    timeout: 300,
+  });
 
   useEffect(() => {
+    // Render old items (with updated status) for 2 seconds before
+    // rendering new items, in order to allow exit transition.
     setItems((current) =>
       current.map((item) => ({
         ...item,
-        isCompleted: values[item.id].status === 'accepted' || values[item.id].status === 'done',
-        isSkipped: values[item.id].status === 'skipped',
+        isCompleted: items[item.id].status === 'accepted' || items[item.id].status === 'done',
+        isSkipped: items[item.id].status === 'skipped',
       }))
     );
     const timeout = setTimeout(setItems, 2000, nextItems);
     return () => clearTimeout(timeout);
-  }, [nextItems, values]);
-
-  const transitionItems = useTransitionArray(allItems, items, {
-    keyFn: (item) => item.id,
-    timeout: 300,
-  });
-  const hasItems = items.length > 0;
+  }, [nextItems, items]);
 
   return (
     <CollapsibleWithMargin collapsed={!hasItems || !loaded}>

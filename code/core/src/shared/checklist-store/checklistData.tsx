@@ -50,7 +50,7 @@ const CodeSnippet = (props: ComponentProps<typeof SyntaxHighlighter>) => (
   </ThemeProvider>
 );
 
-type ItemId = keyof (typeof initialState)['values'];
+type ItemId = keyof (typeof initialState)['items'];
 
 export interface ChecklistData {
   sections: readonly {

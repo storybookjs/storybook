@@ -181,28 +181,23 @@ const run = async () => {
     logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
     verdaccioServer = await startVerdaccio();
     logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
-    logger.log(`👤 add temp user to verdaccio`);
-    // Use npmAuth helper to authenticate to the local Verdaccio registry
-    // This will create a .npmrc file in the root directory
-    await npmAuth({
-      username: 'foo',
-      password: 's3cret',
-      email: 'test@test.com',
-      registry: 'http://localhost:6002',
-      outputDir: root,
-    });
   } else {
     logger.log(`🌿 verdaccio already running on ${verdaccioUrl}`);
   }
 
+  // Use npmAuth helper to authenticate to the local Verdaccio registry
+  // This will create a .npmrc file in the root directory
+  logger.log(`👤 add temp user to verdaccio`);
+
+  await npmAuth({
+    username: 'foo',
+    password: 's3cret',
+    email: 'test@test.com',
+    registry: 'http://localhost:6002',
+    outputDir: root,
+  });
+
   if (opts.publish) {
-    await npmAuth({
-      username: 'foo',
-      password: 's3cret',
-      email: 'test@test.com',
-      registry: 'http://localhost:6002',
-      outputDir: root,
-    });
     const [packages, version] = await Promise.all([getWorkspaces(false), currentVersion()]);
     logger.log(
       `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
@@ -210,9 +205,8 @@ const run = async () => {
     await publish(packages, 'http://localhost:6002');
   }
 
-  await rm(join(root, '.npmrc'), { force: true });
-
   if (!opts.open) {
+    await rm(join(root, '.npmrc'), { force: true });
     verdaccioServer?.close();
     process.exit(0);
   }

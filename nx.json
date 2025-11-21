@@ -96,7 +96,7 @@
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task sandbox -s sandbox --no-link --template={projectName}",
+        "command": "yarn task sandbox -s generate --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "dependsOn": [

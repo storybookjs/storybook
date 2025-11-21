@@ -145,6 +145,7 @@ export const checklistData = {
           available: ({ index }) =>
             !!index &&
             'example-button--primary' in index &&
+            !!globalThis?.FEATURES?.controls &&
             addons.experimental_getRegisteredAddons().includes(ADDON_ONBOARDING_ID),
           criteria: 'Guided tour is completed',
           subscribe: ({ api, accept }) =>
@@ -353,6 +354,7 @@ export const Primary: Story = {
           id: 'controls',
           after: ['renderComponent'],
           label: 'Change a story with Controls',
+          available: () => !!globalThis?.FEATURES?.controls,
           criteria: 'Story args are updated',
           subscribe: ({ api, done }) => api.on(STORY_ARGS_UPDATED, done),
           content: ({ api }) => (
@@ -388,6 +390,7 @@ export const Primary: Story = {
           id: 'viewports',
           after: ['renderComponent'],
           label: 'Check responsiveness with Viewports',
+          available: () => !!globalThis?.FEATURES?.viewport,
           criteria: 'Viewport global is updated',
           subscribe: ({ api, done }) =>
             api.on(UPDATE_GLOBALS, ({ globals }) => globals?.viewport && done()),
@@ -621,6 +624,7 @@ export default {
           id: 'writeInteractions',
           after: ['renderComponent'],
           label: 'Test functionality with interactions',
+          available: () => !!globalThis?.FEATURES?.interactions,
           criteria: 'At least one story with a play or test function',
           subscribe: subscribeToIndex((entries) =>
             Object.values(entries).some(

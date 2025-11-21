@@ -1,7 +1,7 @@
 import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
-import type { Task } from '../task';
+import { type Task } from '../task';
 import { exec } from '../utils/exec';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
@@ -12,13 +12,13 @@ export const serve: Task = {
   description: 'Serve the build storybook for a sandbox',
   service: true,
   dependsOn: ['build'],
-  async ready() {
-    return (await detectFreePort(PORT)) !== PORT;
+  async ready({ port }) {
+    return (await detectFreePort(port)) !== port;
   },
-  async run({ builtSandboxDir, codeDir }, { debug, dryRun }) {
+  async run({ builtSandboxDir, codeDir, port }, { debug, dryRun }) {
     const controller = new AbortController();
     exec(
-      `yarn http-server ${builtSandboxDir} --port ${PORT} -s`,
+      `yarn http-server ${builtSandboxDir} --port ${port} -s`,
       { cwd: codeDir },
       { dryRun, debug, signal: controller.signal as AbortSignal }
     ).catch((err) => {
@@ -27,7 +27,7 @@ export const serve: Task = {
         throw err;
       }
     });
-    await waitOn({ resources: [`tcp:127.0.0.1:${PORT}`], interval: 16 });
+    await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16 });
 
     return controller;
   },

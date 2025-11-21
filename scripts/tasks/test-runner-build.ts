@@ -1,3 +1,4 @@
+import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
 import { PORT } from './serve';
@@ -10,10 +11,12 @@ export const testRunnerBuild: Task & { port: number } = {
   async ready() {
     return false;
   },
-  async run({ sandboxDir, junitFilename }, { dryRun, debug }) {
+  async run({ sandboxDir, junitFilename, key }, { dryRun, debug }) {
+    const port = getPort({ key, selectedTask: 'serve' });
+
     const execOptions = { cwd: sandboxDir };
     const flags = [
-      `--url http://127.0.0.1:${this.port}`,
+      `--url http://127.0.0.1:${port}`,
       '--junit',
       '--maxWorkers=2',
       '--failOnConsole',

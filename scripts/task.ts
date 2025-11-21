@@ -14,6 +14,7 @@ import {
   type TemplateKey,
 } from '../code/lib/cli-storybook/src/sandbox-templates';
 import { version } from '../code/package.json';
+import { getPort } from './sandbox/utils/getPort';
 import { bench } from './tasks/bench';
 import { build } from './tasks/build';
 import { check } from './tasks/check';
@@ -50,6 +51,7 @@ export type TemplateDetails = {
   template: Template;
   codeDir: Path;
   sandboxDir: Path;
+  port: number;
   builtSandboxDir: Path;
   junitFilename: Path;
 };
@@ -397,6 +399,7 @@ async function run() {
     codeDir: CODE_DIRECTORY,
     selectedTask: taskKey,
     sandboxDir: templateSandboxDir,
+    port: getPort({ selectedTask: taskKey, key: templateKey }),
     builtSandboxDir: templateKey && join(templateSandboxDir, 'storybook-static'),
     junitFilename: junit && getJunitFilename(taskKey),
   };

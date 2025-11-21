@@ -1,6 +1,7 @@
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import detectFreePort from 'detect-port';
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
 import { dirname, join, resolve } from 'path';
@@ -39,6 +40,7 @@ import { testRunnerDev } from './tasks/test-runner-dev';
 import { vitestTests } from './tasks/vitest-test';
 import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
 import { findMostMatchText } from './utils/diff';
+import { exec } from './utils/exec';
 import type { OptionValues } from './utils/options';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
@@ -531,11 +533,18 @@ async function run() {
               {},
               details.sandboxDir
             );
-            await waitOn({
-              resources: ['http://localhost:6001', 'http://localhost:6002'],
-              interval: 16,
-              timeout: 5000,
-            });
+            if ((await detectFreePort(6001)) === 6001) {
+              await exec(
+                'yarn local-registry --open',
+                { cwd: CODE_DIRECTORY, env: { CI: 'true' } },
+                { debug: true }
+              );
+              await waitOn({
+                resources: ['http://localhost:6001', 'http://localhost:6002'],
+                interval: 16,
+                timeout: 10000,
+              });
+            }
             await packageManager.installDependencies();
           }
         }

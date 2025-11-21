@@ -176,33 +176,30 @@ const run = async () => {
     }
   }
 
-  logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
-
   let verdaccioServer;
   if ((await detectFreePort(6001)) !== 6001) {
+    logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
     verdaccioServer = await startVerdaccio();
+    logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
+    logger.log(`👤 add temp user to verdaccio`);
+    // Use npmAuth helper to authenticate to the local Verdaccio registry
+    // This will create a .npmrc file in the root directory
+    await npmAuth({
+      username: 'foo',
+      password: 's3cret',
+      email: 'test@test.com',
+      registry: 'http://localhost:6002',
+      outputDir: root,
+    });
+  } else {
+    logger.log(`🌿 verdaccio already running on ${verdaccioUrl}`);
   }
 
-  const [packages, version] = await Promise.all([getWorkspaces(false), currentVersion()]);
-
-  logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
-
-  logger.log(`👤 add temp user to verdaccio`);
-  // Use npmAuth helper to authenticate to the local Verdaccio registry
-  // This will create a .npmrc file in the root directory
-  await npmAuth({
-    username: 'foo',
-    password: 's3cret',
-    email: 'test@test.com',
-    registry: 'http://localhost:6002',
-    outputDir: root,
-  });
-
-  logger.log(
-    `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
-  );
-
   if (opts.publish) {
+    const [packages, version] = await Promise.all([getWorkspaces(false), currentVersion()]);
+    logger.log(
+      `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
+    );
     await publish(packages, 'http://localhost:6002');
   }
 

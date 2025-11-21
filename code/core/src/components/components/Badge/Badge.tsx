@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { transparentize } from 'polished';
+import { darken, transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
 const BadgeWrapper = styled.div<BadgeProps>(
@@ -74,7 +74,8 @@ const BadgeWrapper = styled.div<BadgeProps>(
       }
       case 'active': {
         return {
-          color: theme.color.secondary,
+          color:
+            theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
           background: theme.background.hoverable,
           boxShadow: `inset 0 0 0 1px ${transparentize(0.9, theme.color.secondary)}`,
         };

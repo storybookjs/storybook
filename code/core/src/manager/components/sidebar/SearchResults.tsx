@@ -1,7 +1,7 @@
 import type { FC, MouseEventHandler, PropsWithChildren, ReactNode } from 'react';
 import React, { useCallback, useEffect } from 'react';
 
-import { Button, IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
@@ -82,7 +82,6 @@ const RecentlyOpenedTitle = styled.div(({ theme }) => ({
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
   color: theme.textMutedColor,
-  marginTop: 16,
   marginBottom: 4,
   alignItems: 'center',
 
@@ -119,7 +118,7 @@ const Highlight: FC<PropsWithChildren<{ match?: Match }>> = React.memo(function 
   return <span>{result}</span>;
 });
 
-const Title = styled.div(({ theme }) => ({
+const Title = styled.div({
   display: 'grid',
   justifyContent: 'start',
   gridAutoColumns: 'auto',
@@ -131,7 +130,7 @@ const Title = styled.div(({ theme }) => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
-}));
+});
 
 const Path = styled.div(({ theme }) => ({
   display: 'grid',
@@ -289,12 +288,15 @@ export const SearchResults: FC<{
       {results.length > 0 && !query && (
         <RecentlyOpenedTitle className="search-result-recentlyOpened">
           Recently opened
-          <IconButton
+          <Button
+            padding="small"
+            variant="ghost"
             className="search-result-recentlyOpened-clear"
             onClick={handleClearLastViewed}
+            ariaLabel="Clear recently opened items"
           >
             <TrashIcon />
-          </IconButton>
+          </Button>
         </RecentlyOpenedTitle>
       )}
       {results.length === 0 && query && (
@@ -311,7 +313,6 @@ export const SearchResults: FC<{
           const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
-              {/* @ts-expect-error (non strict) */}
               <Button key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>

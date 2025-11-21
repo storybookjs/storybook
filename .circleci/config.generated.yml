@@ -263,6 +263,31 @@ jobs:
                 name: Ensure no changes pending
             - report-workflow-on-failure
             - cancel-workflow-on-failure
+    check-sandboxes:
+        executor:
+            class: medium
+            name: sb_node_22_classic
+        parallelism: << parameters.parallelism >>
+        parameters:
+            parallelism:
+                type: integer
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                clone_options: --depth 1 --verbose
+            - attach_workspace:
+                at: .
+            - run:
+                command: |
+                    TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
+                    cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+                name: Install sandbox dependencies
+            - run:
+                command: yarn task --task check-sandbox --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox) --no-link --start-from=never --junit
+                name: Type check Sandboxes
+            - report-workflow-on-failure:
+                template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
+            - store_test_results:
+                path: test-results
     chromatic-internal-storybook:
         environment:
             NODE_OPTIONS: --max_old_space_size=4096
@@ -640,36 +665,6 @@ jobs:
             - when:
                 condition:
                     equal:
-                        - yarn1
-                        - << parameters.packageManager >>
-                steps:
-                    - run:
-                        background: true
-                        command: |
-                            cd code
-                            yarn local-registry --open
-                        name: Verdaccio
-                    - run:
-                        command: |
-                            cd code
-                            yarn wait-on tcp:127.0.0.1:6001
-                            yarn wait-on tcp:127.0.0.1:6002
-                        name: Wait on Verdaccio
-                    - run:
-                        command: |
-                            cd ..
-                            mkdir empty-<< parameters.template >>
-                            cd empty-<< parameters.template >>
-                            npx storybook init --yes --package-manager yarn1
-                            yarn storybook --smoke-test
-                        environment:
-                            IN_STORYBOOK_SANDBOX: true
-                            STORYBOOK_DISABLE_TELEMETRY: true
-                            STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
-                        name: Storybook init from empty directory (Yarn 1)
-            - when:
-                condition:
-                    equal:
                         - yarn2
                         - << parameters.packageManager >>
                 steps:
@@ -763,6 +758,171 @@ jobs:
                             STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
                         name: Storybook init from empty directory (--skip-install)
             - report-workflow-on-failure
+    test-init-empty-windows:
+        executor: win/default
+        parameters:
+            packageManager:
+                type: string
+            template:
+                type: string
+        steps:
+            - checkout
+            - attach_workspace:
+                at: .
+            - run:
+                command: |
+                    choco install nodejs-lts --version=22.11.0 -y
+                    corepack enable
+                name: Setup Node & Yarn on Windows
+                shell: bash.exe
+            - run:
+                command: yarn install
+                name: Install code dependencies
+                shell: bash.exe
+                working_directory: code
+            - run:
+                command: yarn install
+                name: Install script dependencies
+                shell: bash.exe
+                working_directory: scripts
+            - when:
+                condition:
+                    equal:
+                        - npm
+                        - << parameters.packageManager >>
+                steps:
+                    - run:
+                        background: true
+                        command: |
+                            cd code
+                            yarn local-registry --open
+                        name: Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd code
+                            yarn wait-on tcp:127.0.0.1:6001
+                            yarn wait-on tcp:127.0.0.1:6002
+                        name: Wait on Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd ..
+                            mkdir empty-<< parameters.template >>
+                            cd empty-<< parameters.template >>
+                            npm set registry http://localhost:6001
+                            npx storybook init --yes --package-manager npm
+                            npm run storybook -- --smoke-test
+                        environment:
+                            IN_STORYBOOK_SANDBOX: true
+                            STORYBOOK_DISABLE_TELEMETRY: true
+                            STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+                        name: Storybook init from empty directory (Windows NPM)
+                        shell: bash.exe
+            - when:
+                condition:
+                    equal:
+                        - yarn2
+                        - << parameters.packageManager >>
+                steps:
+                    - run:
+                        background: true
+                        command: |
+                            cd code
+                            yarn local-registry --open
+                        name: Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd code
+                            yarn wait-on tcp:127.0.0.1:6001
+                            yarn wait-on tcp:127.0.0.1:6002
+                        name: Wait on Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd ..
+                            mkdir empty-<< parameters.template >>
+                            cd empty-<< parameters.template >>
+                            yarn set version berry
+                            yarn config set registry http://localhost:6001
+                            yarn dlx storybook init --yes --package-manager yarn2
+                            yarn storybook --smoke-test
+                        environment:
+                            IN_STORYBOOK_SANDBOX: true
+                            STORYBOOK_DISABLE_TELEMETRY: true
+                            STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+                        name: Storybook init from empty directory (Windows Yarn 2)
+                        shell: bash.exe
+            - when:
+                condition:
+                    equal:
+                        - pnpm
+                        - << parameters.packageManager >>
+                steps:
+                    - run:
+                        background: true
+                        command: |
+                            cd code
+                            yarn local-registry --open
+                        name: Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd code
+                            yarn wait-on tcp:127.0.0.1:6001
+                            yarn wait-on tcp:127.0.0.1:6002
+                        name: Wait on Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd ..
+                            mkdir empty-<< parameters.template >>
+                            cd empty-<< parameters.template >>
+                            npm i -g pnpm
+                            pnpm config set registry http://localhost:6001
+                            pnpm dlx storybook init --yes --package-manager pnpm
+                            pnpm run storybook --smoke-test
+                        environment:
+                            IN_STORYBOOK_SANDBOX: true
+                            STORYBOOK_DISABLE_TELEMETRY: true
+                            STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+                        name: Storybook init from empty directory (Windows PNPM)
+                        shell: bash.exe
+            - when:
+                condition:
+                    equal:
+                        - react-vite-ts
+                        - << parameters.template >>
+                steps:
+                    - run:
+                        background: true
+                        command: |
+                            cd code
+                            yarn local-registry --open
+                        name: Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd code
+                            yarn wait-on tcp:127.0.0.1:6001
+                            yarn wait-on tcp:127.0.0.1:6002
+                        name: Wait on Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd ..
+                            mkdir empty-<< parameters.template >>-no-install
+                            cd empty-<< parameters.template >>-no-install
+                            npx storybook init --yes --skip-install
+                            npm install
+                            npm run build-storybook
+                        environment:
+                            IN_STORYBOOK_SANDBOX: true
+                            STORYBOOK_DISABLE_TELEMETRY: true
+                            STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+                        name: Storybook init from empty directory (Windows --skip-install)
+                        shell: bash.exe
     test-init-features:
         executor:
             class: small
@@ -790,7 +950,7 @@ jobs:
                     mkdir features-1
                     cd features-1
                     npm set registry http://localhost:6001
-                    npx create-storybook --yes --package-manager npm --features dev docs test
+                    npx create-storybook --yes --package-manager npm --features docs test a11y --loglevel=debug
                     npx vitest
                 environment:
                     IN_STORYBOOK_SANDBOX: true
@@ -884,6 +1044,26 @@ jobs:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
             - store_test_results:
                 path: test-results
+    test-yarn-pnp:
+        executor:
+            class: medium
+            name: sb_playwright
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                clone_options: --depth 1 --verbose
+            - attach_workspace:
+                at: .
+            - run:
+                command: yarn install --no-immutable
+                environment:
+                    YARN_ENABLE_IMMUTABLE_INSTALLS: false
+                name: Install dependencies
+                working_directory: test-storybooks/yarn-pnp
+            - run:
+                command: yarn storybook --smoke-test
+                name: Run Storybook smoke test
+                working_directory: test-storybooks/yarn-pnp
+            - report-workflow-on-failure
     unit-tests:
         executor:
             class: xlarge
@@ -943,6 +1123,7 @@ orbs:
     git-shallow-clone: guitarrapc/git-shallow-clone@2.5.0
     node: circleci/node@5.2.0
     nx: nrwl/nx@1.6.2
+    win: circleci/windows@5.0.0
 parameters:
     ghBaseBranch:
         default: next
@@ -991,11 +1172,15 @@ workflows:
                 requires:
                     - build
             - create-sandboxes:
-                parallelism: 34
+                parallelism: 38
                 requires:
                     - build
+            - check-sandboxes:
+                parallelism: 1
+                requires:
+                    - create-sandboxes
             - chromatic-sandboxes:
-                parallelism: 31
+                parallelism: 35
                 requires:
                     - create-sandboxes
             - e2e-production:
@@ -1007,11 +1192,11 @@ workflows:
                 requires:
                     - create-sandboxes
             - test-runner-production:
-                parallelism: 29
+                parallelism: 33
                 requires:
                     - create-sandboxes
             - vitest-integration:
-                parallelism: 11
+                parallelism: 13
                 requires:
                     - create-sandboxes
             - test-portable-stories:
@@ -1024,6 +1209,9 @@ workflows:
                             - svelte
                 requires:
                     - build
+            - test-yarn-pnp:
+                requires:
+                    - build
             - e2e-ui:
                 requires:
                     - build
@@ -1034,6 +1222,18 @@ workflows:
                 requires:
                     - build
             - test-init-empty:
+                matrix:
+                    parameters:
+                        packageManager:
+                            - npm
+                        template:
+                            - react-vite-ts
+                            - nextjs-ts
+                            - vue-vite-ts
+                            - lit-vite-ts
+                requires:
+                    - build
+            - test-init-empty-windows:
                 matrix:
                     parameters:
                         packageManager:
@@ -1086,11 +1286,11 @@ workflows:
                 requires:
                     - unit-tests
             - create-sandboxes:
-                parallelism: 19
+                parallelism: 21
                 requires:
                     - build
             - chromatic-sandboxes:
-                parallelism: 16
+                parallelism: 18
                 requires:
                     - create-sandboxes
             - e2e-production:
@@ -1102,11 +1302,15 @@ workflows:
                 requires:
                     - create-sandboxes
             - test-runner-production:
-                parallelism: 14
+                parallelism: 16
                 requires:
                     - create-sandboxes
             - vitest-integration:
-                parallelism: 6
+                parallelism: 7
+                requires:
+                    - create-sandboxes
+            - check-sandboxes:
+                parallelism: 1
                 requires:
                     - create-sandboxes
             - test-portable-stories:
@@ -1119,6 +1323,9 @@ workflows:
                             - svelte
                 requires:
                     - build
+            - test-yarn-pnp:
+                requires:
+                    - build
             - e2e-ui:
                 requires:
                     - build
@@ -1126,6 +1333,18 @@ workflows:
                 requires:
                     - build
             - test-init-features:
+                requires:
+                    - build
+            - test-init-empty-windows:
+                matrix:
+                    parameters:
+                        packageManager:
+                            - npm
+                        template:
+                            - react-vite-ts
+                            - nextjs-ts
+                            - vue-vite-ts
+                            - lit-vite-ts
                 requires:
                     - build
         when:
@@ -1162,11 +1381,11 @@ workflows:
                 requires:
                     - unit-tests
             - create-sandboxes:
-                parallelism: 13
+                parallelism: 14
                 requires:
                     - build
             - chromatic-sandboxes:
-                parallelism: 10
+                parallelism: 11
                 requires:
                     - create-sandboxes
             - e2e-production:
@@ -1178,13 +1397,20 @@ workflows:
                 requires:
                     - create-sandboxes
             - test-runner-production:
-                parallelism: 8
+                parallelism: 9
                 requires:
                     - create-sandboxes
             - vitest-integration:
                 parallelism: 5
                 requires:
                     - create-sandboxes
+            - check-sandboxes:
+                parallelism: 1
+                requires:
+                    - create-sandboxes
+            - test-yarn-pnp:
+                requires:
+                    - build
             - e2e-ui:
                 requires:
                     - build

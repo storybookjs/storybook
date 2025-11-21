@@ -35,14 +35,14 @@ test.describe('addon-onboarding', () => {
     // so we just create a random id to make it easier to run tests
     const id = Math.random().toString(36).substring(7);
     await page.getByPlaceholder('Story export name').fill('Test-' + id);
-    await page.getByRole('button', { name: 'Create' }).click();
+    await page.getByRole('button', { exact: true, name: 'Create' }).click();
 
     await expect(page.getByText('You just added your first')).toBeVisible();
     await page.getByLabel('Last').click();
 
     await page.getByRole('checkbox', { name: 'Application UI' }).check();
     await page.getByRole('checkbox', { name: 'Functional testing' }).check();
-    await page.getByRole('combobox').selectOption('Web Search');
+    await page.locator('#referrer').selectOption('Web Search');
     await page.getByRole('button', { name: 'Submit' }).click();
 
     await expect(

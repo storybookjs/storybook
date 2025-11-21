@@ -279,7 +279,7 @@ export const WithRefsNarrow: Story = {
         narrow: {
           name: 'narrow',
           styles: {
-            width: '400px',
+            width: '230px',
             height: '800px',
           },
         },
@@ -288,7 +288,7 @@ export const WithRefsNarrow: Story = {
     chromatic: {
       modes: {
         narrow: {
-          viewport: 400,
+          viewport: 230,
         },
       },
     },

@@ -6,7 +6,7 @@ tab:
   title: Migrating from test-runner
 ---
 
-The [test-runner](../test-runner.mdx) was created back in 2021 to enable users to run stories as tests. It is a solution which uses Jest as runner and Playwright as browser environment. Over the years, Storybook has evolved and introduced many testing related concepts, including a [Vitest-based testing solution](./index.mdx), a spiritual successor to the test-runner. Alongside it, we released a testing widget, allowing users to run tests directly from Storybook's UI and get reports such as a11y and coverage.
+The [test-runner](../test-runner.mdx) was created back in 2021 to enable users to run stories as tests. It is a solution that uses Jest as a runner and Playwright as a browser environment. Over the years, Storybook has evolved and introduced many testing-related concepts, including a [Vitest-based testing solution](./index.mdx), a spiritual successor to the test-runner. Alongside it, we released a testing widget, allowing users to run tests directly from Storybook's UI and get reports such as a11y and coverage.
 
 You **do not** have to change how you write your stories between the test-runner and the Vitest addon.
 
@@ -22,7 +22,7 @@ If you are using a different renderer (such as Angular) or the Webpack builder, 
 
 ## Migration steps
 
-Below you will find steps on the migration, and alongside it you can use [this commit as reference](https://github.com/yannbf/test-runner-migration-example/commit/cb0ddd5137021a7ed25d15f8d23c6c5e2d01513e) as an example of project being migrated.
+Below you will find the essential steps to migrate from the test-runner to the Vitest addon. Additionally, you can use the [following commit](https://github.com/yannbf/test-runner-migration-example/commit/cb0ddd5137021a7ed25d15f8d23c6c5e2d01513e) as a reference for an example project being migrated.
 
 ### 1. Remove test-runner dependencies
 
@@ -49,28 +49,19 @@ Remove the following files:
   
 - Update the `package.json` script for Storybook tests, replacing the test-runner binary and using Vitest instead:
 
-  ```diff
+  ```diff title="package.json"
   {
     "scripts": {
   -    "test-storybook": "test-storybook"
   +    "test-storybook": "vitest --project=storybook"
     }
   }
-  ```
-
-- Visit [the Vitest addon guide](./index.mdx) to learn how to use it, how to configure it, and how it works.
-
-Tips:
-
-1. If you previously used `--coverage` with the test-runner, use Vitest’s coverage instead: `vitest --project=storybook --coverage`.
-2. Add more browsers by extending [`instances` field](https://vitest.dev/guide/browser/config.html#browser-instances) in the Vitest configuration file (e.g., `firefox`, `webkit`).
 
 ### 4. Update your CI to run Vitest instead of the test-runner
 
 If you're using the Storybook test-runner in CI, replace its build/serve/wait flow with a single Vitest command. For example, in GitHub Actions:
 
-```diff
-# .github/workflows/storybook-tests.yml
+```diff title=".github/workflows/storybook-tests.yml"
 name: 'Storybook Tests'
 
 on: push
@@ -104,24 +95,16 @@ If you want coverage in CI, run `vitest --project=storybook --coverage`.
 
 For other CI providers and for more detailed configuration info, check the [testing in CI guide](../../in-ci.mdx#2-add-a-new-ci-workflow).
 
-## Conclusion
+## Why migrate?
 
-While the test-runner was limited to running tests via the CLI, the Vitest addon opens up multiple ways to run and interact with your tests:
+Migrating to the Vitest addon replaces the previous Jest-based test-runner with a modern, browser-friendly testing stack. It's designed to run stories as tests directly in [Storybook's UI](./index.mdx#storybook-ui) while also integrating with Vitest's CLI and [IDE](index.mdx#editor-extension) integrations — reducing setup complexity and bringing built-in support for accessibility and coverage. The main benefits are summarized below.
 
-- The testing widget in Storybook's UI
-- Vitest CLI
-- Vitest IDE integrations
-
-For more details, check the [Vitest addon guide](./index.mdx#usage).
-
-Finally, a summary of the changes and benefits you gain by migrating to the Vitest addon:
-
-- Vitest is used as a runner instead of Jest, which modernizes your codebase and executes tests much faster.
+- Vitest is used as a runner instead of Jest, offering faster test execution and better integration with modern JavaScript tooling.
 - Stories seamlessly integrate as tests in your Vitest setup, significantly simplifying your component test configuration.
-- There is no need to build and run Storybook to run tests, which makes the set up faster and more portable.
+- There is no need to build and run Storybook to run tests, which makes the setup faster and more portable.
 - Tests are still tested in a Playwright environment, but in [Vitest's Browser mode](https://vitest.dev/guide/browser/).
 - Accessibility testing comes out of the box and integrates with the Storybook testing widget and Accessibility addon panel.
-- Code coverage comes out of the box and does not require instrumentation from the `@storybook/addon-coverage` package which makes your stories render faster.
+- Code coverage is enabled via Vitest's built-in coverage support. You no longer need instrumentation from the `@storybook/addon-coverage` package, which can make your stories render faster.
 
 For more, please refer to the comparison table in the [Vitest addon guide](./index.mdx#comparison-to-the-test-runner).
 
@@ -133,7 +116,7 @@ In this case, it's advised to keep using the `@storybook/test-runner`.
 
 ### What if I am using Jest for my unit tests?
 
-You can still migrate to use Vitest, but if you believe that you won't benefit from that, you can keep using the `@storybook/test-runner`..
+You can still migrate to use Vitest, but if you believe you won't benefit from it, you can keep using the `@storybook/test-runner`.
 
 ### What if I am doing image snapshot testing?
 

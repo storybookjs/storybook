@@ -446,10 +446,6 @@ async function run() {
   if (startFrom === 'auto') {
     // Don't reset anything!
   } else if (startFrom === 'never') {
-    if (!firstUnready) {
-      throw new Error(`Task ${taskKey} is ready`);
-    }
-
     const firstUnreadyOrNotServing = sortedTasks.find((task) =>
       ['unready', 'notserving'].includes(statuses.get(task))
     );

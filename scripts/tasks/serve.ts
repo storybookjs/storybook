@@ -1,6 +1,7 @@
 import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
+import { getPort } from '../sandbox/utils/getPort';
 import { type Task } from '../task';
 import { exec } from '../utils/exec';
 
@@ -12,10 +13,19 @@ export const serve: Task = {
   description: 'Serve the build storybook for a sandbox',
   service: true,
   dependsOn: ['build'],
-  async ready({ port }) {
+  async ready({ key }) {
+    const port = getPort({ key, selectedTask: 'serve' });
+    console.log({ key, port });
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 3000);
+    });
     return (await detectFreePort(port)) !== port;
   },
-  async run({ builtSandboxDir, codeDir, port }, { debug, dryRun }) {
+  async run({ builtSandboxDir, codeDir, key }, { debug, dryRun }) {
+    const port = getPort({ key, selectedTask: 'serve' });
+    console.log({ key, port });
+
     const controller = new AbortController();
     exec(
       `yarn http-server ${builtSandboxDir} --port ${port} -s`,

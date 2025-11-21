@@ -33,6 +33,7 @@ export type EventType =
   | 'test-run'
   | 'addon-onboarding'
   | 'onboarding-survey'
+  | 'onboarding-checklist'
   | 'mocking'
   | 'automigrate'
   | 'migrate'

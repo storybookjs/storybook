@@ -48,9 +48,19 @@ export interface SubAPI {
   /**
    * Returns the URL of the Storybook documentation for the current version.
    *
+   * @param options - The options for the documentation URL.
+   * @param options.asset - Links to the docs-assets directory instead of docs.
+   * @param options.subpath - The subpath of the documentation URL.
+   * @param options.versioned - Whether to include the versioned path.
+   * @param options.renderer - Whether to include the renderer path.
    * @returns {string} The URL of the Storybook Manager documentation.
    */
-  getDocsUrl: (options: { subpath?: string; versioned?: boolean; renderer?: boolean }) => string;
+  getDocsUrl: (options: {
+    asset?: boolean;
+    subpath?: string;
+    versioned?: boolean;
+    renderer?: boolean;
+  }) => string;
   /**
    * Checks if an update is available for the Storybook Manager.
    *
@@ -89,14 +99,16 @@ export const init: ModuleFn = ({ store }) => {
       return latest as API_Version;
     },
     // TODO: Move this to it's own "info" module later
-    getDocsUrl: ({ subpath, versioned, renderer }) => {
+    getDocsUrl: ({ asset, subpath, versioned, renderer }) => {
       const {
         versions: { latest, current },
       } = store.getState();
 
-      let url = 'https://storybook.js.org/docs/';
+      let url = `https://storybook.js.org/${asset ? 'docs-assets' : 'docs'}/`;
 
-      if (versioned && current?.version && latest?.version) {
+      if (asset && current?.version) {
+        url += `${semver.major(current.version)}.${semver.minor(current.version)}/`;
+      } else if (versioned && current?.version && latest?.version) {
         const versionDiff = semver.diff(latest.version, current.version);
         const isLatestDocs =
           versionDiff === 'patch' ||
@@ -112,7 +124,7 @@ export const init: ModuleFn = ({ store }) => {
       const [cleanedSubpath, hash] = subpath?.split('#') || [];
 
       if (cleanedSubpath) {
-        url += `${cleanedSubpath}/`;
+        url += asset ? cleanedSubpath : `${cleanedSubpath}/`;
       }
 
       if (renderer && typeof global.STORYBOOK_RENDERER !== 'undefined') {

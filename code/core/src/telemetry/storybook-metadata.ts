@@ -143,7 +143,7 @@ export const computeStorybookMetadata = async ({
     metadata.typescriptOptions = mainConfig.typescript;
   }
 
-  const frameworkInfo = await getFrameworkInfo(mainConfig);
+  const frameworkInfo = await getFrameworkInfo(mainConfig, configDir);
 
   if (typeof mainConfig.refs === 'object') {
     metadata.refCount = Object.keys(mainConfig.refs).length;

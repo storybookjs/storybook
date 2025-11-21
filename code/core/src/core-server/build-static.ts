@@ -234,24 +234,26 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     ...effects,
   ]);
 
-  // Now the code has successfully built, we can count this as a 'dev' event.
-  // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible
+  // Now the code has successfully built, we can count this as a 'build' event.
+  // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible.
   if (!core?.disableTelemetry && !options.test) {
-    effects.push(
-      initializedStoryIndexGenerator.then(async (generator) => {
-        const storyIndex = await generator?.getIndex();
-        const payload = {
-          precedingUpgrade: await getPrecedingUpgrade(),
-        };
-        if (storyIndex) {
-          Object.assign(payload, {
-            storyIndex: summarizeIndex(storyIndex),
-          });
-        }
+    try {
+      const generator = await initializedStoryIndexGenerator;
+      const storyIndex = await generator?.getIndex();
+      const payload: any = {
+        precedingUpgrade: await getPrecedingUpgrade(),
+      };
+      if (storyIndex) {
+        Object.assign(payload, {
+          storyIndex: summarizeIndex(storyIndex),
+        });
+      }
 
-        await telemetry('build', payload, { configDir: options.configDir });
-      })
-    );
+      await telemetry('build', payload, { configDir: options.configDir });
+    } catch (e) {
+      // Telemetry failures should not fail the build process
+      logger.debug?.(`Build telemetry failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 
   logger.step(`Output directory: ${options.outputDir}`);

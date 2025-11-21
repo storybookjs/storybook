@@ -4,5 +4,6 @@
   "targets": {
     "build": {},
     "check": {}
-  }
+  },
+  "tags": ["ci:normal"]
 }

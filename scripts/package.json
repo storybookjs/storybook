@@ -9,7 +9,7 @@
   },
   "nx": {
     "name": "scripts",
-    "projectType": "library",
+    "tags": ["ci:normal"],
     "includedScripts": [],
     "targets": {
       "pretty-docs": {

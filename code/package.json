@@ -45,8 +45,8 @@
   },
   "nx": {
     "name": "code",
-    "projectType": "library",
     "includedScripts": [],
+    "tags": ["ci:normal"],
     "targets": {
       "lint": {
         "executor": "nx:run-commands",

@@ -19,35 +19,37 @@ export const dev: Task = {
   async run({ sandboxDir, port }, { dryRun, debug }) {
     const controller = new AbortController();
     const devCommand = `yarn storybook --port ${port} --ci`;
-    const start = now();
 
-    exec(
-      devCommand,
-      { cwd: sandboxDir },
-      { dryRun, debug, signal: controller.signal as AbortSignal }
-    ).catch((err) => {
-      // If aborted, we want to make sure the rejection is handled.
-      if (!err.killed) {
-        throw err;
-      }
-    });
-    const [devPreviewResponsive, devManagerResponsive] = await Promise.all([
-      waitOn({ resources: [`http://localhost:${port}/iframe.html`], interval: 16 }).then(() => {
-        return now() - start;
-      }),
-      waitOn({ resources: [`http://localhost:${port}/index.html`], interval: 16 }).then(() => {
-        return now() - start;
-      }),
-    ]);
+    if ((await detectFreePort(port)) === port) {
+      const start = now();
+      exec(
+        devCommand,
+        { cwd: sandboxDir },
+        { dryRun, debug, signal: controller.signal as AbortSignal }
+      ).catch((err) => {
+        // If aborted, we want to make sure the rejection is handled.
+        if (!err.killed) {
+          throw err;
+        }
+      });
+      const [devPreviewResponsive, devManagerResponsive] = await Promise.all([
+        waitOn({ resources: [`http://localhost:${port}/iframe.html`], interval: 16 }).then(() => {
+          return now() - start;
+        }),
+        waitOn({ resources: [`http://localhost:${port}/index.html`], interval: 16 }).then(() => {
+          return now() - start;
+        }),
+      ]);
 
-    await saveBench(
-      'dev',
-      {
-        devPreviewResponsive,
-        devManagerResponsive,
-      },
-      { rootDir: sandboxDir }
-    );
+      await saveBench(
+        'dev',
+        {
+          devPreviewResponsive,
+          devManagerResponsive,
+        },
+        { rootDir: sandboxDir }
+      );
+    }
 
     return controller;
   },

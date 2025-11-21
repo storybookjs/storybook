@@ -21,17 +21,19 @@ export const serve: Task = {
   async run({ builtSandboxDir, key }, { debug, dryRun }) {
     const port = getPort({ key, selectedTask: 'serve' });
     const controller = new AbortController();
-    exec(
-      `yarn http-server ${builtSandboxDir} --port ${port}`,
-      { cwd: ROOT_DIRECTORY },
-      { dryRun, debug, signal: controller.signal as AbortSignal }
-    ).catch((err) => {
-      // If aborted, we want to make sure the rejection is handled.
-      if (!err.killed) {
-        throw err;
-      }
-    });
-    await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16 });
+    if ((await detectFreePort(port)) === port) {
+      exec(
+        `yarn http-server ${builtSandboxDir} --port ${port}`,
+        { cwd: ROOT_DIRECTORY },
+        { dryRun, debug, signal: controller.signal as AbortSignal }
+      ).catch((err) => {
+        // If aborted, we want to make sure the rejection is handled.
+        if (!err.killed) {
+          throw err;
+        }
+      });
+      await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16 });
+    }
 
     return controller;
   },

@@ -123,7 +123,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 const handleCommandFailure = async (logFilePath: string | boolean | undefined): Promise<never> => {
   const logFile = await logTracker.writeToFile(logFilePath);
   logger.error('Storybook encountered an error during initialization');
-  logger.log(`Storybook debug logs can be found at: ${logFile}`);
+  logger.log(`Debug logs are written to: ${logFile}`);
   logger.outro('Storybook exited with an error');
   process.exit(1);
 };

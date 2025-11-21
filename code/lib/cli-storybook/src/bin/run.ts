@@ -37,7 +37,7 @@ const handleCommandFailure =
     }
 
     const logFile = await logTracker.writeToFile(logFilePath);
-    logger.log(`Storybook debug logs can be found at: ${logFile}`);
+    logger.log(`Debug logs are written to: ${logFile}`);
     logger.outro('');
     process.exit(1);
   };
@@ -80,7 +80,7 @@ const command = (name: string) =>
     .hook('postAction', async ({ getOptionValue }) => {
       if (logTracker.shouldWriteLogsToFile) {
         const logFile = await logTracker.writeToFile(getOptionValue('logfile'));
-        logger.log(`Storybook debug logs can be found at: ${logFile}`);
+        logger.log(`Debug logs are written to: ${logFile}`);
         logger.outro(CLI_COLORS.success('Done!'));
       }
     });

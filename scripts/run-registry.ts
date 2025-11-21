@@ -196,6 +196,13 @@ const run = async () => {
   }
 
   if (opts.publish) {
+    await npmAuth({
+      username: 'foo',
+      password: 's3cret',
+      email: 'test@test.com',
+      registry: 'http://localhost:6002',
+      outputDir: root,
+    });
     const [packages, version] = await Promise.all([getWorkspaces(false), currentVersion()]);
     logger.log(
       `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`

@@ -1,7 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
-import { type FunctionInterpolation, type Theme, styled } from 'storybook/theming';
+import { type FunctionInterpolation, styled } from 'storybook/theming';
 
 import { UseSymbol } from './IconSymbols';
 import { CollapseIcon } from './components/CollapseIcon';
@@ -74,13 +74,17 @@ const BranchNode = styled.button<{
 
 const LeafNode = styled.a<{ depth?: number }>(commonNodeStyles);
 
-export const RootNode = styled.div(({ theme }) => ({
+export const RootNode = styled.div({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   marginTop: 16,
   marginBottom: 4,
-}));
+
+  '&:first-of-type': {
+    marginTop: 0,
+  },
+});
 
 const Wrapper = styled.div({
   display: 'flex',

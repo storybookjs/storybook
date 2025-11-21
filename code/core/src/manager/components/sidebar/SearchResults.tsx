@@ -82,7 +82,6 @@ const RecentlyOpenedTitle = styled.div(({ theme }) => ({
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
   color: theme.textMutedColor,
-  marginTop: 16,
   marginBottom: 4,
   alignItems: 'center',
 
@@ -315,7 +314,6 @@ export const SearchResults: FC<{
           const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
-              {/* @ts-expect-error (non strict) */}
               <Button key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>

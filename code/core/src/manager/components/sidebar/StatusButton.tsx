@@ -29,12 +29,7 @@ export const StatusLabel = styled.div<{ status: StatusValue }>(withStatusColor, 
   margin: 3,
 });
 
-export interface StatusButtonProps extends ComponentProps<typeof Button> {
-  height?: number;
-  width?: number;
-  status: StatusValue;
-  selectedItem?: boolean;
-}
+export type StatusButtonProps = ComponentProps<typeof StyledButton>;
 
 const StyledButton = styled(Button)<{
   height?: number;

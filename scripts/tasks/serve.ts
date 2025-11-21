@@ -3,6 +3,7 @@ import waitOn from 'wait-on';
 
 import { getPort } from '../sandbox/utils/getPort';
 import { type Task } from '../task';
+import { ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
@@ -15,19 +16,14 @@ export const serve: Task = {
   dependsOn: ['build'],
   async ready({ key }) {
     const port = getPort({ key, selectedTask: 'serve' });
-    console.log({ key, port });
-    await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16 });
-
     return (await detectFreePort(port)) !== port;
   },
-  async run({ builtSandboxDir, codeDir, key }, { debug, dryRun }) {
+  async run({ builtSandboxDir, key }, { debug, dryRun }) {
     const port = getPort({ key, selectedTask: 'serve' });
-    console.log({ key, port });
-
     const controller = new AbortController();
     exec(
-      `yarn http-server ${builtSandboxDir} --port ${port} -s`,
-      { cwd: codeDir },
+      `yarn http-server ${builtSandboxDir} --port ${port}`,
+      { cwd: ROOT_DIRECTORY },
       { dryRun, debug, signal: controller.signal as AbortSignal }
     ).catch((err) => {
       // If aborted, we want to make sure the rejection is handled.

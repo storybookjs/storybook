@@ -446,11 +446,8 @@ async function run() {
   if (startFrom === 'auto') {
     // Don't reset anything!
   } else if (startFrom === 'never') {
-    const firstUnreadyOrNotServing = sortedTasks.find((task) =>
-      ['unready', 'notserving'].includes(statuses.get(task))
-    );
-    if (firstUnreadyOrNotServing !== finalTask) {
-      throw new Error(`Task ${getTaskKey(firstUnreadyOrNotServing)} was not ready`);
+    if (firstUnready && firstUnready !== finalTask) {
+      throw new Error(`Task ${getTaskKey(firstUnready)} was not ready`);
     }
   } else if (startFrom) {
     // set to reset back to a specific task
@@ -497,16 +494,15 @@ async function run() {
     const task = sortedTasks[i];
     const status = statuses.get(task);
 
-    let shouldRun = status === 'unready';
+    let shouldRun = startFrom !== 'never' ? status === 'unready' : finalTask === task;
 
-    if (status === 'notserving') {
+    if (startFrom !== 'never' && status === 'notserving') {
       shouldRun =
         finalTask === task ||
         !!tasksThatDepend.get(task).find((t) => statuses.get(t) === 'unready');
     }
 
     if (shouldRun) {
-      console.log(task);
       statuses.set(task, 'running');
       writeTaskList(statuses);
 

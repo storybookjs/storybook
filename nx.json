@@ -93,7 +93,7 @@
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task sandbox -s never --no-link --template={projectName}",
+        "command": "yarn task sandbox -s never --debug --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
@@ -110,7 +110,7 @@
       "inputs": ["^production"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task check-sandbox -s never --no-link --template={projectName}",
+        "command": "yarn task check-sandbox -s never --debug --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
@@ -123,7 +123,7 @@
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}/storybook-static"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task build -s never --no-link --template={projectName}",
+        "command": "yarn task build -s never --debug --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
@@ -136,7 +136,7 @@
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}/storybook-static"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task chromatic -s never --no-link --template={projectName}",
+        "command": "yarn task chromatic -s never --debug --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
@@ -148,7 +148,7 @@
       "inputs": ["^production"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task serve -s never --no-link --template={projectName}",
+        "command": "yarn task serve -s never --debug --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
@@ -160,7 +160,7 @@
       "inputs": ["^production"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task e2e-tests -s never --no-link --template={projectName}",
+        "command": "yarn task e2e-tests -s never --debug --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },

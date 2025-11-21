@@ -447,11 +447,11 @@ async function run() {
       throw new Error(`Task ${taskKey} is ready`);
     }
 
-    if (
-      sortedTasks.find((task) => ['unready', 'notserving'].includes(statuses.get(task))) !==
-      finalTask
-    ) {
-      throw new Error(`Task ${getTaskKey(firstUnready)} was not ready`);
+    const firstUnreadyOrNotServing = sortedTasks.find((task) =>
+      ['unready', 'notserving'].includes(statuses.get(task))
+    );
+    if (firstUnreadyOrNotServing !== finalTask) {
+      throw new Error(`Task ${getTaskKey(firstUnreadyOrNotServing)} was not ready`);
     }
   } else if (startFrom) {
     // set to reset back to a specific task

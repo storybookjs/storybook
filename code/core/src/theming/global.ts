@@ -3,15 +3,22 @@ import memoize from 'memoizerific';
 import { theme } from './tokens/semantic/color';
 import type { Background, Color, Typography } from './types';
 
-const customProps = (values: any) => {
-  const propList: { [key: string]: string } = {};
-
-  for (const group in values) {
-    for (const key in values[group]) {
-      propList[`--${group}-${key}`] = values[group][key];
+const generateCustomProps = (tokenVars: typeof theme): Record<string, string> => {
+  const tokens: Record<string, string> = {};
+  for (const themeVariant in tokenVars) {
+    const themeVariantKey = themeVariant as keyof typeof tokenVars;
+    const themeVariantObj = tokenVars[themeVariantKey];
+    for (const propGroup in themeVariantObj) {
+      const propGroupKey = propGroup as keyof typeof themeVariantObj;
+      const propGroupObj = themeVariantObj[propGroupKey];
+      for (const key in propGroupObj) {
+        const keyKey = key as string;
+        tokens[`--${themeVariantKey}-${propGroupKey}-${keyKey}`] =
+          propGroupObj[keyKey as keyof typeof propGroupObj];
+      }
     }
   }
-  return propList;
+  return tokens;
 };
 
 type Value = string | number;
@@ -24,7 +31,7 @@ interface Return {
 export const createReset = memoize(1)(
   ({ typography }: { typography: Typography }): Return => ({
     body: {
-      ...customProps(theme.light),
+      ...generateCustomProps(theme),
       fontFamily: typography.fonts.base,
       fontSize: typography.size.s3,
       margin: 0,

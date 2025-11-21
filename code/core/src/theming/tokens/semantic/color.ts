@@ -1,4 +1,4 @@
-import { accent, color } from '../primitive/color';
+import { color } from '../primitive/color';
 
 interface FgColor {
   default: string;

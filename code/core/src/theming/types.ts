@@ -1,5 +1,6 @@
 import type { animation, easing } from './animation';
 import type { background, color, typography } from './base';
+import type { theme as themeTokens } from './tokens/semantic/color';
 
 export interface ThemeVars extends ThemeVarsBase, ThemeVarsColors {}
 
@@ -59,6 +60,7 @@ export type Background = typeof background;
 export type Typography = typeof typography;
 export type Animation = typeof animation;
 export type Easing = typeof easing;
+export type Tokens = typeof themeTokens;
 
 export type TextSize = number | string;
 export interface Brand {
@@ -69,6 +71,7 @@ export interface Brand {
 }
 
 export interface StorybookTheme {
+  tokens: Tokens;
   color: Color;
   background: Background;
   typography: Typography;

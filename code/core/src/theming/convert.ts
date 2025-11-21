@@ -4,8 +4,30 @@ import { animation, easing } from './animation';
 import { background, color, typography } from './base';
 import { themes } from './create';
 import { chromeDark, chromeLight, create as createSyntax } from './modules/syntax';
+import { theme as themeTokens } from './tokens/semantic/color';
 import type { Color, StorybookTheme, ThemeVars, ThemeVarsColors } from './types';
 import { getPreferredColorScheme } from './utils';
+
+const generateTokens = (tokenVars: typeof themeTokens): typeof themeTokens => {
+  const tokens = {} as typeof themeTokens;
+  for (const themeGroup in tokenVars) {
+    const themeGroupKey = themeGroup as keyof typeof themeTokens;
+    tokens[themeGroupKey] = {} as (typeof themeTokens)[typeof themeGroupKey];
+    for (const propGroup in tokenVars[themeGroupKey]) {
+      const propGroupKey = propGroup as keyof (typeof tokenVars)[typeof themeGroupKey];
+      (tokens[themeGroupKey] as unknown as Record<string, Record<string, string>>)[propGroupKey] =
+        {};
+      const propGroupObj = tokenVars[themeGroupKey][propGroupKey];
+      for (const key in propGroupObj) {
+        const keyKey = key as keyof typeof propGroupObj;
+        (tokens[themeGroupKey] as unknown as Record<string, Record<string, string>>)[propGroupKey][
+          keyKey
+        ] = `var( --${themeGroupKey}-${propGroupKey}-${keyKey} )`;
+      }
+    }
+  }
+  return tokens;
+};
 
 const lightSyntaxColors = {
   green1: '#008000',
@@ -114,6 +136,7 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
     ...rest,
 
     base,
+    tokens: generateTokens(themeTokens),
     color: createColors(inherit),
     background: {
       app: appBg,

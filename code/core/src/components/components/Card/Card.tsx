@@ -1,6 +1,6 @@
 import React, { type ComponentProps, forwardRef } from 'react';
 
-import type { CSSObject, color } from 'storybook/theming';
+import type { color } from 'storybook/theming';
 import { keyframes, styled } from 'storybook/theming';
 
 const fadeInOut = keyframes({
@@ -26,24 +26,20 @@ const slide = keyframes({
   },
 });
 
-const CardContent = styled.div(({ theme }) => ({
-  borderRadius: theme.appBorderRadius,
-  backgroundColor: theme.background.content,
-  position: 'relative',
-}));
-
 const CardOutline = styled.div<{
   animation?: 'none' | 'rainbow' | 'spin';
   color?: keyof typeof color;
 }>(({ animation = 'none', color, theme }) => ({
-  position: 'relative',
-  width: '100%',
-  padding: 1,
-  overflow: 'hidden',
-  backgroundColor: theme.background.content,
-  borderRadius: theme.appBorderRadius + 1,
+  '--Card-bgColor-default': theme.tokens.light.bgColor.default,
+  '--Card-borderRadius': theme.appBorderRadius + 'px',
+
+  backgroundColor: 'var( --Card-bgColor-default )',
+  borderRadius: 'calc( var( --Card-borderRadius ) + 1px)',
   boxShadow: `inset 0 0 0 1px ${(animation === 'none' && color && theme.color[color]) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
+  padding: 1,
+  position: 'relative',
   transition: 'box-shadow 1s',
+  width: '100%',
 
   '@supports (interpolate-size: allow-keywords)': {
     interpolateSize: 'allow-keywords',
@@ -88,6 +84,11 @@ const CardOutline = styled.div<{
     }),
   },
 }));
+
+const CardContent = styled.div({
+  backgroundColor: 'var( --Card-bgColor-default )',
+  borderRadius: 'var( --Card-borderRadius )',
+});
 
 interface CardProps extends ComponentProps<typeof CardContent> {
   outlineAnimation?: 'none' | 'rainbow' | 'spin';

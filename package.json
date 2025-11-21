@@ -1,5 +1,5 @@
 {
-  "name": "@storybook/super-root",
+  "name": "@storybook/root",
   "private": true,
   "type": "module",
   "workspaces": {

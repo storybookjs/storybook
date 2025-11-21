@@ -1,5 +1,5 @@
 {
-  "name": "@storybook/root",
+  "name": "@storybook/code",
   "version": "10.1.0-alpha.11",
   "private": true,
   "description": "Storybook root",
@@ -42,6 +42,58 @@
     "task": "yarn --cwd ../scripts task",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
+  },
+  "nx": {
+    "name": "code",
+    "projectType": "library",
+    "includedScripts": [],
+    "targets": {
+      "lint": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "{projectRoot}",
+          "command": "yarn lint"
+        },
+        "dependsOn": [
+          {
+            "projects": [
+              "*"
+            ],
+            "target": "build"
+          }
+        ]
+      },
+      "test": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "{projectRoot}",
+          "command": "yarn test"
+        },
+        "dependsOn": [
+          {
+            "projects": [
+              "*"
+            ],
+            "target": "build"
+          }
+        ]
+      },
+      "knip": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "{projectRoot}",
+          "command": "yarn knip"
+        },
+        "dependsOn": [
+          {
+            "projects": [
+              "*"
+            ],
+            "target": "build"
+          }
+        ]
+      }
+    }
   },
   "husky": {
     "hooks": {
@@ -209,50 +261,6 @@
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
-  },
-  "nx": {
-    "name": "root",
-    "projectType": "library",
-    "includedScripts": [],
-    "targets": {
-      "lint": {
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": "{projectRoot}",
-          "command": "yarn lint"
-        },
-        "dependsOn": [
-          {
-            "projects": [
-              "*"
-            ],
-            "target": "build"
-          }
-        ]
-      },
-      "test": {
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": "{projectRoot}",
-          "command": "yarn test"
-        },
-        "dependsOn": [
-          {
-            "projects": [
-              "*"
-            ],
-            "target": "build"
-          }
-        ]
-      },
-      "knip": {
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": "{projectRoot}",
-          "command": "yarn knip"
-        }
-      }
-    }
   },
   "pr-log": {
     "skipLabels": [

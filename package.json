@@ -66,8 +66,10 @@
   "devDependencies": {
     "@nx/workspace": "^22.0.4",
     "@playwright/test": "^1.52.0",
+    "@types/kill-port": "^2.0.3",
     "http-server": "^14.1.1",
     "jiti": "^2.4.2",
+    "kill-port": "^2.0.1",
     "nx": "^22.0.4",
     "prettier": "^3.6.2"
   }

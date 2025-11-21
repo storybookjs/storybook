@@ -8749,8 +8749,10 @@ __metadata:
   dependencies:
     "@nx/workspace": "npm:^22.0.4"
     "@playwright/test": "npm:^1.52.0"
+    "@types/kill-port": "npm:^2.0.3"
     http-server: "npm:^14.1.1"
     jiti: "npm:^2.4.2"
+    kill-port: "npm:^2.0.1"
     nx: "npm:^22.0.4"
     prettier: "npm:^3.6.2"
   languageName: unknown
@@ -9806,6 +9808,16 @@ __metadata:
   version: 0.0.29
   resolution: "@types/json5@npm:0.0.29"
   checksum: 10c0/6bf5337bc447b706bb5b4431d37686aa2ea6d07cfd6f79cc31de80170d6ff9b1c7384a9c0ccbc45b3f512bae9e9f75c2e12109806a15331dc94e8a8db6dbb4ac
+  languageName: node
+  linkType: hard
+
+"@types/kill-port@npm:^2.0.3":
+  version: 2.0.3
+  resolution: "@types/kill-port@npm:2.0.3"
+  dependencies:
+    "@types/node": "npm:*"
+    shell-exec: "npm:^1"
+  checksum: 10c0/e48aa96134f01770ec729e0cc0da6388a0fbbf659e69a3e993fad9d12c48a258b3a70741699b51e5b35f664fa065ebde5a2fe25fea98dcc5eed2abdeb2b76c47
   languageName: node
   linkType: hard
 
@@ -18819,6 +18831,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"get-them-args@npm:1.3.2":
+  version: 1.3.2
+  resolution: "get-them-args@npm:1.3.2"
+  checksum: 10c0/a75e26d7369a00f596dc9c3c7b4259a219d4486a0beef51d991867103cc8c07d22814a24210d9c9f56cefb35f9848e16fe120b57b3ec1ea333054e715059d586
+  languageName: node
+  linkType: hard
+
 "get-tsconfig@npm:^4.10.0, get-tsconfig@npm:^4.10.1":
   version: 4.13.0
   resolution: "get-tsconfig@npm:4.13.0"
@@ -21668,6 +21687,18 @@ __metadata:
   dependencies:
     json-buffer: "npm:3.0.1"
   checksum: 10c0/aa52f3c5e18e16bb6324876bb8b59dd02acf782a4b789c7b2ae21107fab95fab3890ed448d4f8dba80ce05391eeac4bfabb4f02a20221342982f806fa2cf271e
+  languageName: node
+  linkType: hard
+
+"kill-port@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "kill-port@npm:2.0.1"
+  dependencies:
+    get-them-args: "npm:1.3.2"
+    shell-exec: "npm:1.0.2"
+  bin:
+    kill-port: cli.js
+  checksum: 10c0/fcbcea8e950f564e0a0b3a986390ecbd8ef1cac00f365cc2bf1f42dd972dc3a714fc2fbe362068deba2bec11cf10a7d3edb7aaf2d12e48390a2c26d73f85b4f7
   languageName: node
   linkType: hard
 
@@ -28711,6 +28742,20 @@ __metadata:
   version: 3.0.0
   resolution: "shebang-regex@npm:3.0.0"
   checksum: 10c0/1dbed0726dd0e1152a92696c76c7f06084eb32a90f0528d11acd764043aacf76994b2fb30aa1291a21bd019d6699164d048286309a278855ee7bec06cf6fb690
+  languageName: node
+  linkType: hard
+
+"shell-exec@npm:1.0.2":
+  version: 1.0.2
+  resolution: "shell-exec@npm:1.0.2"
+  checksum: 10c0/3733ed251bc025340a373da151c44d36e69d37f570e94f5dd6a968427e8d9f751a58dd87c5a01bf0ad1289ad1de963a425aaf14ad3a06f8aee56f776462b63ca
+  languageName: node
+  linkType: hard
+
+"shell-exec@npm:^1":
+  version: 1.1.2
+  resolution: "shell-exec@npm:1.1.2"
+  checksum: 10c0/d03cdcaf1a7462397d70efde4f43df46a6776bff27d46c83a9f985898b738366236185e79958717356f19b54a1766597d86dfab4d1d8dbe18c07cd5586d2d27c
   languageName: node
   linkType: hard
 

@@ -5,6 +5,7 @@ import type { Server } from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
+import kill from 'kill-port';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
@@ -12,7 +13,6 @@ import { parseConfigFile, runServer } from 'verdaccio';
 import { npmAuth } from './npm-auth';
 import { maxConcurrentTasks } from './utils/concurrency';
 import { PACKS_DIRECTORY } from './utils/constants';
-import { killProcessOnPort } from './utils/kill-process-on-port';
 import { getWorkspaces } from './utils/workspace';
 
 program
@@ -37,9 +37,8 @@ const pathExists = async (p: string) => {
 };
 
 const startVerdaccio = async () => {
-  // Kill Verdaccio related processes if they are already running
-  await killProcessOnPort(6001);
-  await killProcessOnPort(6002);
+  await kill(6001);
+  await kill(6002);
 
   const ready = {
     proxy: false,

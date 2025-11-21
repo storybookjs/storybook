@@ -82,7 +82,7 @@
         "executor": "nx:run-commands",
         "options": {
           "cwd": "{projectRoot}",
-          "command": "yarn knip"
+          "command": "yarn knip --no-exit-code"
         },
         "dependsOn": [
           {

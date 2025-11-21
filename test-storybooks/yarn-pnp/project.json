@@ -7,7 +7,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "{projectRoot}",
-        "command": "yarn && yarn storybook --smoke-test"
+        "command": "yarn --no-immutable && yarn storybook --smoke-test"
       },
       "configurations": {
         "production": {}

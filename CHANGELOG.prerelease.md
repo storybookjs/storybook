@@ -1,3 +1,9 @@
+## 10.1.0-alpha.14
+
+- Angular: Add support for v21 - [#33098](https://github.com/storybookjs/storybook/pull/33098), thanks @valentinpalkovic!
+- Build: Add Rsbuild-based sandboxes - [#33039](https://github.com/storybookjs/storybook/pull/33039), thanks @valentinpalkovic!
+- CLI: Change yarn package manager value to yarn1 - [#33099](https://github.com/storybookjs/storybook/pull/33099), thanks @valentinpalkovic!
+
 ## 10.1.0-alpha.13
 
 - CLI: Modernize Storybook CLI with new init workflow, Clack UI, and Generator System - [#32717](https://github.com/storybookjs/storybook/pull/32717), thanks @valentinpalkovic!

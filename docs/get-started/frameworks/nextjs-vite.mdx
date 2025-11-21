@@ -1,30 +1,27 @@
 ---
-title: Storybook for Next.js with Webpack
+title: Storybook for Next.js with Vite
 hideRendererSelector: true
 sidebar:
-  order: 3
-  title: Next.js (Webpack)
+  order: 2
+  title: Next.js (Vite)
 ---
 
-Storybook for Next.js (Webpack) is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Next.js](https://nextjs.org/) applications using Webpack 5. It includes:
+Storybook for Next.js (Vite) is the **recommended** [framework](../../contribute/framework.mdx) for developing and testing UI components in isolation for [Next.js](https://nextjs.org/) applications. It uses [Vite](https://vitejs.dev/) for faster builds and better performance. It includes:
 
 * 🔀 Routing
 * 🖼 Image optimization
 * ⤵️ Absolute imports
 * 🎨 Styling
-* 🎛 Webpack & Babel config
+* ⚡ Vite-powered builds
 * 💫 and more!
 
-<Callout variant="info">
+This Vite-based framework offers several advantages over the Webpack-based [`@storybook/nextjs`](./nextjs.mdx) framework:
 
-**We recommend using [`@storybook/nextjs-vite`](./nextjs-vite.mdx)** for most Next.js projects. The Vite-based framework is faster, more modern, and offers better support for testing features.
-
-Use this Webpack-based framework (`@storybook/nextjs`) only if:
-- Your project has custom Webpack configurations that are incompatible with Vite
-- Your project has custom Babel configurations that require Webpack
-- You need specific Webpack features not available in Vite
-
-</Callout>
+* ⚡ **Faster builds** - Vite's build system is significantly faster than Webpack
+* 🔧 **Modern tooling** - Uses the latest build tools and optimizations
+* 🧪 **Better test support** - Full support for the [Vitest addon](../../writing-tests/integrations/vitest-addon.mdx) and other testing features
+* 📦 **Simpler configuration** - No need for Babel or complex Webpack configurations
+* 🎯 **Better development experience** - Faster HMR (Hot Module Replacement) and dev server startup
 
 ## Requirements
 
@@ -34,20 +31,7 @@ Use this Webpack-based framework (`@storybook/nextjs`) only if:
 
 ### In a project without Storybook
 
-When you run `storybook init` in your Next.js project, Storybook will automatically detect your project and select the [`@storybook/nextjs-vite`](./nextjs-vite.mdx) framework (which we recommend) unless your project has custom Webpack or Babel configurations that may be incompatible with Vite.
-
-
-<details>
-<summary>If your project has custom Webpack/Babel configurations</summary>
-
-If `storybook init` detects a custom Webpack configuration in your Next.js config file or `.babelrc` file, it will prompt you to choose between:
-
-- **`@storybook/nextjs-vite`** (recommended) - Faster, more modern, supports latest testing features, but may be incompatible with your custom Webpack/Babel config
-- **`@storybook/nextjs`** (Webpack 5) - Better compatibility with custom Webpack/Babel configurations
-
-Choose `@storybook/nextjs` (Webpack 5) if you need to keep your existing Webpack/Babel setup and cannot migrate to Vite.
-
-</details>
+When you run `storybook init` in your Next.js project, Storybook will automatically detect your project and select the `@storybook/nextjs-vite` framework **unless** your project has custom Webpack or Babel configurations that may be incompatible with Vite.
 
 Follow the prompts after running this command in your Next.js project's root directory:
 
@@ -59,9 +43,20 @@ Follow the prompts after running this command in your Next.js project's root dir
 
 [More on getting started with Storybook.](../install.mdx)
 
+<Callout variant="info">
+
+If your project has a custom `webpack.config.js` or `.babelrc` file, `storybook init` will prompt you to choose between:
+
+- **`@storybook/nextjs-vite`** (recommended) - Faster, more modern, supports latest testing features
+- **`@storybook/nextjs`** (Webpack 5) - Better compatibility with custom Webpack/Babel configurations
+
+Choose `nextjs-vite` if you're willing to migrate your custom configurations to Vite. Choose `nextjs` (Webpack 5) if you need to keep your existing Webpack/Babel setup.
+
+</Callout>
+
 ### In a project with Storybook
 
-This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+This framework is designed to work with Storybook 10+. If you're not already using v10, upgrade with this command:
 
 {/* prettier-ignore-start */}
 
@@ -71,7 +66,9 @@ This framework is designed to work with Storybook 7+. If you’re not already us
 
 #### Automatic migration
 
-When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/nextjs`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
+When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/nextjs-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
+
+You can also use the [`nextjs-to-nextjs-vite` automigration](#migrating-from-webpack) to migrate from the Webpack-based `@storybook/nextjs` framework to this Vite-based framework.
 
 #### Manual migration
 
@@ -79,7 +76,7 @@ First, install the framework:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="nextjs-install.md" />
+<CodeSnippets path="nextjs-vite-install.md" />
 
 {/* prettier-ignore-end */}
 
@@ -87,9 +84,17 @@ Then, update your `.storybook/main.js|ts` to change the framework property:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="nextjs-add-framework.md" />
+<CodeSnippets path="nextjs-vite-add-framework.md" />
 
 {/* prettier-ignore-end */}
+
+<Callout variant="info">
+
+If your Storybook configuration contains custom Webpack operations in [`webpackFinal`](../../api/main-config/main-config-webpack-final.mdx), you will likely need to create equivalents in [`viteFinal`](../../api/main-config/main-config-vite-final.mdx).
+
+For more information, see the [Vite builder documentation](../../builders/vite.mdx#migrating-from-webpack).
+
+</Callout>
 
 Finally, if you were using Storybook plugins to integrate with Next.js, those are no longer necessary when using this framework and can be removed:
 
@@ -99,9 +104,25 @@ Finally, if you were using Storybook plugins to integrate with Next.js, those ar
 
 {/* prettier-ignore-end */}
 
-#### Migrating to Vite
+#### Migrating from Webpack
 
-Please refer to the [migration instructions for `@storybook/nextjs-vite`](./nextjs-vite.mdx#migrating-from-webpack).
+Storybook provides a migration tool for migrating to this framework from the Webpack-based Next.js framework, `@storybook/nextjs`. To migrate, run this command:
+
+```bash
+npx storybook automigrate nextjs-to-nextjs-vite
+```
+
+This automigration tool performs the following actions:
+
+1. Updates `package.json` files to replace `@storybook/nextjs` with `@storybook/nextjs-vite`
+2. Updates `.storybook/main.js|ts` to change the framework property
+3. Scans and updates import statements in your story files and configuration files
+
+<Callout variant="info">
+
+If your project has custom Webpack configurations in `.storybook/main.js|ts` (via `webpackFinal`), you'll need to migrate those to Vite configuration (via `viteFinal`) after running this automigration. See the [Vite builder documentation](../builders/vite.mdx#migrating-from-webpack) for more information.
+
+</Callout>
 
 ## Run the Setup Wizard
 
@@ -180,15 +201,7 @@ import localFont from 'next/font/local';
 const localRubikStorm = localFont({ src: './fonts/RubikStorm-Regular.ttf' });
 ```
 
-#### `staticDir` mapping
-
-You have to tell Storybook where the `fonts` directory is located, via the [`staticDirs` configuration](../../api/main-config/main-config-static-dirs.mdx#with-configuration-objects). The `from` value is relative to the `.storybook` directory. The `to` value is relative to the execution context of Storybook. Very likely it is the root of your project.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="nextjs-image-static-dirs.md" />
-
-{/* prettier-ignore-end */}
+The Vite-based framework automatically handles font path mapping, so you don't need to configure `staticDirs` for fonts like you would with the Webpack-based framework.
 
 ### Not supported features of `next/font`
 
@@ -249,7 +262,9 @@ module.exports = {
 [Next.js's router](https://nextjs.org/docs/pages/building-your-application/routing) is automatically stubbed for you so that when the router is interacted with, all of its interactions are automatically logged to the [Actions panel](../../essentials/actions.mdx).
 
 <Callout>
-  You should only use `next/router` in the `pages` directory. In the `app` directory, it is necessary to use `next/navigation`.
+
+You should only use `next/router` in the `pages` directory. In the `app` directory, it is necessary to use `next/navigation`.
+
 </Callout>
 
 ### Overriding defaults
@@ -263,7 +278,9 @@ Per-story overrides can be done by adding a `nextjs.router` property onto the st
 {/* prettier-ignore-end */}
 
 <Callout>
-  These overrides can also be applied to [all stories for a component](../../api/parameters.mdx#meta-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+
+These overrides can also be applied to [all stories for a component](../../api/parameters.mdx#meta-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+
 </Callout>
 
 ### Default router
@@ -292,10 +309,10 @@ Additionally, the [`router` object](https://nextjs.org/docs/pages/api-reference/
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
 ```ts title=".storybook/preview.js|ts"
-import type { Preview } from '@storybook/nextjs';
+import type { Preview } from '@storybook/nextjs-vite';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from "@storybook/nextjs/router.mock";
+import { getRouter } from "@storybook/nextjs-vite/router.mock";
 
 const preview: Preview = {
   parameters: {
@@ -318,7 +335,9 @@ const preview: Preview = {
 ## Next.js navigation
 
 <Callout>
-  Please note that [`next/navigation`](https://nextjs.org/docs/app/building-your-application/routing) can only be used in components/pages in the `app` directory.
+
+Please note that [`next/navigation`](https://nextjs.org/docs/app/building-your-application/routing) can only be used in components/pages in the `app` directory.
+
 </Callout>
 
 ### Set `nextjs.appDirectory` to `true`
@@ -350,7 +369,9 @@ Per-story overrides can be done by adding a `nextjs.navigation` property onto th
 {/* prettier-ignore-end */}
 
 <Callout>
-  These overrides can also be applied to [all stories for a component](../../api/parameters.mdx#meta-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+
+These overrides can also be applied to [all stories for a component](../../api/parameters.mdx#meta-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+
 </Callout>
 
 ### `useSelectedLayoutSegment`, `useSelectedLayoutSegments`, and `useParams` hooks
@@ -398,7 +419,9 @@ export default function ParamsBasedComponent() {
 ```
 
 <Callout>
-  These overrides can also be applied to [a single story](../../api/parameters.mdx#story-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+
+These overrides can also be applied to [a single story](../../api/parameters.mdx#story-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
+
 </Callout>
 
 The default value of `nextjs.navigation.segments` is `[]` if not set.
@@ -420,10 +443,10 @@ Additionally, the [`router` object](https://nextjs.org/docs/app/api-reference/fu
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
 ```ts title=".storybook/preview.js|ts"
-import type { Preview } from '@storybook/nextjs';
+import type { Preview } from '@storybook/nextjs-vite';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from '@storybook/nextjs/navigation.mock';
+import { getRouter } from '@storybook/nextjs-vite/navigation.mock';
 
 const preview: Preview = {
   parameters: {
@@ -488,60 +511,6 @@ export function Button() {
 }
 ```
 
-## Styled JSX
-
-The built in CSS-in-JS solution for Next.js is [styled-jsx](https://nextjs.org/docs/pages/building-your-application/styling/css-in-js), and this framework supports that out of the box too, zero config.
-
-```jsx title="src/components/HelloWorld.jsx"
-// This will work in Storybook
-function HelloWorld() {
-  return (
-    <div>
-      Hello world
-      <p>scoped!</p>
-      <style jsx>{`
-        p {
-          color: blue;
-        }
-        div {
-          background: red;
-        }
-        @media (max-width: 600px) {
-          div {
-            background: blue;
-          }
-        }
-      `}</style>
-      <style global jsx>{`
-        body {
-          background: black;
-        }
-      `}</style>
-    </div>
-  );
-}
-
-export default HelloWorld;
-```
-
-You can use your own babel config too. This is an example of how you can customize styled-jsx.
-
-```jsonc
-// .babelrc (or whatever config file you use)
-{
-  "presets": [
-    [
-      "next/babel",
-      {
-        "styled-jsx": {
-          "plugins": ["@styled-jsx/plugin-sass"]
-        }
-      }
-    ]
-  ]
-}
-```
-
 ## PostCSS
 
 Next.js lets you [customize PostCSS config](https://nextjs.org/docs/pages/building-your-application/configuring/post-css). Thus this framework will automatically handle your PostCSS config for you.
@@ -577,7 +546,9 @@ import 'styles/globals.scss';
 ```
 
 <Callout variant="warning">
-  Absolute imports **cannot** be mocked in stories/tests. See the [Mocking modules](#mocking-modules) section for more information.
+
+Absolute imports **cannot** be mocked in stories/tests. See the [Mocking modules](#mocking-modules) section for more information.
+
 </Callout>
 
 ## Module aliases
@@ -615,7 +586,9 @@ To configure subpath imports, you define the `imports` property in your project'
 ```
 
 <Callout variant="info">
-  Because subpath imports replace module aliases, you can remove the path aliases from your TypeScript configuration.
+
+Because subpath imports replace module aliases, you can remove the path aliases from your TypeScript configuration.
+
 </Callout>
 
 Which can then be used like this:
@@ -642,10 +615,10 @@ Components often depend on modules that are imported into the component file. Th
 
 This framework provides mocks for many of Next.js' internal modules:
 
-1. [`@storybook/nextjs/cache.mock`](#storybooknextjscachemock)
-2. [`@storybook/nextjs/headers.mock`](#storybooknextjsheadersmock)
-3. [`@storybook/nextjs/navigation.mock`](#storybooknextjsnavigationmock)
-4. [`@storybook/nextjs/router.mock`](#storybooknextjsroutermock)
+1. [`@storybook/nextjs-vite/cache.mock`](#storybooknextjs-vitecachemock)
+2. [`@storybook/nextjs-vite/headers.mock`](#storybooknextjs-viteheadersmock)
+3. [`@storybook/nextjs-vite/navigation.mock`](#storybooknextjs-vitenavigationmock)
+4. [`@storybook/nextjs-vite/router.mock`](#storybooknextjs-viteroutermock)
 
 ### Mocking other modules
 
@@ -685,21 +658,11 @@ Calls to `getConfig` would return the following object when called within Storyb
 }
 ```
 
-## Custom Webpack config
+## Custom Vite configuration
 
-Next.js comes with a lot of things for free out of the box like Sass support, but sometimes you add [custom Webpack config modifications to Next.js](https://nextjs.org/docs/pages/api-reference/next-config-js/webpack). This framework takes care of most of the Webpack modifications you would want to add. If Next.js supports a feature out of the box, then that feature will work out of the box in Storybook. If Next.js doesn't support something out of the box, but makes it easy to configure, then this framework will do the same for that thing for Storybook.
+You can customize the [Vite configuration](../../builders/vite.mdx#configuration) used by Storybook in your `.storybook/main.js|ts` file. By default, Storybook's configuration extends the Vite configuration used by your project, but you can configure it to not do so.
 
-Any Webpack modifications desired for Storybook should be made in [`.storybook/main.js|ts`](../../builders/webpack.mdx#extending-storybooks-webpack-config).
-
-Note: Not all Webpack modifications are copy/paste-able between `next.config.js` and `.storybook/main.js|ts`. It is recommended to do your research on how to properly make your modification to Storybook's Webpack config and on how [Webpack works](https://webpack.js.org/concepts/).
-
-Below is an example of how to add SVGR support to Storybook with this framework.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="nextjs-configure-svgr.md" />
-
-{/* prettier-ignore-end */}
+Not all Vite modifications are copy/paste-able between `next.config.js` and `.storybook/main.js|ts`. It is recommended to do your research on how to properly make your modification to Storybook's Vite config and on how [Vite works](https://vitejs.dev/guide/).
 
 ## Typescript
 
@@ -740,34 +703,17 @@ If this wrapper causes problems in any of your existing stories, you can selecti
 
 {/* prettier-ignore-end */}
 
-Note that wrapping your server components in Suspense does not help if your server components access server-side resources like the file system or Node-specific libraries. To work around this, you'll need to mock out your data access layer using [Webpack aliases](https://webpack.js.org/configuration/resolve/#resolvealias) or an addon like [storybook-addon-module-mock](https://storybook.js.org/addons/storybook-addon-module-mock).
+Note that wrapping your server components in Suspense does not help if your server components access server-side resources like the file system or Node-specific libraries. To work around this, you'll need to mock out your data access layer using [Vite aliases](https://vitejs.dev/config/shared-options.html#resolve-alias) or an addon like [storybook-addon-module-mock](https://storybook.js.org/addons/storybook-addon-module-mock).
 
 If your server components access data via the network, we recommend using the [MSW Storybook Addon](https://storybook.js.org/addons/msw-storybook-addon) to mock network requests.
 
 In the future we will provide better mocking support in Storybook and support for [Server Actions](https://nextjs.org/docs/app/api-reference/functions/server-actions).
 
-{/* ## Portable stories
-
-You can test your stories in a Jest environment by using the [portable stories](../../api/portable-stories/portable-stories-jest.mdx) API.
-
-When using portable stories with Next.js, you need to mock the Next.js modules on which your components depend. You can use the [`@storybook/nextjs/export-mocks` module](#storybooknextjsexport-mocks) to generate the aliases needed to set up portable stories in a Jest environment. This is needed because, to replicate Next.js configuration, Storybook sets up aliases in Webpack to make testing and developing your components easier. If you make use of the advanced functionality like the built-in mocks for common Next.js modules, you need to set up this aliasing in your Jest environment as well. */}
-
-## Notes for Yarn v2 and v3 users
-
-If you're using [Yarn](https://yarnpkg.com/) v2 or v3, you may run into issues where Storybook can't resolve `style-loader` or `css-loader`. For example, you might get errors like:
-
-```
-Module not found: Error: Can't resolve 'css-loader'
-Module not found: Error: Can't resolve 'style-loader'
-```
-
-This is because those versions of Yarn have different package resolution rules than Yarn v1.x. If this is the case for you, please install the package directly.
-
 ## FAQ
 
 ### Stories for pages/components which fetch data
 
-Next.js pages can fetch data directly within server components in the `app` directory, which often include module imports that only run in a node environment. This does not (currently) work within Storybook, because if you import from a Next.js page file containing those node module imports in your stories, your Storybook's Webpack will crash because those modules will not run in a browser. To get around this, you can extract the component in your page file into a separate file and import that pure component in your stories. Or, if that's not feasible for some reason, you can [polyfill those modules](https://webpack.js.org/configuration/node/) in your Storybook's [`webpackFinal` configuration](../../builders/webpack.mdx#extending-storybooks-webpack-config).
+Next.js pages can fetch data directly within server components in the `app` directory, which often include module imports that only run in a node environment. This does not (currently) work within Storybook, because if you import from a Next.js page file containing those node module imports in your stories, your Storybook's Vite build will crash because those modules will not run in a browser. To get around this, you can extract the component in your page file into a separate file and import that pure component in your stories. Or, if that's not feasible for some reason, you can [configure Vite to handle those modules](https://vitejs.dev/config/dep-optimization-options.html#optimizedeps-exclude) in your Storybook's [`viteFinal` configuration](../../builders/vite.mdx#configuration).
 
 **Before**
 
@@ -823,14 +769,6 @@ Therefore, if something in Storybook isn't showing the image properly, make sure
 
 See [local images](https://nextjs.org/docs/pages/building-your-application/optimizing/images#local-images) for more detail on how Next.js treats static image imports.
 
-### Module not found: Error: Can't resolve `package name`
-
-You might get this if you're using Yarn v2 or v3. See [Notes for Yarn v2 and v3 users](#notes-for-yarn-v2-and-v3-users) for more details.
-
-### Should I use the Vite or Webpack version?
-
-We recommend using [`@storybook/nextjs-vite`](./nextjs-vite.mdx) (Vite-based) for most projects because it offers faster builds, better test support, and a simpler configuration. However, if your project has custom Webpack configurations that are incompatible with Vite, use this framework instead.
-
 ### Error: You are importing avif images, but you don't have sharp installed. You have to install sharp in order to use image optimization features in Next.js.
 
 `sharp` is a dependency of Next.js's image optimization feature. If you see this error, you need to install `sharp` in your project.
@@ -849,41 +787,24 @@ pnpm add sharp
 
 You can refer to the [Install `sharp` to Use Built-In Image Optimization](https://nextjs.org/docs/messages/install-sharp) in the Next.js documentation for more information.
 
+### Should I use the Vite or Webpack version?
+
+We recommend using `@storybook/nextjs-vite` (this framework) for most projects because it offers:
+
+* Faster builds and development server startup
+* Better support for modern testing features like the [Vitest addon](../../writing-tests/integrations/vitest-addon.mdx)
+* Simpler configuration without Babel
+* Better developer experience with faster HMR
+
+However, if your project has custom Webpack configurations that are incompatible with Vite, or you need specific Webpack features, you should use [`@storybook/nextjs`](./nextjs.mdx) (Webpack 5) instead.
+
 ## API
 
 ### Modules
 
-The `@storybook/nextjs` package exports several modules that enable you to [mock](#mocking-modules) Next.js's internal behavior.
+The `@storybook/nextjs-vite` package exports several modules that enable you to [mock](#mocking-modules) Next.js's internal behavior.
 
-#### `@storybook/nextjs/export-mocks`
-
-Type: `{ getPackageAliases: ({ useESM?: boolean }) => void }`
-
-`getPackageAliases` is a helper for generating the aliases needed to set up [portable stories](#portable-stories).
-
-```ts title="jest.config.ts"
-import type { Config } from 'jest';
-import nextJest from 'next/jest.js';
-// 👇 Import the utility function
-import { getPackageAliases } from '@storybook/nextjs/export-mocks';
-
-const createJestConfig = nextJest({
-  // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
-  dir: './',
-});
-
-const config: Config = {
-  testEnvironment: 'jsdom',
-  // ... rest of Jest config
-  moduleNameMapper: {
-    ...getPackageAliases(), // 👈 Add the utility as mapped module names
-  },
-};
-
-export default createJestConfig(config);
-```
-
-#### `@storybook/nextjs/cache.mock`
+#### `@storybook/nextjs-vite/cache.mock`
 
 Type: `typeof import('next/cache')`
 
@@ -895,7 +816,7 @@ This module exports mocked implementations of the `next/cache` module's exports.
 
 {/* prettier-ignore-end */}
 
-#### `@storybook/nextjs/headers.mock`
+#### `@storybook/nextjs-vite/headers.mock`
 
 Type: [`cookies`](https://nextjs.org/docs/app/api-reference/functions/cookies#cookiessetname-value-options), [`headers`](https://nextjs.org/docs/app/api-reference/functions/headers) and [`draftMode`](https://nextjs.org/docs/app/api-reference/functions/draft-mode) from Next.js
 
@@ -917,7 +838,7 @@ Because `headers()`, `cookies()` and their sub-functions are all mocks you can u
 
 {/* prettier-ignore-end */}
 
-#### `@storybook/nextjs/navigation.mock`
+#### `@storybook/nextjs-vite/navigation.mock`
 
 Type: `typeof import('next/navigation') & getRouter: () => ReturnType<typeof import('next/navigation')['useRouter']>`
 
@@ -929,7 +850,7 @@ This module exports mocked implementations of the `next/navigation` module's exp
 
 {/* prettier-ignore-end */}
 
-#### `@storybook/nextjs/router.mock`
+#### `@storybook/nextjs-vite/router.mock`
 
 Type: `typeof import('next/router') & getRouter: () => ReturnType<typeof import('next/router')['useRouter']>`
 
@@ -951,7 +872,7 @@ import * as path from 'path';
 export default {
   // ...
   framework: {
-    name: '@storybook/nextjs',
+    name: '@storybook/nextjs-vite',
     options: {
       image: {
         loading: 'eager',
@@ -968,7 +889,7 @@ The available options are:
 
 Type: `Record<string, any>`
 
-Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For Next.js, available options can be found in the [Webpack builder docs](../../builders/webpack.mdx).
+Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For Next.js with Vite, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
 
 #### `image`
 

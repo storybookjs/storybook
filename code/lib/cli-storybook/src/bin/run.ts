@@ -2,6 +2,7 @@ import { globalSettings } from 'storybook/internal/cli';
 import {
   HandledError,
   JsPackageManagerFactory,
+  PackageManagerName,
   isCI,
   optionalEnvToBoolean,
   removeAddon as remove,
@@ -11,7 +12,7 @@ import { withTelemetry } from 'storybook/internal/core-server';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
-import { program } from 'commander';
+import { Option, program } from 'commander';
 import envinfo from 'envinfo';
 import leven from 'leven';
 import picocolors from 'picocolors';
@@ -88,7 +89,11 @@ command('init')
   .description('Initialize Storybook into your project')
   .option('-f --force', 'Force add Storybook')
   .option('-s --skip-install', 'Skip installing deps')
-  .option('--package-manager <npm|pnpm|yarn1|yarn2>', 'Force package manager for installing deps')
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
+  )
   // TODO: Remove in SB11
   .option('--use-pnp', 'Enable PnP mode for Yarn 2+')
   .option('-p --parser <babel | babylon | flow | ts | tsx>', 'jscodeshift parser')
@@ -108,9 +113,10 @@ command('init')
 
 command('add <addon>')
   .description('Add an addon to your Storybook')
-  .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
-    'Force package manager for installing dependencies'
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('--skip-install', 'Skip installing deps')
@@ -132,9 +138,10 @@ command('add <addon>')
 
 command('remove <addon>')
   .description('Remove an addon from your Storybook')
-  .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
-    'Force package manager for installing dependencies'
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('-s --skip-install', 'Skip installing deps')
@@ -159,9 +166,10 @@ command('remove <addon>')
 
 command('upgrade')
   .description(`Upgrade your Storybook packages to v${versions.storybook}`)
-  .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
-    'Force package manager for installing dependencies'
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
   )
   .option('-y --yes', 'Skip prompting the user')
   .option('-f --force', 'force the upgrade, skipping autoblockers')
@@ -253,7 +261,11 @@ command('automigrate [fixId]')
   .description('Check storybook for incompatibilities or migrations and apply fixes')
   .option('-y --yes', 'Skip prompting the user')
   .option('-n --dry-run', 'Only check for fixes, do not actually run them')
-  .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
+  )
   .option('-l --list', 'List available migrations')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configurations to migrate')
   .option('-s --skip-install', 'Skip installing deps')
@@ -272,7 +284,11 @@ command('automigrate [fixId]')
 
 command('doctor')
   .description('Check Storybook for known problems and provide suggestions or fixes')
-  .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
+  )
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
   .action(async (options) => {
     withTelemetry('doctor', { cliOptions: options }, async () => {

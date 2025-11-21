@@ -99,6 +99,7 @@
         "command": "yarn task sandbox -s never --no-link --template={projectName}",
         "forwardAllArgs": false
       },
+      "configurations": { "production": {} },
       "dependsOn": [
         {
           "projects": ["scripts"],
@@ -116,6 +117,7 @@
         "command": "yarn task build -s never --no-link --template={projectName}",
         "forwardAllArgs": false
       },
+      "configurations": { "production": {} },
       "dependsOn": ["sandbox"],
       "cache": true
     },
@@ -128,6 +130,7 @@
         "command": "yarn task chromatic -s never --no-link --template={projectName}",
         "forwardAllArgs": false
       },
+      "configurations": { "production": {} },
       "dependsOn": ["build-sandbox"],
       "cache": true
     },
@@ -139,6 +142,7 @@
         "command": "yarn task serve -s never --no-link --template={projectName}",
         "forwardAllArgs": false
       },
+      "configurations": { "production": {} },
       "continuous": true,
       "dependsOn": ["build-sandbox"]
     },
@@ -150,6 +154,7 @@
         "command": "yarn task e2e-tests -s never --no-link --template={projectName}",
         "forwardAllArgs": false
       },
+      "configurations": { "production": {} },
       "dependsOn": ["serve"],
       "cache": true
     }

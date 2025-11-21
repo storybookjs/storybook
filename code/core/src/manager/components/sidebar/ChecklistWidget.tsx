@@ -191,7 +191,7 @@ export const ChecklistWidget = () => {
 
   return (
     <CollapsibleWithMargin collapsed={!hasItems || !loaded}>
-      <HoverCard outlineAnimation="rainbow">
+      <HoverCard id="storybook-checklist-widget" outlineAnimation="rainbow">
         <Collapsible
           collapsed={!hasItems}
           disabled={!hasItems}

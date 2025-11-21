@@ -7,7 +7,7 @@ import * as templates from '../code/lib/cli-storybook/src/sandbox-templates';
 const { allTemplates, merged, daily, normal } = (templates.default ||
   templates) as typeof templates;
 
-const projectJson = (name: string, framework: string, tags: string[]) => ({
+const projectJson = (name: string, framework: string, tags: string[], skipTasks?: string[]) => ({
   name,
   projectType: 'application',
   implicitDependencies: [
@@ -33,7 +33,11 @@ const projectJson = (name: string, framework: string, tags: string[]) => ({
     },
     chromatic: {},
     serve: {},
-    'e2e-tests': {},
+    ...(skipTasks && skipTasks.includes('e2e-tests')
+      ? {}
+      : {
+          'e2e-tests': {},
+        }),
   },
   tags,
 });
@@ -52,7 +56,7 @@ Object.entries(allTemplates).forEach(([key, value]) => {
   ];
   ensureDirectoryExistence(full);
   console.log(full);
-  writeFileSync(full, JSON.stringify(projectJson(key, framework, tags), null, 2), {
+  writeFileSync(full, JSON.stringify(projectJson(key, framework, tags, value.skipTasks), null, 2), {
     encoding: 'utf-8',
   });
 });

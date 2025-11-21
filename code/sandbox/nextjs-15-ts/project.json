@@ -19,8 +19,7 @@
       }
     },
     "chromatic": {},
-    "serve": {},
-    "e2e-tests": {}
+    "serve": {}
   },
   "tags": [
     "ci:merged",

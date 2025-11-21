@@ -448,7 +448,7 @@ async function run() {
     }
 
     if (
-      sortedTasks.find((task) => ['unready', 'not-serving'].includes(statuses.get(task))) !==
+      sortedTasks.find((task) => ['unready', 'notserving'].includes(statuses.get(task))) !==
       finalTask
     ) {
       throw new Error(`Task ${getTaskKey(firstUnready)} was not ready`);

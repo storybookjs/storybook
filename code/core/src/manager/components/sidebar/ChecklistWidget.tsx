@@ -146,7 +146,13 @@ const title = (progress: number) => {
   }
 };
 
-const OpenGuideAction = ({ children }: { children?: React.ReactNode }) => {
+const OpenGuideAction = ({
+  children,
+  afterClick,
+}: {
+  children?: React.ReactNode;
+  afterClick?: () => void;
+}) => {
   const api = useStorybookApi();
   return (
     <Listbox.Action
@@ -154,6 +160,7 @@ const OpenGuideAction = ({ children }: { children?: React.ReactNode }) => {
       onClick={(e) => {
         e.stopPropagation();
         api.navigate('/settings/guide');
+        afterClick?.();
       }}
     >
       <Listbox.Icon>
@@ -231,7 +238,7 @@ export const ChecklistWidget = () => {
                       tooltip={({ onHide }) => (
                         <Listbox as="ul">
                           <Listbox.Item as="li">
-                            <OpenGuideAction>
+                            <OpenGuideAction afterClick={onHide}>
                               <Listbox.Text>Open full guide</Listbox.Text>
                             </OpenGuideAction>
                           </Listbox.Item>

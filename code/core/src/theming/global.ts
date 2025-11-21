@@ -1,6 +1,18 @@
 import memoize from 'memoizerific';
 
+import { theme } from './tokens/semantic/color';
 import type { Background, Color, Typography } from './types';
+
+const customProps = (values: any) => {
+  const propList: { [key: string]: string } = {};
+
+  for (const group in values) {
+    for (const key in values[group]) {
+      propList[`--${group}-${key}`] = values[group][key];
+    }
+  }
+  return propList;
+};
 
 type Value = string | number;
 interface Return {
@@ -12,6 +24,7 @@ interface Return {
 export const createReset = memoize(1)(
   ({ typography }: { typography: Typography }): Return => ({
     body: {
+      ...customProps(theme.light),
       fontFamily: typography.fonts.base,
       fontSize: typography.size.s3,
       margin: 0,

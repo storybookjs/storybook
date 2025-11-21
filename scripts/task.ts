@@ -447,7 +447,10 @@ async function run() {
       throw new Error(`Task ${taskKey} is ready`);
     }
 
-    if (firstUnready !== finalTask) {
+    if (
+      sortedTasks.find((task) => ['unready', 'not-serving'].includes(statuses.get(task))) !==
+      finalTask
+    ) {
       throw new Error(`Task ${getTaskKey(firstUnready)} was not ready`);
     }
   } else if (startFrom) {
@@ -504,6 +507,7 @@ async function run() {
     }
 
     if (shouldRun) {
+      console.log(task);
       statuses.set(task, 'running');
       writeTaskList(statuses);
 

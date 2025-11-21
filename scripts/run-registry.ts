@@ -5,6 +5,7 @@ import type { Server } from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
+import detectFreePort from 'detect-port';
 import kill from 'kill-port';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
@@ -37,9 +38,12 @@ const pathExists = async (p: string) => {
 };
 
 const startVerdaccio = async () => {
-  await kill(6001);
-  await kill(6002);
-
+  if ((await detectFreePort(6001)) !== 6001) {
+    await kill(6001);
+  }
+  if ((await detectFreePort(6002)) !== 6002) {
+    await kill(6002);
+  }
   const ready = {
     proxy: false,
     verdaccio: false,

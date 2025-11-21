@@ -159,7 +159,7 @@ const ItemContent = styled.div(({ theme }) => ({
     listStyleType: 'disc',
 
     'li::marker': {
-      color: theme.color.medium,
+      color: theme.color.mediumdark,
     },
   },
 }));

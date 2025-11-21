@@ -182,12 +182,14 @@ const refsEmpty = {
   },
 };
 
-const waitForChecklistWidget = () =>
-  waitFor(
+const waitForChecklistWidget = async () => {
+  await waitFor(
     () =>
       expect(document.getElementById('storybook-checklist-widget')?.checkVisibility()).toBe(true),
     { timeout: 5000 }
   );
+  await wait(300); // wait for expand animation
+};
 
 export const Simple: Story = {
   play: waitForChecklistWidget,

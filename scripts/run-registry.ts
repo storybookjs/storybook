@@ -177,7 +177,7 @@ const run = async () => {
   }
 
   let verdaccioServer;
-  if ((await detectFreePort(6001)) !== 6001) {
+  if ((await detectFreePort(6001)) === 6001) {
     logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
     verdaccioServer = await startVerdaccio();
     logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);

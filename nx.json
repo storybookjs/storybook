@@ -108,6 +108,18 @@
       ],
       "cache": true
     },
+    "check-sandbox": {
+      "executor": "nx:run-commands",
+      "inputs": ["^production"],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "yarn task check-sandbox -s never --no-link --template={projectName}",
+        "forwardAllArgs": false
+      },
+      "configurations": { "production": {} },
+      "dependsOn": ["sandbox"],
+      "cache": true
+    },
     "build-sandbox": {
       "executor": "nx:run-commands",
       "inputs": ["^production"],

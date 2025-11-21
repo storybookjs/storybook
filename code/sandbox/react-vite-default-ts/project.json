@@ -13,6 +13,7 @@
         "outputPath": "react-vite-default-ts"
       }
     },
+    "check-sandbox": {},
     "build-sandbox": {
       "options": {
         "outputPath": "react-vite-default-ts"

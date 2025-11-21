@@ -19,6 +19,18 @@
           "{workspaceRoot}/docs/**/*"
         ]
       },
+      "check": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "{projectRoot}",
+          "command": "yarn check"
+        },
+        "inputs": [
+          "default"
+        ],
+        "dependsOn": [],
+        "cache": true
+      },
       "lint": {
         "cache": true,
         "executor": "nx:run-commands",

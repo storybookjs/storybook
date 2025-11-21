@@ -1,0 +1,17 @@
+{
+  "name": "portable-stories-kitchen-sink/react",
+  "projectType": "application",
+  "targets": {
+    "e2e-ui": {
+      "dependsOn": [{ "projects": ["*"], "target": "build" }],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn && yarn playwright-e2e"
+      },
+      "configurations": {
+        "production": {}
+      }
+    }
+  }
+}

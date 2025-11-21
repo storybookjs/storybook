@@ -1,13 +1,14 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
+import { type Template } from '../code/lib/cli-storybook/src/sandbox-templates';
 import * as templates from '../code/lib/cli-storybook/src/sandbox-templates';
 
 // @ts-expect-error somehow TS thinks there is a default export
 const { allTemplates, merged, daily, normal } = (templates.default ||
   templates) as typeof templates;
 
-const projectJson = (name: string, framework: string, tags: string[], skipTasks?: string[]) => ({
+const projectJson = (name: string, framework: string, tags: string[], template: Template) => ({
   name,
   projectType: 'application',
   implicitDependencies: [
@@ -26,6 +27,11 @@ const projectJson = (name: string, framework: string, tags: string[], skipTasks?
         outputPath: name.replaceAll('/', '-'),
       },
     },
+    ...(template.typeCheck === true
+      ? {
+          'check-sandbox': {},
+        }
+      : {}),
     'build-sandbox': {
       options: {
         outputPath: name.replaceAll('/', '-'),
@@ -33,7 +39,7 @@ const projectJson = (name: string, framework: string, tags: string[], skipTasks?
     },
     chromatic: {},
     serve: {},
-    ...(skipTasks && skipTasks.includes('e2e-tests')
+    ...(template.skipTasks && template.skipTasks.includes('e2e-tests')
       ? {}
       : {
           'e2e-tests': {},
@@ -56,7 +62,7 @@ Object.entries(allTemplates).forEach(([key, value]) => {
   ];
   ensureDirectoryExistence(full);
   console.log(full);
-  writeFileSync(full, JSON.stringify(projectJson(key, framework, tags, value.skipTasks), null, 2), {
+  writeFileSync(full, JSON.stringify(projectJson(key, framework, tags, value), null, 2), {
     encoding: 'utf-8',
   });
 });

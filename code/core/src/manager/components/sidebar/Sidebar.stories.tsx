@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { initialState } from '../../../shared/checklist-store/checklistData.state';
 import {
@@ -182,7 +182,16 @@ const refsEmpty = {
   },
 };
 
-export const Simple: Story = {};
+const waitForChecklistWidget = () =>
+  waitFor(
+    () =>
+      expect(document.getElementById('storybook-checklist-widget')?.checkVisibility()).toBe(true),
+    { timeout: 5000 }
+  );
+
+export const Simple: Story = {
+  play: waitForChecklistWidget,
+};
 
 export const SimpleInProduction: Story = {
   args: {
@@ -200,6 +209,7 @@ export const SimpleInProduction: Story = {
 export const Mobile: Story = {
   decorators: [mobileLayoutDecorator],
   globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+  play: waitForChecklistWidget,
 };
 
 export const Loading: Story = {
@@ -219,12 +229,14 @@ export const Empty: Story = {
   args: {
     index: {},
   },
+  play: waitForChecklistWidget,
 };
 
 export const EmptyMobile: Story = {
   args: Empty.args,
   decorators: [mobileLayoutDecorator],
   globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+  play: waitForChecklistWidget,
 };
 
 export const EmptyIndex: Story = {
@@ -235,18 +247,21 @@ export const EmptyIndex: Story = {
       v: 6,
     },
   },
+  play: waitForChecklistWidget,
 };
 
 export const IndexError: Story = {
   args: {
     indexError,
   },
+  play: waitForChecklistWidget,
 };
 
 export const WithRefs: Story = {
   args: {
     refs,
   },
+  play: waitForChecklistWidget,
 };
 
 export const WithRefsNarrow: Story = {
@@ -283,12 +298,14 @@ export const WithRefsNarrow: Story = {
       value: 'narrow',
     },
   },
+  play: waitForChecklistWidget,
 };
 
 export const WithRefsMobile: Story = {
   args: WithRefs.args,
   decorators: [mobileLayoutDecorator],
   globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+  play: waitForChecklistWidget,
 };
 
 export const LoadingWithRefs: Story = {
@@ -316,6 +333,7 @@ export const WithRefEmpty: Story = {
     ...Empty.args,
     refs: refsEmpty,
   },
+  play: waitForChecklistWidget,
 };
 
 export const StatusesCollapsed: Story = {
@@ -349,6 +367,7 @@ export const StatusesCollapsed: Story = {
       return acc;
     }, {} as StatusesByStoryIdAndTypeId),
   },
+  play: waitForChecklistWidget,
 };
 
 export const StatusesOpen: Story = {
@@ -380,6 +399,7 @@ export const StatusesOpen: Story = {
       } satisfies StatusesByStoryIdAndTypeId;
     }, {} as StatusesByStoryIdAndTypeId),
   },
+  play: waitForChecklistWidget,
 };
 
 export const Searching: Story = {
@@ -394,7 +414,7 @@ export const Searching: Story = {
     ),
   ],
   play: async ({ canvasElement, step }) => {
-    await step('wait 2000ms', () => wait(2000));
+    await waitForChecklistWidget();
     const canvas = await within(canvasElement);
     const search = await canvas.findByPlaceholderText('Find components');
     userEvent.clear(search);
@@ -473,6 +493,7 @@ export const Scrolled: Story = {
     );
   },
   play: async ({ canvasElement, step }) => {
+    await waitForChecklistWidget();
     const canvas = await within(canvasElement);
     const scrollable = await canvasElement.querySelector('[data-radix-scroll-area-viewport]');
     await step('expand component', async () => {

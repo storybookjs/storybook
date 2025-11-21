@@ -219,7 +219,7 @@
         "options": {
           "cwd": "{projectRoot}",
           "command": "yarn lint"
-        }
+        },
         "dependsOn": [
           {
             "projects": [
@@ -234,7 +234,7 @@
         "options": {
           "cwd": "{projectRoot}",
           "command": "yarn test"
-        }
+        },
         "dependsOn": [
           {
             "projects": [

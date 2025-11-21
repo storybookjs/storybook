@@ -140,8 +140,10 @@ export const Container = styled.div<{
           right: '0',
           width: width ?? '100%',
           height: height ?? '80%',
-          interpolateSize: 'allow-keywords',
           maxWidth: '100%',
+          '@supports (interpolate-size: allow-keywords)': {
+            interpolateSize: 'allow-keywords',
+          },
           '@media (prefers-reduced-motion: no-preference)': {
             animationTimingFunction: 'cubic-bezier(.9,.16,.77,.64)',
             animation:
@@ -236,11 +238,12 @@ export const Col = styled.div({
 
 export const Header = ({
   hasClose = true,
+  onClose,
   ...props
-}: React.ComponentProps<typeof Col> & { hasClose?: boolean }) => (
+}: React.ComponentProps<typeof Col> & { hasClose?: boolean; onClose?: () => void }) => (
   <Row>
     <Col {...props} />
-    {hasClose && <Close />}
+    {hasClose && <Close onClick={onClose} />}
   </Row>
 );
 

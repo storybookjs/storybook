@@ -1,3 +1,20 @@
+## 10.1.0-alpha.14
+
+- Angular: Add support for v21 - [#33098](https://github.com/storybookjs/storybook/pull/33098), thanks @valentinpalkovic!
+- Build: Add Rsbuild-based sandboxes - [#33039](https://github.com/storybookjs/storybook/pull/33039), thanks @valentinpalkovic!
+- CLI: Change yarn package manager value to yarn1 - [#33099](https://github.com/storybookjs/storybook/pull/33099), thanks @valentinpalkovic!
+- Onboarding: Guided tour checklist - [#32795](https://github.com/storybookjs/storybook/pull/32795), thanks @ghengeveld!
+
+## 10.1.0-alpha.13
+
+- CLI: Modernize Storybook CLI with new init workflow, Clack UI, and Generator System - [#32717](https://github.com/storybookjs/storybook/pull/32717), thanks @valentinpalkovic!
+
+## 10.1.0-alpha.12
+
+- Build: Update dependencies in yarn.lock and clean up comments - [#33089](https://github.com/storybookjs/storybook/pull/33089), thanks @ndelangen!
+- CLI: In csf-factories codemod only remove types which are unused - [#33020](https://github.com/storybookjs/storybook/pull/33020), thanks @yannbf!
+- React: Improve import rewriting when tsconfig paths are used - [#33072](https://github.com/storybookjs/storybook/pull/33072), thanks @kasperpeulen!
+
 ## 10.1.0-alpha.11
 
 - Maintenance: Enable syntax minification for dead code elimination - [#33001](https://github.com/storybookjs/storybook/pull/33001), thanks @mrginglymus!

@@ -1,8 +1,15 @@
-import { baseGenerator } from '../baseGenerator';
-import type { Generator } from '../types';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-const generator: Generator = async (packageManager, npmOptions, options) => {
-  await baseGenerator(packageManager, npmOptions, options, 'qwik', {}, 'qwik');
-};
+import { defineGeneratorModule } from '../modules/GeneratorModule';
 
-export default generator;
+export default defineGeneratorModule({
+  metadata: {
+    projectType: ProjectType.QWIK,
+    renderer: SupportedRenderer.QWIK,
+    framework: SupportedFramework.QWIK,
+  },
+  configure: async () => {
+    return {};
+  },
+});

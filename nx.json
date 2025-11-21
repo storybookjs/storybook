@@ -66,13 +66,9 @@
       "configurations": {
         "production": { "command": "yarn workspace @storybook/scripts local-registry --publish" }
       },
-      "dependsOn": [
-        {
-          "projects": ["*"],
-          "target": "build"
-        }
-      ],
+      "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "inputs": [
+        "^production",
         "{workspaceRoot}/code/**/*",
         "!{workspaceRoot}/code/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
       ],
@@ -97,12 +93,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": [
-        {
-          "projects": ["scripts"],
-          "target": "run-registry"
-        }
-      ],
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
       "cache": true
     },
     "check-sandbox": {
@@ -114,7 +105,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox"],
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
       "cache": true
     },
     "build-sandbox": {
@@ -127,7 +118,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox"],
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
       "cache": true
     },
     "dev": {
@@ -139,7 +130,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox"],
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
       "continuous": true
     },
     "vitest-integration": {
@@ -151,7 +142,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox"]
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }]
     },
     "chromatic": {
       "executor": "nx:run-commands",
@@ -163,7 +154,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["build-sandbox"],
+      "dependsOn": ["build-sandbox", { "projects": ["scripts"], "target": "run-registry" }],
       "cache": true
     },
     "serve": {
@@ -176,7 +167,7 @@
       },
       "configurations": { "production": {} },
       "continuous": true,
-      "dependsOn": ["build-sandbox"]
+      "dependsOn": ["build-sandbox", { "projects": ["scripts"], "target": "run-registry" }]
     },
     "e2e-tests": {
       "executor": "nx:run-commands",
@@ -187,7 +178,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["serve"],
+      "dependsOn": ["serve", { "projects": ["scripts"], "target": "run-registry" }],
       "cache": true
     },
     "test-runner": {
@@ -199,7 +190,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["serve"],
+      "dependsOn": ["serve", { "projects": ["scripts"], "target": "run-registry" }],
       "cache": true
     },
     "e2e-tests-dev": {
@@ -211,7 +202,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["dev"],
+      "dependsOn": ["dev", { "projects": ["scripts"], "target": "run-registry" }],
       "cache": true
     },
     "test-runner-dev": {
@@ -223,7 +214,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["dev"],
+      "dependsOn": ["dev", { "projects": ["scripts"], "target": "run-registry" }],
       "cache": true
     },
 
@@ -231,7 +222,10 @@
     "e2e-ui": {
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn playwright-e2e" },
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn --no-immutable && yarn playwright-e2e"
+      },
       "configurations": { "production": {} }
     },
     "jest": {

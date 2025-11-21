@@ -13,7 +13,7 @@ tab:
   
 <Callout variant="info">
 
-The Vitest addon is currently only supported in [React](?renderer=react), [Preact](?renderer=preact), [Vue](?renderer=vue), [Svelte](?renderer=svelte), and [Web Components](?renderer=web-components) projects, which use the [Vite builder](../../../builders/vite.mdx) (or the [Next.js framework with Vite](../../../get-started/frameworks/nextjs.mdx#with-vite)).
+The Vitest addon is supported and recommended for [React](?renderer=react), [Preact](?renderer=preact), [Vue](?renderer=vue), [Svelte](?renderer=svelte), and [Web Components](?renderer=web-components) projects, which use the [Vite builder](../../../builders/vite.mdx) (or the [Next.js framework with Vite](../../../get-started/frameworks/nextjs-vite.mdx)).
 
 If you are using a different renderer (such as Angular) or the Webpack builder, you can use the [Storybook test runner](../test-runner.mdx) to test your stories.
 
@@ -259,7 +259,7 @@ If the same tag is in both the `include` and `exclude` arrays, the `exclude` beh
 
 ## Comparison to the test runner
 
-The [test runner](../test-runner.mdx) requires a running Storybook instance to test your stories, because it visits each one, executes the play function, and listens for results. The Vitest plugin, however, transforms your stories into tests using Vite and portable stories, so it does not need to run Storybook to test your stories. Because of this reliance on Vite, the plugin can only be used with Storybook frameworks that use Vite (and [Next.js](../../../get-started/frameworks/nextjs.mdx#with-vite)). The test runner, on the other hand, can be used with any Storybook framework.
+The [test runner](../test-runner.mdx) requires a running Storybook instance to test your stories, because it visits each one, executes the play function, and listens for results. The Vitest plugin, however, transforms your stories into tests using Vite and portable stories, so it does not need to run Storybook to test your stories. Because of this reliance on Vite, the plugin can only be used with Storybook frameworks that use Vite (and [Next.js](../../../get-started/frameworks/nextjs-vite.mdx)). The test runner, on the other hand, can be used with any Storybook framework.
 
 | Feature                                                  | Vitest addon       | test-runner              |
 | -------------------------------------------------------- | ------------------ | ------------------------ |

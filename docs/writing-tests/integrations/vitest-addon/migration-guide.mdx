@@ -14,9 +14,22 @@ You **do not** have to change how you write your stories between the test-runner
 
 This guide explains how to migrate an existing project using `@storybook/test-runner` to the `@storybook/addon-vitest`.
 
+## Why migrate?
+
+Migrating to the Vitest addon replaces the previous Jest-based test-runner with a modern, browser-friendly testing stack. It's designed to run stories as tests directly in [Storybook's UI](./index.mdx#storybook-ui) while also integrating with Vitest's CLI and [IDE](./index.mdx#editor-extension) integrations — reducing setup complexity and bringing built-in support for accessibility and coverage. The main benefits are summarized below.
+
+- Vitest is used as a runner instead of Jest, offering faster test execution and better integration with modern JavaScript tooling.
+- Stories seamlessly integrate as tests in your Vitest setup, significantly simplifying your component test configuration.
+- There is no need to build and run Storybook to run tests, which makes the setup faster and more portable.
+- Tests are still tested in a Playwright environment, but in [Vitest's Browser mode](https://vitest.dev/guide/browser/).
+- Accessibility testing comes out of the box and integrates with the Storybook testing widget and Accessibility addon panel.
+- Code coverage is enabled via Vitest's built-in coverage support. You no longer need instrumentation from the `@storybook/addon-coverage` package, which can make your stories render faster.
+
+For more, please refer to the comparison table in the [Vitest addon guide](./index.mdx#comparison-to-the-test-runner).
+
 ## Is my project eligible to upgrade?
 
-The [Vitest addon](./index.mdx) is supported and recommended for [React](?renderer=react), [Preact](?renderer=preact), [Vue](?renderer=vue), [Svelte](?renderer=svelte), and [Web Components](?renderer=web-components) projects, which use the [Vite builder](../../../builders/vite.mdx) (or the [Next.js framework with Vite](../../get-started/frameworks/nextjs.mdx#with-vite)).
+The [Vitest addon](./index.mdx) is supported and recommended for React, Preact, Vue, Svelte, and Web Components projects, which use the [Vite builder](../../../builders/vite.mdx) (or the [Next.js framework with Vite](../../../get-started/frameworks/nextjs-vite.mdx)).
 
 If you are using a different renderer (such as Angular) or the Webpack builder, you should continue to use the [test runner](../test-runner.mdx) to test your stories.
 
@@ -76,43 +89,34 @@ jobs:
         with:
           node-version-file: '.nvmrc'
       - name: Install dependencies
-        run: yarn
+        run: npm ci
       - name: Install Playwright
         run: npx playwright install --with-deps
 -      - name: Build Storybook
--        run: yarn build-storybook --quiet
+-        run: npm run build-storybook --quiet
 -      - name: Serve Storybook and run tests
 -        run: |
 -          npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
 -            "npx http-server storybook-static --port 6006 --silent" \
--            "npx wait-on tcp:127.0.0.1:6006 && yarn test-storybook --coverage"
+-            "npx wait-on tcp:127.0.0.1:6006 && npm run test-storybook --coverage"
 +      - name: Run storybook tests
 +        run: |
-+          npx vitest --project=storybook
++          npm run test-storybook
 ```
 
-If you want coverage in CI, run `vitest --project=storybook --coverage`.
+If you want to generate coverage reports in CI, use the `--coverage` flag with the test script: `npm run test-storybook -- --coverage`.
 
 For other CI providers and for more detailed configuration info, check the [testing in CI guide](../../in-ci.mdx#2-add-a-new-ci-workflow).
-
-## Why migrate?
-
-Migrating to the Vitest addon replaces the previous Jest-based test-runner with a modern, browser-friendly testing stack. It's designed to run stories as tests directly in [Storybook's UI](./index.mdx#storybook-ui) while also integrating with Vitest's CLI and [IDE](index.mdx#editor-extension) integrations — reducing setup complexity and bringing built-in support for accessibility and coverage. The main benefits are summarized below.
-
-- Vitest is used as a runner instead of Jest, offering faster test execution and better integration with modern JavaScript tooling.
-- Stories seamlessly integrate as tests in your Vitest setup, significantly simplifying your component test configuration.
-- There is no need to build and run Storybook to run tests, which makes the setup faster and more portable.
-- Tests are still tested in a Playwright environment, but in [Vitest's Browser mode](https://vitest.dev/guide/browser/).
-- Accessibility testing comes out of the box and integrates with the Storybook testing widget and Accessibility addon panel.
-- Code coverage is enabled via Vitest's built-in coverage support. You no longer need instrumentation from the `@storybook/addon-coverage` package, which can make your stories render faster.
-
-For more, please refer to the comparison table in the [Vitest addon guide](./index.mdx#comparison-to-the-test-runner).
 
 ## FAQ
 
 ### What if I am using Storybook with Webpack or RsPack?
 
-In this case, it's advised to keep using the `@storybook/test-runner`.
+The Vitest addon relies on Vite to transform and run your stories as tests. Which means it only works with Storybook frameworks that use Vite.
+
+If your Storybook project uses a non-Vite builder like Webpack or RsPack, you will need to keep using the `@storybook/test-runner` for your component testing.
+
+Most Webpack-based Storybook projects which do not have complex configurations can [migrate to Vite](../../../builders/vite#migrating-from-webpack) relatively easily. If you are using Next.js, you can use the [`@storybook/nextjs-vite` framework](../../../get-started/frameworks/nextjs-vite.mdx) to use Vite with Storybook.
 
 ### What if I am using Jest for my unit tests?
 

@@ -46,7 +46,9 @@
   "nx": {
     "name": "code",
     "includedScripts": [],
-    "tags": ["ci:normal"],
+    "tags": [
+      "ci:normal"
+    ],
     "targets": {
       "lint": {
         "executor": "nx:run-commands",

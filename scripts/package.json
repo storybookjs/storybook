@@ -9,7 +9,9 @@
   },
   "nx": {
     "name": "scripts",
-    "tags": ["ci:normal"],
+    "tags": [
+      "ci:normal"
+    ],
     "includedScripts": [],
     "targets": {
       "pretty-docs": {

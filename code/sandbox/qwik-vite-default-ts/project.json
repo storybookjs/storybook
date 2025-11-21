@@ -21,7 +21,5 @@
     "serve": {},
     "e2e-tests": {}
   },
-  "tags": [
-    "ci:daily"
-  ]
+  "tags": []
 }

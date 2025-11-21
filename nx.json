@@ -96,7 +96,7 @@
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task sandbox -s generate --no-link --template={projectName}",
+        "command": "yarn task sandbox -s never --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "dependsOn": [
@@ -113,7 +113,7 @@
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}/storybook-static"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task build -s build --no-link --template={projectName}",
+        "command": "yarn task build -s never --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "dependsOn": ["sandbox"],
@@ -125,7 +125,7 @@
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}/storybook-static"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task chromatic -s chromatic --no-link --template={projectName}",
+        "command": "yarn task chromatic -s never --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "dependsOn": ["build-sandbox"],
@@ -136,7 +136,7 @@
       "inputs": ["^production"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task serve -s serve --no-link --template={projectName}",
+        "command": "yarn task serve -s never --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "continuous": true,
@@ -147,7 +147,7 @@
       "inputs": ["^production"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "yarn task e2e-tests -s e2e-tests --no-link --template={projectName}",
+        "command": "yarn task e2e-tests -s never --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "dependsOn": ["serve"],

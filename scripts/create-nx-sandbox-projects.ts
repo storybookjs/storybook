@@ -46,9 +46,9 @@ Object.entries(allTemplates).forEach(([key, value]) => {
   console.log(framework);
   console.log();
   const tags = [
-    ...(normal.includes(key as any) ? ['ci:normal'] : []),
-    ...(merged.includes(key as any) ? ['ci:merged'] : []),
-    ...(daily.includes(key as any) ? ['ci:daily'] : []),
+    ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
+    ...(merged.includes(key as any) && !value.inDevelopment ? ['ci:merged'] : []),
+    ...(daily.includes(key as any) && !value.inDevelopment ? ['ci:daily'] : []),
   ];
   ensureDirectoryExistence(full);
   console.log(full);

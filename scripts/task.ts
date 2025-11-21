@@ -433,8 +433,8 @@ async function run() {
     }
     tasksThatDepend
       .get(task)
-      .filter((t) => !t.service)
-      .forEach(setUnready);
+      ?.filter((t) => !t.service)
+      ?.forEach(setUnready);
   }
 
   // NOTE: we don't include services in the first unready task. We only need to rewind back to a
@@ -452,11 +452,7 @@ async function run() {
     }
   } else if (startFrom) {
     // set to reset back to a specific task
-    if (
-      startFrom !== taskKey &&
-      firstUnready &&
-      sortedTasks.indexOf(tasks[startFrom]) > sortedTasks.indexOf(firstUnready)
-    ) {
+    if (firstUnready && sortedTasks.indexOf(tasks[startFrom]) > sortedTasks.indexOf(firstUnready)) {
       throw new Error(
         `Task ${getTaskKey(firstUnready)} was not ready, earlier than your request ${startFrom}.`
       );
@@ -499,7 +495,7 @@ async function run() {
     const task = sortedTasks[i];
     const status = statuses.get(task);
 
-    let shouldRun = startFrom === taskKey ? finalTask === task : status === 'unready';
+    let shouldRun = status === 'unready';
 
     if (status === 'notserving') {
       shouldRun =

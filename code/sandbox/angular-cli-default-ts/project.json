@@ -23,6 +23,7 @@
     "e2e-tests": {}
   },
   "tags": [
+    "ci:normal",
     "ci:merged",
     "ci:daily"
   ]

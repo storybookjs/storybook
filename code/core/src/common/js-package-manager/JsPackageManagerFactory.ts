@@ -163,11 +163,11 @@ export class JsPackageManagerFactory {
 
   /** Look up map of package manager proxies by name */
   private static PROXY_MAP: Record<PackageManagerName, PackageManagerProxy> = {
-    npm: NPMProxy,
-    pnpm: PNPMProxy,
-    yarn: Yarn1Proxy,
-    yarn2: Yarn2Proxy,
-    bun: BUNProxy,
+    [PackageManagerName.NPM]: NPMProxy,
+    [PackageManagerName.PNPM]: PNPMProxy,
+    [PackageManagerName.YARN1]: Yarn1Proxy,
+    [PackageManagerName.YARN2]: Yarn2Proxy,
+    [PackageManagerName.BUN]: BUNProxy,
   };
 
   /**

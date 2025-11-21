@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components",
-  "version": "10.1.0-alpha.13",
+  "version": "10.1.0-alpha.14",
   "description": "Storybook Web Components renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

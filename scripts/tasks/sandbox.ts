@@ -142,7 +142,7 @@ export const sandbox: Task = {
     }
 
     // not if sandbox is bench
-    if (!details.template.name.includes('Bench')) {
+    if (!details.template.modifications?.skipMocking) {
       await addGlobalMocks(details, options);
     }
 

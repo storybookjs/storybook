@@ -33,6 +33,7 @@ export type EventType =
   | 'test-run'
   | 'addon-onboarding'
   | 'onboarding-survey'
+  | 'onboarding-checklist'
   | 'mocking'
   | 'automigrate'
   | 'migrate'
@@ -54,7 +55,7 @@ export type StorybookMetadata = {
   userSince?: number;
   language: 'typescript' | 'javascript';
   framework?: {
-    name: string;
+    name?: string;
     options?: any;
   };
   builder?: string;

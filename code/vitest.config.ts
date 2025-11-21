@@ -6,6 +6,17 @@ export default defineConfig({
       NODE_ENV: 'test',
     },
 
+    projects: [
+      'vitest-storybook.config.mts',
+      'addons/*/vitest.config.ts',
+      'frameworks/*/vitest.config.ts',
+      'lib/*/vitest.config.ts',
+      'core/vitest.config.ts',
+      'builders/*/vitest.config.ts',
+      'presets/*/vitest.config.ts',
+      'renderers/*/vitest.config.ts',
+    ],
+
     coverage: {
       all: false,
       provider: 'istanbul',

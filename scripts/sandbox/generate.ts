@@ -12,6 +12,7 @@ import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
+import { PackageManagerName } from '../../code/core/src/common/js-package-manager';
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
 import storybookVersions from '../../code/core/src/common/versions';
 import {
@@ -109,7 +110,7 @@ const addStorybook = async ({
       await addResolutions(tmpDir);
     }
 
-    await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
+    await sbInit(tmpDir, env, [...flags, `--package-manager=${PackageManagerName.YARN1}`], debug);
   } catch (e) {
     console.log('error', e);
     await rm(tmpDir, { recursive: true, force: true });

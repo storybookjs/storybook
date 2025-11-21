@@ -64,9 +64,9 @@ const command = (name: string) =>
         logger.error('Error loading global settings:\n' + String(e));
       }
     })
-    .hook('postAction', async ({ getOptionValue }) => {
+    .hook('postAction', async (command) => {
       if (logTracker.shouldWriteLogsToFile) {
-        const logFile = await logTracker.writeToFile(getOptionValue('logfile'));
+        const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
         logger.outro(`Storybook debug logs can be found at: ${logFile}`);
       }
     });

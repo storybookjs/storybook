@@ -498,7 +498,7 @@ async function run() {
 
     let shouldRun = startFrom !== 'never' ? status === 'unready' : finalTask === task;
 
-    if (status === 'notserving') {
+    if (startFrom !== 'never' && status === 'notserving') {
       shouldRun =
         finalTask === task ||
         !!tasksThatDepend.get(task).find((t) => statuses.get(t) === 'unready');

@@ -56,7 +56,7 @@
     "publish": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "yarn workspace @storybook/scripts local-registry --publish"
+        "command": "yarn workspace @storybook/scripts local-registry --publish --open"
       },
       "configurations": {
         "production": { "command": "yarn workspace @storybook/scripts local-registry --publish" }

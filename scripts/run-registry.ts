@@ -6,7 +6,6 @@ import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
 import detectFreePort from 'detect-port';
-import kill from 'kill-port';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
@@ -38,17 +37,12 @@ const pathExists = async (p: string) => {
 };
 
 const startVerdaccio = async () => {
-  if ((await detectFreePort(6001)) !== 6001) {
-    await kill(6001);
-  }
-  if ((await detectFreePort(6002)) !== 6002) {
-    await kill(6002);
-  }
+  // no need to restart
   const ready = {
     proxy: false,
     verdaccio: false,
   };
-  return Promise.race([
+  return (await Promise.race([
     new Promise((resolve) => {
       /**
        * The proxy server will sit in front of verdaccio and tunnel traffic to either verdaccio or
@@ -109,7 +103,7 @@ const startVerdaccio = async () => {
         }
       }, 10000);
     }),
-  ]) as Promise<Server>;
+  ])) as Promise<Server>;
 };
 
 const currentVersion = async () => {
@@ -184,11 +178,12 @@ const run = async () => {
 
   logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
 
-  const [verdaccioServer, packages, version] = await Promise.all([
-    startVerdaccio(),
-    getWorkspaces(false),
-    currentVersion(),
-  ]);
+  let verdaccioServer;
+  if ((await detectFreePort(6001)) !== 6001) {
+    verdaccioServer = await startVerdaccio();
+  }
+
+  const [packages, version] = await Promise.all([getWorkspaces(false), currentVersion()]);
 
   logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
 
@@ -214,7 +209,7 @@ const run = async () => {
   await rm(join(root, '.npmrc'), { force: true });
 
   if (!opts.open) {
-    verdaccioServer.close();
+    verdaccioServer?.close();
     process.exit(0);
   }
 };

@@ -9,7 +9,7 @@ import type { CommandOptions } from '../generators/types';
 
 const ADDON_INSTALLATION_INSTRUCTIONS = {
   '@storybook/addon-vitest':
-    'https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup',
+    'https://storybook.js.org/docs/writing-tests/integrations/vitest-addon/#manual-setup',
 } as { [key: string]: string };
 
 type ExecuteAddonConfigurationParams = {

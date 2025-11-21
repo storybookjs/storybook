@@ -45,7 +45,7 @@ export const Page = () => {
             Storybook tutorials
           </a>
           . Read more in the{' '}
-          <a href="https://storybook.js.org/docs" target="_blank" rel="noopener noreferrer">
+          <a href="https://storybook.js.org/docs/" target="_blank" rel="noopener noreferrer">
             docs
           </a>
           .

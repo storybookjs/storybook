@@ -144,7 +144,7 @@ describe('Refs API', () => {
         // mockReturnValue(edgecaseLocations[0])
         expect(getSourceType('https://storybook.js.org/storybook/iframe.html')).toEqual([
           'local',
-          'https://storybook.js.org/storybook',
+          'https://storybook.js.org/storybook/',
         ]);
       });
       it('returns "correct url" when source does not match location', () => {
@@ -158,7 +158,7 @@ describe('Refs API', () => {
     it('returns "local" when source matches location', () => {
       expect(getSourceType('https://storybook.js.org/storybook/iframe.html')).toEqual([
         'local',
-        'https://storybook.js.org/storybook',
+        'https://storybook.js.org/storybook/',
       ]);
     });
     it('returns "external" when source does not match location', () => {

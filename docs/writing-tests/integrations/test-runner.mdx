@@ -126,7 +126,7 @@ TARGET_URL=https://the-storybook-url-here.com yarn test-storybook
 
 ## Run accessibility tests
 
-When you have the [Accessibility addon](https://storybook.js.org/addons/@storybook/addon-a11y) installed, you can run accessibility tests alongside your interaction tests, using the test-runner.
+When you have the [Accessibility addon](https://storybook.js.org/addons/@storybook/addon-a11y/) installed, you can run accessibility tests alongside your interaction tests, using the test-runner.
 
 For more details, including configuration options, see the [Accessibility testing documentation](../accessibility-testing.mdx).
 
@@ -202,7 +202,7 @@ When the test-runner executes your tests, it will introspect the resulting HTML,
 
 ## Generate code coverage
 
-Storybook also provides a [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage). It is powered by [Istanbul](https://istanbul.js.org/), which allows out-of-the-box code instrumentation for the most commonly used frameworks and builders in the JavaScript ecosystem.
+Storybook also provides a [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage/). It is powered by [Istanbul](https://istanbul.js.org/), which allows out-of-the-box code instrumentation for the most commonly used frameworks and builders in the JavaScript ecosystem.
 
 ### Set up
 
@@ -240,7 +240,7 @@ Finally, open a new terminal window and run the test-runner with:
 
 ### Configure
 
-By default, the [`@storybook/addon-coverage`](https://storybook.js.org/addons/@storybook/addon-coverage) offers zero-config support for Storybook and instruments your code via [`istanbul-lib-instrument`](https://www.npmjs.com/package/istanbul-lib-instrument) for [Webpack](https://webpack.js.org/), or [`vite-plugin-istanbul`](https://github.com/iFaxity/vite-plugin-istanbul) for [Vite](https://vitejs.dev/). However, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts`) and provide additional options to the addon. Listed below are the available options divided by builder and examples of how to use them.
+By default, the [`@storybook/addon-coverage`](https://storybook.js.org/addons/@storybook/addon-coverage/) offers zero-config support for Storybook and instruments your code via [`istanbul-lib-instrument`](https://www.npmjs.com/package/istanbul-lib-instrument) for [Webpack](https://webpack.js.org/), or [`vite-plugin-istanbul`](https://github.com/iFaxity/vite-plugin-istanbul) for [Vite](https://vitejs.dev/). However, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts`) and provide additional options to the addon. Listed below are the available options divided by builder and examples of how to use them.
 
 {/* prettier-ignore-start */}
 
@@ -288,7 +288,7 @@ By default, the [`@storybook/addon-coverage`](https://storybook.js.org/addons/@s
 
 ### What about other coverage reporting tools?
 
-Out of the box, code coverage tests work seamlessly with Storybook's test-runner and the [`@storybook/addon-coverage`](https://storybook.js.org/addons/@storybook/addon-coverage). However, that doesn't mean you can't use additional reporting tools (e.g., [Codecov](https://about.codecov.io/)). For instance, if you're working with [LCOV](https://wiki.documentfoundation.org/Development/Lcov), you can use the generated output (in `coverage/storybook/coverage-storybook.json`) and create your own report with:
+Out of the box, code coverage tests work seamlessly with Storybook's test-runner and the [`@storybook/addon-coverage`](https://storybook.js.org/addons/@storybook/addon-coverage/). However, that doesn't mean you can't use additional reporting tools (e.g., [Codecov](https://about.codecov.io/)). For instance, if you're working with [LCOV](https://wiki.documentfoundation.org/Development/Lcov), you can use the generated output (in `coverage/storybook/coverage-storybook.json`) and create your own report with:
 
 {/* prettier-ignore-start */}
 
@@ -558,7 +558,7 @@ If you intend on running coverage tests in frameworks with special files like Vu
 
 ### The coverage addon doesn't support optimized builds
 
-If you generated a production build optimized for performance with the [`--test`](../../sharing/publish-storybook.mdx#customizing-the-build-for-performance) flag, and you're using the coverage addon to run tests against your Storybook, you may run into a situation where the coverage addon doesn't instrument your code. This is due to how the flag works, as it removes addons that have an impact on performance (e.g., [`Docs`](../../writing-docs/index.mdx), [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage)). To resolve this issue, you'll need to adjust your Storybook configuration file (i.e., `.storybook/main.js|ts`) and include the [`disabledAddons`](../../api/main-config/main-config-build.mdx#testdisabledaddons) option to allow the addon to run tests at the expense of a slower build.
+If you generated a production build optimized for performance with the [`--test`](../../sharing/publish-storybook.mdx#customizing-the-build-for-performance) flag, and you're using the coverage addon to run tests against your Storybook, you may run into a situation where the coverage addon doesn't instrument your code. This is due to how the flag works, as it removes addons that have an impact on performance (e.g., [`Docs`](../../writing-docs/index.mdx), [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage/)). To resolve this issue, you'll need to adjust your Storybook configuration file (i.e., `.storybook/main.js|ts`) and include the [`disabledAddons`](../../api/main-config/main-config-build.mdx#testdisabledaddons) option to allow the addon to run tests at the expense of a slower build.
 
 {/* prettier-ignore-start */}
 
@@ -568,7 +568,7 @@ If you generated a production build optimized for performance with the [`--test`
 
 ### The coverage addon doesn't support instrumented code
 
-As the [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage) is based on Webpack5 loaders and Vite plugins for code instrumentation, frameworks that don't rely upon these libraries (e.g., Angular configured with Webpack), will require additional configuration to enable code instrumentation. In that case, you can refer to the following [repository](https://github.com/yannbf/storybook-coverage-recipes) for more information.
+As the [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage/) is based on Webpack5 loaders and Vite plugins for code instrumentation, frameworks that don't rely upon these libraries (e.g., Angular configured with Webpack), will require additional configuration to enable code instrumentation. In that case, you can refer to the following [repository](https://github.com/yannbf/storybook-coverage-recipes) for more information.
 
 **More testing resources**
 

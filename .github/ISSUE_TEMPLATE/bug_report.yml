@@ -19,7 +19,7 @@ body:
     attributes:
       label: Reproduction link
       description: >-
-        Please provide a link to a reproduction of the issue. We accept reproductions hosted on GitHub, CodeSandbox, and StackBlitz. Due to the high volume of reports, we prioritize those with clear reproductions. The easiest way to create a reproduction is to use [storybook.new](https://storybook.new). For detailed guidance, please refer to our [documentation](https://storybook.js.org/docs/react/contribute/how-to-reproduce).
+        Please provide a link to a reproduction of the issue. We accept reproductions hosted on GitHub, CodeSandbox, and StackBlitz. Due to the high volume of reports, we prioritize those with clear reproductions. The easiest way to create a reproduction is to use [storybook.new](https://storybook.new). For detailed guidance, please refer to our [documentation](https://storybook.js.org/docs/react/contribute/how-to-reproduce/).
 
         Important: If the provided URL is invalid (e.g., 404 error or private repository), we may close the issue. Thank you for your understanding!
     validations:

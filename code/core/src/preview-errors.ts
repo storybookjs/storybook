@@ -318,7 +318,7 @@ export class NextJsSharpError extends StorybookError {
       name: 'NextJsSharpError',
       category: Category.FRAMEWORK_NEXTJS,
       code: 1,
-      documentation: 'https://storybook.js.org/docs/get-started/nextjs#faq',
+      documentation: 'https://storybook.js.org/docs/get-started/nextjs/#faq',
       message: dedent`
       You are importing avif images, but you don't have sharp installed.
 

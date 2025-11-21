@@ -1,6 +1,6 @@
 # Storybook for SvelteKit
 
-See [documentation](https://storybook.js.org/docs/get-started/frameworks/sveltekit?renderer=svelte&ref=readme) for installation instructions, usage examples, APIs, and more.
+See [documentation](https://storybook.js.org/docs/get-started/frameworks/sveltekit/?renderer=svelte&ref=readme) for installation instructions, usage examples, APIs, and more.
 
 ## Acknowledgements
 

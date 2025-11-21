@@ -23,7 +23,7 @@ export interface WrapGetAbsolutePathRunOptions {
 
 export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
   id: 'wrap-getAbsolutePath',
-  link: 'https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments',
+  link: 'https://storybook.js.org/docs/faq/#how-do-i-fix-module-resolution-in-special-environments',
 
   async check({ packageManager, storybookVersion, mainConfigPath }) {
     const isStorybookInMonorepo = packageManager.isStorybookInMonorepo();

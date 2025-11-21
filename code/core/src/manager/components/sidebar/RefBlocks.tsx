@@ -140,7 +140,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
               View error <ChevronDownIcon />
             </Link>
           </PopoverProvider>{' '}
-          <Link href="https://storybook.js.org/docs?ref=ui" cancel={false} target="_blank">
+          <Link href="https://storybook.js.org/docs/?ref=ui" cancel={false} target="_blank">
             View docs
           </Link>
         </TextStyle>
@@ -172,7 +172,7 @@ export const EmptyBlock = ({ isMain, hasEntries }: { isMain: boolean; hasEntries
               <li>
                 Your{' '}
                 <Link
-                  href="https://storybook.js.org/docs/api/main-config/main-config-stories?ref=ui"
+                  href="https://storybook.js.org/docs/api/main-config/main-config-stories/?ref=ui"
                   cancel={false}
                   target="_blank"
                 >
@@ -183,7 +183,7 @@ export const EmptyBlock = ({ isMain, hasEntries }: { isMain: boolean; hasEntries
               <li>
                 You have{' '}
                 <Link
-                  href="https://storybook.js.org/docs/writing-stories?ref=ui"
+                  href="https://storybook.js.org/docs/writing-stories/?ref=ui"
                   cancel={false}
                   target="_blank"
                 >

@@ -78,15 +78,15 @@ Visit [Storybook's website](https://storybook.js.org/?ref=readme) to learn more 
 
 ### Documentation
 
-Documentation can be found on [Storybook's docs site](https://storybook.js.org/docs?ref=readme).
+Documentation can be found on [Storybook's docs site](https://storybook.js.org/docs/?ref=readme).
 
 ### Examples
 
-View [Component Encyclopedia](https://storybook.js.org/showcase?ref=readme) to see how leading teams use Storybook.
+View [Component Encyclopedia](https://storybook.js.org/showcase/?ref=readme) to see how leading teams use Storybook.
 
 Use [storybook.new](https://storybook.new) to quickly create an example project in Stackblitz.
 
-Storybook comes with a lot of [addons](https://storybook.js.org/docs/configure/user-interface/storybook-addons?ref=readme) for component design, documentation, testing, interactivity, and so on. Storybook's API makes it possible to configure and extend in various ways. It has even been extended to support React Native, Android, iOS, and Flutter development for mobile.
+Storybook comes with a lot of [addons](https://storybook.js.org/docs/configure/user-interface/storybook-addons/?ref=readme) for component design, documentation, testing, interactivity, and so on. Storybook's API makes it possible to configure and extend in various ways. It has even been extended to support React Native, Android, iOS, and Flutter development for mobile.
 
 ### Community
 
@@ -131,7 +131,7 @@ For additional help, share your issue in [the repo's GitHub Discussions](https:/
 | [query params](https://github.com/storybookjs/addon-queryparams)          | Mock query params                                                          |
 | [viewport](code/core/src/viewport/)                                       | Change display sizes and layouts for responsive components using Storybook |
 
-See [Addon / Framework Support Table](https://storybook.js.org/docs/configure/integration/frameworks-feature-support?ref=readme)
+See [Addon / Framework Support Table](https://storybook.js.org/docs/configure/integration/frameworks-feature-support/?ref=readme)
 
 To continue improving your experience, we have to eventually deprecate or remove certain addons in favor of new and better tools.
 
@@ -139,7 +139,7 @@ If you're using info/notes, we highly recommend you migrate to [docs](code/addon
 
 If you're using contexts, we highly recommend you migrate to [toolbars](https://github.com/storybookjs/storybook/tree/next/code/addons/toolbars) and [here is a guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#deprecated-addon-contexts) to help you.
 
-If you're using addon-storyshots, we highly recommend you migrate to the Storybook [test-runner](https://github.com/storybookjs/test-runner) and [here is a guide](https://storybook.js.org/docs/writing-tests/storyshots-migration-guide?ref=readme) to help you.
+If you're using addon-storyshots, we highly recommend you migrate to the Storybook [test-runner](https://github.com/storybookjs/test-runner) and [here is a guide](https://storybook.js.org/docs/writing-tests/storyshots-migration-guide/?ref=readme) to help you.
 
 ## Badges & Presentation materials
 

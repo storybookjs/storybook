@@ -31,7 +31,7 @@ export type WhatsNewResponse = {
 };
 
 const WHATS_NEW_CACHE = 'whats-new-cache';
-const WHATS_NEW_URL = 'https://storybook.js.org/whats-new/v1';
+const WHATS_NEW_URL = 'https://storybook.js.org/whats-new/v1/';
 
 export function initializeWhatsNew(
   channel: Channel,

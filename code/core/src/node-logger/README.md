@@ -12,4 +12,4 @@ logger.warn('Warning message');
 logger.error('Error message');
 ```
 
-For more information visit: [storybook.js.org](https://storybook.js.org)
+For more information visit: [storybook.js.org](https://storybook.js.org/)

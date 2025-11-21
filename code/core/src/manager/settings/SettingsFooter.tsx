@@ -26,7 +26,7 @@ const SettingsFooter: FC<any> = (props) => (
     </Link>
     <Link
       secondary
-      href="https://storybook.js.org/community?ref=ui#support"
+      href="https://storybook.js.org/community/?ref=ui#support"
       cancel={false}
       target="_blank"
     >

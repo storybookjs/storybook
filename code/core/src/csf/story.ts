@@ -331,7 +331,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
    *
    * Decorators defined in Meta will be applied to every story variation.
    *
-   * @see [Decorators](https://storybook.js.org/docs/writing-stories/decorators)
+   * @see [Decorators](https://storybook.js.org/docs/writing-stories/decorators/)
    */
   decorators?:
     | DecoratorFunction<TRenderer, Simplify<TArgs>>[]
@@ -340,7 +340,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
   /**
    * Custom metadata for a story.
    *
-   * @see [Parameters](https://storybook.js.org/docs/writing-stories/parameters)
+   * @see [Parameters](https://storybook.js.org/docs/writing-stories/parameters/)
    */
   parameters?: Parameters &
     (TRenderer['csf4'] extends true ? CoreTypes['parameters'] & TRenderer['parameters'] : unknown);
@@ -348,7 +348,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.
    *
-   * @see [Args](https://storybook.js.org/docs/writing-stories/args)
+   * @see [Args](https://storybook.js.org/docs/writing-stories/args/)
    */
   args?: Partial<TArgs>;
 
@@ -356,14 +356,14 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
    * ArgTypes encode basic metadata for args, such as `name`, `description`, `defaultValue` for an
    * arg. These get automatically filled in by Storybook Docs.
    *
-   * @see [ArgTypes](https://storybook.js.org/docs/api/arg-types)
+   * @see [ArgTypes](https://storybook.js.org/docs/api/arg-types/)
    */
   argTypes?: Partial<ArgTypes<TArgs>>;
 
   /**
    * Asynchronous functions which provide data for a story.
    *
-   * @see [Loaders](https://storybook.js.org/docs/writing-stories/loaders)
+   * @see [Loaders](https://storybook.js.org/docs/writing-stories/loaders/)
    */
   loaders?: LoaderFunction<TRenderer, TArgs>[] | LoaderFunction<TRenderer, TArgs>;
 
@@ -439,7 +439,7 @@ export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TAr
    *
    * @example Export default { ... title: 'Design System/Atoms/Button' }
    *
-   * @see [Story Hierarchy](https://storybook.js.org/docs/writing-stories/naming-components-and-hierarchy#structure-and-hierarchy)
+   * @see [Story Hierarchy](https://storybook.js.org/docs/writing-stories/naming-components-and-hierarchy/#structure-and-hierarchy)
    */
   title?: ComponentTitle;
 
@@ -448,7 +448,7 @@ export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TAr
    *
    * By default is inferred from sanitizing the title
    *
-   * @see [Permalink to stories](https://storybook.js.org/docs/configure/sidebar-and-urls#permalink-to-stories)
+   * @see [Permalink to stories](https://storybook.js.org/docs/configure/sidebar-and-urls/#permalink-to-stories)
    */
   id?: ComponentId;
 
@@ -458,7 +458,7 @@ export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TAr
    *
    * @example IncludeStories: ['SimpleStory', 'ComplexStory'] includeStories: /.*Story$/
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/api/csf/#non-story-exports)
    */
   includeStories?: StoryDescriptor;
 
@@ -468,7 +468,7 @@ export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TAr
    *
    * @example ExcludeStories: ['simpleData', 'complexData'] excludeStories: /.*Data$/
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/api/csf/#non-story-exports)
    */
   excludeStories?: StoryDescriptor;
 

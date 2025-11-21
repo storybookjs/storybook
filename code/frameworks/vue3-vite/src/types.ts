@@ -39,7 +39,7 @@ export type FrameworkOptions = {
          * correctly (e.g. import aliases are not resolved).
          *
          * For further information, see our
-         * [docs](https://storybook.js.org/docs/get-started/vue3-vite#override-the-default-configuration).
+         * [docs](https://storybook.js.org/docs/get-started/vue3-vite/#override-the-default-configuration).
          *
          * @default 'tsconfig.json'
          */

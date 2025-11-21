@@ -21,7 +21,7 @@ The mechanism for wrapping each story is referred to as a Storybook [decorator](
 
 Parameters are available in the browser and are great for configuring addon behavior globally, at the component level, or at the story level.
 
-For example, the [Pseudo States addon](https://storybook.js.org/addons/storybook-addon-pseudo-states) uses parameters to enable the various pseudo-states. Users can provide global defaults and then override them at the story level.
+For example, the [Pseudo States addon](https://storybook.js.org/addons/storybook-addon-pseudo-states/) uses parameters to enable the various pseudo-states. Users can provide global defaults and then override them at the story level.
 
 Use the [`useParameter`](./addons-api.mdx#useparameter) hook to access the parameter values within your addon.
 
@@ -36,7 +36,7 @@ export const Hover = {
 
 Channels enable two-way communication between the manager and the preview pane, using a NodeJS [EventEmitter](https://nodejs.org/api/events.html) compatible API. Your addons can plug into specific channels and respond to these events.
 
-For example, [Actions](https://storybook.js.org/docs/essentials/actions) captures user events and displays their data in a panel.
+For example, [Actions](https://storybook.js.org/docs/essentials/actions/) captures user events and displays their data in a panel.
 
 Use the [`useChannel`](./addons-api.mdx#usechannel) hook to access the channel data within your addon.
 

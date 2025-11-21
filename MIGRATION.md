@@ -518,7 +518,6 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
-
 ## From version 10.0.0 to 10.1.0
 
 ### API and Component Changes
@@ -526,6 +525,7 @@
 #### Button Component API Changes
 
 ##### Added: ariaLabel
+
 The Button component now has an `ariaLabel` prop, to ensure that Storybook UI code is accessible to screenreader users. The prop will become mandatory in Storybook 11.
 
 When buttons have text content as children, and when that text content does not rely on visual context to be understood, you may pass `false` to the `ariaLabel` prop to indicate that an ARIA label is not necessary.
@@ -557,15 +557,16 @@ IconButton will be removed in future versions.
 The `Bar` component's internal layout has changed, to fix a height bug in scrollable bars. It now applies flex positioning and applies a default item gap, that can be controlled with the `innerStyle` prop. You may see slight changes in default padding as a result of this change.
 
 ##### Added: innerStyle
+
 When `scrollable` is set to `true`, `Bar` now adds an inner container that is used to ensure the scrollbar size does not impact the height of the bar. This inner container displays as 'flex' and has the following default style:
 
 ```css
-  width: 100%;
-  min-height: 40;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-inline: 6px;
+width: 100%;
+min-height: 40;
+display: flex;
+align-items: center;
+gap: 6px;
+padding-inline: 6px;
 ```
 
 The inner container's style can be overridden by passing CSS properties to `innerStyle`.
@@ -597,18 +598,23 @@ The `TabBar` component, a styled bar used inside `Tabs` and not intended to be p
 #### Modal Component API Changes
 
 ##### Deprecated: onInteractOutside
+
 The `onInteractOutside` prop is deprecated in favor of `dismissOnClickOutside`, because it was only used to close the modal when clicking outside. Use `dismissOnClickOutside` to control whether clicking outside the modal should close it or not.
 
 ##### Deprecated: onEscapeKeyDown
+
 The `onEscapeKeyDown` prop is deprecated in favor of `dismissOnEscape`, because it was only used to close the modal when pressing Escape. Use `dismissOnEscape` to control whether pressing Escape should close it or not.
 
 ##### Added: `ariaLabel`
+
 Modal elements must have a title to be accessible. Set that title through the `ariaLabel` prop. It will become mandatory in Storybook 11.
 
 ##### Renamed: Modal.Dialog.Close and Modal.CloseButton
+
 The `Modal.Dialog.Close` component and `Modal.CloseButton` components are replaced by `Modal.Close` for consistency with other components. Those names are deprecated and will be removed in Storybook 11. You may call `<Modal.Close />` for a default close button, or `<Modal.Close asChild>...</Modal.Close>` to wrap your own custom button.
 
 The `Modal.Close` component no longer requires an `onClick` handler to close the modal. It will automatically close the modal when clicked. If you need to perform additional actions when the close button is clicked, you can still provide an `onClick` handler, and it will be called in addition to closing the modal.
+
 #### ListItem, TooltipLinkList and TooltipMessage are deprecated
 
 The ListItem and TooltipLinkList components were used in Storybook to make menus, and TooltipMessage to make message popovers. However, WithTooltip does not support keyboard interactions, so these components were not accessible.
@@ -626,33 +632,40 @@ PopoverProvider is based on react-aria. It must have a single child that acts as
 The WithTooltip component has been reimplemented from the ground up, under the new name `TooltipProvider`. The new implementation will replace `WithTooltip` entirely in Storybook 11. Below is a summary of the changes between both APIs, which will take full effect in Storybook 11.
 
 ##### Removed: trigger
+
 The `trigger` prop was removed to enforce better accessibility compliance. WithTooltip must not be triggered on click, as it is not reachable by keyboard. Buttons that open a popover, menu or select must use appropriate components instead.
 
 #### Added: triggerOnFocusOnly
+
 The `triggerOnFocusOnly` prop was added. When set, tooltips will only show on focus. Use this to provide keyboard navigation hints to keyboard users. Do not use it for other purposes.
 
 #### Renamed: startOpen
+
 The `startOpen` prop was renamed `defaultVisible` to match naming in other components that expose both controlled and uncontrolled visibility. The `startOpen` prop will be removed in future versions.
 
 #### Removed: svg, strategy, withArrows, mutationObserverOptions
+
 These prop were not used inside Storybook and have been removed.
 
 #### Removed: hasChrome
+
 The `hasChrome` prop was removed because it should be handled by the tooltip being shown instead. Popover and Tooltip both have a `hasChrome` prop. TooltipNote never needs this prop and does not have it.
 
 #### Removed: closeOnTriggerHidden, followCursor, closeOnOutsideClick
+
 The `closeOnTriggerHidden`, `followCursor` and `closeOnOutsideClick` prop has been removed. WithTooltip will now authoritatively decide when and where to show or hide its tooltip. It will always close on clicks outside the tooltip, because tooltips should never be modal.
 
 #### Removed: interactive
+
 Thed `interactive` prop has been removed as it does not align with our vision for accessible components with a well-defined role. Use PopoverProvider instead of WithTooltip to show interactive overlays.
 
 ##### Other changes
+
 The underlying implementation was switched from Popper.js to react-aria. Due to these changes, WithTooltip must now have a single child that has a focusable role and that can receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your tooltip.
 
 #### WithTooltipPure and WithTooltipState are deprecated
 
 Instead, use `WithTooltipNew` in Storybook 10, or `WithTooltip` in Storybook 11 or newer. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
-
 
 ## From version 9.x to 10.0.0
 
@@ -728,20 +741,23 @@ A `main.ts` file that's CJS is no longer supported. The same applies to any cust
 Additionally, **extensionless relative imports are no longer supported** in JavaScript-based configuration files (`.storybook/main.js`) and custom presets. All relative imports must now include explicit file extensions.
 
 **Before (no longer works):**
+
 ```js
 // .storybook/main.js
-import myPreset from './my-file';
+import myPreset from "./my-file";
 ```
 
 **After:**
+
 ```js
 // .storybook/main.js
-import myPreset from './my-file.js';
+import myPreset from "./my-file.js";
 ```
 
 This change aligns with Node.js ESM requirements, where relative imports must specify the full file extension. This applies to `.storybook/main.js` and any custom preset files. While TypeScript-based files (`.storybook/main.ts`) will continue to work with extensionless imports for now through automatic resolution, we recommend migrating to explicit extensions for consistency and better compatibility.
 
 **Recommended approach for all files:**
+
 - Use `.js` for JavaScript files
 - Use `.mjs` for ES modules
 - Use `.ts` for TypeScript files
@@ -799,8 +815,9 @@ export const core = {
 ```
 
 #### Removed x-only builtin tags
-During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
-During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superceded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+
+During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags/), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags/), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superceded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
 
 ## From version 8.x to 9.0.0
 
@@ -1409,7 +1426,7 @@ export default {
 };
 ```
 
-For more details, please refer to the [Svelte & Vite documentation](https://storybook.js.org/docs/get-started/frameworks/svelte-vite).
+For more details, please refer to the [Svelte & Vite documentation](https://storybook.js.org/docs/get-started/frameworks/svelte-vite/).
 
 #### Svelte: Dropped automatic docgen for events and slots
 
@@ -1621,7 +1638,7 @@ export default {
 
 ### Added source code panel to docs
 
-Storybook Docs (`@storybook/addon-docs`) now can automatically add a new addon panel to stories that displays a source snippet beneath each story. This is an experimental feature that works similarly to the existing [source snippet doc block](https://storybook.js.org/docs/writing-docs/doc-blocks#source), but in the story view. It is intended to replace the [Storysource addon](https://storybook.js.org/addons/@storybook/addon-storysource).
+Storybook Docs (`@storybook/addon-docs`) now can automatically add a new addon panel to stories that displays a source snippet beneath each story. This is an experimental feature that works similarly to the existing [source snippet doc block](https://storybook.js.org/docs/writing-docs/doc-blocks/#source), but in the story view. It is intended to replace the [Storysource addon](https://storybook.js.org/addons/@storybook/addon-storysource/).
 
 To enable this globally, add the following line to your project configuration. You can also configure at the component/story level.
 
@@ -1638,9 +1655,9 @@ export default {
 
 ### Addon-a11y: Component test integration
 
-In Storybook 8.4, we introduced the [Test addon](https://storybook.js.org/docs/writing-tests/test-addon) (`@storybook/experimental-addon-test`). Powered by Vitest under the hood, this addon lets you watch, run, and debug your component tests directly in Storybook.
+In Storybook 8.4, we introduced the [Test addon](https://storybook.js.org/docs/writing-tests/test-addon/) (`@storybook/experimental-addon-test`). Powered by Vitest under the hood, this addon lets you watch, run, and debug your component tests directly in Storybook.
 
-In Storybook 8.5, we revamped the [Accessibility addon](https://storybook.js.org/docs/writing-tests/accessibility-testing) (`@storybook/addon-a11y`) to integrate it with the component tests feature. This means you can now extend your component tests to include accessibility tests.
+In Storybook 8.5, we revamped the [Accessibility addon](https://storybook.js.org/docs/writing-tests/accessibility-testing/) (`@storybook/addon-a11y`) to integrate it with the component tests feature. This means you can now extend your component tests to include accessibility tests.
 
 If you upgrade to Storybook 8.5 via `npx storybook@latest upgrade`, the Accessibility addon will be automatically configured to work with the component tests. However, if you're upgrading manually and you have the Test addon installed, adjust your configuration as follows:
 
@@ -2179,7 +2196,7 @@ If you were using the [legacy MDX1 format](#legacy-mdx1-support), you will have 
 
 Alongside with this change, the `jsxOptions` configuration was removed as it is not used anymore.
 
-[More info here](https://storybook.js.org/docs/migration-guide#storiesmdx-to-mdxcsf).
+[More info here](https://storybook.js.org/docs/migration-guide/#storiesmdx-to-mdxcsf).
 
 #### Dropping support for id, name and story in Story block
 
@@ -2286,7 +2303,7 @@ In Storybook 8, we have dropped Node.js 16 support since it reached end-of-life 
 
 #### Autotitle breaking fixes
 
-In Storybook 7, the file name `path/to/foo.bar.stories.js` would result in the [autotitle](https://storybook.js.org/docs/react/configure/overview#configure-story-loading) `path/to/foo`. In 8.0, this has been changed to generate `path/to/foo.bar`. We consider this a bugfix but it is also a breaking change if you depended on the old behavior. To get the old titles, you can manually specify the desired title in the default export of your story file. For example:
+In Storybook 7, the file name `path/to/foo.bar.stories.js` would result in the [autotitle](https://storybook.js.org/docs/configure/overview/#configure-story-loading) `path/to/foo`. In 8.0, this has been changed to generate `path/to/foo.bar`. We consider this a bugfix but it is also a breaking change if you depended on the old behavior. To get the old titles, you can manually specify the desired title in the default export of your story file. For example:
 
 ```js
 export default {
@@ -2294,7 +2311,7 @@ export default {
 };
 ```
 
-Alternatively, if you need to achieve a different behavior for a large number of files, you can provide a [custom indexer](https://storybook.js.org/docs/7.0/vue/configure/sidebar-and-urls#processing-custom-titles) to generate the titles dynamically.
+Alternatively, if you need to achieve a different behavior for a large number of files, you can provide a [custom indexer](https://storybook.js.org/docs/7/vue/configure/sidebar-and-urls/#processing-custom-titles) to generate the titles dynamically.
 
 #### Storyshots has been removed
 
@@ -2315,11 +2332,11 @@ Finally, storyStoreV7: true (the default and only option in Storybook 8), was no
 
 By removing Storyshots, the Storybook team was unblocked from moving (eventually) to an ESM-only Storybook, which is a big step towards a more modern Storybook.
 
-Please check the [migration guide](https://storybook.js.org/docs/writing-tests/storyshots-migration-guide) that we prepared.
+Please check the [migration guide](https://storybook.js.org/docs/writing-tests/storyshots-migration-guide/) that we prepared.
 
 #### UI layout state has changed shape
 
-In Storybook 7 it was possible to use `addons.setConfig({...});` to configure Storybook UI features and behavior as documented [here (v7)](https://storybook.js.org/docs/7.3/react/configure/features-and-behavior), [(latest)](https://storybook.js.org/docs/react/configure/features-and-behavior). The state and API for the UI layout has changed:
+In Storybook 7 it was possible to use `addons.setConfig({...});` to configure Storybook UI features and behavior as documented [here (v7)](https://storybook.js.org/docs/7.3/react/configure/features-and-behavior/), [(latest)](https://storybook.js.org/docs/react/configure/features-and-behavior/). The state and API for the UI layout has changed:
 
 - `showNav: boolean` is now `navSize: number`, where the number represents the size of the sidebar in pixels.
 - `showPanel: boolean` is now split into `bottomPanelHeight: number` and `rightPanelWidth: number`, where the numbers represents the size of the panel in pixels.
@@ -2588,7 +2605,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-To learn more about the available icons and their names, see the [Storybook documentation](https://storybook.js.org/docs/8.0/faq#what-icons-are-available-for-my-toolbar-or-my-addon).
+To learn more about the available icons and their names, see the [Storybook documentation](https://storybook.js.org/docs/8/faq/#what-icons-are-available-for-my-toolbar-or-my-addon).
 
 #### Removals in @storybook/types
 
@@ -2927,13 +2944,13 @@ npx storybook@latest migrate csf-2-to-3 --glob="**/*.stories.tsx" --parser=tsx
 
 They won't do a perfect migration so we recommend that you manually go through each file afterwards.
 
-Alternatively you can build your own `storiesOf` implementation by leveraging the new (experimental) indexer API ([documentation](https://storybook.js.org/docs/react/api/main-config-indexers), [migration](#storyindexers-is-replaced-with-experimental_indexers)). A proof of concept of such an implementation can be seen in [this StackBlitz demo](https://stackblitz.com/edit/github-h2rgfk?file=README.md). See the demo's `README.md` for a deeper explanation of the implementation.
+Alternatively you can build your own `storiesOf` implementation by leveraging the new (experimental) indexer API ([documentation](https://storybook.js.org/docs/react/api/main-config-indexers/), [migration](#storyindexers-is-replaced-with-experimental_indexers)). A proof of concept of such an implementation can be seen in [this StackBlitz demo](https://stackblitz.com/edit/github-h2rgfk?file=README.md). See the demo's `README.md` for a deeper explanation of the implementation.
 
 #### `storyIndexers` is replaced with `experimental_indexers`
 
 Defining custom indexers for stories has become a more official - yet still experimental - API which is now configured at `experimental_indexers` instead of `storyIndexers` in `main.ts`. `storyIndexers` has been deprecated and will be fully removed in version 8.0.
 
-The new experimental indexers are documented [here](https://storybook.js.org/docs/react/api/main-config-indexers). The most notable change from `storyIndexers` is that the indexer must now return a list of [`IndexInput`](https://github.com/storybookjs/storybook/blob/next/code/lib/types/src/modules/indexer.ts#L104-L148) instead of `CsfFile`. It's possible to construct an `IndexInput` from a `CsfFile` using the `CsfFile.indexInputs` getter.
+The new experimental indexers are documented [here](https://storybook.js.org/docs/react/api/main-config-indexers/). The most notable change from `storyIndexers` is that the indexer must now return a list of [`IndexInput`](https://github.com/storybookjs/storybook/blob/next/code/lib/types/src/modules/indexer.ts#L104-L148) instead of `CsfFile`. It's possible to construct an `IndexInput` from a `CsfFile` using the `CsfFile.indexInputs` getter.
 
 That means you can convert an existing story indexer like this:
 
@@ -3531,7 +3548,7 @@ Please follow up the [Configure your Storybook project](https://storybook.js.org
 
 #### Stricter global types
 
-In 6.x, you could declare and use [`globals`](https://storybook.js.org/docs/react/essentials/toolbars-and-globals) without declaring their corresponding `globalTypes`. We've made this more strict in 7.0, so that the `globalTypes` declaration is required, and undeclared globals will be ignored.
+In 6.x, you could declare and use [`globals`](https://storybook.js.org/docs/react/essentials/toolbars-and-globals/) without declaring their corresponding `globalTypes`. We've made this more strict in 7.0, so that the `globalTypes` declaration is required, and undeclared globals will be ignored.
 
 #### Deploying build artifacts
 
@@ -3541,7 +3558,7 @@ Those end up as `.mjs` files in your static Storybook artifact and need to be se
 
 For a simple HTTP server to view a Storybook build, you can run `npx http-server storybook-static`.
 
-Note that [using the serve package](https://storybook.js.org/docs/react/faq#i-see-a-no-preview-error-with-a-storybook-production-build) will not work.
+Note that [using the serve package](https://storybook.js.org/docs/react/faq/#i-see-a-no-preview-error-with-a-storybook-production-build) will not work.
 
 ##### Dropped support for file URLs
 
@@ -3634,7 +3651,7 @@ Storybook 7 uses `prefers-color-scheme` to detects your system's dark mode prefe
 
 Earlier versions used the light theme by default, so if you don't set a theme and your system's settings are in dark mode, this could surprise you.
 
-To learn more about theming, read our [documentation](https://storybook.js.org/docs/react/configure/theming).
+To learn more about theming, read our [documentation](https://storybook.js.org/docs/react/configure/theming/).
 
 #### `addons.setConfig` should now be imported from `@storybook/manager-api`.
 
@@ -3705,14 +3722,14 @@ export default config;
 #### Vite builder uses Vite config automatically
 
 When using a [Vite-based framework](#framework-field-mandatory), Storybook will automatically use your `vite.config.(ctm)js` config file starting in 7.0.
-Some settings will be overridden by Storybook so that it can function properly, and the merged settings can be modified using `viteFinal` in `.storybook/main.js` (see the [Storybook Vite configuration docs](https://storybook.js.org/docs/react/builders/vite#configuration)).
+Some settings will be overridden by Storybook so that it can function properly, and the merged settings can be modified using `viteFinal` in `.storybook/main.js` (see the [Storybook Vite configuration docs](https://storybook.js.org/docs/builders/vite/#configuration)).
 If you were using `viteFinal` in 6.5 to simply merge in your project's standard Vite config, you can now remove it.
 
 For Svelte projects this means that the `svelteOptions` property in the `main.js` config should be omitted, as it will be loaded automatically via the project's `vite.config.js`.
 
 #### Vite cache moved to node_modules/.cache/.vite-storybook
 
-Previously, Storybook's Vite builder placed cache files in node_modules/.vite-storybook. However, it's more common for tools to place cached files into `node_modules/.cache`, and putting them there makes it quick and easy to clear the cache for multiple tools at once. We don't expect this change will cause any problems, but it's something that users of Storybook Vite projects should know about. It can be configured by setting `cacheDir` in `viteFinal` within `.storybook/main.js` [Storybook Vite configuration docs](https://storybook.js.org/docs/react/builders/vite#configuration)).
+Previously, Storybook's Vite builder placed cache files in node_modules/.vite-storybook. However, it's more common for tools to place cached files into `node_modules/.cache`, and putting them there makes it quick and easy to clear the cache for multiple tools at once. We don't expect this change will cause any problems, but it's something that users of Storybook Vite projects should know about. It can be configured by setting `cacheDir` in `viteFinal` within `.storybook/main.js` [Storybook Vite configuration docs](https://storybook.js.org/docs/builders/vite/#configuration)).
 
 ### 7.0 Webpack changes
 
@@ -3854,7 +3871,7 @@ In Storybook 7.0 we introduced a convenient package that provides an out of the 
 
 #### SvelteKit: needs the `@storybook/sveltekit` framework
 
-In Storybook 7.0 we introduced a convenient package that provides an out of the box experience for SvelteKit projects: `@storybook/sveltekit`. Please see the [following resource](https://storybook.js.org/docs/get-started/frameworks/sveltekit?renderer=svelte) to get started with it.
+In Storybook 7.0 we introduced a convenient package that provides an out of the box experience for SvelteKit projects: `@storybook/sveltekit`. Please see the [following resource](https://storybook.js.org/docs/get-started/frameworks/sveltekit/?renderer=svelte) to get started with it.
 
 For existing users, SvelteKit projects need to use the `@storybook/sveltekit` framework in the `main.js` file. Previously it was enough to just setup Storybook with Svelte+Vite, but that is no longer the case.
 
@@ -3903,7 +3920,7 @@ Since v7 [drops webpack4 support](#webpack4-support-discontinued), it no longer 
 
 The `@storybook/html` renderer doesn't dedent the source code when displayed in the "Show Code" source viewer any more.
 
-You can get the same result by setting [the parameter `parameters.docs.source.format = "dedent"`](https://storybook.js.org/docs/7.0/html/api/doc-block-source#format) either on a story level or globally in `preview.js`.
+You can get the same result by setting [the parameter `parameters.docs.source.format = "dedent"`](https://storybook.js.org/docs/7.0/html/api/doc-block-source/#format) either on a story level or globally in `preview.js`.
 
 ### 7.0 Addon authors changes
 
@@ -5032,7 +5049,7 @@ storySort: {
 }
 ```
 
-This would sort `*/Introduction` first, but not `Introduction` or `Very/Nested/Introduction`. If you want to target `Introduction` stories/docs anywhere in the hierarchy, you can do this with a [custom sort function](https://storybook.js.org/docs/react/writing-stories/naming-components-and-hierarchy#sorting-stories).
+This would sort `*/Introduction` first, but not `Introduction` or `Very/Nested/Introduction`. If you want to target `Introduction` stories/docs anywhere in the hierarchy, you can do this with a [custom sort function](https://storybook.js.org/docs/react/writing-stories/naming-components-and-hierarchy/#sorting-stories).
 
 #### v7 Store API changes for addon authors
 
@@ -5113,7 +5130,7 @@ In 6.4 the behavior of loaders when arg changes occurred was tweaked so loaders 
 
 #### SB Angular builder
 
-Since SB6.3, Storybook for Angular supports a builder configuration in your project's `angular.json`. This provides an Angular-style configuration for running and building your Storybook. An example builder configuration is now part of the [get started documentation page](https://storybook.js.org/docs/angular/get-started/install).
+Since SB6.3, Storybook for Angular supports a builder configuration in your project's `angular.json`. This provides an Angular-style configuration for running and building your Storybook. An example builder configuration is now part of the [get started documentation page](https://storybook.js.org/docs/angular/get-started/install/).
 
 If you want to know all the available options, please checks the builders' validation schemas :
 
@@ -5407,7 +5424,7 @@ The new convention is consistent with how other frameworks and addons work in St
 
 #### New Angular renderer
 
-We've rewritten the Angular renderer in Storybook 6.2. It's meant to be entirely backwards compatible, but if you need to use the legacy renderer it's still available via a [parameter](https://storybook.js.org/docs/angular/writing-stories/parameters). To opt out of the new renderer, add the following to `.storybook/preview.ts`:
+We've rewritten the Angular renderer in Storybook 6.2. It's meant to be entirely backwards compatible, but if you need to use the legacy renderer it's still available via a [parameter](https://storybook.js.org/docs/angular/writing-stories/parameters/). To opt out of the new renderer, add the following to `.storybook/preview.ts`:
 
 ```ts
 export const parameters = {
@@ -5571,7 +5588,7 @@ DESIGN SYSTEM   [root]
   - Checkbox    [story]
 ```
 
-See [Naming components and hierarchy](https://storybook.js.org/docs/react/writing-stories/naming-components-and-hierarchy#single-story-hoisting) for details.
+See [Naming components and hierarchy](https://storybook.js.org/docs/writing-stories/naming-components-and-hierarchy/#single-story-hoisting) for details.
 
 ### React peer dependencies
 
@@ -5653,7 +5670,7 @@ Basic.parameters: {
 
 Like [Deprecated disabled parameter](#deprecated-disabled-parameter). The `disabled` parameter has been deprecated, please use `disable` instead.
 
-For more information, see the [the related documentation](https://storybook.js.org/docs/react/workflows/package-composition#configuring).
+For more information, see the [the related documentation](https://storybook.js.org/docs/workflows/package-composition/#configuring).
 
 ## From version 5.3.x to 6.0.x
 
@@ -5699,7 +5716,7 @@ Storybook has built-in Typescript support in 6.0. That means you should remove y
 
 To migrate from an old setup, we recommend deleting any typescript-specific webpack/babel configurations in your project. You should also remove `@storybook/preset-typescript`, which is superseded by the built-in configuration.
 
-If you want to override the defaults, see the [typescript configuration docs](https://storybook.js.org/docs/react/configure/typescript).
+If you want to override the defaults, see the [typescript configuration docs](https://storybook.js.org/docs/react/configure/typescript/).
 
 ### Correct globs in main.js
 
@@ -5745,7 +5762,7 @@ npm install core-js@^3.0.1 --save-dev
 
 ### Args passed as first argument to story
 
-Starting in 6.0, the first argument to a story function is an [Args object](https://storybook.js.org/docs/react/api/csf#args-story-inputs). In 5.3 and earlier, the first argument was a [StoryContext](https://github.com/storybookjs/storybook/blob/release/5.3/lib/addons/src/types.ts#L24-L31), and that context is now passed as the second argument by default.
+Starting in 6.0, the first argument to a story function is an [Args object](https://storybook.js.org/docs/api/csf/#args-story-inputs). In 5.3 and earlier, the first argument was a [StoryContext](https://github.com/storybookjs/storybook/blob/release/5.3/lib/addons/src/types.ts#L24-L31), and that context is now passed as the second argument by default.
 
 This breaking change only affects you if your stories actually use the context, which is not common. If you have any stories that use the context, you can either (1) update your stories, or (2) set a flag to opt-out of new behavior.
 
@@ -6663,7 +6680,7 @@ module.exports = ({ config }) => ({
 });
 ```
 
-Please refer to the [current custom webpack documentation](https://storybook.js.org/docs/react/configure/webpack) for more information on custom webpack config and to [Issue #6081](https://github.com/storybookjs/storybook/issues/6081) for more information about the change.
+Please refer to the [current custom webpack documentation](https://storybook.js.org/docs/react/configure/webpack/) for more information on custom webpack config and to [Issue #6081](https://github.com/storybookjs/storybook/issues/6081) for more information about the change.
 
 ## From version 4.1.x to 5.0.x
 
@@ -6704,11 +6721,11 @@ module.exports = ({ config, mode }) => { config.module.rules.push(...); return c
 
 In contrast, the 4.x configuration function accepted either two or three arguments (`(baseConfig, mode)`, or `(baseConfig, mode, defaultConfig)`). The `config` object in the 5.x signature is equivalent to 4.x's `defaultConfig`.
 
-Please see the [current custom webpack documentation](https://storybook.js.org/docs/react/configure/webpack) for more information on custom webpack config.
+Please see the [current custom webpack documentation](https://storybook.js.org/docs/react/configure/webpack/) for more information on custom webpack config.
 
 ### Theming overhaul
 
-Theming has been rewritten in v5. If you used theming in v4, please consult the [theming docs](https://storybook.js.org/docs/react/configure/theming) to learn about the new API.
+Theming has been rewritten in v5. If you used theming in v4, please consult the [theming docs](https://storybook.js.org/docs/react/configure/theming/) to learn about the new API.
 
 ### Story hierarchy defaults
 
@@ -6740,7 +6757,7 @@ addParameters({
 
 ### Options addon deprecated
 
-In 4.x we added story parameters. In 5.x we've deprecated the options addon in favor of [global parameters](https://storybook.js.org/docs/react/configure/features-and-behavior), and we've also renamed some of the options in the process (though we're maintaining backwards compatibility until 6.0).
+In 4.x we added story parameters. In 5.x we've deprecated the options addon in favor of [global parameters](https://storybook.js.org/docs/react/configure/features-and-behavior/), and we've also renamed some of the options in the process (though we're maintaining backwards compatibility until 6.0).
 
 Here's an old configuration:
 
@@ -7101,7 +7118,7 @@ The `@storybook/react-native` had built-in addons (`addon-actions` and `addon-li
 
 ### Webpack 4
 
-Storybook now uses webpack 4. If you have a [custom webpack config](https://storybook.js.org/docs/react/configure/webpack), make sure that all the loaders and plugins you use support webpack 4.
+Storybook now uses webpack 4. If you have a [custom webpack config](https://storybook.js.org/docs/react/configure/webpack/), make sure that all the loaders and plugins you use support webpack 4.
 
 ### Babel 7
 
@@ -7213,7 +7230,7 @@ This was done to support different major versions of babel.
 
 ### Base webpack config now contains vital plugins #1775
 
-This affects you if you use custom webpack config in [Full Control Mode](https://storybook.js.org/docs/react/configure/webpack#full-control-mode) while not preserving the plugins from `storybookBaseConfig`. Before `3.3`, preserving them was a recommendation, but now it [became](https://github.com/storybookjs/storybook/pull/2578) a requirement.
+This affects you if you use custom webpack config in [Full Control Mode](https://storybook.js.org/docs/configure/webpack/#full-control-mode) while not preserving the plugins from `storybookBaseConfig`. Before `3.3`, preserving them was a recommendation, but now it [became](https://github.com/storybookjs/storybook/pull/2578) a requirement.
 
 ### Refactored Knobs
 
@@ -7283,7 +7300,7 @@ Now we use:
 - `preview-head.html` for including extra content into the preview pane.
 - `manager-head.html` for including extra content into the manager window.
 
-[Read our docs](https://storybook.js.org/docs/react/configure/story-rendering#adding-to-head) for more details.
+[Read our docs](https://storybook.js.org/docs/configure/story-rendering/#adding-to-head) for more details.
 
 ## From version 2.x.x to 3.x.x
 

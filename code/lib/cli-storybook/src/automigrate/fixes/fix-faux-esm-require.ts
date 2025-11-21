@@ -66,7 +66,7 @@ function hasExistingDeclaration(program: t.Program, identifierName: string): boo
 
 export const fixFauxEsmRequire = {
   id: 'fix-faux-esm-require',
-  link: 'https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments',
+  link: 'https://storybook.js.org/docs/faq/#how-do-i-fix-module-resolution-in-special-environments',
 
   async check({ mainConfigPath }) {
     if (!mainConfigPath) {

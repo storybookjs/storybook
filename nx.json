@@ -84,12 +84,12 @@
       "options": {
         "command": "yarn workspace @storybook/scripts local-registry --open"
       },
-//      "dependsOn": ["publish"],
+      "dependsOn": ["publish"],
       "continuous": true
     },
     "sandbox": {
       "executor": "nx:run-commands",
-//      "inputs": ["^production"],
+      "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}"],
       "options": {
         "cwd": "{workspaceRoot}",

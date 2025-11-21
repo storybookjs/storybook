@@ -231,31 +231,31 @@
     "e2e-ui": {
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn && yarn playwright-e2e" },
+      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn playwright-e2e" },
       "configurations": { "production": {} }
     },
     "jest": {
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn && yarn jest" },
+      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn jest" },
       "configurations": { "production": {} }
     },
     "vitest": {
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn && yarn vitest" },
+      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn vitest" },
       "configurations": { "production": {} }
     },
     "playwright-ct": {
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn && yarn playwright-ct" },
+      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn playwright-ct" },
       "configurations": { "production": {} }
     },
     "cypress": {
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn && yarn cypress" },
+      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn cypress" },
       "configurations": { "production": {} }
     }
   },

@@ -19,6 +19,7 @@ Type:
   controls?: boolean;
   developmentModeForBuild?: boolean;
   experimentalTestSyntax?: boolean;
+  userEventSetup?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   legacyDecoratorFileOrder?: boolean;
@@ -40,6 +41,7 @@ Type:
   backgrounds?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
+  userEventSetup?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   legacyDecoratorFileOrder?: boolean;
@@ -60,6 +62,7 @@ Type:
   backgrounds?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
+  userEventSetup?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   legacyDecoratorFileOrder?: boolean;
@@ -145,6 +148,20 @@ Enable the [experimental `.test` method with the CSF Next format](../csf/csf-nex
 {/* prettier-ignore-end */}
 
 </If>
+
+## `userEventSetup`
+
+Type: `boolean`
+
+Control automatic setup of Testing Library's `userEvent` in Storybook's preview runtime. When enabled, Storybook sets up `userEvent` and wires clipboard helpers for web-based environments. Disable this in non-DOM environments (e.g., React Native) or when you want full control over interaction utilities.
+
+Defaults to enabled for web renderers. Can be turned off globally via `features`.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-user-event-instrumentation.md" />
+
+{/* prettier-ignore-end */}
 
 ## `highlight`
 

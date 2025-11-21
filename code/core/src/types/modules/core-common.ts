@@ -452,6 +452,12 @@ export interface StorybookConfigRaw {
     actions?: boolean;
 
     /**
+     * Control automatic setup of @testing-library/user-event in the preview. Disabled in non-DOM
+     * environments (e.g., React Native) or when you want to manage interaction utilities manually.
+     */
+    userEventSetup?: boolean;
+
+    /**
      * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
      *
      * Filter args with a "target" on the type from the render function (EXPERIMENTAL)

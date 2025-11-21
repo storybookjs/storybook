@@ -95,8 +95,11 @@ const enhanceContext: LoaderFunction = async (context) => {
 
   // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
   // which will throw an error in react native for example.
+  const userEventDisabled = globalThis?.FEATURES?.userEventSetup === false;
+
   const clipboard = globalThis.window?.navigator?.clipboard;
-  if (clipboard) {
+  // TODO: Remove clipboard check in SB 11
+  if (!userEventDisabled && clipboard) {
     context.userEvent = instrument(
       { userEvent: uninstrumentedUserEvent.setup() },
       {

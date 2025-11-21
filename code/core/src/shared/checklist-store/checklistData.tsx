@@ -264,7 +264,7 @@ export const Primary: Story = {
                 Autocomplete, or even full pages.
               </p>
               <img
-                src={api.getDocsUrl({ subpath: 'onboarding/sidebar-components.png', asset: true })}
+                src={api.getDocsUrl({ asset: 'onboarding/sidebar-components.png' })}
                 alt="Components in the sidebar"
               />
               <p>
@@ -301,10 +301,7 @@ export const Primary: Story = {
                 More stories for your components means better documentation and more test coverage.
               </p>
               <img
-                src={api.getDocsUrl({
-                  subpath: 'onboarding/sidebar-many-stories.png',
-                  asset: true,
-                })}
+                src={api.getDocsUrl({ asset: 'onboarding/sidebar-many-stories.png' })}
                 alt="Stories in the sidebar"
               />
               <p>
@@ -363,7 +360,7 @@ export const Primary: Story = {
                 component handles various inputs.
               </p>
               <img
-                src={api.getDocsUrl({ subpath: 'api/doc-block-controls.png', asset: true })}
+                src={api.getDocsUrl({ asset: 'api/doc-block-controls.png' })}
                 alt="Screenshot of Controls block"
               />
               <strong>Take it further</strong>
@@ -398,7 +395,7 @@ export const Primary: Story = {
                 built-in support for previewing stories in various device sizes.
               </p>
               <img
-                src={api.getDocsUrl({ subpath: 'onboarding/viewports-menu.png', asset: true })}
+                src={api.getDocsUrl({ asset: 'onboarding/viewports-menu.png' })}
                 alt="Screenshot of Viewports menu"
               />
               <strong>Take it further</strong>
@@ -449,7 +446,7 @@ export default {
               </CodeSnippet>
               <p>Which would look like:</p>
               <img
-                src={api.getDocsUrl({ subpath: 'onboarding/sidebar-with-groups.png', asset: true })}
+                src={api.getDocsUrl({ asset: 'onboarding/sidebar-with-groups.png' })}
                 alt="Grouped components in the sidebar"
               />
               <strong>Take it further</strong>
@@ -502,10 +499,7 @@ export default {
                 <em>Restart your Storybook after installing the addon.</em>
               </p>
               <img
-                src={api.getDocsUrl({
-                  subpath: 'writing-tests/testing-ui-overview.png',
-                  asset: true,
-                })}
+                src={api.getDocsUrl({ asset: 'writing-tests/testing-ui-overview.png' })}
                 alt="Storybook app with story status indicators, testing widget, and addon panel annotated"
               />
               <p>
@@ -575,10 +569,7 @@ export default {
                 from the test widget, at the bottom of the sidebar.
               </p>
               <img
-                src={api.getDocsUrl({
-                  subpath: 'onboarding/test-widget-with-failures.png',
-                  asset: true,
-                })}
+                src={api.getDocsUrl({ asset: 'onboarding/test-widget-with-failures.png' })}
                 alt="Test widget showing test failures"
               />
 
@@ -587,10 +578,7 @@ export default {
                 tests for just that selection.
               </p>
               <img
-                src={api.getDocsUrl({
-                  subpath: 'writing-tests/context-menu.png',
-                  asset: true,
-                })}
+                src={api.getDocsUrl({ asset: 'writing-tests/context-menu.png' })}
                 alt="Screenshot of story sidebar item with open menu"
               />
               <strong>Take it further</strong>
@@ -676,10 +664,7 @@ export const Disabled: Story = {
                 Interactions panel.
               </p>
               <img
-                src={api.getDocsUrl({
-                  subpath: 'writing-tests/interaction-test-pass.png',
-                  asset: true,
-                })}
+                src={api.getDocsUrl({ asset: 'writing-tests/interaction-test-pass.png' })}
                 alt="Storybook with a LoginForm component and passing interactions in the Interactions panel"
               />
               <strong>Take it further</strong>
@@ -762,10 +747,7 @@ export const Disabled: Story = {
                 component tests button.
               </p>
               <img
-                src={api.getDocsUrl({
-                  subpath: 'writing-tests/test-widget-a11y-enabled.png',
-                  asset: true,
-                })}
+                src={api.getDocsUrl({ asset: 'writing-tests/test-widget-a11y-enabled.png' })}
                 alt="Testing widget with accessibility activated"
               />
               <p>
@@ -773,10 +755,7 @@ export const Disabled: Story = {
                 violations.
               </p>
               <img
-                src={api.getDocsUrl({
-                  subpath: 'writing-tests/addon-a11y-debug-violations.png',
-                  asset: true,
-                })}
+                src={api.getDocsUrl({ asset: 'writing-tests/addon-a11y-debug-violations.png' })}
                 alt="Storybook app with accessibility panel open, showing violations and an interactive popover on the violating elements in the preview"
               />
               <strong>Take it further</strong>
@@ -850,10 +829,7 @@ export const Disabled: Story = {
             <>
               <p>Expand the test widget and click the Run visual tests button.</p>
               <img
-                src={api.getDocsUrl({
-                  subpath: 'writing-tests/test-widget-expanded-with-vta.png',
-                  asset: true,
-                })}
+                src={api.getDocsUrl({ asset: 'writing-tests/test-widget-expanded-with-vta.png' })}
                 alt="Expanded testing widget, showing the Visual tests section"
               />
               <p>
@@ -862,10 +838,7 @@ export const Disabled: Story = {
                 and become the new baseline.
               </p>
               <img
-                src={api.getDocsUrl({
-                  subpath: 'writing-tests/vta-run-from-panel.png',
-                  asset: true,
-                })}
+                src={api.getDocsUrl({ asset: 'writing-tests/vta-run-from-panel.png' })}
                 alt="Visual tests addon panel showing a diff from the baseline"
               />
               <strong>Take it further</strong>
@@ -913,10 +886,7 @@ export const Disabled: Story = {
                 widget.
               </p>
               <img
-                src={api.getDocsUrl({
-                  subpath: 'writing-tests/test-widget-coverage-summary.png',
-                  asset: true,
-                })}
+                src={api.getDocsUrl({ asset: 'writing-tests/test-widget-coverage-summary.png' })}
                 alt="Test widget with coverage summary"
               />
               <strong>Take it further</strong>
@@ -956,8 +926,7 @@ export const Disabled: Story = {
               </p>
               <img
                 src={api.getDocsUrl({
-                  subpath: 'writing-tests/test-ci-workflow-pr-status-checks.png',
-                  asset: true,
+                  asset: 'writing-tests/test-ci-workflow-pr-status-checks.png',
                 })}
                 alt='GitHub pull request status checks, with a failing "UI Tests / test" check'
               />
@@ -1054,10 +1023,7 @@ export default {
                 documentation for <em>all</em> components.
               </p>
               <img
-                src={api.getDocsUrl({
-                  subpath: 'writing-docs/autodocs.png',
-                  asset: true,
-                })}
+                src={api.getDocsUrl({ asset: 'writing-docs/autodocs.png' })}
                 alt="Storybook autodocs page, showing a title, description, primary story, controls table, and additional stories"
               />
               <strong>Take it further</strong>
@@ -1179,8 +1145,7 @@ npm install @my/awesome-project
               </p>
               <img
                 src={api.getDocsUrl({
-                  subpath: 'sharing/prbadge-publish.png',
-                  asset: true,
+                  asset: 'sharing/prbadge-publish.png',
                 })}
                 alt="PR check for publish action"
               />

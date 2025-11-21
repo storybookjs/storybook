@@ -135,6 +135,10 @@ const config: BuildEntries = {
         entryPoint: './src/manager/globals.ts',
       },
       {
+        exportEntries: ['./internal/manager/manager-stores'],
+        entryPoint: './src/manager/manager-stores.ts',
+      },
+      {
         entryPoint: './src/core-server/presets/common-manager.ts',
         dts: false,
       },

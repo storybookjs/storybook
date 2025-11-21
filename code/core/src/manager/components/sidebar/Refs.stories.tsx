@@ -18,6 +18,7 @@ const managerContext = {
   api: {
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
+    once: fn().mockName('api::once'),
     emit: fn().mockName('api::emit'),
     getElements: fn(() => ({})).mockName('api::getElements'),
     getShortcutKeys: fn(() => ({})).mockName('api::getShortcutKeys'),
@@ -28,7 +29,10 @@ const meta = {
   component: Ref,
   title: 'Sidebar/Refs',
   excludeStories: /.*Data$/,
-  parameters: { layout: 'fullscreen' },
+  parameters: {
+    layout: 'fullscreen',
+    chromatic: { ignoreSelectors: ['[role="dialog"] pre'] },
+  },
   globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn) => (

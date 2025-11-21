@@ -118,6 +118,10 @@
       "default": "./dist/manager/globals.js"
     },
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
+    "./internal/manager/manager-stores": {
+      "types": "./dist/manager/manager-stores.d.ts",
+      "default": "./dist/manager/manager-stores.js"
+    },
     "./internal/mocking-utils": {
       "types": "./dist/mocking-utils/index.d.ts",
       "default": "./dist/mocking-utils/index.js"

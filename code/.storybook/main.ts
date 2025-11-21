@@ -82,6 +82,9 @@ const config = defineMain({
       titlePrefix: 'addons/onboarding',
     },
     {
+      directory: '../addons/onboarding/example-stories',
+    },
+    {
       directory: '../addons/pseudo-states/src',
       titlePrefix: 'addons/pseudo-states',
     },
@@ -100,6 +103,7 @@ const config = defineMain({
     },
   ],
   addons: [
+    '@storybook/addon-onboarding',
     '@storybook/addon-themes',
     '@storybook/addon-docs',
     '@storybook/addon-designs',

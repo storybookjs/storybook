@@ -215,7 +215,11 @@
     "includedScripts": [],
     "targets": {
       "lint": {
-        "command": "yarn lint",
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "{projectRoot}",
+          "command": "yarn lint"
+        }
         "dependsOn": [
           {
             "projects": [
@@ -226,7 +230,11 @@
         ]
       },
       "test": {
-        "command": "yarn test",
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "{projectRoot}",
+          "command": "yarn test"
+        }
         "dependsOn": [
           {
             "projects": [
@@ -235,6 +243,13 @@
             "target": "build"
           }
         ]
+      },
+      "knip": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "{projectRoot}",
+          "command": "yarn knip"
+        }
       }
     }
   },

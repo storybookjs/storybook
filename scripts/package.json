@@ -11,6 +11,13 @@
     "name": "scripts",
     "includedScripts": [],
     "targets": {
+      "pretty-docs": {
+        "cache": true,
+        "command": "yarn docs:prettier:check",
+        "inputs": [
+          "{workspaceRoot}/docs/**/*"
+        ]
+      },
       "lint": {
         "cache": true,
         "executor": "nx:run-commands",
@@ -20,7 +27,8 @@
         },
         "inputs": [
           "default"
-        ]
+        ],
+        "dependsOn": []
       },
       "test": {
         "cache": true,
@@ -39,13 +47,6 @@
         ],
         "inputs": [
           "default"
-        ]
-      },
-      "pretty-docs": {
-        "cache": true,
-        "command": "yarn docs:prettier:check",
-        "inputs": [
-          "{workspaceRoot}/docs/**/*"
         ]
       },
       "run-registry": {},

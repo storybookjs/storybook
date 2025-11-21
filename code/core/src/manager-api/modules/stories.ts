@@ -122,6 +122,13 @@ export interface SubAPI {
    */
   getCurrentStoryData: () => API_LeafEntry;
   /**
+   * Returns the current story index.
+   *
+   * @returns {API_PreparedStoryIndex | undefined} The current story index, or undefined if not yet
+   *   loaded.
+   */
+  getIndex: () => API_PreparedStoryIndex | undefined;
+  /**
    * Sets the prepared story index to the given value.
    *
    * @param {API_PreparedStoryIndex} index - The prepared story index to set.
@@ -354,6 +361,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const { storyId, refId } = store.getState();
 
       return api.getData(storyId, refId);
+    },
+    getIndex: () => {
+      const { internal_index } = store.getState();
+      return internal_index;
     },
     getParameters: (storyIdOrCombo, parameterName) => {
       const { storyId, refId } =

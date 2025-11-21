@@ -212,6 +212,7 @@
   },
   "nx": {
     "name": "root",
+    "projectType": "library",
     "includedScripts": [],
     "targets": {
       "lint": {

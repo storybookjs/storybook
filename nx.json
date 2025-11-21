@@ -93,7 +93,7 @@
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}"],
       "options": {
         "cwd": "{workspaceRoot}",
-        "command": "echo '1'",
+        "command": "yarn task sandbox -s never --debug --no-link --template={projectName}",
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },

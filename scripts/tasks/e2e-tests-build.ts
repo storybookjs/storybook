@@ -1,4 +1,5 @@
 import { dedent } from 'ts-dedent';
+import waitOn from 'wait-on';
 
 import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
@@ -16,9 +17,8 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
   async ready() {
     return false;
   },
-  async run({ codeDir, junitFilename, key, sandboxDir }, { dryRun, debug }) {
-    const port = getPort({ key, selectedTask: 'serve' });
-    console.log({ key, port });
+  async run({ codeDir, junitFilename, key, sandboxDir, selectedTask }, { dryRun, debug }) {
+    const port = getPort({ key, selectedTask: selectedTask === 'e2e-tests' ? 'serve' : 'dev' });
     if (process.env.DEBUG) {
       console.log(dedent`
         Running e2e tests in Playwright's ui mode for chromium only (for brevity sake).
@@ -33,6 +33,7 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
       ? `yarn playwright test --project=chromium --ui ${testFiles.join(' ')}`
       : `yarn playwright test ${testFiles.join(' ')}`;
 
+    await waitOn({ resources: [`http://localhost:${port}`], interval: 16 });
     await exec(
       playwrightCommand,
       {

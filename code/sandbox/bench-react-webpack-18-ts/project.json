@@ -3,7 +3,10 @@
   "projectType": "application",
   "implicitDependencies": [
     "core",
-    "addon-links",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
     "addon-onboarding",
     "react-webpack5"
   ],
@@ -13,6 +16,7 @@
         "outputPath": "bench-react-webpack-18-ts"
       }
     },
+    "dev": {},
     "build-sandbox": {
       "options": {
         "outputPath": "bench-react-webpack-18-ts"

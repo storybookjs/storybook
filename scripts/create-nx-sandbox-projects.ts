@@ -13,7 +13,10 @@ const projectJson = (name: string, framework: string, tags: string[], template: 
   projectType: 'application',
   implicitDependencies: [
     'core',
-    'addon-links',
+    'cli',
+    'addon-a11y',
+    'addon-docs',
+    'addon-vitest',
     'addon-onboarding',
     ...(!['storybook-framework-qwik', 'storybook-solidjs-vite'].includes(framework)
       ? [framework]
@@ -27,11 +30,17 @@ const projectJson = (name: string, framework: string, tags: string[], template: 
         outputPath: name.replaceAll('/', '-'),
       },
     },
+    dev: {},
     ...(template.typeCheck === true
       ? {
           'check-sandbox': {},
         }
       : {}),
+    ...(template.skipTasks && template.skipTasks.includes('vitest-integration')
+      ? {}
+      : {
+          'vitest-integration': {},
+        }),
     'build-sandbox': {
       options: {
         outputPath: name.replaceAll('/', '-'),
@@ -43,6 +52,21 @@ const projectJson = (name: string, framework: string, tags: string[], template: 
       ? {}
       : {
           'e2e-tests': {},
+        }),
+    ...(template.skipTasks && template.skipTasks.includes('e2e-tests-dev')
+      ? {}
+      : {
+          'e2e-tests-dev': {},
+        }),
+    ...(template.skipTasks && template.skipTasks.includes('test-runner')
+      ? {}
+      : {
+          'test-runner': {},
+        }),
+    ...(template.skipTasks && template.skipTasks.includes('test-runner-dev')
+      ? {}
+      : {
+          'test-runner-dev': {},
         }),
   },
   tags,

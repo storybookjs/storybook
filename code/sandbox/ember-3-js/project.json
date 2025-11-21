@@ -3,7 +3,10 @@
   "projectType": "application",
   "implicitDependencies": [
     "core",
-    "addon-links",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
     "addon-onboarding",
     "ember"
   ],
@@ -13,6 +16,8 @@
         "outputPath": "ember-3-js"
       }
     },
+    "dev": {},
+    "vitest-integration": {},
     "build-sandbox": {
       "options": {
         "outputPath": "ember-3-js"
@@ -20,7 +25,10 @@
     },
     "chromatic": {},
     "serve": {},
-    "e2e-tests": {}
+    "e2e-tests": {},
+    "e2e-tests-dev": {},
+    "test-runner": {},
+    "test-runner-dev": {}
   },
   "tags": []
 }

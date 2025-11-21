@@ -3,7 +3,10 @@
   "projectType": "application",
   "implicitDependencies": [
     "core",
-    "addon-links",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
     "addon-onboarding"
   ],
   "targets": {
@@ -12,13 +15,18 @@
         "outputPath": "solid-vite-default-ts"
       }
     },
+    "dev": {},
+    "vitest-integration": {},
     "build-sandbox": {
       "options": {
         "outputPath": "solid-vite-default-ts"
       }
     },
     "chromatic": {},
-    "serve": {}
+    "serve": {},
+    "e2e-tests-dev": {},
+    "test-runner": {},
+    "test-runner-dev": {}
   },
   "tags": []
 }

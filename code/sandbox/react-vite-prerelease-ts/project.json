@@ -3,7 +3,10 @@
   "projectType": "application",
   "implicitDependencies": [
     "core",
-    "addon-links",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
     "addon-onboarding",
     "react-vite"
   ],
@@ -13,13 +16,18 @@
         "outputPath": "react-vite-prerelease-ts"
       }
     },
+    "dev": {},
+    "vitest-integration": {},
     "build-sandbox": {
       "options": {
         "outputPath": "react-vite-prerelease-ts"
       }
     },
     "chromatic": {},
-    "serve": {}
+    "serve": {},
+    "e2e-tests-dev": {},
+    "test-runner": {},
+    "test-runner-dev": {}
   },
   "tags": [
     "ci:daily"

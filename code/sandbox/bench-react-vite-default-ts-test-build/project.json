@@ -3,7 +3,10 @@
   "projectType": "application",
   "implicitDependencies": [
     "core",
-    "addon-links",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
     "addon-onboarding",
     "react-vite"
   ],
@@ -13,6 +16,7 @@
         "outputPath": "bench-react-vite-default-ts-test-build"
       }
     },
+    "dev": {},
     "build-sandbox": {
       "options": {
         "outputPath": "bench-react-vite-default-ts-test-build"

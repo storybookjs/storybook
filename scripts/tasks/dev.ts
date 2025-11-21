@@ -13,12 +13,12 @@ export const dev: Task = {
   description: 'Run the sandbox in development mode',
   service: true,
   dependsOn: ['sandbox'],
-  async ready() {
-    return (await detectFreePort(PORT)) !== PORT;
+  async ready({ port }) {
+    return (await detectFreePort(port)) !== port;
   },
-  async run({ sandboxDir, selectedTask }, { dryRun, debug }) {
+  async run({ sandboxDir, port }, { dryRun, debug }) {
     const controller = new AbortController();
-    const devCommand = `yarn storybook --port ${PORT}${selectedTask === 'dev' ? '' : ' --ci'}`;
+    const devCommand = `yarn storybook --port ${port} --ci`;
     const start = now();
 
     exec(
@@ -32,10 +32,10 @@ export const dev: Task = {
       }
     });
     const [devPreviewResponsive, devManagerResponsive] = await Promise.all([
-      waitOn({ resources: [`http://localhost:${PORT}/iframe.html`], interval: 16 }).then(() => {
+      waitOn({ resources: [`http://localhost:${port}/iframe.html`], interval: 16 }).then(() => {
         return now() - start;
       }),
-      waitOn({ resources: [`http://localhost:${PORT}/index.html`], interval: 16 }).then(() => {
+      waitOn({ resources: [`http://localhost:${port}/index.html`], interval: 16 }).then(() => {
         return now() - start;
       }),
     ]);

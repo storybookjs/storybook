@@ -3,7 +3,10 @@
   "projectType": "application",
   "implicitDependencies": [
     "core",
-    "addon-links",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
     "addon-onboarding",
     "react-native-web-vite"
   ],
@@ -13,6 +16,7 @@
         "outputPath": "react-native-web-vite-expo-ts"
       }
     },
+    "dev": {},
     "build-sandbox": {
       "options": {
         "outputPath": "react-native-web-vite-expo-ts"
@@ -20,7 +24,10 @@
     },
     "chromatic": {},
     "serve": {},
-    "e2e-tests": {}
+    "e2e-tests": {},
+    "e2e-tests-dev": {},
+    "test-runner": {},
+    "test-runner-dev": {}
   },
   "tags": [
     "ci:daily"

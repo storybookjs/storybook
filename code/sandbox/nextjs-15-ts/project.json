@@ -3,7 +3,10 @@
   "projectType": "application",
   "implicitDependencies": [
     "core",
-    "addon-links",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
     "addon-onboarding",
     "nextjs"
   ],
@@ -13,13 +16,17 @@
         "outputPath": "nextjs-15-ts"
       }
     },
+    "dev": {},
     "build-sandbox": {
       "options": {
         "outputPath": "nextjs-15-ts"
       }
     },
     "chromatic": {},
-    "serve": {}
+    "serve": {},
+    "e2e-tests-dev": {},
+    "test-runner": {},
+    "test-runner-dev": {}
   },
   "tags": [
     "ci:merged",

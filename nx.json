@@ -50,12 +50,7 @@
         "production": {}
       },
       "inputs": ["default", "^production"],
-      "dependsOn": [
-        {
-          "projects": ["*"],
-          "target": "build"
-        }
-      ],
+      "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "cache": true
     },
     "publish": {

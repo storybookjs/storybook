@@ -8,6 +8,7 @@ import picocolors from 'picocolors';
 import { prompt } from 'prompts';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
+import waitOn from 'wait-on';
 
 import {
   allTemplates as TEMPLATES,
@@ -508,7 +509,20 @@ async function run() {
       writeTaskList(statuses);
 
       try {
-        if (details.sandboxDir && details.selectedTask !== 'sandbox') {
+        if (
+          details.sandboxDir &&
+          [
+            'build',
+            'dev',
+            'serve',
+            'test-runner',
+            'test-runner-dev',
+            'check-sandbox',
+            'e2e-tests',
+            'e2e-tests-dev',
+            'vitest-integration',
+          ].includes(details.selectedTask)
+        ) {
           if (!(await pathExists(path.join(details.sandboxDir, 'node_modules')))) {
             const { JsPackageManagerFactory } = await import(
               '../code/core/src/common/js-package-manager/JsPackageManagerFactory'
@@ -517,6 +531,7 @@ async function run() {
               {},
               details.sandboxDir
             );
+            await waitOn({ resources: ['http://localhost:6001'], interval: 16 });
             await packageManager.installDependencies();
           }
         }

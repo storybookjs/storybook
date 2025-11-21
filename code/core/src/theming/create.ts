@@ -32,12 +32,15 @@ export const create = (
   },
   rest?: Rest
 ): ThemeVars => {
-  const base = themes[vars.base] ? vars.base : preferredColorScheme;
   const inherit: ThemeVars = {
+    // We always inherit the preferred color scheme.
     ...themes[preferredColorScheme],
+    // And then the declared theme base if it exists.
     ...(themes[vars.base] || {}),
+    // And then the actual theme content.
     ...vars,
-    base,
+    // If no theme base was declared, we declare the preferred color scheme as the base.
+    base: themes[vars.base] ? vars.base : preferredColorScheme,
   };
   return {
     ...rest,

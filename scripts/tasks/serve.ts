@@ -16,10 +16,8 @@ export const serve: Task = {
   async ready({ key }) {
     const port = getPort({ key, selectedTask: 'serve' });
     console.log({ key, port });
+    await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16 });
 
-    await new Promise((resolve) => {
-      setTimeout(resolve, 3000);
-    });
     return (await detectFreePort(port)) !== port;
   },
   async run({ builtSandboxDir, codeDir, key }, { debug, dryRun }) {

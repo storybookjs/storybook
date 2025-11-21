@@ -502,7 +502,7 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'solid-vite/default-js': {
+  'solid-vite/default-ts': {
     name: 'SolidJS Latest (Vite | TypeScript)',
     script: 'yarn create solid {{beforeDir}} --vanilla --ts --template=with-vitest',
     expected: {

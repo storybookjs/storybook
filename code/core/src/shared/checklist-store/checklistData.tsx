@@ -196,14 +196,22 @@ export const checklistData = {
               <p>
                 Rendering your components can often require{' '}
                 <Link
-                  href={api.getDocsUrl({ subpath: 'writing-stories/decorators', renderer: true })}
+                  href={api.getDocsUrl({
+                    subpath: 'writing-stories/decorators',
+                    renderer: true,
+                    ref: 'guide',
+                  })}
                   target="_blank"
                 >
                   setting up surrounding context in decorators
                 </Link>{' '}
                 or{' '}
                 <Link
-                  href={api.getDocsUrl({ subpath: 'configure/styling-and-css', renderer: true })}
+                  href={api.getDocsUrl({
+                    subpath: 'configure/styling-and-css',
+                    renderer: true,
+                    ref: 'guide',
+                  })}
                   target="_blank"
                 >
                   applying global styles
@@ -242,7 +250,11 @@ export const Primary: Story = {
               </CodeSnippet>
               <p>
                 <Link
-                  href={api.getDocsUrl({ subpath: 'writing-stories', renderer: true })}
+                  href={api.getDocsUrl({
+                    subpath: 'writing-stories',
+                    renderer: true,
+                    ref: 'guide',
+                  })}
                   target="_blank"
                   withArrow
                 >
@@ -264,7 +276,10 @@ export const Primary: Story = {
                 Autocomplete, or even full pages.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'onboarding/sidebar-components.png' })}
+                src={api.getDocsUrl({
+                  asset: 'onboarding/sidebar-components.png',
+                  ref: 'guide',
+                })}
                 alt="Components in the sidebar"
               />
               <p>
@@ -272,6 +287,7 @@ export const Primary: Story = {
                   href={api.getDocsUrl({
                     subpath: 'get-started/whats-a-story#create-a-new-story',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                   withArrow
@@ -301,7 +317,10 @@ export const Primary: Story = {
                 More stories for your components means better documentation and more test coverage.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'onboarding/sidebar-many-stories.png' })}
+                src={api.getDocsUrl({
+                  asset: 'onboarding/sidebar-many-stories.png',
+                  ref: 'guide',
+                })}
                 alt="Stories in the sidebar"
               />
               <p>
@@ -309,6 +328,7 @@ export const Primary: Story = {
                   href={api.getDocsUrl({
                     subpath: 'essentials/controls#creating-and-editing-stories-from-controls',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                   withArrow
@@ -360,14 +380,21 @@ export const Primary: Story = {
                 component handles various inputs.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'api/doc-block-controls.png' })}
+                src={api.getDocsUrl({
+                  asset: 'api/doc-block-controls.png',
+                  ref: 'guide',
+                })}
                 alt="Screenshot of Controls block"
               />
               <strong>Take it further</strong>
               <p>
                 Read the{' '}
                 <Link
-                  href={api.getDocsUrl({ subpath: 'essentials/controls', renderer: true })}
+                  href={api.getDocsUrl({
+                    subpath: 'essentials/controls',
+                    renderer: true,
+                    ref: 'guide',
+                  })}
                   target="_blank"
                 >
                   Controls documentation
@@ -395,14 +422,21 @@ export const Primary: Story = {
                 built-in support for previewing stories in various device sizes.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'onboarding/viewports-menu.png' })}
+                src={api.getDocsUrl({
+                  asset: 'onboarding/viewports-menu.png',
+                  ref: 'guide',
+                })}
                 alt="Screenshot of Viewports menu"
               />
               <strong>Take it further</strong>
               <p>
                 Read the{' '}
                 <Link
-                  href={api.getDocsUrl({ subpath: 'essentials/viewport', renderer: true })}
+                  href={api.getDocsUrl({
+                    subpath: 'essentials/viewport',
+                    renderer: true,
+                    ref: 'guide',
+                  })}
                   target="_blank"
                 >
                   Viewports documentation
@@ -446,7 +480,10 @@ export default {
               </CodeSnippet>
               <p>Which would look like:</p>
               <img
-                src={api.getDocsUrl({ asset: 'onboarding/sidebar-with-groups.png' })}
+                src={api.getDocsUrl({
+                  asset: 'onboarding/sidebar-with-groups.png',
+                  ref: 'guide',
+                })}
                 alt="Grouped components in the sidebar"
               />
               <strong>Take it further</strong>
@@ -456,6 +493,7 @@ export default {
                   href={api.getDocsUrl({
                     subpath: 'writing-stories/naming-components-and-hierarchy',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                 >
@@ -499,7 +537,10 @@ export default {
                 <em>Restart your Storybook after installing the addon.</em>
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'writing-tests/testing-ui-overview.png' })}
+                src={api.getDocsUrl({
+                  asset: 'writing-tests/testing-ui-overview.png',
+                  ref: 'guide',
+                })}
                 alt="Storybook app with story status indicators, testing widget, and addon panel annotated"
               />
               <p>
@@ -507,6 +548,7 @@ export default {
                   href={api.getDocsUrl({
                     subpath: 'writing-tests/integrations/vitest-addon',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                   withArrow
@@ -569,7 +611,10 @@ export default {
                 from the test widget, at the bottom of the sidebar.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'onboarding/test-widget-with-failures.png' })}
+                src={api.getDocsUrl({
+                  asset: 'onboarding/test-widget-with-failures.png',
+                  ref: 'guide',
+                })}
                 alt="Test widget showing test failures"
               />
 
@@ -578,7 +623,10 @@ export default {
                 tests for just that selection.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'writing-tests/context-menu.png' })}
+                src={api.getDocsUrl({
+                  asset: 'writing-tests/context-menu.png',
+                  ref: 'guide',
+                })}
                 alt="Screenshot of story sidebar item with open menu"
               />
               <strong>Take it further</strong>
@@ -588,6 +636,7 @@ export default {
                   href={api.getDocsUrl({
                     subpath: 'writing-tests#component-tests',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                 >
@@ -664,7 +713,10 @@ export const Disabled: Story = {
                 Interactions panel.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'writing-tests/interaction-test-pass.png' })}
+                src={api.getDocsUrl({
+                  asset: 'writing-tests/interaction-test-pass.png',
+                  ref: 'guide',
+                })}
                 alt="Storybook with a LoginForm component and passing interactions in the Interactions panel"
               />
               <strong>Take it further</strong>
@@ -674,6 +726,7 @@ export const Disabled: Story = {
                   href={api.getDocsUrl({
                     subpath: 'writing-tests/interaction-testing',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                 >
@@ -720,6 +773,7 @@ export const Disabled: Story = {
                   href={api.getDocsUrl({
                     subpath: 'writing-tests/accessibility-testing',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                   withArrow
@@ -747,7 +801,10 @@ export const Disabled: Story = {
                 component tests button.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'writing-tests/test-widget-a11y-enabled.png' })}
+                src={api.getDocsUrl({
+                  asset: 'writing-tests/test-widget-a11y-enabled.png',
+                  ref: 'guide',
+                })}
                 alt="Testing widget with accessibility activated"
               />
               <p>
@@ -755,7 +812,10 @@ export const Disabled: Story = {
                 violations.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'writing-tests/addon-a11y-debug-violations.png' })}
+                src={api.getDocsUrl({
+                  asset: 'writing-tests/addon-a11y-debug-violations.png',
+                  ref: 'guide',
+                })}
                 alt="Storybook app with accessibility panel open, showing violations and an interactive popover on the violating elements in the preview"
               />
               <strong>Take it further</strong>
@@ -765,6 +825,7 @@ export const Disabled: Story = {
                   href={api.getDocsUrl({
                     subpath: 'writing-tests/accessibility-testing',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                 >
@@ -808,6 +869,7 @@ export const Disabled: Story = {
                   href={api.getDocsUrl({
                     subpath: 'writing-tests/visual-testing',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                   withArrow
@@ -829,7 +891,10 @@ export const Disabled: Story = {
             <>
               <p>Expand the test widget and click the Run visual tests button.</p>
               <img
-                src={api.getDocsUrl({ asset: 'writing-tests/test-widget-expanded-with-vta.png' })}
+                src={api.getDocsUrl({
+                  asset: 'writing-tests/test-widget-expanded-with-vta.png',
+                  ref: 'guide',
+                })}
                 alt="Expanded testing widget, showing the Visual tests section"
               />
               <p>
@@ -838,7 +903,10 @@ export const Disabled: Story = {
                 and become the new baseline.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'writing-tests/vta-run-from-panel.png' })}
+                src={api.getDocsUrl({
+                  asset: 'writing-tests/vta-run-from-panel.png',
+                  ref: 'guide',
+                })}
                 alt="Visual tests addon panel showing a diff from the baseline"
               />
               <strong>Take it further</strong>
@@ -848,6 +916,7 @@ export const Disabled: Story = {
                   href={api.getDocsUrl({
                     subpath: 'writing-tests/visual-testing',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                 >
@@ -886,7 +955,10 @@ export const Disabled: Story = {
                 widget.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'writing-tests/test-widget-coverage-summary.png' })}
+                src={api.getDocsUrl({
+                  asset: 'writing-tests/test-widget-coverage-summary.png',
+                  ref: 'guide',
+                })}
                 alt="Test widget with coverage summary"
               />
               <strong>Take it further</strong>
@@ -896,6 +968,7 @@ export const Disabled: Story = {
                   href={api.getDocsUrl({
                     subpath: 'writing-tests/test-coverage',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                 >
@@ -927,6 +1000,7 @@ export const Disabled: Story = {
               <img
                 src={api.getDocsUrl({
                   asset: 'writing-tests/test-ci-workflow-pr-status-checks.png',
+                  ref: 'guide',
                 })}
                 alt='GitHub pull request status checks, with a failing "UI Tests / test" check'
               />
@@ -937,6 +1011,7 @@ export const Disabled: Story = {
                   href={api.getDocsUrl({
                     subpath: 'writing-tests/in-ci',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                 >
@@ -983,6 +1058,7 @@ export const Disabled: Story = {
                   href={api.getDocsUrl({
                     subpath: 'writing-docs',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                   withArrow
@@ -1023,7 +1099,10 @@ export default {
                 documentation for <em>all</em> components.
               </p>
               <img
-                src={api.getDocsUrl({ asset: 'writing-docs/autodocs.png' })}
+                src={api.getDocsUrl({
+                  asset: 'writing-docs/autodocs.png',
+                  ref: 'guide',
+                })}
                 alt="Storybook autodocs page, showing a title, description, primary story, controls table, and additional stories"
               />
               <strong>Take it further</strong>
@@ -1033,6 +1112,7 @@ export default {
                   href={api.getDocsUrl({
                     subpath: 'writing-docs/autodocs',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                 >
@@ -1069,7 +1149,11 @@ export default {
                 For a start, create an <code>introduction.mdx</code> file and (using markdown and
                 Storybook&apos;s{' '}
                 <Link
-                  href={api.getDocsUrl({ subpath: 'writing-docs/doc-blocks', renderer: true })}
+                  href={api.getDocsUrl({
+                    subpath: 'writing-docs/doc-blocks',
+                    renderer: true,
+                    ref: 'guide',
+                  })}
                   target="_blank"
                 >
                   doc blocks
@@ -1104,6 +1188,7 @@ npm install @my/awesome-project
                   href={api.getDocsUrl({
                     subpath: 'writing-docs/mdx',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                 >
@@ -1146,6 +1231,7 @@ npm install @my/awesome-project
               <img
                 src={api.getDocsUrl({
                   asset: 'sharing/prbadge-publish.png',
+                  ref: 'guide',
                 })}
                 alt="PR check for publish action"
               />
@@ -1156,6 +1242,7 @@ npm install @my/awesome-project
                   href={api.getDocsUrl({
                     subpath: 'sharing/publish-storybook',
                     renderer: true,
+                    ref: 'guide',
                   })}
                   target="_blank"
                 >

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/html-vite",
-  "version": "10.1.0-alpha.3",
+  "version": "10.1.0-alpha.14",
   "description": "Storybook for HTML and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -63,5 +63,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

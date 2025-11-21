@@ -11,6 +11,7 @@ declare var STORYBOOK_BUILDER: string | undefined;
 declare var STORYBOOK_FRAMEWORK: string | undefined;
 declare var STORYBOOK_HOOKS_CONTEXT: any;
 declare var STORYBOOK_RENDERER: string | undefined;
+declare var STORYBOOK_CURRENT_TASK_LOG: undefined | null | Array<any>;
 
 declare var __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__: any;
 declare var __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__: any;

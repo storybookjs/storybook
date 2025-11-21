@@ -8,7 +8,10 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
+import type { SupportedBuilder } from './builders';
+import type { SupportedFramework } from './frameworks';
 import type { Indexer, StoriesEntry } from './indexer';
+import type { SupportedRenderer } from './renderers';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
@@ -352,7 +355,13 @@ export interface ComponentManifest {
   description?: string;
   import?: string;
   summary?: string;
-  stories: { name: string; snippet?: string; error?: { name: string; message: string } }[];
+  stories: {
+    name: string;
+    snippet?: string;
+    description?: string;
+    summary?: string;
+    error?: { name: string; message: string };
+  }[];
   jsDocTags: Record<string, string[]>;
   error?: { name: string; message: string };
 }
@@ -674,15 +683,16 @@ export type CoreCommon_AddonEntry = string | CoreCommon_OptionsEntry;
 export type CoreCommon_AddonInfo = { name: string; inEssentials: boolean };
 
 export interface CoreCommon_StorybookInfo {
-  version: string;
-  // FIXME: these are renderers for now,
-  // need to update with framework OR fix
-  // the calling code
-  framework: string;
-  frameworkPackage: string;
-  renderer: string;
-  rendererPackage: string;
+  addons: string[];
+  version?: string;
+  framework?: SupportedFramework;
+  renderer?: SupportedRenderer;
+  builder?: SupportedBuilder;
+  rendererPackage?: string;
+  frameworkPackage?: string;
+  builderPackage?: string;
   configDir?: string;
+  mainConfig: StorybookConfigRaw;
   mainConfigPath?: string;
   previewConfigPath?: string;
   managerConfigPath?: string;

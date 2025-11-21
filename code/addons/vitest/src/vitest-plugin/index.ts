@@ -24,7 +24,7 @@ import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
-import { dirname, join, normalize, relative, resolve, sep } from 'pathe';
+import { join, normalize, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';

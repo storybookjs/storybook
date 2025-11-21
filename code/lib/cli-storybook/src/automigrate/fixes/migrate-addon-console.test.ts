@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAddonNames, removeAddon } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import type { RunOptions } from '../types';
 import {

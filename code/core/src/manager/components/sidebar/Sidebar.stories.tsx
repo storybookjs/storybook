@@ -1,6 +1,8 @@
 import React from 'react';
 
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import type { DecoratorFunction, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -8,7 +10,11 @@ import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
-import { internal_fullStatusStore } from '../../manager-stores.mock';
+import { initialState } from '../../../shared/checklist-store/checklistData.state';
+import {
+  internal_fullStatusStore,
+  internal_universalChecklistStore,
+} from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';
@@ -40,11 +46,15 @@ const managerContext: any = {
     emit: fn().mockName('api::emit'),
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
+    once: fn().mockName('api::once'),
+    getData: fn().mockName('api::getData'),
+    getIndex: fn().mockName('api::getIndex'),
     getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
       'api::getShortcutKeys'
     ),
     getChannel: fn().mockName('api::getChannel'),
     getElements: fn(() => ({})),
+    navigate: fn().mockName('api::navigate'),
     selectStory: fn().mockName('api::selectStory'),
     experimental_setFilter: fn().mockName('api::experimental_setFilter'),
     getDocsUrl: () => 'https://storybook.js.org/docs/',
@@ -90,9 +100,15 @@ const meta = {
     isDevelopment: true,
   },
   decorators: [
-    (storyFn) => (
+    (storyFn, { globals, title }) => (
       <ManagerContext.Provider value={managerContext}>
-        <LayoutProvider>
+        <LayoutProvider
+          forceDesktop={
+            globals.viewport?.value === 'desktop' ||
+            globals.viewport?.value === undefined ||
+            title.endsWith('scrolled')
+          }
+        >
           <IconSymbols />
           {storyFn()}
         </LayoutProvider>
@@ -102,12 +118,37 @@ const meta = {
   globals: { sb_theme: 'side-by-side' },
   beforeEach: () => {
     internal_fullStatusStore.unset();
+    internal_universalChecklistStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        viewports: { status: 'skipped' },
+      },
+    });
   },
 } satisfies Meta<typeof Sidebar>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
+
+const mobileLayoutDecorator: DecoratorFunction = (storyFn, { globals, title }) => (
+  <ManagerContext.Provider value={managerContext}>
+    <LayoutProvider
+      forceDesktop={
+        globals.viewport?.value === 'desktop' ||
+        globals.viewport?.value === undefined ||
+        title.endsWith('scrolled')
+      }
+    >
+      <IconSymbols />
+      {storyFn()}
+    </LayoutProvider>
+  </ManagerContext.Provider>
+);
 
 const refs: Record<string, RefType> = {
   optimized: {
@@ -147,6 +188,18 @@ export const SimpleInProduction: Story = {
   args: {
     showCreateStoryButton: false,
   },
+  beforeEach: () => {
+    const configType = global.CONFIG_TYPE;
+    global.CONFIG_TYPE = 'PRODUCTION';
+    return () => {
+      global.CONFIG_TYPE = configType;
+    };
+  },
+};
+
+export const Mobile: Story = {
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
 };
 
 export const Loading: Story = {
@@ -156,10 +209,22 @@ export const Loading: Story = {
   },
 };
 
+export const LoadingMobile: Story = {
+  args: Loading.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+};
+
 export const Empty: Story = {
   args: {
     index: {},
   },
+};
+
+export const EmptyMobile: Story = {
+  args: Empty.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
 };
 
 export const EmptyIndex: Story = {
@@ -220,6 +285,12 @@ export const WithRefsNarrow: Story = {
   },
 };
 
+export const WithRefsMobile: Story = {
+  args: WithRefs.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
+};
+
 export const LoadingWithRefs: Story = {
   args: {
     ...Loading.args,
@@ -232,6 +303,12 @@ export const LoadingWithRefError: Story = {
     ...Loading.args,
     refs: refsError,
   },
+};
+
+export const LoadingWithRefErrorMobile: Story = {
+  args: LoadingWithRefError.args,
+  decorators: [mobileLayoutDecorator],
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
 };
 
 export const WithRefEmpty: Story = {

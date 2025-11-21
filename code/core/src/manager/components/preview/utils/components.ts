@@ -10,7 +10,7 @@ export const PreviewContainer = styled.main({
   overflow: 'hidden',
 });
 
-export const FrameWrap = styled.div({
+export const FrameWrap = styled.section({
   overflow: 'auto',
   width: '100%',
   zIndex: 3,

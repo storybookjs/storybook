@@ -181,6 +181,7 @@ export const sandbox: Task = {
     if (process.env.NX_RUN) {
       logger.info('✅ Removing node_modules before caching');
       await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
+      await rm(path.join(details.sandboxDir, '.yarn', 'cache'), { force: true, recursive: true });
     }
 
     logger.info(`✅ Storybook sandbox created at ${details.sandboxDir}`);

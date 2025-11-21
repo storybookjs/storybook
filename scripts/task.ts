@@ -531,7 +531,10 @@ async function run() {
               {},
               details.sandboxDir
             );
-            await waitOn({ resources: ['http://localhost:6001'], interval: 16 });
+            await waitOn({
+              resources: ['http://localhost:6001', 'http://localhost:6002'],
+              interval: 16,
+            });
             await packageManager.installDependencies();
           }
         }

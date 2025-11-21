@@ -178,6 +178,10 @@ export const sandbox: Task = {
 
     await extendPreview(details, options);
 
+    if (process.env.NX_RUN) {
+      await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
+    }
+
     logger.info(`✅ Storybook sandbox created at ${details.sandboxDir}`);
   },
 };

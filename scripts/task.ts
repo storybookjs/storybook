@@ -1,4 +1,5 @@
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
@@ -507,6 +508,19 @@ async function run() {
       writeTaskList(statuses);
 
       try {
+        if (details.sandboxDir && details.selectedTask !== 'sandbox') {
+          if (!(await pathExists(path.join(details.sandboxDir, 'node_modules')))) {
+            const { JsPackageManagerFactory } = await import(
+              '../code/core/src/common/js-package-manager/JsPackageManagerFactory'
+            );
+            const packageManager = JsPackageManagerFactory.getPackageManager(
+              {},
+              details.sandboxDir
+            );
+            await packageManager.installDependencies();
+          }
+        }
+
         const controller = await runTask(task, details, {
           ...optionValues,
           // Always debug the final task so we can see it's output fully

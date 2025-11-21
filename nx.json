@@ -84,12 +84,12 @@
       "options": {
         "command": "yarn workspace @storybook/scripts local-registry --open"
       },
-//      "dependsOn": ["publish"],
+      //      "dependsOn": ["publish"],
       "continuous": true
     },
     "sandbox": {
       "executor": "nx:run-commands",
-//      "inputs": ["^production"],
+      //      "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}"],
       "options": {
         "cwd": "{workspaceRoot}",
@@ -225,6 +225,38 @@
       "configurations": { "production": {} },
       "dependsOn": ["dev"],
       "cache": true
+    },
+
+    // test storybook
+    "e2e-ui": {
+      "dependsOn": [{ "projects": ["*"], "target": "build" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn && yarn playwright-e2e" },
+      "configurations": { "production": {} }
+    },
+    "jest": {
+      "dependsOn": [{ "projects": ["*"], "target": "build" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn && yarn jest" },
+      "configurations": { "production": {} }
+    },
+    "vitest": {
+      "dependsOn": [{ "projects": ["*"], "target": "build" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn && yarn vitest" },
+      "configurations": { "production": {} }
+    },
+    "playwright-ct": {
+      "dependsOn": [{ "projects": ["*"], "target": "build" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn && yarn playwright-ct" },
+      "configurations": { "production": {} }
+    },
+    "cypress": {
+      "dependsOn": [{ "projects": ["*"], "target": "build" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn && yarn cypress" },
+      "configurations": { "production": {} }
     }
   },
   "namedInputs": {

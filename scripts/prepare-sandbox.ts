@@ -28,7 +28,7 @@ async function main() {
   const storybookStaticSandboxDir = join(sandboxDir, 'storybook-static');
   const storybookStaticCacheDir = join(cacheDir, 'storybook-static');
 
-  if (true || !existsSync(join(sandboxDir, 'node_modules'))) {
+  if (!existsSync(join(sandboxDir, 'node_modules'))) {
     if (sandboxDir !== cacheDir) {
       console.log(`🧹 copying cached ${cacheDir} to ${sandboxDir}`);
       await rm(sandboxDir, { recursive: true, force: true });

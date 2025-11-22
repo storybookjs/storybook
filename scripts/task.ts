@@ -559,9 +559,11 @@ async function run() {
                 );
                 await packageManager.installDependencies();
               })();
+              await installingPromise;
               globalThis.installing = false;
+            } else {
+              await installingPromise;
             }
-            await installingPromise;
           }
         }
 

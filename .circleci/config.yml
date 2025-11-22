@@ -281,7 +281,6 @@ jobs:
                 at: .
             - run:
                 command: |
-                    yarn
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
                     cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies

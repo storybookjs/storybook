@@ -61,7 +61,7 @@
       "configurations": { "production": {} }
     },
     "run-registry": {
-      "dependsOn": ["publish"],
+      "dependsOn": [{ "projects": ["scripts"], "target": "publish" }],
       "command": "yarn workspace @storybook/scripts local-registry --open",
       "continuous": true
     },
@@ -95,7 +95,7 @@
       "configurations": { "production": {} }
     },
     "prepared-build-sandbox": {
-      "dependsOn": ["build-sandbox"],
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }, "build-sandbox"],
       "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
       "cache": false,
       "configurations": { "production": {} }

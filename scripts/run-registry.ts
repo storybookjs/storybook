@@ -9,7 +9,6 @@ import detectFreePort from 'detect-port';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
-import waitOn from 'wait-on';
 
 import { npmAuth } from './npm-auth';
 import { maxConcurrentTasks } from './utils/concurrency';
@@ -37,6 +36,7 @@ const pathExists = async (p: string) => {
   }
 };
 
+type Servers = { close: () => void };
 const startVerdaccio = async () => {
   // no need to restart
   const ready = {
@@ -73,10 +73,18 @@ const startVerdaccio = async () => {
 
       let verdaccioApp: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
 
+      const servers = {
+        close: () => {
+          console.log('Closing servers running on port 6001 and 6002');
+          verdaccioApp.close();
+          proxy.close();
+        },
+      };
+
       proxy.listen(6001, () => {
         ready.proxy = true;
         if (ready.verdaccio) {
-          resolve(verdaccioApp);
+          resolve(servers);
         }
       });
       const cache = join(__dirname, '..', '.verdaccio-cache');
@@ -92,7 +100,7 @@ const startVerdaccio = async () => {
         app.listen(6002, () => {
           ready.verdaccio = true;
           if (ready.proxy) {
-            resolve(verdaccioApp);
+            resolve(servers);
           }
         });
       });
@@ -104,7 +112,7 @@ const startVerdaccio = async () => {
         }
       }, 10000);
     }),
-  ])) as Promise<Server>;
+  ])) as Promise<Servers>;
 };
 
 const currentVersion = async () => {
@@ -162,23 +170,28 @@ const publish = async (packages: { name: string; location: string }[], url: stri
   );
 };
 
+let servers: Servers | undefined;
+
 const run = async () => {
-  const verdaccioUrl = `http://localhost:6001`;
-  let verdaccioServer: Server;
+  const npmRegistry = `http://localhost:6001`;
+  const verdaccioUrl = `http://localhost:6002`;
   if ((await detectFreePort(6001)) === 6001) {
     logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
-    verdaccioServer = await startVerdaccio();
-    logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
+    servers = await startVerdaccio();
+    logger.log(
+      `🌿 npm registry running on ${npmRegistry} and verdaccio running on ${verdaccioUrl}`
+    );
   } else {
-    logger.log(`🌿 verdaccio already running on ${verdaccioUrl}`);
+    logger.log(`🌿 npm registry already running on ${npmRegistry}`);
+
+    if ((await detectFreePort(6002)) !== 6002) {
+      logger.log(`🌿 verdaccio already running on ${verdaccioUrl}`);
+    } else {
+      throw new Error(`🌿 verdaccio not running on ${npmRegistry}`);
+    }
   }
 
   if (opts.publish) {
-    await waitOn({
-      resources: ['http://localhost:6001', 'http://localhost:6002'],
-      interval: 16,
-      timeout: 2000,
-    });
     // when running e2e locally, clear cache to avoid EPUBLISHCONFLICT errors
     const verdaccioCache = join(ROOT_DIRECTORY, '.verdaccio-cache');
     if (await pathExists(verdaccioCache)) {
@@ -206,12 +219,16 @@ const run = async () => {
     }
 
     if (!opts.open) {
-      verdaccioServer?.close();
+      servers?.close();
       process.exit(0);
     }
   }
 };
 
 run().catch((e) => {
+  servers?.close();
   logger.error(e);
 });
+
+process.on('SIGINT', () => servers?.close());
+process.on('SIGTERM', () => servers?.close());

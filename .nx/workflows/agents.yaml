@@ -20,9 +20,6 @@ common-js-init-steps: &common-js-init-steps
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node-modules/main.yaml'
   - name: Install Browsers (if needed)
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-browsers/main.yaml'
-  - name: Run local verdaccio registry
-    script: |
-      yarn workspace @storybook/scripts local-registry --open &
 
 launch-templates:
   linux-small-js:

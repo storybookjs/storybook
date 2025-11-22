@@ -6,7 +6,6 @@ import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
 import detectFreePort from 'detect-port';
-import killPort from 'kill-port';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
@@ -14,6 +13,7 @@ import { parseConfigFile, runServer } from 'verdaccio';
 import { npmAuth } from './npm-auth';
 import { maxConcurrentTasks } from './utils/concurrency';
 import { PACKS_DIRECTORY, ROOT_DIRECTORY } from './utils/constants';
+import { killProcessOnPort } from './utils/kill-process-on-port';
 import { getWorkspaces } from './utils/workspace';
 
 program
@@ -187,16 +187,8 @@ let servers: Servers | undefined;
 const run = async () => {
   const npmRegistry = `http://localhost:6001`;
   const verdaccioUrl = `http://localhost:6002`;
-  if ((await detectFreePort(6001)) !== 6001) {
-    console.log('killing port 6001');
-    await killPort(6001);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-  if ((await detectFreePort(6002)) !== 6002) {
-    console.log('killing port 6002');
-    await killPort(6002);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
+  await killProcessOnPort(6001);
+  await killProcessOnPort(6002);
 
   logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
   servers = await startVerdaccio();

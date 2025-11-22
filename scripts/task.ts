@@ -533,9 +533,9 @@ async function run() {
             console.log('port 6002 is free');
           }
           if ((await detectFreePort(6001)) === 6001 || (await detectFreePort(6002)) === 6002) {
-            await exec(
+            void exec(
               'yarn local-registry --open',
-              { cwd: CODE_DIRECTORY, env: { CI: 'true' } },
+              { cwd: CODE_DIRECTORY, env: { CI: 'true' }, detached: true },
               { debug: true }
             );
             await waitOn({

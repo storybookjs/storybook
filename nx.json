@@ -84,7 +84,7 @@
       ],
       "cache": true
     },
-    "prepare-sandbox": {
+    "prepared-sandbox": {
       "executor": "nx:run-commands",
       "options": {
         "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
@@ -107,7 +107,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["prepare-sandbox"],
+      "dependsOn": ["prepared-sandbox"],
       "cache": true
     },
     "build-sandbox": {
@@ -120,8 +120,20 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["prepare-sandbox"],
+      "dependsOn": ["prepared-sandbox"],
       "cache": true
+    },
+    "prepared-build-sandbox": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
+        "forwardAllArgs": false
+      },
+      "configurations": { "production": {} },
+      "dependsOn": [
+        "build-sandbox"
+      ],
+      "cache": false
     },
     "dev": {
       "executor": "nx:run-commands",
@@ -132,7 +144,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["prepare-sandbox"],
+      "dependsOn": ["prepared-sandbox"],
       "continuous": true
     },
     "vitest-integration": {
@@ -144,7 +156,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["prepare-sandbox"]
+      "dependsOn": ["prepared-sandbox"]
     },
     "chromatic": {
       "executor": "nx:run-commands",
@@ -156,7 +168,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["build-sandbox"],
+      "dependsOn": ["prepared-build-sandbox"],
       "cache": true
     },
     "serve": {
@@ -169,7 +181,7 @@
       },
       "configurations": { "production": {} },
       "continuous": true,
-      "dependsOn": ["build-sandbox"]
+      "dependsOn": ["prepared-build-sandbox"]
     },
     "e2e-tests": {
       "executor": "nx:run-commands",

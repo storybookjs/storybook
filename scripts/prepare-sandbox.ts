@@ -8,6 +8,8 @@ import waitOn from 'wait-on';
 import { ROOT_DIRECTORY } from './utils/constants';
 import { exec } from './utils/exec';
 
+process.setMaxListeners(50);
+
 const {
   values: { link, template },
 } = parseArgs({

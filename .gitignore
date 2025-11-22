@@ -18,6 +18,8 @@ test-results
 /.npmrc
 tsconfig.vitest-temp.json
 
+.env.local
+
 # Yarn stuff
 .yarn
 !.yarn/releases

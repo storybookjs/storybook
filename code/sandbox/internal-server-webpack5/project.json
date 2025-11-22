@@ -16,13 +16,14 @@
         "outputPath": "internal-server-webpack5"
       }
     },
-    "prepare-sandbox": {},
+    "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
         "outputPath": "internal-server-webpack5"
       }
     },
+    "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
     "e2e-tests": {},

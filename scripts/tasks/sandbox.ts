@@ -53,6 +53,10 @@ export const sandbox: Task = {
     return isSelectedTaskAfterSandboxCreation && pathExists(sandboxDir);
   },
   async run(details, options) {
+    if ((await pathExists(details.sandboxDir)) && process.env.SKIP_SANDBOX) {
+      console.log('Skipping recreating sandbox due to SKIP_SANDBOX env variable.');
+      return;
+    }
     if (options.link && details.template.inDevelopment) {
       logger.log(
         `The ${options.template} has inDevelopment property enabled, therefore the sandbox for that template cannot be linked. Enabling --no-link mode..`

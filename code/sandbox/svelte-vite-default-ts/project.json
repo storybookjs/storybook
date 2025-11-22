@@ -16,7 +16,7 @@
         "outputPath": "svelte-vite-default-ts"
       }
     },
-    "prepare-sandbox": {},
+    "prepared-sandbox": {},
     "dev": {},
     "vitest-integration": {},
     "build-sandbox": {
@@ -24,6 +24,7 @@
         "outputPath": "svelte-vite-default-ts"
       }
     },
+    "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
     "e2e-tests": {},

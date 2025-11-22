@@ -15,13 +15,14 @@
         "outputPath": "qwik-vite-default-ts"
       }
     },
-    "prepare-sandbox": {},
+    "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
         "outputPath": "qwik-vite-default-ts"
       }
     },
+    "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
     "test-runner": {},

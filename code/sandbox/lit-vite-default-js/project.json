@@ -16,13 +16,14 @@
         "outputPath": "lit-vite-default-js"
       }
     },
-    "prepare-sandbox": {},
+    "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
         "outputPath": "lit-vite-default-js"
       }
     },
+    "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

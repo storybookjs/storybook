@@ -15,7 +15,7 @@
         "outputPath": "solid-vite-default-ts"
       }
     },
-    "prepare-sandbox": {},
+    "prepared-sandbox": {},
     "dev": {},
     "vitest-integration": {},
     "build-sandbox": {
@@ -23,6 +23,7 @@
         "outputPath": "solid-vite-default-ts"
       }
     },
+    "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

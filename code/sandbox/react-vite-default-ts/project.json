@@ -16,7 +16,7 @@
         "outputPath": "react-vite-default-ts"
       }
     },
-    "prepare-sandbox": {},
+    "prepared-sandbox": {},
     "dev": {},
     "check-sandbox": {},
     "vitest-integration": {},
@@ -25,6 +25,7 @@
         "outputPath": "react-vite-default-ts"
       }
     },
+    "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
     "e2e-tests": {},

@@ -16,13 +16,14 @@
         "outputPath": "bench-react-webpack-18-ts-test-build"
       }
     },
-    "prepare-sandbox": {},
+    "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
         "outputPath": "bench-react-webpack-18-ts-test-build"
       }
     },
+    "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {}
   },

@@ -15,13 +15,14 @@
         "outputPath": "solid-vite-default-js"
       }
     },
-    "prepare-sandbox": {},
+    "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
         "outputPath": "solid-vite-default-js"
       }
     },
+    "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

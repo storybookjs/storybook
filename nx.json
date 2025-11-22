@@ -8,6 +8,7 @@
       "analyzeSourceFiles": false
     }
   },
+  "useInferencePlugins": false,
   "tasksRunnerOptions": {
     "default": {
       "options": {

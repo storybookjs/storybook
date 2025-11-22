@@ -16,13 +16,14 @@
         "outputPath": "bench-react-vite-default-ts-test-build"
       }
     },
-    "prepare-sandbox": {},
+    "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
         "outputPath": "bench-react-vite-default-ts-test-build"
       }
     },
+    "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {}
   },

@@ -30,7 +30,7 @@ const projectJson = (name: string, framework: string, tags: string[], template: 
         outputPath: name.replaceAll('/', '-'),
       },
     },
-    'prepare-sandbox': {},
+    'prepared-sandbox': {},
     dev: {},
     ...(template.typeCheck === true
       ? {
@@ -47,6 +47,7 @@ const projectJson = (name: string, framework: string, tags: string[], template: 
         outputPath: name.replaceAll('/', '-'),
       },
     },
+    'prepared-build-sandbox': {},
     chromatic: {},
     serve: {},
     ...(template.skipTasks && template.skipTasks.includes('e2e-tests')

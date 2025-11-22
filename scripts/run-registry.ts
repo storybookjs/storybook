@@ -230,5 +230,9 @@ run().catch((e) => {
   logger.error(e);
 });
 
-process.on('SIGINT', () => servers?.close());
-process.on('SIGTERM', () => servers?.close());
+['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((sig) => {
+  process.on(sig, async () => {
+    servers?.close();
+    process.exit(0);
+  });
+});

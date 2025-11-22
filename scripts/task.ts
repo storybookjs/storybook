@@ -518,11 +518,7 @@ async function run() {
             'build',
             'dev',
             'serve',
-            'test-runner',
-            'test-runner-dev',
             'check-sandbox',
-            'e2e-tests',
-            'e2e-tests-dev',
             'vitest-integration',
           ].includes(details.selectedTask)
         ) {

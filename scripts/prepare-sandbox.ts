@@ -35,6 +35,7 @@ async function main() {
 
     if (!link) {
       await waitOn({
+        log: true,
         resources: ['http://localhost:6001', 'http://localhost:6002'],
         interval: 16,
         timeout: 2000,

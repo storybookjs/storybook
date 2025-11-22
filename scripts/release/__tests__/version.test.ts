@@ -22,7 +22,7 @@ vi.mock('../../utils/workspace', () => ({
   getWorkspaces: vi.fn().mockResolvedValue([
     {
       name: '@storybook/addon-a11y',
-      location: 'addons/a11y',
+      location: 'code/addons/a11y',
     },
   ]),
 }));

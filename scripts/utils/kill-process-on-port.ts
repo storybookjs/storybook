@@ -46,7 +46,7 @@ export const killProcessOnPort = async (port: number): Promise<void> => {
       }
 
       // Give the OS a moment to release the port
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   } catch {
     // No process found on port or command failed, which is fine

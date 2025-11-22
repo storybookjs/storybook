@@ -532,7 +532,7 @@ export default {
           id: 'installVitest',
           label: 'Install Vitest addon',
           afterCompletion: 'unavailable',
-          available: () => true, // TODO check for compatibility with the project
+          available: () => !!globalThis?.STORYBOOK_BUILDER?.includes('vite'),
           criteria: '@storybook/addon-vitest registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
             if (addons.experimental_getRegisteredAddons().includes(ADDON_TEST_ID)) {

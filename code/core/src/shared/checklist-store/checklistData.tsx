@@ -1097,12 +1097,14 @@ export const Disabled: Story = {
                 and a description.
               </p>
               <CodeSnippet language="typescript">
-                {`// Button.stories.ts
+                {`// Button.stories.js
 
-export default {
+const meta = {
   component: Button,
   tags: ['autodocs'], // 👈 Add this tag
-}`}
+}
+  
+export default meta;`}
               </CodeSnippet>
               <p>
                 That tag can also be applied in <code>.storybook/preview.ts</code>, to generate

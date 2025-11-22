@@ -85,6 +85,7 @@ export default async function reactDocgenLoader(
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 
     if (tsconfig.resultType === 'success') {
+      logger.debug('Using tsconfig paths for react-docgen');
       matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
         'browser',
         'module',

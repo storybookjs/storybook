@@ -43,6 +43,7 @@ export function npmAuth(opts: AuthOptions & { outputDir?: string }): Promise<voi
           base += '/';
         }
         writeFileSync(path, `registry=${registry}\n${base}:_authToken=${res.token}`);
+
         console.log('Done');
         resolve();
       }

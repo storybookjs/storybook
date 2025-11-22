@@ -16,6 +16,7 @@
         "outputPath": "lit-vite-default-ts"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

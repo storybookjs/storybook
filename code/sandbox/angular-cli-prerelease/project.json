@@ -16,6 +16,7 @@
         "outputPath": "angular-cli-prerelease"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

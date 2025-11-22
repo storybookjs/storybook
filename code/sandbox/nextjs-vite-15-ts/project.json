@@ -16,6 +16,7 @@
         "outputPath": "nextjs-vite-15-ts"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "vitest-integration": {},
     "build-sandbox": {

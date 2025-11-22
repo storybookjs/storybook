@@ -30,6 +30,7 @@ const projectJson = (name: string, framework: string, tags: string[], template: 
         outputPath: name.replaceAll('/', '-'),
       },
     },
+    'prepare-sandbox': {},
     dev: {},
     ...(template.typeCheck === true
       ? {

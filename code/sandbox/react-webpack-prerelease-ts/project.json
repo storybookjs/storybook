@@ -16,6 +16,7 @@
         "outputPath": "react-webpack-prerelease-ts"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

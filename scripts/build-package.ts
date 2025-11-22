@@ -96,8 +96,6 @@ async function run() {
     .map((key) => tasks[key])
     .filter((item) => !['watch', 'prod'].includes(item.name) && item.value === true);
 
-  console.log(selection);
-
   // user has passed invalid package name(s) - try to guess the correct package name(s)
   if ((!selection.length && main.args.length >= 1) || selection.length !== main.args.length) {
     const suffixList = Object.values(tasks)

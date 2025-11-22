@@ -16,6 +16,7 @@
         "outputPath": "internal-react16-webpack"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

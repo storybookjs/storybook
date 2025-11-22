@@ -16,6 +16,7 @@
         "outputPath": "internal-react18-webpack-babel"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

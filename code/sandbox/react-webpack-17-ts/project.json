@@ -16,6 +16,7 @@
         "outputPath": "react-webpack-17-ts"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

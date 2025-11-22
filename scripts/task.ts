@@ -1,8 +1,6 @@
-import { existsSync } from 'node:fs';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import detectFreePort from 'detect-port';
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
 import { dirname, join, resolve } from 'path';
@@ -10,7 +8,6 @@ import picocolors from 'picocolors';
 import { prompt } from 'prompts';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
-import waitOn from 'wait-on';
 
 import {
   allTemplates as TEMPLATES,
@@ -39,13 +36,12 @@ import { syncDocs } from './tasks/sync-docs';
 import { testRunnerBuild } from './tasks/test-runner-build';
 import { testRunnerDev } from './tasks/test-runner-dev';
 import { vitestTests } from './tasks/vitest-test';
-import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
+import { CODE_DIRECTORY, JUNIT_DIRECTORY, ROOT_DIRECTORY } from './utils/constants';
 import { findMostMatchText } from './utils/diff';
-import { exec } from './utils/exec';
 import type { OptionValues } from './utils/options';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
-const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
+const sandboxDir = process.env.SANDBOX_ROOT || '../storybook-sandboxes';
 
 export const extraAddons = ['@storybook/addon-a11y'];
 
@@ -397,7 +393,12 @@ async function run() {
   const { template: templateKey } = optionValues;
   const template = TEMPLATES[templateKey];
 
-  const templateSandboxDir = templateKey && join(sandboxDir, templateKey.replace('/', '-'));
+  const templateSandboxDir =
+    templateKey &&
+    join(
+      path.isAbsolute(sandboxDir) ? sandboxDir : join(ROOT_DIRECTORY, sandboxDir),
+      templateKey.replace('/', '-')
+    );
   const details: TemplateDetails = {
     key: templateKey,
     template,
@@ -512,57 +513,6 @@ async function run() {
       writeTaskList(statuses);
 
       try {
-        if (
-          details.sandboxDir &&
-          [
-            'build',
-            'dev',
-            'serve',
-            'check-sandbox',
-            'vitest-integration',
-          ].includes(details.selectedTask)
-        ) {
-          if ((await detectFreePort(6001)) === 6001) {
-            console.log('port 6001 is free');
-          }
-          if ((await detectFreePort(6002)) === 6002) {
-            console.log('port 6002 is free');
-          }
-          if ((await detectFreePort(6001)) === 6001 || (await detectFreePort(6002)) === 6002) {
-            void exec(
-              'yarn local-registry --open',
-              { cwd: CODE_DIRECTORY, env: { CI: 'true' }, detached: true },
-              { debug: true }
-            );
-            await waitOn({
-              resources: ['http://localhost:6001', 'http://localhost:6002'],
-              interval: 16,
-              timeout: 10000,
-            });
-          }
-
-          const { JsPackageManagerFactory } = await import(
-            '../code/core/src/common/js-package-manager/JsPackageManagerFactory'
-          );
-
-          if (!existsSync(path.join(details.sandboxDir, 'node_modules'))) {
-            if (!installing) {
-              globalThis.installing = true;
-              globalThis.installingPromise = (async () => {
-                const packageManager = JsPackageManagerFactory.getPackageManager(
-                  {},
-                  details.sandboxDir
-                );
-                await packageManager.installDependencies();
-              })();
-              await globalThis.installingPromise;
-              globalThis.installing = false;
-            } else {
-              await globalThis.installingPromise;
-            }
-          }
-        }
-
         const controller = await runTask(task, details, {
           ...optionValues,
           // Always debug the final task so we can see it's output fully
@@ -618,15 +568,6 @@ async function run() {
 
   return 0;
 }
-
-declare global {
-  // eslint-disable-next-line no-var
-  var installing: boolean;
-  // eslint-disable-next-line no-var
-  var installingPromise: Promise<void> | undefined;
-}
-globalThis.installing = false;
-globalThis.installingPromise = undefined;
 
 process.on('exit', () => {
   // Make sure to kill any running tasks 🎉

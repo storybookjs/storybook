@@ -1,4 +1,4 @@
-import { access } from 'node:fs/promises';
+import { access, cp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
@@ -6,6 +6,7 @@ import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task } from '../task';
+import { ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
 
 async function pathExists(path: string) {
@@ -23,7 +24,7 @@ export const build: Task = {
   async ready({ builtSandboxDir }) {
     return pathExists(builtSandboxDir);
   },
-  async run({ sandboxDir, template }, { dryRun, debug }) {
+  async run({ builtSandboxDir, sandboxDir, template, key }, { dryRun, debug }) {
     const start = now();
 
     await exec(
@@ -61,5 +62,16 @@ export const build: Task = {
       },
       { rootDir: sandboxDir }
     );
+
+    if (process.env.NX_RUN) {
+      const cacheDir = join(ROOT_DIRECTORY, 'sandbox', key.replace('/', '-'), 'storybook-static');
+      if (builtSandboxDir !== cacheDir) {
+        console.info(`✅ Removing cache directory ${cacheDir}`);
+        await rm(cacheDir, { recursive: true, force: true });
+
+        console.info(`✅ Copy ${builtSandboxDir} to cache directory`);
+        await cp(builtSandboxDir, cacheDir, { recursive: true, force: true });
+      }
+    }
   },
 };

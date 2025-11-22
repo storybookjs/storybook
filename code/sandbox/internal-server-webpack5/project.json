@@ -16,6 +16,7 @@
         "outputPath": "internal-server-webpack5"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

@@ -15,6 +15,7 @@
         "outputPath": "qwik-vite-default-ts"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

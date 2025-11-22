@@ -16,6 +16,7 @@
         "outputPath": "nextjs-default-ts"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

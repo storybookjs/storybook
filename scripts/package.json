@@ -101,6 +101,7 @@
     "release:write-changelog": "jiti ./release/write-changelog.ts",
     "strict-ts": "jiti ./strict-ts.ts",
     "task": "jiti ./task.ts",
+    "prepare-sandbox": "jiti ./prepare-sandbox.ts",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",
     "upgrade": "jiti ./task.ts",

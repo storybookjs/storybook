@@ -9,6 +9,7 @@ import picocolors from 'picocolors';
 import semver from 'semver';
 import { z } from 'zod';
 
+import { ROOT_DIRECTORY } from '../utils/constants';
 import { esMain } from '../utils/esmain';
 import type { Workspace } from '../utils/workspace';
 import { getWorkspaces } from '../utils/workspace';
@@ -168,7 +169,7 @@ const bumpAllPackageJsons = async ({
   await Promise.all(
     packages.map(async (pkg) => {
       // 2. get the package.json
-      const packageJsonPath = join(CODE_DIR_PATH, pkg.location, 'package.json');
+      const packageJsonPath = join(ROOT_DIRECTORY, pkg.location, 'package.json');
       const packageJson: {
         version: string;
         [key: string]: any;

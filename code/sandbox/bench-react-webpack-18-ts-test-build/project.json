@@ -16,6 +16,7 @@
         "outputPath": "bench-react-webpack-18-ts-test-build"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

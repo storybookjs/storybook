@@ -16,6 +16,7 @@
         "outputPath": "svelte-vite-default-ts"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "vitest-integration": {},
     "build-sandbox": {

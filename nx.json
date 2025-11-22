@@ -1,5 +1,5 @@
 {
-  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "$schema": "./node_modules/nx/schemas/workspace-schema.json",
   "nxCloudAccessToken": "NGVmYTkxMmItYzY3OS00MjkxLTk1ZDktZDFmYTFmNmVlNGY4fHJlYWQ=",
   "defaultBase": "next",
   "parallel": 8,
@@ -54,28 +54,21 @@
       "cache": true
     },
     "publish": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "yarn workspace @storybook/scripts local-registry --publish --open"
-      },
+      "command": "yarn workspace @storybook/scripts local-registry --publish",
       "configurations": {
-        "production": { "command": "yarn workspace @storybook/scripts local-registry --publish" }
+        "production": {}
       },
-      "dependsOn": [{ "projects": ["*"], "target": "build" }],
-      "inputs": [
-        "^production",
-        "{workspaceRoot}/code/**/*",
-        "!{workspaceRoot}/code/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+      "dependsOn": [
+        "run-registry"
+        //        { "projects": ["*"], "target": "build" }
       ],
-      "outputs": ["{workspaceRoot}/.verdaccio-cache"],
-      "cache": true
+      "cache": false
     },
     "run-registry": {
       "executor": "nx:run-commands",
       "options": {
         "command": "yarn workspace @storybook/scripts local-registry --open"
       },
-      "dependsOn": ["publish"],
       "continuous": true
     },
     "sandbox": {
@@ -88,8 +81,25 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
+      "dependsOn": [
+        { "projects": ["scripts"], "target": "publish" },
+        { "projects": ["scripts"], "target": "run-registry" }
+      ],
       "cache": true
+    },
+    "prepare-sandbox": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
+        "forwardAllArgs": false
+      },
+      "configurations": { "production": {} },
+      "dependsOn": [
+        "sandbox",
+        { "projects": ["scripts"], "target": "publish" },
+        { "projects": ["scripts"], "target": "run-registry" }
+      ],
+      "cache": false
     },
     "check-sandbox": {
       "executor": "nx:run-commands",
@@ -100,7 +110,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox"],
+      "dependsOn": ["prepare-sandbox"],
       "cache": true
     },
     "build-sandbox": {
@@ -113,7 +123,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox"],
+      "dependsOn": ["prepare-sandbox"],
       "cache": true
     },
     "dev": {
@@ -125,7 +135,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox"],
+      "dependsOn": ["prepare-sandbox"],
       "continuous": true
     },
     "vitest-integration": {
@@ -137,7 +147,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox"]
+      "dependsOn": ["prepare-sandbox"]
     },
     "chromatic": {
       "executor": "nx:run-commands",

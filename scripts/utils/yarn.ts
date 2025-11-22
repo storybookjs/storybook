@@ -55,6 +55,7 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   const command = [
     touch('yarn.lock'),
     touch('.yarnrc.yml'),
+    `yarn set version berry`,
 
     // Use the global cache so we aren't re-caching dependencies each time we run sandbox
     `yarn config set enableGlobalCache true`,
@@ -125,7 +126,8 @@ export const configureYarn2ForVerdaccio = async ({
   const command = [
     // We don't want to use the cache or we might get older copies of our built packages
     // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed
-    `yarn config set enableGlobalCache true`,
+    // TODO publish unique versions instead
+    // `yarn config set enableGlobalCache false`,
     `yarn config set enableMirror false`,
     // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)
     `yarn config set npmRegistryServer "http://localhost:6001/"`,

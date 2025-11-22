@@ -16,6 +16,7 @@
         "outputPath": "react-native-web-vite-rn-cli-ts"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

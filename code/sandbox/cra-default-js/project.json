@@ -16,6 +16,7 @@
         "outputPath": "cra-default-js"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

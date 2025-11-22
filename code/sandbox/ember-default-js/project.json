@@ -16,6 +16,7 @@
         "outputPath": "ember-default-js"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "vitest-integration": {},
     "build-sandbox": {

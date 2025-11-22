@@ -9,10 +9,11 @@ import detectFreePort from 'detect-port';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
+import waitOn from 'wait-on';
 
 import { npmAuth } from './npm-auth';
 import { maxConcurrentTasks } from './utils/concurrency';
-import { PACKS_DIRECTORY } from './utils/constants';
+import { PACKS_DIRECTORY, ROOT_DIRECTORY } from './utils/constants';
 import { getWorkspaces } from './utils/workspace';
 
 program
@@ -162,59 +163,49 @@ const publish = async (packages: { name: string; location: string }[], url: stri
 };
 
 const run = async () => {
-  const verdaccioUrl = `http://localhost:6001`;
-
-  logger.log(`📐 reading version of storybook`);
-  logger.log(`🚛 listing storybook packages`);
-
   if (opts.publish) {
+    await waitOn({
+      resources: ['http://localhost:6001', 'http://localhost:6002'],
+      interval: 16,
+      timeout: 2000,
+    });
     // when running e2e locally, clear cache to avoid EPUBLISHCONFLICT errors
-    const verdaccioCache = resolvePath(__dirname, '..', '.verdaccio-cache');
+    const verdaccioCache = join(ROOT_DIRECTORY, '.verdaccio-cache');
     if (await pathExists(verdaccioCache)) {
       logger.log(`🗑 cleaning up cache`);
       await rm(verdaccioCache, { force: true, recursive: true });
     }
-  }
-
-  let verdaccioServer;
-  if ((await detectFreePort(6001)) === 6001) {
-    logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
-    verdaccioServer = await startVerdaccio();
-    logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
+    // Use npmAuth helper to authenticate to the local Verdaccio registry
+    // This will create a .npmrc file in the root directory
+    logger.log(`👤 add temp user to verdaccio`);
+    await npmAuth({
+      username: 'foo',
+      password: 's3cret',
+      email: 'test@test.com',
+      registry: 'http://localhost:6002',
+      outputDir: root,
+    });
+    try {
+      const [packages, version] = await Promise.all([getWorkspaces(false), currentVersion()]);
+      logger.log(
+        `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
+      );
+      await publish(packages, 'http://localhost:6002');
+    } finally {
+      await rm(join(root, '.npmrc'), { force: true });
+    }
   } else {
-    logger.log(`🌿 verdaccio already running on ${verdaccioUrl}`);
-  }
-
-  // Use npmAuth helper to authenticate to the local Verdaccio registry
-  // This will create a .npmrc file in the root directory
-  logger.log(`👤 add temp user to verdaccio`);
-
-  await npmAuth({
-    username: 'foo',
-    password: 's3cret',
-    email: 'test@test.com',
-    registry: 'http://localhost:6002',
-    outputDir: root,
-  });
-
-  if (opts.publish) {
-    const [packages, version] = await Promise.all([getWorkspaces(false), currentVersion()]);
-    logger.log(
-      `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
-    );
-    await publish(packages, 'http://localhost:6002');
-  }
-
-  if (!opts.open) {
-    await rm(join(root, '.npmrc'), { force: true });
-    verdaccioServer?.close();
-    process.exit(0);
+    const verdaccioUrl = `http://localhost:6001`;
+    if ((await detectFreePort(6001)) === 6001) {
+      logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
+      await startVerdaccio();
+      logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
+    } else {
+      logger.log(`🌿 verdaccio already running on ${verdaccioUrl}`);
+    }
   }
 };
 
 run().catch((e) => {
   logger.error(e);
-  rm(join(root, '.npmrc'), { force: true }).then(() => {
-    process.exit(1);
-  });
 });

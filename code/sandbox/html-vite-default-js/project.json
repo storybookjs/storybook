@@ -16,6 +16,7 @@
         "outputPath": "html-vite-default-js"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

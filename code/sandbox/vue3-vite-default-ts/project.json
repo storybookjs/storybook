@@ -16,6 +16,7 @@
         "outputPath": "vue3-vite-default-ts"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "vitest-integration": {},
     "build-sandbox": {

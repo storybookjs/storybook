@@ -16,6 +16,7 @@
         "outputPath": "nextjs-prerelease"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

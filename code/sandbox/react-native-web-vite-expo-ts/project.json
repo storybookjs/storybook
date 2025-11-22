@@ -16,6 +16,7 @@
         "outputPath": "react-native-web-vite-expo-ts"
       }
     },
+    "prepare-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {

@@ -1,4 +1,4 @@
-import { access, rm } from 'node:fs/promises';
+import { access, cp, rm } from 'node:fs/promises';
 import path, { join } from 'node:path';
 import { promisify } from 'node:util';
 
@@ -6,6 +6,7 @@ import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task, TaskKey } from '../task';
+import { ROOT_DIRECTORY } from '../utils/constants';
 
 const logger = console;
 
@@ -179,9 +180,31 @@ export const sandbox: Task = {
     await extendPreview(details, options);
 
     if (process.env.NX_RUN) {
-      logger.info('✅ Removing node_modules before caching');
-      await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
-      await rm(path.join(details.sandboxDir, '.yarn'), { force: true, recursive: true });
+      logger.info('✅ Moving sandbox to cache directory');
+      const sandboxDir = join(details.sandboxDir);
+      const cacheDir = join(ROOT_DIRECTORY, 'sandbox', details.key.replace('/', '-'));
+
+      if (sandboxDir !== cacheDir) {
+        logger.info(`✅ Removing cache directory ${cacheDir}`);
+        await rm(cacheDir, { recursive: true, force: true });
+
+        logger.info(`✅ Copy ${sandboxDir} to cache directory`);
+        await cp(sandboxDir, cacheDir, {
+          recursive: true,
+          force: true,
+          filter: (src) => {
+            const name = path.basename(src);
+            return (
+              name !== 'node_modules' &&
+              !(name === 'cache' && path.basename(path.dirname(src)) === '.yarn')
+            );
+          },
+        });
+      } else {
+        logger.info(`✅ Removing node_modules from cache directory ${cacheDir}`);
+        await rm(path.join(cacheDir, 'node_modules'), { force: true, recursive: true });
+        await rm(path.join(cacheDir, '.yarn', 'cache'), { force: true, recursive: true });
+      }
     }
 
     logger.info(`✅ Storybook sandbox created at ${details.sandboxDir}`);

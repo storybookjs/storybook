@@ -62,6 +62,7 @@ const startVerdaccio = async () => {
       const proxy = http.createServer((req, res) => {
         // if request contains "storybook" redirect to verdaccio
         if (req.url?.includes('storybook') || req.url?.includes('/sb') || req.method === 'PUT') {
+          logger.log(`🌿redirecting 6001 request to verdaccio on 6002`);
           res.writeHead(302, { Location: 'http://localhost:6002' + req.url });
           res.end();
         } else {

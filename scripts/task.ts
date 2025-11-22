@@ -545,17 +545,20 @@ async function run() {
             });
           }
 
-          if (!installing && !existsSync(path.join(details.sandboxDir, 'node_modules'))) {
-            installing = true;
-            const { JsPackageManagerFactory } = await import(
-              '../code/core/src/common/js-package-manager/JsPackageManagerFactory'
-            );
-            const packageManager = JsPackageManagerFactory.getPackageManager(
-              {},
-              details.sandboxDir
-            );
-            await packageManager.installDependencies();
-            installing = false;
+          if (!installingPromise && !existsSync(path.join(details.sandboxDir, 'node_modules'))) {
+            installingPromise = (async () => {
+              const { JsPackageManagerFactory } = await import(
+                '../code/core/src/common/js-package-manager/JsPackageManagerFactory'
+              );
+              const packageManager = JsPackageManagerFactory.getPackageManager(
+                {},
+                details.sandboxDir
+              );
+              await packageManager.installDependencies();
+            })();
+            await installingPromise;
+          } else {
+            await installingPromise;
           }
         }
 
@@ -615,7 +618,7 @@ async function run() {
   return 0;
 }
 
-let installing = false;
+let installingPromise: Promise<void> | undefined;
 
 process.on('exit', () => {
   // Make sure to kill any running tasks 🎉

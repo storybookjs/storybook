@@ -58,10 +58,7 @@
       "configurations": {
         "production": {}
       },
-      "dependsOn": [
-        "run-registry"
-        //        { "projects": ["*"], "target": "build" }
-      ],
+      "dependsOn": ["run-registry", { "projects": ["*"], "target": "build" }],
       "cache": false
     },
     "run-registry": {

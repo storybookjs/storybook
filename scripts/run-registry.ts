@@ -85,6 +85,10 @@ const startVerdaccio = async () => {
               proxy?.close(() => resolve());
             }),
           ]);
+
+          if ((await detectFreePort(6001)) !== 6001 || (await detectFreePort(6002)) !== 6002) {
+            logger.error(`❌ failed to close servers`);
+          }
         },
       };
 
@@ -182,14 +186,18 @@ let servers: Servers | undefined;
 const run = async () => {
   const npmRegistry = `http://localhost:6001`;
   const verdaccioUrl = `http://localhost:6002`;
-  if ((await detectFreePort(6001)) === 6001) {
+  if ((await detectFreePort(6001)) === 6001 && (await detectFreePort(6002)) === 6002) {
     logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
     servers = await startVerdaccio();
     logger.log(
       `🌿 npm registry running on ${npmRegistry} and verdaccio running on ${verdaccioUrl}`
     );
   } else {
-    logger.log(`🌿 npm registry already running on ${npmRegistry}`);
+    if ((await detectFreePort(6001)) !== 6001) {
+      logger.log(`🌿 npm registry already running on ${npmRegistry}`);
+    } else {
+      throw new Error(`🌿 npm registry already running on ${npmRegistry}`);
+    }
 
     if ((await detectFreePort(6002)) !== 6002) {
       logger.log(`🌿 verdaccio already running on ${verdaccioUrl}`);

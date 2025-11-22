@@ -22,35 +22,35 @@
   },
   "targetDefaults": {
     "build": {
+      "dependsOn": ["^build"],
       "executor": "nx:run-commands",
       "options": {
         "cwd": "{projectRoot}",
         "command": "yarn prep",
         "args": "--reset"
       },
-      "configurations": {
-        "production": {
-          "args": "--reset --optimized"
-        }
-      },
+      "cache": true,
       "inputs": ["production", "^production"],
-      "dependsOn": ["^build"],
       "outputs": [
         "{projectRoot}/dist",
         "{workspaceRoot}/code/bench/esbuild-metafiles/{projectName}"
       ],
-      "cache": true
+      "configurations": {
+        "production": {
+          "args": "--reset --optimized"
+        }
+      }
     },
     "check": {
-      "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
       "options": {
         "cwd": "{projectRoot}",
         "command": "yarn exec jiti $(yarn workspace @storybook/scripts bin check-package)"
       },
-      "configurations": { "production": {} },
+      "dependsOn": [{ "projects": ["*"], "target": "build" }],
+      "cache": true,
       "inputs": ["default", "^production"],
-      "cache": true
+      "configurations": { "production": {} }
     },
     "publish": {
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
@@ -63,7 +63,8 @@
     "run-registry": {
       "dependsOn": [{ "projects": ["scripts"], "target": "publish" }],
       "command": "yarn workspace @storybook/scripts local-registry --open",
-      "continuous": true
+      "continuous": true,
+      "configurations": { "production": {} }
     },
     "sandbox": {
       "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],

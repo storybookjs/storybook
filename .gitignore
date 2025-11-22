@@ -56,8 +56,6 @@ code/playwright/.cache/
 code/bench-results/
 
 /packs
-code/.nx/cache
-code/.nx/workspace-data
 .vite-inspect
 .nx/cache
 .nx/workspace-data

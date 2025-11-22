@@ -551,15 +551,15 @@ async function run() {
 
           if (!existsSync(path.join(details.sandboxDir, 'node_modules'))) {
             if (!installing) {
-              installing = true;
-              installingPromise = (async () => {
+              globalThis.installing = true;
+              globalThis.installingPromise = (async () => {
                 const packageManager = JsPackageManagerFactory.getPackageManager(
                   {},
                   details.sandboxDir
                 );
                 await packageManager.installDependencies();
               })();
-              installing = false;
+              globalThis.installing = false;
             }
             await installingPromise;
           }
@@ -621,8 +621,14 @@ async function run() {
   return 0;
 }
 
-let installing = false;
-let installingPromise: Promise<void> | undefined;
+declare global {
+  // eslint-disable-next-line no-var
+  var installing: boolean;
+  // eslint-disable-next-line no-var
+  var installingPromise: Promise<void> | undefined;
+}
+globalThis.installing = false;
+globalThis.installingPromise = undefined;
 
 process.on('exit', () => {
   // Make sure to kill any running tasks 🎉

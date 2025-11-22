@@ -6,6 +6,7 @@ import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
 import detectFreePort from 'detect-port';
+import killPort from 'kill-port';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
@@ -186,6 +187,13 @@ let servers: Servers | undefined;
 const run = async () => {
   const npmRegistry = `http://localhost:6001`;
   const verdaccioUrl = `http://localhost:6002`;
+  if ((await detectFreePort(6001)) !== 6001) {
+    await killPort(6001);
+  }
+  if ((await detectFreePort(6002)) !== 6002) {
+    await killPort(6002);
+  }
+
   if ((await detectFreePort(6001)) === 6001 && (await detectFreePort(6002)) === 6002) {
     logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
     servers = await startVerdaccio();

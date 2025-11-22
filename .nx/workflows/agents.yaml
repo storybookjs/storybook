@@ -22,9 +22,7 @@ common-js-init-steps: &common-js-init-steps
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-browsers/main.yaml'
   - name: Run local verdaccio registry
     script: |
-      echo "Starting local Verdaccio registry in background..."
       yarn workspace @storybook/scripts local-registry --open &
-      echo "Verdaccio started (PID $!)"
 
 launch-templates:
   linux-small-js:

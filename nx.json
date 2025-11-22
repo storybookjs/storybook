@@ -194,7 +194,8 @@
     "sharedGlobals": [
       "{workspaceRoot}/code/tsconfig.json",
       "{workspaceRoot}/scripts/**/*",
-      "{workspaceRoot}/.github/workflows/nx.yml"
+      "{workspaceRoot}/.github/workflows/nx.yml",
+      "{workspaceRoot}/.nx/workflows/*"
     ],
     "default": ["sharedGlobals", "{projectRoot}/**/*"],
     "production": [

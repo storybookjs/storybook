@@ -188,31 +188,19 @@ const run = async () => {
   const npmRegistry = `http://localhost:6001`;
   const verdaccioUrl = `http://localhost:6002`;
   if ((await detectFreePort(6001)) !== 6001) {
+    console.log('killing port 6001');
     await killPort(6001);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
   if ((await detectFreePort(6002)) !== 6002) {
+    console.log('killing port 6002');
     await killPort(6002);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
-  if ((await detectFreePort(6001)) === 6001 && (await detectFreePort(6002)) === 6002) {
-    logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
-    servers = await startVerdaccio();
-    logger.log(
-      `🌿 npm registry running on ${npmRegistry} and verdaccio running on ${verdaccioUrl}`
-    );
-  } else {
-    if ((await detectFreePort(6001)) !== 6001) {
-      logger.log(`🌿 npm registry already running on ${npmRegistry}`);
-    } else {
-      throw new Error(`🌿 npm registry already running on ${npmRegistry}`);
-    }
-
-    if ((await detectFreePort(6002)) !== 6002) {
-      logger.log(`🌿 verdaccio already running on ${verdaccioUrl}`);
-    } else {
-      throw new Error(`🌿 verdaccio not running on ${npmRegistry}`);
-    }
-  }
+  logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
+  servers = await startVerdaccio();
+  logger.log(`🌿 npm registry running on ${npmRegistry} and verdaccio running on ${verdaccioUrl}`);
 
   if (opts.publish) {
     // when running e2e locally, clear cache to avoid EPUBLISHCONFLICT errors

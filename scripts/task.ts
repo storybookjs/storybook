@@ -41,6 +41,8 @@ import { findMostMatchText } from './utils/diff';
 import type { OptionValues } from './utils/options';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
+process.setMaxListeners(50);
+
 const sandboxDir = process.env.SANDBOX_ROOT || '../storybook-sandboxes';
 
 export const extraAddons = ['@storybook/addon-a11y'];

@@ -26,7 +26,7 @@ async function main() {
   const storybookStaticSandboxDir = join(sandboxDir, 'storybook-static');
   const storybookStaticCacheDir = join(cacheDir, 'storybook-static');
 
-  if (!existsSync(join(sandboxDir, 'node_modules'))) {
+  if (true || !existsSync(join(sandboxDir, 'node_modules'))) {
     if (sandboxDir !== cacheDir) {
       console.log(`🧹 copying cached ${cacheDir} to ${sandboxDir}`);
       await rm(sandboxDir, { recursive: true, force: true });
@@ -34,6 +34,7 @@ async function main() {
     }
 
     if (!link) {
+      console.log(`🧹 waiting on port 6001 and 6002`);
       await waitOn({
         log: true,
         resources: ['http://localhost:6001', 'http://localhost:6002'],

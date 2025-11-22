@@ -75,7 +75,7 @@
       "configurations": { "production": {} }
     },
     "prepared-sandbox": {
-      "dependsOn": ["sandbox"],
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
       "cache": false,
       "configurations": { "production": {} }

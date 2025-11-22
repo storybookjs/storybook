@@ -1,7 +1,7 @@
 import { exec } from 'node:child_process';
 import { access, mkdir, readFile, rm } from 'node:fs/promises';
-import http from 'node:http';
 import type { Server } from 'node:http';
+import http from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
@@ -36,7 +36,7 @@ const pathExists = async (p: string) => {
   }
 };
 
-type Servers = { close: () => void };
+type Servers = { close: () => Promise<void> };
 const startVerdaccio = async () => {
   // no need to restart
   const ready = {
@@ -74,10 +74,16 @@ const startVerdaccio = async () => {
       let verdaccioApp: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
 
       const servers = {
-        close: () => {
-          console.log('Closing servers running on port 6001 and 6002');
-          verdaccioApp.close();
-          proxy.close();
+        close: async () => {
+          console.log('🛬 Closing servers running on port 6001 and 6002');
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              verdaccioApp?.close(() => resolve());
+            }),
+            new Promise<void>((resolve) => {
+              proxy?.close(() => resolve());
+            }),
+          ]);
         },
       };
 
@@ -219,20 +225,20 @@ const run = async () => {
     }
 
     if (!opts.open) {
-      servers?.close();
+      await servers?.close();
       process.exit(0);
     }
   }
 };
 
-run().catch((e) => {
-  servers?.close();
+run().catch(async (e) => {
   logger.error(e);
+  await servers?.close();
 });
 
-['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((sig) => {
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'SIGUSR1', 'SIGUSR2']) {
   process.on(sig, async () => {
-    servers?.close();
+    await servers?.close();
     process.exit(0);
   });
-});
+}

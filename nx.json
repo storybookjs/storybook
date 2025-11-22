@@ -100,7 +100,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
+      "dependsOn": ["sandbox"],
       "cache": true
     },
     "build-sandbox": {
@@ -113,7 +113,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
+      "dependsOn": ["sandbox"],
       "cache": true
     },
     "dev": {
@@ -125,7 +125,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
+      "dependsOn": ["sandbox"],
       "continuous": true
     },
     "vitest-integration": {
@@ -137,7 +137,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }]
+      "dependsOn": ["sandbox"]
     },
     "chromatic": {
       "executor": "nx:run-commands",
@@ -149,7 +149,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["build-sandbox", { "projects": ["scripts"], "target": "run-registry" }],
+      "dependsOn": ["build-sandbox"],
       "cache": true
     },
     "serve": {
@@ -162,7 +162,7 @@
       },
       "configurations": { "production": {} },
       "continuous": true,
-      "dependsOn": ["build-sandbox", { "projects": ["scripts"], "target": "run-registry" }]
+      "dependsOn": ["build-sandbox"]
     },
     "e2e-tests": {
       "executor": "nx:run-commands",
@@ -173,7 +173,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["serve", { "projects": ["scripts"], "target": "run-registry" }],
+      "dependsOn": ["serve"],
       "cache": true
     },
     "test-runner": {
@@ -185,7 +185,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["serve", { "projects": ["scripts"], "target": "run-registry" }],
+      "dependsOn": ["serve"],
       "cache": true
     },
     "e2e-tests-dev": {
@@ -197,7 +197,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["dev", { "projects": ["scripts"], "target": "run-registry" }],
+      "dependsOn": ["dev"],
       "cache": true
     },
     "test-runner-dev": {
@@ -209,7 +209,7 @@
         "forwardAllArgs": false
       },
       "configurations": { "production": {} },
-      "dependsOn": ["dev", { "projects": ["scripts"], "target": "run-registry" }],
+      "dependsOn": ["dev"],
       "cache": true
     },
 

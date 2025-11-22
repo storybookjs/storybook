@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -525,7 +526,27 @@ async function run() {
             'vitest-integration',
           ].includes(details.selectedTask)
         ) {
-          if (!(await pathExists(path.join(details.sandboxDir, 'node_modules')))) {
+          if ((await detectFreePort(6001)) === 6001) {
+            console.log('port 6001 is free');
+          }
+          if ((await detectFreePort(6002)) === 6002) {
+            console.log('port 6002 is free');
+          }
+          if ((await detectFreePort(6001)) === 6001 || (await detectFreePort(6002)) === 6002) {
+            await exec(
+              'yarn local-registry --open',
+              { cwd: CODE_DIRECTORY, env: { CI: 'true' } },
+              { debug: true }
+            );
+            await waitOn({
+              resources: ['http://localhost:6001', 'http://localhost:6002'],
+              interval: 16,
+              timeout: 10000,
+            });
+          }
+
+          if (!installing && !existsSync(path.join(details.sandboxDir, 'node_modules'))) {
+            installing = true;
             const { JsPackageManagerFactory } = await import(
               '../code/core/src/common/js-package-manager/JsPackageManagerFactory'
             );
@@ -533,19 +554,8 @@ async function run() {
               {},
               details.sandboxDir
             );
-            if ((await detectFreePort(6001)) === 6001) {
-              await exec(
-                'yarn local-registry --open',
-                { cwd: CODE_DIRECTORY, env: { CI: 'true' } },
-                { debug: true }
-              );
-              await waitOn({
-                resources: ['http://localhost:6001', 'http://localhost:6002'],
-                interval: 16,
-                timeout: 10000,
-              });
-            }
             await packageManager.installDependencies();
+            installing = false;
           }
         }
 
@@ -604,6 +614,8 @@ async function run() {
 
   return 0;
 }
+
+let installing = false;
 
 process.on('exit', () => {
   // Make sure to kill any running tasks 🎉

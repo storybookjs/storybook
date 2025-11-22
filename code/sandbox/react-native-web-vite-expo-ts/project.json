@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "react-native-web-vite-expo-ts"
+        "dir": "react-native-web-vite-expo-ts"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "react-native-web-vite-expo-ts"
+        "dir": "react-native-web-vite-expo-ts"
       }
     },
     "prepared-build-sandbox": {},

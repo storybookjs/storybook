@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "angular-cli-prerelease"
+        "dir": "angular-cli-prerelease"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "angular-cli-prerelease"
+        "dir": "angular-cli-prerelease"
       }
     },
     "prepared-build-sandbox": {},

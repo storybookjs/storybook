@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "react-native-web-vite-rn-cli-ts"
+        "dir": "react-native-web-vite-rn-cli-ts"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "react-native-web-vite-rn-cli-ts"
+        "dir": "react-native-web-vite-rn-cli-ts"
       }
     },
     "prepared-build-sandbox": {},

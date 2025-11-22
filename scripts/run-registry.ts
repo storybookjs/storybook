@@ -163,6 +163,16 @@ const publish = async (packages: { name: string; location: string }[], url: stri
 };
 
 const run = async () => {
+  const verdaccioUrl = `http://localhost:6001`;
+  let verdaccioServer: Server;
+  if ((await detectFreePort(6001)) === 6001) {
+    logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
+    verdaccioServer = await startVerdaccio();
+    logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
+  } else {
+    logger.log(`🌿 verdaccio already running on ${verdaccioUrl}`);
+  }
+
   if (opts.publish) {
     await waitOn({
       resources: ['http://localhost:6001', 'http://localhost:6002'],
@@ -194,14 +204,10 @@ const run = async () => {
     } finally {
       await rm(join(root, '.npmrc'), { force: true });
     }
-  } else {
-    const verdaccioUrl = `http://localhost:6001`;
-    if ((await detectFreePort(6001)) === 6001) {
-      logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
-      await startVerdaccio();
-      logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
-    } else {
-      logger.log(`🌿 verdaccio already running on ${verdaccioUrl}`);
+
+    if (!opts.open) {
+      verdaccioServer?.close();
+      process.exit(0);
     }
   }
 };

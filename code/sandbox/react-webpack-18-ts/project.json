@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "react-webpack-18-ts"
+        "dir": "react-webpack-18-ts"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "react-webpack-18-ts"
+        "dir": "react-webpack-18-ts"
       }
     },
     "prepared-build-sandbox": {},

@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "nextjs-15-ts"
+        "dir": "nextjs-15-ts"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "nextjs-15-ts"
+        "dir": "nextjs-15-ts"
       }
     },
     "prepared-build-sandbox": {},

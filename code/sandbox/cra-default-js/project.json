@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "cra-default-js"
+        "dir": "cra-default-js"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "cra-default-js"
+        "dir": "cra-default-js"
       }
     },
     "prepared-build-sandbox": {},

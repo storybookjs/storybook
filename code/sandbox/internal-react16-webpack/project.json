@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "internal-react16-webpack"
+        "dir": "internal-react16-webpack"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "internal-react16-webpack"
+        "dir": "internal-react16-webpack"
       }
     },
     "prepared-build-sandbox": {},

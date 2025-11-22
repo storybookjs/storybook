@@ -12,14 +12,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "qwik-vite-default-ts"
+        "dir": "qwik-vite-default-ts"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "qwik-vite-default-ts"
+        "dir": "qwik-vite-default-ts"
       }
     },
     "prepared-build-sandbox": {},

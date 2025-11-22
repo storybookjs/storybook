@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "bench-react-webpack-18-ts"
+        "dir": "bench-react-webpack-18-ts"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "bench-react-webpack-18-ts"
+        "dir": "bench-react-webpack-18-ts"
       }
     },
     "prepared-build-sandbox": {},

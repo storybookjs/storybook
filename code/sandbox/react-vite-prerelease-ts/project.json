@@ -13,7 +13,7 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "react-vite-prerelease-ts"
+        "dir": "react-vite-prerelease-ts"
       }
     },
     "prepared-sandbox": {},
@@ -21,7 +21,7 @@
     "vitest-integration": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "react-vite-prerelease-ts"
+        "dir": "react-vite-prerelease-ts"
       }
     },
     "prepared-build-sandbox": {},

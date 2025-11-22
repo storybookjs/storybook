@@ -42,195 +42,116 @@
       "cache": true
     },
     "check": {
+      "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
       "options": {
         "cwd": "{projectRoot}",
         "command": "yarn exec jiti $(yarn workspace @storybook/scripts bin check-package)"
       },
-      "configurations": {
-        "production": {}
-      },
+      "configurations": { "production": {} },
       "inputs": ["default", "^production"],
-      "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "cache": true
     },
     "publish": {
+      "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "command": "yarn workspace @storybook/scripts local-registry --publish",
-      "configurations": {
-        "production": {}
-      },
-      "dependsOn": ["run-registry", { "projects": ["*"], "target": "build" }],
-      "cache": false
+      "cache": true,
+      "inputs": ["all-production"],
+      "outputs": ["{workspaceRoot}/.verdaccio-cache"],
+      "configurations": { "production": {} }
     },
     "run-registry": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "yarn workspace @storybook/scripts local-registry --open"
-      },
+      "dependsOn": ["publish"],
+      "command": "yarn workspace @storybook/scripts local-registry --open",
       "continuous": true
     },
     "sandbox": {
-      "executor": "nx:run-commands",
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
+      "command": "yarn task sandbox -s never --debug --no-link --template={projectName}",
+      "cache": true,
       "inputs": ["^production"],
-      "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}"],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task sandbox -s never --debug --no-link --template={projectName}",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
-      "dependsOn": [
-        { "projects": ["scripts"], "target": "publish" },
-        { "projects": ["scripts"], "target": "run-registry" }
-      ],
-      "cache": true
+      "outputs": ["{workspaceRoot}/sandbox/{options.dir}"],
+      "configurations": { "production": {} }
     },
     "prepared-sandbox": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
-      "dependsOn": [
-        "sandbox",
-        { "projects": ["scripts"], "target": "publish" },
-        { "projects": ["scripts"], "target": "run-registry" }
-      ],
-      "cache": false
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }, "sandbox"],
+      "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
+      "cache": false,
+      "configurations": { "production": {} }
     },
     "check-sandbox": {
-      "executor": "nx:run-commands",
-      "inputs": ["^production"],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task check-sandbox -s never --debug --no-link --template={projectName}",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
       "dependsOn": ["prepared-sandbox"],
-      "cache": true
+      "command": "yarn task check-sandbox -s never --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "configurations": { "production": {} }
     },
     "build-sandbox": {
-      "executor": "nx:run-commands",
-      "inputs": ["^production"],
-      "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}/storybook-static"],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task build -s never --debug --no-link --template={projectName}",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
       "dependsOn": ["prepared-sandbox"],
-      "cache": true
+      "command": "yarn task build -s never --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "outputs": ["{workspaceRoot}/sandbox/{options.dir}/storybook-static"],
+      "configurations": { "production": {} }
     },
     "prepared-build-sandbox": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
-      "dependsOn": [
-        "build-sandbox"
-      ],
-      "cache": false
+      "dependsOn": ["build-sandbox"],
+      "command": "yarn workspace @storybook/scripts prepare-sandbox --template={projectName} --no-link",
+      "cache": false,
+      "configurations": { "production": {} }
     },
     "dev": {
-      "executor": "nx:run-commands",
-      "inputs": ["^production"],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task dev -s never --debug --no-link --template={projectName}",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
       "dependsOn": ["prepared-sandbox"],
-      "continuous": true
+      "command": "yarn task dev -s never --debug --no-link --template={projectName}",
+      "continuous": true,
+      "configurations": { "production": {} }
     },
     "vitest-integration": {
-      "executor": "nx:run-commands",
+      "dependsOn": ["prepared-sandbox"],
+      "command": "yarn task vitest-integration -s never --debug --no-link --template={projectName}",
       "inputs": ["^production"],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task vitest-integration -s never --debug --no-link --template={projectName}",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
-      "dependsOn": ["prepared-sandbox"]
+      "configurations": { "production": {} }
     },
     "chromatic": {
-      "executor": "nx:run-commands",
-      "inputs": ["^production"],
-      "outputs": ["{workspaceRoot}/sandbox/{options.outputPath}/storybook-static"],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task chromatic -s never --debug --no-link --template={projectName}",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
       "dependsOn": ["prepared-build-sandbox"],
-      "cache": true
+      "command": "yarn task chromatic -s never --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "configurations": { "production": {} }
     },
     "serve": {
-      "executor": "nx:run-commands",
-      "inputs": ["^production"],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task serve -s never --debug --no-link --template={projectName}",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
+      "dependsOn": ["prepared-build-sandbox"],
+      "command": "yarn task serve -s never --debug --no-link --template={projectName}",
       "continuous": true,
-      "dependsOn": ["prepared-build-sandbox"]
+      "configurations": { "production": {} }
     },
     "e2e-tests": {
-      "executor": "nx:run-commands",
-      "inputs": ["^production"],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task e2e-tests --junit -s never --debug --no-link --template={projectName}",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
       "dependsOn": ["serve"],
-      "cache": true
+      "command": "yarn task e2e-tests --junit -s never --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "configurations": { "production": {} }
     },
     "test-runner": {
-      "executor": "nx:run-commands",
-      "inputs": ["^production"],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task test-runner --junit -s never --debug --no-link --template={projectName}",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
       "dependsOn": ["serve"],
-      "cache": true
+      "command": "yarn task test-runner --junit -s never --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "configurations": { "production": {} }
     },
     "e2e-tests-dev": {
-      "executor": "nx:run-commands",
-      "inputs": ["^production"],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task e2e-tests-dev --junit -s never --debug --no-link --template={projectName}",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
       "dependsOn": ["dev"],
-      "cache": true
+      "command": "yarn task e2e-tests-dev --junit -s never --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "configurations": { "production": {} }
     },
     "test-runner-dev": {
-      "executor": "nx:run-commands",
-      "inputs": ["^production"],
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn task test-runner-dev --junit -s never --debug --no-link --template={projectName}",
-        "forwardAllArgs": false
-      },
-      "configurations": { "production": {} },
       "dependsOn": ["dev"],
-      "cache": true
+      "command": "yarn task test-runner-dev --junit -s never --debug --no-link --template={projectName}",
+      "cache": true,
+      "inputs": ["^production"],
+      "configurations": { "production": {} }
     },
 
     // test storybook
@@ -269,19 +190,24 @@
     }
   },
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "sharedGlobals": [
       "{workspaceRoot}/code/tsconfig.json",
       "{workspaceRoot}/scripts/**/*",
       "{workspaceRoot}/.github/workflows/nx.yml"
     ],
+    "default": ["sharedGlobals", "{projectRoot}/**/*"],
     "production": [
       "default",
-      "!{projectRoot}/src/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
+      "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
       "!{projectRoot}/vitest.config.[jt]s",
       "!{projectRoot}/README.md",
       "!{projectRoot}/.eslintrc.{json,js}",
       "!{projectRoot}/src/test-setup.[jt]s"
+    ],
+    "all-production": [
+      "sharedGlobals",
+      "{workspaceRoot}/code/**/*",
+      "!{workspaceRoot}/code/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ]
   },
   "nxCloudId": "691dbcdcb2822ca4fdc727c4"

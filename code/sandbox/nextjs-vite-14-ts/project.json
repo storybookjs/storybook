@@ -13,7 +13,7 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "nextjs-vite-14-ts"
+        "dir": "nextjs-vite-14-ts"
       }
     },
     "prepared-sandbox": {},
@@ -21,7 +21,7 @@
     "vitest-integration": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "nextjs-vite-14-ts"
+        "dir": "nextjs-vite-14-ts"
       }
     },
     "prepared-build-sandbox": {},

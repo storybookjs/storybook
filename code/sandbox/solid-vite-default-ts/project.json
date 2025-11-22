@@ -12,7 +12,7 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "solid-vite-default-ts"
+        "dir": "solid-vite-default-ts"
       }
     },
     "prepared-sandbox": {},
@@ -20,7 +20,7 @@
     "vitest-integration": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "solid-vite-default-ts"
+        "dir": "solid-vite-default-ts"
       }
     },
     "prepared-build-sandbox": {},

@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "nextjs-prerelease"
+        "dir": "nextjs-prerelease"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "nextjs-prerelease"
+        "dir": "nextjs-prerelease"
       }
     },
     "prepared-build-sandbox": {},

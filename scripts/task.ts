@@ -154,6 +154,12 @@ export const options = createOptions({
     inverse: true,
     promptType: false,
   },
+  dir: {
+    type: 'string',
+    description: 'Name of sandbox directory',
+    required: false,
+    promptType: false,
+  },
   prod: {
     type: 'boolean',
     description: 'Build code for production',
@@ -390,14 +396,14 @@ async function run() {
   }
 
   const finalTask = tasks[taskKey];
-  const { template: templateKey } = optionValues;
+  const { template: templateKey, dir } = optionValues;
   const template = TEMPLATES[templateKey];
 
   const templateSandboxDir =
     templateKey &&
     join(
       path.isAbsolute(sandboxDir) ? sandboxDir : join(ROOT_DIRECTORY, sandboxDir),
-      templateKey.replace('/', '-')
+      dir ?? templateKey.replace('/', '-')
     );
   const details: TemplateDetails = {
     key: templateKey,
@@ -493,7 +499,7 @@ async function run() {
         },
       }
     );
-    
+
     setUnready(startFromTask);
   }
 

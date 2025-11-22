@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "react-webpack-17-ts"
+        "dir": "react-webpack-17-ts"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "react-webpack-17-ts"
+        "dir": "react-webpack-17-ts"
       }
     },
     "prepared-build-sandbox": {},

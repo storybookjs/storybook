@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "html-vite-default-js"
+        "dir": "html-vite-default-js"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "html-vite-default-js"
+        "dir": "html-vite-default-js"
       }
     },
     "prepared-build-sandbox": {},

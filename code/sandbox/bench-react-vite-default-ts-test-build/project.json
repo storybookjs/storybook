@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "bench-react-vite-default-ts-test-build"
+        "dir": "bench-react-vite-default-ts-test-build"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "bench-react-vite-default-ts-test-build"
+        "dir": "bench-react-vite-default-ts-test-build"
       }
     },
     "prepared-build-sandbox": {},

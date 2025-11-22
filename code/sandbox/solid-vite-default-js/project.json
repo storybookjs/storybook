@@ -12,14 +12,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "solid-vite-default-js"
+        "dir": "solid-vite-default-js"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "solid-vite-default-js"
+        "dir": "solid-vite-default-js"
       }
     },
     "prepared-build-sandbox": {},

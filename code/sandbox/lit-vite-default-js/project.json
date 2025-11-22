@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "lit-vite-default-js"
+        "dir": "lit-vite-default-js"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "lit-vite-default-js"
+        "dir": "lit-vite-default-js"
       }
     },
     "prepared-build-sandbox": {},

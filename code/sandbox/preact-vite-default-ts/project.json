@@ -13,7 +13,7 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "preact-vite-default-ts"
+        "dir": "preact-vite-default-ts"
       }
     },
     "prepared-sandbox": {},
@@ -21,7 +21,7 @@
     "vitest-integration": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "preact-vite-default-ts"
+        "dir": "preact-vite-default-ts"
       }
     },
     "prepared-build-sandbox": {},

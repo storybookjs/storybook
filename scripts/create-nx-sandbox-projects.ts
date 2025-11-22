@@ -27,7 +27,7 @@ const projectJson = (name: string, framework: string, tags: string[], template: 
       options: {
         // Ensure Nx sandboxes write to a stable, slash-free folder name
         // e.g. "react-vite/default-ts" -> "react-vite-default-ts"
-        outputPath: name.replaceAll('/', '-'),
+        dir: name.replaceAll('/', '-'),
       },
     },
     'prepared-sandbox': {},
@@ -44,7 +44,7 @@ const projectJson = (name: string, framework: string, tags: string[], template: 
         }),
     'build-sandbox': {
       options: {
-        outputPath: name.replaceAll('/', '-'),
+        dir: name.replaceAll('/', '-'),
       },
     },
     'prepared-build-sandbox': {},

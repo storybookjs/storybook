@@ -13,14 +13,14 @@
   "targets": {
     "sandbox": {
       "options": {
-        "outputPath": "angular-cli-default-ts"
+        "dir": "angular-cli-default-ts"
       }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
       "options": {
-        "outputPath": "angular-cli-default-ts"
+        "dir": "angular-cli-default-ts"
       }
     },
     "prepared-build-sandbox": {},

@@ -24,7 +24,7 @@ describe('AddonVitestService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new AddonVitestService();
+    service = new AddonVitestService(mockPackageManager);
     vi.mocked(getProjectRoot).mockReturnValue('/test/project');
 
     mockPackageManager = {
@@ -55,7 +55,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce(null) // @vitest/coverage-v8
         .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
-      const deps = await service.collectDependencies(mockPackageManager);
+      const deps = await service.collectDependencies();
 
       expect(deps).toContain('vitest');
       // When vitest version is null, defaults to vitest 4+ behavior
@@ -75,7 +75,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce('3.0.0') // @vitest/coverage-v8
         .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
-      const deps = await service.collectDependencies(mockPackageManager);
+      const deps = await service.collectDependencies();
 
       expect(deps).not.toContain('vitest');
       expect(deps).not.toContain('@vitest/browser');
@@ -91,7 +91,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce(null) // @vitest/coverage-v8
         .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
-      const deps = await service.collectDependencies(mockPackageManager);
+      const deps = await service.collectDependencies();
 
       // Should only contain base packages, not framework-specific ones
       expect(deps).toContain('vitest');
@@ -109,7 +109,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce(null) // @vitest/coverage-v8
         .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
-      const deps = await service.collectDependencies(mockPackageManager);
+      const deps = await service.collectDependencies();
 
       expect(deps.every((d) => !d.includes('nextjs-vite'))).toBe(true);
     });
@@ -161,7 +161,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce('3.0.0') // vitest
         .mockResolvedValueOnce(null); // msw
 
-      const result = await service.validatePackageVersions(mockPackageManager);
+      const result = await service.validatePackageVersions();
 
       expect(result.compatible).toBe(true);
       expect(result.reasons).toBeUndefined();
@@ -172,7 +172,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce('4.0.0') // vitest
         .mockResolvedValueOnce(null); // msw
 
-      const result = await service.validatePackageVersions(mockPackageManager);
+      const result = await service.validatePackageVersions();
 
       expect(result.compatible).toBe(true);
       expect(result.reasons).toBeUndefined();
@@ -183,7 +183,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce('2.5.0') // vitest
         .mockResolvedValueOnce(null); // msw
 
-      const result = await service.validatePackageVersions(mockPackageManager);
+      const result = await service.validatePackageVersions();
 
       expect(result.compatible).toBe(false);
       expect(result.reasons).toBeDefined();
@@ -195,7 +195,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce('3.0.0') // vitest
         .mockResolvedValueOnce('2.0.0'); // msw
 
-      const result = await service.validatePackageVersions(mockPackageManager);
+      const result = await service.validatePackageVersions();
 
       expect(result.compatible).toBe(true);
     });

@@ -13,7 +13,6 @@ const ADDON_INSTALLATION_INSTRUCTIONS = {
 } as { [key: string]: string };
 
 type ExecuteAddonConfigurationParams = {
-  packageManager: JsPackageManager;
   addons: string[];
   options: CommandOptions;
   configDir?: string;
@@ -34,11 +33,13 @@ export type ExecuteAddonConfigurationResult = {
  * - Handle configuration errors gracefully
  */
 export class AddonConfigurationCommand {
-  constructor(private readonly addonVitestService = new AddonVitestService()) {}
+  constructor(
+    readonly packageManager: JsPackageManager,
+    private readonly addonVitestService = new AddonVitestService(packageManager)
+  ) {}
 
   /** Execute addon configuration */
   async execute({
-    packageManager,
     options,
     addons,
     configDir,
@@ -57,15 +58,10 @@ export class AddonConfigurationCommand {
     }
 
     try {
-      const { hasFailures, addonResults } = await this.configureAddons(
-        packageManager,
-        configDir,
-        addons,
-        options
-      );
+      const { hasFailures, addonResults } = await this.configureAddons(configDir, addons, options);
 
       if (addonResults.has('@storybook/addon-vitest')) {
-        await this.addonVitestService.installPlaywright(packageManager, {
+        await this.addonVitestService.installPlaywright({
           yes: options.yes,
         });
       }
@@ -106,24 +102,8 @@ export class AddonConfigurationCommand {
     }
   }
 
-  private getAddonInstructions(addons: string[]): string {
-    return addons
-      .map((addon) => {
-        const instructions =
-          ADDON_INSTALLATION_INSTRUCTIONS[addon as keyof typeof ADDON_INSTALLATION_INSTRUCTIONS];
-        return instructions ? dedent`- ${addon}: ${instructions}` : null;
-      })
-      .filter(Boolean)
-      .join('\n');
-  }
-
   /** Configure test addons (a11y and vitest) */
-  private async configureAddons(
-    packageManager: JsPackageManager,
-    configDir: string,
-    addons: string[],
-    options: CommandOptions
-  ) {
+  private async configureAddons(configDir: string, addons: string[], options: CommandOptions) {
     // Import postinstallAddon from cli-storybook package
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
 
@@ -141,7 +121,7 @@ export class AddonConfigurationCommand {
         task.message(`Configuring ${addon}...`);
 
         await postinstallAddon(addon, {
-          packageManager: packageManager.type,
+          packageManager: this.packageManager.type,
           configDir,
           yes: options.yes,
           skipInstall: true,
@@ -179,6 +159,9 @@ export class AddonConfigurationCommand {
   }
 }
 
-export const executeAddonConfiguration = (params: ExecuteAddonConfigurationParams) => {
-  return new AddonConfigurationCommand().execute(params);
+export const executeAddonConfiguration = ({
+  packageManager,
+  ...options
+}: ExecuteAddonConfigurationParams & { packageManager: JsPackageManager }) => {
+  return new AddonConfigurationCommand(packageManager).execute(options);
 };

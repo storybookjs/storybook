@@ -21,7 +21,8 @@ describe('FeatureCompatibilityService', () => {
   let mockAddonVitestService: AddonVitestService;
 
   beforeEach(() => {
-    mockAddonVitestService = new AddonVitestService();
+    // @ts-expect-error accept old constructor in mock context
+    mockAddonVitestService = new AddonVitestService({} as any);
     service = new FeatureCompatibilityService(mockAddonVitestService);
   });
 

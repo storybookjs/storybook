@@ -18,12 +18,13 @@ vi.mock('storybook/internal/cli', async () => {
 
 describe('FeatureCompatibilityService', () => {
   let service: FeatureCompatibilityService;
-  let mockAddonVitestService: AddonVitestService;
+  const mockPackageManager = {
+    getInstalledVersion: vi.fn(),
+  } as Partial<JsPackageManager> as JsPackageManager;
+  const mockAddonVitestService = new AddonVitestService(mockPackageManager);
 
   beforeEach(() => {
-    // @ts-expect-error accept old constructor in mock context
-    mockAddonVitestService = new AddonVitestService({} as any);
-    service = new FeatureCompatibilityService(mockAddonVitestService);
+    service = new FeatureCompatibilityService(mockPackageManager, mockAddonVitestService);
   });
 
   describe('supportsOnboarding', () => {
@@ -43,14 +44,9 @@ describe('FeatureCompatibilityService', () => {
   });
 
   describe('validateTestFeatureCompatibility', () => {
-    let mockPackageManager: JsPackageManager;
     let mockValidateCompatibility: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      mockPackageManager = {
-        getInstalledVersion: vi.fn(),
-      } as Partial<JsPackageManager> as JsPackageManager;
-
       // Get the mocked validateCompatibility method
       mockValidateCompatibility = vi.mocked(mockAddonVitestService.validateCompatibility);
     });
@@ -59,7 +55,6 @@ describe('FeatureCompatibilityService', () => {
       mockValidateCompatibility.mockResolvedValue({ compatible: true });
 
       const result = await service.validateTestFeatureCompatibility(
-        mockPackageManager,
         SupportedFramework.REACT_VITE,
         SupportedBuilder.VITE,
         '/test'
@@ -67,7 +62,6 @@ describe('FeatureCompatibilityService', () => {
 
       expect(result.compatible).toBe(true);
       expect(mockValidateCompatibility).toHaveBeenCalledWith({
-        packageManager: mockPackageManager,
         framework: 'react-vite',
         builder: SupportedBuilder.VITE,
         projectRoot: '/test',
@@ -81,7 +75,6 @@ describe('FeatureCompatibilityService', () => {
       });
 
       const result = await service.validateTestFeatureCompatibility(
-        mockPackageManager,
         SupportedFramework.REACT_VITE,
         SupportedBuilder.VITE,
         '/test'

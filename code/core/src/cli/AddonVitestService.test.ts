@@ -24,14 +24,14 @@ describe('AddonVitestService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new AddonVitestService(mockPackageManager);
-    vi.mocked(getProjectRoot).mockReturnValue('/test/project');
-
     mockPackageManager = {
       getAllDependencies: vi.fn(),
       getInstalledVersion: vi.fn(),
       runPackageCommand: vi.fn(),
     } as Partial<JsPackageManager> as JsPackageManager;
+
+    service = new AddonVitestService(mockPackageManager);
+    vi.mocked(getProjectRoot).mockReturnValue('/test/project');
 
     // Setup default mocks for logger and prompt
     vi.mocked(logger.info).mockImplementation(() => {});
@@ -121,7 +121,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce('3.0.0') // @vitest/coverage-v8
         .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
-      const deps = await service.collectDependencies(mockPackageManager);
+      const deps = await service.collectDependencies();
 
       expect(deps.every((d) => !d.includes('coverage'))).toBe(true);
     });
@@ -133,7 +133,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce('3.0.0') // @vitest/coverage-istanbul
         .mockResolvedValueOnce(null); // vitest version
 
-      const deps = await service.collectDependencies(mockPackageManager);
+      const deps = await service.collectDependencies();
 
       expect(deps.every((d) => !d.includes('coverage'))).toBe(true);
     });
@@ -145,7 +145,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce(null) // @vitest/coverage-v8
         .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
-      const deps = await service.collectDependencies(mockPackageManager);
+      const deps = await service.collectDependencies();
 
       expect(deps).toContain('vitest@3.2.0');
       // Version 3.2.0 < 4.0.0, so uses @vitest/browser
@@ -205,7 +205,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce('3.0.0') // vitest
         .mockResolvedValueOnce('1.9.0'); // msw
 
-      const result = await service.validatePackageVersions(mockPackageManager);
+      const result = await service.validatePackageVersions();
 
       expect(result.compatible).toBe(false);
       expect(result.reasons).toBeDefined();
@@ -217,7 +217,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce('3.0.0') // vitest
         .mockResolvedValueOnce(null); // msw
 
-      const result = await service.validatePackageVersions(mockPackageManager);
+      const result = await service.validatePackageVersions();
 
       expect(result.compatible).toBe(true);
     });
@@ -227,7 +227,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce(null) // vitest
         .mockResolvedValueOnce(null); // msw
 
-      const result = await service.validatePackageVersions(mockPackageManager);
+      const result = await service.validatePackageVersions();
 
       expect(result.compatible).toBe(true);
     });
@@ -237,7 +237,7 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce('2.0.0') // vitest <3.0.0
         .mockResolvedValueOnce('1.0.0'); // msw <2.0.0
 
-      const result = await service.validatePackageVersions(mockPackageManager);
+      const result = await service.validatePackageVersions();
 
       expect(result.compatible).toBe(false);
       expect(result.reasons).toBeDefined();
@@ -253,7 +253,6 @@ describe('AddonVitestService', () => {
 
     it('should return compatible for valid Vite-based framework', async () => {
       const result = await service.validateCompatibility({
-        packageManager: mockPackageManager,
         framework: SupportedFramework.REACT_VITE,
         builder: SupportedBuilder.VITE,
       });
@@ -263,7 +262,6 @@ describe('AddonVitestService', () => {
 
     it('should return compatible for react-vite with Vite builder', async () => {
       const result = await service.validateCompatibility({
-        packageManager: mockPackageManager,
         framework: SupportedFramework.REACT_VITE,
         builder: SupportedBuilder.VITE,
       });
@@ -273,7 +271,6 @@ describe('AddonVitestService', () => {
 
     it('should return incompatible for non-Vite builder (except Next.js)', async () => {
       const result = await service.validateCompatibility({
-        packageManager: mockPackageManager,
         framework: SupportedFramework.REACT_WEBPACK5,
         builder: SupportedBuilder.WEBPACK5,
       });
@@ -288,7 +285,6 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce(null); // msw
 
       const result = await service.validateCompatibility({
-        packageManager: mockPackageManager,
         framework: SupportedFramework.NEXTJS,
         builder: SupportedBuilder.WEBPACK5,
       });
@@ -300,7 +296,6 @@ describe('AddonVitestService', () => {
 
     it('should return incompatible for unsupported framework', async () => {
       const result = await service.validateCompatibility({
-        packageManager: mockPackageManager,
         framework: SupportedFramework.ANGULAR,
         builder: SupportedBuilder.VITE,
       });
@@ -317,7 +312,6 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce(null); // msw
 
       const result = await service.validateCompatibility({
-        packageManager: mockPackageManager,
         framework: SupportedFramework.NEXTJS_VITE,
         builder: SupportedBuilder.VITE,
       });
@@ -330,7 +324,6 @@ describe('AddonVitestService', () => {
       vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.json');
 
       const result = await service.validateCompatibility({
-        packageManager: mockPackageManager,
         framework: SupportedFramework.REACT_VITE,
         builder: SupportedBuilder.VITE,
         projectRoot: '.storybook',
@@ -344,7 +337,6 @@ describe('AddonVitestService', () => {
       vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.json');
 
       const result = await service.validateCompatibility({
-        packageManager: mockPackageManager,
         framework: SupportedFramework.REACT_VITE,
         builder: SupportedBuilder.VITE,
       });
@@ -359,7 +351,6 @@ describe('AddonVitestService', () => {
         .mockResolvedValueOnce('1.0.0'); // msw <2.0.0
 
       const result = await service.validateCompatibility({
-        packageManager: mockPackageManager,
         framework: SupportedFramework.ANGULAR,
         builder: SupportedBuilder.WEBPACK5,
       });
@@ -381,7 +372,7 @@ describe('AddonVitestService', () => {
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockResolvedValue(undefined);
 
-      const { errors } = await service.installPlaywright(mockPackageManager);
+      const { errors } = await service.installPlaywright();
 
       expect(errors).toEqual([]);
       expect(prompt.confirm).toHaveBeenCalledWith({
@@ -409,7 +400,7 @@ describe('AddonVitestService', () => {
         }
       );
 
-      await service.installPlaywright(mockPackageManager);
+      await service.installPlaywright();
 
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
         args: ['playwright', 'install', 'chromium', '--with-deps'],
@@ -424,7 +415,7 @@ describe('AddonVitestService', () => {
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(error);
 
-      const { errors } = await service.installPlaywright(mockPackageManager);
+      const { errors } = await service.installPlaywright();
 
       expect(errors).toEqual(['Error stack trace']);
     });
@@ -435,7 +426,7 @@ describe('AddonVitestService', () => {
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(error);
 
-      const { errors } = await service.installPlaywright(mockPackageManager);
+      const { errors } = await service.installPlaywright();
 
       expect(errors).toEqual(['Installation failed']);
     });
@@ -444,7 +435,7 @@ describe('AddonVitestService', () => {
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue('String error');
 
-      const { errors } = await service.installPlaywright(mockPackageManager);
+      const { errors } = await service.installPlaywright();
 
       expect(errors).toEqual(['String error']);
     });
@@ -452,7 +443,7 @@ describe('AddonVitestService', () => {
     it('should skip installation when user declines', async () => {
       vi.mocked(prompt.confirm).mockResolvedValue(false);
 
-      const { errors } = await service.installPlaywright(mockPackageManager);
+      const { errors } = await service.installPlaywright();
 
       expect(errors).toEqual([]);
       expect(prompt.executeTaskWithSpinner).not.toHaveBeenCalled();
@@ -463,7 +454,7 @@ describe('AddonVitestService', () => {
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockResolvedValue(undefined);
 
-      await service.installPlaywright(mockPackageManager);
+      await service.installPlaywright();
 
       expect(prompt.confirm).toHaveBeenCalled();
       expect(prompt.executeTaskWithSpinner).toHaveBeenCalled();

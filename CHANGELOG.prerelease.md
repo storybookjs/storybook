@@ -1,3 +1,6 @@
+## 10.1.0-beta.0
+
+
 ## 10.1.0-alpha.14
 
 - Angular: Add support for v21 - [#33098](https://github.com/storybookjs/storybook/pull/33098), thanks @valentinpalkovic!

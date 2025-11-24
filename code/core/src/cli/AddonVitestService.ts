@@ -14,7 +14,7 @@ import { dedent } from 'ts-dedent';
 
 import { SupportedBuilder, SupportedFramework } from '../types';
 
-export const SUPPORTED_VITEST_FRAMEWORKS: readonly SupportedFramework[] = [
+export const SUPPORTED_FRAMEWORKS: readonly SupportedFramework[] = [
   SupportedFramework.HTML_VITE,
   SupportedFramework.NEXTJS_VITE,
   SupportedFramework.PREACT_VITE,
@@ -188,7 +188,7 @@ export class AddonVitestService {
     }
 
     // Check renderer/framework support
-    const isFrameworkSupported = SUPPORTED_VITEST_FRAMEWORKS.some(
+    const isFrameworkSupported = SUPPORTED_FRAMEWORKS.some(
       (framework) => options.framework === framework
     );
 

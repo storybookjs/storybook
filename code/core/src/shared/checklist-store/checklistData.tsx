@@ -13,7 +13,6 @@ import type {
   API_IndexHash,
   API_PreparedIndexEntry,
   API_StoryEntry,
-  SupportedFramework,
 } from 'storybook/internal/types';
 
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
@@ -28,7 +27,7 @@ import {
   ADDON_ID as ADDON_TEST_ID,
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/vitest/src/constants';
-import { SUPPORTED_VITEST_FRAMEWORKS } from '../../cli';
+import { SUPPORTED_FRAMEWORKS } from '../../cli';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
 import type { initialState } from './checklistData.state';
@@ -536,7 +535,7 @@ export default {
           afterCompletion: 'unavailable',
           available: () =>
             !!globalThis?.STORYBOOK_BUILDER?.includes('vite') &&
-            SUPPORTED_VITEST_FRAMEWORKS.some((framework) =>
+            SUPPORTED_FRAMEWORKS.some((framework) =>
               // STORYBOOK_FRAMEWORK is a package name, but they all map safely onto the framework name
               globalThis?.STORYBOOK_FRAMEWORK?.endsWith(`/${framework}`)
             ),

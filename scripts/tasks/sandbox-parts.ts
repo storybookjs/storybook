@@ -12,7 +12,6 @@ import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
-import { SupportedLanguage } from '../../code/core/dist/types';
 import { babelParse, types as t } from '../../code/core/src/babel';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
 import storybookPackages from '../../code/core/src/common/versions';
@@ -22,6 +21,7 @@ import {
   formatConfig,
   writeConfig,
 } from '../../code/core/src/csf-tools';
+import { SupportedLanguage } from '../../code/core/src/types';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
@@ -1040,7 +1040,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    'docs:json': 'DIR=$PWD; yarn --cwd ../../scripts jiti combine-compodoc $DIR',
+    'docs:json': `DIR=$PWD; yarn --cwd ${join(ROOT_DIRECTORY, 'scripts')} jiti combine-compodoc $DIR`,
     storybook: `yarn docs:json && ${packageJson.scripts.storybook}`,
     'build-storybook': `yarn docs:json && ${packageJson.scripts['build-storybook']}`,
   };

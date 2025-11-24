@@ -13,6 +13,7 @@ import type {
   API_IndexHash,
   API_PreparedIndexEntry,
   API_StoryEntry,
+  SupportedFramework,
 } from 'storybook/internal/types';
 
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
@@ -27,6 +28,7 @@ import {
   ADDON_ID as ADDON_TEST_ID,
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/vitest/src/constants';
+import { SUPPORTED_VITEST_FRAMEWORKS } from '../../cli';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
 import type { initialState } from './checklistData.state';
@@ -532,7 +534,12 @@ export default {
           id: 'installVitest',
           label: 'Install Vitest addon',
           afterCompletion: 'unavailable',
-          available: () => !!globalThis?.STORYBOOK_BUILDER?.includes('vite'),
+          available: () =>
+            !!globalThis?.STORYBOOK_BUILDER?.includes('vite') &&
+            SUPPORTED_VITEST_FRAMEWORKS.some((framework) =>
+              // STORYBOOK_FRAMEWORK is a package name, but they all map safely onto the framework name
+              globalThis?.STORYBOOK_FRAMEWORK?.endsWith(`/${framework}`)
+            ),
           criteria: '@storybook/addon-vitest registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
             if (addons.experimental_getRegisteredAddons().includes(ADDON_TEST_ID)) {

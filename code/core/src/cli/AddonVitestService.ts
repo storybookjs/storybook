@@ -14,6 +14,18 @@ import { dedent } from 'ts-dedent';
 
 import { SupportedBuilder, SupportedFramework } from '../types';
 
+export const SUPPORTED_VITEST_FRAMEWORKS: readonly SupportedFramework[] = [
+  SupportedFramework.HTML_VITE,
+  SupportedFramework.NEXTJS_VITE,
+  SupportedFramework.PREACT_VITE,
+  SupportedFramework.REACT_NATIVE_WEB_VITE,
+  SupportedFramework.REACT_VITE,
+  SupportedFramework.SVELTE_VITE,
+  SupportedFramework.SVELTEKIT,
+  SupportedFramework.VUE3_VITE,
+  SupportedFramework.WEB_COMPONENTS_VITE,
+];
+
 type Result = {
   compatible: boolean;
   reasons?: string[];
@@ -37,17 +49,6 @@ export interface AddonVitestCompatibilityOptions {
  * - Code/lib/create-storybook/src/services/FeatureCompatibilityService.ts
  */
 export class AddonVitestService {
-  readonly supportedFrameworks: SupportedFramework[] = [
-    SupportedFramework.HTML_VITE,
-    SupportedFramework.NEXTJS_VITE,
-    SupportedFramework.PREACT_VITE,
-    SupportedFramework.REACT_NATIVE_WEB_VITE,
-    SupportedFramework.REACT_VITE,
-    SupportedFramework.SVELTE_VITE,
-    SupportedFramework.SVELTEKIT,
-    SupportedFramework.VUE3_VITE,
-    SupportedFramework.WEB_COMPONENTS_VITE,
-  ];
   /**
    * Collect all dependencies needed for @storybook/addon-vitest
    *
@@ -187,7 +188,7 @@ export class AddonVitestService {
     }
 
     // Check renderer/framework support
-    const isFrameworkSupported = this.supportedFrameworks.some(
+    const isFrameworkSupported = SUPPORTED_VITEST_FRAMEWORKS.some(
       (framework) => options.framework === framework
     );
 

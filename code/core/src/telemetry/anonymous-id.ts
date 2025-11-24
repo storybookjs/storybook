@@ -41,13 +41,16 @@ export const getAnonymousProjectId = () => {
   try {
     const projectRootPath = relative(getProjectRoot(), process.cwd());
 
+    console.log({ projectRootPath });
+
     const originBuffer = execSync(`git config --local --get remote.origin.url`, {
       timeout: 1000,
       stdio: `pipe`,
     });
 
     anonymousProjectId = oneWayHash(unhashedProjectId(String(originBuffer), projectRootPath));
-  } catch (_) {
+  } catch (e) {
+    console.error(e);
     //
   }
 

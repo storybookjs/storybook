@@ -10,7 +10,6 @@ import type {
   BuilderContext,
   BuilderHandlerFn,
   BuilderOutput,
-  BuilderOutputLike,
   Target,
   Builder as DevkitBuilder,
 } from '@angular-devkit/architect';
@@ -27,8 +26,6 @@ import type {
 import type { JsonObject } from '@angular-devkit/core';
 import * as find from 'empathic/find';
 import * as pkg from 'empathic/package';
-import { from, of, throwError } from 'rxjs';
-import { catchError, map, mapTo, switchMap } from 'rxjs/operators';
 
 import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
@@ -70,94 +67,85 @@ export type StorybookBuilderOutput = JsonObject & BuilderOutput & { [key: string
 
 type StandaloneBuildOptions = StandaloneOptions & { outputDir: string };
 
-const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
+const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
   options,
   context
-): BuilderOutputLike => {
-  const builder = from(setup(options, context)).pipe(
-    switchMap(({ tsConfig }) => {
-      const docTSConfig = find.up('tsconfig.doc.json', {
-        cwd: options.configDir,
-        last: getProjectRoot(),
-      });
-      const runCompodoc$ = options.compodoc
-        ? runCompodoc(
-            { compodocArgs: options.compodocArgs, tsconfig: docTSConfig ?? tsConfig },
-            context
-          ).pipe(mapTo({ tsConfig }))
-        : of({});
+): Promise<BuilderOutput> => {
+  const { tsConfig } = await setup(options, context);
 
-      return runCompodoc$.pipe(mapTo({ tsConfig }));
-    }),
-    map(({ tsConfig }) => {
-      getEnvConfig(options, {
-        staticDir: 'SBCONFIG_STATIC_DIR',
-        outputDir: 'SBCONFIG_OUTPUT_DIR',
-        configDir: 'SBCONFIG_CONFIG_DIR',
-      });
+  const docTSConfig = find.up('tsconfig.doc.json', {
+    cwd: options.configDir,
+    last: getProjectRoot(),
+  });
 
-      const {
-        browserTarget,
-        stylePreprocessorOptions,
-        styles,
-        configDir,
-        docs,
-        loglevel,
-        test,
-        outputDir,
-        quiet,
-        enableProdMode = true,
-        webpackStatsJson,
-        statsJson,
-        debugWebpack,
-        disableTelemetry,
-        assets,
-        previewUrl,
-        sourceMap = false,
-        preserveSymlinks = false,
-        experimentalZoneless = !!(VERSION.major && Number(VERSION.major) >= 21),
-      } = options;
+  if (options.compodoc) {
+    await runCompodoc(
+      { compodocArgs: options.compodocArgs, tsconfig: docTSConfig ?? tsConfig },
+      context
+    );
+  }
 
-      const packageJsonPath = pkg.up({ cwd: __dirname });
-      const packageJson =
-        packageJsonPath != null ? JSON.parse(readFileSync(packageJsonPath, 'utf8')) : null;
+  getEnvConfig(options, {
+    staticDir: 'SBCONFIG_STATIC_DIR',
+    outputDir: 'SBCONFIG_OUTPUT_DIR',
+    configDir: 'SBCONFIG_CONFIG_DIR',
+  });
 
-      const standaloneOptions: StandaloneBuildOptions = {
-        packageJson,
-        configDir,
-        ...(docs ? { docs } : {}),
-        loglevel,
-        outputDir,
-        test,
-        quiet,
-        enableProdMode,
-        disableTelemetry,
-        angularBrowserTarget: browserTarget,
-        angularBuilderContext: context,
-        angularBuilderOptions: {
-          ...(stylePreprocessorOptions ? { stylePreprocessorOptions } : {}),
-          ...(styles ? { styles } : {}),
-          ...(assets ? { assets } : {}),
-          sourceMap,
-          preserveSymlinks,
-          experimentalZoneless,
-        },
-        tsConfig,
-        webpackStatsJson,
-        statsJson,
-        debugWebpack,
-        previewUrl,
-      };
+  const {
+    browserTarget,
+    stylePreprocessorOptions,
+    styles,
+    configDir,
+    docs,
+    loglevel,
+    test,
+    outputDir,
+    quiet,
+    enableProdMode = true,
+    webpackStatsJson,
+    statsJson,
+    debugWebpack,
+    disableTelemetry,
+    assets,
+    previewUrl,
+    sourceMap = false,
+    preserveSymlinks = false,
+    experimentalZoneless = !!(VERSION.major && Number(VERSION.major) >= 21),
+  } = options;
 
-      return standaloneOptions;
-    }),
-    switchMap((standaloneOptions) => runInstance({ ...standaloneOptions, mode: 'static' })),
-    map(() => {
-      return { success: true };
-    })
-  );
+  const packageJsonPath = pkg.up({ cwd: __dirname });
+  const packageJson =
+    packageJsonPath != null ? JSON.parse(readFileSync(packageJsonPath, 'utf8')) : null;
 
-  return builder as any as BuilderOutput;
+  const standaloneOptions: StandaloneBuildOptions = {
+    packageJson,
+    configDir,
+    ...(docs ? { docs } : {}),
+    loglevel,
+    outputDir,
+    test,
+    quiet,
+    enableProdMode,
+    disableTelemetry,
+    angularBrowserTarget: browserTarget,
+    angularBuilderContext: context,
+    angularBuilderOptions: {
+      ...(stylePreprocessorOptions ? { stylePreprocessorOptions } : {}),
+      ...(styles ? { styles } : {}),
+      ...(assets ? { assets } : {}),
+      sourceMap,
+      preserveSymlinks,
+      experimentalZoneless,
+    },
+    tsConfig,
+    webpackStatsJson,
+    statsJson,
+    debugWebpack,
+    previewUrl,
+  };
+
+  await runInstance({ ...standaloneOptions, mode: 'static' });
+  return { success: true } as BuilderOutput;
 };
 
 export default createBuilder(commandBuilder) as DevkitBuilder<StorybookBuilderOptions & JsonObject>;
@@ -182,9 +170,9 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
   };
 }
 
-function runInstance(options: StandaloneBuildOptions) {
-  return from(
-    withTelemetry(
+async function runInstance(options: StandaloneBuildOptions) {
+  try {
+    await withTelemetry(
       'build',
       {
         cliOptions: options,
@@ -197,6 +185,9 @@ function runInstance(options: StandaloneBuildOptions) {
         logger.outro('Storybook build completed successfully');
         return result;
       }
-    )
-  ).pipe(catchError((error: any) => throwError(errorSummary(error))));
+    );
+  } catch (error) {
+    const summary = errorSummary(error);
+    throw new Error(summary);
+  }
 }

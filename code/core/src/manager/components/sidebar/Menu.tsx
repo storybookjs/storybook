@@ -90,9 +90,9 @@ const SidebarMenuList: FC<{
     {menu
       .filter((links) => links.length)
       .flatMap((links) => (
-        <ActionsList as="ul" key={links.map((link) => link.id).join('_')}>
+        <ActionsList key={links.map((link) => link.id).join('_')}>
           {links.map((link) => (
-            <ActionsList.Item as="li" key={link.id} active={link.active}>
+            <ActionsList.Item key={link.id} active={link.active}>
               <ActionsList.Action
                 {...(link.href && { as: 'a', href: link.href, target: '_blank' })}
                 ariaLabel={false}

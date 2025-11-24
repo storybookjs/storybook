@@ -327,7 +327,7 @@ export const Checklist = ({
                       const itemContent = content?.({ api });
 
                       return (
-                        <ActionsList.Item as="li" key={item.id}>
+                        <ActionsList.Item key={item.id}>
                           <Focus.Target
                             targetHash={item.id}
                             highlightDuration={2000}

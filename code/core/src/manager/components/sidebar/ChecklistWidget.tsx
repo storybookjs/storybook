@@ -4,8 +4,8 @@ import {
   ActionsList,
   Card,
   Collapsible,
+  PopoverProvider,
   ProgressSpinner,
-  WithTooltip,
 } from 'storybook/internal/components';
 
 import {
@@ -203,9 +203,9 @@ export const ChecklistWidget = () => {
           collapsed={!hasItems}
           disabled={!hasItems}
           summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
-            <ActionsList onClick={toggleCollapsed}>
-              <ActionsList.Item>
-                <ActionsList.Item style={{ flexShrink: 1 }}>
+            <ActionsList as="div" onClick={toggleCollapsed}>
+              <ActionsList.Item as="div">
+                <ActionsList.Item as="div" style={{ flexShrink: 1 }}>
                   {loaded && (
                     <Optional
                       content={
@@ -217,7 +217,7 @@ export const ChecklistWidget = () => {
                     />
                   )}
                 </ActionsList.Item>
-                <ActionsList.Item>
+                <ActionsList.Item as="div">
                   <CollapseToggle
                     {...toggleProps}
                     id="checklist-module-collapse-toggle"
@@ -232,17 +232,16 @@ export const ChecklistWidget = () => {
                     />
                   </CollapseToggle>
                   {loaded && (
-                    <WithTooltip
-                      as="div"
-                      closeOnOutsideClick
-                      tooltip={({ onHide }) => (
-                        <ActionsList as="ul">
-                          <ActionsList.Item as="li">
+                    <PopoverProvider
+                      padding={0}
+                      popover={({ onHide }) => (
+                        <ActionsList>
+                          <ActionsList.Item>
                             <OpenGuideAction afterClick={onHide}>
                               <ActionsList.Text>Open full guide</ActionsList.Text>
                             </OpenGuideAction>
                           </ActionsList.Item>
-                          <ActionsList.Item as="li">
+                          <ActionsList.Item>
                             <ActionsList.Action
                               ariaLabel={false}
                               onClick={(e) => {
@@ -272,23 +271,18 @@ export const ChecklistWidget = () => {
                         />
                         <TextFlip text={`${progress}%`} placeholder="00%" />
                       </ActionsList.Button>
-                    </WithTooltip>
+                    </PopoverProvider>
                   )}
                 </ActionsList.Item>
               </ActionsList.Item>
             </ActionsList>
           )}
         >
-          <ActionsList as="ul">
+          <ActionsList>
             {transitionItems.map(
               ([item, { status, isMounted }]) =>
                 isMounted && (
-                  <ActionsList.HoverItem
-                    as="li"
-                    key={item.id}
-                    targetId={item.id}
-                    transitionStatus={status}
-                  >
+                  <ActionsList.HoverItem key={item.id} targetId={item.id} transitionStatus={status}>
                     <ActionsList.Action
                       ariaLabel={`Open onboarding guide for ${item.label}`}
                       onClick={() => api.navigate(`/settings/guide#${item.id}`)}

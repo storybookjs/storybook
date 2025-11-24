@@ -92,7 +92,8 @@ export const TagsFilterPanel = ({
     const isIncluded = includedFilters.has(id);
     const isExcluded = excludedFilters.has(id);
     const isChecked = isIncluded || isExcluded;
-    const toggleTagLabel = `${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`;
+    const toggleLabel = `${type} filter: ${isExcluded ? `exclude ${title}` : title}`;
+    const toggleTooltip = `${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`;
     const invertButtonLabel = `${isExcluded ? 'Include' : 'Exclude'} ${type}: ${title}`;
 
     // for built-in filters (docs, play, test), don't show if there are no matches
@@ -104,14 +105,14 @@ export const TagsFilterPanel = ({
       id: `filter-${type}-${id}`,
       content: (
         <ActionsList.HoverItem targetId={`filter-${type}-${id}`}>
-          <ActionsList.Action as="label" tabIndex={-1} tooltip={toggleTagLabel}>
+          <ActionsList.Action as="label" tabIndex={-1} tooltip={toggleTooltip}>
             <ActionsList.Icon>
               {isExcluded ? <DeleteIcon /> : isIncluded ? null : icon}
               <Form.Checkbox
                 checked={isChecked}
                 onChange={() => onToggle(!isChecked)}
                 data-tag={title}
-                aria-label={toggleTagLabel}
+                aria-label={toggleLabel}
               />
             </ActionsList.Icon>
             <ActionsList.Text>
@@ -153,8 +154,8 @@ export const TagsFilterPanel = ({
   return (
     <Wrapper ref={ref}>
       {hasItems && (
-        <ActionsList>
-          <ActionsList.Item>
+        <ActionsList as="div">
+          <ActionsList.Item as="div">
             {isNothingSelectedYet ? (
               <ActionsList.Button
                 ariaLabel={false}
@@ -199,8 +200,8 @@ export const TagsFilterPanel = ({
         </ActionsList>
       ))}
       {!hasUserTags && (
-        <ActionsList>
-          <ActionsList.Item>
+        <ActionsList as="div">
+          <ActionsList.Item as="div">
             <ActionsList.Link
               href={api.getDocsUrl({ subpath: 'writing-stories/tags#custom-tags' })}
               target="_blank"

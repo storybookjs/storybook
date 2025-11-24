@@ -5,7 +5,7 @@ import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button';
 
-const ActionsListItem = styled.div<{
+const ActionsListItem = styled.li<{
   active?: boolean;
   transitionStatus?: TransitionStatus;
 }>(
@@ -159,7 +159,7 @@ const ActionsListIcon = styled.div({
 });
 
 export const ActionsList = Object.assign(
-  styled.div(({ theme, onClick }) => ({
+  styled.ul(({ theme, onClick }) => ({
     listStyle: 'none',
     margin: 0,
     padding: 4,

@@ -5,7 +5,7 @@ import { parseArgs } from 'node:util';
 import { join } from 'path';
 import waitOn from 'wait-on';
 
-import { ROOT_DIRECTORY } from './utils/constants';
+import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
 import { exec } from './utils/exec';
 
 process.setMaxListeners(50);
@@ -23,7 +23,7 @@ const {
 async function main() {
   const templateDir = template.replace('/', '-');
 
-  const sandboxDir = join(ROOT_DIRECTORY, process.env.SANDBOX_ROOT, templateDir);
+  const sandboxDir = join(SANDBOX_DIRECTORY, templateDir);
   const cacheDir = join(ROOT_DIRECTORY, 'sandbox', templateDir);
   const storybookStaticSandboxDir = join(sandboxDir, 'storybook-static');
   const storybookStaticCacheDir = join(cacheDir, 'storybook-static');

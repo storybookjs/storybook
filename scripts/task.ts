@@ -1,5 +1,4 @@
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
 
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
@@ -36,14 +35,12 @@ import { syncDocs } from './tasks/sync-docs';
 import { testRunnerBuild } from './tasks/test-runner-build';
 import { testRunnerDev } from './tasks/test-runner-dev';
 import { vitestTests } from './tasks/vitest-test';
-import { CODE_DIRECTORY, JUNIT_DIRECTORY, ROOT_DIRECTORY } from './utils/constants';
+import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
 import { findMostMatchText } from './utils/diff';
 import type { OptionValues } from './utils/options';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
 process.setMaxListeners(50);
-
-const sandboxDir = process.env.SANDBOX_ROOT || '../storybook-sandboxes';
 
 export const extraAddons = ['@storybook/addon-a11y'];
 
@@ -402,11 +399,7 @@ async function run() {
   const template = TEMPLATES[templateKey];
 
   const templateSandboxDir =
-    templateKey &&
-    join(
-      path.isAbsolute(sandboxDir) ? sandboxDir : join(ROOT_DIRECTORY, sandboxDir),
-      dir ?? templateKey.replace('/', '-')
-    );
+    templateKey && join(SANDBOX_DIRECTORY, dir ?? templateKey.replace('/', '-'));
   const details: TemplateDetails = {
     key: templateKey,
     template,

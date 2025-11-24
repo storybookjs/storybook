@@ -1,6 +1,6 @@
-// eslint-disable-next-line depend/ban-dependencies
 import path from 'node:path';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import memoize from 'memoizerific';
 

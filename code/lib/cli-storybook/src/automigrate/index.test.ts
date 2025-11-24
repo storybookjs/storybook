@@ -113,17 +113,10 @@ const common = {
   storiesPaths: [],
 };
 
-const runFixWrapper = async ({
-  beforeVersion,
-  storybookVersion,
-}: {
-  beforeVersion: string;
-  storybookVersion: string;
-}) => {
+const runFixWrapper = async ({ storybookVersion }: { storybookVersion: string }) => {
   return runFixes({
     ...common,
     storybookVersion,
-    beforeVersion,
   });
 };
 
@@ -161,7 +154,7 @@ describe('runFixes', () => {
   });
 
   it('should be necessary to run fix-1 from SB 6.5.15 to 7.0.0', async () => {
-    const { fixResults } = await runFixWrapper({ beforeVersion, storybookVersion: '7.0.0' });
+    const { fixResults } = await runFixWrapper({ storybookVersion: '7.0.0' });
 
     expect(fixResults).toEqual({
       'fix-1': 'succeeded',
@@ -182,7 +175,7 @@ describe('runFixes', () => {
   it('should fail if an error is thrown by migration', async () => {
     check1.mockRejectedValue(new Error('check1 error'));
 
-    const { fixResults } = await runFixWrapper({ beforeVersion, storybookVersion: '7.0.0' });
+    const { fixResults } = await runFixWrapper({ storybookVersion: '7.0.0' });
 
     expect(fixResults).toEqual({
       'fix-1': 'check_failed',

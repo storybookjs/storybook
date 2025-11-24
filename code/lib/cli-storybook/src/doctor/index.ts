@@ -193,7 +193,7 @@ export const doctor = async ({
 
   let packageManager!: JsPackageManager;
   let configDir!: string;
-  let storybookVersion!: string;
+  let storybookVersion: string | undefined;
   let mainConfig!: StorybookConfigRaw;
 
   try {
@@ -248,7 +248,7 @@ export async function getDoctorDiagnostics({
 }: {
   configDir: string;
   packageManager: JsPackageManager;
-  storybookVersion: string;
+  storybookVersion?: string;
   mainConfig: StorybookConfigRaw;
 }): Promise<DoctorCheckResult[]> {
   const results: DoctorCheckResult[] = [];

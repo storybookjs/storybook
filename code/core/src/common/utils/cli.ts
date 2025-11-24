@@ -66,19 +66,6 @@ export function parseList(str: string): string[] {
     .filter((item) => item.length > 0);
 }
 
-/**
- * Given a package manager, returns the coerced version of Storybook. It tries to find renderer
- * packages in the project and returns the coerced version of the first one found. Example: If
- *
- * @storybook/react version 8.0.0-alpha.14 is installed, it returns the coerced version 8.0.0
- */
-export async function getCoercedStorybookVersion(packageManager: JsPackageManager, cwd?: string) {
-  return (
-    (await packageManager.getModulePackageJSON('storybook', cwd))?.version ||
-    storybookPackagesVersions.storybook
-  );
-}
-
 export function getEnvConfig(program: Record<string, any>, configEnv: Record<string, any>): void {
   Object.keys(configEnv).forEach((fieldName) => {
     const envVarName = configEnv[fieldName];

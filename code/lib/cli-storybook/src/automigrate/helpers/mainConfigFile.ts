@@ -8,7 +8,7 @@ import {
   getStorybookInfo,
 } from 'storybook/internal/common';
 import type { PackageManagerName } from 'storybook/internal/common';
-import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
+import { frameworkToRenderer } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';

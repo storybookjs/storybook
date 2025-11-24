@@ -114,7 +114,6 @@ export const automigrate = async ({
   mainConfigPath,
   previewConfigPath,
   storybookVersion,
-  beforeVersion,
   renderer: rendererPackage,
   skipInstall,
   hideMigrationSummary = false,
@@ -184,7 +183,6 @@ export const automigrate = async ({
     mainConfig,
     mainConfigPath,
     storybookVersion,
-    beforeVersion,
     isUpgrade: !!isUpgrade,
     dryRun,
     yes,
@@ -219,7 +217,6 @@ type RunFixesOptions = {
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
   storybookVersion: string;
-  beforeVersion: string;
   isUpgrade?: boolean;
 };
 

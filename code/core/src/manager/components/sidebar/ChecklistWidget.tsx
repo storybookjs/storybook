@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import {
+  ActionsList,
   Card,
   Collapsible,
-  Listbox,
   ProgressSpinner,
   WithTooltip,
 } from 'storybook/internal/components';
@@ -85,7 +85,7 @@ const HoverCard = styled(Card)({
   },
 });
 
-const CollapseToggle = styled(Listbox.Button)({
+const CollapseToggle = styled(ActionsList.Button)({
   opacity: 0,
   transition: 'opacity var(--transition-duration, 0.2s)',
   '&:focus, &:hover': {
@@ -155,7 +155,7 @@ const OpenGuideAction = ({
 }) => {
   const api = useStorybookApi();
   return (
-    <Listbox.Action
+    <ActionsList.Action
       ariaLabel="Open onboarding guide"
       onClick={(e) => {
         e.stopPropagation();
@@ -163,11 +163,11 @@ const OpenGuideAction = ({
         afterClick?.();
       }}
     >
-      <Listbox.Icon>
+      <ActionsList.Icon>
         <ListUnorderedIcon />
-      </Listbox.Icon>
+      </ActionsList.Icon>
       {children}
-    </Listbox.Action>
+    </ActionsList.Action>
   );
 };
 
@@ -203,9 +203,9 @@ export const ChecklistWidget = () => {
           collapsed={!hasItems}
           disabled={!hasItems}
           summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
-            <Listbox onClick={toggleCollapsed}>
-              <Listbox.Item>
-                <Listbox.Item style={{ flexShrink: 1 }}>
+            <ActionsList onClick={toggleCollapsed}>
+              <ActionsList.Item>
+                <ActionsList.Item style={{ flexShrink: 1 }}>
                   {loaded && (
                     <Optional
                       content={
@@ -216,8 +216,8 @@ export const ChecklistWidget = () => {
                       fallback={<OpenGuideAction />}
                     />
                   )}
-                </Listbox.Item>
-                <Listbox.Item>
+                </ActionsList.Item>
+                <ActionsList.Item>
                   <CollapseToggle
                     {...toggleProps}
                     id="checklist-module-collapse-toggle"
@@ -236,14 +236,14 @@ export const ChecklistWidget = () => {
                       as="div"
                       closeOnOutsideClick
                       tooltip={({ onHide }) => (
-                        <Listbox as="ul">
-                          <Listbox.Item as="li">
+                        <ActionsList as="ul">
+                          <ActionsList.Item as="li">
                             <OpenGuideAction afterClick={onHide}>
-                              <Listbox.Text>Open full guide</Listbox.Text>
+                              <ActionsList.Text>Open full guide</ActionsList.Text>
                             </OpenGuideAction>
-                          </Listbox.Item>
-                          <Listbox.Item as="li">
-                            <Listbox.Action
+                          </ActionsList.Item>
+                          <ActionsList.Item as="li">
+                            <ActionsList.Action
                               ariaLabel={false}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -251,16 +251,16 @@ export const ChecklistWidget = () => {
                                 onHide();
                               }}
                             >
-                              <Listbox.Icon>
+                              <ActionsList.Icon>
                                 <EyeCloseIcon />
-                              </Listbox.Icon>
-                              <Listbox.Text>Remove from sidebar</Listbox.Text>
-                            </Listbox.Action>
-                          </Listbox.Item>
-                        </Listbox>
+                              </ActionsList.Icon>
+                              <ActionsList.Text>Remove from sidebar</ActionsList.Text>
+                            </ActionsList.Action>
+                          </ActionsList.Item>
+                        </ActionsList>
                       )}
                     >
-                      <Listbox.Button
+                      <ActionsList.Button
                         ariaLabel={`${progress}% completed`}
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -271,43 +271,43 @@ export const ChecklistWidget = () => {
                           width={1.5}
                         />
                         <TextFlip text={`${progress}%`} placeholder="00%" />
-                      </Listbox.Button>
+                      </ActionsList.Button>
                     </WithTooltip>
                   )}
-                </Listbox.Item>
-              </Listbox.Item>
-            </Listbox>
+                </ActionsList.Item>
+              </ActionsList.Item>
+            </ActionsList>
           )}
         >
-          <Listbox as="ul">
+          <ActionsList as="ul">
             {transitionItems.map(
               ([item, { status, isMounted }]) =>
                 isMounted && (
-                  <Listbox.HoverItem
+                  <ActionsList.HoverItem
                     as="li"
                     key={item.id}
                     targetId={item.id}
                     transitionStatus={status}
                   >
-                    <Listbox.Action
+                    <ActionsList.Action
                       ariaLabel={`Open onboarding guide for ${item.label}`}
                       onClick={() => api.navigate(`/settings/guide#${item.id}`)}
                     >
-                      <Listbox.Icon>
+                      <ActionsList.Icon>
                         {item.isCompleted ? (
                           <Particles anchor={Checked} key={item.id} />
                         ) : (
                           <StatusFailIcon />
                         )}
-                      </Listbox.Icon>
-                      <Listbox.Text>
+                      </ActionsList.Icon>
+                      <ActionsList.Text>
                         <ItemLabel isCompleted={item.isCompleted} isSkipped={item.isSkipped}>
                           {item.label}
                         </ItemLabel>
-                      </Listbox.Text>
-                    </Listbox.Action>
+                      </ActionsList.Text>
+                    </ActionsList.Action>
                     {item.action && (
-                      <Listbox.Button
+                      <ActionsList.Button
                         data-target-id={item.id}
                         ariaLabel={false}
                         onClick={(e) => {
@@ -319,12 +319,12 @@ export const ChecklistWidget = () => {
                         }}
                       >
                         {item.action.label}
-                      </Listbox.Button>
+                      </ActionsList.Button>
                     )}
-                  </Listbox.HoverItem>
+                  </ActionsList.HoverItem>
                 )
             )}
-          </Listbox>
+          </ActionsList>
         </Collapsible>
       </HoverCard>
     </CollapsibleWithMargin>

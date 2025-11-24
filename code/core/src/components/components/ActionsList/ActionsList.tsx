@@ -5,7 +5,7 @@ import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button';
 
-const ListboxItem = styled.div<{
+const ActionsListItem = styled.div<{
   active?: boolean;
   transitionStatus?: TransitionStatus;
 }>(
@@ -53,11 +53,11 @@ const ListboxItem = styled.div<{
 );
 
 /**
- * A Listbox item that shows/hides child elements on hover based on the targetId. Child elements
+ * A ActionsList item that shows/hides child elements on hover based on the targetId. Child elements
  * must have a `data-target-id` attribute matching the `targetId` prop to be affected by the hover
  * behavior.
  */
-const ListboxHoverItem = styled(ListboxItem)<{ targetId: string }>(({ targetId }) => ({
+const ActionsListHoverItem = styled(ActionsListItem)<{ targetId: string }>(({ targetId }) => ({
   gap: 0,
   [`& [data-target-id="${targetId}"]`]: {
     inlineSize: 'auto',
@@ -84,13 +84,16 @@ const StyledButton = styled(Button)({
   },
 });
 
-const ListboxButton = forwardRef<HTMLButtonElement, ComponentProps<typeof Button>>(
-  function ListboxButton({ padding = 'small', size = 'medium', variant = 'ghost', ...props }, ref) {
+const ActionsListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof StyledButton>>(
+  function ActionsListButton(
+    { padding = 'small', size = 'medium', variant = 'ghost', ...props },
+    ref
+  ) {
     return <StyledButton {...props} variant={variant} padding={padding} size={size} ref={ref} />;
   }
 );
 
-const ListboxAction = styled(ListboxButton)({
+const ActionsListAction = styled(ActionsListButton)({
   flex: '0 1 100%',
   textAlign: 'start',
   justifyContent: 'space-between',
@@ -101,7 +104,7 @@ const ListboxAction = styled(ListboxButton)({
   },
 });
 
-const ListboxText = styled.div({
+const ActionsListText = styled.div({
   display: 'flex',
   alignItems: 'center',
   gap: 8,
@@ -129,7 +132,7 @@ const ListboxText = styled.div({
   },
 });
 
-const ListboxIcon = styled.div({
+const ActionsListIcon = styled.div({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -139,7 +142,7 @@ const ListboxIcon = styled.div({
   color: 'var(--listbox-item-muted-color)',
 });
 
-export const Listbox = Object.assign(
+export const ActionsList = Object.assign(
   styled.div(({ theme, onClick }) => ({
     listStyle: 'none',
     margin: 0,
@@ -151,11 +154,11 @@ export const Listbox = Object.assign(
     },
   })),
   {
-    Item: ListboxItem,
-    HoverItem: ListboxHoverItem,
-    Button: ListboxButton,
-    Action: ListboxAction,
-    Text: ListboxText,
-    Icon: ListboxIcon,
+    Item: ActionsListItem,
+    HoverItem: ActionsListHoverItem,
+    Button: ActionsListButton,
+    Action: ActionsListAction,
+    Text: ActionsListText,
+    Icon: ActionsListIcon,
   }
 );

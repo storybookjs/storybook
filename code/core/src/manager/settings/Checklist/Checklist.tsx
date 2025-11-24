@@ -1,6 +1,6 @@
-import React, { createRef, useMemo } from 'react';
+import React, { useMemo } from 'react';
 
-import { Button, Collapsible, Listbox } from 'storybook/internal/components';
+import { ActionsList, Button, Collapsible } from 'storybook/internal/components';
 
 import {
   CheckIcon,
@@ -327,7 +327,7 @@ export const Checklist = ({
                       const itemContent = content?.({ api });
 
                       return (
-                        <Listbox.Item as="li" key={item.id}>
+                        <ActionsList.Item as="li" key={item.id}>
                           <Focus.Target
                             targetHash={item.id}
                             highlightDuration={2000}
@@ -434,7 +434,7 @@ export const Checklist = ({
                               </Collapsible>
                             </Focus.Proxy>
                           </Focus.Target>
-                        </Listbox.Item>
+                        </ActionsList.Item>
                       );
                     }
                   )}

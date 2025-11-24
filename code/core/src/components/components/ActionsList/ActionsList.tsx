@@ -22,6 +22,11 @@ const ActionsListItem = styled.div<{
     color: active ? theme.color.secondary : theme.color.defaultText,
     '--listbox-item-muted-color': active ? theme.color.secondary : theme.color.mediumdark,
 
+    '&:not(:hover, :has(:focus-visible)) svg + input': {
+      position: 'absolute',
+      opacity: 0,
+    },
+
     '@supports (interpolate-size: allow-keywords)': {
       interpolateSize: 'allow-keywords',
       transition: 'all var(--transition-duration, 0.2s)',
@@ -93,7 +98,7 @@ const ActionsListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof St
   }
 );
 
-const ActionsListAction = styled(ActionsListButton)({
+const ActionsListAction = styled(ActionsListButton)(({ theme }) => ({
   flex: '0 1 100%',
   textAlign: 'start',
   justifyContent: 'space-between',
@@ -102,7 +107,14 @@ const ActionsListAction = styled(ActionsListButton)({
   '&:hover': {
     color: 'inherit',
   },
-});
+  '& input:enabled:focus-visible': {
+    outline: 'none',
+  },
+  [`&:has(input:focus-visible)`]: {
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: -2,
+  },
+}));
 
 const ActionsListText = styled.div({
   display: 'flex',

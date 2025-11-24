@@ -1,13 +1,6 @@
-import React, { useRef } from 'react';
+import React, { Fragment, useRef } from 'react';
 
-import {
-  Button,
-  Form,
-  ListItem,
-  TooltipLinkList,
-  TooltipNote,
-  TooltipProvider,
-} from 'storybook/internal/components';
+import { ActionsList, Form } from 'storybook/internal/components';
 import type { API_PreparedIndexEntry } from 'storybook/internal/types';
 
 import {
@@ -37,44 +30,6 @@ export const groupByType = (filters: Filter[]) =>
 const Wrapper = styled.div({
   minWidth: 240,
   maxWidth: 300,
-});
-
-const Actions = styled.div(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'space-between',
-  gap: 4,
-  padding: 4,
-  borderBottom: `1px solid ${theme.appBorderColor}`,
-}));
-
-const TagRow = styled.div({
-  display: 'flex',
-
-  '& button:last-of-type': {
-    width: 64,
-    maxWidth: 64,
-    marginLeft: 4,
-    paddingLeft: 0,
-    paddingRight: 0,
-    fontWeight: 'normal',
-    transition: 'max-width 150ms',
-  },
-  '&:not(:hover):not(:focus-within)': {
-    '& button:last-of-type': {
-      marginLeft: 0,
-      maxWidth: 0,
-      opacity: 0,
-    },
-    '& svg + input': {
-      display: 'none',
-    },
-  },
-});
-
-const Label = styled.div({
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
 });
 
 const MutedText = styled.span(({ theme }) => ({
@@ -146,42 +101,33 @@ export const TagsFilterPanel = ({
     return {
       id: `filter-${type}-${id}`,
       content: (
-        <TagRow>
-          <TooltipProvider delayShow={1000} tooltip={<TooltipNote note={toggleTagLabel} />}>
-            <ListItem
-              style={{ minWidth: 0, flex: 1 }}
-              onClick={() => onToggle(!isChecked)}
-              icon={
-                <>
-                  {isExcluded ? <DeleteIcon /> : isIncluded ? null : icon}
-                  <Form.Checkbox
-                    checked={isChecked}
-                    onChange={() => onToggle(!isChecked)}
-                    data-tag={title}
-                    aria-hidden={true}
-                    tabIndex={-1}
-                  />
-                </>
-              }
-              aria-label={toggleTagLabel}
-              title={
-                <Label>
-                  {title}
-                  {isExcluded && <MutedText> (excluded)</MutedText>}
-                </Label>
-              }
-              right={isExcluded ? <s>{count}</s> : <span>{count}</span>}
-            />
-          </TooltipProvider>
-          <Button
-            variant="ghost"
-            size="medium"
-            onClick={() => onToggle(true, !isExcluded)}
+        <ActionsList.HoverItem targetId={`filter-${type}-${id}`}>
+          <ActionsList.Action as="label" tabIndex={-1} tooltip={toggleTagLabel}>
+            <ActionsList.Icon>
+              {isExcluded ? <DeleteIcon /> : isIncluded ? null : icon}
+              <Form.Checkbox
+                checked={isChecked}
+                onChange={() => onToggle(!isChecked)}
+                data-tag={title}
+                aria-label={toggleTagLabel}
+              />
+            </ActionsList.Icon>
+            <ActionsList.Text>
+              <span>
+                {title}
+                {isExcluded && <MutedText> (excluded)</MutedText>}
+              </span>
+            </ActionsList.Text>
+            {isExcluded ? <s>{count}</s> : <span>{count}</span>}
+          </ActionsList.Action>
+          <ActionsList.Button
+            data-target-id={`filter-${type}-${id}`}
             ariaLabel={invertButtonLabel}
+            onClick={() => onToggle(true, !isExcluded)}
           >
-            {isExcluded ? 'Include' : 'Exclude'}
-          </Button>
-        </TagRow>
+            <span style={{ minWidth: 45 }}>{isExcluded ? 'Include' : 'Exclude'}</span>
+          </ActionsList.Button>
+        </ActionsList.HoverItem>
       ),
     };
   };
@@ -213,49 +159,51 @@ export const TagsFilterPanel = ({
   return (
     <Wrapper ref={ref}>
       {Object.keys(filtersById).length > 0 && (
-        <Actions>
-          {isNothingSelectedYet ? (
-            <Button
-              ariaLabel={false}
-              variant="ghost"
-              padding="small"
-              id="select-all"
-              key="select-all"
-              onClick={() => setAllFilters(true)}
-            >
-              <BatchAcceptIcon />
-              {filtersLabel}
-            </Button>
-          ) : (
-            <Button
-              ariaLabel={false}
-              variant="ghost"
-              padding="small"
-              id="deselect-all"
-              key="deselect-all"
-              onClick={() => setAllFilters(false)}
-            >
-              <SweepIcon />
-              {filtersLabel}
-            </Button>
-          )}
-          {hasDefaultSelection && (
-            <Button
-              id="reset-filters"
-              key="reset-filters"
-              onClick={resetFilters}
-              ariaLabel="Reset filters"
-              variant="ghost"
-              padding="small"
-              tooltip="Reset to default selection"
-              disabled={isDefaultSelection}
-            >
-              <UndoIcon />
-            </Button>
-          )}
-        </Actions>
+        <ActionsList>
+          <ActionsList.Item>
+            {isNothingSelectedYet ? (
+              <ActionsList.Button
+                ariaLabel={false}
+                id="select-all"
+                key="select-all"
+                onClick={() => setAllFilters(true)}
+              >
+                <BatchAcceptIcon />
+                <ActionsList.Text>{filtersLabel}</ActionsList.Text>
+              </ActionsList.Button>
+            ) : (
+              <ActionsList.Button
+                ariaLabel={false}
+                id="deselect-all"
+                key="deselect-all"
+                onClick={() => setAllFilters(false)}
+              >
+                <SweepIcon />
+                {filtersLabel}
+              </ActionsList.Button>
+            )}
+            {hasDefaultSelection && (
+              <ActionsList.Button
+                id="reset-filters"
+                key="reset-filters"
+                onClick={resetFilters}
+                ariaLabel="Reset filters"
+                tooltip="Reset to default selection"
+                disabled={isDefaultSelection}
+              >
+                <UndoIcon />
+              </ActionsList.Button>
+            )}
+          </ActionsList.Item>
+        </ActionsList>
       )}
-      <TooltipLinkList links={links} />
+      {links.map((group) => (
+        <ActionsList key={group.map((link) => link.id).join('_')}>
+          {group.map((link) => (
+            <Fragment key={link.id}>{link.content}</Fragment>
+          ))}
+        </ActionsList>
+      ))}
     </Wrapper>
   );
 };

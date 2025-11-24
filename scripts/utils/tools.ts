@@ -21,7 +21,7 @@ import type * as typefest from 'type-fest';
 import typescript from 'typescript';
 import ts from 'typescript';
 
-import { CODE_DIRECTORY, ROOT_DIRECTORY } from './constants';
+import { ROOT_DIRECTORY } from './constants';
 
 export { globalExternals };
 
@@ -144,7 +144,7 @@ export const getWorkspace = async (): Promise<PackageJson[]> => {
 
   return Promise.all(
     workspaces
-      .flatMap((p) => p.map((i) => join(CODE_DIRECTORY, i)))
+      .flatMap((p) => p.map((i) => join(ROOT_DIRECTORY, i)))
       .map(async (packagePath) => {
         const packageJsonPath = join(packagePath, 'package.json');
         if (!(await pathExists(packageJsonPath))) {

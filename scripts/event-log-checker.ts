@@ -119,6 +119,8 @@ async function run() {
     test(`main event should contain anonymousId properly hashed`, () => {
       const templateDir = join(SANDBOX_DIRECTORY, `${templateName.replace('/', '-')}`);
       const unhashedId = `github.com/storybookjs/storybook.git${templateDir}`;
+      console.log(eventsWithoutMocks);
+      console.log(mainEvent);
       assert.equal(mainEvent.context.anonymousId, oneWayHash(unhashedId));
     });
 

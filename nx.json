@@ -68,7 +68,7 @@
     },
     "sandbox": {
       "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
-      "command": "yarn task sandbox -s never --debug --no-link --template={projectName}",
+      "command": "yarn task sandbox -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.dir}"],
@@ -82,14 +82,14 @@
     },
     "check-sandbox": {
       "dependsOn": ["prepared-sandbox"],
-      "command": "yarn task check-sandbox -s never --debug --no-link --template={projectName}",
+      "command": "yarn task check-sandbox -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "build-sandbox": {
       "dependsOn": ["prepared-sandbox"],
-      "command": "yarn task build -s never --debug --no-link --template={projectName}",
+      "command": "yarn task build -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.dir}/storybook-static"],
@@ -103,53 +103,53 @@
     },
     "dev": {
       "dependsOn": ["prepared-sandbox"],
-      "command": "yarn task dev -s never --debug --no-link --template={projectName}",
+      "command": "yarn task dev -s task --debug --no-link --template={projectName}",
       "continuous": true,
       "configurations": { "production": {} }
     },
     "vitest-integration": {
       "dependsOn": ["prepared-sandbox"],
-      "command": "yarn task vitest-integration -s never --debug --no-link --template={projectName}",
+      "command": "yarn task vitest-integration -s task --debug --no-link --template={projectName}",
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "chromatic": {
       "dependsOn": ["prepared-build-sandbox"],
-      "command": "yarn task chromatic -s never --debug --no-link --template={projectName}",
+      "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "serve": {
       "dependsOn": ["prepared-build-sandbox"],
-      "command": "yarn task serve -s never --debug --no-link --template={projectName}",
+      "command": "yarn task serve -s task --debug --no-link --template={projectName}",
       "continuous": true,
       "configurations": { "production": {} }
     },
     "e2e-tests": {
       "dependsOn": ["serve"],
-      "command": "yarn task e2e-tests --junit -s never --debug --no-link --template={projectName}",
+      "command": "yarn task e2e-tests --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "test-runner": {
       "dependsOn": ["serve"],
-      "command": "yarn task test-runner --junit -s never --debug --no-link --template={projectName}",
+      "command": "yarn task test-runner --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "e2e-tests-dev": {
       "dependsOn": ["dev"],
-      "command": "yarn task e2e-tests-dev --junit -s never --debug --no-link --template={projectName}",
+      "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "test-runner-dev": {
       "dependsOn": ["dev"],
-      "command": "yarn task test-runner-dev --junit -s never --debug --no-link --template={projectName}",
+      "command": "yarn task test-runner-dev --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }

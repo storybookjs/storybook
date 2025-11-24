@@ -120,7 +120,7 @@ export const options = createOptions({
   startFrom: {
     type: 'string',
     description: 'Which task should we start execution from?',
-    values: [...(Object.keys(tasks) as TaskKey[]), 'never', 'auto'] as const,
+    values: [...(Object.keys(tasks) as TaskKey[]), 'never', 'auto', 'task'] as const,
     // This is prompted later based on information about what's ready
     promptType: false,
   },
@@ -447,6 +447,8 @@ async function run() {
   const firstUnready = sortedTasks.find((task) => statuses.get(task) === 'unready');
   if (startFrom === 'auto') {
     // Don't reset anything!
+  } else if (startFrom === 'task') {
+    // just run that one task
   } else if (startFrom === 'never') {
     if (firstUnready && firstUnready !== finalTask) {
       throw new Error(`Task ${getTaskKey(firstUnready)} was not ready`);
@@ -496,13 +498,17 @@ async function run() {
     const task = sortedTasks[i];
     const status = statuses.get(task);
 
-    let shouldRun = status === 'unready' || finalTask === task;
+    let shouldRun = status === 'unready';
 
     // Don't run services in NX, as NX starts them up itself
-    if (!process.env.NX_RUN && status === 'notserving') {
+    if (status === 'notserving') {
       shouldRun =
         finalTask === task ||
         !!tasksThatDepend.get(task).find((t) => statuses.get(t) === 'unready');
+    }
+
+    if (startFrom === 'task') {
+      shouldRun = finalTask === task;
     }
 
     if (shouldRun) {

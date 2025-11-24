@@ -18,7 +18,7 @@ export const Tool = memo(function MyAddonSelector() {
       [PARAM_KEY]: !isActive,
     });
   }, [isActive]);
-
+  
   useEffect(() => {
     api.setAddonShortcut(ADDON_ID, {
       label: 'Toggle Outline',

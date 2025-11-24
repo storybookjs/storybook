@@ -64,6 +64,10 @@ const majorDiff = {
   current: { version: '6.2.1' },
   latest: { version: '7.6.10' },
 };
+const canary = {
+  current: { version: '0.0.0-canary.0' },
+  latest: { version: '7.6.10' },
+};
 const newerPrerelease = {
   current: { version: '8.0.0-beta' },
   latest: { version: '7.6.10' },
@@ -186,6 +190,17 @@ describe('versions API', () => {
       );
     });
 
+    it('returns the latest versioned url when current is a canary', async () => {
+      const store = createMockStore();
+      const { init, api, state: initialState } = initVersions({ store });
+
+      await init();
+
+      setVersions(store, initialState, canary);
+
+      expect(api.getDocsUrl({ versioned: true })).toEqual('https://storybook.js.org/docs/?ref=ui');
+    });
+
     it('returns the versioned url when current is a prerelease', async () => {
       const store = createMockStore();
       const { init, api, state: initialState } = initVersions({ store });
@@ -245,6 +260,19 @@ describe('versions API', () => {
       await init();
 
       setVersions(store, initialState, latest);
+
+      expect(api.getDocsUrl({ asset: 'api/doc-block-controls.png' })).toEqual(
+        'https://storybook.js.org/docs-assets/7.6/api/doc-block-controls.png?ref=ui'
+      );
+    });
+
+    it('returns the latest versioned url with assets path for canary version', async () => {
+      const store = createMockStore();
+      const { init, api, state: initialState } = initVersions({ store });
+
+      await init();
+
+      setVersions(store, initialState, canary);
 
       expect(api.getDocsUrl({ asset: 'api/doc-block-controls.png' })).toEqual(
         'https://storybook.js.org/docs-assets/7.6/api/doc-block-controls.png?ref=ui'

@@ -119,16 +119,6 @@ export default async function postInstall(options: PostinstallOptions) {
           Read more about Vitest coverage providers at https://vitest.dev/guide/coverage.html#coverage-providers
         `
       );
-        Adding "@vitest/coverage-v8" to enable coverage reporting.
-        Read more about Vitest coverage providers at https://vitest.dev/guide/coverage.html#coverage-providers
-      `
-    );
-    uniqueDependencies.push(`@vitest/coverage-v8`); // Version specifier is added below
-  }
-
-  const versionedDependencies = uniqueDependencies.map((p) => {
-    if (p.includes('vitest')) {
-      return vitestVersionSpecifier ? `${p}@${vitestVersionSpecifier.split('::')[0]}` : p;
     }
 
     if (versionedDependencies.length > 0) {

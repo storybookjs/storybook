@@ -1,3 +1,19 @@
+## 10.1.0-beta.3
+
+- A11y: Make search clear button keyboard accessible - [#32590](https://github.com/storybookjs/storybook/pull/32590), thanks @ritoban23!
+- Angular: Add preset entry point for framework - [#33154](https://github.com/storybookjs/storybook/pull/33154), thanks @valentinpalkovic!
+- CLI: Fix framework config validation path and messages - [#33146](https://github.com/storybookjs/storybook/pull/33146), thanks @valentinpalkovic!
+- Manager: Added tokens and a dark color scheme for status colors - [#33081](https://github.com/storybookjs/storybook/pull/33081), thanks @MichaelArestad!
+- Remove yarn esbuild pnp plugin - [#33097](https://github.com/storybookjs/storybook/pull/33097), thanks @mrginglymus!
+- UI: Increase border contrast of Checkbox, Radio, and Range - [#33064](https://github.com/storybookjs/storybook/pull/33064), thanks @MichaelArestad!
+
+## 10.1.0-beta.2
+
+- Automigration: Update description and link for addon-a11y-addon-test - [#33133](https://github.com/storybookjs/storybook/pull/33133), thanks @valentinpalkovic!
+- CLI: Fix Vitest v3 installs and refactor AddonVitestService; align create‑storybook usage - [#33131](https://github.com/storybookjs/storybook/pull/33131), thanks @valentinpalkovic!
+- CLI: Update postAction hook to use command parameter for logfile retrieval - [#33137](https://github.com/storybookjs/storybook/pull/33137), thanks @valentinpalkovic!
+- Core: Fix `getDocsUrl` for canary versions - [#33128](https://github.com/storybookjs/storybook/pull/33128), thanks @ghengeveld!
+
 ## 10.1.0-beta.1
 
 - Addon-Vitest: Ensure Storybook starts correctly across platforms by using shell in spawn - [#33116](https://github.com/storybookjs/storybook/pull/33116), thanks @valentinpalkovic!

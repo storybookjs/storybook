@@ -78,6 +78,7 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
     top: 0,
     left: 0,
     bottom: 0,
+    textDecoration: 'none',
   },
   'h1, h2, h3, h4, h5, h6': {
     margin: '20px 0 10px',

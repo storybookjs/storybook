@@ -1,7 +1,6 @@
 name: nx
 
 on:
-  push:
   pull_request:
 
 permissions:

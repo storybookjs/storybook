@@ -6,70 +6,37 @@ sidebar:
   title: SvelteKit
 ---
 
-Storybook for SvelteKit is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [SvelteKit](https://kit.svelte.dev/) applications. It includes:
+Storybook for SvelteKit is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [SvelteKit](https://kit.svelte.dev/) applications.
 
-* 🪄 Zero config
-* 🧩 Easily mock many SvelteKit modules
-* 🔗 Automatic link handling
-* 💫 and more!
+## Install
 
-## Requirements
+To install Storybook in an existing SvelteKit project, run this command in your project's root directory:
 
-* SvelteKit ≥ 1.0
+<CodeSnippets path="create-command.md" variant="new-users" />
 
-## Getting started
+You can then get started [writing stories](/docs/get-started/whats-a-story/), [running tests](/docs/writing-tests/) and [documenting your components](/docs/writing-docs/).
 
-### In a project without Storybook
+Storybook is compatible with SvelteKit ≥ 1.0, and Vite ≥ 5. For more control over the installation process, refer to the [installation guide](/docs/install/). Keep reading to learn how to better integrate Storybook with your SvelteKit project.
 
-Follow the prompts after running this command in your Sveltekit project's root directory:
 
-{/* prettier-ignore-start */}
+## Run Storybook
 
-<CodeSnippets path="create-command.md" />
+To run Storybook for a particular project, run the following:
 
-{/* prettier-ignore-end */}
+<CodeSnippets path="storybook-run-dev.md" />
 
-[More on getting started with Storybook.](../install.mdx)
+To build Storybook, run:
 
-### In a project with Storybook
+<CodeSnippets path="build-storybook-production-mode.md" />
 
-This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+You will find the output in the configured `outputDir` (default is `storybook-static`).
 
-{/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-upgrade.md" />
+## Configure
 
-{/* prettier-ignore-end */}
+This section covers SvelteKit support and configuration options.
 
-#### Automatic migration
-
-When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/sveltekit`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
-
-#### Manual migration
-
-First, install the framework:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="sveltekit-install.md" />
-
-{/* prettier-ignore-end */}
-
-Then, update your `.storybook/main.js|ts` to change the framework property:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="sveltekit-add-framework.md" />
-
-{/* prettier-ignore-end */}
-
-Finally, these packages are now either obsolete or part of `@storybook/sveltekit`, so you no longer need to depend on them directly. You can remove them (`npm uninstall`, `yarn remove`, `pnpm remove`) from your project:
-
-* `@storybook/svelte-vite`
-* `storybook-builder-vite`
-* `@storybook/builder-vite`
-
-## Supported features
+### Supported features
 
 All Svelte language features are supported out of the box, as the Storybook framework uses the Svelte compiler directly.
 However, SvelteKit has some [Kit-specific modules](https://kit.svelte.dev/docs/modules) that aren't supported. Here's a breakdown of what will and will not work within Storybook:
@@ -90,7 +57,7 @@ However, SvelteKit has some [Kit-specific modules](https://kit.svelte.dev/docs/m
 | [`$env/static/private`](https://svelte.dev/docs/kit/$env-static-private)           | ⛔ Not supported       | This is a server-side feature, and Storybook renders all components on the client.                                                      |
 | [`$service-worker`](https://svelte.dev/docs/kit/$service-worker)                   | ⛔ Not supported       | This is a service worker feature, which does not apply to Storybook.                                                                    |
 
-## How to mock
+### How to mock
 
 To mock a SvelteKit import you can define it within `parameters.sveltekit_experimental`:
 
@@ -102,7 +69,7 @@ To mock a SvelteKit import you can define it within `parameters.sveltekit_experi
 
 The [available parameters](#parameters) are documented in the API section, below.
 
-### Mocking links
+#### Mocking links
 
 The default link-handling behavior (e.g., when clicking an `<a href="..." />` element) is to log an action to the [Actions panel](../../essentials/actions.mdx).
 
@@ -231,6 +198,44 @@ If you enabled automatic documentation generation with the `autodocs` story prop
 <CodeSnippets path="svelte-csf-addon-tags.md" />
 
 {/* prettier-ignore-end */}
+
+## FAQ
+
+### How do I manually install the SvelteKit framework?
+
+First, install the framework:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="sveltekit-install.md" />
+
+{/* prettier-ignore-end */}
+
+Then, update your `.storybook/main.js|ts` to change the framework property:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="sveltekit-add-framework.md" />
+
+{/* prettier-ignore-end */}
+
+Finally, these packages are now either obsolete or part of `@storybook/sveltekit`, so you no longer need to depend on them directly. You can remove them (`npm uninstall`, `yarn remove`, `pnpm remove`) from your project:
+
+* `@storybook/svelte-vite`
+* `storybook-builder-vite`
+* `@storybook/builder-vite`
+
+
+### Error when starting Storybook
+
+When starting Storybook after upgrading to v7.0, it may quit with the following error:
+
+```sh
+ERR! SyntaxError: Identifier '__esbuild_register_import_meta_url__' has already been declared
+```
+
+This can occur when manually upgrading from 6.5 to 7.0. To resolve it, you'll need to remove the `svelteOptions` property in `.storybook/main.js`, as that is not supported (and no longer necessary) in Storybook 7+ with SvelteKit.
+
 
 ## API
 
@@ -381,15 +386,3 @@ Enables or disables automatic documentation generation for component properties.
 #### When to disable docgen
 
 Disabling docgen can improve build performance for large projects, but [argTypes won't be inferred automatically](../../api/arg-types.mdx#automatic-argtype-inference), which will prevent features like [Controls](../../essentials/controls.mdx) and [docs](../../writing-docs/autodocs.mdx) from working as expected. To use those features, you will need to [define `argTypes` manually](../../api/arg-types.mdx#manually-specifying-argtypes).
-
-## Troubleshooting
-
-### Error when starting Storybook
-
-When starting Storybook after upgrading to v7.0, it may quit with the following error:
-
-```sh
-ERR! SyntaxError: Identifier '__esbuild_register_import_meta_url__' has already been declared
-```
-
-This can occur when manually upgrading from 6.5 to 7.0. To resolve it, you'll need to remove the `svelteOptions` property in `.storybook/main.js`, as that is not supported (and no longer necessary) in Storybook 7+ with SvelteKit.

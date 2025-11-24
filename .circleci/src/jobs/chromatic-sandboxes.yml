@@ -25,7 +25,7 @@ steps:
         echo "sandbox/$TEMPLATE/package.json" > .sandbox-package-path.txt
         echo "Computed sandbox template: $TEMPLATE"
   - restore_cache:
-      key: sandbox-{{ .BuildNum }}-{{ checksum ".sandbox-package-path.txt" }}
+      key: sandbox-{{ .Revision }}-{{ checksum ".sandbox-package-path.txt" }}
   - run:
       name: Install sandbox dependencies
       command: |

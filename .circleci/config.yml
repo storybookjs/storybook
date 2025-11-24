@@ -300,7 +300,7 @@ jobs:
                     echo "Computed sandbox template: $TEMPLATE"
                 name: Compute sandbox cache key
             - restore_cache:
-                key: sandbox-{{ .BuildNum }}-{{ checksum ".sandbox-package-path.txt" }}
+                key: sandbox-{{ .Revision }}-{{ checksum ".sandbox-package-path.txt" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
@@ -361,7 +361,7 @@ jobs:
                     echo "Computed sandbox template: $TEMPLATE"
                 name: Compute sandbox cache key
             - restore_cache:
-                key: sandbox-{{ .BuildNum }}-{{ checksum ".sandbox-package-path.txt" }}
+                key: sandbox-{{ .Revision }}-{{ checksum ".sandbox-package-path.txt" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
@@ -436,7 +436,7 @@ jobs:
                     echo "Computed sandbox template: $TEMPLATE"
                 name: Compute sandbox cache key
             - save_cache:
-                key: sandbox-{{ .BuildNum }}-{{ checksum ".sandbox-package-path.txt" }}
+                key: sandbox-{{ .Revision }}-{{ checksum ".sandbox-package-path.txt" }}
                 paths:
                     - sandbox
             - store_test_results:
@@ -467,7 +467,7 @@ jobs:
                     echo "Computed sandbox template: $TEMPLATE"
                 name: Compute sandbox cache key
             - restore_cache:
-                key: sandbox-{{ .BuildNum }}-{{ checksum ".sandbox-package-path.txt" }}
+                key: sandbox-{{ .Revision }}-{{ checksum ".sandbox-package-path.txt" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
@@ -511,7 +511,7 @@ jobs:
                     echo "Computed sandbox template: $TEMPLATE"
                 name: Compute sandbox cache key
             - restore_cache:
-                key: sandbox-{{ .BuildNum }}-{{ checksum ".sandbox-package-path.txt" }}
+                key: sandbox-{{ .Revision }}-{{ checksum ".sandbox-package-path.txt" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
@@ -1158,7 +1158,7 @@ jobs:
                     echo "Computed sandbox template: $TEMPLATE"
                 name: Compute sandbox cache key
             - restore_cache:
-                key: sandbox-{{ .BuildNum }}-{{ checksum ".sandbox-package-path.txt" }}
+                key: sandbox-{{ .Revision }}-{{ checksum ".sandbox-package-path.txt" }}
             - run:
                 command: yarn task --task test-runner-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev) --no-link --start-from=never --junit
                 name: Running Test Runner in Dev mode
@@ -1192,7 +1192,7 @@ jobs:
                     echo "Computed sandbox template: $TEMPLATE"
                 name: Compute sandbox cache key
             - restore_cache:
-                key: sandbox-{{ .BuildNum }}-{{ checksum ".sandbox-package-path.txt" }}
+                key: sandbox-{{ .Revision }}-{{ checksum ".sandbox-package-path.txt" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
@@ -1290,7 +1290,7 @@ jobs:
                     echo "Computed sandbox template: $TEMPLATE"
                 name: Compute sandbox cache key
             - restore_cache:
-                key: sandbox-{{ .BuildNum }}-{{ checksum ".sandbox-package-path.txt" }}
+                key: sandbox-{{ .Revision }}-{{ checksum ".sandbox-package-path.txt" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)

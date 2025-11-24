@@ -6,6 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
 import { cachedResolveImport } from './utils';
+import { stripSubpath, validPackageName } from './valid-package-name';
 
 // Public component metadata type used across passes
 export type ComponentRef = {
@@ -256,8 +257,6 @@ export const getImports = ({
     order: number;
   };
 
-  const isRelative = (id: string) => id.startsWith('.') || id === '.';
-
   const withSource = components
     .filter((c) => Boolean(c.importId))
     .map((c, idx) => {
@@ -281,7 +280,7 @@ export const getImports = ({
       const rewritten =
         overrideSource !== undefined
           ? overrideSource
-          : packageName && isRelative(importId)
+          : packageName && !validPackageName(stripSubpath(importId))
             ? packageName
             : importId;
       return { c, src: t.stringLiteral(rewritten), key: rewritten, ord: idx };

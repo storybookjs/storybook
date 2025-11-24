@@ -48,9 +48,21 @@ export interface SubAPI {
   /**
    * Returns the URL of the Storybook documentation for the current version.
    *
+   * @param options - The options for the documentation URL.
+   * @param options.asset - Like subpath, but links to the docs-assets directory.
+   * @param options.subpath - The subpath of the documentation URL.
+   * @param options.versioned - Whether to include the versioned path.
+   * @param options.renderer - Whether to include the renderer path.
+   * @param options.ref - Tracking reference for the docs site. E.g. 'ui', 'error', 'upgrade', etc.
    * @returns {string} The URL of the Storybook Manager documentation.
    */
-  getDocsUrl: (options: { subpath?: string; versioned?: boolean; renderer?: boolean }) => string;
+  getDocsUrl: (options: {
+    asset?: string;
+    subpath?: string;
+    versioned?: boolean;
+    renderer?: boolean;
+    ref?: string;
+  }) => string;
   /**
    * Checks if an update is available for the Storybook Manager.
    *
@@ -89,14 +101,16 @@ export const init: ModuleFn = ({ store }) => {
       return latest as API_Version;
     },
     // TODO: Move this to it's own "info" module later
-    getDocsUrl: ({ subpath, versioned, renderer }) => {
+    getDocsUrl: ({ asset, subpath = asset, versioned, renderer, ref = 'ui' }) => {
       const {
         versions: { latest, current },
       } = store.getState();
 
-      let url = 'https://storybook.js.org/docs/';
+      let url = `https://storybook.js.org/${asset ? 'docs-assets' : 'docs'}/`;
 
-      if (versioned && current?.version && latest?.version) {
+      if (asset && current?.version) {
+        url += `${semver.major(current.version)}.${semver.minor(current.version)}/`;
+      } else if (versioned && current?.version && latest?.version) {
         const versionDiff = semver.diff(latest.version, current.version);
         const isLatestDocs =
           versionDiff === 'patch' ||
@@ -112,7 +126,7 @@ export const init: ModuleFn = ({ store }) => {
       const [cleanedSubpath, hash] = subpath?.split('#') || [];
 
       if (cleanedSubpath) {
-        url += `${cleanedSubpath}/`;
+        url += asset ? cleanedSubpath : `${cleanedSubpath}/`;
       }
 
       if (renderer && typeof global.STORYBOOK_RENDERER !== 'undefined') {
@@ -121,6 +135,10 @@ export const init: ModuleFn = ({ store }) => {
         if (rendererName) {
           url += `?renderer=${normalizeRendererName(rendererName)}`;
         }
+      }
+
+      if (ref) {
+        url += `${url.includes('?') ? '&' : '?'}ref=${ref}`;
       }
 
       if (hash) {

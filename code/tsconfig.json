@@ -4,6 +4,7 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "esModuleInterop": true,
+    "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
     "ignoreDeprecations": "5.0",
     "incremental": false,

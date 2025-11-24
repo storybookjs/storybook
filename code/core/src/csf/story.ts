@@ -126,13 +126,13 @@ export interface InputType {
     /** @see https://storybook.js.org/docs/api/arg-types#tablecategory */
     category?: string;
     /** @see https://storybook.js.org/docs/api/arg-types#tabledefaultvalue */
-    defaultValue?: { summary?: string; detail?: string };
+    defaultValue?: { summary?: string | undefined; detail?: string | undefined };
     /** @see https://storybook.js.org/docs/api/arg-types#tabledisable */
     disable?: boolean;
     /** @see https://storybook.js.org/docs/api/arg-types#tablesubcategory */
     subcategory?: string;
     /** @see https://storybook.js.org/docs/api/arg-types#tabletype */
-    type?: { summary?: string; detail?: string };
+    type?: { summary?: string | undefined; detail?: string | undefined };
   };
   /** @see https://storybook.js.org/docs/api/arg-types#type */
   type?: SBType | SBScalarType['name'];

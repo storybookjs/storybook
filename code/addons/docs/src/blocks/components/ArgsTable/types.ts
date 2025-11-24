@@ -21,8 +21,8 @@ export interface JsDocTags {
 }
 
 export interface PropSummaryValue {
-  summary: string;
-  detail?: string;
+  summary: string | undefined;
+  detail?: string | undefined;
   required?: boolean;
 }
 
@@ -46,12 +46,12 @@ export interface ArgType {
     disable?: boolean;
     subcategory?: string;
     defaultValue?: {
-      summary?: string;
-      detail?: string;
+      summary?: string | undefined;
+      detail?: string | undefined;
     };
     type?: {
-      summary?: string;
-      detail?: string;
+      summary?: string | undefined;
+      detail?: string | undefined;
     };
     readonly?: boolean;
     [key: string]: any;

@@ -40,6 +40,6 @@ steps:
   - persist_to_workspace:
       root: .
       paths:
-        - ../storybook-sandboxes/**
+        - sandbox/**
   - store_test_results:
       path: test-results

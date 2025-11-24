@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.1.0-alpha.13",
+  "version": "10.1.0-beta.2",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -118,6 +118,10 @@
       "default": "./dist/manager/globals.js"
     },
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
+    "./internal/manager/manager-stores": {
+      "types": "./dist/manager/manager-stores.d.ts",
+      "default": "./dist/manager/manager-stores.js"
+    },
     "./internal/mocking-utils": {
       "types": "./dist/mocking-utils/index.d.ts",
       "default": "./dist/mocking-utils/index.js"
@@ -257,7 +261,6 @@
     "@types/semver": "^7.5.8",
     "@types/ws": "^8",
     "@vitest/utils": "^3.2.4",
-    "@yarnpkg/esbuild-plugin-pnp": "^3.0.0-rc.10",
     "@yarnpkg/fslib": "2.10.3",
     "@yarnpkg/libzip": "2.3.0",
     "ansi-to-html": "^0.7.2",

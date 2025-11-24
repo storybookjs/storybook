@@ -55,11 +55,6 @@ import { useExpanded } from './useExpanded';
 
 export type ExcludesNull = <T>(x: T | null) => x is T;
 
-const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
-  marginTop: props.hasOrphans ? 20 : 0,
-  marginBottom: 20,
-}));
-
 const CollapseButton = styled(Button)(({ theme }) => ({
   fontSize: `${theme.typography.size.s1 - 1}px`,
   fontWeight: theme.typography.weight.bold,
@@ -473,7 +468,6 @@ export const Tree = React.memo<{
   onSelectStoryId: (storyId: string) => void;
 }>(function Tree({
   isBrowsing,
-  isMain,
   refId,
   data,
   allStatuses,
@@ -682,10 +676,10 @@ export const Tree = React.memo<{
   ]);
   return (
     <StatusContext.Provider value={{ data, allStatuses, groupStatus }}>
-      <Container ref={containerRef} hasOrphans={isMain && orphanIds.length > 0}>
+      <div ref={containerRef}>
         <IconSymbols />
         {treeItems}
-      </Container>
+      </div>
     </StatusContext.Provider>
   );
 });

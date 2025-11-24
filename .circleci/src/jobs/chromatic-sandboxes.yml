@@ -12,6 +12,21 @@ steps:
   - checkout
   - attach_workspace:
       at: .
+  - restore_cache:
+      keys:
+        - code-node-modules-{{ checksum "code/yarn.lock" }}
+  - restore_cache:
+      keys:
+        - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
+  - run:
+      name: Compute sandbox cache key
+      command: |
+        TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
+        echo "sandbox-template=$TEMPLATE" >> $BASH_ENV
+        source $BASH_ENV
+        echo "Computed sandbox template: $sandbox-template"
+  - restore_cache:
+      key: sandbox-{{ .BuildNum }}-{{ checksum "sandbox/${sandbox-template}/package.json" }}
   - run:
       name: Install sandbox dependencies
       command: |

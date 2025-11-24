@@ -13,6 +13,12 @@ steps:
       clone_options: '--depth 1 --verbose'
   - attach_workspace:
       at: .
+  - restore_cache:
+      keys:
+        - code-node-modules-{{ checksum "code/yarn.lock" }}
+  - restore_cache:
+      keys:
+        - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
   - when:
       condition:
         equal: ['npm', << parameters.packageManager >>]

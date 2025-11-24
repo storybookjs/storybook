@@ -116,6 +116,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - when:
                 condition:
                     and:
@@ -177,6 +183,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench)
@@ -213,18 +225,17 @@ jobs:
                     yarn local-registry --publish
                 name: Publish to Verdaccio
             - report-workflow-on-failure
-            - store_artifacts:
-                path: code/bench/esbuild-metafiles
             - save_cache:
-                key: build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
-                name: Save Yarn cache
-                paths:
-                    - ~/.yarn/berry/cache
-            - persist_to_workspace:
+                key: code-node-modules-{{ checksum "code/yarn.lock" }}
                 paths:
                     - code/node_modules
-                    - code/addons
+            - save_cache:
+                key: scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
+                paths:
                     - scripts/node_modules
+            - persist_to_workspace:
+                paths:
+                    - code/addons
                     - code/bench
                     - code/examples
                     - code/frameworks
@@ -298,6 +309,12 @@ jobs:
             - checkout
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: yarn storybook:ui:chromatic
                 name: Running Chromatic
@@ -317,6 +334,21 @@ jobs:
             - checkout
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
+            - run:
+                command: |
+                    TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
+                    echo "sandbox-template=$TEMPLATE" >> $BASH_ENV
+                    source $BASH_ENV
+                    echo "Computed sandbox template: $sandbox-template"
+                name: Compute sandbox cache key
+            - restore_cache:
+                key: sandbox-{{ .BuildNum }}-{{ checksum "sandbox/${sandbox-template}/package.json" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
@@ -353,6 +385,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: |
                     # Enable corepack
@@ -370,6 +408,7 @@ jobs:
                     if [[ $TEMPLATE != bench/* ]]; then
                       yarn --cwd scripts jiti ./event-log-checker.ts build $TEMPLATE
                     fi
+                    # Clean node_modules before caching sandbox to keep cache light
                     cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && rm -rf node_modules
                 environment:
                     STORYBOOK_TELEMETRY_DEBUG: 1
@@ -377,10 +416,17 @@ jobs:
                 name: Create Sandboxes
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
-            - persist_to_workspace:
+            - run:
+                command: |
+                    TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
+                    echo "sandbox-template=$TEMPLATE" >> $BASH_ENV
+                    source $BASH_ENV
+                    echo "Computed sandbox template: $sandbox-template"
+                name: Compute sandbox cache key
+            - save_cache:
+                key: sandbox-{{ .BuildNum }}-{{ checksum "sandbox/${sandbox-template}/package.json" }}
                 paths:
                     - sandbox/**
-                root: .
             - store_test_results:
                 path: test-results
     e2e-dev:
@@ -396,6 +442,21 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
+            - run:
+                command: |
+                    TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
+                    echo "sandbox-template=$TEMPLATE" >> $BASH_ENV
+                    source $BASH_ENV
+                    echo "Computed sandbox template: $sandbox-template"
+                name: Compute sandbox cache key
+            - restore_cache:
+                key: sandbox-{{ .BuildNum }}-{{ checksum "sandbox/${sandbox-template}/package.json" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
@@ -426,6 +487,21 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
+            - run:
+                command: |
+                    TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
+                    echo "sandbox-template=$TEMPLATE" >> $BASH_ENV
+                    source $BASH_ENV
+                    echo "Computed sandbox template: $sandbox-template"
+                name: Compute sandbox cache key
+            - restore_cache:
+                key: sandbox-{{ .BuildNum }}-{{ checksum "sandbox/${sandbox-template}/package.json" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
@@ -452,6 +528,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: yarn install --no-immutable
                 environment:
@@ -477,6 +559,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: yarn install --no-immutable
                 environment:
@@ -502,6 +590,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: |
                     cd code
@@ -518,6 +612,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: |
                     cd code
@@ -558,6 +658,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: |
                     cd scripts
@@ -607,6 +713,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: |
                     cd code
@@ -631,6 +743,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - when:
                 condition:
                     equal:
@@ -932,6 +1050,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 background: true
                 command: |
@@ -969,6 +1093,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: yarn install --no-immutable
                 environment:
@@ -1025,6 +1155,21 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
+            - run:
+                command: |
+                    TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
+                    echo "sandbox-template=$TEMPLATE" >> $BASH_ENV
+                    source $BASH_ENV
+                    echo "Computed sandbox template: $sandbox-template"
+                name: Compute sandbox cache key
+            - restore_cache:
+                key: sandbox-{{ .BuildNum }}-{{ checksum "sandbox/${sandbox-template}/package.json" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
@@ -1053,6 +1198,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: yarn install --no-immutable
                 environment:
@@ -1074,6 +1225,12 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
             - run:
                 command: |
                     cd code
@@ -1097,6 +1254,21 @@ jobs:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
                 at: .
+            - restore_cache:
+                keys:
+                    - code-node-modules-{{ checksum "code/yarn.lock" }}
+            - restore_cache:
+                keys:
+                    - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
+            - run:
+                command: |
+                    TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
+                    echo "sandbox-template=$TEMPLATE" >> $BASH_ENV
+                    source $BASH_ENV
+                    echo "Computed sandbox template: $sandbox-template"
+                name: Compute sandbox cache key
+            - restore_cache:
+                key: sandbox-{{ .BuildNum }}-{{ checksum "sandbox/${sandbox-template}/package.json" }}
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)

@@ -10,6 +10,12 @@ steps:
   - checkout
   - attach_workspace:
       at: .
+  - restore_cache:
+      keys:
+        - code-node-modules-{{ checksum "code/yarn.lock" }}
+  - restore_cache:
+      keys:
+        - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
   - run:
       name: Running Chromatic
       command: yarn storybook:ui:chromatic

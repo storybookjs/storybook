@@ -9,6 +9,12 @@ steps:
       clone_options: '--depth 1 --verbose'
   - attach_workspace:
       at: .
+  - restore_cache:
+      keys:
+        - code-node-modules-{{ checksum "code/yarn.lock" }}
+  - restore_cache:
+      keys:
+        - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
   - run:
       name: Run tests
       # TEST_FILES should include all relevant test files, including story files, but not e2e-tests

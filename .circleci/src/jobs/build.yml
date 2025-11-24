@@ -21,25 +21,25 @@ steps:
         cd code
         yarn local-registry --publish
   - report-workflow-on-failure
-  - store_artifacts:
-      path: code/bench/esbuild-metafiles
   - save_cache:
-      name: Save Yarn cache
-      key: build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+      key: code-node-modules-{{ checksum "code/yarn.lock" }}
       paths:
-        - ~/.yarn/berry/cache
+          - code/node_modules
+  - save_cache:
+      key: scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
+      paths:
+          - scripts/node_modules
+  # Persist source/artifacts only (exclude node_modules)
   - persist_to_workspace:
       root: .
       paths:
-        - code/node_modules
-        - code/addons
-        - scripts/node_modules
-        - code/bench
-        - code/examples
-        - code/frameworks
-        - code/lib
-        - code/core
-        - code/builders
-        - code/renderers
-        - code/presets
-        - .verdaccio-cache
+          - code/addons
+          - code/bench
+          - code/examples
+          - code/frameworks
+          - code/lib
+          - code/core
+          - code/builders
+          - code/renderers
+          - code/presets
+          - .verdaccio-cache

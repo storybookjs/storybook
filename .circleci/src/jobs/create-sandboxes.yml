@@ -13,6 +13,12 @@ steps:
       clone_options: '--depth 1 --verbose'
   - attach_workspace:
       at: .
+  - restore_cache:
+      keys:
+        - code-node-modules-{{ checksum "code/yarn.lock" }}
+  - restore_cache:
+      keys:
+        - scripts-node-modules-{{ checksum "scripts/yarn.lock" }}
   - run:
       name: Setup Corepack
       command: |
@@ -31,14 +37,22 @@ steps:
         if [[ $TEMPLATE != bench/* ]]; then
           yarn --cwd scripts jiti ./event-log-checker.ts build $TEMPLATE
         fi
+        # Clean node_modules before caching sandbox to keep cache light
         cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && rm -rf node_modules
       environment:
         STORYBOOK_TELEMETRY_DEBUG: 1
         STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
   - report-workflow-on-failure:
       template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
-  - persist_to_workspace:
-      root: .
+  - run:
+      name: Compute sandbox cache key
+      command: |
+        TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
+        echo "sandbox-template=$TEMPLATE" >> $BASH_ENV
+        source $BASH_ENV
+        echo "Computed sandbox template: $sandbox-template"
+  - save_cache:
+      key: sandbox-{{ .BuildNum }}-{{ checksum "sandbox/${sandbox-template}/package.json" }}
       paths:
         - sandbox/**
   - store_test_results:

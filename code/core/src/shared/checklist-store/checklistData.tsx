@@ -534,11 +534,9 @@ export default {
           label: 'Install Vitest addon',
           afterCompletion: 'unavailable',
           available: () =>
-            !!globalThis?.STORYBOOK_BUILDER?.includes('vite') &&
-            SUPPORTED_FRAMEWORKS.some((framework) =>
-              // STORYBOOK_FRAMEWORK is a package name, but they all map safely onto the framework name
-              globalThis?.STORYBOOK_FRAMEWORK?.endsWith(`/${framework}`)
-            ),
+            globalThis.STORYBOOK_BUILDER === 'vite' &&
+            !!globalThis.STORYBOOK_FRAMEWORK &&
+            SUPPORTED_FRAMEWORKS.includes(globalThis.STORYBOOK_FRAMEWORK),
           criteria: '@storybook/addon-vitest registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
             if (addons.experimental_getRegisteredAddons().includes(ADDON_TEST_ID)) {

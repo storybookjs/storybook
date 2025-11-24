@@ -23,8 +23,7 @@ import {
 import { useTestProvider } from './use-test-provider-state';
 
 addons.register(ADDON_ID, (api) => {
-  const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
-  if (storybookBuilder.includes('vite')) {
+  if (globalThis.STORYBOOK_BUILDER === 'vite') {
     const openPanel = (panelId: string) => {
       api.setSelectedPanel(panelId);
       api.togglePanel(true);

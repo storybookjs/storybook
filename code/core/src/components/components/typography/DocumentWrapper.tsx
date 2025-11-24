@@ -64,7 +64,7 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
   },
   a: {
     color: theme.color.secondary,
-    textDecoration: 'none',
+    textDecoration: 'underline',
   },
   'a.absent': {
     color: '#cc0000',

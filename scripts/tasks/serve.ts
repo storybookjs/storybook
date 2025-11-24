@@ -8,7 +8,7 @@ import { exec } from '../utils/exec';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
-  : 8001;
+  : undefined;
 
 export const serve: Task = {
   description: 'Serve the build storybook for a sandbox',
@@ -19,21 +19,20 @@ export const serve: Task = {
     return (await detectFreePort(port)) !== port;
   },
   async run({ builtSandboxDir, key }, { debug, dryRun }) {
-    const port = getPort({ key, selectedTask: 'serve' });
+    const port = PORT ?? getPort({ key, selectedTask: 'serve' });
+
     const controller = new AbortController();
-    if ((await detectFreePort(port)) === port) {
-      exec(
-        `yarn http-server ${builtSandboxDir} --port ${port} -s`,
-        { cwd: ROOT_DIRECTORY },
-        { dryRun, debug, signal: controller.signal as AbortSignal }
-      ).catch((err) => {
-        // If aborted, we want to make sure the rejection is handled.
-        if (!err.killed) {
-          throw err;
-        }
-      });
-      await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16, timeout: 200000 });
-    }
+    exec(
+      `yarn http-server ${builtSandboxDir} --port ${port} -s`,
+      { cwd: ROOT_DIRECTORY },
+      { dryRun, debug, signal: controller.signal as AbortSignal }
+    ).catch((err) => {
+      // If aborted, we want to make sure the rejection is handled.
+      if (!err.killed) {
+        throw err;
+      }
+    });
+    await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16, timeout: 200000 });
 
     return controller;
   },

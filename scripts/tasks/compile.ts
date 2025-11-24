@@ -26,10 +26,6 @@ export const compile: Task = {
         resolve(codeDir, './core/dist/manager-api/index.d.ts'),
         'utf8'
       );
-      // TODO revisit, I want to run linked sandboxes without dts files
-      if (contents) {
-        return true;
-      }
       const isLinkedContents = contents.indexOf(linkedContents) !== -1;
 
       if (link) {

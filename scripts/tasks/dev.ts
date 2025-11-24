@@ -7,7 +7,7 @@ import { exec } from '../utils/exec';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
-  : 6006;
+  : undefined;
 
 export const dev: Task = {
   description: 'Run the sandbox in development mode',
@@ -20,44 +20,42 @@ export const dev: Task = {
     const controller = new AbortController();
     const devCommand = `yarn storybook --port ${port} --ci`;
 
-    if ((await detectFreePort(port)) === port) {
-      const start = now();
-      exec(
-        devCommand,
-        { cwd: sandboxDir },
-        { dryRun, debug, signal: controller.signal as AbortSignal }
-      ).catch((err) => {
-        // If aborted, we want to make sure the rejection is handled.
-        if (!err.killed) {
-          throw err;
-        }
-      });
-      const [devPreviewResponsive, devManagerResponsive] = await Promise.all([
-        waitOn({
-          resources: [`http://localhost:${port}/iframe.html`],
-          interval: 16,
-          timeout: 200000,
-        }).then(() => {
-          return now() - start;
-        }),
-        waitOn({
-          resources: [`http://localhost:${port}/index.html`],
-          interval: 16,
-          timeout: 200000,
-        }).then(() => {
-          return now() - start;
-        }),
-      ]);
+    const start = now();
+    exec(
+      devCommand,
+      { cwd: sandboxDir },
+      { dryRun, debug, signal: controller.signal as AbortSignal }
+    ).catch((err) => {
+      // If aborted, we want to make sure the rejection is handled.
+      if (!err.killed) {
+        throw err;
+      }
+    });
+    const [devPreviewResponsive, devManagerResponsive] = await Promise.all([
+      waitOn({
+        resources: [`http://localhost:${port}/iframe.html`],
+        interval: 16,
+        timeout: 200000,
+      }).then(() => {
+        return now() - start;
+      }),
+      waitOn({
+        resources: [`http://localhost:${port}/index.html`],
+        interval: 16,
+        timeout: 200000,
+      }).then(() => {
+        return now() - start;
+      }),
+    ]);
 
-      await saveBench(
-        'dev',
-        {
-          devPreviewResponsive,
-          devManagerResponsive,
-        },
-        { rootDir: sandboxDir }
-      );
-    }
+    await saveBench(
+      'dev',
+      {
+        devPreviewResponsive,
+        devManagerResponsive,
+      },
+      { rootDir: sandboxDir }
+    );
 
     return controller;
   },

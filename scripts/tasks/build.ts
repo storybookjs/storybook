@@ -63,15 +63,13 @@ export const build: Task = {
       { rootDir: sandboxDir }
     );
 
-    if (process.env.NX_RUN) {
-      const cacheDir = join(ROOT_DIRECTORY, 'sandbox', key.replace('/', '-'), 'storybook-static');
-      if (builtSandboxDir !== cacheDir) {
-        console.info(`✅ Removing cache directory ${cacheDir}`);
-        await rm(cacheDir, { recursive: true, force: true });
+    const cacheDir = join(ROOT_DIRECTORY, 'sandbox', key.replace('/', '-'), 'storybook-static');
+    if (builtSandboxDir !== cacheDir) {
+      console.info(`✅ Removing cache directory ${cacheDir}`);
+      await rm(cacheDir, { recursive: true, force: true });
 
-        console.info(`✅ Copy ${builtSandboxDir} to cache directory`);
-        await cp(builtSandboxDir, cacheDir, { recursive: true, force: true });
-      }
+      console.info(`✅ Copy ${builtSandboxDir} to cache directory`);
+      await cp(builtSandboxDir, cacheDir, { recursive: true, force: true });
     }
   },
 };

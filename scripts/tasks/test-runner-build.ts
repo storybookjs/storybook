@@ -14,7 +14,8 @@ export const testRunnerBuild: Task & { port: number } = {
     return false;
   },
   async run({ sandboxDir, junitFilename, key, selectedTask }, { dryRun, debug }) {
-    const port = getPort({ key, selectedTask: selectedTask === 'test-runner' ? 'serve' : 'dev' });
+    const port =
+      this.port ?? getPort({ key, selectedTask: selectedTask === 'test-runner' ? 'serve' : 'dev' });
 
     const execOptions = { cwd: sandboxDir };
     const flags = [

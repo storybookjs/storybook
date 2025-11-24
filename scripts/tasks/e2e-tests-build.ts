@@ -18,7 +18,8 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
     return false;
   },
   async run({ codeDir, junitFilename, key, sandboxDir, selectedTask }, { dryRun, debug }) {
-    const port = getPort({ key, selectedTask: selectedTask === 'e2e-tests' ? 'serve' : 'dev' });
+    const port =
+      this.port ?? getPort({ key, selectedTask: selectedTask === 'e2e-tests' ? 'serve' : 'dev' });
     if (process.env.DEBUG) {
       console.log(dedent`
         Running e2e tests in Playwright's ui mode for chromium only (for brevity sake).

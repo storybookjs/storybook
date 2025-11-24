@@ -41,8 +41,6 @@ export const getAnonymousProjectId = () => {
   try {
     const projectRootPath = relative(getProjectRoot(), process.cwd());
 
-    console.log({ projectRootPath });
-
     const originBuffer = execSync(`git config --local --get remote.origin.url`, {
       timeout: 1000,
       stdio: `pipe`,
@@ -50,7 +48,6 @@ export const getAnonymousProjectId = () => {
 
     anonymousProjectId = oneWayHash(unhashedProjectId(String(originBuffer), projectRootPath));
   } catch (e) {
-    console.error(e);
     //
   }
 

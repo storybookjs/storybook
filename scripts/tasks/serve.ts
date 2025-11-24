@@ -15,7 +15,7 @@ export const serve: Task = {
   service: true,
   dependsOn: ['build'],
   async ready({ key }) {
-    const port = getPort({ key, selectedTask: 'serve' });
+    const port = PORT ?? getPort({ key, selectedTask: 'serve' });
     return (await detectFreePort(port)) !== port;
   },
   async run({ builtSandboxDir, key }, { debug, dryRun }) {

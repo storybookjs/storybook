@@ -1,12 +1,8 @@
-import { join } from 'node:path';
-
 import assert from 'assert';
 import picocolors from 'picocolors';
 
 // import versions from '../code/core/src/common/versions';
-import { oneWayHash } from '../code/core/src/telemetry/one-way-hash';
 import { allTemplates } from '../code/lib/cli-storybook/src/sandbox-templates';
-import { SANDBOX_DIRECTORY } from './utils/constants';
 import { esMain } from './utils/esmain';
 
 const PORT = process.env.PORT || 6007;
@@ -116,12 +112,8 @@ async function run() {
       }
     });
 
-    test(`main event should contain anonymousId properly hashed`, () => {
-      const templateDir = join(SANDBOX_DIRECTORY, `${templateName.replace('/', '-')}`);
-      const unhashedId = `github.com/storybookjs/storybook.git${templateDir}`;
-      console.log(eventsWithoutMocks);
-      console.log(mainEvent);
-      assert.equal(mainEvent.context.anonymousId, oneWayHash(unhashedId));
+    test(`main event should not contain anonymousId because it is not a git directory`, () => {
+      assert.equal(mainEvent.context.anonymousId, undefined);
     });
 
     // Not sure if it's worth testing this as we are not providing this value in CI.

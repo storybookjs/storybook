@@ -2,6 +2,7 @@ import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
 import { now, saveBench } from '../bench/utils';
+import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
 
@@ -16,8 +17,9 @@ export const dev: Task = {
   async ready({ port }) {
     return (await detectFreePort(port)) !== port;
   },
-  async run({ sandboxDir, port }, { dryRun, debug }) {
+  async run({ sandboxDir, key }, { dryRun, debug }) {
     const controller = new AbortController();
+    const port = getPort({ selectedTask: 'dev', key });
     const devCommand = `yarn storybook --port ${port}`;
 
     const start = now();

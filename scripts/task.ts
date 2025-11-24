@@ -406,7 +406,7 @@ async function run() {
     codeDir: CODE_DIRECTORY,
     selectedTask: taskKey,
     sandboxDir: templateSandboxDir,
-    port: getPort({ selectedTask: taskKey, key: templateKey }),
+    port: templateKey ? getPort({ selectedTask: taskKey, key: templateKey }) : undefined,
     builtSandboxDir: templateKey && join(templateSandboxDir, 'storybook-static'),
     junitFilename: junit && getJunitFilename(taskKey),
   };

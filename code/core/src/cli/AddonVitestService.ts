@@ -9,7 +9,7 @@ import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import type { CallExpression } from '@babel/types';
 import * as find from 'empathic/find';
-import { coerce, satisfies } from 'semver';
+import { coerce, minVersion, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { SupportedBuilder, SupportedFramework } from '../types';
@@ -20,7 +20,6 @@ type Result = {
 };
 
 export interface AddonVitestCompatibilityOptions {
-  packageManager: JsPackageManager;
   builder?: SupportedBuilder;
   framework?: SupportedFramework | null;
   projectRoot?: string;
@@ -37,6 +36,8 @@ export interface AddonVitestCompatibilityOptions {
  * - Code/lib/create-storybook/src/services/FeatureCompatibilityService.ts
  */
 export class AddonVitestService {
+  constructor(private readonly packageManager: JsPackageManager) {}
+
   readonly supportedFrameworks: SupportedFramework[] = [
     SupportedFramework.HTML_VITE,
     SupportedFramework.NEXTJS_VITE,
@@ -57,16 +58,25 @@ export class AddonVitestService {
    * - Next.js specific: @storybook/nextjs-vite
    * - Coverage reporter: @vitest/coverage-v8
    */
-  async collectDependencies(packageManager: JsPackageManager): Promise<string[]> {
-    const allDeps = packageManager.getAllDependencies();
+  async collectDependencies(): Promise<string[]> {
+    const allDeps = this.packageManager.getAllDependencies();
     const dependencies: string[] = [];
 
-    // Get vitest version for proper version specifiers
-    const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+    // Determine Vitest version/range from installed or declared dependency to avoid pulling
+    // incompatible majors by default.
+    let vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
+    if (!vitestVersionSpecifier && allDeps['vitest']) {
+      vitestVersionSpecifier = allDeps['vitest'];
+    }
 
-    const isVitest4OrNewer = vitestVersionSpecifier
-      ? satisfies(vitestVersionSpecifier, '>=4.0.0')
-      : true;
+    let isVitest4OrNewer = true;
+    if (vitestVersionSpecifier) {
+      const range = validRange(vitestVersionSpecifier);
+      const versionToCheck = range
+        ? minVersion(range)?.version
+        : coerce(vitestVersionSpecifier)?.version;
+      isVitest4OrNewer = versionToCheck ? satisfies(versionToCheck, '>=4.0.0') : true;
+    }
 
     // only install these dependencies if they are not already installed
     const basePackages = [
@@ -83,8 +93,10 @@ export class AddonVitestService {
     }
 
     // Check for coverage reporters
-    const v8Version = await packageManager.getInstalledVersion('@vitest/coverage-v8');
-    const istanbulVersion = await packageManager.getInstalledVersion('@vitest/coverage-istanbul');
+    const v8Version = await this.packageManager.getInstalledVersion('@vitest/coverage-v8');
+    const istanbulVersion = await this.packageManager.getInstalledVersion(
+      '@vitest/coverage-istanbul'
+    );
 
     if (!v8Version && !istanbulVersion) {
       dependencies.push('@vitest/coverage-v8');
@@ -112,10 +124,7 @@ export class AddonVitestService {
    * @param options - Installation options
    * @returns Array of error messages if installation fails
    */
-  async installPlaywright(
-    packageManager: JsPackageManager,
-    options: { yes?: boolean } = {}
-  ): Promise<{ errors: string[] }> {
+  async installPlaywright(options: { yes?: boolean } = {}): Promise<{ errors: string[] }> {
     const errors: string[] = [];
 
     const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
@@ -137,7 +146,7 @@ export class AddonVitestService {
       if (shouldBeInstalled) {
         await prompt.executeTaskWithSpinner(
           (signal) =>
-            packageManager.runPackageCommand({
+            this.packageManager.runPackageCommand({
               args: playwrightCommand,
               stdio: ['inherit', 'pipe', 'pipe'],
               signal,
@@ -196,7 +205,7 @@ export class AddonVitestService {
     }
 
     // Check package versions
-    const packageVersionResult = await this.validatePackageVersions(options.packageManager);
+    const packageVersionResult = await this.validatePackageVersions();
     if (!packageVersionResult.compatible && packageVersionResult.reasons) {
       reasons.push(...packageVersionResult.reasons);
     }
@@ -216,11 +225,11 @@ export class AddonVitestService {
    * Validate package versions for addon-vitest compatibility Public method to allow early
    * validation before framework detection
    */
-  async validatePackageVersions(packageManager: JsPackageManager): Promise<Result> {
+  async validatePackageVersions(): Promise<Result> {
     const reasons: string[] = [];
 
     // Check Vitest version (>=3.0.0 - stricter requirement from postinstall)
-    const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+    const vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
     const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
 
     if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0')) {
@@ -230,7 +239,7 @@ export class AddonVitestService {
     }
 
     // Check MSW version (>=2.0.0 if installed)
-    const mswVersionSpecifier = await packageManager.getInstalledVersion('msw');
+    const mswVersionSpecifier = await this.packageManager.getInstalledVersion('msw');
     const coercedMswVersion = mswVersionSpecifier ? coerce(mswVersionSpecifier) : null;
 
     if (coercedMswVersion && !satisfies(coercedMswVersion, '>=2.0.0')) {

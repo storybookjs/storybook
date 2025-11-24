@@ -6,6 +6,7 @@ import { type API_HashEntry, type StatusesByStoryIdAndTypeId } from 'storybook/i
 
 import { CircleIcon } from '@storybook/icons';
 
+import memoizerific from 'memoizerific';
 import { type Theme, styled } from 'storybook/theming';
 
 import { UseSymbol } from '../components/sidebar/IconSymbols';

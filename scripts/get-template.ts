@@ -49,32 +49,16 @@ export async function getTemplate(
   scriptName: string,
   { index, total }: { index: number; total: number }
 ) {
-  let potentialTemplateKeys: TemplateKey[] = [];
-  const isLocalSandbox = await pathExists(sandboxDir);
-  if (isLocalSandbox) {
-    const sandboxes = await getDirectories(sandboxDir);
-    potentialTemplateKeys = sandboxes
-      .map((dirName) => {
-        return Object.keys(allTemplates).find(
-          (templateKey) => templateKey.replace('/', '-') === dirName
-        );
-      })
-      .filter(Boolean) as TemplateKey[];
-  }
+  const cadenceTemplates = Object.entries(allTemplates).filter(([key]) =>
+    templatesByCadence[cadence].includes(key as TemplateKey)
+  );
 
-  if (potentialTemplateKeys.length === 0) {
-    const cadenceTemplates = Object.entries(allTemplates).filter(([key]) =>
-      templatesByCadence[cadence].includes(key as TemplateKey)
-    );
-    potentialTemplateKeys = cadenceTemplates.map(([k]) => k) as TemplateKey[];
-  }
-
-  potentialTemplateKeys = potentialTemplateKeys.filter((t) => {
+  const potentialTemplateKeys = (cadenceTemplates.map(([k]) => k) as TemplateKey[]).filter((t) => {
     const currentTemplate = allTemplates[t] as Template;
     return isTaskSkipped(currentTemplate, scriptName);
   });
 
-  if (!isLocalSandbox && potentialTemplateKeys.length !== total) {
+  if (potentialTemplateKeys.length !== total) {
     throw new Error(dedent`Circle parallelism set incorrectly.
 
       Parallelism is set to ${total}, but there are ${

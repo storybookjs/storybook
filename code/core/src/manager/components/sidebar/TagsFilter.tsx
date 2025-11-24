@@ -52,10 +52,6 @@ const remove = (set: Set<string>, id: string) => {
 const equal = (left: Set<string>, right: Set<string>) =>
   left.size === right.size && new Set([...left, ...right]).size === left.size;
 
-const Wrapper = styled.div({
-  position: 'relative',
-});
-
 const TagSelected = styled(Badge)(({ theme }) => ({
   position: 'absolute',
   top: 7,

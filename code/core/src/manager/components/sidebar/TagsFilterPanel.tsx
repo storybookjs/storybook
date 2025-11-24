@@ -137,13 +137,14 @@ export const TagsFilterPanel = ({
   };
 
   const groups = groupByType(Object.values(filtersById));
-  const links: Link[][] = Object.values(groups).map(
-    (group) =>
+  const links: Link[][] = Object.values(groups)
+    .map((group) =>
       group
         .sort((a, b) => a.id.localeCompare(b.id))
         .map((filter) => renderLink(filter))
-        .filter(Boolean) as Link[]
-  );
+        .filter((value): value is Link => !!value)
+    )
+    .filter((value): value is Link[] => value.length > 0);
 
   if (!groups.tag?.length && isDevelopment) {
     links.push([

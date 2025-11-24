@@ -166,22 +166,29 @@ There are some noteworthy items here:
 
   #### The CLI doesn't detect my framework
 
-  If you're working with a custom environment setup or need to set up Storybook manually, you can use the `--type` flag to specify the framework you need to use. Listed below are the supported frameworks and examples of how to use them:
+  If auto‑detection fails or you’re using a custom setup, pass the project type explicitly with `--type` when running the initializer. The allowed values are:
 
-  | Framework      | Type             |
-  | -------------- | ---------------- |
-  | Angular        | `angular`        |
-  | Ember          | `ember`          |
-  | HTML           | `html`           |
-  | Next.js        | `nextjs`         |
-  | Preact         | `preact`         |
-  | Qwik           | `qwik`           |
-  | React          | `react`          |
-  | Server         | `server`         |
-  | Solid          | `solid`          |
-  | Svelte         | `svelte`         |
-  | Vue 3          | `vue3`           |
-  | Web Components | `web_components` |
+  | Type                          | Framework                          |
+  | ----------------------------- | ---------------------------------- |
+  | `angular`                     | Angular                            |
+  | `ember`                       | Ember                              |
+  | `html`                        | HTML                               |
+  | `nextjs`                      | Next.js                            |
+  | `nuxt`                        | Nuxt                               |
+  | `preact`                      | Preact                             |
+  | `qwik`                        | Qwik                               |
+  | `react`                       | React                              |
+  | `react_native`                | React Native                       |
+  | `react_native_web`            | React Native Web                   |
+  | `react_native_and_rnw`        | React Native (+ Web)               |
+  | `react_scripts`               | Create React App (react-scripts)   |
+  | `react_project`               | React Project                      |
+  | `server`                      | Server renderer                    |
+  | `solid`                       | Solid                              |
+  | `svelte`                      | Svelte                             |
+  | `sveltekit`                   | SvelteKit                          |
+  | `vue3`                        | Vue 3                              |
+  | `web_components`              | Web Components                     |
 
   {/* prettier-ignore-start */}
 

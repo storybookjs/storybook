@@ -1,7 +1,5 @@
 import { promises as fs } from 'node:fs';
-import path, { join } from 'node:path';
-
-import { isCI } from 'storybook/internal/common';
+import { join } from 'node:path';
 
 import type { LogLevel } from './logger';
 
@@ -90,7 +88,7 @@ class LogTracker {
     await fs.writeFile(logFilePath, logContent, 'utf-8');
     this.#logs = [];
 
-    return isCI() ? logFilePath : path.relative(process.cwd(), logFilePath);
+    return logFilePath;
   }
 }
 

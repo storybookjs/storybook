@@ -58,11 +58,10 @@ export default async function postInstall(options: PostinstallOptions) {
   const allDeps = packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
 
-  const addonVitestService = new AddonVitestService();
+  const addonVitestService = new AddonVitestService(packageManager);
 
   // Use AddonVitestService for compatibility validation
   const compatibilityResult = await addonVitestService.validateCompatibility({
-    packageManager,
     framework: info.framework,
     builder: info.builder,
   });
@@ -97,7 +96,7 @@ export default async function postInstall(options: PostinstallOptions) {
   // Skip all dependency management when flag is set (called from init command)
   if (!options.skipDependencyManagement) {
     // Use AddonVitestService for dependency collection
-    const versionedDependencies = await addonVitestService.collectDependencies(packageManager);
+    const versionedDependencies = await addonVitestService.collectDependencies();
 
     // Print informational messages for Next.js
     if (info.framework === SupportedFramework.NEXTJS) {
@@ -139,12 +138,9 @@ export default async function postInstall(options: PostinstallOptions) {
   // Install Playwright browser binaries using AddonVitestService
   if (!options.skipDependencyManagement) {
     if (!options.skipInstall) {
-      const { errors: playwrightErrors } = await addonVitestService.installPlaywright(
-        packageManager,
-        {
-          yes: options.yes,
-        }
-      );
+      const { errors: playwrightErrors } = await addonVitestService.installPlaywright({
+        yes: options.yes,
+      });
       errors.push(...playwrightErrors);
     } else {
       logger.warn(dedent`

@@ -539,11 +539,6 @@ jobs:
                 keys:
                     - prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
                 name: Restore Yarn cache
-            - run:
-                command: |
-                    cd scripts
-                    yarn install
-                name: Install
             - save_cache:
                 key: prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
                 name: Save Yarn cache

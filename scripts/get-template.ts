@@ -50,7 +50,8 @@ export async function getTemplate(
   { index, total }: { index: number; total: number }
 ) {
   let potentialTemplateKeys: TemplateKey[] = [];
-  if (await pathExists(sandboxDir)) {
+  const isLocalSandbox = await pathExists(sandboxDir);
+  if (isLocalSandbox) {
     const sandboxes = await getDirectories(sandboxDir);
     potentialTemplateKeys = sandboxes
       .map((dirName) => {
@@ -73,7 +74,7 @@ export async function getTemplate(
     return isTaskSkipped(currentTemplate, scriptName);
   });
 
-  if (potentialTemplateKeys.length !== total) {
+  if (!isLocalSandbox && potentialTemplateKeys.length !== total) {
     throw new Error(dedent`Circle parallelism set incorrectly.
 
       Parallelism is set to ${total}, but there are ${
@@ -332,9 +333,9 @@ async function run({ cadence, task, check, fix }: RunOptions) {
   }
 
   const { CIRCLE_NODE_INDEX = 0, CIRCLE_NODE_TOTAL = 1 } = process.env;
-
   console.log(
     await getTemplate(cadence as Cadence, task, {
+      // Convert to integer
       index: +CIRCLE_NODE_INDEX,
       total: +CIRCLE_NODE_TOTAL,
     })

@@ -49,11 +49,10 @@ steps:
       command: |
         TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
         echo "sandbox/$TEMPLATE/package.json" > .sandbox-package-path.txt
-        source $BASH_ENV
         echo "Computed sandbox template: $TEMPLATE"
   - save_cache:
       key: sandbox-{{ .BuildNum }}-{{ checksum ".sandbox-package-path.txt" }}
       paths:
-        - sandbox/**
+        - sandbox
   - store_test_results:
       path: test-results

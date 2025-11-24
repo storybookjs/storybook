@@ -131,7 +131,7 @@ export const configureYarn2ForVerdaccio = async ({
     // We don't want to use the cache or we might get older copies of our built packages
     // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed
     // TODO publish unique versions instead
-    // `yarn config set enableGlobalCache false`,
+    `yarn config set enableGlobalCache false`,
     `yarn config set enableMirror false`,
     // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)
     `yarn config set npmRegistryServer "http://localhost:6001/"`,

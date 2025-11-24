@@ -33,7 +33,7 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
       ? `yarn playwright test --project=chromium --ui ${testFiles.join(' ')}`
       : `yarn playwright test ${testFiles.join(' ')}`;
 
-    await waitOn({ resources: [`http://localhost:${port}`], interval: 16, timeout: 20000 });
+    await waitOn({ resources: [`http://localhost:${port}`], interval: 16, timeout: 200000 });
     await exec(
       playwrightCommand,
       {

@@ -2,7 +2,7 @@
 // the repo to work properly. So we load it async in the task runner *after* those steps.
 import { existsSync } from 'node:fs';
 import { access, cp, lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
-import path, { dirname } from 'node:path';
+import { dirname } from 'node:path';
 
 import { isFunction } from 'es-toolkit/predicate';
 import JSON5 from 'json5';
@@ -28,7 +28,7 @@ import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
 import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
-import { filterExistsInRootDir } from '../utils/filterExistsInRootDir';
+import { filterExistsInCodeDir } from '../utils/filterExistsInRootDir';
 import { addPreviewAnnotations, readConfig } from '../utils/main-js';
 import { updatePackageScripts } from '../utils/package-json';
 import { findFirstPath } from '../utils/paths';
@@ -259,7 +259,7 @@ export const init: Task['run'] = async (
 function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
   // NOTE: the test regexp here will apply whether the path is symlink-preserved or otherwise
   const require = createRequire(import.meta.url);
-  const esbuildLoaderPath = require.resolve('../../node_modules/esbuild-loader');
+  const esbuildLoaderPath = require.resolve('../../code/node_modules/esbuild-loader');
   const webpackFinalCode = `
   (config) => ({
     ...config,
@@ -401,16 +401,9 @@ async function linkPackageStories(
   },
   variant?: string
 ) {
-  // strip leading code
-  packageDir = packageDir
-    .split(path.sep)
-    .filter((it, i) => !(it === 'code' && i === 0))
-    .join(path.sep);
-
   const storiesFolderName = variant ? getStoriesFolderWithVariant(variant) : 'stories';
   const source = join(CODE_DIRECTORY, packageDir, 'template', storiesFolderName);
 
-  console.log({ storiesFolderName, source, packageDir });
   // By default we link `stories` directories
   //   e.g '../../../code/lib/preview-api/template/stories' to 'template-stories/lib/preview-api'
   // if the directory <code>/lib/preview-api/template/stories exists
@@ -552,7 +545,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     if (lastBraceIndex !== -1) {
       // Insert before the last }
       const before = args.slice(0, lastBraceIndex).trimEnd();
-      console.log(before);
       const needsComma = before.endsWith('{') || before.endsWith(',') ? '' : ',';
       const after = args.slice(lastBraceIndex);
       return `storybookTest(${before}${needsComma}\n  tags: {\n    include: ['vitest']\n  }\n${after})`;
@@ -647,7 +639,7 @@ export const addStories: Task['run'] = async (
     // Link in the template/components/index.js from preview-api, the renderer and the addons
     const rendererPath = await workspacePath('renderer', template.expected.renderer);
     await ensureSymlinkOrCopy(
-      join(ROOT_DIRECTORY, rendererPath, 'template', 'components'),
+      join(CODE_DIRECTORY, rendererPath, 'template', 'components'),
       resolve(cwd, storiesPath, 'components')
     );
     addPreviewAnnotations(mainConfig, [`.${sep}${join(storiesPath, 'components')}`]);
@@ -663,7 +655,7 @@ export const addStories: Task['run'] = async (
 
     if (
       await pathExists(
-        resolve(ROOT_DIRECTORY, rendererPath, join('template', storiesVariantFolder))
+        resolve(CODE_DIRECTORY, rendererPath, join('template', storiesVariantFolder))
       )
     ) {
       await linkPackageStories(
@@ -686,7 +678,7 @@ export const addStories: Task['run'] = async (
     const frameworkPath = await workspacePath('frameworks', template.expected.framework);
 
     // Add stories for the framework if it has one. NOTE: these *do* need to be processed by the framework build system
-    if (await pathExists(resolve(ROOT_DIRECTORY, frameworkPath, join('template', 'stories')))) {
+    if (await pathExists(resolve(CODE_DIRECTORY, frameworkPath, join('template', 'stories')))) {
       await linkPackageStories(frameworkPath, {
         mainConfig,
         cwd,
@@ -698,7 +690,7 @@ export const addStories: Task['run'] = async (
 
     if (
       await pathExists(
-        resolve(ROOT_DIRECTORY, frameworkPath, join('template', storiesVariantFolder))
+        resolve(CODE_DIRECTORY, frameworkPath, join('template', storiesVariantFolder))
       )
     ) {
       await linkPackageStories(
@@ -774,7 +766,7 @@ export const addStories: Task['run'] = async (
   );
 
   if (isCoreRenderer) {
-    const existingStories = await filterExistsInRootDir(addonDirs, join('template', 'stories'));
+    const existingStories = await filterExistsInCodeDir(addonDirs, join('template', 'stories'));
     for (const packageDir of existingStories) {
       await linkPackageStories(packageDir, { mainConfig, cwd, disableDocs, skipMocking });
     }

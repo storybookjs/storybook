@@ -1,4 +1,6 @@
 // eslint-disable-next-line depend/ban-dependencies
+import path from 'node:path';
+
 import { execaCommand } from 'execa';
 import memoize from 'memoizerific';
 
@@ -6,7 +8,11 @@ import { ROOT_DIRECTORY } from './constants';
 
 export type Workspace = { name: string; location: string };
 
-export async function getWorkspaces(includePrivate = true) {
+/**
+ * Get the list of workspaces in the monorepo, excluding the scripts and code packages. And relative
+ * to the code directory.
+ */
+export async function getCodeWorkspaces(includePrivate = true) {
   const { stdout } = await execaCommand(
     `yarn workspaces list --json ${includePrivate ? '' : '--no-private'}`,
     {
@@ -14,12 +20,21 @@ export async function getWorkspaces(includePrivate = true) {
       shell: true,
     }
   );
-  return JSON.parse(`[${stdout.split('\n').join(',')}]`).filter(
-    ({ name }: any) => name !== '@storybook/scripts' && name !== '@storybook/super-root'
-  ) as Workspace[];
+  return (JSON.parse(`[${stdout.split('\n').join(',')}]`) as Workspace[])
+    .filter(({ name }: any) => name !== '@storybook/scripts' && name !== '@storybook/code')
+    .map((it) => {
+      return {
+        name: it.name,
+        // strip code from the location for backwards compatibility
+        location: it.location
+          .split(path.sep)
+          .filter((it, i) => !(it === 'code' && i === 0))
+          .join(path.sep),
+      };
+    }) as Workspace[];
 }
 
-const getWorkspacesMemo = memoize(1)(getWorkspaces);
+const getWorkspacesMemo = memoize(1)(getCodeWorkspaces);
 
 export async function workspacePath(type: string, packageName: string) {
   const workspaces = await getWorkspacesMemo();

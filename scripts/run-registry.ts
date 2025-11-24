@@ -14,7 +14,7 @@ import { parseConfigFile, runServer } from 'verdaccio';
 import { npmAuth } from './npm-auth';
 import { maxConcurrentTasks } from './utils/concurrency';
 import { PACKS_DIRECTORY, ROOT_DIRECTORY } from './utils/constants';
-import { getWorkspaces } from './utils/workspace';
+import { getCodeWorkspaces } from './utils/workspace';
 
 program
   .option('-O, --open', 'keep process open')
@@ -161,7 +161,7 @@ const publish = async (packages: { name: string; location: string }[], url: stri
         () =>
           new Promise((resolve, reject) => {
             const loggedLocation = location.replace(resolvePath(join(__dirname, '..')), '.');
-            const resolvedLocation = resolvePath('..', location);
+            const resolvedLocation = resolvePath('../code', location);
 
             logger.log(`🛫 publishing ${name} (${loggedLocation})`);
 
@@ -230,7 +230,7 @@ const run = async () => {
       outputDir: root,
     });
     try {
-      const [packages, version] = await Promise.all([getWorkspaces(false), currentVersion()]);
+      const [packages, version] = await Promise.all([getCodeWorkspaces(false), currentVersion()]);
       logger.log(
         `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
       );

@@ -10,7 +10,6 @@
  */
 
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { existsSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
@@ -32,11 +31,6 @@ async function run() {
   const DIR_CWD = process.cwd();
   const DIR_DIST = join(DIR_CWD, 'dist');
   const DIR_REL = relative(DIR_ROOT, DIR_CWD);
-
-  if (process.env.SKIP_COMPILE && existsSync(join(DIR_DIST))) {
-    console.log('Skipping re-compiling due to SKIP_COMPILE env var');
-    return;
-  }
 
   const isProduction =
     flags.includes('--prod') || flags.includes('--production') || flags.includes('--optimized');

@@ -14,7 +14,8 @@ export const dev: Task = {
   description: 'Run the sandbox in development mode',
   service: true,
   dependsOn: ['sandbox'],
-  async ready({ port }) {
+  async ready({ key }) {
+    const port = getPort({ selectedTask: 'dev', key });
     return (await detectFreePort(port)) !== port;
   },
   async run({ sandboxDir, key }, { dryRun, debug }) {

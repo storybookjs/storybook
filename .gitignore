@@ -65,5 +65,3 @@ code/core/report
 *storybook.log
 
 .junie
-
-node_modules/.yarn-state.yml

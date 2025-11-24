@@ -328,13 +328,13 @@ export const Search = React.memo<SearchProps>(function Search({
         openMenu,
         closeMenu,
         inputValue,
-        clearSelection,
         getInputProps,
         getItemProps,
         getLabelProps,
         getMenuProps,
         getRootProps,
         highlightedIndex,
+        reset,
       }) => {
         const input = inputValue ? inputValue.trim() : '';
         let results: DownshiftItem[] = input ? getResults(input) : [];
@@ -415,7 +415,10 @@ export const Search = React.memo<SearchProps>(function Search({
                       padding="small"
                       variant="ghost"
                       ariaLabel="Clear search"
-                      onClick={() => clearSelection()}
+                      onClick={() => {
+                        reset({ inputValue: '' });
+                        closeMenu();
+                      }}
                     >
                       <CloseIcon />
                     </Button>

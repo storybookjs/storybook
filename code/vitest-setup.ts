@@ -31,6 +31,7 @@ const ignoreList = [
     error.message.includes('<Pressable> child must forward its ref to a DOM element.'),
   (error: any) =>
     error.message.includes('<Focusable> child must forward its ref to a DOM element.'),
+  (error: any) => error.message.includes('Please ensure the tabIndex prop is passed through.'),
 ];
 
 const throwMessage = (type: any, message: any) => {

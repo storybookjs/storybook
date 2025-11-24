@@ -9,10 +9,10 @@ import {
   STORY_INDEX_INVALIDATED,
   UPDATE_GLOBALS,
 } from 'storybook/internal/core-events';
-import type {
-  API_IndexHash,
-  API_PreparedIndexEntry,
-  API_StoryEntry,
+import {
+  type API_IndexHash,
+  type API_PreparedIndexEntry,
+  type API_StoryEntry,
 } from 'storybook/internal/types';
 
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
@@ -534,7 +534,6 @@ export default {
           label: 'Install Vitest addon',
           afterCompletion: 'unavailable',
           available: () =>
-            globalThis.STORYBOOK_BUILDER === 'vite' &&
             !!globalThis.STORYBOOK_FRAMEWORK &&
             SUPPORTED_FRAMEWORKS.includes(globalThis.STORYBOOK_FRAMEWORK),
           criteria: '@storybook/addon-vitest registered in .storybook/main.js|ts',

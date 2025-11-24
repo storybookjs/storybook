@@ -1,4 +1,4 @@
-import { access, readFile, readdir, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 
 import { program } from 'commander';
 import picocolors from 'picocolors';
@@ -12,29 +12,11 @@ import {
   allTemplates,
   templatesByCadence,
 } from '../code/lib/cli-storybook/src/sandbox-templates';
-import { SANDBOX_DIRECTORY } from './utils/constants';
 import { esMain } from './utils/esmain';
-
-const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 
 type Template = Pick<TTemplate, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
 export type TemplateKey = keyof typeof allTemplates;
 export type Templates = Record<TemplateKey, Template>;
-
-async function getDirectories(source: string) {
-  return (await readdir(source, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
-}
-
-async function pathExists(path: string) {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 function isTaskSkipped(template: Template, script: string): boolean {
   return (

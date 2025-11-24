@@ -65,7 +65,8 @@ const ListboxHoverItem = styled(ListboxItem)<{ targetId: string }>(({ targetId }
     opacity: 1,
     '@supports (interpolate-size: allow-keywords)': {
       interpolateSize: 'allow-keywords',
-      transition: 'all var(--transition-duration, 0.2s)',
+      transitionProperty: 'inline-size, margin-left, opacity, padding-inline',
+      transitionDuration: 'var(--transition-duration, 0.2s)',
     },
   },
   [`&:not(:hover, :has(:focus-visible)) [data-target-id="${targetId}"]`]: {
@@ -76,9 +77,16 @@ const ListboxHoverItem = styled(ListboxItem)<{ targetId: string }>(({ targetId }
   },
 }));
 
+const StyledButton = styled(Button)({
+  '&:focus-visible': {
+    // Prevent focus outline from being cut off by overflow: hidden
+    outlineOffset: -2,
+  },
+});
+
 const ListboxButton = forwardRef<HTMLButtonElement, ComponentProps<typeof Button>>(
   function ListboxButton({ padding = 'small', size = 'medium', variant = 'ghost', ...props }, ref) {
-    return <Button {...props} variant={variant} padding={padding} size={size} ref={ref} />;
+    return <StyledButton {...props} variant={variant} padding={padding} size={size} ref={ref} />;
   }
 );
 

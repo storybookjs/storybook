@@ -154,15 +154,47 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
 Button.displayName = 'Button';
 
+// This is just an example of structured hierarchy.
+// I would expect our CSS custom prop names to follow suit.
+// For example, using the below structure:
+// color: var( --Button-default-fgColor-rest );
+const exampleTokenStructure = {
+  default: {
+    fgColor: {
+      rest: 'color',
+      hover: 'color',
+      active: 'color',
+      selected: 'color',
+      disabled: 'color',
+    },
+    bgColor: {},
+    borderColor: {},
+    // do we separate font stuff?
+    fontSize: {},
+    fontWeight: {},
+    // sizes?
+  },
+  outline: {},
+  danger: {},
+  warning: {},
+  accent: {},
+  ghost: {},
+};
+
+// This whole set of styles needs a mega refactor
 const StyledButton = styled('button', {
   shouldForwardProp: (prop) => isPropValid(prop),
 })<{
+  // Why are size AND padding defined?
   size?: 'small' | 'medium';
   padding?: 'small' | 'medium' | 'none';
+  // Need to rename variants
   variant?: 'outline' | 'solid' | 'ghost';
   active?: boolean;
   disabled?: boolean;
+  // What is this for?
   readOnly?: boolean;
+  // Do we need separate props for animation and animating?
   animating?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
 }>(
@@ -177,6 +209,23 @@ const StyledButton = styled('button', {
     animation = 'none',
     padding,
   }) => ({
+    // Create CSS custom props for reuse - feels messy initially because tokens not using convert.
+    '--Button-fgColor-default':
+      theme.base === 'dark'
+        ? theme.tokens.dark.fgColor.default
+        : theme.tokens.light.fgColor.default,
+    '--Button-fgColor-ghost':
+      theme.base === 'dark' ? theme.tokens.dark.fgColor.mute : theme.tokens.light.fgColor.mute,
+    '--Button-fgColor-accent': '#ffffff', // need to be able to handle this
+    '--Button-bgColor-default':
+      theme.base === 'dark'
+        ? theme.tokens.dark.bgColor.default
+        : theme.tokens.light.bgColor.default,
+    '--Button-bgColor-ghost': 'transparent',
+    '--Button-bgColor-accent':
+      theme.base === 'dark' ? theme.tokens.dark.bgColor.accent : theme.tokens.light.bgColor.accent,
+    '--Button-fontSize-medium': `${theme.typography.size.s1}px`,
+
     border: 0,
     cursor: readOnly ? 'inherit' : disabled ? 'not-allowed' : 'pointer',
     display: 'inline-flex',
@@ -202,6 +251,7 @@ const StyledButton = styled('button', {
       }
       return 0;
     })(),
+    // fixed heights are bad
     height: size === 'small' ? '28px' : '32px',
     position: 'relative',
     textAlign: 'center',
@@ -211,44 +261,33 @@ const StyledButton = styled('button', {
     transitionTimingFunction: 'ease-out',
     verticalAlign: 'top',
     whiteSpace: 'nowrap',
+    // needed?
     userSelect: 'none',
     opacity: disabled && !readOnly ? 0.5 : 1,
     margin: 0,
-    fontSize: `${theme.typography.size.s1}px`,
+    fontSize: 'var( --Button-fontSize-medium )',
     fontWeight: theme.typography.weight.bold,
+    // Too restrictive probably
     lineHeight: '1',
     background: (() => {
-      if (variant === 'solid') {
-        return theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary);
+      switch (variant) {
+        case 'solid':
+          return 'var( --Button-bgColor-accent )';
+        case 'ghost':
+          return 'var( --Button-bgColor-ghost )';
+        default:
+          return 'var( --Button-bgColor-default )';
       }
-
-      if (variant === 'outline') {
-        return theme.button.background;
-      }
-
-      if (variant === 'ghost' && active) {
-        return transparentize(0.93, theme.barSelectedColor);
-      }
-
-      return 'transparent';
     })(),
     color: (() => {
-      if (variant === 'solid') {
-        return theme.color.lightest;
+      switch (variant) {
+        case 'solid':
+          return 'var( --Button-fgColor-accent )';
+        case 'ghost':
+          return 'var( --Button-fgColor-ghost )';
+        default:
+          return 'var( --Button-fgColor-default )';
       }
-
-      if (variant === 'outline') {
-        return theme.input.color;
-      }
-
-      if (variant === 'ghost' && active) {
-        return theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary;
-      }
-
-      if (variant === 'ghost') {
-        return theme.textMutedColor;
-      }
-      return theme.input.color;
     })(),
     boxShadow: variant === 'outline' ? `${theme.button.border} 0 0 0 1px inset` : 'none',
     borderRadius: theme.input.borderRadius,

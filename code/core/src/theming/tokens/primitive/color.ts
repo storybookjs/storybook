@@ -7,7 +7,7 @@ const colors = {
   },
   blue: {
     hue: accent,
-    saturation: 54,
+    saturation: 100,
   },
   purple: {
     hue: 271,

@@ -30,7 +30,10 @@ const CardOutline = styled.div<{
   animation?: 'none' | 'rainbow' | 'spin';
   color?: keyof typeof color;
 }>(({ animation = 'none', color, theme }) => ({
-  '--Card-bgColor-default': theme.tokens.light.bgColor.default,
+  // Need a better way to do this, but this is also adequate in the mean time.
+  // Sometims simplicity is nice.
+  '--Card-bgColor-default':
+    theme.base === 'dark' ? theme.tokens.dark.bgColor.default : theme.tokens.light.bgColor.default,
   '--Card-borderRadius': theme.appBorderRadius + 'px',
 
   backgroundColor: 'var( --Card-bgColor-default )',

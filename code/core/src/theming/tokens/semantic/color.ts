@@ -8,6 +8,7 @@ interface FgColor {
   positive: string;
   warning: string;
   negative: string;
+  // do we also need a white and black color?
 }
 
 interface BgColor {
@@ -77,8 +78,8 @@ export const theme: Theme = {
       negative: color.red.l60,
     },
     bgColor: {
-      default: color.neutral.white,
-      mute: color.neutral.l12, // might need to add 98 as an option
+      default: color.neutral.l12,
+      mute: color.neutral.l12,
       accent: color.blue.l44,
       positive: 'unset',
       warning: 'unset',

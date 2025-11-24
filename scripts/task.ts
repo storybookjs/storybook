@@ -491,7 +491,6 @@ async function run() {
         },
       }
     );
-
     setUnready(startFromTask);
   }
 

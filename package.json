@@ -16,7 +16,6 @@
     ]
   },
   "scripts": {
-    "check": "nx run-many -t build,check,test,pretty-docs,lint,publish,run-registry -c production",
     "ci-tests": "cd code; yarn ci-tests",
     "get-report-message": "cd scripts; yarn get-report-message",
     "get-sandbox-dir": "cd scripts; yarn get-sandbox-dir",
@@ -24,6 +23,7 @@
     "i": "yarn --cwd scripts && yarn --cwd code",
     "knip": "cd code; yarn knip",
     "lint": "cd code; yarn lint",
+    "nx": "yarn nx",
     "pretty-docs": "cd scripts; yarn install >/dev/null; yarn docs:prettier:write",
     "start": "yarn task --task dev --template react-vite/default-ts --start-from=install",
     "svelte-ecosystem-ci:before-test": "node ./scripts/ecosystem-ci/before-test.js svelte-kit/skeleton-ts && cd ../storybook-sandboxes/svelte-kit-skeleton-ts && yarn install",

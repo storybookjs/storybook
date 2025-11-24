@@ -1,12 +1,12 @@
 import { exec } from 'node:child_process';
 import { access, mkdir, readFile, rm } from 'node:fs/promises';
-import type { Server } from 'node:http';
 import http from 'node:http';
+import type { Server } from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
 import detectFreePort from 'detect-port';
-import killPort from 'kill-port';
+import killProcessOnPort from 'kill-port';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
@@ -37,14 +37,35 @@ const pathExists = async (p: string) => {
   }
 };
 
+const isPortUsed = async (port: number) => (await detectFreePort(port)) !== port;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 type Servers = { close: () => Promise<void> };
 const startVerdaccio = async () => {
-  // no need to restart
+  // Kill Verdaccio related processes if they are already running
+  if (await isPortUsed(6001)) {
+    await killProcessOnPort(6001);
+
+    let attempts = 0;
+    while ((await isPortUsed(6002)) && attempts < 10) {
+      await sleep(1000);
+      attempts++;
+    }
+  }
+  if (await isPortUsed(6002)) {
+    await killProcessOnPort(6002);
+    let attempts = 0;
+    while ((await isPortUsed(6002)) && attempts < 10) {
+      await sleep(1000);
+      attempts++;
+    }
+  }
+
   const ready = {
     proxy: false,
     verdaccio: false,
   };
-  return (await Promise.race([
+  return Promise.race([
     new Promise((resolve) => {
       /**
        * The proxy server will sit in front of verdaccio and tunnel traffic to either verdaccio or
@@ -63,7 +84,6 @@ const startVerdaccio = async () => {
       const proxy = http.createServer((req, res) => {
         // if request contains "storybook" redirect to verdaccio
         if (req.url?.includes('storybook') || req.url?.includes('/sb') || req.method === 'PUT') {
-          logger.log(`🌿redirecting 6001 request to verdaccio on 6002`);
           res.writeHead(302, { Location: 'http://localhost:6002' + req.url });
           res.end();
         } else {
@@ -86,10 +106,6 @@ const startVerdaccio = async () => {
               proxy?.close(() => resolve());
             }),
           ]);
-
-          if ((await detectFreePort(6001)) !== 6001 || (await detectFreePort(6002)) !== 6002) {
-            logger.error(`❌ failed to close servers`);
-          }
         },
       };
 
@@ -124,7 +140,7 @@ const startVerdaccio = async () => {
         }
       }, 10000);
     }),
-  ])) as Promise<Servers>;
+  ]) as Promise<Servers>;
 };
 
 const currentVersion = async () => {
@@ -185,32 +201,10 @@ const publish = async (packages: { name: string; location: string }[], url: stri
 let servers: Servers | undefined;
 
 const run = async () => {
-  const npmRegistry = `http://localhost:6001`;
-  const verdaccioUrl = `http://localhost:6002`;
-  if ((await detectFreePort(6001)) !== 6001) {
-    console.log('killing port 6001');
-    await killPort(6001);
+  const verdaccioUrl = `http://localhost:6001`;
 
-    let attempts = 0;
-    while ((await detectFreePort(6001)) !== 6001 && attempts < 10) {
-      console.log(`killing port 6001 attempt ${attempts}`);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      attempts++;
-    }
-  }
-  if ((await detectFreePort(6002)) !== 6002) {
-    console.log('killing port 6002');
-    await killPort(6002);
-    let attempts = 0;
-    while ((await detectFreePort(6002)) !== 6002 && attempts < 10) {
-      console.log(`killing port 6002 attempt ${attempts}`);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      attempts++;
-    }
-  }
-  logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
-  servers = await startVerdaccio();
-  logger.log(`🌿 npm registry running on ${npmRegistry} and verdaccio running on ${verdaccioUrl}`);
+  logger.log(`📐 reading version of storybook`);
+  logger.log(`🚛 listing storybook packages`);
 
   if (opts.publish) {
     // when running e2e locally, clear cache to avoid EPUBLISHCONFLICT errors
@@ -219,41 +213,49 @@ const run = async () => {
       logger.log(`🗑 cleaning up cache`);
       await rm(verdaccioCache, { force: true, recursive: true });
     }
-    // Use npmAuth helper to authenticate to the local Verdaccio registry
-    // This will create a .npmrc file in the root directory
-    logger.log(`👤 add temp user to verdaccio`);
-    await npmAuth({
-      username: 'foo',
-      password: 's3cret',
-      email: 'test@test.com',
-      registry: 'http://localhost:6002',
-      outputDir: root,
-    });
+  }
+
+  logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
+
+  const all = await Promise.all([startVerdaccio(), getCodeWorkspaces(false), currentVersion()]);
+
+  const [, packages, version] = all;
+  servers = all[0];
+
+  logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
+
+  logger.log(`👤 add temp user to verdaccio`);
+  // Use npmAuth helper to authenticate to the local Verdaccio registry
+  // This will create a .npmrc file in the root directory
+  await npmAuth({
+    username: 'foo',
+    password: 's3cret',
+    email: 'test@test.com',
+    registry: 'http://localhost:6002',
+    outputDir: root,
+  });
+
+  logger.log(
+    `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
+  );
+
+  if (opts.publish) {
     try {
-      const [packages, version] = await Promise.all([getCodeWorkspaces(false), currentVersion()]);
-      logger.log(
-        `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
-      );
       await publish(packages, 'http://localhost:6002');
     } finally {
       await rm(join(root, '.npmrc'), { force: true });
     }
+  }
 
-    if (!opts.open) {
-      await servers?.close();
-      process.exit(0);
-    }
+  if (!opts.open) {
+    await servers.close();
+    process.exit(0);
   }
 };
 
 run().catch(async (e) => {
   logger.error(e);
-  await servers?.close();
+  await servers.close();
+  await rm(join(root, '.npmrc'), { force: true });
+  process.exit(1);
 });
-
-for (const sig of ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'SIGUSR1', 'SIGUSR2']) {
-  process.on(sig, async () => {
-    await servers?.close();
-    process.exit(0);
-  });
-}

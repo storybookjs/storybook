@@ -212,12 +212,12 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
             status={itemStatus}
             onClick={handlers.onOpen}
           >
-            <EllipsisIcon />
+            {MenuIcon}
           </FloatingStatusButton>
         </PopoverProvider>
       ) : null,
     };
-  }, [context, handlers, isOpen, shouldRender, links, topLinks, itemStatus]);
+  }, [context, handlers, isOpen, shouldRender, links, topLinks, itemStatus, MenuIcon]);
 };
 
 /**

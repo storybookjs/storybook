@@ -12,7 +12,8 @@ import * as find from 'empathic/find';
 import { coerce, minVersion, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { SupportedBuilder, SupportedFramework } from '../types';
+import { SupportedBuilder, type SupportedFramework } from '../types';
+import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants';
 
 type Result = {
   compatible: boolean;
@@ -38,17 +39,6 @@ export interface AddonVitestCompatibilityOptions {
 export class AddonVitestService {
   constructor(private readonly packageManager: JsPackageManager) {}
 
-  readonly supportedFrameworks: SupportedFramework[] = [
-    SupportedFramework.HTML_VITE,
-    SupportedFramework.NEXTJS_VITE,
-    SupportedFramework.PREACT_VITE,
-    SupportedFramework.REACT_NATIVE_WEB_VITE,
-    SupportedFramework.REACT_VITE,
-    SupportedFramework.SVELTE_VITE,
-    SupportedFramework.SVELTEKIT,
-    SupportedFramework.VUE3_VITE,
-    SupportedFramework.WEB_COMPONENTS_VITE,
-  ];
   /**
    * Collect all dependencies needed for @storybook/addon-vitest
    *
@@ -196,7 +186,7 @@ export class AddonVitestService {
     }
 
     // Check renderer/framework support
-    const isFrameworkSupported = this.supportedFrameworks.some(
+    const isFrameworkSupported = SUPPORTED_FRAMEWORKS.some(
       (framework) => options.framework === framework
     );
 

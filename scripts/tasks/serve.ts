@@ -32,7 +32,7 @@ export const serve: Task = {
           throw err;
         }
       });
-      await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16 });
+      await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16, timeout: 10000 });
     }
 
     return controller;

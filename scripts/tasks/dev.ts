@@ -33,10 +33,18 @@ export const dev: Task = {
         }
       });
       const [devPreviewResponsive, devManagerResponsive] = await Promise.all([
-        waitOn({ resources: [`http://localhost:${port}/iframe.html`], interval: 16 }).then(() => {
+        waitOn({
+          resources: [`http://localhost:${port}/iframe.html`],
+          interval: 16,
+          timeout: 10000,
+        }).then(() => {
           return now() - start;
         }),
-        waitOn({ resources: [`http://localhost:${port}/index.html`], interval: 16 }).then(() => {
+        waitOn({
+          resources: [`http://localhost:${port}/index.html`],
+          interval: 16,
+          timeout: 10000,
+        }).then(() => {
           return now() - start;
         }),
       ]);

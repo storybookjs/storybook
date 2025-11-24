@@ -25,7 +25,7 @@ export const testRunnerBuild: Task & { port: number } = {
       '--index-json',
     ];
 
-    await waitOn({ resources: [`http://localhost:${port}`], interval: 16 });
+    await waitOn({ resources: [`http://localhost:${port}`], interval: 16, timeout: 10000 });
 
     await exec(
       `yarn test-storybook ${flags.join(' ')}`,

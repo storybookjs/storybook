@@ -229,10 +229,10 @@ export class SbPage {
     await this.openTagsFilter();
 
     if (toggleExclusion) {
-      await this.page.getByLabel(new RegExp(`filter: ${type}`)).hover();
+      await this.page.getByLabel(new RegExp(`built-in filter: ${type}`)).hover();
       await this.page.getByLabel(new RegExp(`(Exclude|Include) built-in: ${type}`, 'i')).click();
     } else {
-      await this.page.getByLabel(new RegExp(`(Add|Remove) built-in filter: ${type}`)).click();
+      await this.page.getByLabel(new RegExp(`built-in filter: ${type}`)).click();
     }
   }
 

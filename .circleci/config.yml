@@ -38,6 +38,7 @@ executors:
         docker:
             - environment:
                 NODE_OPTIONS: --max_old_space_size=6144
+                SANDBOX_ROOT: ../storybook-sandboxes
               image: cimg/node:18.20.3-browsers
         parameters:
             class:
@@ -56,6 +57,7 @@ executors:
         docker:
             - environment:
                 NODE_OPTIONS: --max_old_space_size=6144
+                SANDBOX_ROOT: ../storybook-sandboxes
               image: cimg/node:22.15.0-browsers
         parameters:
             class:
@@ -74,6 +76,7 @@ executors:
         docker:
             - environment:
                 NODE_OPTIONS: --max_old_space_size=6144
+                SANDBOX_ROOT: ../storybook-sandboxes
               image: cimg/node:22.15.0
         parameters:
             class:
@@ -92,6 +95,7 @@ executors:
         docker:
             - environment:
                 NODE_OPTIONS: --max_old_space_size=6144
+                SANDBOX_ROOT: ../storybook-sandboxes
               image: mcr.microsoft.com/playwright:v1.52.0-noble
         parameters:
             class:

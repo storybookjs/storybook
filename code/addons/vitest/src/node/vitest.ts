@@ -37,7 +37,7 @@ const channel: Channel = new Channel({
 
 const store = UniversalStore.create<StoreState, StoreEvent>(storeOptions);
 
-new TestManager({
+const testManager = new TestManager({
   store,
   componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
   a11yStatusStore: getStatusStore(STATUS_TYPE_ID_A11Y),
@@ -50,8 +50,10 @@ new TestManager({
   } as any,
 });
 
-const exit = (code = 0) => {
+const exit = async (code = 0) => {
   channel?.removeAllListeners();
+  // Close Vitest instance to clean up file watchers
+  await testManager?.vitestManager?.vitest?.close();
   process.exit(code);
 };
 

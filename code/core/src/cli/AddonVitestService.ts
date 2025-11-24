@@ -12,19 +12,8 @@ import * as find from 'empathic/find';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { SupportedBuilder, SupportedFramework } from '../types';
-
-export const SUPPORTED_FRAMEWORKS: readonly SupportedFramework[] = [
-  SupportedFramework.HTML_VITE,
-  SupportedFramework.NEXTJS_VITE,
-  SupportedFramework.PREACT_VITE,
-  SupportedFramework.REACT_NATIVE_WEB_VITE,
-  SupportedFramework.REACT_VITE,
-  SupportedFramework.SVELTE_VITE,
-  SupportedFramework.SVELTEKIT,
-  SupportedFramework.VUE3_VITE,
-  SupportedFramework.WEB_COMPONENTS_VITE,
-];
+import { SupportedBuilder, type SupportedFramework } from '../types';
+import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants';
 
 type Result = {
   compatible: boolean;

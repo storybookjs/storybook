@@ -27,7 +27,7 @@ import {
   ADDON_ID as ADDON_TEST_ID,
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/vitest/src/constants';
-import { SUPPORTED_FRAMEWORKS } from '../../cli';
+import { SUPPORTED_FRAMEWORKS } from '../../cli/AddonVitestService.constants';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
 import type { initialState } from './checklistData.state';

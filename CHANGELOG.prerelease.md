@@ -1,3 +1,185 @@
+## 10.1.0-beta.2
+
+- Automigration: Update description and link for addon-a11y-addon-test - [#33133](https://github.com/storybookjs/storybook/pull/33133), thanks @valentinpalkovic!
+- CLI: Fix Vitest v3 installs and refactor AddonVitestService; align create‑storybook usage - [#33131](https://github.com/storybookjs/storybook/pull/33131), thanks @valentinpalkovic!
+- CLI: Update postAction hook to use command parameter for logfile retrieval - [#33137](https://github.com/storybookjs/storybook/pull/33137), thanks @valentinpalkovic!
+- Core: Fix `getDocsUrl` for canary versions - [#33128](https://github.com/storybookjs/storybook/pull/33128), thanks @ghengeveld!
+
+## 10.1.0-beta.1
+
+- Addon-Vitest: Ensure Storybook starts correctly across platforms by using shell in spawn - [#33116](https://github.com/storybookjs/storybook/pull/33116), thanks @valentinpalkovic!
+- Build: Fix async telemetry event sending - [#33115](https://github.com/storybookjs/storybook/pull/33115), thanks @valentinpalkovic!
+- CLI: Fix access to getOptionValue in postAction hook - [#33119](https://github.com/storybookjs/storybook/pull/33119), thanks @valentinpalkovic!
+- CLI: Standardize debug log messages across the application - [#33123](https://github.com/storybookjs/storybook/pull/33123), thanks @valentinpalkovic!
+- CLI: Update compatibility guidance link in summary message - [#33117](https://github.com/storybookjs/storybook/pull/33117), thanks @valentinpalkovic!
+- Core: Update `getDocsUrl` to add a default `ref` param and set `guide` as ref for links in the Guide - [#33111](https://github.com/storybookjs/storybook/pull/33111), thanks @ghengeveld!
+- Guide: Hide items for which their required feature is disabled (controls, viewport, interactions) - [#33113](https://github.com/storybookjs/storybook/pull/33113), thanks @ghengeveld!
+
+## 10.1.0-beta.0
+
+
+## 10.1.0-alpha.14
+
+- Angular: Add support for v21 - [#33098](https://github.com/storybookjs/storybook/pull/33098), thanks @valentinpalkovic!
+- Build: Add Rsbuild-based sandboxes - [#33039](https://github.com/storybookjs/storybook/pull/33039), thanks @valentinpalkovic!
+- CLI: Change yarn package manager value to yarn1 - [#33099](https://github.com/storybookjs/storybook/pull/33099), thanks @valentinpalkovic!
+- Onboarding: Guided tour checklist - [#32795](https://github.com/storybookjs/storybook/pull/32795), thanks @ghengeveld!
+
+## 10.1.0-alpha.13
+
+- CLI: Modernize Storybook CLI with new init workflow, Clack UI, and Generator System - [#32717](https://github.com/storybookjs/storybook/pull/32717), thanks @valentinpalkovic!
+
+## 10.1.0-alpha.12
+
+- Build: Update dependencies in yarn.lock and clean up comments - [#33089](https://github.com/storybookjs/storybook/pull/33089), thanks @ndelangen!
+- CLI: In csf-factories codemod only remove types which are unused - [#33020](https://github.com/storybookjs/storybook/pull/33020), thanks @yannbf!
+- React: Improve import rewriting when tsconfig paths are used - [#33072](https://github.com/storybookjs/storybook/pull/33072), thanks @kasperpeulen!
+
+## 10.1.0-alpha.11
+
+- Maintenance: Enable syntax minification for dead code elimination - [#33001](https://github.com/storybookjs/storybook/pull/33001), thanks @mrginglymus!
+- React Native Web: Fix react native resuables and nativewind - [#33056](https://github.com/storybookjs/storybook/pull/33056), thanks @dannyhw!
+- UI: Add VRTs to FileSearchModal in light theme - [#33022](https://github.com/storybookjs/storybook/pull/33022), thanks @Sidnioulz!
+- WebComponents: Fix `custom-elements.json` not being loaded - [#33045](https://github.com/storybookjs/storybook/pull/33045), thanks @ndelangen!
+
+## 10.1.0-alpha.10
+
+- Core: Significantly improve Storybook's own accessibility - [#32458](https://github.com/storybookjs/storybook/pull/32458), thanks @Sidnioulz!
+
+## 10.1.0-alpha.9
+
+- Core: Improve globbing using dynamic CWD - [#32990](https://github.com/storybookjs/storybook/pull/32990), thanks @ia319!
+
+## 10.1.0-alpha.8
+
+- ESLint: Only apply csf-strict rules on stories files - [#31963](https://github.com/storybookjs/storybook/pull/31963), thanks @cylewaitforit!
+- Middleware: Prepend `file://` to middleware `import` for Windows support - [#32955](https://github.com/storybookjs/storybook/pull/32955), thanks @ndelangen!
+- Next.js: Update SWC loader to support new wasm detection - [#33003](https://github.com/storybookjs/storybook/pull/33003), thanks @yannbf!
+- React Native Web: Update vite-plugin-rnw for overall improvements - [#32991](https://github.com/storybookjs/storybook/pull/32991), thanks @dannyhw!
+
+## 10.1.0-alpha.7
+
+- CSF: Fix export interface declaration for NextPreview - [#32914](https://github.com/storybookjs/storybook/pull/32914), thanks @icopp!
+- Controls: Add range validation in Number Control - [#32539](https://github.com/storybookjs/storybook/pull/32539), thanks @ia319!
+- Fix: Export interface declaration for ReactMeta - [#32915](https://github.com/storybookjs/storybook/pull/32915), thanks @icopp!
+- React: Improve error messages in component manifest - [#32954](https://github.com/storybookjs/storybook/pull/32954), thanks @kasperpeulen!
+- Vitest Addon: Add support for Preact - [#32948](https://github.com/storybookjs/storybook/pull/32948), thanks @yannbf!
+
+## 10.1.0-alpha.6
+
+- Core: Add reentry guard to focus patch - [#32655](https://github.com/storybookjs/storybook/pull/32655), thanks @ia319!
+- Nextjs Vite: Update internal plugin to support `svgr` use cases - [#32957](https://github.com/storybookjs/storybook/pull/32957), thanks @yannbf!
+
+## 10.1.0-alpha.5
+
+- CLI: Fix issue with running Storybook after being initialized - [#32929](https://github.com/storybookjs/storybook/pull/32929), thanks @yannbf!
+- CRA: Fix `module` not defined in ESM - [#32940](https://github.com/storybookjs/storybook/pull/32940), thanks @ndelangen!
+- React: Improve automatic component, automatic imports, support barrel files and enhance story filtering - [#32939](https://github.com/storybookjs/storybook/pull/32939), thanks @kasperpeulen!
+- Theming: Set `themes.normal` according to user preference and export `getPreferredColorScheme` - [#28721](https://github.com/storybookjs/storybook/pull/28721), thanks @elisezhg!
+
+## 10.1.0-alpha.4
+
+- Core: Better handling for TypeScript satisfies/as syntaxes - [#32891](https://github.com/storybookjs/storybook/pull/32891), thanks @yannbf!
+- Core: Fix wrong import to fix Yarn PnP support - [#32928](https://github.com/storybookjs/storybook/pull/32928), thanks @yannbf!
+- ESlint: Update `@storybook/experimental-nextjs-vite` in `no-renderer-packages` rule - [#32909](https://github.com/storybookjs/storybook/pull/32909), thanks @ndelangen!
+- React Native: Update withStorybook setup instructions - [#32919](https://github.com/storybookjs/storybook/pull/32919), thanks @dannyhw!
+- React: Change examples to stories in manifests and show correct examples and prop types - [#32908](https://github.com/storybookjs/storybook/pull/32908), thanks @kasperpeulen!
+
+## 10.1.0-alpha.3
+
+- React: Add manifests/components.html page - [#32905](https://github.com/storybookjs/storybook/pull/32905), thanks @kasperpeulen!
+
+## 10.1.0-alpha.2
+
+- A11y: Add aria-selected attribute to tab buttons - [#32656](https://github.com/storybookjs/storybook/pull/32656), thanks @Nischit-Ekbote!
+- React: Experimental code examples - [#32813](https://github.com/storybookjs/storybook/pull/32813), thanks @kasperpeulen!
+- React: Implement manifests/component.json for React - [#32751](https://github.com/storybookjs/storybook/pull/32751), thanks @kasperpeulen!
+- React: Improve error handling of component manifest generation - [#32855](https://github.com/storybookjs/storybook/pull/32855), thanks @kasperpeulen!
+
+## 10.1.0-alpha.1
+
+- CLI: Fix glob string formatting in csf-factories codemod - [#32880](https://github.com/storybookjs/storybook/pull/32880), thanks @yannbf!
+- Core: Improve file path resolution on Windows - [#32893](https://github.com/storybookjs/storybook/pull/32893), thanks @yannbf!
+- Presets: Fix incorrect imports - [#32875](https://github.com/storybookjs/storybook/pull/32875), thanks @ndelangen!
+- Vite: Update `optimizeViteDeps` for addon-docs and addon-vitest - [#32881](https://github.com/storybookjs/storybook/pull/32881), thanks @ndelangen!
+
+## 10.1.0-alpha.0
+
+
+## 10.0.0-rc.4
+
+- Core: Add `experimental_devServer` preset - [#32862](https://github.com/storybookjs/storybook/pull/32862), thanks @yannbf!
+- Core: Fix stepping back through story interactions panel - [#32793](https://github.com/storybookjs/storybook/pull/32793), thanks @ia319!
+- Core: Join framework preset path with slash - [#32838](https://github.com/storybookjs/storybook/pull/32838), thanks @brandonroberts!
+- Telemetry: Fix preview-first-load event - [#32859](https://github.com/storybookjs/storybook/pull/32859), thanks @shilman!
+
+## 10.0.0-rc.3
+
+- A11y: Persist tab/highlight across docs navigation - [#32762](https://github.com/storybookjs/storybook/pull/32762), thanks @404Dealer!
+- Addon Vitest: Fix incorrect file modifications during setup - [#32844](https://github.com/storybookjs/storybook/pull/32844), thanks @yannbf!
+- Core: Enhance warning for Testing Library's `screen` usage in docs mode - [#32851](https://github.com/storybookjs/storybook/pull/32851), thanks @yannbf!
+- Core: Mark pnp support as deprecated - [#32645](https://github.com/storybookjs/storybook/pull/32645), thanks @ndelangen!
+
+## 10.0.0-rc.2
+
+- CLI: Fix Nextjs project creation in empty directories - [#32828](https://github.com/storybookjs/storybook/pull/32828), thanks @yannbf!
+- CLI: Switch over to modern-tar - [#32763](https://github.com/storybookjs/storybook/pull/32763), thanks @ayuhito!
+- Core: Add parameter typings for addon-pseudo-state - [#32384](https://github.com/storybookjs/storybook/pull/32384), thanks @mrginglymus!
+- Core: Dedupe aria-query and @testing-library/dom packages - [#32801](https://github.com/storybookjs/storybook/pull/32801), thanks @mrginglymus!
+- Core: Improve es-toolkit usage for better tree-shaking - [#32787](https://github.com/storybookjs/storybook/pull/32787), thanks @mrginglymus!
+- Core: Replace es-toolkit compat imports with non-compat - [#32837](https://github.com/storybookjs/storybook/pull/32837), thanks @mrginglymus!
+- React: Simplify version detection - [#32802](https://github.com/storybookjs/storybook/pull/32802), thanks @mrginglymus!
+- Vite: Optimize @storybook/addon-docs/blocks dependency - [#32798](https://github.com/storybookjs/storybook/pull/32798), thanks @mrginglymus!
+
+## 10.0.0-rc.1
+
+- Addon-Vitest: Support Vitest 4 - [#32819](https://github.com/storybookjs/storybook/pull/32819), thanks @yannbf!
+- CSF: Fix `play-fn` tag for methods - [#32695](https://github.com/storybookjs/storybook/pull/32695), thanks @shilman!
+- Core: Add `preview-first-load` telemetry - [#32770](https://github.com/storybookjs/storybook/pull/32770), thanks @shilman!
+- Dependencies: Update `vite-plugin-storybook-nextjs` - [#32821](https://github.com/storybookjs/storybook/pull/32821), thanks @ndelangen!
+- Maintenance: Fix bundle size bloat caused by `SyntaxHighlighter` (`createElement`) - [#32800](https://github.com/storybookjs/storybook/pull/32800), thanks @mrginglymus!
+- Nextjs: Add Next v16 support - [#32791](https://github.com/storybookjs/storybook/pull/32791), thanks @yannbf!
+- UI: Improve syntax-highlighter bundling - [#32776](https://github.com/storybookjs/storybook/pull/32776), thanks @mrginglymus!
+
+## 10.0.0-rc.0
+
+- A11Y: Bugfix missing `manager.js` entry-file - [#32780](https://github.com/storybookjs/storybook/pull/32780), thanks @ndelangen!
+- Addon Vitest: Support modifying mergeConfig on addon setup - [#32753](https://github.com/storybookjs/storybook/pull/32753), thanks @yannbf!
+- CLI: Change message in downgrade-blocker - [#32745](https://github.com/storybookjs/storybook/pull/32745), thanks @ndelangen!
+
+## 10.0.0-beta.13
+
+- CLI: CSF factories codemod - support annotations in npx context - [#32741](https://github.com/storybookjs/storybook/pull/32741), thanks @yannbf!
+- Move: Addon jest into it's own repository - [#32646](https://github.com/storybookjs/storybook/pull/32646), thanks @ndelangen!
+- Upgrade: Enhance ESM compatibility checks and banner generation - [#32694](https://github.com/storybookjs/storybook/pull/32694), thanks @ndelangen!
+
+## 10.0.0-beta.12
+
+- CLI: Avoid mixed CSF in files with unconventional stories - [#32716](https://github.com/storybookjs/storybook/pull/32716), thanks @yannbf!
+- CLI: Fix CSF factories addon syncing in storybook add command - [#32728](https://github.com/storybookjs/storybook/pull/32728), thanks @yannbf!
+- CLI: Make relative imports default in csf-factories codemod - [#32610](https://github.com/storybookjs/storybook/pull/32610), thanks @copilot-swe-agent!
+- Core: Prevent navigating to hidden (filtered) item - [#32715](https://github.com/storybookjs/storybook/pull/32715), thanks @ghengeveld!
+- Fix: Allow proceeding without selecting automigrations in upgrade command - [#32597](https://github.com/storybookjs/storybook/pull/32597), thanks @copilot-swe-agent!
+
+## 10.0.0-beta.11
+
+- Automigration: Improve the viewport/backgrounds automigration - [#32619](https://github.com/storybookjs/storybook/pull/32619), thanks @valentinpalkovic!
+- CSF: Enhance config-to-csf-factory to support type wrappers - [#32543](https://github.com/storybookjs/storybook/pull/32543), thanks @yannbf!
+- Core: Ensure valid QR code URL - [#32661](https://github.com/storybookjs/storybook/pull/32661), thanks @ghengeveld!
+- Mocking: Fix `sb.mock` usage in Storybook's deployed in subpaths - [#32678](https://github.com/storybookjs/storybook/pull/32678), thanks @valentinpalkovic!
+- NextJS-Vite: Automatically fix bad PostCSS configuration - [#32691](https://github.com/storybookjs/storybook/pull/32691), thanks @ndelangen!
+- Nextjs: Fix Nextjs version detection with prereleases - [#32724](https://github.com/storybookjs/storybook/pull/32724), thanks @yannbf!
+- Presets: Support extensionless imports in TS-based presets - [#32641](https://github.com/storybookjs/storybook/pull/32641), thanks @JReinhold!
+- React Native Web: Fix REACT_NATIVE_AND_RNW should detect vite builder - [#32718](https://github.com/storybookjs/storybook/pull/32718), thanks @dannyhw!
+
+## 10.0.0-beta.10
+
+- Core: Make `subtype` an optional property on an index input - [#32602](https://github.com/storybookjs/storybook/pull/32602), thanks @JReinhold!
+- Core: Various QA fixes - [#32629](https://github.com/storybookjs/storybook/pull/32629), thanks @ghengeveld!
+- Fix: Incorrect URLS for the upgrade command - [#32624](https://github.com/storybookjs/storybook/pull/32624), thanks @jonniebigodes!
+- Onboarding: Prevent confetti overlay from intercepting pointer events - [#32660](https://github.com/storybookjs/storybook/pull/32660), thanks @ghengeveld!
+- Telemetry: Add metadata for react routers - [#32615](https://github.com/storybookjs/storybook/pull/32615), thanks @shilman!
+
 ## 10.0.0-beta.9
 
 - Automigrations: Add automigration for viewport and backgrounds - [#31614](https://github.com/storybookjs/storybook/pull/31614), thanks @valentinpalkovic!

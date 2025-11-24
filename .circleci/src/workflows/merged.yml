@@ -21,6 +21,9 @@ jobs:
   - unit-tests:
       requires:
         - build
+  - stories-tests:
+      requires:
+        - build
   - script-checks:
       requires:
         - build
@@ -31,27 +34,31 @@ jobs:
       requires:
         - unit-tests
   - create-sandboxes:
-      parallelism: 17
+      parallelism: 21
       requires:
         - build
   - chromatic-sandboxes:
-      parallelism: 14
+      parallelism: 18
       requires:
         - create-sandboxes
   - e2e-production:
-      parallelism: 12
+      parallelism: 6
       requires:
         - create-sandboxes
   - e2e-dev:
-      parallelism: 1
+      parallelism: 14
       requires:
         - create-sandboxes
   - test-runner-production:
-      parallelism: 12
+      parallelism: 16
       requires:
         - create-sandboxes
   - vitest-integration:
-      parallelism: 5
+      parallelism: 7
+      requires:
+        - create-sandboxes
+  - check-sandboxes:
+      parallelism: 1
       requires:
         - create-sandboxes
   - test-portable-stories:
@@ -60,12 +67,30 @@ jobs:
       matrix:
         parameters:
           directory: ['react', 'vue3', 'nextjs', 'svelte']
+  - test-yarn-pnp:
+      requires:
+        - build
   - e2e-ui:
+      requires:
+        - build
+  - e2e-ui-vitest-3:
       requires:
         - build
   - test-init-features:
       requires:
         - build
+  - test-init-empty-windows:
+      requires:
+        - build
+      matrix:
+        parameters:
+          packageManager:
+            - 'npm'
+          template:
+            - 'react-vite-ts'
+            - 'nextjs-ts'
+            - 'vue-vite-ts'
+            - 'lit-vite-ts'
 # TODO: don't forget to reenable this
 #      - bench-sandboxes:
 #          parallelism: 5

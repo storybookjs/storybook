@@ -1,11 +1,17 @@
-import { baseGenerator } from '../baseGenerator';
-import type { Generator } from '../types';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedRenderer } from 'storybook/internal/types';
 
-const generator: Generator = async (packageManager, npmOptions, options) => {
-  await baseGenerator(packageManager, npmOptions, options, 'svelte', {
-    extensions: ['js', 'ts', 'svelte'],
-    extraAddons: ['@storybook/addon-svelte-csf'],
-  });
-};
+import { defineGeneratorModule } from '../modules/GeneratorModule';
 
-export default generator;
+export default defineGeneratorModule({
+  metadata: {
+    projectType: ProjectType.SVELTE,
+    renderer: SupportedRenderer.SVELTE,
+  },
+  configure: async () => {
+    return {
+      extensions: ['js', 'ts', 'svelte'],
+      extraAddons: ['@storybook/addon-svelte-csf'],
+    };
+  },
+});

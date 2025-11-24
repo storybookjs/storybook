@@ -1,6 +1,6 @@
 {
   "name": "sb",
-  "version": "10.0.0-beta.9",
+  "version": "10.1.0-beta.2",
   "description": "Storybook CLI: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -31,5 +31,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

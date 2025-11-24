@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { useAddonState } from 'storybook/manager-api';
-import { AddonPanel, IconButton } from 'storybook/internal/components';
+import { AddonPanel, Button, ToggleButton } from 'storybook/internal/components';
 import { LightningIcon } from '@storybook/icons';
 
 export const Panel = () => {
@@ -10,7 +10,7 @@ export const Panel = () => {
 
   return (
     <AddonPanel key="custom-panel" active="true">
-      <Button onClick={() => setState('Example')}>
+      <Button ariaLabel={false} onClick={() => setState('Example')}>
         Click to update Storybook's internal state
       </Button>
     </AddonPanel>
@@ -20,14 +20,16 @@ export const Tool = () => {
   const [state, setState] = useAddonState('addon-unique-identifier', 'initial state');
 
   return (
-    <IconButton
+    <ToggleButton
+      padding="small"
+      variant="ghost"
       key="custom-toolbar"
-      active="true"
-      title="Enable my addon"
+      pressed="true"
+      ariaLabel="Enable my addon"
       onClick={() => setState('Example')}
     >
       <LightningIcon />
-    </IconButton>
+    </ToggleButton>
   );
 };
 ```

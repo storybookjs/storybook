@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { resolveModulePath } from 'exsolve';
+
 import { validateFrameworkName } from './validate-config';
+
+// mock exsolve to spy
+vi.mock('exsolve', { spy: true });
 
 describe('validateFrameworkName', () => {
   afterEach(() => {
@@ -20,15 +25,20 @@ describe('validateFrameworkName', () => {
   });
 
   it('should not throw if framework is unknown (community) but can be resolved', () => {
-    // mock require.resolve to return a value
-    vi.spyOn(require, 'resolve').mockReturnValue('some-community-framework');
-    expect(() => validateFrameworkName('some-community-framework')).toThrow();
+    vi.mocked(resolveModulePath).mockImplementation(() => {});
+
+    expect(() => validateFrameworkName('some-community-framework')).not.toThrow();
+  });
+
+  it('should not throw if scoped framework is unknown (community) but can be resolved', () => {
+    vi.mocked(resolveModulePath).mockImplementation(() => {});
+
+    expect(() => validateFrameworkName('@some-community/framework')).not.toThrow();
   });
 
   it('should throw if framework is unknown and cannot be resolved', () => {
-    // mock require.resolve to fail
-    vi.spyOn(require, 'resolve').mockImplementation(() => {
-      throw new Error('Cannot resolve');
+    vi.mocked(resolveModulePath).mockImplementation(() => {
+      throw new Error('cannot resolve');
     });
 
     expect(() => validateFrameworkName('foo')).toThrow();

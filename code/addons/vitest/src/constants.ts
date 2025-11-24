@@ -10,25 +10,13 @@ export {
 
 export const ADDON_ID = 'storybook/test';
 export const TEST_PROVIDER_ID = `${ADDON_ID}/test-provider`;
-export const STORYBOOK_ADDON_TEST_CHANNEL = 'STORYBOOK_ADDON_TEST_CHANNEL';
+export const STORYBOOK_ADDON_TEST_CHANNEL = `${ADDON_ID}/channel`;
 
 export const TUTORIAL_VIDEO_LINK = 'https://youtu.be/Waht9qq7AoA';
 export const DOCUMENTATION_LINK = 'writing-tests/integrations/vitest-addon';
 export const DOCUMENTATION_FATAL_ERROR_LINK = `${DOCUMENTATION_LINK}#what-happens-if-vitest-itself-has-an-error`;
 
 export const COVERAGE_DIRECTORY = 'coverage';
-
-export const SUPPORTED_FRAMEWORKS = [
-  '@storybook/nextjs',
-  '@storybook/nextjs-vite',
-  '@storybook/react-vite',
-  '@storybook/svelte-vite',
-  '@storybook/vue3-vite',
-  '@storybook/html-vite',
-  '@storybook/web-components-vite',
-  '@storybook/sveltekit',
-  '@storybook/react-native-web-vite',
-];
 
 export const storeOptions = {
   id: ADDON_ID,

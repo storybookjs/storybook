@@ -3,11 +3,13 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { printCsf } from 'storybook/internal/csf-tools';
+
 // Import common to mock
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 // Import FixResult type
-import { addonGlobalsApi, transformStoryFileSync } from './addon-globals-api';
+import { addonGlobalsApi, transformStoryFile } from './addon-globals-api';
 
 // Mock fs/promises
 vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises'));
@@ -44,10 +46,7 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
   const result = await check(previewContents);
   const mockWriteFile = vi.mocked(fsp.writeFile);
 
-  let transformFn: (
-    filePath: string,
-    content: string
-  ) => ReturnType<typeof transformStoryFileSync> = () => null;
+  let transformFn: (filePath: string, content: string) => string | null = () => null;
 
   let transformOptions: any;
 
@@ -60,14 +59,15 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
     } as any);
 
     if (result) {
-      // Create a transform function that uses the sync version
+      // Create a transform function that uses transformStoryFile + printCsf
       transformFn = (filePath: string, content: string) => {
-        return transformStoryFileSync(content, {
+        const transformed = transformStoryFile(content, {
           needsViewportMigration: result.needsViewportMigration,
           needsBackgroundsMigration: result.needsBackgroundsMigration,
           viewportsOptions: result.viewportsOptions,
           backgroundsOptions: result.backgroundsOptions,
         });
+        return transformed ? printCsf(transformed, {}).code : null;
       };
       // Extract options passed to transformStoryFile from the closure
       // This is a bit indirect, relying on the implementation detail
@@ -245,25 +245,25 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      expect(previewFileContent).toMatchInlineSnapshot(dedent`
-  "export default {
-    parameters: {
-      viewport: {
-        options: {
-          mobile: { name: 'Mobile', width: '320px', height: '568px' },
-          tablet: { name: 'Tablet', width: '768px', height: '1024px' }
-        }
-      }
-    },
+      expect(previewFileContent).toMatchInlineSnapshot(`
+        "export default {
+          parameters: {
+            viewport: {
+              options: {
+                mobile: { name: 'Mobile', width: '320px', height: '568px' },
+                tablet: { name: 'Tablet', width: '768px', height: '1024px' }
+              }
+            }
+          },
 
-    initialGlobals: {
-      viewport: {
-        value: 'mobile',
-        isRotated: false
-      }
-    }
-  };"
-`);
+          initialGlobals: {
+            viewport: {
+              value: 'mobile',
+              isRotated: false
+            }
+          }
+        };"
+      `);
     });
 
     it('should migrate backgrounds configuration correctly', async () => {
@@ -281,24 +281,24 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      expect(previewFileContent).toMatchInlineSnapshot(dedent`
-  "export default {
-    parameters: {
-      backgrounds: {
-        options: {
-          light: { name: 'Light', value: '#F8F8F8' },
-          dark: { name: 'Dark', value: '#333333' }
-        }
-      }
-    },
+      expect(previewFileContent).toMatchInlineSnapshot(`
+        "export default {
+          parameters: {
+            backgrounds: {
+              options: {
+                light: { name: 'Light', value: '#F8F8F8' },
+                dark: { name: 'Dark', value: '#333333' }
+              }
+            }
+          },
 
-    initialGlobals: {
-      backgrounds: {
-        value: 'light'
-      }
-    }
-  };"
-`);
+          initialGlobals: {
+            backgrounds: {
+              value: 'light'
+            }
+          }
+        };"
+      `);
     });
 
     it('should rename backgrounds disable property to disabled', async () => {
@@ -316,7 +316,7 @@ describe('addon-globals-api', () => {
       `);
 
       // Verify the transformation results
-      expect(previewFileContent).toMatchInlineSnapshot(dedent`
+      expect(previewFileContent).toMatchInlineSnapshot(`
         "export default {
           parameters: {
             backgrounds: {
@@ -351,7 +351,7 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      expect(previewFileContent).toMatchInlineSnapshot(dedent`
+      expect(previewFileContent).toMatchInlineSnapshot(`
   "export default {
     parameters: {
       viewport: {
@@ -400,7 +400,7 @@ describe('addon-globals-api', () => {
       `);
 
       // Verify the transformation results
-      expect(previewFileContent).toMatchInlineSnapshot(dedent`
+      expect(previewFileContent).toMatchInlineSnapshot(`
         "export default {
           parameters: {
             viewport: {
@@ -439,33 +439,33 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      expect(previewFileContent).toMatchInlineSnapshot(dedent`
-          "import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
+      expect(previewFileContent).toMatchInlineSnapshot(`
+        "import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
 
-          export default {
-            parameters: {
-              viewport: {
-                options: INITIAL_VIEWPORTS
-              },
-              backgrounds: {
-                options: {
-                  light: { name: 'Light', value: '#F8F8F8' },
-                  dark: { name: 'Dark', value: '#333333' }
-                }
-              }
+        export default {
+          parameters: {
+            viewport: {
+              options: INITIAL_VIEWPORTS
             },
-
-            initialGlobals: {
-              viewport: {
-                value: 'tablet',
-                isRotated: false
-              },
-
-              backgrounds: {
-                value: 'light'
+            backgrounds: {
+              options: {
+                light: { name: 'Light', value: '#F8F8F8' },
+                dark: { name: 'Dark', value: '#333333' }
               }
             }
-          };"
+          },
+
+          initialGlobals: {
+            viewport: {
+              value: 'tablet',
+              isRotated: false
+            },
+
+            backgrounds: {
+              value: 'light'
+            }
+          }
+        };"
       `);
     });
 
@@ -486,7 +486,7 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      expect(previewFileContent).toMatchInlineSnapshot(dedent`
+      expect(previewFileContent).toMatchInlineSnapshot(`
   "export default {
     parameters: {
       backgrounds: {
@@ -542,21 +542,18 @@ describe('addon-globals-api', () => {
           };
         `;
 
-      const expectedContent = dedent`
-          import Button from './Button';
-          export default {
-            component: Button
-          };
-          export const Default = {
-            globals: {
-              backgrounds: {
-                value: "dark"
-              }
-            }
-          };
-        `;
       expect(transformFn).toBeDefined();
-      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+        export default { component: Button };
+        export const Default = {
+          globals: {
+            backgrounds: {
+              value: 'dark'
+            }
+          }
+        };"
+      `);
     });
 
     it('should migrate parameters.backgrounds.disable: true to disabled: true', async () => {
@@ -570,21 +567,16 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      const expectedContent = dedent`
-          import Button from './Button';
-          export default {
-            component: Button
-          };
-          export const Disabled = {
-            parameters: {
-              backgrounds: {
-                disabled: true
-              }
-            }
-          };
-        `;
       expect(transformFn).toBeDefined();
-      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+        export default { component: Button };
+        export const Disabled = {
+          parameters: {
+            backgrounds: { disabled: true }
+          }
+        };"
+      `);
     });
 
     it('should rename parameters.backgrounds.disable: false to disabled: false', async () => {
@@ -598,22 +590,16 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      // disable should be renamed to disabled
-      const expectedContent = dedent`
-          import Button from './Button';
-          export default {
-            component: Button
-          };
-          export const Disabled = {
-            parameters: {
-              backgrounds: {
-                disabled: false
-              }
-            }
-          };
-        `;
       expect(transformFn).toBeDefined();
-      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+        export default { component: Button };
+        export const Disabled = {
+          parameters: {
+            backgrounds: { disabled: false }
+          }
+        };"
+      `);
     });
 
     it('should migrate parameters.viewport.defaultViewport to globals.viewport', async () => {
@@ -627,22 +613,19 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      const expectedContent = dedent`
-          import Button from './Button';
-          export default {
-            component: Button
-          };
-          export const MobileOnly = {
-            globals: {
-              viewport: {
-                value: "mobile",
-                isRotated: false
-              }
-            }
-          };
-        `;
       expect(transformFn).toBeDefined();
-      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+        export default { component: Button };
+        export const MobileOnly = {
+          globals: {
+            viewport: {
+              value: 'mobile',
+              isRotated: false
+            }
+          }
+        };"
+      `);
     });
 
     it('should migrate both viewport and backgrounds in the same story', async () => {
@@ -657,25 +640,23 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      const expectedContent = dedent`
-          import Button from './Button';
-          export default {
-            component: Button
-          };
-          export const DarkMobile = {
-            globals: {
-              viewport: {
-                value: "mobile",
-                isRotated: false
-              },
-              backgrounds: {
-                value: "dark"
-              }
-            }
-          };
-        `;
       expect(transformFn).toBeDefined();
-      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+        export default { component: Button };
+        export const DarkMobile = {
+          globals: {
+            viewport: {
+              value: 'mobile',
+              isRotated: false
+            },
+
+            backgrounds: {
+              value: 'dark'
+            }
+          }
+        };"
+      `);
     });
 
     it('should handle migration in meta (export default)', async () => {
@@ -690,20 +671,20 @@ describe('addon-globals-api', () => {
           };
           export const Default = {};
         `;
-      const expectedContent = dedent`
-          import Button from './Button';
-          export default {
-            component: Button,
-            globals: {
-              backgrounds: {
-                value: "tweet"
-              }
-            }
-          };
-          export const Default = {};
-        `;
+
       expect(transformFn).toBeDefined();
-      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+        export default {
+          component: Button,
+          globals: {
+            backgrounds: {
+              value: 'tweet'
+            }
+          }
+        };
+        export const Default = {};"
+      `);
     });
 
     it('should return null if no changes are needed', async () => {
@@ -723,98 +704,235 @@ describe('addon-globals-api', () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
         import Button from './Button';
-        export default { component: Button };
-        export const ExistingGlobals = { globals: { backgrounds: { value: 'dark' } } };
-        export const NeedsMigration = { parameters: { backgrounds: { default: 'Dark' } } };
-      `;
-      const expectedContent = dedent`
-        import Button from './Button';
-        export default {
-          component: Button
+
+        export default { 
+          component: Button 
         };
-        export const ExistingGlobals = {
+
+        export const ExistingGlobals = { 
+          globals: { 
+            backgrounds: { 
+              value: 'dark' 
+            } 
+          } 
+        };
+
+        export const NeedsMigration = { 
+          parameters: { 
+            backgrounds: { 
+              default: 'Dark' 
+            } 
+          } 
+        };
+      `;
+      expect(transformFn).toBeDefined();
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+
+        export default { 
+          component: Button 
+        };
+
+        export const ExistingGlobals = { 
+          globals: { 
+            backgrounds: { 
+              value: 'dark' 
+            } 
+          } 
+        };
+
+        export const NeedsMigration = { 
           globals: {
             backgrounds: {
               value: 'dark'
             }
-          }
-        };
-        export const NeedsMigration = {
-          globals: {
-            backgrounds: {
-              value: "dark"
-            }
-          }
-        };
-      `;
-      expect(transformFn).toBeDefined();
-      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+          } 
+        };"
+      `);
     });
 
     it('should merge new globals with existing globals in the same story', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
         import Button from './Button';
+
         export default { component: Button };
-        export const ExistingAndNeedsMigration = {
-          globals: { backgrounds: { value: 'light' } },
-          parameters: { backgrounds: { default: 'Dark' } }
-        };
-      `;
-      const expectedContent = dedent`
-        import Button from './Button';
-        export default {
-          component: Button
-        };
-        export const ExistingAndNeedsMigration = {
-          globals: {
+        
+        export const ExistingAndNeedsMigration = { 
+          globals: { 
+            backgrounds: { 
+              value: 'light' 
+            } 
+          },
+          parameters: {
             backgrounds: {
-              value: 'light'
+              default: 'Dark'
             }
-          }
+          } 
         };
       `;
       expect(transformFn).toBeDefined();
-      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+
+        export default { component: Button };
+
+        export const ExistingAndNeedsMigration = {
+          globals: { 
+            backgrounds: { 
+              value: 'light' 
+            } 
+          }
+        };"
+      `);
     });
 
     it('should remove empty parameters/backgrounds/viewport objects after migration', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
           import Button from './Button';
+
           export default { component: Button };
+
           export const TestStory = {
             parameters: {
               otherParam: true,
-              backgrounds: { default: 'Dark' }, // This will move
-              viewport: { defaultViewport: 'tablet' } // This will move
-            }
-          };
-        `;
-      // parameters.backgrounds and parameters.viewport become empty and are removed
-      // parameters still has otherParam, so it remains
-      const expectedContent = dedent`
-          import Button from './Button';
-          export default {
-            component: Button
-          };
-          export const TestStory = {
-            parameters: {
-              otherParam: true
-            },
-            globals: {
-              viewport: {
-                value: "tablet",
-                isRotated: false
+              backgrounds: { 
+                default: 'Dark' 
               },
-              backgrounds: {
-                value: "dark"
+              viewport: { 
+                defaultViewport: 'tablet'
               }
             }
           };
         `;
       expect(transformFn).toBeDefined();
-      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+
+        export default { component: Button };
+
+        export const TestStory = {
+          parameters: {
+            otherParam: true
+          },
+
+          globals: {
+            viewport: {
+              value: 'tablet',
+              isRotated: false
+            },
+
+            backgrounds: {
+              value: 'dark'
+            }
+          }
+        };"
+      `);
+    });
+
+    it('should transform defaultOrientation and disabled properties in viewport stories', async () => {
+      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
+      const storyContent = dedent`
+          import Button from './Button';
+          export default { component: Button };
+          export const Mobile = {
+            parameters: {
+              viewport: {
+                defaultOrientation: 'portrait',
+                defaultViewport: 'iphonex',
+                disable: true,
+              },
+            },
+          };
+        `;
+      expect(transformFn).toBeDefined();
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+        export default { component: Button };
+        export const Mobile = {
+          parameters: {
+            viewport: {
+              disabled: true
+            },
+          },
+
+          globals: {
+            viewport: {
+              value: 'iphonex',
+              isRotated: true
+            }
+          }
+        };"
+      `);
+    });
+
+    it('should transform member expression references in viewport stories', async () => {
+      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
+      const storyContent = dedent`
+          import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
+          import Button from './Button';
+          export default { component: Button };
+          export const Mobile = {
+            parameters: {
+              viewport: {
+                defaultViewport: MINIMAL_VIEWPORTS.mobile2
+              },
+            },
+          };
+        `;
+      expect(transformFn).toBeDefined();
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
+        import Button from './Button';
+        export default { component: Button };
+        export const Mobile = {
+          globals: {
+            viewport: {
+              value: MINIMAL_VIEWPORTS.mobile2,
+              isRotated: false
+            }
+          },
+        };"
+      `);
+    });
+
+    it('should transform backgrounds values to options and migrate default in story files', async () => {
+      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
+      const storyContent = dedent`
+          import Button from './Button';
+          export default { component: Button };
+          export const Mobile = {
+            parameters: {
+              backgrounds: {
+                default: 'Light',
+                values: [
+                  { name: 'Gray', value: '#CCC' },
+                ],
+              },
+            },
+          };
+        `;
+      expect(transformFn).toBeDefined();
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+        export default { component: Button };
+        export const Mobile = {
+          parameters: {
+            backgrounds: {
+              options: {
+                gray: { name: 'Gray', value: '#CCC' }
+              }
+            },
+          },
+
+          globals: {
+            backgrounds: {
+              value: 'light'
+            }
+          }
+        };"
+      `);
     });
   });
 });

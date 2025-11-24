@@ -11,6 +11,10 @@ type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 export type FrameworkOptions = {
   /** The path to the Next.js configuration file. */
   nextConfigPath?: string;
+  image?: {
+    includeFiles?: string[];
+    excludeFiles?: string[];
+  };
   builder?: BuilderOptions;
 };
 

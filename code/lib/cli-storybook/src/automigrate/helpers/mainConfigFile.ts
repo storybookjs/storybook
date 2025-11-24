@@ -101,11 +101,9 @@ export const getFrameworkOptions = (
 
 export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
-  cwd,
   packageManagerName,
 }: {
   configDir?: string;
-  cwd?: string;
   packageManagerName?: PackageManagerName;
   cache?: boolean;
 }) => {
@@ -115,7 +113,11 @@ export const getStorybookData = async ({
     mainConfigPath: mainConfigPath,
     configDir: configDirFromScript,
     previewConfigPath,
-  } = await getStorybookInfo(userDefinedConfigDir, cwd);
+    version: storybookVersion,
+  } = await getStorybookInfo(
+    userDefinedConfigDir,
+    userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined
+  );
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
@@ -123,7 +125,7 @@ export const getStorybookData = async ({
 
   const workingDir = isAbsolute(configDir)
     ? dirname(configDir)
-    : dirname(join(cwd ?? process.cwd(), configDir));
+    : dirname(join(process.cwd(), configDir));
 
   logger.debug('Getting stories paths...');
   const storiesPaths = await getStoriesPathsFromConfig({
@@ -140,7 +142,6 @@ export const getStorybookData = async ({
   });
 
   logger.debug('Getting Storybook version...');
-  const storybookVersion = await getCoercedStorybookVersion(packageManager);
 
   return {
     configDir,

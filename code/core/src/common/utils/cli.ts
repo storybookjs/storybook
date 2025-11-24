@@ -10,7 +10,6 @@ import uniqueString from 'unique-string';
 import type { JsPackageManager } from '../js-package-manager';
 import satelliteAddons from '../satellite-addons';
 import storybookPackagesVersions from '../versions';
-import { rendererPackages } from './get-storybook-info';
 
 const tempDir = () => realpath(os.tmpdir());
 
@@ -73,17 +72,11 @@ export function parseList(str: string): string[] {
  *
  * @storybook/react version 8.0.0-alpha.14 is installed, it returns the coerced version 8.0.0
  */
-export async function getCoercedStorybookVersion(packageManager: JsPackageManager) {
-  const packages = (
-    await Promise.all(
-      Object.keys(rendererPackages).map(async (pkg) => ({
-        name: pkg,
-        version: (await packageManager.getModulePackageJSON(pkg))?.version ?? null,
-      }))
-    )
-  ).filter(({ version }) => !!version);
-
-  return packages[0]?.version || storybookPackagesVersions.storybook;
+export async function getCoercedStorybookVersion(packageManager: JsPackageManager, cwd?: string) {
+  return (
+    (await packageManager.getModulePackageJSON('storybook', cwd))?.version ||
+    storybookPackagesVersions.storybook
+  );
 }
 
 export function getEnvConfig(program: Record<string, any>, configEnv: Record<string, any>): void {

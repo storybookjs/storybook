@@ -76,9 +76,9 @@ export class NPMProxy extends JsPackageManager {
     return `npm run ${command}`;
   }
 
-  async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
+  async getModulePackageJSON(packageName: string, cwd = this.cwd): Promise<PackageJson | null> {
     const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
+    const packageJsonPath = find.up(wantedPath, { cwd, last: getProjectRoot() });
 
     if (!packageJsonPath) {
       return null;

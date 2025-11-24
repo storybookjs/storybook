@@ -8,39 +8,32 @@ sidebar:
 
 Storybook for Web components & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for applications using [Web components](https://www.webcomponents.org/introduction) built with [Vite](https://vitejs.dev/).
 
-## Requirements
 
-* Vite ≥ 5.0
+## Install
 
-## Getting started
+To install Storybook in an existing project, run this command in your project's root directory:
 
-### In a project without Storybook
+<CodeSnippets path="create-command.md" variant="new-users" />
 
-Follow the prompts after running this command in your Web components project's root directory:
+You can then get started [writing stories](/docs/get-started/whats-a-story/), [running tests](/docs/writing-tests/) and [documenting your components](/docs/writing-docs/).
 
-{/* prettier-ignore-start */}
+Storybook is compatible with Vite ≥ 5. For more control over the installation process, refer to the [installation guide](/docs/install/). Keep reading to learn how to better integrate Storybook with your project.
 
-<CodeSnippets path="create-command.md" />
+## Run Storybook
 
-{/* prettier-ignore-end */}
+To run Storybook for a particular project, run the following:
 
-[More on getting started with Storybook.](../install.mdx)
+<CodeSnippets path="storybook-run-dev.md" />
 
-### In a project with Storybook
+To build Storybook, run:
 
-This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+<CodeSnippets path="build-storybook-production-mode.md" />
 
-{/* prettier-ignore-start */}
+You will find the output in the configured `outputDir` (default is `storybook-static`).
 
-<CodeSnippets path="storybook-upgrade.md" />
 
-{/* prettier-ignore-end */}
-
-#### Automatic migration
-
-When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/web-components-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
-
-#### Manual migration
+## FAQ
+### How do I manually install the Web Components framework?
 
 First, install the framework:
 

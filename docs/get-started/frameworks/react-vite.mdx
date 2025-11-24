@@ -6,34 +6,36 @@ sidebar:
   title: React (Vite)
 ---
 
-Storybook for React & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [React](https://react.dev/) applications built with [Vite](https://vitejs.dev/). It includes:
+Storybook for React & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [React](https://react.dev/) applications built with [Vite](https://vitejs.dev/).
 
-* 🏎️ Pre-bundled for performance
-* 🪄 Zero config
-* 💫 and more!
+## Install
 
-## Requirements
+To install Storybook in an existing React project, run this command in your project's root directory:
 
-* React ≥ 16.8
-* Vite ≥ 5.0
+<CodeSnippets path="create-command.md" variant="new-users" />
 
-## Getting started
+You can then get started [writing stories](/docs/get-started/whats-a-story/), [running tests](/docs/writing-tests/) and [documenting your components](/docs/writing-docs/).
 
-### In a project without Storybook
+Storybook is compatible with React ≥ 16.8, and Vite ≥ 5. For more control over the installation process, refer to the [installation guide](/docs/install/). Keep reading to learn how to better integrate Storybook with your React project.
 
-Follow the prompts after running this command in your React project's root directory:
 
-{/* prettier-ignore-start */}
+## Run Storybook
 
-<CodeSnippets path="create-command.md" />
+To run Storybook for a particular project, run the following:
 
-{/* prettier-ignore-end */}
+<CodeSnippets path="storybook-run-dev.md" />
 
-[More on getting started with Storybook.](../install.mdx)
+To build Storybook, run:
 
-### In a project with Storybook
+<CodeSnippets path="build-storybook-production-mode.md" />
 
-This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+You will find the output in the configured `outputDir` (default is `storybook-static`).
+
+
+## FAQ
+### How do I migrate from the React Webpack framework?
+
+The `upgrade` command should prompt you to migrate to `@storybook/react-vite` when you run it:
 
 {/* prettier-ignore-start */}
 
@@ -41,11 +43,9 @@ This framework is designed to work with Storybook 7+. If you’re not already us
 
 {/* prettier-ignore-end */}
 
-#### Automatic migration
+In case that auto-migration does not work for your project, refer to the manual installation instructions below.
 
-When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/react-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
-
-#### Manual migration
+### How do I manually install the React framework?
 
 First, install the framework:
 
@@ -63,13 +63,6 @@ Then, update your `.storybook/main.js|ts` to change the framework property:
 
 {/* prettier-ignore-end */}
 
-## Run the Setup Wizard
-
-If all goes well, you should see a setup wizard that will help you get started with Storybook introducing you to the main concepts and features, including how the UI is organized, how to write your first story, and how to test your components' response to various inputs utilizing [controls](../../essentials/controls.mdx).
-
-![Storybook onboarding](../../_assets/get-started/example-onboarding-wizard.png)
-
-If you skipped the wizard, you can always run it again by adding the `?path=/onboarding` query parameter to the URL of your Storybook instance, provided that the example stories are still available.
 
 ## API
 

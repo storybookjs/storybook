@@ -23,7 +23,7 @@ export const serve: Task = {
     const controller = new AbortController();
     if ((await detectFreePort(port)) === port) {
       exec(
-        `yarn http-server ${builtSandboxDir} --port ${port}`,
+        `yarn http-server ${builtSandboxDir} --port ${port} -s`,
         { cwd: ROOT_DIRECTORY },
         { dryRun, debug, signal: controller.signal as AbortSignal }
       ).catch((err) => {
@@ -32,7 +32,7 @@ export const serve: Task = {
           throw err;
         }
       });
-      await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16, timeout: 10000 });
+      await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16, timeout: 200000 });
     }
 
     return controller;

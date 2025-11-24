@@ -36,14 +36,14 @@ export const dev: Task = {
         waitOn({
           resources: [`http://localhost:${port}/iframe.html`],
           interval: 16,
-          timeout: 10000,
+          timeout: 200000,
         }).then(() => {
           return now() - start;
         }),
         waitOn({
           resources: [`http://localhost:${port}/index.html`],
           interval: 16,
-          timeout: 10000,
+          timeout: 200000,
         }).then(() => {
           return now() - start;
         }),

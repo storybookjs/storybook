@@ -72,7 +72,6 @@ const meta = {
     api: {
       getDocsUrl: () => 'https://storybook.js.org/docs/',
     } as any,
-    isDevelopment: true,
   },
   tags: ['hoho'],
 } satisfies Meta<typeof TagsFilterPanel>;
@@ -89,10 +88,10 @@ export const BuiltInOnly: Story = {
   },
 };
 
+/** Production is equal to development now */
 export const BuiltInOnlyProduction: Story = {
   args: {
     ...BuiltInOnly.args,
-    isDevelopment: false,
   },
 };
 

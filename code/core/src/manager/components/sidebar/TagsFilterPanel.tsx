@@ -57,7 +57,6 @@ interface TagsFilterPanelProps {
   toggleFilter: (key: string, selected: boolean, excluded?: boolean) => void;
   setAllFilters: (selected: boolean) => void;
   resetFilters: () => void;
-  isDevelopment: boolean;
   isDefaultSelection: boolean;
   hasDefaultSelection: boolean;
 }
@@ -70,7 +69,6 @@ export const TagsFilterPanel = ({
   toggleFilter,
   setAllFilters,
   resetFilters,
-  isDevelopment,
   isDefaultSelection,
   hasDefaultSelection,
 }: TagsFilterPanelProps) => {
@@ -146,24 +144,15 @@ export const TagsFilterPanel = ({
     )
     .filter((value): value is Link[] => value.length > 0);
 
-  if (!groups.tag?.length && isDevelopment) {
-    links.push([
-      {
-        id: 'tags-docs',
-        title: 'Learn how to add tags',
-        icon: <DocumentIcon />,
-        right: <ShareAltIcon />,
-        href: api.getDocsUrl({ subpath: 'writing-stories/tags#custom-tags' }),
-      },
-    ]);
-  }
+  const hasItems = links.length > 0;
+  const hasUserTags = Object.values(filtersById).some(({ type }) => type === 'tag');
 
   const isNothingSelectedYet = includedFilters.size === 0 && excludedFilters.size === 0;
   const filtersLabel = isNothingSelectedYet ? 'Select all' : 'Clear filters';
 
   return (
     <Wrapper ref={ref}>
-      {Object.keys(filtersById).length > 0 && (
+      {hasItems && (
         <ActionsList>
           <ActionsList.Item>
             {isNothingSelectedYet ? (
@@ -209,6 +198,26 @@ export const TagsFilterPanel = ({
           ))}
         </ActionsList>
       ))}
+      {!hasUserTags && (
+        <ActionsList>
+          <ActionsList.Item>
+            <ActionsList.Link
+              href={api.getDocsUrl({ subpath: 'writing-stories/tags#custom-tags' })}
+              target="_blank"
+            >
+              <ActionsList.Icon>
+                <DocumentIcon />
+              </ActionsList.Icon>
+              <ActionsList.Text>
+                <span>Learn how to add tags</span>
+              </ActionsList.Text>
+              <ActionsList.Icon>
+                <ShareAltIcon />
+              </ActionsList.Icon>
+            </ActionsList.Link>
+          </ActionsList.Item>
+        </ActionsList>
+      )}
     </Wrapper>
   );
 };

@@ -73,11 +73,10 @@ const TagSelected = styled(Badge)(({ theme }) => ({
 export interface TagsFilterProps {
   api: API;
   indexJson: StoryIndex;
-  isDevelopment: boolean;
   tagPresets: TagsOptions;
 }
 
-export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFilterProps) => {
+export const TagsFilter = ({ api, indexJson, tagPresets }: TagsFilterProps) => {
   const filtersById = useMemo<{ [id: string]: Filter }>(() => {
     const userTagsCounts = Object.values(indexJson.entries).reduce<{ [key: Tag]: number }>(
       (acc, entry) => {
@@ -224,11 +223,6 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
     [expanded, setExpanded]
   );
 
-  // Hide the entire UI if there are no tags and it's a built Storybook
-  if (Object.keys(filtersById).length === 0 && !isDevelopment) {
-    return null;
-  }
-
   return (
     <PopoverProvider
       placement="bottom"
@@ -244,7 +238,6 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
           toggleFilter={toggleFilter}
           setAllFilters={setAllFilters}
           resetFilters={resetFilters}
-          isDevelopment={isDevelopment}
           isDefaultSelection={
             equal(includedFilters, defaultIncluded) && equal(excludedFilters, defaultExcluded)
           }

@@ -116,6 +116,10 @@ const ActionsListAction = styled(ActionsListButton)(({ theme }) => ({
   },
 }));
 
+const ActionsListLink = (
+  props: ComponentProps<typeof ActionsListAction> & React.AnchorHTMLAttributes<HTMLAnchorElement>
+) => <ActionsListAction as="a" {...props} />;
+
 const ActionsListText = styled.div({
   display: 'flex',
   alignItems: 'center',
@@ -170,6 +174,7 @@ export const ActionsList = Object.assign(
     HoverItem: ActionsListHoverItem,
     Button: ActionsListButton,
     Action: ActionsListAction,
+    Link: ActionsListLink,
     Text: ActionsListText,
     Icon: ActionsListIcon,
   }

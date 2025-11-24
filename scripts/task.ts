@@ -39,8 +39,6 @@ import { findMostMatchText } from './utils/diff';
 import type { OptionValues } from './utils/options';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
-process.setMaxListeners(50);
-
 export const extraAddons = ['@storybook/addon-a11y'];
 
 export type Path = string;
@@ -498,9 +496,10 @@ async function run() {
     const task = sortedTasks[i];
     const status = statuses.get(task);
 
-    let shouldRun = startFrom !== 'never' ? status === 'unready' : finalTask === task;
+    let shouldRun = status === 'unready' || finalTask === task;
 
-    if (startFrom !== 'never' && status === 'notserving') {
+    // Don't run services in NX, as NX starts them up itself
+    if (!process.env.NX_RUN && status === 'notserving') {
       shouldRun =
         finalTask === task ||
         !!tasksThatDepend.get(task).find((t) => statuses.get(t) === 'unready');

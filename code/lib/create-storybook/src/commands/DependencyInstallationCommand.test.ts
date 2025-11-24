@@ -8,17 +8,15 @@ import { DependencyInstallationCommand } from './DependencyInstallationCommand';
 
 describe('DependencyInstallationCommand', () => {
   let command: DependencyInstallationCommand;
-  let mockPackageManager: JsPackageManager;
+  const mockPackageManager = {
+    addDependencies: vi.fn().mockResolvedValue(undefined),
+    installDependencies: vi.fn().mockResolvedValue(undefined),
+  } as Partial<JsPackageManager> as JsPackageManager;
   let dependencyCollector: DependencyCollector;
 
   beforeEach(async () => {
     dependencyCollector = new DependencyCollector();
-    command = new DependencyInstallationCommand(dependencyCollector);
-
-    mockPackageManager = {
-      addDependencies: vi.fn().mockResolvedValue(undefined),
-      installDependencies: vi.fn().mockResolvedValue(undefined),
-    } as Partial<JsPackageManager> as JsPackageManager;
+    command = new DependencyInstallationCommand(dependencyCollector, mockPackageManager);
 
     vi.clearAllMocks();
   });
@@ -28,7 +26,6 @@ describe('DependencyInstallationCommand', () => {
       dependencyCollector.addDevDependencies(['storybook@8.0.0']);
 
       await command.execute({
-        packageManager: mockPackageManager,
         skipInstall: false,
         selectedFeatures: new Set([Feature.TEST]),
       });
@@ -42,7 +39,6 @@ describe('DependencyInstallationCommand', () => {
 
     it('should skip installation when skipInstall is true and no packages', async () => {
       await command.execute({
-        packageManager: mockPackageManager,
         skipInstall: true,
         selectedFeatures: new Set([Feature.TEST]),
       });
@@ -55,7 +51,6 @@ describe('DependencyInstallationCommand', () => {
       dependencyCollector.addDevDependencies(['storybook@8.0.0']);
 
       await command.execute({
-        packageManager: mockPackageManager,
         skipInstall: true,
         selectedFeatures: new Set([Feature.TEST]),
       });
@@ -71,7 +66,6 @@ describe('DependencyInstallationCommand', () => {
       dependencyCollector.addDependencies(['react@18.0.0']);
 
       await command.execute({
-        packageManager: mockPackageManager,
         skipInstall: true,
         selectedFeatures: new Set([Feature.TEST]),
       });
@@ -90,7 +84,6 @@ describe('DependencyInstallationCommand', () => {
 
       await expect(
         command.execute({
-          packageManager: mockPackageManager,
           skipInstall: false,
           selectedFeatures: new Set([Feature.TEST]),
         })
@@ -99,7 +92,6 @@ describe('DependencyInstallationCommand', () => {
 
     it('should handle empty dependency collector', async () => {
       await command.execute({
-        packageManager: mockPackageManager,
         skipInstall: false,
         selectedFeatures: new Set([Feature.TEST]),
       });
@@ -110,7 +102,6 @@ describe('DependencyInstallationCommand', () => {
 
     it('should not collect test dependencies if test feature is not selected', async () => {
       await command.execute({
-        packageManager: mockPackageManager,
         skipInstall: false,
         selectedFeatures: new Set([Feature.DOCS]),
       });

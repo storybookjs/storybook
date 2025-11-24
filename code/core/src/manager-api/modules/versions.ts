@@ -102,24 +102,22 @@ export const init: ModuleFn = ({ store }) => {
     },
     // TODO: Move this to it's own "info" module later
     getDocsUrl: ({ asset, subpath = asset, versioned, renderer, ref = 'ui' }) => {
-      const {
-        versions: { latest, current },
-      } = store.getState();
+      const { versions } = store.getState();
+      const latestVersion = versions.latest?.version;
+      const currentVersion = versions.current?.version;
+      const activeVersion =
+        (currentVersion?.startsWith('0.0.0') && latestVersion) || currentVersion;
 
       let url = `https://storybook.js.org/${asset ? 'docs-assets' : 'docs'}/`;
 
-      if (asset && current?.version) {
-        url += `${semver.major(current.version)}.${semver.minor(current.version)}/`;
-      } else if (versioned && current?.version && latest?.version) {
-        const versionDiff = semver.diff(latest.version, current.version);
-        const isLatestDocs =
-          versionDiff === 'patch' ||
-          versionDiff === null ||
-          // assume latest version when current version is a 0.0.0 canary
-          semver.satisfies(current.version, '0.0.0', { includePrerelease: true });
+      if (asset && activeVersion) {
+        url += `${semver.major(activeVersion)}.${semver.minor(activeVersion)}/`;
+      } else if (versioned && activeVersion && latestVersion) {
+        const versionDiff = semver.diff(latestVersion, activeVersion);
+        const isLatestDocs = versionDiff === 'patch' || versionDiff === null;
 
         if (!isLatestDocs) {
-          url += `${semver.major(current.version)}.${semver.minor(current.version)}/`;
+          url += `${semver.major(activeVersion)}.${semver.minor(activeVersion)}/`;
         }
       }
 

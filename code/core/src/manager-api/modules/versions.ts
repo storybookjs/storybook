@@ -49,17 +49,19 @@ export interface SubAPI {
    * Returns the URL of the Storybook documentation for the current version.
    *
    * @param options - The options for the documentation URL.
-   * @param options.asset - Links to the docs-assets directory instead of docs.
+   * @param options.asset - Like subpath, but links to the docs-assets directory.
    * @param options.subpath - The subpath of the documentation URL.
    * @param options.versioned - Whether to include the versioned path.
    * @param options.renderer - Whether to include the renderer path.
+   * @param options.ref - Tracking reference for the docs site. E.g. 'ui', 'error', 'upgrade', etc.
    * @returns {string} The URL of the Storybook Manager documentation.
    */
   getDocsUrl: (options: {
-    asset?: boolean;
+    asset?: string;
     subpath?: string;
     versioned?: boolean;
     renderer?: boolean;
+    ref?: string;
   }) => string;
   /**
    * Checks if an update is available for the Storybook Manager.
@@ -99,7 +101,7 @@ export const init: ModuleFn = ({ store }) => {
       return latest as API_Version;
     },
     // TODO: Move this to it's own "info" module later
-    getDocsUrl: ({ asset, subpath, versioned, renderer }) => {
+    getDocsUrl: ({ asset, subpath = asset, versioned, renderer, ref = 'ui' }) => {
       const {
         versions: { latest, current },
       } = store.getState();
@@ -133,6 +135,10 @@ export const init: ModuleFn = ({ store }) => {
         if (rendererName) {
           url += `?renderer=${normalizeRendererName(rendererName)}`;
         }
+      }
+
+      if (ref) {
+        url += `${url.includes('?') ? '&' : '?'}ref=${ref}`;
       }
 
       if (hash) {

@@ -1,3 +1,23 @@
+## 10.1.0-beta.1
+
+- Addon-Vitest: Ensure Storybook starts correctly across platforms by using shell in spawn - [#33116](https://github.com/storybookjs/storybook/pull/33116), thanks @valentinpalkovic!
+- Build: Fix async telemetry event sending - [#33115](https://github.com/storybookjs/storybook/pull/33115), thanks @valentinpalkovic!
+- CLI: Fix access to getOptionValue in postAction hook - [#33119](https://github.com/storybookjs/storybook/pull/33119), thanks @valentinpalkovic!
+- CLI: Standardize debug log messages across the application - [#33123](https://github.com/storybookjs/storybook/pull/33123), thanks @valentinpalkovic!
+- CLI: Update compatibility guidance link in summary message - [#33117](https://github.com/storybookjs/storybook/pull/33117), thanks @valentinpalkovic!
+- Core: Update `getDocsUrl` to add a default `ref` param and set `guide` as ref for links in the Guide - [#33111](https://github.com/storybookjs/storybook/pull/33111), thanks @ghengeveld!
+- Guide: Hide items for which their required feature is disabled (controls, viewport, interactions) - [#33113](https://github.com/storybookjs/storybook/pull/33113), thanks @ghengeveld!
+
+## 10.1.0-beta.0
+
+
+## 10.1.0-alpha.14
+
+- Angular: Add support for v21 - [#33098](https://github.com/storybookjs/storybook/pull/33098), thanks @valentinpalkovic!
+- Build: Add Rsbuild-based sandboxes - [#33039](https://github.com/storybookjs/storybook/pull/33039), thanks @valentinpalkovic!
+- CLI: Change yarn package manager value to yarn1 - [#33099](https://github.com/storybookjs/storybook/pull/33099), thanks @valentinpalkovic!
+- Onboarding: Guided tour checklist - [#32795](https://github.com/storybookjs/storybook/pull/32795), thanks @ghengeveld!
+
 ## 10.1.0-alpha.13
 
 - CLI: Modernize Storybook CLI with new init workflow, Clack UI, and Generator System - [#32717](https://github.com/storybookjs/storybook/pull/32717), thanks @valentinpalkovic!

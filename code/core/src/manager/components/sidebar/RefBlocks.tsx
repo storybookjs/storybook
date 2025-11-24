@@ -106,7 +106,6 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
           <Fragment>
             <Text>Sign in to browse this Storybook.</Text>
             <div>
-              {/* @ts-expect-error (non strict) */}
               <Button size="small" variant="outline" onClick={open}>
                 <LockIcon />
                 Sign in

@@ -30,6 +30,11 @@ const taskLogMock = {
   message: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
+  group: vi.fn().mockReturnValue({
+    message: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+  }),
 };
 
 describe('multi-project automigrations', () => {

@@ -107,7 +107,7 @@ test.describe('Manager UI', () => {
       const sbPage = new SbPage(page, expect);
       await sbPage.navigateToStory('example/button', 'primary');
       await expect(page.getByRole('button', { name: 'Open in editor' })).toBeVisible();
-      await page.getByRole('button', { name: 'Share' }).click();
+      await page.getByRole('button', { name: 'Share', exact: true }).click();
       await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
       await page.getByRole('button', { name: /copy story link/i }).click();
 
@@ -120,7 +120,7 @@ test.describe('Manager UI', () => {
       test.skip(type !== 'build', 'These actions are only applicable in build mode');
       const sbPage = new SbPage(page, expect);
       await sbPage.navigateToStory('example/button', 'primary');
-      await page.getByRole('button', { name: 'Share' }).click();
+      await page.getByRole('button', { name: 'Share', exact: true }).click();
       await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
       await page.getByRole('button', { name: /copy story link/i }).click();
 
@@ -153,7 +153,6 @@ test.describe('Manager UI', () => {
       await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-T').click();
       await expectToolbarToNotExist();
-      await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-T').click();
       await expectToolbarToBeVisible();
     });
@@ -192,6 +191,7 @@ test.describe('Manager UI', () => {
         await sbPage.page.locator('[aria-label="Settings"]').click();
         await sbPage.page.locator('#list-item-A').click();
         await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
+        await sbPage.page.locator('html').press('Escape');
 
         // toggle with "Show addon panel" button
         await sbPage.page.locator('[aria-label="Show addon panel"]').click();
@@ -239,29 +239,26 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
-      // toggle with menu item
-      await sbPage.page.locator('[aria-label="Settings"]').click();
-      await sbPage.page.locator('#list-item-F').click();
-      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
-      await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
-
       // toggle with "go/exit fullscreen" button
-      await sbPage.page.locator('[aria-label="Exit full screen"]').click();
-      await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
-      await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
-
       await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
+      await sbPage.page.locator('[aria-label="Exit full screen"]').click();
+      await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
+
       // go fullscreen when sidebar is shown but panel is hidden
+      await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await sbPage.page.locator('[aria-label="Show sidebar"]').click();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
       await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
       // go fullscreen when panel is shown but sidebar is hidden
       await sbPage.page.locator('[aria-label="Show addon panel"]').click();
+      await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
       await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();

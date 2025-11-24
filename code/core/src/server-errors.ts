@@ -455,6 +455,31 @@ export class GenerateNewProjectOnInitError extends StorybookError {
   }
 }
 
+export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError {
+  constructor(public data: { reasons: string[] }) {
+    super({
+      name: 'AddonVitestPostinstallPrerequisiteCheckError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 4,
+      documentation: '',
+      message: 'The prerequisite check for the Vitest addon failed.',
+    });
+  }
+}
+
+export class AddonVitestPostinstallError extends StorybookError {
+  constructor(public data: { errors: string[] }) {
+    super({
+      name: 'AddonVitestPostinstallError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 5,
+      message: 'The Vitest addon setup failed.',
+    });
+  }
+}
+
 export class UpgradeStorybookToLowerVersionError extends StorybookError {
   constructor(public data: { beforeVersion: string; currentVersion: string }) {
     super({
@@ -577,6 +602,19 @@ export class CommonJsConfigNotSupportedError extends StorybookError {
         
         CommonJS files (ending in .cjs, .cts, .cjsx, .ctsx) or files containing 'module.exports' are no longer supported.
         Please convert your config to use ES modules (import/export syntax).`,
+    });
+  }
+}
+
+export class AutomigrateError extends StorybookError {
+  constructor(public data: { errors: Array<Error | unknown> }) {
+    super({
+      name: 'AutomigrateError',
+      category: Category.CLI_AUTOMIGRATE,
+      code: 2,
+      message: dedent`
+        An error occurred while running the automigrate command.
+      `,
     });
   }
 }

@@ -50,10 +50,13 @@ const testManager = new TestManager({
   } as any,
 });
 
-const exit = async (code = 0) => {
+const shutdown = async (code = 0) => {
   channel?.removeAllListeners();
   // Close Vitest instance to clean up file watchers
   await testManager?.vitestManager?.vitest?.close();
+};
+
+const exit = (code = 0) => {
   process.exit(code);
 };
 
@@ -76,6 +79,7 @@ const createUnhandledErrorHandler = (message: string) => async (error: ErrorLike
       payload,
     });
   } finally {
+    await shutdown(1);
     exit(1);
   }
 };
@@ -90,5 +94,12 @@ process.on(
 );
 
 process.on('exit', exit);
-process.on('SIGINT', () => exit(0));
-process.on('SIGTERM', () => exit(0));
+process.on('SIGINT', async () => {
+  await shutdown(0);
+  exit(0);
+});
+process.on('SIGTERM', async () => {
+  await shutdown(0);
+  exit(0);
+});
+process.on('beforeExit', shutdown);

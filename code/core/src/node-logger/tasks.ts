@@ -149,7 +149,7 @@ export const executeTaskWithSpinner = async (
       await childProcess;
     }
     logTracker.addLog('info', success);
-    task.stop(success);
+    task.cancel(success);
   } catch (err: any) {
     const isAborted =
       abortController?.signal.aborted ||
@@ -158,12 +158,12 @@ export const executeTaskWithSpinner = async (
 
     if (isAborted) {
       logTracker.addLog('info', `${intro} aborted`);
-      task.stop(CLI_COLORS.warning(`${intro} aborted`));
+      task.cancel(CLI_COLORS.warning(`${intro} aborted`));
       return;
     }
     const errorMessage = err instanceof Error ? (err.stack ?? err.message) : String(err);
     logTracker.addLog('error', error, { error: errorMessage });
-    task.stop(CLI_COLORS.error(error));
+    task.error(CLI_COLORS.error(error));
     throw err;
   } finally {
     cleanup?.();

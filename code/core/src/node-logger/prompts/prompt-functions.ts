@@ -122,11 +122,18 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
           spinnerInstance.start(message);
         }
       },
-      stop: (message?: string) => {
+      cancel: (message?: string) => {
         activeSpinner = null;
         restoreConsoleLog();
         if (shouldLog('info')) {
-          spinnerInstance.stop(message);
+          spinnerInstance.cancel(message);
+        }
+      },
+      error: (message?: string) => {
+        activeSpinner = null;
+        restoreConsoleLog();
+        if (shouldLog('error')) {
+          spinnerInstance.error(message);
         }
       },
       message: (text: string) => {
@@ -146,9 +153,16 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
           maybeLog(message);
         }
       },
-      stop: (message) => {
+      cancel: (message) => {
         if (message) {
           maybeLog(message);
+        }
+      },
+      error: (message) => {
+        if (message) {
+          if (shouldLog('error')) {
+            logger.error(message);
+          }
         }
       },
       message: (message) => {

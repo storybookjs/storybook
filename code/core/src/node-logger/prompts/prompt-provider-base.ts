@@ -45,7 +45,8 @@ export interface PromptOptions {
 
 export interface SpinnerInstance {
   start: (message?: string) => void;
-  stop: (message?: string) => void;
+  cancel: (message?: string) => void;
+  error: (message?: string) => void;
   message: (text: string) => void;
 }
 

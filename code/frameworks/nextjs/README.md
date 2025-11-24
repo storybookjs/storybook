@@ -1,6 +1,6 @@
 # Storybook for Next.js
 
-See [documentation](https://storybook.js.org/docs/get-started/frameworks/nextjs?renderer=react&ref=readme) for installation instructions, usage examples, APIs, and more.
+See [documentation](https://storybook.js.org/docs/get-started/frameworks/nextjs/?renderer=react&ref=readme) for installation instructions, usage examples, APIs, and more.
 
 ## Acknowledgements
 

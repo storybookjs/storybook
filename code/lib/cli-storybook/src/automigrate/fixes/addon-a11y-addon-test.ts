@@ -40,7 +40,7 @@ interface AddonA11yAddonTestOptions {
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   id: 'addon-a11y-addon-test',
-  link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration',
+  link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing/#test-addon-integration',
 
   promptType: 'auto',
 

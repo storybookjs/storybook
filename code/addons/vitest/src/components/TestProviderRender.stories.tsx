@@ -15,7 +15,7 @@ import { TestProviderRender } from './TestProviderRender';
 
 const managerContext: any = {
   api: {
-    getDocsUrl: fn(({ subpath }) => `https://storybook.js.org/docs/${subpath}`).mockName(
+    getDocsUrl: fn(({ subpath }) => `https://storybook.js.org/docs/${subpath}/`).mockName(
       'api::getDocsUrl'
     ),
     findAllLeafStoryIds: fn((entryId) => [entryId]),

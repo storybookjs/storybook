@@ -18,7 +18,7 @@ import type { Options, TelemetryData } from './types';
 
 const retryingFetch = retry(fetch);
 
-const URL = process.env.STORYBOOK_TELEMETRY_URL || 'https://storybook.js.org/event-log';
+const URL = process.env.STORYBOOK_TELEMETRY_URL || 'https://storybook.js.org/event-log/';
 
 let tasks: Promise<any>[] = [];
 

@@ -259,7 +259,7 @@ export const suggestESLintPlugin = async (): Promise<boolean> => {
   const shouldInstall = await prompt.confirm({
     message: dedent`
         We have detected that you're using ESLint. Storybook provides a plugin that gives the best experience with Storybook and helps follow best practices: ${picocolors.yellow(
-          'https://storybook.js.org/docs/9/configure/integration/eslint-plugin'
+          'https://storybook.js.org/docs/9/configure/integration/eslint-plugin/'
         )}
 
         Would you like to install it?

@@ -9,7 +9,7 @@
 ## Rule Details
 
 Storybook provides a browser compatible version of `expect` via the [@storybook/test](https://github.com/storybookjs/storybook/tree/next/code/lib/test) library (formerly available in the legacy [@storybook/jest](https://github.com/storybookjs/jest) library).
-When [writing interactions](https://storybook.js.org/docs/essentials/interactions) and asserting values, you should always use `expect` from the `@storybook/test` library.
+When [writing interactions](https://storybook.js.org/docs/essentials/interactions/) and asserting values, you should always use `expect` from the `@storybook/test` library.
 
 Examples of **incorrect** code for this rule:
 

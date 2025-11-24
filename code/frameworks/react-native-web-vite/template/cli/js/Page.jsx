@@ -69,7 +69,7 @@ export const Page = () => {
             style={styles.a}
             role="link"
             onPress={() => {
-              Linking.openURL('https://storybook.js.org/docs');
+              Linking.openURL('https://storybook.js.org/docs/');
             }}
           >
             docs

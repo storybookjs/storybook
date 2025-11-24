@@ -294,7 +294,7 @@ const ReadDocsMessage: FC = () => {
   const theme = useTheme();
 
   return (
-    <Message href="https://storybook.js.org/docs/sharing/storybook-composition?ref=ui">
+    <Message href="https://storybook.js.org/docs/sharing/storybook-composition/?ref=ui">
       <DocumentIcon color={theme.color.green} />
       <div>
         <MessageTitle>Read Composition docs</MessageTitle>
@@ -337,7 +337,7 @@ const PerformanceDegradedMessage: FC = () => {
   const theme = useTheme();
 
   return (
-    <Message href="https://storybook.js.org/docs/sharing/storybook-composition?ref=ui">
+    <Message href="https://storybook.js.org/docs/sharing/storybook-composition/?ref=ui">
       <LightningIcon color={theme.color.gold} />
       <div>
         <MessageTitle>Reduce lag</MessageTitle>

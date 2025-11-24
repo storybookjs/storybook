@@ -8,7 +8,7 @@
 
 ## Rule Details
 
-Since Storybook 5.2, the [CSF format](https://storybook.js.org/docs/api/csf) was introduced and the `storiesOf` API has been deprecated.
+Since Storybook 5.2, the [CSF format](https://storybook.js.org/docs/api/csf/) was introduced and the `storiesOf` API has been deprecated.
 
 Examples of **incorrect** code for this rule:
 

@@ -35,7 +35,7 @@ const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Pro
 
 export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
   id: 'nextjs-to-nextjs-vite',
-  link: 'https://storybook.js.org/docs/get-started/frameworks/nextjs-vite',
+  link: 'https://storybook.js.org/docs/get-started/frameworks/nextjs-vite/',
   defaultSelected: false,
 
   async check({ packageManager }): Promise<NextjsToNextjsViteOptions | null> {

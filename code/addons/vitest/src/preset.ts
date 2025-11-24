@@ -71,7 +71,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       log(dedent`
         You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.
 
-        Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs?ref=upgrade#with-vite')}\n
+        Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs/?ref=upgrade#with-vite')}\n
       `);
     }
     return channel;

@@ -33,4 +33,4 @@ While we encourage each CSF file to clearly correspond to a single component, it
 
 ## Further Reading
 
-- [Automatic argType inference](https://storybook.js.org/docs/api/argtypes#automatic-argtype-inference)
+- [Automatic argType inference](https://storybook.js.org/docs/api/argtypes/#automatic-argtype-inference)

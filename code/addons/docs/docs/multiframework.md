@@ -17,7 +17,7 @@ Addon-docs handles this kind of customization by file naming convention. Its [co
 
 For example, consider Storybook Docs for Vue, which needs `vue-docgen-loader` in its webpack config, and also has custom extraction functions for [props tables](#props-tables) and [component descriptions](#component-descriptions).
 
-For webpack configuration, Docs for Vue defines [preset.ts](https://github.com/storybookjs/storybook/blob/next/addons/docs/src/frameworks/vue/preset.ts), which follows the [preset](https://storybook.js.org/docs/vue/api/presets) file structure:
+For webpack configuration, Docs for Vue defines [preset.ts](https://github.com/storybookjs/storybook/blob/next/addons/docs/src/frameworks/vue/preset.ts), which follows the [preset](https://storybook.js.org/docs/vue/api/presets/) file structure:
 
 ```
 export function webpack(webpackConfig: any = {}, options: any = {}) {
@@ -106,7 +106,7 @@ The input is the story function and the story context (id, parameters, args, etc
 
 ## Dynamic source rendering
 
-With the release of Storybook 6.0, we've improved how stories are rendered in the [`Source` doc block](https://storybook.js.org/docs/api/doc-blocks/doc-block-source). One of such improvements is the `dynamic` source type, which renders a snippet based on the output the story function.
+With the release of Storybook 6.0, we've improved how stories are rendered in the [`Source` doc block](https://storybook.js.org/docs/api/doc-blocks/doc-block-source/). One of such improvements is the `dynamic` source type, which renders a snippet based on the output the story function.
 
 This dynamic rendering is framework-specific, meaning it needs a custom implementation for each framework.
 

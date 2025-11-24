@@ -45,6 +45,6 @@ Upvoting issues to show your interest will help us prioritize and address them a
 
 ### Useful Resources
 
-- [Create a Storybook reproduction](https://storybook.js.org/docs/react/contribute/how-to-reproduce)
+- [Create a Storybook reproduction](https://storybook.js.org/docs/react/contribute/how-to-reproduce/)
 - [How to create a Minimal, Complete, and Verifiable example](https://stackoverflow.com/help/mcve)
-- [Contributing to Storybook](https://storybook.js.org/docs/contribute/how-to-contribute)
+- [Contributing to Storybook](https://storybook.js.org/docs/contribute/how-to-contribute/)

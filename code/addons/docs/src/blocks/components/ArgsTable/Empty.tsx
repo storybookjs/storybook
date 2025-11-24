@@ -67,7 +67,7 @@ export const Empty: FC<EmptyProps> = ({ inAddonPanel }) => {
             {inAddonPanel && (
               <>
                 <Link
-                  href="https://storybook.js.org/docs/essentials/controls?ref=ui"
+                  href="https://storybook.js.org/docs/essentials/controls/?ref=ui"
                   target="_blank"
                   withArrow
                 >
@@ -77,7 +77,7 @@ export const Empty: FC<EmptyProps> = ({ inAddonPanel }) => {
             )}
             {!inAddonPanel && (
               <Link
-                href="https://storybook.js.org/docs/essentials/controls?ref=ui"
+                href="https://storybook.js.org/docs/essentials/controls/?ref=ui"
                 target="_blank"
                 withArrow
               >

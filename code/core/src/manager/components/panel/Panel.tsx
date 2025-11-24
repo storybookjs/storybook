@@ -93,7 +93,7 @@ export const AddonPanel = React.memo<{
         <>Integrate your tools with Storybook to connect workflows and unlock advanced features.</>
       }
       footer={
-        <Link href={'https://storybook.js.org/addons?ref=ui'} target="_blank" withArrow>
+        <Link href={'https://storybook.js.org/addons/?ref=ui'} target="_blank" withArrow>
           <DocumentIcon /> Explore integrations catalog
         </Link>
       }

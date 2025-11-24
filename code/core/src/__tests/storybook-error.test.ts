@@ -46,7 +46,7 @@ describe('StorybookError', () => {
   it('should generate the correct message with multiple external documentation links', () => {
     const error = new TestError([
       'https://example.com/docs/first-error',
-      'https://storybook.js.org/docs/second-error',
+      'https://storybook.js.org/docs/second-error/',
     ]);
     expect(error.message).toMatchInlineSnapshot(`
       "This is a test error.
@@ -66,33 +66,33 @@ describe('StorybookError', () => {
 
 describe('appendErrorRef', () => {
   it('should append ref=error to storybook.js.org URLs without query parameters', () => {
-    const url = 'https://storybook.js.org/docs/example';
+    const url = 'https://storybook.js.org/docs/example/';
     const result = appendErrorRef(url);
-    expect(result).toBe('https://storybook.js.org/docs/example?ref=error');
+    expect(result).toBe('https://storybook.js.org/docs/example/?ref=error');
   });
 
   it('should append ref=error to storybook.js.org URLs with existing query parameters', () => {
     const url = 'https://storybook.js.org/docs/example?foo=bar';
     const result = appendErrorRef(url);
-    expect(result).toBe('https://storybook.js.org/docs/example?foo=bar&ref=error');
+    expect(result).toBe('https://storybook.js.org/docs/example/?foo=bar&ref=error');
   });
 
   it('should append ref=error to storybook.js.org URLs with multiple existing query parameters', () => {
     const url = 'https://storybook.js.org/docs/example?foo=bar&baz=qux';
     const result = appendErrorRef(url);
-    expect(result).toBe('https://storybook.js.org/docs/example?foo=bar&baz=qux&ref=error');
+    expect(result).toBe('https://storybook.js.org/docs/example/?foo=bar&baz=qux&ref=error');
   });
 
   it('should handle storybook.js.org URLs with hash fragments', () => {
     const url = 'https://storybook.js.org/docs/example#section';
     const result = appendErrorRef(url);
-    expect(result).toBe('https://storybook.js.org/docs/example?ref=error#section');
+    expect(result).toBe('https://storybook.js.org/docs/example/?ref=error#section');
   });
 
   it('should handle storybook.js.org URLs with query parameters and hash fragments', () => {
     const url = 'https://storybook.js.org/docs/example?foo=bar#section';
     const result = appendErrorRef(url);
-    expect(result).toBe('https://storybook.js.org/docs/example?foo=bar&ref=error#section');
+    expect(result).toBe('https://storybook.js.org/docs/example/?foo=bar&ref=error#section');
   });
 
   it('should not modify non-storybook.js.org URLs', () => {
@@ -120,26 +120,26 @@ describe('appendErrorRef', () => {
   });
 
   it('should not append ref=error if it already exists in the URL', () => {
-    const url = 'https://storybook.js.org/docs/example?ref=error';
+    const url = 'https://storybook.js.org/docs/example/?ref=error';
     const result = appendErrorRef(url);
-    expect(result).toBe('https://storybook.js.org/docs/example?ref=error');
+    expect(result).toBe('https://storybook.js.org/docs/example/?ref=error');
   });
 
   it('should not append ref=error if it already exists with other parameters', () => {
-    const url = 'https://storybook.js.org/docs/example?foo=bar&ref=error&baz=qux';
+    const url = 'https://storybook.js.org/docs/example/?foo=bar&ref=error&baz=qux';
     const result = appendErrorRef(url);
-    expect(result).toBe('https://storybook.js.org/docs/example?foo=bar&ref=error&baz=qux');
+    expect(result).toBe('https://storybook.js.org/docs/example/?foo=bar&ref=error&baz=qux');
   });
 
   it('should not append ref=error if it already exists in URL with hash fragment', () => {
-    const url = 'https://storybook.js.org/docs/example?ref=error#target';
+    const url = 'https://storybook.js.org/docs/example/?ref=error#target';
     const result = appendErrorRef(url);
-    expect(result).toBe('https://storybook.js.org/docs/example?ref=error#target');
+    expect(result).toBe('https://storybook.js.org/docs/example/?ref=error#target');
   });
 
   it('should append ref=error before hash fragment when no existing ref parameter', () => {
-    const url = 'https://storybook.js.org/docs/example#target';
+    const url = 'https://storybook.js.org/docs/example/#target';
     const result = appendErrorRef(url);
-    expect(result).toBe('https://storybook.js.org/docs/example?ref=error#target');
+    expect(result).toBe('https://storybook.js.org/docs/example/?ref=error#target');
   });
 });

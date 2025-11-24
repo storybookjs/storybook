@@ -25,7 +25,7 @@ export const Welcome = () => html`
     <p>
       Usually we create stories with smaller UI components in the app.<br />
       Have a look at the
-      <a class="link" href="https://storybook.js.org/basics/writing-stories" target="_blank">
+      <a class="link" href="https://storybook.js.org/basics/writing-stories/" target="_blank">
         Writing Stories
       </a>
       section in our documentation.

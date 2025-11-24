@@ -2,7 +2,7 @@
 
 The Storybook Links addon can be used to create links that navigate between stories in [Storybook](https://storybook.js.org?ref=readme).
 
-[Framework Support](https://storybook.js.org/docs/configure/integration/frameworks-feature-support?ref=readme)
+[Framework Support](https://storybook.js.org/docs/configure/integration/frameworks-feature-support/?ref=readme)
 
 ## Getting Started
 

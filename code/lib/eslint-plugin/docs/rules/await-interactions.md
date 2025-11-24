@@ -8,7 +8,7 @@
 
 ## Rule Details
 
-Storybook provides an instrumented version of testing library in the [@storybook/test](https://github.com/storybookjs/storybook/tree/next/code/core/src/test) library (formerly available in [@storybook/testing-library](https://github.com/storybookjs/testing-library/) library). When [writing interactions](https://storybook.js.org/docs/essentials/interactions), make sure to **await** them, so that addon-interactions can intercept these helper functions and allow you to step through them when debugging.
+Storybook provides an instrumented version of testing library in the [@storybook/test](https://github.com/storybookjs/storybook/tree/next/code/core/src/test) library (formerly available in [@storybook/testing-library](https://github.com/storybookjs/testing-library/) library). When [writing interactions](https://storybook.js.org/docs/essentials/interactions/), make sure to **await** them, so that addon-interactions can intercept these helper functions and allow you to step through them when debugging.
 
 Examples of **incorrect** code for this rule:
 

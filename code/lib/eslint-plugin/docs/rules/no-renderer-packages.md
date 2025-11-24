@@ -47,9 +47,9 @@ If you have a specific need to use renderer packages directly in your stories, y
 
 For more information about Storybook's framework-specific packages and build tools, see:
 
-- [Storybook for React](https://storybook.js.org/docs/react/get-started/install)
-- [Storybook for Vue](https://storybook.js.org/docs/vue/get-started/install)
-- [Storybook for Web Components](https://storybook.js.org/docs/web-components/get-started/install)
-- [Storybook for Svelte](https://storybook.js.org/docs/svelte/get-started/install)
-- [Storybook for HTML](https://storybook.js.org/docs/html/get-started/install)
-- [Storybook for Preact](https://storybook.js.org/docs/preact/get-started/install)
+- [Storybook for React](https://storybook.js.org/docs/react/get-started/install/)
+- [Storybook for Vue](https://storybook.js.org/docs/vue/get-started/install/)
+- [Storybook for Web Components](https://storybook.js.org/docs/web-components/get-started/install/)
+- [Storybook for Svelte](https://storybook.js.org/docs/svelte/get-started/install/)
+- [Storybook for HTML](https://storybook.js.org/docs/html/get-started/install/)
+- [Storybook for Preact](https://storybook.js.org/docs/preact/get-started/install/)

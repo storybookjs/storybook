@@ -78,7 +78,7 @@ export const blocker = createBlocker<MajorVersionData>({
         message: dedent`
           Your Storybook version (v${data.currentVersion}) is newer than the target release (v${versions.storybook}). Downgrading is not supported.
           `,
-        link: 'https://storybook.js.org/docs/releases/migration-guide?ref=upgrade',
+        link: 'https://storybook.js.org/docs/releases/migration-guide/?ref=upgrade',
       };
     }
 
@@ -93,7 +93,7 @@ export const blocker = createBlocker<MajorVersionData>({
           You can upgrade to version ${nextMajor} by running:
           ${CLI_COLORS.info(`npx storybook@${nextMajor} upgrade`)}
         `,
-        link: `https://storybook.js.org/docs/${nextMajor}/migration-guide?ref=upgrade`,
+        link: `https://storybook.js.org/docs/${nextMajor}/migration-guide/?ref=upgrade`,
       };
     }
 

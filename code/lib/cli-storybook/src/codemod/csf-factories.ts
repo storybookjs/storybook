@@ -62,7 +62,7 @@ export const csfFactories: CommandFix = {
         
         However, we cannot broadly recommend it for all projects, because it might not work in some monorepo setups or if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
         
-        More info: ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next#subpath-imports?ref=upgrade')}
+        More info: ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next/#subpath-imports?ref=upgrade')}
       `);
 
       useSubPathImports = await prompt.select<boolean>({
@@ -117,7 +117,7 @@ export const csfFactories: CommandFix = {
           You can now run Storybook with the new CSF factories format.
           
           For more info, check out the docs:
-          ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next?ref=upgrade')}
+          ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next/?ref=upgrade')}
         `
     );
   },

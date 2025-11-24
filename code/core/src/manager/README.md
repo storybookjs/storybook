@@ -1,6 +1,6 @@
 <h1>Storybook manager's UI</h1>
 
-Storybook manager is the core UI of [Storybook](https://storybook.js.org).
+Storybook manager is the core UI of [Storybook](https://storybook.js.org/).
 It's a React based UI which you can initialize with a function.
 You can configure it by providing a provider API.
 

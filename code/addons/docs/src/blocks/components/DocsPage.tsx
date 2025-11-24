@@ -127,6 +127,7 @@ export const DocsContent = styled.div(({ theme }) => {
         top: 0,
         left: 0,
         bottom: 0,
+        textDecoration: 'none',
       },
     },
     [toGlobalSelector('blockquote')]: {

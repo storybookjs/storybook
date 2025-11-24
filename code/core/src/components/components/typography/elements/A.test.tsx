@@ -46,7 +46,7 @@ describe('A', () => {
       expect(styles.textDecoration).toContain('underline');
     });
 
-    it('should maintain underline for anchor links with anchor class', () => {
+    it('should not underline anchor position markers (a.anchor)', () => {
       const { container } = render(
         <ThemedA href="#heading" className="anchor">
           Anchor Link
@@ -57,8 +57,8 @@ describe('A', () => {
       expect(link).toBeTruthy();
 
       const styles = window.getComputedStyle(link!);
-      // The base A component has underline, specific contexts may override
-      expect(styles.textDecoration).toContain('underline');
+      // Anchor links are position markers and should not have underline
+      expect(styles.textDecoration).not.toContain('underline');
     });
 
     it('should render with correct color and styling', () => {

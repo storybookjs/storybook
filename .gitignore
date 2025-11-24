@@ -21,12 +21,9 @@ tsconfig.vitest-temp.json
 .env.local
 
 # Yarn stuff
-.yarn
-!.yarn/releases
-!.yarn/plugins
-!.yarn/sdks
-!.yarn/versions
-!.yarn/patches
+.yarn/cache/
+.yarn/install-state.gz
+.pnp.data.json
 /**/.pnp.*
 
 # test-storybooks

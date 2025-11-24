@@ -17,7 +17,7 @@ export const Default = meta.story({
     <ActionsList>
       <ActionsList.Item>
         <ActionsList.Text>Text item</ActionsList.Text>
-        <ActionsList.Button aria-label="Options">
+        <ActionsList.Button ariaLabel="Options">
           <EllipsisIcon />
         </ActionsList.Button>
       </ActionsList.Item>

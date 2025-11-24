@@ -30,6 +30,10 @@ export const groupByType = (filters: Filter[]) =>
 const Wrapper = styled.div({
   minWidth: 240,
   maxWidth: 300,
+  maxHeight: 15.5 * 32 + 8, // 15.5 items at 32px each + 8px padding
+  overflow: 'hidden',
+  overflowY: 'auto',
+  scrollbarWidth: 'thin',
 });
 
 const MutedText = styled.span(({ theme }) => ({

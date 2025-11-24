@@ -184,7 +184,6 @@ export class SbPage {
   }
 
   async expandAllSidebarNodes() {
-    await this.page.keyboard.press('Escape');
     await this.page.keyboard.press(
       `${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+ArrowDown`
     );

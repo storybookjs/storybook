@@ -146,7 +146,7 @@ const title = (progress: number) => {
   }
 };
 
-const OpenGuideAction = ({
+const OpenGuideButton = ({
   children,
   afterClick,
 }: {
@@ -209,11 +209,11 @@ export const ChecklistWidget = () => {
                   {loaded && (
                     <Optional
                       content={
-                        <OpenGuideAction>
+                        <OpenGuideButton>
                           <strong>{title(progress)}</strong>
-                        </OpenGuideAction>
+                        </OpenGuideButton>
                       }
-                      fallback={<OpenGuideAction />}
+                      fallback={<OpenGuideButton />}
                     />
                   )}
                 </ActionList.Item>
@@ -237,9 +237,9 @@ export const ChecklistWidget = () => {
                       popover={({ onHide }) => (
                         <ActionList>
                           <ActionList.Item>
-                            <OpenGuideAction afterClick={onHide}>
+                            <OpenGuideButton afterClick={onHide}>
                               <ActionList.Text>Open full guide</ActionList.Text>
-                            </OpenGuideAction>
+                            </OpenGuideButton>
                           </ActionList.Item>
                           <ActionList.Item>
                             <ActionList.Action

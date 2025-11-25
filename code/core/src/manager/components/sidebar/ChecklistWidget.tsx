@@ -155,7 +155,7 @@ const OpenGuideButton = ({
 }) => {
   const api = useStorybookApi();
   return (
-    <ActionList.Button
+    <ActionList.Action
       ariaLabel="Open onboarding guide"
       onClick={(e) => {
         e.stopPropagation();
@@ -167,7 +167,7 @@ const OpenGuideButton = ({
         <ListUnorderedIcon />
       </ActionList.Icon>
       {children}
-    </ActionList.Button>
+    </ActionList.Action>
   );
 };
 
@@ -208,7 +208,11 @@ export const ChecklistWidget = () => {
                 <ActionList.Item as="div" style={{ flexShrink: 1 }}>
                   {loaded && (
                     <Optional
-                      content={<OpenGuideButton>{title(progress)}</OpenGuideButton>}
+                      content={
+                        <OpenGuideButton>
+                          <strong>{title(progress)}</strong>
+                        </OpenGuideButton>
+                      }
                       fallback={<OpenGuideButton />}
                     />
                   )}

@@ -205,7 +205,6 @@ const StyledButton = styled('button', {
     height: size === 'small' ? '28px' : '32px',
     position: 'relative',
     textAlign: 'center',
-    textDecoration: 'none',
     transitionProperty: 'background, box-shadow',
     transitionDuration: '150ms',
     transitionTimingFunction: 'ease-out',
@@ -316,6 +315,9 @@ const StyledButton = styled('button', {
       animation:
         animating && animation !== 'none' ? `${theme.animation[animation]} 1000ms ease-out` : '',
     },
+
+    // Button-styled links should not have underlines - they're visually buttons, not text links
+    textDecoration: 'none',
   })
 );
 

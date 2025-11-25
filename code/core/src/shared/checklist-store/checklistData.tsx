@@ -29,6 +29,7 @@ import {
 } from '../../../../addons/vitest/src/constants';
 import { SUPPORTED_FRAMEWORKS } from '../../cli/AddonVitestService.constants';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
+import { LocationMonitor } from '../../manager/components/LocationMonitor';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
 import type { initialState } from './checklistData.state';
 
@@ -365,11 +366,10 @@ export const Primary: Story = {
           criteria: "What's New page is opened",
           action: {
             label: 'Go',
-            onClick: ({ api, accept }) => {
-              api.navigate('/settings/whats-new');
-              accept();
-            },
+            onClick: ({ api }) => api.navigate('/settings/whats-new'),
           },
+          subscribe: ({ accept }) =>
+            LocationMonitor.subscribe((l) => l.search.endsWith('/settings/whats-new') && accept()),
         },
       ],
     },

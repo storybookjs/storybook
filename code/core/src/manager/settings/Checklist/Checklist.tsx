@@ -14,8 +14,8 @@ import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { Focus } from '../../components/Focus/Focus';
+import { useLocationHash } from '../../components/LocationMonitor';
 import type { ChecklistItem, useChecklist } from '../../components/sidebar/useChecklist';
-import { useLocationHash } from '../../components/useLocationHash';
 
 type ChecklistSection = {
   id: string;

@@ -1,12 +1,12 @@
 version: 2.1
 orbs:
-    browser-tools: circleci/browser-tools@1.4.1
-    codecov: codecov/codecov@3.2.4
+    browser-tools: circleci/browser-tools@2.3.2
+    codecov: codecov/codecov@5.4.3
     discord: antonioned/discord@0.1.0
-    git-shallow-clone: guitarrapc/git-shallow-clone@2.5.0
+    git-shallow-clone: guitarrapc/git-shallow-clone@2.8.0
     node: circleci/node@7.2.1
-    nx: nrwl/nx@1.6.2
-    win: circleci/windows@5.0.0
+    nx: nrwl/nx@1.7.0
+    win: circleci/windows@5.1.1
 commands:
     cancel-workflow-on-failure:
         description: Cancels the entire workflow in case the previous step has failed
@@ -253,58 +253,111 @@ jobs:
                       - code/node_modules
                       - scripts/node_modules
                       - code/core/dist
+                      - code/core/node_modules
                       - code/addons/a11y/dist
+                      - code/addons/a11y/node_modules
                       - code/addons/docs/dist
+                      - code/addons/docs/node_modules
                       - code/addons/links/dist
+                      - code/addons/links/node_modules
                       - code/addons/onboarding/dist
+                      - code/addons/onboarding/node_modules
                       - code/addons/pseudo-states/dist
+                      - code/addons/pseudo-states/node_modules
                       - code/addons/themes/dist
+                      - code/addons/themes/node_modules
                       - code/addons/vitest/dist
+                      - code/addons/vitest/node_modules
                       - code/builders/builder-vite/dist
+                      - code/builders/builder-vite/node_modules
                       - code/builders/builder-webpack5/dist
+                      - code/builders/builder-webpack5/node_modules
                       - code/frameworks/angular/dist
+                      - code/frameworks/angular/node_modules
                       - code/frameworks/ember/dist
+                      - code/frameworks/ember/node_modules
                       - code/frameworks/html-vite/dist
+                      - code/frameworks/html-vite/node_modules
                       - code/frameworks/nextjs/dist
+                      - code/frameworks/nextjs/node_modules
                       - code/frameworks/nextjs-vite/dist
+                      - code/frameworks/nextjs-vite/node_modules
                       - code/frameworks/preact-vite/dist
+                      - code/frameworks/preact-vite/node_modules
                       - code/frameworks/react-native-web-vite/dist
+                      - code/frameworks/react-native-web-vite/node_modules
                       - code/frameworks/react-vite/dist
+                      - code/frameworks/react-vite/node_modules
                       - code/frameworks/react-webpack5/dist
+                      - code/frameworks/react-webpack5/node_modules
                       - code/frameworks/server-webpack5/dist
+                      - code/frameworks/server-webpack5/node_modules
                       - code/frameworks/svelte-vite/dist
+                      - code/frameworks/svelte-vite/node_modules
                       - code/frameworks/sveltekit/dist
+                      - code/frameworks/sveltekit/node_modules
                       - code/frameworks/vue3-vite/dist
+                      - code/frameworks/vue3-vite/node_modules
                       - code/frameworks/web-components-vite/dist
+                      - code/frameworks/web-components-vite/node_modules
                       - code/lib/cli-storybook/dist
+                      - code/lib/cli-storybook/node_modules
                       - code/lib/codemod/dist
+                      - code/lib/codemod/node_modules
                       - code/lib/core-webpack/dist
+                      - code/lib/core-webpack/node_modules
                       - code/lib/create-storybook/dist
+                      - code/lib/create-storybook/node_modules
                       - code/lib/csf-plugin/dist
+                      - code/lib/csf-plugin/node_modules
                       - code/lib/eslint-plugin/dist
+                      - code/lib/eslint-plugin/node_modules
                       - code/lib/react-dom-shim/dist
+                      - code/lib/react-dom-shim/node_modules
                       - code/presets/create-react-app/dist
+                      - code/presets/create-react-app/node_modules
                       - code/presets/react-webpack/dist
+                      - code/presets/react-webpack/node_modules
                       - code/presets/server-webpack/dist
+                      - code/presets/server-webpack/node_modules
                       - code/renderers/html/dist
+                      - code/renderers/html/node_modules
                       - code/renderers/preact/dist
+                      - code/renderers/preact/node_modules
                       - code/renderers/react/dist
+                      - code/renderers/react/node_modules
                       - code/renderers/server/dist
+                      - code/renderers/server/node_modules
                       - code/renderers/svelte/dist
+                      - code/renderers/svelte/node_modules
                       - code/renderers/vue3/dist
+                      - code/renderers/vue3/node_modules
                       - code/renderers/web-components/dist
+                      - code/renderers/web-components/node_modules
                       - code/core/node_modules/human-signals/build/dist
+                      - code/core/node_modules/human-signals/build/node_modules
                       - code/core/dist/core-server/utils/__mockdata__/src
+                      - code/core/node_modules/core-server/utils/__mockdata__/src
                       - code/core/dist/core-server/utils/__search-files-tests__/src
+                      - code/core/node_modules/core-server/utils/__search-files-tests__/src
                       - code/frameworks/angular/dist/server/__mocks-ng-workspace__/minimal-config/src
+                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/minimal-config/src
                       - code/frameworks/angular/dist/server/__mocks-ng-workspace__/some-config/src
+                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/some-config/src
                       - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-angularBrowserTarget/src
+                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-angularBrowserTarget/src
                       - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-nx/src
+                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-nx/src
                       - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-nx-workspace/src
+                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-nx-workspace/src
                       - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-options-styles/src
+                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-options-styles/src
                       - code/frameworks/angular/dist/server/__mocks-ng-workspace__/without-tsConfig/src
+                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/without-tsConfig/src
                       - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-lib/projects/pattern-lib/src
+                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-lib/projects/pattern-lib/src
                       - code/frameworks/angular/dist/server/__mocks-ng-workspace__/without-projects-entry/projects/pattern-lib/src
+                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/without-projects-entry/projects/pattern-lib/src
                       - .verdaccio-cache
                       - .yarn/code-install-state.gz
                       - .yarn/scripts-install-state.gz

@@ -352,7 +352,10 @@ const jobs = {
                 onlyDirectories: true,
                 ignore: ['node_modules'],
               })
-              .map((p) => `code/${p.replace('src', 'dist')}`),
+              .flatMap((p) => [
+                `code/${p.replace('src', 'dist')}`,
+                `code/${p.replace('src', 'node_modules')}`,
+              ]),
             '.verdaccio-cache',
             '.yarn/code-install-state.gz',
             '.yarn/scripts-install-state.gz',
@@ -1776,13 +1779,13 @@ const jobs = {
   },
 };
 const orbs = {
-  'browser-tools': 'circleci/browser-tools@1.4.1',
-  codecov: 'codecov/codecov@3.2.4',
+  'browser-tools': 'circleci/browser-tools@2.3.2',
+  codecov: 'codecov/codecov@5.4.3',
   discord: 'antonioned/discord@0.1.0',
-  'git-shallow-clone': 'guitarrapc/git-shallow-clone@2.5.0',
+  'git-shallow-clone': 'guitarrapc/git-shallow-clone@2.8.0',
   node: 'circleci/node@7.2.1',
-  nx: 'nrwl/nx@1.6.2',
-  win: 'circleci/windows@5.0.0',
+  nx: 'nrwl/nx@1.7.0',
+  win: 'circleci/windows@5.1.1',
 };
 const parameters = {
   ghBaseBranch: {

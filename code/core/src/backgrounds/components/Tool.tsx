@@ -54,7 +54,6 @@ interface PureProps {
 
 const Pure = memo(function PureTool(props: PureProps) {
   const {
-    item,
     length,
     updateGlobals,
     backgroundMap,

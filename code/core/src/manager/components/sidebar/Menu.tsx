@@ -1,7 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React, { useState } from 'react';
 
-import { ActionsList, Button, PopoverProvider, ToggleButton } from 'storybook/internal/components';
+import { ActionList, Button, PopoverProvider, ToggleButton } from 'storybook/internal/components';
 
 import { CloseIcon, CogIcon } from '@storybook/icons';
 
@@ -90,10 +90,10 @@ const SidebarMenuList: FC<{
     {menu
       .filter((links) => links.length)
       .flatMap((links) => (
-        <ActionsList key={links.map((link) => link.id).join('_')}>
+        <ActionList key={links.map((link) => link.id).join('_')}>
           {links.map((link) => (
-            <ActionsList.Item key={link.id} active={link.active}>
-              <ActionsList.Action
+            <ActionList.Item key={link.id} active={link.active}>
+              <ActionList.Action
                 {...(link.href && { as: 'a', href: link.href, target: '_blank' })}
                 ariaLabel={false}
                 id={`list-item-${link.id}`}
@@ -116,16 +116,16 @@ const SidebarMenuList: FC<{
                 }}
               >
                 {(link.icon || link.input) && (
-                  <ActionsList.Icon>{link.icon || link.input}</ActionsList.Icon>
+                  <ActionList.Icon>{link.icon || link.input}</ActionList.Icon>
                 )}
                 {(link.title || link.center) && (
-                  <ActionsList.Text>{link.title || link.center}</ActionsList.Text>
+                  <ActionList.Text>{link.title || link.center}</ActionList.Text>
                 )}
                 {link.right}
-              </ActionsList.Action>
-            </ActionsList.Item>
+              </ActionList.Action>
+            </ActionList.Item>
           ))}
-        </ActionsList>
+        </ActionList>
       ))}
   </Container>
 );

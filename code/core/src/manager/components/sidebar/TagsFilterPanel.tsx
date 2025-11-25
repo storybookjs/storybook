@@ -1,6 +1,6 @@
 import React, { Fragment, useRef } from 'react';
 
-import { ActionsList, Form } from 'storybook/internal/components';
+import { ActionList, Form } from 'storybook/internal/components';
 import type { API_PreparedIndexEntry } from 'storybook/internal/types';
 
 import {
@@ -104,9 +104,9 @@ export const TagsFilterPanel = ({
     return {
       id: `filter-${type}-${id}`,
       content: (
-        <ActionsList.HoverItem targetId={`filter-${type}-${id}`}>
-          <ActionsList.Action as="label" tabIndex={-1} tooltip={toggleTooltip}>
-            <ActionsList.Icon>
+        <ActionList.HoverItem targetId={`filter-${type}-${id}`}>
+          <ActionList.Action as="label" tabIndex={-1} tooltip={toggleTooltip}>
+            <ActionList.Icon>
               {isExcluded ? <DeleteIcon /> : isIncluded ? null : icon}
               <Form.Checkbox
                 checked={isChecked}
@@ -114,23 +114,23 @@ export const TagsFilterPanel = ({
                 data-tag={title}
                 aria-label={toggleLabel}
               />
-            </ActionsList.Icon>
-            <ActionsList.Text>
+            </ActionList.Icon>
+            <ActionList.Text>
               <span>
                 {title}
                 {isExcluded && <MutedText> (excluded)</MutedText>}
               </span>
-            </ActionsList.Text>
+            </ActionList.Text>
             {isExcluded ? <s>{count}</s> : <span>{count}</span>}
-          </ActionsList.Action>
-          <ActionsList.Button
+          </ActionList.Action>
+          <ActionList.Button
             data-target-id={`filter-${type}-${id}`}
             ariaLabel={invertButtonLabel}
             onClick={() => onToggle(true, !isExcluded)}
           >
             <span style={{ minWidth: 45 }}>{isExcluded ? 'Include' : 'Exclude'}</span>
-          </ActionsList.Button>
-        </ActionsList.HoverItem>
+          </ActionList.Button>
+        </ActionList.HoverItem>
       ),
     };
   };
@@ -154,20 +154,20 @@ export const TagsFilterPanel = ({
   return (
     <Wrapper ref={ref}>
       {hasItems && (
-        <ActionsList as="div">
-          <ActionsList.Item as="div">
+        <ActionList as="div">
+          <ActionList.Item as="div">
             {isNothingSelectedYet ? (
-              <ActionsList.Button
+              <ActionList.Button
                 ariaLabel={false}
                 id="select-all"
                 key="select-all"
                 onClick={() => setAllFilters(true)}
               >
                 <BatchAcceptIcon />
-                <ActionsList.Text>{filtersLabel}</ActionsList.Text>
-              </ActionsList.Button>
+                <ActionList.Text>{filtersLabel}</ActionList.Text>
+              </ActionList.Button>
             ) : (
-              <ActionsList.Button
+              <ActionList.Button
                 ariaLabel={false}
                 id="deselect-all"
                 key="deselect-all"
@@ -175,10 +175,10 @@ export const TagsFilterPanel = ({
               >
                 <SweepIcon />
                 {filtersLabel}
-              </ActionsList.Button>
+              </ActionList.Button>
             )}
             {hasDefaultSelection && (
-              <ActionsList.Button
+              <ActionList.Button
                 id="reset-filters"
                 key="reset-filters"
                 onClick={resetFilters}
@@ -187,37 +187,37 @@ export const TagsFilterPanel = ({
                 disabled={isDefaultSelection}
               >
                 <UndoIcon />
-              </ActionsList.Button>
+              </ActionList.Button>
             )}
-          </ActionsList.Item>
-        </ActionsList>
+          </ActionList.Item>
+        </ActionList>
       )}
       {links.map((group) => (
-        <ActionsList key={group.map((link) => link.id).join('_')}>
+        <ActionList key={group.map((link) => link.id).join('_')}>
           {group.map((link) => (
             <Fragment key={link.id}>{link.content}</Fragment>
           ))}
-        </ActionsList>
+        </ActionList>
       ))}
       {!hasUserTags && (
-        <ActionsList as="div">
-          <ActionsList.Item as="div">
-            <ActionsList.Link
+        <ActionList as="div">
+          <ActionList.Item as="div">
+            <ActionList.Link
               href={api.getDocsUrl({ subpath: 'writing-stories/tags#custom-tags' })}
               target="_blank"
             >
-              <ActionsList.Icon>
+              <ActionList.Icon>
                 <DocumentIcon />
-              </ActionsList.Icon>
-              <ActionsList.Text>
+              </ActionList.Icon>
+              <ActionList.Text>
                 <span>Learn how to add tags</span>
-              </ActionsList.Text>
-              <ActionsList.Icon>
+              </ActionList.Text>
+              <ActionList.Icon>
                 <ShareAltIcon />
-              </ActionsList.Icon>
-            </ActionsList.Link>
-          </ActionsList.Item>
-        </ActionsList>
+              </ActionList.Icon>
+            </ActionList.Link>
+          </ActionList.Item>
+        </ActionList>
       )}
     </Wrapper>
   );

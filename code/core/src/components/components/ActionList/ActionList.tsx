@@ -5,7 +5,7 @@ import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button';
 
-const ActionsListItem = styled.li<{
+const ActionListItem = styled.li<{
   active?: boolean;
   transitionStatus?: TransitionStatus;
 }>(
@@ -58,11 +58,11 @@ const ActionsListItem = styled.li<{
 );
 
 /**
- * A ActionsList item that shows/hides child elements on hover based on the targetId. Child elements
+ * A ActionList item that shows/hides child elements on hover based on the targetId. Child elements
  * must have a `data-target-id` attribute matching the `targetId` prop to be affected by the hover
  * behavior.
  */
-const ActionsListHoverItem = styled(ActionsListItem)<{ targetId: string }>(({ targetId }) => ({
+const ActionListHoverItem = styled(ActionListItem)<{ targetId: string }>(({ targetId }) => ({
   gap: 0,
   [`& [data-target-id="${targetId}"]`]: {
     inlineSize: 'auto',
@@ -89,8 +89,8 @@ const StyledButton = styled(Button)({
   },
 });
 
-const ActionsListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof StyledButton>>(
-  function ActionsListButton(
+const ActionListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof StyledButton>>(
+  function ActionListButton(
     { padding = 'small', size = 'medium', variant = 'ghost', ...props },
     ref
   ) {
@@ -98,7 +98,7 @@ const ActionsListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof St
   }
 );
 
-const ActionsListAction = styled(ActionsListButton)(({ theme }) => ({
+const ActionListAction = styled(ActionListButton)(({ theme }) => ({
   flex: '0 1 100%',
   textAlign: 'start',
   justifyContent: 'space-between',
@@ -116,11 +116,11 @@ const ActionsListAction = styled(ActionsListButton)(({ theme }) => ({
   },
 }));
 
-const ActionsListLink = (
-  props: ComponentProps<typeof ActionsListAction> & React.AnchorHTMLAttributes<HTMLAnchorElement>
-) => <ActionsListAction as="a" {...props} />;
+const ActionListLink = (
+  props: ComponentProps<typeof ActionListAction> & React.AnchorHTMLAttributes<HTMLAnchorElement>
+) => <ActionListAction as="a" {...props} />;
 
-const ActionsListText = styled.div({
+const ActionListText = styled.div({
   display: 'flex',
   alignItems: 'center',
   gap: 8,
@@ -148,7 +148,7 @@ const ActionsListText = styled.div({
   },
 });
 
-const ActionsListIcon = styled.div({
+const ActionListIcon = styled.div({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -158,7 +158,7 @@ const ActionsListIcon = styled.div({
   color: 'var(--listbox-item-muted-color)',
 });
 
-export const ActionsList = Object.assign(
+export const ActionList = Object.assign(
   styled.ul(({ theme, onClick }) => ({
     listStyle: 'none',
     margin: 0,
@@ -170,12 +170,12 @@ export const ActionsList = Object.assign(
     },
   })),
   {
-    Item: ActionsListItem,
-    HoverItem: ActionsListHoverItem,
-    Button: ActionsListButton,
-    Action: ActionsListAction,
-    Link: ActionsListLink,
-    Text: ActionsListText,
-    Icon: ActionsListIcon,
+    Item: ActionListItem,
+    HoverItem: ActionListHoverItem,
+    Button: ActionListButton,
+    Action: ActionListAction,
+    Link: ActionListLink,
+    Text: ActionListText,
+    Icon: ActionListIcon,
   }
 );

@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { useCallback, useMemo } from 'react';
 
-import { ActionsList, ProgressSpinner } from 'storybook/internal/components';
+import { ActionList, ProgressSpinner } from 'storybook/internal/components';
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
@@ -96,10 +96,10 @@ export const useMenu = ({
       closeOnClick: true,
       icon: <ListUnorderedIcon />,
       right: progress < 100 && (
-        <ActionsList.Button as="div" readOnly padding="none" ariaLabel={`${progress}% completed`}>
+        <ActionList.Button as="div" readOnly padding="none" ariaLabel={`${progress}% completed`}>
           <ProgressCircle percentage={progress} running={false} size={16} width={1.5} />
           {progress}%
-        </ActionsList.Button>
+        </ActionList.Button>
       ),
     }),
     [api, progress]
@@ -218,9 +218,9 @@ export const useMenu = ({
       closeOnClick: true,
       href: docsUrl,
       right: (
-        <ActionsList.Icon>
+        <ActionList.Icon>
           <ShareAltIcon />
-        </ActionsList.Icon>
+        </ActionList.Icon>
       ),
       icon: <DocumentIcon />,
     };

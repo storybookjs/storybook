@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import {
-  ActionsList,
+  ActionList,
   Card,
   Collapsible,
   PopoverProvider,
@@ -85,7 +85,7 @@ const HoverCard = styled(Card)({
   },
 });
 
-const CollapseToggle = styled(ActionsList.Button)({
+const CollapseToggle = styled(ActionList.Button)({
   opacity: 0,
   transition: 'opacity var(--transition-duration, 0.2s)',
   '&:focus, &:hover': {
@@ -155,7 +155,7 @@ const OpenGuideAction = ({
 }) => {
   const api = useStorybookApi();
   return (
-    <ActionsList.Action
+    <ActionList.Action
       ariaLabel="Open onboarding guide"
       onClick={(e) => {
         e.stopPropagation();
@@ -163,11 +163,11 @@ const OpenGuideAction = ({
         afterClick?.();
       }}
     >
-      <ActionsList.Icon>
+      <ActionList.Icon>
         <ListUnorderedIcon />
-      </ActionsList.Icon>
+      </ActionList.Icon>
       {children}
-    </ActionsList.Action>
+    </ActionList.Action>
   );
 };
 
@@ -203,9 +203,9 @@ export const ChecklistWidget = () => {
           collapsed={!hasItems}
           disabled={!hasItems}
           summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
-            <ActionsList as="div" onClick={toggleCollapsed}>
-              <ActionsList.Item as="div">
-                <ActionsList.Item as="div" style={{ flexShrink: 1 }}>
+            <ActionList as="div" onClick={toggleCollapsed}>
+              <ActionList.Item as="div">
+                <ActionList.Item as="div" style={{ flexShrink: 1 }}>
                   {loaded && (
                     <Optional
                       content={
@@ -216,8 +216,8 @@ export const ChecklistWidget = () => {
                       fallback={<OpenGuideAction />}
                     />
                   )}
-                </ActionsList.Item>
-                <ActionsList.Item as="div">
+                </ActionList.Item>
+                <ActionList.Item as="div">
                   <CollapseToggle
                     {...toggleProps}
                     id="checklist-module-collapse-toggle"
@@ -235,14 +235,14 @@ export const ChecklistWidget = () => {
                     <PopoverProvider
                       padding={0}
                       popover={({ onHide }) => (
-                        <ActionsList>
-                          <ActionsList.Item>
+                        <ActionList>
+                          <ActionList.Item>
                             <OpenGuideAction afterClick={onHide}>
-                              <ActionsList.Text>Open full guide</ActionsList.Text>
+                              <ActionList.Text>Open full guide</ActionList.Text>
                             </OpenGuideAction>
-                          </ActionsList.Item>
-                          <ActionsList.Item>
-                            <ActionsList.Action
+                          </ActionList.Item>
+                          <ActionList.Item>
+                            <ActionList.Action
                               ariaLabel={false}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -250,16 +250,16 @@ export const ChecklistWidget = () => {
                                 onHide();
                               }}
                             >
-                              <ActionsList.Icon>
+                              <ActionList.Icon>
                                 <EyeCloseIcon />
-                              </ActionsList.Icon>
-                              <ActionsList.Text>Remove from sidebar</ActionsList.Text>
-                            </ActionsList.Action>
-                          </ActionsList.Item>
-                        </ActionsList>
+                              </ActionList.Icon>
+                              <ActionList.Text>Remove from sidebar</ActionList.Text>
+                            </ActionList.Action>
+                          </ActionList.Item>
+                        </ActionList>
                       )}
                     >
-                      <ActionsList.Button
+                      <ActionList.Button
                         ariaLabel={`${progress}% completed`}
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -270,38 +270,38 @@ export const ChecklistWidget = () => {
                           width={1.5}
                         />
                         <TextFlip text={`${progress}%`} placeholder="00%" />
-                      </ActionsList.Button>
+                      </ActionList.Button>
                     </PopoverProvider>
                   )}
-                </ActionsList.Item>
-              </ActionsList.Item>
-            </ActionsList>
+                </ActionList.Item>
+              </ActionList.Item>
+            </ActionList>
           )}
         >
-          <ActionsList>
+          <ActionList>
             {transitionItems.map(
               ([item, { status, isMounted }]) =>
                 isMounted && (
-                  <ActionsList.HoverItem key={item.id} targetId={item.id} transitionStatus={status}>
-                    <ActionsList.Action
+                  <ActionList.HoverItem key={item.id} targetId={item.id} transitionStatus={status}>
+                    <ActionList.Action
                       ariaLabel={`Open onboarding guide for ${item.label}`}
                       onClick={() => api.navigate(`/settings/guide#${item.id}`)}
                     >
-                      <ActionsList.Icon>
+                      <ActionList.Icon>
                         {item.isCompleted ? (
                           <Particles anchor={Checked} key={item.id} />
                         ) : (
                           <StatusFailIcon />
                         )}
-                      </ActionsList.Icon>
-                      <ActionsList.Text>
+                      </ActionList.Icon>
+                      <ActionList.Text>
                         <ItemLabel isCompleted={item.isCompleted} isSkipped={item.isSkipped}>
                           {item.label}
                         </ItemLabel>
-                      </ActionsList.Text>
-                    </ActionsList.Action>
+                      </ActionList.Text>
+                    </ActionList.Action>
                     {item.action && (
-                      <ActionsList.Button
+                      <ActionList.Button
                         data-target-id={item.id}
                         ariaLabel={false}
                         onClick={(e) => {
@@ -313,12 +313,12 @@ export const ChecklistWidget = () => {
                         }}
                       >
                         {item.action.label}
-                      </ActionsList.Button>
+                      </ActionList.Button>
                     )}
-                  </ActionsList.HoverItem>
+                  </ActionList.HoverItem>
                 )
             )}
-          </ActionsList>
+          </ActionList>
         </Collapsible>
       </HoverCard>
     </CollapsibleWithMargin>

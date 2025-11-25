@@ -487,7 +487,7 @@ export default {
     'A',
     'AbstractToolbar',
     'ActionBar',
-    'ActionsList',
+    'ActionList',
     'AddonPanel',
     'Badge',
     'Bar',

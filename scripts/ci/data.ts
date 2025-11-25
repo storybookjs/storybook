@@ -1730,11 +1730,45 @@ const jobs = {
       class: 'xlarge',
       name: 'sb_playwright',
     },
+    name: 'react-vite/default-ts',
     steps: [
       {
         'git-shallow-clone/checkout_advanced': {
           clone_options: '--depth 1 --verbose',
         },
+      },
+      {
+        attach_workspace: {
+          at: '.',
+        },
+      },
+      {
+        run: {
+          command: 'yarn local-registry --open',
+          name: 'Verdaccio',
+          background: true,
+          working_directory: 'code',
+        },
+      },
+      {
+        run: {
+          command: 'yarn wait-on tcp:127.0.0.1:6001\nyarn wait-on tcp:127.0.0.1:6002',
+          name: 'Wait on Verdaccio',
+          working_directory: 'code',
+        },
+      },
+      {
+        run: {
+          command:
+            'yarn task --task create-sandboxes --template react-vite/default-ts --no-link -s=never',
+          name: 'Create sandbox',
+        },
+      },
+      {
+        persist_to_workspace: {
+          paths: ['sandbox/react-vite-default-ts'],
+        },
+        root: '.',
       },
     ],
   },
@@ -1747,6 +1781,20 @@ const jobs = {
       {
         'git-shallow-clone/checkout_advanced': {
           clone_options: '--depth 1 --verbose',
+        },
+      },
+      {
+        attach_workspace: {
+          at: '.',
+        },
+      },
+      {
+        run: {
+          command: [
+            'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
+            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests) --no-link --start-from=never --junit" --verbose --index=0 --total=1',
+          ].join('\n'),
+          name: 'Running E2E Tests',
         },
       },
     ],

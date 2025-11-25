@@ -266,19 +266,10 @@ export const Checklist = ({
     [itemsById, sectionsById]
   );
 
-  const next = useMemo(
-    () =>
-      Object.values(sections).findIndex(({ items }) =>
-        items.some((item) => item.isOpen && item.isAvailable)
-      ),
-    [sections]
-  );
-
   return (
     <Sections>
-      {sections.map(({ id, title, items, progress }, index) => {
-        const hasTarget = items.some((item) => item.id === locationHash);
-        const collapsed = !hasTarget && (progress === 0 || progress === 100) && next !== index;
+      {sections.map(({ id, title, items, progress }) => {
+        const collapsed = progress === 100 && items.every((item) => item.id !== locationHash);
 
         return (
           <li key={id}>
@@ -322,7 +313,7 @@ export const Checklist = ({
                       ...item
                     }) => {
                       const isChecked = isAccepted || isDone;
-                      const isCollapsed = isChecked && item.id !== locationHash;
+                      const isCollapsed = item.id !== locationHash;
                       const isLocked = !!isLockedBy;
                       const itemContent = content?.({ api });
 

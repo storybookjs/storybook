@@ -113,7 +113,7 @@
     "sharedGlobals": [
       "{workspaceRoot}/tsconfig.json",
       {
-        "runtime": "cd .. && git ls-files scripts | sort | git hash-object --stdin-paths | git hash-object --stdin"
+        "runtime": "node {workspaceRoot}/../scripts/hash-scripts-dir.mjs"
       }
     ],
     "production": [

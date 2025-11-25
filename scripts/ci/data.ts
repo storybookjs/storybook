@@ -375,6 +375,11 @@ const jobs = {
         },
       },
       {
+        attach_workspace: {
+          at: '.',
+        },
+      },
+      {
         run: {
           command: 'yarn task --task check --no-link',
           name: 'TypeCheck code',

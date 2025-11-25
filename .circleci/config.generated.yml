@@ -317,6 +317,8 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1 --verbose
+            - attach_workspace:
+                  at: .
             - run:
                   command: yarn task --task check --no-link
                   name: TypeCheck code

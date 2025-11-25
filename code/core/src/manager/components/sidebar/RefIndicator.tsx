@@ -199,7 +199,8 @@ export const RefIndicator = React.memo(
                 tooltip="Choose version"
                 defaultOptions={currentVersion}
                 onSelect={(item) => {
-                  const href = ref.versions?.[item];
+                  // We only pass strings as version ids, so item is always a string
+                  const href = ref.versions?.[item as string];
                   if (href) {
                     api.changeRefVersion(ref.id, href);
                   }

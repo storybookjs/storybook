@@ -1,12 +1,14 @@
 import type { FC } from 'react';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 
-import { Loader } from 'storybook/internal/components';
+import { deprecate } from 'storybook/internal/client-logger';
+import { Loader, useTabsState } from 'storybook/internal/components';
 import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from 'storybook/internal/core-events';
 import type { Addon_BaseType, Addon_WrapperType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
+import type { TabListState } from '@react-stately/tabs';
 import { Helmet } from 'react-helmet-async';
 import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-api';
 
@@ -56,6 +58,30 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
     tabId,
   } = props;
 
+  // SB11: remove code
+  // NOTE: we interface with the old API without rewriting the UI because we know
+  // that addon tabs are pretty rare and we want to deprecate them. To make this UI
+  // accessible, we'd need to pass tabContent/CanvasWrap to the tabs consumed by
+  // the TabPanel. It's doable, but not worth the effort considering the feature's
+  // remaining lifespan.
+  const tabState = useTabsState({
+    selected: tabId ?? 'canvas',
+    onSelectionChange: (key) => {
+      api.applyQueryParams({ tab: key === 'canvas' ? undefined : key });
+    },
+    tabs: tabs.map((tab, index) => ({
+      id: tab.id ?? `tab-${index}`,
+      title: tab.title,
+      isDisabled: !!tab.disabled,
+      children: () => tab.render({ active: true }),
+    })),
+  });
+
+  if (tabs.length > 1) {
+    deprecate('Addon tabs are deprecated and will be removed in Storybook 11.');
+  }
+  // SB11: end remove code
+
   const tabContent = tabs.find((tab) => tab.id === tabId)?.render;
 
   const shouldScale = viewMode === 'story';
@@ -96,16 +122,17 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
           <ToolbarComp
             key="tools"
             isShown={customisedShowToolbar}
-            // @ts-expect-error (non strict)
-            tabId={tabId}
             tabs={tabs}
+            tabState={tabState as TabListState<object>}
             tools={tools}
             toolsExtra={toolsExtra}
-            api={api}
           />
-          <S.FrameWrap key="frame">
+          <S.FrameWrap aria-labelledby="main-preview-heading">
+            <h2 id="main-preview-heading" className="sb-sr-only">
+              Main preview area
+            </h2>
             {tabContent && <S.IframeWrapper>{tabContent({ active: true })}</S.IframeWrapper>}
-            <S.CanvasWrap show={!tabId}>
+            <S.CanvasWrap show={!tabId || tabId === 'canvas'}>
               <Canvas {...{ withLoader, baseUrl }} wrappers={wrappers} />
             </S.CanvasWrap>
           </S.FrameWrap>

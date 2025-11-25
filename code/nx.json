@@ -3,8 +3,10 @@
   "extends": "nx/presets/npm.json",
   "nxCloudAccessToken": "NGVmYTkxMmItYzY3OS00MjkxLTk1ZDktZDFmYTFmNmVlNGY4fHJlYWQ=",
   "defaultBase": "next",
-  "useLegacyCache": true,
   "parallel": 8,
+  "tui": {
+    "autoExit": true
+  },
   "plugins": [
     {
       "plugin": "@nx/vite/plugin",
@@ -57,7 +59,7 @@
       "configurations": {
         "production": {}
       },
-      "inputs": ["default", "^production", "{workspaceRoot}/../scripts/prepare/check.ts"],
+      "inputs": ["default", "^production"],
       "dependsOn": ["build"],
       "cache": true
     },
@@ -108,7 +110,12 @@
   },
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "sharedGlobals": ["{workspaceRoot}/tsconfig.json"],
+    "sharedGlobals": [
+      "{workspaceRoot}/tsconfig.json",
+      {
+        "runtime": "cd .. && git ls-files scripts | sort | git hash-object --stdin-paths | git hash-object --stdin"
+      }
+    ],
     "production": [
       "default",
       "!{projectRoot}/src/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",

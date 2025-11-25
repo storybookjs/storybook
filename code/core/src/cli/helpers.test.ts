@@ -4,13 +4,12 @@ import fsp from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import type { SupportedRenderers } from 'storybook/internal/types';
+import { Feature, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
 
 import { sep } from 'path';
 
 import { IS_WINDOWS } from '../../../vitest.helpers';
 import * as helpers from './helpers';
-import { SupportedLanguage } from './project_types';
 
 const normalizePath = (path: string) => (IS_WINDOWS ? path.replace(/\//g, sep) : path);
 
@@ -162,11 +161,11 @@ describe('Helpers', () => {
           filePath === normalizePath('@storybook/react/template/cli')
       );
       await helpers.copyTemplateFiles({
-        templateLocation: 'react',
+        templateLocation: SupportedRenderer.REACT,
         language,
         packageManager: packageManagerMock,
         commonAssetsDir: normalizePath('create-storybook/rendererAssets/common'),
-        features: ['dev', 'docs', 'test'],
+        features: new Set([Feature.DOCS, Feature.TEST]),
       });
 
       expect(fsp.cp).toHaveBeenNthCalledWith(
@@ -186,10 +185,10 @@ describe('Helpers', () => {
       return filePath === normalizePath('@storybook/react/template/cli') || filePath === './src';
     });
     await helpers.copyTemplateFiles({
-      templateLocation: 'react',
+      templateLocation: SupportedRenderer.REACT,
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
-      features: ['dev', 'docs', 'test'],
+      features: new Set([Feature.DOCS, Feature.TEST]),
     });
     expect(fsp.cp).toHaveBeenCalledWith(expect.anything(), './src/stories', expect.anything());
   });
@@ -199,23 +198,23 @@ describe('Helpers', () => {
       return filePath === normalizePath('@storybook/react/template/cli');
     });
     await helpers.copyTemplateFiles({
-      templateLocation: 'react',
+      templateLocation: SupportedRenderer.REACT,
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
-      features: ['dev', 'docs', 'test'],
+      features: new Set([Feature.DOCS, Feature.TEST]),
     });
     expect(fsp.cp).toHaveBeenCalledWith(expect.anything(), './stories', expect.anything());
   });
 
   it(`should throw an error for unsupported renderer`, async () => {
-    const renderer = 'unknown renderer' as SupportedRenderers;
+    const renderer = 'unknown renderer' as unknown as SupportedRenderer;
     const expectedMessage = `Unsupported renderer: ${renderer}`;
     await expect(
       helpers.copyTemplateFiles({
         templateLocation: renderer,
         language: SupportedLanguage.JAVASCRIPT,
         packageManager: packageManagerMock,
-        features: ['dev', 'docs', 'test'],
+        features: new Set([Feature.DOCS, Feature.TEST]),
       })
     ).rejects.toThrowError(expectedMessage);
   });

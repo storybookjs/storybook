@@ -48,9 +48,21 @@ export interface SubAPI {
   /**
    * Returns the URL of the Storybook documentation for the current version.
    *
+   * @param options - The options for the documentation URL.
+   * @param options.asset - Like subpath, but links to the docs-assets directory.
+   * @param options.subpath - The subpath of the documentation URL.
+   * @param options.versioned - Whether to include the versioned path.
+   * @param options.renderer - Whether to include the renderer path.
+   * @param options.ref - Tracking reference for the docs site. E.g. 'ui', 'error', 'upgrade', etc.
    * @returns {string} The URL of the Storybook Manager documentation.
    */
-  getDocsUrl: (options: { subpath?: string; versioned?: boolean; renderer?: boolean }) => string;
+  getDocsUrl: (options: {
+    asset?: string;
+    subpath?: string;
+    versioned?: boolean;
+    renderer?: boolean;
+    ref?: string;
+  }) => string;
   /**
    * Checks if an update is available for the Storybook Manager.
    *
@@ -89,30 +101,30 @@ export const init: ModuleFn = ({ store }) => {
       return latest as API_Version;
     },
     // TODO: Move this to it's own "info" module later
-    getDocsUrl: ({ subpath, versioned, renderer }) => {
-      const {
-        versions: { latest, current },
-      } = store.getState();
+    getDocsUrl: ({ asset, subpath = asset, versioned, renderer, ref = 'ui' }) => {
+      const { versions } = store.getState();
+      const latestVersion = versions.latest?.version;
+      const currentVersion = versions.current?.version;
+      const activeVersion =
+        (currentVersion?.startsWith('0.0.0') && latestVersion) || currentVersion;
 
-      let url = 'https://storybook.js.org/docs/';
+      let url = `https://storybook.js.org/${asset ? 'docs-assets' : 'docs'}/`;
 
-      if (versioned && current?.version && latest?.version) {
-        const versionDiff = semver.diff(latest.version, current.version);
-        const isLatestDocs =
-          versionDiff === 'patch' ||
-          versionDiff === null ||
-          // assume latest version when current version is a 0.0.0 canary
-          semver.satisfies(current.version, '0.0.0', { includePrerelease: true });
+      if (asset && activeVersion) {
+        url += `${semver.major(activeVersion)}.${semver.minor(activeVersion)}/`;
+      } else if (versioned && activeVersion && latestVersion) {
+        const versionDiff = semver.diff(latestVersion, activeVersion);
+        const isLatestDocs = versionDiff === 'patch' || versionDiff === null;
 
         if (!isLatestDocs) {
-          url += `${semver.major(current.version)}.${semver.minor(current.version)}/`;
+          url += `${semver.major(activeVersion)}.${semver.minor(activeVersion)}/`;
         }
       }
 
       const [cleanedSubpath, hash] = subpath?.split('#') || [];
 
       if (cleanedSubpath) {
-        url += `${cleanedSubpath}/`;
+        url += asset ? cleanedSubpath : `${cleanedSubpath}/`;
       }
 
       if (renderer && typeof global.STORYBOOK_RENDERER !== 'undefined') {
@@ -121,6 +133,10 @@ export const init: ModuleFn = ({ store }) => {
         if (rendererName) {
           url += `?renderer=${normalizeRendererName(rendererName)}`;
         }
+      }
+
+      if (ref) {
+        url += `${url.includes('?') ? '&' : '?'}ref=${ref}`;
       }
 
       if (hash) {

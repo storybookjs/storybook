@@ -23,6 +23,8 @@ export function appendErrorRef(url: string): string {
 }
 
 export abstract class StorybookError extends Error {
+  private _name: string | undefined;
+
   /** Category of the error. Used to classify the type of error, e.g., 'PREVIEW_API'. */
   public readonly category: string;
 
@@ -48,15 +50,25 @@ export abstract class StorybookError extends Error {
   /** Flag used to easily determine if the error originates from Storybook. */
   readonly fromStorybook: true = true as const;
 
+  /**
+   * Flag used to determine if the error is handled by us and should therefore not be shown to the
+   * user.
+   */
+  public isHandledError = false;
+
   get fullErrorCode() {
     return parseErrorCode({ code: this.code, category: this.category });
   }
 
   /** Overrides the default `Error.name` property in the format: SB_<CATEGORY>_<CODE>. */
   get name() {
-    const errorName = this.constructor.name;
+    const errorName = this._name || this.constructor.name;
 
     return `${this.fullErrorCode} (${errorName})`;
+  }
+
+  set name(name: string) {
+    this._name = name;
   }
 
   constructor(props: {
@@ -64,11 +76,15 @@ export abstract class StorybookError extends Error {
     code: number;
     message: string;
     documentation?: boolean | string | string[];
+    isHandledError?: boolean;
+    name: string;
   }) {
     super(StorybookError.getFullMessage(props));
     this.category = props.category;
     this.documentation = props.documentation ?? false;
     this.code = props.code;
+    this.isHandledError = props.isHandledError ?? false;
+    this.name = props.name;
   }
 
   /** Generates the error message along with additional documentation link (if applicable). */

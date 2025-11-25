@@ -1,14 +1,6 @@
 import React from 'react';
 
-import {
-  Bar as BaseBar,
-  Button,
-  Form,
-  IconButton,
-  Modal,
-  TooltipNote,
-  WithTooltip,
-} from 'storybook/internal/components';
+import { Bar as BaseBar, Button, Form, Modal } from 'storybook/internal/components';
 
 import { AddIcon, CheckIcon, UndoIcon } from '@storybook/icons';
 
@@ -28,20 +20,14 @@ const Container = styled.div({
   containerType: 'size',
   position: 'sticky',
   bottom: 0,
-  height: 39,
+  height: 41,
   overflow: 'hidden',
   zIndex: 1,
 });
 
 const Bar = styled(BaseBar)(({ theme }) => ({
   '--highlight-bg-color': theme.base === 'dark' ? '#153B5B' : '#E0F0FF',
-  display: 'flex',
-  flexDirection: 'row-reverse', // hide Info rather than Actions on overflow
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  flexWrap: 'wrap',
-  gap: 6,
-  padding: '6px 10px',
+  paddingInline: 4,
   animation: `${slideIn} 300ms, ${highlight} 2s`,
   background: theme.background.bar,
   borderTop: `1px solid ${theme.appBorderColor}`,
@@ -57,16 +43,18 @@ const Info = styled.div({
   display: 'flex',
   flex: '99 0 auto',
   alignItems: 'center',
-  marginLeft: 10,
+  marginInlineEnd: 10,
   gap: 6,
 });
 
 const Actions = styled.div(({ theme }) => ({
+  // We want actions to appear first and be hidden last on overflow,
+  // but the screenreader reading order must start with Info.
   display: 'flex',
   flex: '1 0 0',
   alignItems: 'center',
   gap: 2,
-  color: theme.color.mediumdark,
+  color: theme.textMutedColor,
   fontSize: theme.typography.size.s2,
 }));
 
@@ -96,15 +84,9 @@ type SaveStoryProps = {
   saveStory: () => Promise<unknown>;
   createStory: (storyName: string) => Promise<unknown>;
   resetArgs: () => void;
-  portalSelector?: string;
 };
 
-export const SaveStory = ({
-  saveStory,
-  createStory,
-  resetArgs,
-  portalSelector,
-}: SaveStoryProps) => {
+export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [saving, setSaving] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
@@ -150,59 +132,36 @@ export const SaveStory = ({
     }
   };
 
+  const saveLabel = saving ? 'Saving changes to story' : 'Save changes to story';
+  const createLabel = 'Create new story with these settings';
+
   return (
     <Container id="save-from-controls">
-      <Bar>
+      <Bar
+        innerStyle={{
+          flexDirection: 'row-reverse',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+        }}
+      >
         <Actions>
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            trigger="hover"
-            tooltip={<TooltipNote note="Save changes to story" />}
-          >
-            <IconButton aria-label="Save changes to story" disabled={saving} onClick={onSaveStory}>
-              <CheckIcon />
-              <Label data-short-label="Save">Update story</Label>
-            </IconButton>
-          </WithTooltip>
+          <Button ariaLabel={saveLabel} tooltip={saveLabel} disabled={saving} onClick={onSaveStory}>
+            <CheckIcon />
+            <Label data-short-label="Save">Update story</Label>
+          </Button>
 
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            trigger="hover"
-            tooltip={<TooltipNote note="Create new story with these settings" />}
-          >
-            <IconButton aria-label="Create new story with these settings" onClick={onShowForm}>
-              <AddIcon />
-              <Label data-short-label="New">Create new story</Label>
-            </IconButton>
-          </WithTooltip>
+          <Button ariaLabel={createLabel} tooltip={createLabel} onClick={onShowForm}>
+            <AddIcon />
+            <Label data-short-label="New">Create new story</Label>
+          </Button>
 
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            trigger="hover"
-            tooltip={<TooltipNote note="Reset changes" />}
-          >
-            <IconButton aria-label="Reset changes" onClick={() => resetArgs()}>
-              <UndoIcon />
-              <span>Reset</span>
-            </IconButton>
-          </WithTooltip>
+          <Button ariaLabel="Reset changes" onClick={() => resetArgs()}>
+            <UndoIcon />
+            <span>Reset</span>
+          </Button>
         </Actions>
 
-        <Info>
-          <Label data-short-label="Unsaved changes">
-            You modified this story. Do you want to save your changes?
-          </Label>
-        </Info>
-
-        <Modal
-          width={350}
-          open={creating}
-          onOpenChange={setCreating}
-          portalSelector={portalSelector}
-        >
+        <Modal ariaLabel="Create new story" width={350} open={creating} onOpenChange={setCreating}>
           <Form onSubmit={onSubmitForm} id="create-new-story-form">
             <Modal.Content>
               <Modal.Header>
@@ -219,19 +178,30 @@ export const SaveStory = ({
                 value={storyName}
               />
               <Modal.Actions>
-                <Button disabled={saving || !storyName} size="medium" type="submit" variant="solid">
+                <Button
+                  ariaLabel={false}
+                  disabled={saving || !storyName}
+                  size="medium"
+                  type="submit"
+                  variant="solid"
+                >
                   Create
                 </Button>
-                <Modal.Dialog.Close asChild>
-                  <Button disabled={saving} size="medium" type="reset">
+                <Modal.Close asChild>
+                  <Button ariaLabel={false} disabled={saving} size="medium" type="reset">
                     Cancel
                   </Button>
-                </Modal.Dialog.Close>
+                </Modal.Close>
               </Modal.Actions>
             </Modal.Content>
           </Form>
           {errorMessage && <Modal.Error>{errorMessage}</Modal.Error>}
         </Modal>
+        <Info>
+          <Label data-short-label="Unsaved changes">
+            You modified this story. Do you want to save your changes?
+          </Label>
+        </Info>
       </Bar>
     </Container>
   );

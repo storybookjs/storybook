@@ -2,16 +2,15 @@ import type { FC } from 'react';
 import React from 'react';
 
 import { once } from 'storybook/internal/client-logger';
-import { IconButton, Link, ResetWrapper } from 'storybook/internal/components';
+import { Button, Link, ResetWrapper } from 'storybook/internal/components';
 import { includeConditionalArg } from 'storybook/internal/csf';
 
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
 import { pickBy } from 'es-toolkit/object';
-import { transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
-import { EmptyBlock } from '..';
+import { EmptyBlock } from '../EmptyBlock';
 import { ArgRow } from './ArgRow';
 import { Empty } from './Empty';
 import { SectionRow } from './SectionRow';
@@ -21,8 +20,9 @@ import type { ArgType, ArgTypes, Args, Globals } from './types';
 export const TableWrapper = styled.table<{
   compact?: boolean;
   inAddonPanel?: boolean;
+  inTabPanel?: boolean;
   isLoading?: boolean;
-}>(({ theme, compact, inAddonPanel }) => ({
+}>(({ theme, compact, inAddonPanel, inTabPanel }) => ({
   '&&': {
     // Resets for cascading/system styles
     borderSpacing: 0,
@@ -83,10 +83,7 @@ export const TableWrapper = styled.table<{
     },
 
     th: {
-      color:
-        theme.base === 'light'
-          ? transparentize(0.25, theme.color.defaultText)
-          : transparentize(0.45, theme.color.defaultText),
+      color: theme.textMutedColor,
       paddingTop: 10,
       paddingBottom: 10,
       paddingLeft: 15,
@@ -108,8 +105,7 @@ export const TableWrapper = styled.table<{
     },
 
     // Makes border alignment consistent w/other DocBlocks
-    marginLeft: inAddonPanel ? 0 : 1,
-    marginRight: inAddonPanel ? 0 : 1,
+    marginInline: inAddonPanel || inTabPanel ? 0 : 1,
 
     tbody: {
       // Safari doesn't love shadows on tbody so we need to use a shadow filter. In order to do this,
@@ -173,8 +169,12 @@ const TablePositionWrapper = styled.div({
 
 const ButtonPositionWrapper = styled.div({
   position: 'absolute',
-  right: 8,
-  top: 6,
+  right: 22,
+  top: 10,
+});
+
+const StyledButton = styled(Button)({
+  margin: '-4px -12px -4px 0',
 });
 
 export enum ArgsTableError {
@@ -199,6 +199,7 @@ export interface ArgsTableOptionProps {
   resetArgs?: (argNames?: string[]) => void;
   compact?: boolean;
   inAddonPanel?: boolean;
+  inTabPanel?: boolean;
   initialExpandedArgs?: boolean;
   isLoading?: boolean;
   sort?: SortType;
@@ -321,6 +322,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     resetArgs,
     compact,
     inAddonPanel,
+    inTabPanel,
     initialExpandedArgs,
     sort = 'none',
     isLoading,
@@ -384,17 +386,21 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
       <TablePositionWrapper>
         {updateArgs && !isLoading && resetArgs && (
           <ButtonPositionWrapper>
-            <IconButton
+            <StyledButton
+              variant="ghost"
+              padding="small"
               onClick={() => resetArgs()}
-              aria-label="Reset controls"
-              title="Reset controls"
+              ariaLabel="Reset controls"
             >
               <UndoIcon />
-            </IconButton>
+            </StyledButton>
           </ButtonPositionWrapper>
         )}
 
-        <TableWrapper {...{ compact, inAddonPanel }} className="docblock-argstable sb-unstyled">
+        <TableWrapper
+          {...{ compact, inAddonPanel, inTabPanel }}
+          className="docblock-argstable sb-unstyled"
+        >
           <thead className="docblock-argstable-head">
             <tr>
               <th>

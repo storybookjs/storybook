@@ -1,4 +1,4 @@
-import React, { useEffect, useId } from 'react';
+import React, { useEffect } from 'react';
 import type { FC, ReactElement } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -126,7 +126,7 @@ const Nav = styled.nav(({ theme }) => ({
 const Heading = styled.p(({ theme }) => ({
   fontWeight: 600,
   fontSize: '0.875em',
-  color: theme.textColor,
+  color: theme.color.defaultText,
   textTransform: 'uppercase',
   marginBottom: 10,
 }));
@@ -201,7 +201,7 @@ export const TableOfContents = ({
     };
   }, [channel, disable, ignoreSelector, contentsSelector, headingSelector, unsafeTocbotOptions]);
 
-  const headingId = useId();
+  const headingId = 'table-of-contents';
 
   return (
     <Aside className={className}>

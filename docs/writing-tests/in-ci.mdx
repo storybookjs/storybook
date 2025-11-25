@@ -6,7 +6,7 @@ sidebar:
   title: In CI
 ---
 
-The [Vitest addon](./integrations/vitest-addon.mdx) is great for automating your UI tests within Storybook. To have full confidence in your work, backed by tests, you need to run those automated tests in your continuous integration (CI) environment.
+The [Vitest addon](./integrations/vitest-addon/index.mdx) is great for automating your UI tests within Storybook. To have full confidence in your work, backed by tests, you need to run those automated tests in your continuous integration (CI) environment.
 
 Thankfully, that’s quite easy!
 
@@ -329,7 +329,7 @@ jobs:
 +         SB_URL: '${{ github.event.deployment_status.environment_url }}'
 ```
 
-Finally, we update the plugin configuration to use that environment variable in the [`storybookUrl` plugin option](./integrations/vitest-addon.mdx#storybookurl).
+Finally, we update the plugin configuration to use that environment variable in the [`storybookUrl` plugin option](./integrations/vitest-addon/index.mdx#storybookurl).
 
 {/* prettier-ignore-start */}
 
@@ -447,7 +447,7 @@ The workflow would then look like:
 
 **More testing resources**
 
-* [Vitest addon](./integrations/vitest-addon.mdx) for running tests in Storybook
+* [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
 * [Interaction testing](./interaction-testing.mdx) for user behavior simulation
 * [Accessibility testing](./accessibility-testing.mdx) for accessibility
 * [Visual testing](./visual-testing.mdx) for appearance

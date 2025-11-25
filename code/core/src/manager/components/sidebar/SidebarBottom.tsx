@@ -18,7 +18,7 @@ import { styled } from 'storybook/theming';
 
 import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store';
 import { NotificationList } from '../notifications/NotificationList';
-import { TestingModule } from './TestingModule';
+import { TestingWidget } from './TestingWidget';
 
 // This ID is used dynamically add/remove space at the bottom to prevent overlapping the main sidebar content.
 const SIDEBAR_BOTTOM_SPACER_ID = 'sidebar-bottom-spacer';
@@ -56,21 +56,22 @@ const Spacer = styled.div({
 
 const Content = styled.div(({ theme }) => ({
   position: 'absolute',
+  zIndex: 1,
   bottom: 0,
   left: 0,
   right: 0,
-  padding: '12px 0',
-  margin: '0 12px',
+  padding: 12,
   display: 'flex',
   flexDirection: 'column',
   gap: 12,
   color: theme.color.defaultText,
   fontSize: theme.typography.size.s1,
-  overflow: 'hidden',
 
   '&:empty': {
     display: 'none',
   },
+
+  '--card-box-shadow': `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app}`,
 
   // Integrators can use these to style their custom additions
   '--sb-sidebar-bottom-card-background': theme.background.content,
@@ -141,7 +142,7 @@ export const SidebarBottomBase = ({
       <Content id={SIDEBAR_BOTTOM_WRAPPER_ID} ref={wrapperRef}>
         <NotificationList notifications={notifications} clearNotification={api.clearNotification} />
         {isDevelopment && (
-          <TestingModule
+          <TestingWidget
             {...{
               registeredTestProviders,
               testProviderStates,

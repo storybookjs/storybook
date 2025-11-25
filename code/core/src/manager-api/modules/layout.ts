@@ -327,17 +327,62 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       );
     },
 
+    /**
+     * Attempts to focus (and select) an element identified by its ID. It is the responsibility of
+     * the callee to ensure that the element is present in the DOM and that no focus trap is
+     * available. This API polls and attempts to perform the focus for a set duration (max 500ms),
+     * so that race conditions can be avoided with the current API design. Because this API is
+     * historically synchronous, it cannot report errors or failure to focus. It fails silently.
+     *
+     * @param elementId The id of the element to focus.
+     * @param select Whether to call select() on the element after focusing it.
+     */
     focusOnUIElement(elementId?: string, select?: boolean) {
+      // See RFC https://github.com/storybookjs/storybook/discussions/32983 for
+      // ways to make this API more robust to focus-trap race conditions.
+
       if (!elementId) {
         return;
       }
-      const element = document.getElementById(elementId);
-      if (element) {
-        element.focus();
-        if (select) {
-          (element as any).select();
+
+      const startTime = Date.now();
+      const maxDuration = 500;
+      const pollInterval = 50;
+
+      const attemptFocus = () => {
+        const element = document.getElementById(elementId);
+        if (!element) {
+          return false;
         }
+
+        element.focus();
+        if (element !== document.activeElement) {
+          return false;
+        }
+
+        if (select) {
+          (element as any).select?.();
+        }
+        return true;
+      };
+
+      if (attemptFocus()) {
+        return;
       }
+
+      // Poll every 50ms for up to 500ms to account for race conditions.
+      const intervalId = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+
+        if (elapsed >= maxDuration) {
+          clearInterval(intervalId);
+          return;
+        }
+
+        if (attemptFocus()) {
+          clearInterval(intervalId);
+        }
+      }, pollInterval);
     },
 
     getInitialOptions() {

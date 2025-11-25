@@ -1,5 +1,3 @@
-import { join, relative, resolve } from 'node:path';
-
 import {
   getProjectRoot,
   loadAllPresets,
@@ -11,6 +9,8 @@ import { oneWayHash } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
+
+import { dirname, join, relative, resolve } from 'pathe';
 
 import { resolvePackageDir } from '../shared/utils/module';
 
@@ -57,8 +57,14 @@ export async function loadStorybook(
     isCritical: true,
   });
 
-  const { renderer } = await presets.apply('core', {});
+  const { renderer, builder } = await presets.apply('core', {});
   const resolvedRenderer = renderer && resolveAddonName(options.configDir, renderer, options);
+
+  const builderName = typeof builder === 'string' ? builder : builder?.name;
+
+  if (builderName) {
+    corePresets.push(join(dirname(builderName), 'preset.js'));
+  }
 
   // Load second pass: all presets are applied in order
 

@@ -24,6 +24,7 @@ defaults:
 jobs:
   generate-next:
     name: Generate to next
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,6 +77,7 @@ jobs:
 
   generate-main:
     name: Generate to main
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

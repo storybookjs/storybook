@@ -1,12 +1,13 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
-import React, { useMemo, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 
-import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
   type API_HashEntry,
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
+  type StatusValue,
 } from 'storybook/internal/types';
 
 import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
@@ -18,7 +19,10 @@ import { styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { Shortcut } from '../../container/Menu';
+import { getMostCriticalStatusValue } from '../../utils/status';
+import { UseSymbol } from './IconSymbols';
 import { StatusButton } from './StatusButton';
+import { StatusContext } from './StatusContext';
 import type { ExcludesNull } from './Tree';
 
 const empty = {
@@ -26,21 +30,22 @@ const empty = {
   node: null,
 };
 
-const PositionedWithTooltip = styled(WithTooltip)({
-  position: 'absolute',
-  right: 0,
-  zIndex: 1,
-});
-
 const FloatingStatusButton = styled(StatusButton)({
   background: 'var(--tree-node-background-hover)',
   boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
+  position: 'absolute',
+  right: 0,
+  zIndex: 1,
+  '&:focus-visible': {
+    outlineOffset: -2,
+  },
 });
 
 export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {
   const [hoverCount, setHoverCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [copyText, setCopyText] = React.useState('Copy story name');
+  const { allStatuses, groupStatus } = useContext(StatusContext);
 
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
@@ -85,7 +90,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
     }
 
     return defaultLinks;
-  }, [context, copyText, enableShortcuts, shortcutKeys]);
+  }, [api, context, copyText, enableShortcuts, shortcutKeys]);
 
   const handlers = useMemo(() => {
     return {
@@ -118,6 +123,69 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
   const shouldRender =
     !context.refId && (providerLinks.length > 0 || links.length > 0 || topLinks.length > 0);
 
+  const isLeafNode = context.type === 'story' || context.type === 'docs';
+
+  const itemStatus = useMemo<StatusValue>(() => {
+    let status: StatusValue = 'status-value:unknown';
+    if (!context) {
+      return status;
+    }
+
+    if (isLeafNode) {
+      const values = Object.values(allStatuses?.[context.id] || {}).map((s) => s.value);
+      status = getMostCriticalStatusValue(values);
+    }
+
+    if (!isLeafNode) {
+      // On component/groups we only show non-ellipsis on hover on non-success status colors
+      const groupValue = groupStatus && groupStatus[context.id];
+      status =
+        groupValue === 'status-value:success' || groupValue === undefined
+          ? 'status-value:unknown'
+          : groupValue;
+    }
+
+    return status;
+  }, [allStatuses, groupStatus, context, isLeafNode]);
+
+  const MenuIcon = useMemo(() => {
+    // On component/groups we only show non-ellipsis on hover on non-success statuses
+    if (context.type !== 'story' && context.type !== 'docs') {
+      if (itemStatus !== 'status-value:success' && itemStatus !== 'status-value:unknown') {
+        return (
+          <svg key="icon" viewBox="0 0 6 6" width="6" height="6">
+            <UseSymbol type="dot" />
+          </svg>
+        );
+      }
+
+      return <EllipsisIcon />;
+    }
+
+    if (itemStatus === 'status-value:error') {
+      return (
+        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+          <UseSymbol type="error" />
+        </svg>
+      );
+    }
+    if (itemStatus === 'status-value:warning') {
+      return (
+        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+          <UseSymbol type="warning" />
+        </svg>
+      );
+    }
+    if (itemStatus === 'status-value:success') {
+      return (
+        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+          <UseSymbol type="success" />
+        </svg>
+      );
+    }
+    return <EllipsisIcon />;
+  }, [itemStatus, context.type]);
+
   return useMemo(() => {
     // Never show the SidebarContextMenu in production
     if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
@@ -127,27 +195,29 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
     return {
       onMouseEnter: handlers.onMouseEnter,
       node: shouldRender ? (
-        <PositionedWithTooltip
-          data-displayed={isOpen ? 'on' : 'off'}
-          closeOnOutsideClick
+        <PopoverProvider
           placement="bottom-end"
-          data-testid="context-menu"
-          onVisibleChange={(visible) => {
-            if (!visible) {
-              handlers.onClose();
-            } else {
-              setIsOpen(true);
-            }
-          }}
-          tooltip={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
+          defaultVisible={false}
+          visible={isOpen}
+          onVisibleChange={setIsOpen}
+          popover={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
+          hasChrome={true}
+          padding={0}
         >
-          <FloatingStatusButton type="button" status="status-value:pending">
-            <EllipsisIcon />
+          <FloatingStatusButton
+            data-displayed={isOpen ? 'on' : 'off'}
+            data-testid="context-menu"
+            ariaLabel="Open context menu"
+            type="button"
+            status={itemStatus}
+            onClick={handlers.onOpen}
+          >
+            {MenuIcon}
           </FloatingStatusButton>
-        </PositionedWithTooltip>
+        </PopoverProvider>
       ) : null,
     };
-  }, [context, handlers, isOpen, shouldRender, links, topLinks]);
+  }, [context, handlers, isOpen, shouldRender, links, topLinks, itemStatus, MenuIcon]);
 };
 
 /**
@@ -198,5 +268,5 @@ export function generateTestProviderLinks(
         content,
       };
     })
-    .filter(Boolean as any as ExcludesNull);
+    .filter(Boolean as unknown as ExcludesNull);
 }

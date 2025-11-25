@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import React from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
+
 import { styled } from 'storybook/theming';
 
 import { Link } from '../typography/link/link';
@@ -43,6 +45,10 @@ export interface TooltipMessageProps {
 }
 
 export const TooltipMessage = ({ title, desc, links }: TooltipMessageProps) => {
+  deprecate(
+    '`TooltipLinkList` is deprecated and will be removed in Storybook 11, use `Popover` and `PopoverProvider` instead.'
+  );
+
   return (
     <MessageWrapper>
       <Message>

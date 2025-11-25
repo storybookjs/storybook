@@ -6,6 +6,7 @@ import type { MonorepoType } from './get-monorepo-type';
 
 export type EventType =
   | 'boot'
+  | 'add'
   | 'dev'
   | 'build'
   | 'index'
@@ -32,8 +33,12 @@ export type EventType =
   | 'test-run'
   | 'addon-onboarding'
   | 'onboarding-survey'
+  | 'onboarding-checklist'
   | 'mocking'
-  | 'preview-first-load';
+  | 'automigrate'
+  | 'migrate'
+  | 'preview-first-load'
+  | 'doctor';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;
@@ -50,7 +55,7 @@ export type StorybookMetadata = {
   userSince?: number;
   language: 'typescript' | 'javascript';
   framework?: {
-    name: string;
+    name?: string;
     options?: any;
   };
   builder?: string;

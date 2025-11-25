@@ -10,6 +10,7 @@ export interface ScrollAreaProps {
   className?: string;
   offset?: number;
   scrollbarSize?: number;
+  scrollPadding?: number | string;
 }
 
 const ScrollAreaRoot = styled(ScrollAreaPrimitive.Root)<{ scrollbarsize: number; offset: number }>(
@@ -62,6 +63,7 @@ const ScrollAreaThumb = styled(ScrollAreaPrimitive.Thumb)(({ theme }) => ({
   borderRadius: `var(--scrollbar-size)`,
   position: 'relative',
   transition: 'opacity 0.2s ease-out',
+  zIndex: 1,
 
   '&:hover': { opacity: 0.8 },
 
@@ -79,11 +81,21 @@ const ScrollAreaThumb = styled(ScrollAreaPrimitive.Thumb)(({ theme }) => ({
 
 export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
   (
-    { children, horizontal = false, vertical = false, offset = 2, scrollbarSize = 6, className },
+    {
+      children,
+      horizontal = false,
+      vertical = false,
+      offset = 2,
+      scrollbarSize = 6,
+      scrollPadding = 0,
+      className,
+    },
     ref
   ) => (
     <ScrollAreaRoot scrollbarsize={scrollbarSize} offset={offset} className={className}>
-      <ScrollAreaViewport ref={ref}>{children}</ScrollAreaViewport>
+      <ScrollAreaViewport ref={ref} style={{ scrollPadding }}>
+        {children}
+      </ScrollAreaViewport>
       {horizontal && (
         <ScrollAreaScrollbar
           orientation="horizontal"

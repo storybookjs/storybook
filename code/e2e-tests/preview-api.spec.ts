@@ -27,10 +27,10 @@ test.describe('preview-api', () => {
 
     // wait for the play function to complete
     await sbPage.viewAddonPanel('Interactions');
-    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
+    const interactionsTab = page.getByRole('tab', { name: 'Interactions' });
     await expect(interactionsTab).toBeVisible();
     const panel = sbPage.panelContent();
-    const runStatusBadge = panel.locator('[aria-label="Story status"]');
+    const runStatusBadge = panel.locator('[aria-label^="Story status:"]');
     await expect(runStatusBadge).toContainText(/Pass/);
 
     // click outside, to remove focus from the input of the story, then press S to toggle sidebar
@@ -82,9 +82,9 @@ test.describe('preview-api', () => {
 
     await expect(root.getByText('Loaded. Click me')).toBeVisible();
 
-    await sbPage.page.getByRole('button', { name: 'Remount component' }).click();
+    await sbPage.page.getByRole('button', { name: 'Reload story' }).click();
     await wait(200);
-    await sbPage.page.getByRole('button', { name: 'Remount component' }).click();
+    await sbPage.page.getByRole('button', { name: 'Reload story' }).click();
 
     // the loading spinner indicates the iframe is being fully reloaded
     await expect(sbPage.previewIframe().locator('.sb-preparing-story > .sb-loader')).toBeVisible();

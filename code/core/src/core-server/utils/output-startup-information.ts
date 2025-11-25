@@ -1,8 +1,6 @@
-import { colors } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import type { VersionCheck } from 'storybook/internal/types';
 
-import boxen from 'boxen';
-import Table from 'cli-table3';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
@@ -23,34 +21,22 @@ export function outputStartupInformation(options: {
 
   const updateMessage = createUpdateMessage(updateInfo, version);
 
-  const serveMessage = new Table({
-    chars: {
-      top: '',
-      'top-mid': '',
-      'top-left': '',
-      'top-right': '',
-      bottom: '',
-      'bottom-mid': '',
-      'bottom-left': '',
-      'bottom-right': '',
-      left: '',
-      'left-mid': '',
-      mid: '',
-      'mid-mid': '',
-      right: '',
-      'right-mid': '',
-      middle: '',
-    },
-    // @ts-expect-error (Converted from ts-ignore)
-    paddingLeft: 0,
-    paddingRight: 0,
-    paddingTop: 0,
-    paddingBottom: 0,
-  });
+  const serverMessages = [
+    `- Local:             ${address}`,
+    `- On your network:   ${networkAddress}`,
+  ];
 
-  serveMessage.push(
-    ['Local:', picocolors.cyan(address)],
-    ['On your network:', picocolors.cyan(networkAddress)]
+  logger.logBox(
+    dedent`
+      Storybook ready!
+      
+      ${serverMessages.join('\n')}${updateMessage ? `\n\n${updateMessage}` : ''}
+    `,
+    {
+      formatBorder: CLI_COLORS.storybook,
+      contentPadding: 3,
+      rounded: true,
+    }
   );
 
   const timeStatement = [
@@ -60,17 +46,5 @@ export function outputStartupInformation(options: {
     .filter(Boolean)
     .join(' and ');
 
-  console.log(
-    boxen(
-      dedent`
-          ${colors.green(
-            `Storybook ${picocolors.bold(version)} for ${picocolors.bold(name)} started`
-          )}
-          ${picocolors.gray(timeStatement)}
-
-          ${serveMessage.toString()}${updateMessage ? `\n\n${updateMessage}` : ''}
-        `,
-      { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
-    )
-  );
+  logger.info(timeStatement);
 }

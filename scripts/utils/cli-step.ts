@@ -41,7 +41,8 @@ export const steps = {
     options: createOptions({
       yes: { type: 'boolean' },
       type: { type: 'string' },
-      debug: { type: 'boolean' },
+      loglevel: { type: 'string' },
+      builder: { type: 'string' },
       'skip-install': { type: 'boolean' },
     }),
   },

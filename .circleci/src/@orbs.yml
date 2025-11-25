@@ -11,3 +11,5 @@ orbs:
   node: circleci/node@5.2.0
   # Monorepo build optimization
   nx: nrwl/nx@1.6.2
+  # Windows support
+  win: circleci/windows@5.0.0

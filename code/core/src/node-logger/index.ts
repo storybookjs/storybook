@@ -3,13 +3,13 @@ import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
 
 import * as newLogger from './logger/logger';
-import { isClackEnabled } from './prompts/prompt-config';
 
 export { prompt } from './prompts';
 export { logTracker } from './logger/log-tracker';
 export type { SpinnerInstance, TaskLogInstance } from './prompts/prompt-provider-base';
 export { protectUrls, createHyperlink } from './wrap-utils';
 export { CLI_COLORS } from './logger/colors';
+export { ConsoleLogger, StyledConsoleLogger } from './logger/console';
 
 // The default is stderr, which can cause some tools (like rush.js) to think
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621
@@ -49,10 +49,9 @@ export const colors = {
 export const logger = {
   ...newLogger,
   verbose: (message: string): void => newLogger.debug(message),
-  info: (message: string): void =>
-    isClackEnabled() ? newLogger.info(message) : npmLog.info('', message),
-  plain: (message: string): void => newLogger.log(message),
+
   line: (count = 1): void => newLogger.log(`${Array(count - 1).fill('\n')}`),
+  /** For non-critical issues or warnings */
   warn: (message: string): void => newLogger.warn(message),
   trace: ({ message, time }: { message: string; time: [number, number] }): void =>
     newLogger.debug(`${message} (${colors.purple(prettyTime(time))})`),
@@ -60,17 +59,17 @@ export const logger = {
     npmLog.level = level;
     newLogger.setLogLevel(level);
   },
-  error: (message: Error | string): void => {
+  error: (message: unknown): void => {
     let msg: string;
     if (message instanceof Error && message.stack) {
-      msg = message.stack.toString();
-    } else {
+      msg = message.stack.toString().replace(message.toString(), colors.red(message.toString()));
+    } else if (typeof message === 'string') {
       msg = message.toString();
+    } else {
+      msg = String(message);
     }
 
-    newLogger.error(
-      msg.replace(message.toString(), colors.red(message.toString())).replaceAll(process.cwd(), '.')
-    );
+    newLogger.error(msg.replaceAll(process.cwd(), '.'));
   },
 };
 

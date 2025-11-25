@@ -623,6 +623,84 @@ describe('stories codemod', () => {
       `);
     });
 
+    it('should preserve user-defined generic types', async () => {
+      const result = await transform(dedent`
+        import { Meta, StoryObj } from '@storybook/react';
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        type Data = Record<string, any>;
+        interface UnusedButShouldNotBeRemoved { name: string };
+        type UnusedAndShouldBeRemoved = Meta;
+
+        export default { title: 'Table' };
+
+        export const A = {
+          render: () => {
+            const data: Data[] = [];
+            return <Table data={data} />;
+          }
+        };
+      `);
+
+      expect(result).toContain('UnusedButShouldNotBeRemoved');
+      expect(result).not.toContain('UnusedAndShouldBeRemoved');
+
+      expect(result).toMatchInlineSnapshot(`
+        import preview from '#.storybook/preview';
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        type Data = Record<string, any>;
+        interface UnusedButShouldNotBeRemoved {
+          name: string;
+        }
+
+        const meta = preview.meta({
+          title: 'Table',
+        });
+
+        export const A = meta.story({
+          render: () => {
+            const data: Data[] = [];
+            return <Table data={data} />;
+          },
+        });
+      `);
+    });
+
+    it('should remove Storybook-specific type aliases but leave the ones that are actually used', async () => {
+      await expect(
+        transform(dedent`
+          import { Meta, StoryObj, ComponentStory, ComponentMeta } from '@storybook/react';
+          import { Button } from './Button';
+
+          type CustomMeta = Meta<typeof Button>;
+          type CustomStory = StoryObj<typeof Button>;
+          type LegacyStory = ComponentStory<typeof Button>;
+          type LegacyMeta = ComponentMeta<typeof Button>;
+          type ThisShouldNotBeRemoved = Meta<typeof Button>;
+          const something: ThisShouldNotBeRemoved = {};
+
+          export default { title: 'Button' };
+          export const A = {};
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import { Meta } from '@storybook/react';
+
+        import preview from '#.storybook/preview';
+
+        import { Button } from './Button';
+
+        type ThisShouldNotBeRemoved = Meta<typeof Button>;
+        const something: ThisShouldNotBeRemoved = {};
+
+        const meta = preview.meta({
+          title: 'Button',
+        });
+
+        export const A = meta.story();
+      `);
+    });
+
     it.todo('should support non-conventional formats', async () => {
       const transformed = await transform(dedent`
         import { Meta, StoryObj as CSF3 } from '@storybook/react';

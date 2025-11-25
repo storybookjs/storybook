@@ -6,11 +6,8 @@ import path from 'path';
 
 import type { FileInfo } from '../../automigrate/codemod';
 import { cleanupTypeImports } from './csf-factories-utils';
+import { removeUnusedTypes } from './remove-unused-types';
 
-// Name of properties that should not be renamed to `Story.input.xyz`
-const reuseDisallowList = ['play', 'run', 'extends', 'story'];
-
-// Name of types that should be removed from the import list
 const typesDisallowList = [
   'Story',
   'StoryFn',
@@ -20,6 +17,9 @@ const typesDisallowList = [
   'ComponentStory',
   'ComponentMeta',
 ];
+
+// Name of properties that should not be renamed to `Story.input.xyz`
+const reuseDisallowList = ['play', 'run', 'extends', 'story'];
 
 type Options = { previewConfigPath: string; useSubPathImports: boolean };
 
@@ -327,27 +327,7 @@ export async function storyToCsfFactory(
     programNode.body.unshift(configImport);
   }
 
-  // Remove unused type aliases e.g. `type Story = StoryObj<typeof meta>;`
-  programNode.body.forEach((node, index) => {
-    if (t.isTSTypeAliasDeclaration(node)) {
-      const isUsed = programNode.body.some((otherNode) => {
-        if (t.isVariableDeclaration(otherNode)) {
-          return otherNode.declarations.some(
-            (declaration) =>
-              t.isIdentifier(declaration.init) && declaration.init.name === node.id.name
-          );
-        }
-        return false;
-      });
-
-      if (!isUsed) {
-        programNode.body.splice(index, 1);
-      }
-    }
-  });
-
-  // Remove type imports – now inferred – from @storybook/* packages
-  programNode.body = cleanupTypeImports(programNode, typesDisallowList);
+  removeUnusedTypes(programNode, csf._ast);
 
   return printCsf(csf).code;
 }

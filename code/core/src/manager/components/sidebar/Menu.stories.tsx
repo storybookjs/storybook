@@ -6,11 +6,13 @@ import { LinkIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import type { State } from 'storybook/manager-api';
-import { expect, screen, userEvent, within } from 'storybook/test';
+import { ManagerContext } from 'storybook/manager-api';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
+import { initialState } from '../../../shared/checklist-store/checklistData.state';
 import { useMenu } from '../../container/Menu';
+import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { type MenuList, SidebarMenu } from './Menu';
 
@@ -21,6 +23,19 @@ const fakemenu: MenuList = [
   ],
 ];
 
+const managerContext: any = {
+  state: {},
+  api: {
+    getData: fn().mockName('api::getData'),
+    getIndex: fn().mockName('api::getIndex'),
+    getUrlState: fn().mockName('api::getUrlState'),
+    navigate: fn().mockName('api::navigate'),
+    on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
+    once: fn().mockName('api::once'),
+  },
+};
+
 const meta = {
   component: SidebarMenu,
   title: 'Sidebar/Menu',
@@ -28,7 +43,25 @@ const meta = {
     menu: fakemenu,
   },
   globals: { sb_theme: 'side-by-side' },
-  decorators: [(storyFn) => <LayoutProvider>{storyFn()}</LayoutProvider>],
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={managerContext}>
+        <LayoutProvider>{storyFn()}</LayoutProvider>
+      </ManagerContext.Provider>
+    ),
+  ],
+  beforeEach: async () => {
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        viewports: { status: 'skipped' },
+      },
+    });
+  },
 } satisfies Meta<typeof SidebarMenu>;
 export default meta;
 
@@ -53,11 +86,10 @@ const DoubleThemeRenderingHack = styled.div({
 });
 
 export const Expanded: Story = {
-  globals: { sb_theme: 'light' },
+  globals: { sb_theme: 'light', viewport: 'desktop' },
   render: () => {
-    const menu = useMenu(
-      { whatsNewData: undefined } as State,
-      {
+    const menu = useMenu({
+      api: {
         // @ts-expect-error (Converted from ts-ignore)
         getShortcutKeys: () => ({}),
         getAddonsShortcuts: () => ({}),
@@ -65,27 +97,34 @@ export const Expanded: Story = {
         isWhatsNewUnread: () => false,
         getDocsUrl: () => 'https://storybook.js.org/docs/',
       },
-      false,
-      false,
-      false,
-      false,
-      false
-    );
+      showToolbar: false,
+      isPanelShown: false,
+      isNavShown: false,
+      enableShortcuts: false,
+    });
     return (
       <DoubleThemeRenderingHack>
         <SidebarMenu menu={menu} />
       </DoubleThemeRenderingHack>
     );
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    await new Promise((res) => {
-      setTimeout(res, 500);
+    await step('Wait 3 seconds for story to load', async () => {
+      await new Promise((res) => {
+        setTimeout(res, 3000);
+      });
     });
-    const menuButton = await canvas.findByRole('button');
-    await userEvent.click(menuButton);
-    const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
-    await expect(aboutStorybookBtn).toBeInTheDocument();
+
+    await step('Expand menu', async () => {
+      const menuButton = await canvas.findByRole('switch');
+      await userEvent.click(menuButton);
+    });
+
+    await step('Check menu is open', async () => {
+      const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
+      await expect(aboutStorybookBtn).toBeInTheDocument();
+    });
   },
   decorators: [
     (StoryFn) => (
@@ -99,9 +138,8 @@ export const Expanded: Story = {
 export const ExpandedWithShortcuts: Story = {
   ...Expanded,
   render: () => {
-    const menu = useMenu(
-      { whatsNewData: undefined } as State,
-      {
+    const menu = useMenu({
+      api: {
         // @ts-expect-error (invalid)
         getShortcutKeys: () => ({
           shortcutsPage: ['⌘', '⇧​', ','],
@@ -122,12 +160,11 @@ export const ExpandedWithShortcuts: Story = {
         isWhatsNewUnread: () => false,
         getDocsUrl: () => 'https://storybook.js.org/docs/',
       },
-      false,
-      false,
-      false,
-      false,
-      true
-    );
+      showToolbar: false,
+      isPanelShown: false,
+      isNavShown: false,
+      enableShortcuts: true,
+    });
 
     return (
       <DoubleThemeRenderingHack>
@@ -137,12 +174,15 @@ export const ExpandedWithShortcuts: Story = {
   },
   play: async (context) => {
     const canvas = within(context.canvasElement);
+    // This story can have significant loading time.
     await new Promise((res) => {
-      setTimeout(res, 500);
+      setTimeout(res, 2000);
     });
-    // @ts-expect-error (non strict)
-    await Expanded.play(context);
-    const releaseNotes = await canvas.queryByText(/What's new/);
+    const menuButton = await waitFor(() => canvas.findByRole('switch'));
+    await userEvent.click(menuButton);
+    const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
+    await expect(aboutStorybookBtn).toBeInTheDocument();
+    const releaseNotes = canvas.queryByText(/What's new/);
     await expect(releaseNotes).not.toBeInTheDocument();
   },
 };
@@ -150,9 +190,8 @@ export const ExpandedWithShortcuts: Story = {
 export const ExpandedWithWhatsNew: Story = {
   ...Expanded,
   render: () => {
-    const menu = useMenu(
-      { whatsNewData: { status: 'SUCCESS', disableWhatsNewNotifications: false } } as State,
-      {
+    const menu = useMenu({
+      api: {
         // @ts-expect-error (invalid)
         getShortcutKeys: () => ({}),
         getAddonsShortcuts: () => ({}),
@@ -160,12 +199,11 @@ export const ExpandedWithWhatsNew: Story = {
         isWhatsNewUnread: () => true,
         getDocsUrl: () => 'https://storybook.js.org/docs/',
       },
-      false,
-      false,
-      false,
-      false,
-      false
-    );
+      showToolbar: false,
+      isPanelShown: false,
+      isNavShown: false,
+      enableShortcuts: false,
+    });
 
     return (
       <DoubleThemeRenderingHack>

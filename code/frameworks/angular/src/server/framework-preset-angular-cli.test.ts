@@ -95,7 +95,7 @@ describe('framework-preset-angular-cli', () => {
 
       expect(mockedTargetFromTargetString).toHaveBeenCalledWith('test-project:build:development');
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular browser target options from "test-project:build:development"'
+        'Using angular browser target options from "test-project:build:development"'
       );
       expect(mockBuilderContext.getTargetOptions).toHaveBeenCalledWith(mockTarget);
     });
@@ -145,7 +145,7 @@ describe('framework-preset-angular-cli', () => {
 
       expect(result.tsConfig).toBe('/custom/tsconfig.json');
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular project with "tsConfig:/custom/tsconfig.json"'
+        'Using angular project with "tsConfig:../../custom/tsconfig.json"'
       );
     });
 
@@ -223,7 +223,7 @@ describe('framework-preset-angular-cli', () => {
       const result = await getBuilderOptions(options, mockBuilderContext);
 
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular browser target options from "test-project:build"'
+        'Using angular browser target options from "test-project:build"'
       );
     });
 
@@ -243,7 +243,7 @@ describe('framework-preset-angular-cli', () => {
       const result = await getBuilderOptions(options, mockBuilderContext);
 
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular browser target options from "test-project:build:production"'
+        'Using angular browser target options from "test-project:build:production"'
       );
     });
 

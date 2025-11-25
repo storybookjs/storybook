@@ -269,7 +269,6 @@ export const getImports = ({
     order: number;
   };
 
-
   const withSource = components
     .filter((c) => Boolean(c.importId))
     .map((c, idx) => {

@@ -172,7 +172,7 @@ export const configureYarn2ForVerdaccio = async ({
   }
 
   await exec(
-    command,
+    command.join(' && '),
     { cwd },
     {
       dryRun,

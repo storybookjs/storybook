@@ -1751,12 +1751,20 @@ const jobs = {
       },
       {
         run: {
+          background: true,
+          command: 'yarn jiti ./event-log-collector.ts',
+          name: 'Start Event Collector',
+          working_directory: 'scripts',
+        },
+      },
+      {
+        run: {
           command: [
-            //
-            'yarn wait-on tcp:127.0.0.1:6001',
-            'yarn wait-on tcp:127.0.0.1:6002',
+            'yarn wait-on tcp:127.0.0.1:6001', // verdaccio
+            'yarn wait-on tcp:127.0.0.1:6002', // reverse proxy
+            'yarn wait-on tcp:127.0.0.1:6007', // event collector
           ].join('\n'),
-          name: 'Wait on Verdaccio',
+          name: 'Wait on servers',
           working_directory: 'code',
         },
       },
@@ -1773,26 +1781,14 @@ const jobs = {
       },
       {
         run: {
-          background: true,
-          command: 'yarn jiti ./event-log-collector.ts',
-          name: 'Start Event Collector',
-          working_directory: 'scripts',
-        },
-      },
-      {
-        run: {
-          command: 'yarn dlx wait-on tcp:127.0.0.1:6007',
-        },
-      },
-      {
-        run: {
-          command: 'yarn task sandbox --template react-vite/default-ts --no-link -s auto',
+          command:
+            'yarn task sandbox --template react-vite/default-ts --no-link -s sandbox --debug',
           environment: {
             STORYBOOK_TELEMETRY_DEBUG: 1,
             STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
           },
           name: 'Create Sandboxes',
-          working_directory: 'code',
+          working_directory: '.',
         },
       },
       {

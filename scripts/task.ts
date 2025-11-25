@@ -125,6 +125,7 @@ export const options = createOptions({
     values: [...(Object.keys(tasks) as TaskKey[]), 'never', 'auto'] as const,
     // This is prompted later based on information about what's ready
     promptType: false,
+    default: process.env.CI ? 'auto' : undefined,
   },
   template: {
     type: 'string',
@@ -371,6 +372,7 @@ async function run() {
   const allOptionValues = await getOptionsOrPrompt('yarn task', options);
 
   const { junit, startFrom, ...optionValues } = allOptionValues;
+
   const taskKey = optionValues.task;
 
   if (!(taskKey in tasks)) {

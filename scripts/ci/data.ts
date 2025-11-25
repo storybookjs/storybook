@@ -1786,12 +1786,13 @@ const jobs = {
       },
       {
         run: {
-          command: 'yarn task --task sandbox --template react-vite/default-ts --no-link',
+          command: 'yarn task sandbox --template react-vite/default-ts --no-link',
           environment: {
             STORYBOOK_TELEMETRY_DEBUG: 1,
             STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
           },
           name: 'Create Sandboxes',
+          working_directory: 'code',
         },
       },
       {

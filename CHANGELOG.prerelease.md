@@ -1,3 +1,22 @@
+## 10.1.0-beta.4
+
+- Angular: Migrate from RxJS to async/await in command builders and run Compodoc utility as spinner - [#33156](https://github.com/storybookjs/storybook/pull/33156), thanks @valentinpalkovic!
+- CLI: Fix 'beforeVersion' evaluation for Storybook package - [#33141](https://github.com/storybookjs/storybook/pull/33141), thanks @valentinpalkovic!
+- CLI: Update clack - [#33151](https://github.com/storybookjs/storybook/pull/33151), thanks @valentinpalkovic!
+- Checklist: Data improvements - [#33129](https://github.com/storybookjs/storybook/pull/33129), thanks @ghengeveld!
+- Guide: Collapse checklist items by default - [#33160](https://github.com/storybookjs/storybook/pull/33160), thanks @ghengeveld!
+- React: Add isPackage flag to component imports for better package identification - [#33090](https://github.com/storybookjs/storybook/pull/33090), thanks @kasperpeulen!
+- UI: Improve status handling in sidebar nodes - [#32965](https://github.com/storybookjs/storybook/pull/32965), thanks @yannbf!
+
+## 10.1.0-beta.3
+
+- A11y: Make search clear button keyboard accessible - [#32590](https://github.com/storybookjs/storybook/pull/32590), thanks @ritoban23!
+- Angular: Add preset entry point for framework - [#33154](https://github.com/storybookjs/storybook/pull/33154), thanks @valentinpalkovic!
+- CLI: Fix framework config validation path and messages - [#33146](https://github.com/storybookjs/storybook/pull/33146), thanks @valentinpalkovic!
+- Manager: Added tokens and a dark color scheme for status colors - [#33081](https://github.com/storybookjs/storybook/pull/33081), thanks @MichaelArestad!
+- Remove yarn esbuild pnp plugin - [#33097](https://github.com/storybookjs/storybook/pull/33097), thanks @mrginglymus!
+- UI: Increase border contrast of Checkbox, Radio, and Range - [#33064](https://github.com/storybookjs/storybook/pull/33064), thanks @MichaelArestad!
+
 ## 10.1.0-beta.2
 
 - Automigration: Update description and link for addon-a11y-addon-test - [#33133](https://github.com/storybookjs/storybook/pull/33133), thanks @valentinpalkovic!

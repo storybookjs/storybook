@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { Addon_TypesEnum } from 'storybook/internal/types';
+import { Addon_TypesEnum, SupportedBuilder } from 'storybook/internal/types';
 
 import {
   a11yStatusStore,
@@ -23,8 +23,7 @@ import {
 import { useTestProvider } from './use-test-provider-state';
 
 addons.register(ADDON_ID, (api) => {
-  const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
-  if (storybookBuilder.includes('vite')) {
+  if (globalThis.STORYBOOK_BUILDER === SupportedBuilder.VITE) {
     const openPanel = (panelId: string) => {
       api.setSelectedPanel(panelId);
       api.togglePanel(true);

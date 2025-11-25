@@ -1146,11 +1146,12 @@ jobs:
                   path: test-results
     sandboxes:
         executor:
-            class: xlarge
-            name: sb_playwright
+            class: small
+            name: sb_node_22_classic
         steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
+            - run:
+                  command: ""
+                  name: Grouping sandboxes in CI graph
     sandboxes-a-create:
         executor:
             class: xlarge

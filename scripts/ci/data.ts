@@ -281,7 +281,7 @@ const jobs = {
   },
   build: {
     executor: {
-      class: 'large',
+      class: 'xlarge',
       name: 'sb_node_22_classic',
     },
     steps: [
@@ -291,37 +291,47 @@ const jobs = {
         },
       },
       {
-        restore_cache: {
-          keys: [
-            'build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}',
-          ],
-          name: 'Restore Yarn cache',
+        'node/install-packages': {
+          'app-dir': 'code',
+          'pkg-manager': 'yarn',
+        },
+      },
+      {
+        'node/install-packages': {
+          'app-dir': 'scripts',
+          'pkg-manager': 'yarn',
         },
       },
       {
         run: {
-          command:
-            'yarn task --task compile --start-from=auto --no-link --debug\ngit diff --exit-code\nyarn dedupe --check\n',
+          command: 'git diff --exit-code',
+          name: 'Check for changes',
+        },
+      },
+      {
+        run: {
+          command: 'yarn dedupe --check',
+          name: 'Check for dedupe',
+        },
+      },
+      {
+        run: {
+          command: 'yarn task --task compile --start-from=auto --no-link --debug',
           name: 'Compile',
+          working_directory: 'code',
         },
       },
       {
         run: {
-          command: 'cd code\nyarn local-registry --publish\n',
+          command: 'yarn local-registry --publish',
           name: 'Publish to Verdaccio',
+          working_directory: 'code',
         },
       },
       'report-workflow-on-failure',
       {
         store_artifacts: {
           path: 'code/bench/esbuild-metafiles',
-        },
-      },
-      {
-        save_cache: {
-          key: 'build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}',
-          name: 'Save Yarn cache',
-          paths: ['~/.yarn/berry/cache'],
         },
       },
       {
@@ -1713,13 +1723,14 @@ const jobs = {
   },
   sandboxes: {
     executor: {
-      class: 'xlarge',
-      name: 'sb_playwright',
+      class: 'small',
+      name: 'sb_node_22_classic',
     },
     steps: [
       {
-        'git-shallow-clone/checkout_advanced': {
-          clone_options: '--depth 1 --verbose',
+        run: {
+          command: '',
+          name: 'Grouping sandboxes in CI graph',
         },
       },
     ],
@@ -1782,7 +1793,7 @@ const orbs = {
   codecov: 'codecov/codecov@3.2.4',
   discord: 'antonioned/discord@0.1.0',
   'git-shallow-clone': 'guitarrapc/git-shallow-clone@2.5.0',
-  node: 'circleci/node@5.2.0',
+  node: 'circleci/node@7.2.1',
   nx: 'nrwl/nx@1.6.2',
   win: 'circleci/windows@5.0.0',
 };

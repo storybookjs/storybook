@@ -1792,7 +1792,7 @@ const jobs = {
         run: {
           command: [
             'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
-            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests) --no-link --start-from=never --junit" --verbose --index=0 --total=1',
+            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests --template react-vite/default-ts --no-link -s=never" --verbose --index=0 --total=1',
           ].join('\n'),
           name: 'Running E2E Tests',
         },

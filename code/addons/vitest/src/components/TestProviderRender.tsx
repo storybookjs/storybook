@@ -261,7 +261,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           ) : (
             <ActionList.Action as="label" readOnly>
               <ActionList.Icon>
-                <Form.Checkbox checked disabled />
+                <Form.Checkbox name="Interactions" checked disabled />
               </ActionList.Icon>
               <ActionList.Text>Interactions</ActionList.Text>
             </ActionList.Action>
@@ -303,9 +303,10 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
 
         {!entry && (
           <ActionList.Item>
-            <ActionList.Action as="label" readOnly={isRunning}>
+            <ActionList.Action as="label" readOnly={isRunning} ariaLabel={false}>
               <ActionList.Icon>
                 <Form.Checkbox
+                  name="Coverage"
                   checked={config.coverage}
                   disabled={isRunning}
                   onChange={() =>
@@ -375,9 +376,10 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             {entry ? (
               <ActionList.Text>Accessibility</ActionList.Text>
             ) : (
-              <ActionList.Action as="label" readOnly={isRunning}>
+              <ActionList.Action as="label" readOnly={isRunning} ariaLabel={false}>
                 <ActionList.Icon>
                   <Form.Checkbox
+                    name="Accessibility"
                     checked={config.a11y}
                     disabled={isRunning}
                     onChange={() =>

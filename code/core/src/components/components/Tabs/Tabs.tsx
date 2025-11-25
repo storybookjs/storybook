@@ -61,7 +61,7 @@ const StyledTabBar = styled.div({
 export const TabBar = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   (props, ref) => {
     deprecate('The `TabBar` component is deprecated. Use `TabsView` instead.');
-    return <StyledTabBar {...props} ref={ref} />;
+    return <StyledTabBar data-deprecated="TabBar" {...props} ref={ref} />;
   }
 );
 TabBar.displayName = 'TabBar';
@@ -121,7 +121,7 @@ export const TabWrapper = forwardRef<HTMLDivElement, TabWrapperProps>(
   ({ active, render, children }, ref) => {
     deprecate('The `TabWrapper` component is deprecated. Use `TabsView` instead.');
     return (
-      <VisuallyHidden ref={ref} active={active}>
+      <VisuallyHidden data-deprecated="TabWrapper" ref={ref} active={active}>
         {render ? render() : children}
       </VisuallyHidden>
     );
@@ -220,7 +220,7 @@ export const Tabs: FC<TabsProps> = memo(
 
     return (
       // @ts-expect-error (non strict)
-      <Wrapper absolute={absolute} bordered={bordered} id={htmlId}>
+      <Wrapper data-deprecated="Tabs" absolute={absolute} bordered={bordered} id={htmlId}>
         <FlexBar scrollable={false} border backgroundColor={backgroundColor}>
           {/* @ts-expect-error (non strict) */}
           <TabBar style={{ whiteSpace: 'normal' }} ref={tabBarRef} role="tablist">
@@ -314,6 +314,7 @@ export class TabsState extends Component<TabsStateProps, TabsStateState> {
     const { selected } = this.state;
     return (
       <Tabs
+        data-deprecated="TabsState"
         bordered={bordered}
         absolute={absolute}
         selected={selected}

@@ -27,12 +27,11 @@ const BUILT_IN_TAGS = new Set([
   'test-fn',
 ]);
 
-// Temporary to prevent regressions until TagFilterPanel can be refactored.
-const StyledIconButton = styled(Button)<{ active: boolean }>(({ active, theme }) => ({
+const StyledButton = styled(Button)<{ isHighlighted: boolean }>(({ isHighlighted, theme }) => ({
   '&:focus-visible': {
     outlineOffset: 4,
   },
-  ...(active && {
+  ...(isHighlighted && {
     background: theme.background.hoverable,
     color: theme.color.secondary,
   }),
@@ -245,18 +244,19 @@ export const TagsFilter = ({ api, indexJson, tagPresets }: TagsFilterProps) => {
         />
       )}
     >
-      <StyledIconButton
+      <StyledButton
         key="tags"
         ariaLabel="Tag filters"
         ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
+        aria-haspopup="dialog"
         variant="ghost"
         padding="small"
-        active={tagsActive}
+        isHighlighted={tagsActive}
         onClick={handleToggleExpand}
       >
         <FilterIcon />
         {includedFilters.size + excludedFilters.size > 0 && <TagSelected />}
-      </StyledIconButton>
+      </StyledButton>
     </PopoverProvider>
   );
 };

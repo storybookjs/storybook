@@ -50,7 +50,7 @@ async function main() {
 
   if (existsSync(storybookStaticCacheDir) && !existsSync(storybookStaticSandboxDir)) {
     console.log(`🧹 copying cached ${storybookStaticCacheDir} to ${storybookStaticSandboxDir}`);
-    await cp(storybookStaticSandboxDir, storybookStaticSandboxDir, {
+    await cp(storybookStaticCacheDir, storybookStaticSandboxDir, {
       recursive: true,
       force: true,
     });

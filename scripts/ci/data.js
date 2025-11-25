@@ -1952,12 +1952,18 @@ const workflows = {
         'sandboxes-a-create': {
           requires: ['sandboxes'],
         },
+      },
+      {
         'sandboxes-a-e2e': {
           requires: ['sandboxes-a-create'],
         },
+      },
+      {
         'sandboxes-b-create': {
           requires: ['sandboxes'],
         },
+      },
+      {
         'sandboxes-b-e2e': {
           requires: ['sandboxes-b-create'],
         },

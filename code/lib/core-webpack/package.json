@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core-webpack",
-  "version": "10.1.0-alpha.10",
+  "version": "10.1.0-beta.3",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -53,5 +53,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae17"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

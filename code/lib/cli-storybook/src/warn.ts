@@ -19,7 +19,6 @@ export const warn = async ({ hasTSDependency }: Options) => {
         'We have detected TypeScript files in your project directory, however TypeScript is not listed as a project dependency.'
       );
       logger.warn('Storybook will continue as though this is a JavaScript project.');
-      logger.line();
       logger.info(
         'For more information, see: https://storybook.js.org/docs/configurations/typescript-config/'
       );

@@ -1,19 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cache, loadAllPresets } from 'storybook/internal/common';
-import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
-
-import prompts from 'prompts';
+import { prompt } from 'storybook/internal/node-logger';
+import { ErrorCollector, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 
 import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry';
 
-vi.mock('prompts');
-vi.mock('storybook/internal/common');
-vi.mock('storybook/internal/telemetry');
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const cliOptions = {};
 
 describe('withTelemetry', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
+  });
   it('works in happy path', async () => {
     const run = vi.fn();
 
@@ -61,7 +64,11 @@ describe('withTelemetry', () => {
       expect(telemetry).toHaveBeenCalledTimes(2);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
-        expect.objectContaining({ eventType: 'dev', error }),
+        expect.objectContaining({
+          eventType: 'dev',
+          error: undefined, // error is only included when errorLevel === 'full'
+          isErrorInstance: true,
+        }),
         expect.objectContaining({})
       );
     });
@@ -115,8 +122,12 @@ describe('withTelemetry', () => {
       expect(telemetry).toHaveBeenCalledTimes(2);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
-        expect.objectContaining({ eventType: 'dev', error }),
-        expect.objectContaining({})
+        expect.objectContaining({
+          eventType: 'dev',
+          error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: true })
       );
     });
 
@@ -157,8 +168,12 @@ describe('withTelemetry', () => {
       expect(telemetry).toHaveBeenCalledTimes(2);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
-        expect.objectContaining({ eventType: 'dev', error }),
-        expect.objectContaining({})
+        expect.objectContaining({
+          eventType: 'dev',
+          error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: true })
       );
     });
 
@@ -201,8 +216,12 @@ describe('withTelemetry', () => {
       expect(telemetry).toHaveBeenCalledTimes(2);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
-        expect.objectContaining({ eventType: 'dev', error }),
-        expect.objectContaining({})
+        expect.objectContaining({
+          eventType: 'dev',
+          error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: true })
       );
     });
 
@@ -211,7 +230,7 @@ describe('withTelemetry', () => {
         apply: async () => ({}) as any,
       });
       vi.mocked(cache.get).mockResolvedValueOnce(undefined);
-      vi.mocked(prompts).mockResolvedValueOnce({ enableCrashReports: false });
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(false);
 
       await expect(async () =>
         withTelemetry(
@@ -234,7 +253,7 @@ describe('withTelemetry', () => {
         apply: async () => ({}) as any,
       });
       vi.mocked(cache.get).mockResolvedValueOnce(undefined);
-      vi.mocked(prompts).mockResolvedValueOnce({ enableCrashReports: true });
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true);
 
       await expect(async () =>
         withTelemetry(
@@ -247,8 +266,12 @@ describe('withTelemetry', () => {
       expect(telemetry).toHaveBeenCalledTimes(2);
       expect(telemetry).toHaveBeenCalledWith(
         'error',
-        expect.objectContaining({ eventType: 'dev', error }),
-        expect.objectContaining({})
+        expect.objectContaining({
+          eventType: 'dev',
+          error: expect.objectContaining({ message: 'An Error!', name: 'Error' }),
+          isErrorInstance: true,
+        }),
+        expect.objectContaining({ enableCrashReports: true })
       );
     });
 
@@ -276,6 +299,11 @@ describe('withTelemetry', () => {
 });
 
 describe('sendTelemetryError', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
+  });
+
   it('handles error instances and sends telemetry', async () => {
     const options: any = {
       cliOptions: {},
@@ -291,12 +319,16 @@ describe('sendTelemetryError', () => {
     expect(telemetry).toHaveBeenCalledWith(
       'error',
       expect.objectContaining({
-        error: mockError,
+        error: undefined, // error is only included when errorLevel === 'full'
         eventType,
         isErrorInstance: true,
         errorHash: 'some-hash',
+        name: 'Error',
       }),
-      expect.any(Object)
+      expect.objectContaining({
+        enableCrashReports: false,
+        immediate: true,
+      })
     );
   });
 
@@ -313,12 +345,15 @@ describe('sendTelemetryError', () => {
     expect(telemetry).toHaveBeenCalledWith(
       'error',
       expect.objectContaining({
-        error: mockError,
+        error: undefined, // error is only included when errorLevel === 'full'
         eventType,
         isErrorInstance: false,
         errorHash: 'NO_MESSAGE',
       }),
-      expect.any(Object)
+      expect.objectContaining({
+        enableCrashReports: false,
+        immediate: true,
+      })
     );
   });
 
@@ -335,12 +370,16 @@ describe('sendTelemetryError', () => {
     expect(telemetry).toHaveBeenCalledWith(
       'error',
       expect.objectContaining({
-        error: mockError,
+        error: undefined, // error is only included when errorLevel === 'full'
         eventType,
         isErrorInstance: true,
         errorHash: 'EMPTY_MESSAGE',
+        name: 'Error',
       }),
-      expect.any(Object)
+      expect.objectContaining({
+        enableCrashReports: false,
+        immediate: true,
+      })
     );
   });
 });
@@ -348,6 +387,7 @@ describe('sendTelemetryError', () => {
 describe('getErrorLevel', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
   });
 
   it('returns "none" when cliOptions.disableTelemetry is true', async () => {
@@ -364,7 +404,7 @@ describe('getErrorLevel', () => {
     expect(errorLevel).toBe('none');
   });
 
-  it('returns "full" when presetOptions is not provided', async () => {
+  it('returns "error" when presetOptions is not provided', async () => {
     const options: any = {
       cliOptions: {
         disableTelemetry: false,
@@ -375,7 +415,7 @@ describe('getErrorLevel', () => {
 
     const errorLevel = await getErrorLevel(options);
 
-    expect(errorLevel).toBe('full');
+    expect(errorLevel).toBe('error');
   });
 
   it('returns "full" when core.enableCrashReports is true', async () => {

@@ -92,13 +92,11 @@ export const sandbox: Task = {
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
 
-    options.addon.push('@storybook/addon-a11y');
-
     if (shouldAddVitestIntegration) {
       extraDeps.push('happy-dom');
 
       if (details.template.expected.framework.includes('nextjs')) {
-        extraDeps.push('@storybook/nextjs-vite', 'jsdom');
+        extraDeps.push('jsdom');
       }
 
       // if (details.template.expected.renderer === '@storybook/svelte') {
@@ -108,8 +106,6 @@ export const sandbox: Task = {
       // if (details.template.expected.framework === '@storybook/angular') {
       //   extraDeps.push('@testing-library/angular', '@analogjs/vitest-angular');
       // }
-
-      options.addon.push('@storybook/addon-vitest');
     }
 
     let startTime = now();
@@ -146,7 +142,7 @@ export const sandbox: Task = {
     }
 
     // not if sandbox is bench
-    if (!details.template.name.includes('Bench')) {
+    if (!details.template.modifications?.skipMocking) {
       await addGlobalMocks(details, options);
     }
 

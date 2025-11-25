@@ -11,15 +11,16 @@
  *
  * When you pass no package names, you will be prompted to select which packages to build.
  */
-import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import { exec } from 'child_process';
 import { program } from 'commander';
-import { posix, resolve, sep } from 'path';
+import { resolve } from 'path';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import windowSize from 'window-size';
 
+import { ROOT_DIRECTORY } from './utils/constants';
 import { findMostMatchText } from './utils/diff';
 import { getCodeWorkspaces } from './utils/workspace';
 
@@ -165,26 +166,18 @@ async function run() {
   let lastName = '';
 
   selection.forEach(async (v) => {
-    const content = await readFile(resolve('../code', v.location, 'package.json'), 'utf-8');
-    const command = JSON.parse(content).scripts?.prep.split(posix.sep).join(sep);
-
-    if (!command) {
-      console.log(`No prep script found for ${v.name}`);
-      return;
-    }
+    const script = join(ROOT_DIRECTORY, 'scripts', 'build', 'build-package.ts');
+    const command = `yarn exec jiti ${script}`;
 
     const cwd = resolve(__dirname, '..', 'code', v.location);
-    const sub = exec(
-      `${command}${watchMode ? ' --watch' : ''}${prodMode ? ' --optimized' : ''} --reset`,
-      {
-        cwd,
-        env: {
-          NODE_ENV: 'production',
-          ...process.env,
-          FORCE_COLOR: '1',
-        },
-      }
-    );
+    const sub = exec(`${command}${watchMode ? ' --watch' : ''}${prodMode ? ' --prod' : ''}`, {
+      cwd,
+      env: {
+        NODE_ENV: 'production',
+        ...process.env,
+        FORCE_COLOR: '1',
+      },
+    });
 
     sub.stdout?.on('data', (data) => {
       if (lastName !== v.name) {

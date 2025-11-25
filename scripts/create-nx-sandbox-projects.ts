@@ -18,9 +18,7 @@ const projectJson = (name: string, framework: string, tags: string[], template: 
     'addon-docs',
     'addon-vitest',
     'addon-onboarding',
-    ...(!['storybook-framework-qwik', 'storybook-solidjs-vite'].includes(framework)
-      ? [framework]
-      : []),
+    ...(framework ? [framework] : []),
   ],
   targets: {
     sandbox: {
@@ -80,8 +78,11 @@ Object.entries(allTemplates)
     const full = join(process.cwd(), '../code/sandbox', p, 'project.json');
 
     console.log(full);
-    const framework = value.expected.framework.replace('@storybook/', '');
-    console.log(framework);
+    const framework = value.expected.framework;
+    const project = framework.includes('@storybook/')
+      ? framework.replace('@storybook/', '')
+      : undefined;
+    console.log(project);
     console.log();
     const tags = [
       ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
@@ -90,7 +91,7 @@ Object.entries(allTemplates)
     ];
     ensureDirectoryExistence(full);
     console.log(full);
-    writeFileSync(full, JSON.stringify(projectJson(key, framework, tags, value), null, 2), {
+    writeFileSync(full, JSON.stringify(projectJson(key, project, tags, value), null, 2), {
       encoding: 'utf-8',
     });
   });

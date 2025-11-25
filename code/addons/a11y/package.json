@@ -54,9 +54,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "axe-core": "^4.2.0"

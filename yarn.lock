@@ -8879,9 +8879,6 @@ __metadata:
       optional: true
     verdaccio-auth-memory:
       optional: true
-  bin:
-    build-package: ./build/build-package.ts
-    check-package: ./check/check-package.ts
   languageName: unknown
   linkType: soft
 

@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/workspace-schema.json",
-  "nxCloudId": "691dbcdcb2822ca4fdc727c4",
+  "nxCloudId": "606dc2e0c2e8d5671d813305",
   "defaultBase": "next",
   "parallel": 8,
   "pluginsConfig": {
@@ -23,31 +23,18 @@
   "targetDefaults": {
     "build": {
       "dependsOn": ["^build"],
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "{projectRoot}",
-        "command": "yarn prep",
-        "args": "--reset"
-      },
+      "command": "yarn exec jiti ./scripts/build/build-package.ts --cwd {projectRoot}",
+      "configurations": { "production": { "args": "--prod" } },
       "cache": true,
       "inputs": ["production", "^production"],
       "outputs": [
         "{projectRoot}/dist",
         "{workspaceRoot}/code/bench/esbuild-metafiles/{projectName}"
-      ],
-      "configurations": {
-        "production": {
-          "args": "--reset --optimized"
-        }
-      }
+      ]
     },
     "check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "{projectRoot}",
-        "command": "yarn exec jiti $(yarn workspace @storybook/scripts bin check-package)"
-      },
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
+      "command": "yarn exec jiti ./scripts/check/check-package.ts --cwd {projectRoot}",
       "cache": true,
       "inputs": ["default", "^production"],
       "configurations": { "production": {} }
@@ -200,11 +187,7 @@
     "default": ["sharedGlobals", "{projectRoot}/**/*"],
     "production": [
       "default",
-      "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-      "!{projectRoot}/vitest.config.[jt]s",
-      "!{projectRoot}/README.md",
-      "!{projectRoot}/.eslintrc.{json,js}",
-      "!{projectRoot}/src/test-setup.[jt]s"
+      "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ],
     "all-production": [
       "sharedGlobals",

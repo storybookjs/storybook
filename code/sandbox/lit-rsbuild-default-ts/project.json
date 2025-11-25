@@ -1,0 +1,34 @@
+{
+  "name": "lit-rsbuild/default-ts",
+  "projectType": "application",
+  "implicitDependencies": [
+    "core",
+    "cli",
+    "addon-a11y",
+    "addon-docs",
+    "addon-vitest",
+    "addon-onboarding"
+  ],
+  "targets": {
+    "sandbox": {
+      "options": {
+        "dir": "lit-rsbuild-default-ts"
+      }
+    },
+    "prepared-sandbox": {},
+    "dev": {},
+    "build-sandbox": {
+      "options": {
+        "dir": "lit-rsbuild-default-ts"
+      }
+    },
+    "prepared-build-sandbox": {},
+    "chromatic": {},
+    "serve": {},
+    "test-runner": {},
+    "test-runner-dev": {}
+  },
+  "tags": [
+    "ci:daily"
+  ]
+}

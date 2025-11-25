@@ -37,9 +37,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "devDependencies": {
     "typescript": "^5.8.3"
   },

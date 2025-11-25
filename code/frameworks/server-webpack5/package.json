@@ -43,9 +43,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preset-server-webpack": "workspace:*",

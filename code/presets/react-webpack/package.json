@@ -37,9 +37,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
     "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",

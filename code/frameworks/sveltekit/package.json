@@ -54,9 +54,6 @@
     "*.js",
     "*.d.ts"
   ],
-  "scripts": {
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/svelte": "workspace:*",

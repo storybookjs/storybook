@@ -35,9 +35,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "ts-dedent": "^2.0.0"
   },

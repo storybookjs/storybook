@@ -37,9 +37,6 @@
     "README.md",
     "!src/**/*"
   ],
-  "scripts": {
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "semver": "^7.6.2",
     "storybook": "workspace:*"

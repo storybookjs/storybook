@@ -45,9 +45,6 @@
     "preset.js",
     "!src/**/*"
   ],
-  "scripts": {
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/csf-plugin": "workspace:*",
     "@vitest/mocker": "3.2.4",

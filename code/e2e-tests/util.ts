@@ -153,8 +153,10 @@ export class SbPage {
    */
   async closeAnyPendingModal() {
     const popover = this.page.locator('[role="dialog"]');
-    await this.page.keyboard.press('Escape');
-    await popover.waitFor({ state: 'hidden' });
+    if (await popover.isVisible()) {
+      await popover.press('Escape');
+      await popover.waitFor({ state: 'hidden', timeout: 1000 });
+    }
   }
 
   previewIframe() {
@@ -214,7 +216,10 @@ export class SbPage {
     await this.openTagsFilter();
 
     if (toggleExclusion) {
-      await this.page.getByLabel(new RegExp(`tag filter: ${tag}`)).hover();
+      await this.page
+        .getByRole('listitem')
+        .filter({ has: this.page.getByLabel(new RegExp(`tag filter: ${tag}`)) })
+        .hover();
       await this.page.getByLabel(new RegExp(`(Exclude|Include) tag: ${tag}`)).click();
     } else {
       await this.page.getByLabel(new RegExp(`tag filter: ${tag}`)).click();
@@ -228,7 +233,10 @@ export class SbPage {
     await this.openTagsFilter();
 
     if (toggleExclusion) {
-      await this.page.getByLabel(new RegExp(`built-in filter: ${type}`)).hover();
+      await this.page
+        .getByRole('listitem')
+        .filter({ has: this.page.getByLabel(new RegExp(`built-in filter: ${type}`)) })
+        .hover();
       await this.page.getByLabel(new RegExp(`(Exclude|Include) built-in: ${type}`, 'i')).click();
     } else {
       await this.page.getByLabel(new RegExp(`built-in filter: ${type}`)).click();

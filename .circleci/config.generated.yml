@@ -1236,8 +1236,8 @@ jobs:
                   name: Grouping sandboxes in CI graph
     sandboxes-a-create:
         executor:
-            class: xlarge
-            name: sb_playwright
+            class: large
+            name: sb_node_22_browsers
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1 --verbose

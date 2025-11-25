@@ -1727,8 +1727,8 @@ const jobs = {
   },
   'sandboxes-a-create': {
     executor: {
-      class: 'xlarge',
-      name: 'sb_playwright',
+      class: 'large',
+      name: 'sb_node_22_browsers',
     },
     steps: [
       {

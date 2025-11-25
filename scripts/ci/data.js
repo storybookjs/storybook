@@ -1711,6 +1711,71 @@ const jobs = {
       },
     ],
   },
+  sandboxes: {
+    executor: {
+      class: 'xlarge',
+      name: 'sb_playwright',
+    },
+    steps: [
+      {
+        'git-shallow-clone/checkout_advanced': {
+          clone_options: '--depth 1 --verbose',
+        },
+      },
+    ],
+  },
+  'sandboxes-a-create': {
+    executor: {
+      class: 'xlarge',
+      name: 'sb_playwright',
+    },
+    steps: [
+      {
+        'git-shallow-clone/checkout_advanced': {
+          clone_options: '--depth 1 --verbose',
+        },
+      },
+    ],
+  },
+  'sandboxes-a-e2e': {
+    executor: {
+      class: 'xlarge',
+      name: 'sb_playwright',
+    },
+    steps: [
+      {
+        'git-shallow-clone/checkout_advanced': {
+          clone_options: '--depth 1 --verbose',
+        },
+      },
+    ],
+  },
+  'sandboxes-b-create': {
+    executor: {
+      class: 'xlarge',
+      name: 'sb_playwright',
+    },
+    steps: [
+      {
+        'git-shallow-clone/checkout_advanced': {
+          clone_options: '--depth 1 --verbose',
+        },
+      },
+    ],
+  },
+  'sandboxes-b-e2e': {
+    executor: {
+      class: 'xlarge',
+      name: 'sb_playwright',
+    },
+    steps: [
+      {
+        'git-shallow-clone/checkout_advanced': {
+          clone_options: '--depth 1 --verbose',
+        },
+      },
+    ],
+  },
 };
 const orbs = {
   'browser-tools': 'circleci/browser-tools@1.4.1',
@@ -1880,7 +1945,24 @@ const workflows = {
     },
   },
   docs: {
-    jobs: ['pretty-docs'],
+    jobs: [
+      'pretty-docs',
+      'sandboxes',
+      {
+        'sandboxes-a-create': {
+          requires: ['sandboxes'],
+        },
+        'sandboxes-a-e2e': {
+          requires: ['sandboxes-a-create'],
+        },
+        'sandboxes-b-create': {
+          requires: ['sandboxes'],
+        },
+        'sandboxes-b-e2e': {
+          requires: ['sandboxes-b-create'],
+        },
+      },
+    ],
     when: {
       equal: ['docs', '<< pipeline.parameters.workflow >>'],
     },

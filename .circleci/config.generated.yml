@@ -1,3 +1,12 @@
+version: 2.1
+orbs:
+    browser-tools: circleci/browser-tools@1.4.1
+    codecov: codecov/codecov@3.2.4
+    discord: antonioned/discord@0.1.0
+    git-shallow-clone: guitarrapc/git-shallow-clone@2.5.0
+    node: circleci/node@5.2.0
+    nx: nrwl/nx@1.6.2
+    win: circleci/windows@5.0.0
 commands:
     cancel-workflow-on-failure:
         description: Cancels the entire workflow in case the previous step has failed
@@ -106,6 +115,25 @@ executors:
                 type: enum
         resource_class: <<parameters.class>>
         working_directory: /tmp/storybook
+parameters:
+    ghBaseBranch:
+        default: next
+        description: The name of the base branch (the target of the PR)
+        type: string
+    ghPrNumber:
+        default: ""
+        description: The PR number
+        type: string
+    workflow:
+        default: skipped
+        description: Which workflow to run
+        enum:
+            - normal
+            - merged
+            - daily
+            - skipped
+            - docs
+        type: enum
 jobs:
     bench-packages:
         executor:
@@ -1116,34 +1144,41 @@ jobs:
                   template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
             - store_test_results:
                   path: test-results
-orbs:
-    browser-tools: circleci/browser-tools@1.4.1
-    codecov: codecov/codecov@3.2.4
-    discord: antonioned/discord@0.1.0
-    git-shallow-clone: guitarrapc/git-shallow-clone@2.5.0
-    node: circleci/node@5.2.0
-    nx: nrwl/nx@1.6.2
-    win: circleci/windows@5.0.0
-parameters:
-    ghBaseBranch:
-        default: next
-        description: The name of the base branch (the target of the PR)
-        type: string
-    ghPrNumber:
-        default: ""
-        description: The PR number
-        type: string
-    workflow:
-        default: skipped
-        description: Which workflow to run
-        enum:
-            - normal
-            - merged
-            - daily
-            - skipped
-            - docs
-        type: enum
-version: 2.1
+    sandboxes:
+        executor:
+            class: xlarge
+            name: sb_playwright
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1 --verbose
+    sandboxes-a-create:
+        executor:
+            class: xlarge
+            name: sb_playwright
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1 --verbose
+    sandboxes-a-e2e:
+        executor:
+            class: xlarge
+            name: sb_playwright
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1 --verbose
+    sandboxes-b-create:
+        executor:
+            class: xlarge
+            name: sb_playwright
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1 --verbose
+    sandboxes-b-e2e:
+        executor:
+            class: xlarge
+            name: sb_playwright
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1 --verbose
 workflows:
     daily:
         jobs:
@@ -1252,6 +1287,19 @@ workflows:
     docs:
         jobs:
             - pretty-docs
+            - sandboxes
+            - sandboxes-a-create:
+                  requires:
+                      - sandboxes
+              sandboxes-a-e2e:
+                  requires:
+                      - sandboxes-a-create
+              sandboxes-b-create:
+                  requires:
+                      - sandboxes
+              sandboxes-b-e2e:
+                  requires:
+                      - sandboxes-b-create
         when:
             equal:
                 - docs

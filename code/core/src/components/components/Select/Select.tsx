@@ -15,7 +15,7 @@ import { Form } from '../Form/Form';
 import { Popover } from '../Popover/Popover';
 import { SelectOption } from './SelectOption';
 import type { Option, ResetOption } from './helpers';
-import { Listbox, PAGE_STEP_SIZE } from './helpers';
+import { Listbox, PAGE_STEP_SIZE, UNDEFINED_VALUE } from './helpers';
 
 export interface SelectProps
   extends Omit<ButtonProps, 'onClick' | 'onChange' | 'onSelect' | 'variant'> {
@@ -54,7 +54,7 @@ export interface SelectProps
   options: Option[];
 
   /** IDs of the preselected options. */
-  defaultOptions?: string | string[];
+  defaultOptions?: Option['value'] | Option['value'][];
 
   /** Whether the Select should render open. */
   defaultOpen?: boolean;
@@ -84,11 +84,7 @@ function setSelectedFromDefault(
   options: SelectProps['options'],
   defaultOptions: SelectProps['defaultOptions']
 ): Option[] {
-  if (!defaultOptions) {
-    return [];
-  }
-
-  if (typeof defaultOptions === 'string') {
+  if (defaultOptions === UNDEFINED_VALUE || defaultOptions === null || typeof defaultOptions !== 'object') {
     return options.filter((opt) => opt.value === defaultOptions);
   }
 

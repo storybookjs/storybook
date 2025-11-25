@@ -8,7 +8,7 @@ export interface Option {
   title: string;
   description?: string;
   icon?: React.ReactNode;
-  value: string;
+  value: string | number | null | boolean | Symbol;
 }
 
 export interface ResetOption extends Omit<Option, 'value'> {
@@ -26,3 +26,5 @@ export const Listbox = styled('ul')({
   margin: 0,
   padding: 4,
 });
+
+export const UNDEFINED_VALUE = Symbol.for('undefined');

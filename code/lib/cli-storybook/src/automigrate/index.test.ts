@@ -48,7 +48,7 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-const fixes: Fix<any>[] = [
+const fixes: Fix[] = [
   {
     id: 'fix-1',
 
@@ -88,7 +88,7 @@ class PackageManager implements Partial<JsPackageManager> {
   }
 }
 
-const packageManager = new PackageManager() as any as JsPackageManager;
+const packageManager = new PackageManager() as unknown as JsPackageManager;
 
 const dryRun = false;
 const yes = true;
@@ -127,15 +127,13 @@ const runAutomigrateWrapper = async ({
   beforeVersion: string;
   storybookVersion: string;
 }) => {
-  getStorybookData.mockImplementation(() => {
-    return {
-      ...common,
-      beforeVersion,
-      storybookVersion,
-      isLatest: true,
-    };
+  getStorybookData.mockResolvedValue({
+    ...common,
+    beforeVersion,
+    versionInstalled: storybookVersion,
+    isLatest: true,
   });
-  return doAutomigrate({ configDir });
+  return doAutomigrate({ configDir, fixes });
 };
 
 describe('runFixes', () => {
@@ -183,7 +181,7 @@ describe('runFixes', () => {
     expect(run1).not.toHaveBeenCalled();
   });
 
-  it('should throw error if an error is thrown my migration', async () => {
+  it('should throw error if an error is thrown by migration', async () => {
     check1.mockRejectedValue(new Error('check1 error'));
 
     const result = runAutomigrateWrapper({ beforeVersion, storybookVersion: '7.0.0' });

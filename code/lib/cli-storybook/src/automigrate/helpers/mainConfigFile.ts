@@ -113,7 +113,7 @@ export const getStorybookData = async ({
     mainConfigPath: mainConfigPath,
     configDir: configDirFromScript,
     previewConfigPath,
-    version: storybookVersion,
+    versionSpecifier,
   } = await getStorybookInfo(
     userDefinedConfigDir,
     userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined
@@ -142,11 +142,15 @@ export const getStorybookData = async ({
   });
 
   logger.debug('Getting Storybook version...');
+  const versionInstalled = (await packageManager.getModulePackageJSON('storybook'))?.version;
 
   return {
     configDir,
     mainConfig,
-    storybookVersion,
+    /** The version specifier of Storybook from the user'spackage.json */
+    versionSpecifier,
+    /** The version of Storybook installed in the user's project */
+    versionInstalled,
     mainConfigPath,
     previewConfigPath,
     packageManager,

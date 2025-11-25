@@ -262,6 +262,9 @@ jobs:
                       - code/renderers
                       - code/presets
                       - .verdaccio-cache
+                      - .yarn/code-install-state.gz
+                      - .yarn/scripts-install-state.gz
+                      - .yarn/root-install-state.gz
                   root: .
     check:
         executor:
@@ -552,25 +555,13 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1 --verbose
-            - restore_cache:
-                  keys:
-                      - prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
-                  name: Restore Yarn cache
+            - node/install-packages:
+                  app-dir: scripts
+                  pkg-manager: yarn
             - run:
-                  command: |
-                      cd scripts
-                      yarn install
-                  name: Install
-            - save_cache:
-                  key: prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
-                  name: Save Yarn cache
-                  paths:
-                      - ~/.yarn/berry/cache
-            - run:
-                  command: |
-                      cd scripts
-                      yarn docs:prettier:check
+                  command: yarn docs:prettier:check
                   name: Prettier
+                  working_directory: scripts
     script-checks:
         executor: sb_node_22_browsers
         steps:

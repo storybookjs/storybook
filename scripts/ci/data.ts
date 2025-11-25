@@ -349,6 +349,9 @@ const jobs = {
             'code/renderers',
             'code/presets',
             '.verdaccio-cache',
+            '.yarn/code-install-state.gz',
+            '.yarn/scripts-install-state.gz',
+            '.yarn/root-install-state.gz',
           ],
           root: '.',
         },
@@ -862,30 +865,16 @@ const jobs = {
         },
       },
       {
-        restore_cache: {
-          keys: [
-            'prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}',
-          ],
-          name: 'Restore Yarn cache',
+        'node/install-packages': {
+          'app-dir': 'scripts',
+          'pkg-manager': 'yarn',
         },
       },
       {
         run: {
-          command: 'cd scripts\nyarn install\n',
-          name: 'Install',
-        },
-      },
-      {
-        save_cache: {
-          key: 'prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}',
-          name: 'Save Yarn cache',
-          paths: ['~/.yarn/berry/cache'],
-        },
-      },
-      {
-        run: {
-          command: 'cd scripts\nyarn docs:prettier:check\n',
+          command: 'yarn docs:prettier:check',
           name: 'Prettier',
+          working_directory: 'scripts',
         },
       },
     ],

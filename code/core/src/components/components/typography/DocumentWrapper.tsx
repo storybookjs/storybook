@@ -64,7 +64,10 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
   },
   a: {
     color: theme.color.secondary,
+    // Add underlines to all links for WCAG 2.1 Level A compliance (SC 1.4.1)
     textDecoration: 'underline',
+    textDecorationThickness: '0.5px',
+    textUnderlineOffset: '0.11em',
   },
   'a.absent': {
     color: '#cc0000',
@@ -78,6 +81,7 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
     top: 0,
     left: 0,
     bottom: 0,
+    // Anchor links are position markers and should not have underlines
     textDecoration: 'none',
   },
   'h1, h2, h3, h4, h5, h6': {

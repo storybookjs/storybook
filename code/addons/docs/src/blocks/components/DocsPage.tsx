@@ -114,7 +114,10 @@ export const DocsContent = styled.div(({ theme }) => {
       lineHeight: '24px',
 
       color: theme.color.secondary,
+      // Add underlines to all links for WCAG 2.1 Level A compliance (SC 1.4.1)
       textDecoration: 'underline',
+      textDecorationThickness: '0.5px',
+      textUnderlineOffset: '0.11em',
       '&.absent': {
         color: '#cc0000',
       },
@@ -127,6 +130,7 @@ export const DocsContent = styled.div(({ theme }) => {
         top: 0,
         left: 0,
         bottom: 0,
+        // Anchor links are position markers and should not have underlines
         textDecoration: 'none',
       },
     },

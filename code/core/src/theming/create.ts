@@ -23,22 +23,28 @@ export const themes: Themes = {
 };
 
 interface Rest {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export const create = (
-  vars: ThemeVarsPartial = { base: preferredColorScheme },
+  vars: ThemeVarsPartial = {
+    base: preferredColorScheme,
+  },
   rest?: Rest
 ): ThemeVars => {
   const inherit: ThemeVars = {
+    // We always inherit the preferred color scheme.
     ...themes[preferredColorScheme],
+    // And then the declared theme base if it exists.
     ...(themes[vars.base] || {}),
+    // And then the actual theme content.
     ...vars,
-    ...{ base: themes[vars.base] ? vars.base : preferredColorScheme },
+    // If no theme base was declared, we declare the preferred color scheme as the base.
+    base: themes[vars.base] ? vars.base : preferredColorScheme,
   };
   return {
     ...rest,
     ...inherit,
-    ...{ barSelectedColor: vars.barSelectedColor || inherit.colorSecondary },
+    barSelectedColor: vars.barSelectedColor || inherit.colorSecondary,
   };
 };

@@ -30,7 +30,15 @@ const meta = {
   globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn: any) => (
-      <div style={{ padding: 20, maxWidth: '230px' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          padding: 20,
+          maxWidth: '230px',
+        }}
+      >
         <IconSymbols />
         {storyFn()}
       </div>

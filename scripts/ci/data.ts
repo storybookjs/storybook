@@ -1792,7 +1792,8 @@ const jobs = {
       },
       {
         store_artifacts: {
-          path: 'sandbox/react-vite-default-ts/*.log',
+          path: 'sandbox/react-vite-default-ts/debug-storybook.log',
+          destination: 'logs',
         },
       },
       {

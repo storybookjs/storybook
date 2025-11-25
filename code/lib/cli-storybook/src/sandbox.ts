@@ -251,23 +251,23 @@ export const sandbox = async ({
         `)
       : `Recreate your setup, then ${picocolors.yellow(`npx storybook@latest init`)}`;
 
-    logger.logBox(
-      dedent`
-        🎉 Your Storybook reproduction project is ready to use! 🎉
+    // logger.logBox(
+    //   dedent`
+    //     🎉 Your Storybook reproduction project is ready to use! 🎉
 
-        ${picocolors.yellow(`cd ${selectedDirectory}`)}
-        ${initMessage}
+    //     ${picocolors.yellow(`cd ${selectedDirectory}`)}
+    //     ${initMessage}
 
-        Once you've recreated the problem you're experiencing, please:
+    //     Once you've recreated the problem you're experiencing, please:
 
-        1. Document any additional steps in ${picocolors.cyan('README.md')}
-        2. Publish the repository to github
-        3. Link to the repro repository in your issue
+    //     1. Document any additional steps in ${picocolors.cyan('README.md')}
+    //     2. Publish the repository to github
+    //     3. Link to the repro repository in your issue
 
-        Having a clean repro helps us solve your issue faster! 🙏
-      `.trim(),
-      { rounded: true }
-    );
+    //     Having a clean repro helps us solve your issue faster! 🙏
+    //   `.trim(),
+    //   { rounded: true }
+    // );
   } catch (error) {
     logger.error('🚨 Failed to create sandbox');
     throw error;

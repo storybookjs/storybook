@@ -381,6 +381,7 @@ export default {
     'lighten',
     'styled',
     'themes',
+    'tokens',
     'typography',
     'useTheme',
     'withTheme',

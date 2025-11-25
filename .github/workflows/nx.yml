@@ -23,5 +23,3 @@ jobs:
       - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@v4
       - run: yarn nx run-many --parallel=1 -t check,knip,test,pretty-docs,lint,test,sandbox,build-sandbox,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct,cypress -c production -p="tag:ci:normal,tag:ci:merged,tag:ci:daily"
-      - run: yarn nx fix-ci
-        if: always()

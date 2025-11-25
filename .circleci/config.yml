@@ -781,12 +781,6 @@ jobs:
                 command: yarn install
                 name: Install code dependencies
                 shell: bash.exe
-                working_directory: code
-            - run:
-                command: yarn install
-                name: Install script dependencies
-                shell: bash.exe
-                working_directory: scripts
             - when:
                 condition:
                     equal:

@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import storybookVersions from '../../code/core/src/common/versions';
 import type { TemplateKey } from '../get-template';
 import { exec } from './exec';
-import touch from './touch';
 
 export type YarnOptions = {
   cwd: string;
@@ -49,17 +48,16 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   await rm(join(cwd, '.yarnrc.yml'), { force: true }).catch(() => {});
 
-  // TODO: Remove in SB11
-  const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
-
-  await writeFile(join(cwd, 'yarn.lock'), '', { flag: 'a' });
-  await writeFile(join(cwd, '.yarnrc.yml'), '', { flag: 'a' });
+  const [pnpApiExists] = await Promise.all([
+    // TODO: Remove in SB11
+    pathExists(join(cwd, '.pnp.cjs')),
+    writeFile(join(cwd, 'yarn.lock'), ''),
+    writeFile(join(cwd, '.yarnrc.yml'), ''),
+  ]);
 
   const command = [
     `yarn set version berry`,
-
-    // Use the global cache so we aren't re-caching dependencies each time we run sandbox
-    `yarn config set enableGlobalCache true`,
+    `yarn config set enableGlobalCache true`, // Use the global cache so we aren't re-caching dependencies each time we run sandbox
     `yarn config set checksumBehavior ignore`,
   ];
 

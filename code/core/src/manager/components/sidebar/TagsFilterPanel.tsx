@@ -147,9 +147,7 @@ export const TagsFilterPanel = ({
 
   const hasItems = links.length > 0;
   const hasUserTags = Object.values(filtersById).some(({ type }) => type === 'tag');
-
   const isNothingSelectedYet = includedFilters.size === 0 && excludedFilters.size === 0;
-  const filtersLabel = isNothingSelectedYet ? 'Select all' : 'Clear filters';
 
   return (
     <Wrapper ref={ref}>
@@ -164,7 +162,7 @@ export const TagsFilterPanel = ({
                 onClick={() => setAllFilters(true)}
               >
                 <BatchAcceptIcon />
-                <ActionList.Text>{filtersLabel}</ActionList.Text>
+                <ActionList.Text>Select all</ActionList.Text>
               </ActionList.Button>
             ) : (
               <ActionList.Button
@@ -174,7 +172,7 @@ export const TagsFilterPanel = ({
                 onClick={() => setAllFilters(false)}
               >
                 <SweepIcon />
-                {filtersLabel}
+                <ActionList.Text>Clear filters</ActionList.Text>
               </ActionList.Button>
             )}
             {hasDefaultSelection && (

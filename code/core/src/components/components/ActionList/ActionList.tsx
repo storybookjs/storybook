@@ -110,7 +110,7 @@ const ActionListAction = styled(ActionListButton)(({ theme }) => ({
   '& input:enabled:focus-visible': {
     outline: 'none',
   },
-  [`&:has(input:focus-visible)`]: {
+  '&:has(input:focus-visible)': {
     outline: `2px solid ${theme.color.secondary}`,
     outlineOffset: -2,
   },

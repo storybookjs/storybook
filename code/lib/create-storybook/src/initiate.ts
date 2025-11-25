@@ -58,7 +58,8 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   // Step 4: Get user preferences and feature selections (with framework/builder for validation)
-  const { newUser, selectedFeatures } = await executeUserPreferences(packageManager, {
+  const { newUser, selectedFeatures } = await executeUserPreferences({
+    packageManager,
     options,
     framework,
     builder,
@@ -123,7 +124,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 const handleCommandFailure = async (logFilePath: string | boolean | undefined): Promise<never> => {
   const logFile = await logTracker.writeToFile(logFilePath);
   logger.error('Storybook encountered an error during initialization');
-  logger.log(`Storybook debug logs can be found at: ${logFile}`);
+  logger.log(`Debug logs are written to: ${logFile}`);
   logger.outro('Storybook exited with an error');
   process.exit(1);
 };

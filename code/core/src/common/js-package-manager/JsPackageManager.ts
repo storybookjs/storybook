@@ -105,7 +105,7 @@ export abstract class JsPackageManager {
   abstract getRunCommand(command: string): string;
 
   /** Get the package.json file for a given module. */
-  abstract getModulePackageJSON(packageName: string): Promise<PackageJson | null>;
+  abstract getModulePackageJSON(packageName: string, cwd?: string): Promise<PackageJson | null>;
 
   isStorybookInMonorepo() {
     const turboJsonPath = find.up(`turbo.json`, { last: getProjectRoot() });

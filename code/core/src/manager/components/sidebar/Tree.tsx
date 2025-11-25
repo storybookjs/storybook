@@ -34,7 +34,7 @@ import { styled, useTheme } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
-import { getGroupStatus, getMostCriticalStatusValue, statusMapping } from '../../utils/status';
+import { getGroupStatus, getMostCriticalStatusValue, getStatus } from '../../utils/status';
 import {
   createId,
   getAncestorIds,
@@ -214,8 +214,8 @@ const Node = React.memo<NodeProps>(function Node(props) {
     onSelectStoryId,
     api,
   } = props;
+  const theme = useTheme();
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
-  const { counts, statusesByValue } = useStatusSummary(item);
 
   if (!isDisplayed) {
     return null;
@@ -239,48 +239,79 @@ const Node = React.memo<NodeProps>(function Node(props) {
         }));
     }
 
-    // TODO should this be updated for stories with tests?
-    if (item.type === 'component' || item.type === 'group') {
-      const links: Link[] = [];
-      const errorCount = counts['status-value:error'];
-      const warningCount = counts['status-value:warning'];
-      if (errorCount) {
-        links.push({
-          id: 'errors',
-          icon: StatusIconMap['status-value:error'],
-          title: `${errorCount} ${errorCount === 1 ? 'story' : 'stories'} with errors`,
-          onClick: () => {
-            const [firstStoryId] = Object.entries(statusesByValue['status-value:error'])[0];
-            onSelectStoryId(firstStoryId);
-            const errorStatuses = Object.values(statusesByValue['status-value:error']).flat();
-            fullStatusStore.selectStatuses(errorStatuses);
-          },
-        });
-      }
-      if (warningCount) {
-        links.push({
-          id: 'warnings',
-          icon: StatusIconMap['status-value:warning'],
-          title: `${warningCount} ${warningCount === 1 ? 'story' : 'stories'} with warnings`,
-          onClick: () => {
-            const [firstStoryId] = Object.entries(statusesByValue['status-value:warning'])[0];
-            onSelectStoryId(firstStoryId);
-            const warningStatuses = Object.values(statusesByValue['status-value:warning']).flat();
-            fullStatusStore.selectStatuses(warningStatuses);
-          },
-        });
-      }
-      return links;
-    }
-
     return [];
-  }, [counts, item.id, item.type, onSelectStoryId, statuses, statusesByValue]);
+  }, [item.id, item.type, onSelectStoryId, statuses]);
 
   const id = createId(item.id, refId);
   const contextMenu =
     refId === 'storybook_internal'
       ? useContextMenu(item, statusLinks, api)
       : { node: null, onMouseEnter: () => {} };
+
+  if (
+    (item.type === 'story' &&
+      !('children' in item && item.children) &&
+      (!('subtype' in item) || item.subtype !== 'test')) ||
+    item.type === 'docs'
+  ) {
+    const LeafNode = item.type === 'docs' ? DocumentNode : StoryNode;
+
+    const statusValue = getMostCriticalStatusValue(
+      Object.values(statuses || {}).map((s) => s.value)
+    );
+    const [icon, textColor] = getStatus(theme, statusValue);
+
+    return (
+      <LeafNodeStyleWrapper
+        key={id}
+        className="sidebar-item"
+        data-selected={isSelected}
+        data-ref-id={refId}
+        data-item-id={item.id}
+        data-parent-id={item.parent}
+        data-nodetype={item.type === 'docs' ? 'document' : 'story'}
+        data-highlightable={isDisplayed}
+        onMouseEnter={contextMenu.onMouseEnter}
+      >
+        <LeafNode
+          // @ts-expect-error (non strict)
+          style={isSelected ? {} : { color: textColor }}
+          href={getLink(item, refId)}
+          id={id}
+          depth={isOrphan ? item.depth : item.depth - 1}
+          onClick={(event) => {
+            event.preventDefault();
+            onSelectStoryId(item.id);
+
+            if (isMobile) {
+              setMobileMenuOpen(false);
+            }
+          }}
+          {...(item.type === 'docs' && { docsMode })}
+        >
+          {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
+            item.name}
+        </LeafNode>
+        {isSelected && (
+          <SkipToContentLink asChild ariaLabel={false}>
+            <a href="#storybook-preview-wrapper">Skip to canvas</a>
+          </SkipToContentLink>
+        )}
+        {contextMenu.node}
+        {icon ? (
+          <StatusButton
+            ariaLabel={`Test status: ${statusValue.replace('status-value:', '')}`}
+            data-testid="tree-status-button"
+            type="button"
+            status={statusValue}
+            selectedItem={isSelected}
+          >
+            {icon}
+          </StatusButton>
+        ) : null}
+      </LeafNodeStyleWrapper>
+    );
+  }
 
   if (item.type === 'root') {
     return (
@@ -327,7 +358,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
   }
 
   const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const [itemIcon, itemColor] = statusMapping[itemStatus];
+  const [itemIcon, itemColor] = getStatus(theme, itemStatus);
   const itemStatusButton = itemIcon ? (
     <StatusButton
       ariaLabel={`Test status: ${itemStatus.replace('status-value:', '')}`}
@@ -349,7 +380,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     const { children = [] } = item;
     const BranchNode = { component: ComponentNode, group: GroupNode, story: StoryNode }[item.type];
     const status = getMostCriticalStatusValue([itemStatus, groupStatus?.[item.id]]);
-    const color = status ? statusMapping[status][1] : null;
+    const color = status ? getStatus(theme, status)[1] : null;
     const showBranchStatus = status === 'status-value:error' || status === 'status-value:warning';
 
     return (
@@ -454,7 +485,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
             setMobileMenuOpen(false);
           }
         }}
-        {...(item.type === 'docs' && { docsMode })}
       >
         {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
           item.name}

@@ -189,7 +189,6 @@ export const scaffoldNewProject = async (
     });
   }
 
-  // Use stop for successful completion; cancel is reserved for aborted flows
   spinner.stop(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
 
   if (!disableTelemetry) {

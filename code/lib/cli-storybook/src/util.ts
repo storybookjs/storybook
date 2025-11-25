@@ -678,7 +678,7 @@ export const getProjects = async (
     const projects = await collectProjects(options, detectedConfigDirs, () =>
       task.message(`Detecting projects: ${++count} projects`)
     );
-    task.cancel(`${projects.length} ${projects.length > 1 ? 'projects' : 'project'} detected`);
+    task.stop(`${projects.length} ${projects.length > 1 ? 'projects' : 'project'} detected`);
 
     // Separate valid and error projects
     const validProjects = projects.filter(isSuccessResult);

@@ -357,7 +357,7 @@ const jobs = {
   },
   check: {
     executor: {
-      class: 'large',
+      class: 'xlarge',
       name: 'sb_node_22_classic',
     },
     steps: [
@@ -367,34 +367,22 @@ const jobs = {
         },
       },
       {
-        'nx/set-shas': {
-          'main-branch-name': 'next',
-          'workflow-name': '<< pipeline.parameters.workflow >>',
-        },
-      },
-      {
-        restore_cache: {
-          keys: [
-            'build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}',
-          ],
-          name: 'Restore Yarn cache',
+        run: {
+          command: 'yarn task --task check --no-link',
+          name: 'TypeCheck code',
+          working_directory: 'code',
         },
       },
       {
         run: {
-          command: 'yarn task --task compile --start-from=auto --no-link --debug\n',
-          name: 'Compile',
+          command: 'yarn check',
+          name: 'TypeCheck scripts',
+          working_directory: 'scripts',
         },
       },
       {
         run: {
-          command: 'yarn task --task check --start-from=auto --no-link --debug\n',
-          name: 'Check',
-        },
-      },
-      {
-        run: {
-          command: 'git diff --exit-code\n',
+          command: 'git diff --exit-code',
           name: 'Ensure no changes pending',
         },
       },
@@ -1729,7 +1717,7 @@ const jobs = {
     steps: [
       {
         run: {
-          command: '',
+          command: 'echo "Grouping sandboxes in CI graph"',
           name: 'Grouping sandboxes in CI graph',
         },
       },
@@ -1959,6 +1947,7 @@ const workflows = {
     jobs: [
       'pretty-docs',
       'build',
+      'check',
       {
         sandboxes: {
           requires: ['build'],

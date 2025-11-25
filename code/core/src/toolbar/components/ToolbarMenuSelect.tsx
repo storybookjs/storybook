@@ -57,8 +57,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
     const resetItem = items.find((item) => item.type === 'reset');
     const resetLabel = resetItem?.title;
     const options = items
-      .filter((item) => item.type === 'item')
-      .filter((item): item is ToolbarItem & { value: string } => item.value !== undefined)
+      .filter((item): item is ToolbarItem => item.type === 'item')
       .map((item) => {
         const itemTitle = item.title ?? item.value;
         const iconComponent =

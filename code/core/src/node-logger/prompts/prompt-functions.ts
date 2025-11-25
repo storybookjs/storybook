@@ -1,5 +1,4 @@
-import { logger } from '../../client-logger';
-import { shouldLog } from '../logger';
+import { error, log, shouldLog } from '../logger';
 import { wrapTextForClack, wrapTextForClackHint } from '../wrap-utils';
 import { getPromptProvider } from './prompt-config';
 import type {
@@ -152,7 +151,7 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
 
     return wrappedSpinner;
   } else {
-    const maybeLog = shouldLog('info') ? logger.log : (_: string) => {};
+    const maybeLog = shouldLog('info') ? log : (_: string) => {};
 
     return {
       start: (message) => {
@@ -173,7 +172,7 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
       error: (message) => {
         if (message) {
           if (shouldLog('error')) {
-            logger.error(message);
+            error(message);
           }
         }
       },
@@ -225,7 +224,7 @@ export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
 
     return wrappedTaskLog;
   } else {
-    const maybeLog = shouldLog('info') ? logger.log : (_: string) => {};
+    const maybeLog = shouldLog('info') ? log : (_: string) => {};
 
     return {
       message: (message: string) => {

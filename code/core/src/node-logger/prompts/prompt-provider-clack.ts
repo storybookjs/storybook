@@ -101,12 +101,16 @@ export class ClackPromptProvider extends PromptProvider {
         logTracker.addLog('info', `${spinnerId}: ${message}`);
         task.message(message);
       },
-      cancel: (message) => {
+      stop: (message) => {
         logTracker.addLog('info', `${spinnerId}-stop: ${message}`);
+        task.stop(message);
+      },
+      cancel: (message) => {
+        logTracker.addLog('info', `${spinnerId}-cancel: ${message}`);
         task.cancel(message);
       },
       error: (message) => {
-        logTracker.addLog('error', `${spinnerId}-stop: ${message}`);
+        logTracker.addLog('error', `${spinnerId}-error: ${message}`);
         task.error(message);
       },
     };

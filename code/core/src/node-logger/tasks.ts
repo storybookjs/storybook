@@ -149,7 +149,7 @@ export const executeTaskWithSpinner = async (
       await childProcess;
     }
     logTracker.addLog('info', success);
-    task.cancel(success);
+    task.stop(success);
   } catch (err: any) {
     const isAborted =
       abortController?.signal.aborted ||

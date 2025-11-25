@@ -122,6 +122,13 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
           spinnerInstance.start(message);
         }
       },
+      stop: (message?: string) => {
+        activeSpinner = null;
+        restoreConsoleLog();
+        if (shouldLog('info')) {
+          spinnerInstance.stop(message);
+        }
+      },
       cancel: (message?: string) => {
         activeSpinner = null;
         restoreConsoleLog();
@@ -149,6 +156,11 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
 
     return {
       start: (message) => {
+        if (message) {
+          maybeLog(message);
+        }
+      },
+      stop: (message) => {
         if (message) {
           maybeLog(message);
         }

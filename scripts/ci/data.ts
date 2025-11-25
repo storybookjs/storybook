@@ -1947,7 +1947,11 @@ const workflows = {
     jobs: [
       'pretty-docs',
       'build',
-      'check',
+      {
+        check: {
+          requires: ['build'],
+        },
+      },
       {
         sandboxes: {
           requires: ['build'],

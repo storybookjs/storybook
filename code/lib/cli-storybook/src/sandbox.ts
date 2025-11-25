@@ -57,33 +57,33 @@ export const sandbox = async ({
   const downloadType = !isOutdated && init ? 'after-storybook' : 'before-storybook';
   const branch = isPrerelease ? 'next' : 'main';
 
-  const messages = {
-    welcome: `Creating a Storybook ${picocolors.bold(currentVersion)} sandbox..`,
-    notLatest: picocolors.red(dedent`
-      This version is behind the latest release, which is: ${picocolors.bold(latestVersion)}!
-      You likely ran the init command through npx, which can use a locally cached version, to get the latest please run:
-      ${picocolors.bold('npx storybook@latest sandbox')}
-      
-      You may want to CTRL+C to stop, and run with the latest version instead.
-    `),
-    longInitTime: picocolors.yellow(
-      'The creation of the sandbox will take longer, because we will need to run init.'
-    ),
-    prerelease: picocolors.yellow('This is a pre-release version.'),
-  };
+  // const messages = {
+  //   welcome: `Creating a Storybook ${picocolors.bold(currentVersion)} sandbox..`,
+  //   notLatest: picocolors.red(dedent`
+  //     This version is behind the latest release, which is: ${picocolors.bold(latestVersion)}!
+  //     You likely ran the init command through npx, which can use a locally cached version, to get the latest please run:
+  //     ${picocolors.bold('npx storybook@latest sandbox')}
+
+  //     You may want to CTRL+C to stop, and run with the latest version instead.
+  //   `),
+  //   longInitTime: picocolors.yellow(
+  //     'The creation of the sandbox will take longer, because we will need to run init.'
+  //   ),
+  //   prerelease: picocolors.yellow('This is a pre-release version.'),
+  // };
 
   console.log({ isOutdated, isPrerelease });
 
-  logger.logBox(
-    [messages.welcome]
-      .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
-      .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
-      .concat(isPrerelease ? [messages.prerelease] : [])
-      .join('\n'),
-    {
-      rounded: true,
-    }
-  );
+  // logger.logBox(
+  //   [messages.welcome]
+  //     .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
+  //     .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
+  //     .concat(isPrerelease ? [messages.prerelease] : [])
+  //     .join('\n'),
+  //   {
+  //     rounded: true,
+  //   }
+  // );
 
   console.log({ selectedConfig });
 

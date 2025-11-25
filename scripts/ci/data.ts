@@ -1730,7 +1730,6 @@ const jobs = {
       class: 'xlarge',
       name: 'sb_playwright',
     },
-    name: 'react-vite/default-ts',
     steps: [
       {
         'git-shallow-clone/checkout_advanced': {
@@ -1767,8 +1766,8 @@ const jobs = {
       {
         persist_to_workspace: {
           paths: ['sandbox/react-vite-default-ts'],
+          root: '.',
         },
-        root: '.',
       },
     ],
   },

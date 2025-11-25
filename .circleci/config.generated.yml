@@ -1238,7 +1238,6 @@ jobs:
         executor:
             class: xlarge
             name: sb_playwright
-        name: react-vite/default-ts
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1 --verbose
@@ -1261,7 +1260,7 @@ jobs:
             - persist_to_workspace:
                   paths:
                       - sandbox/react-vite-default-ts
-              root: .
+                  root: .
     sandboxes-a-e2e:
         executor:
             class: xlarge

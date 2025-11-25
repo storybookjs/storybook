@@ -1561,7 +1561,7 @@ __metadata:
     "@verdaccio/types": "npm:^10.8.0"
     "@vitest/coverage-v8": "npm:^3.2.4"
     ansi-regex: "npm:^6.0.1"
-    chromatic: "npm:^11.28.2"
+    chromatic: "npm:^13.3.4"
     codecov: "npm:^3.8.1"
     commander: "npm:^12.1.0"
     cross-env: "npm:^7.0.3"
@@ -3743,9 +3743,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chromatic@npm:^11.28.2":
-  version: 11.28.2
-  resolution: "chromatic@npm:11.28.2"
+"chromatic@npm:^13.3.4":
+  version: 13.3.4
+  resolution: "chromatic@npm:13.3.4"
   peerDependencies:
     "@chromatic-com/cypress": ^0.*.* || ^1.0.0
     "@chromatic-com/playwright": ^0.*.* || ^1.0.0
@@ -3758,7 +3758,7 @@ __metadata:
     chroma: dist/bin.js
     chromatic: dist/bin.js
     chromatic-cli: dist/bin.js
-  checksum: 10c0/0e30c01adae08708b871c5e27462af14a8426e0fe443d0c42afb2477326703504b02fa96a02e64c858072f535d149b96f207c43b147ba1492de83bb5f505e59e
+  checksum: 10c0/1800c1640dbc168b621daeca5895698cb5a0a1def50b9d1ada5ea99ce242bf1f70d15065460948b168eedea1f56422553184f4cce1d01a7816f32c60054d704d
   languageName: node
   linkType: hard
 

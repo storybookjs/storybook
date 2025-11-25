@@ -107,8 +107,8 @@
   },
   "dependencies": {
     "@chromatic-com/storybook": "^4.1.2",
-    "@nx/vite": "22.0.3",
-    "@nx/workspace": "22.0.3",
+    "@nx/vite": "^22.0.3",
+    "@nx/workspace": "^22.0.3",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-designs": "^11.0.1",

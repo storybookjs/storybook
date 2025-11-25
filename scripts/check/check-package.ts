@@ -19,7 +19,7 @@ const normalizedCwd = cwd ? (isAbsolute(cwd) ? cwd : join(ROOT_DIRECTORY, cwd)) 
 
 const tsconfigPath = join(normalizedCwd, 'tsconfig.json');
 
-  const { options, fileNames } = getTSFilesAndConfig(tsconfigPath, normalizedCwd);
+const { options, fileNames } = getTSFilesAndConfig(tsconfigPath, normalizedCwd);
 const { program, host } = getTSProgramAndHost(fileNames, options);
 
 const tsDiagnostics = getTSDiagnostics(program, normalizedCwd, host);

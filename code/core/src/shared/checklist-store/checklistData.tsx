@@ -9,10 +9,10 @@ import {
   STORY_INDEX_INVALIDATED,
   UPDATE_GLOBALS,
 } from 'storybook/internal/core-events';
-import type {
-  API_IndexHash,
-  API_PreparedIndexEntry,
-  API_StoryEntry,
+import {
+  type API_IndexHash,
+  type API_PreparedIndexEntry,
+  type API_StoryEntry,
 } from 'storybook/internal/types';
 
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
@@ -23,6 +23,7 @@ import {
   ADDON_ID as ADDON_TEST_ID,
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/vitest/src/constants';
+import { SUPPORTED_FRAMEWORKS } from '../../cli/AddonVitestService.constants';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
 import {
@@ -119,12 +120,21 @@ export interface ChecklistData {
   }[];
 }
 
+const isExample = (id: string) =>
+  id.startsWith('example-') || id.startsWith('configure-your-project--');
+
 const subscribeToIndex: (
   condition: (entries: Record<string, API_PreparedIndexEntry>) => boolean
 ) => ChecklistData['sections'][number]['items'][number]['subscribe'] =
   (condition) =>
   ({ api, done }) => {
-    const check = () => condition(api.getIndex()?.entries || {});
+    const check = () =>
+      condition(
+        Object.entries(api.getIndex()?.entries || {}).reduce(
+          (acc, [id, entry]) => (isExample(entry.id) ? acc : Object.assign(acc, { [id]: entry })),
+          {} as Record<string, API_PreparedIndexEntry>
+        )
+      );
     if (check()) {
       done();
     } else {
@@ -184,7 +194,10 @@ export const checklistData = {
           label: 'Render a component',
           criteria: 'A story finished rendering successfully',
           subscribe: ({ api, done }) =>
-            api.on(STORY_FINISHED, ({ status }) => status === 'success' && done()),
+            api.on(
+              STORY_FINISHED,
+              ({ storyId, status }) => status === 'success' && !isExample(storyId) && done()
+            ),
           content: ({ api }) => (
             <>
               <p>
@@ -298,8 +311,7 @@ export const Primary: Story = {
           criteria: 'At least 5 components exist in the index',
           subscribe: subscribeToIndex((entries) => {
             const stories = Object.values(entries).filter(
-              (entry): entry is API_StoryEntry =>
-                entry.type === 'story' && !entry.id.startsWith('example-')
+              (entry): entry is API_StoryEntry => entry.type === 'story'
             );
             const components = new Set(stories.map(({ title }) => title));
             return components.size >= 5;
@@ -339,8 +351,7 @@ export const Primary: Story = {
           criteria: 'At least 20 stories exist in the index',
           subscribe: subscribeToIndex((entries) => {
             const stories = Object.values(entries).filter(
-              (entry): entry is API_StoryEntry =>
-                entry.type === 'story' && !entry.id.startsWith('example-')
+              (entry): entry is API_StoryEntry => entry.type === 'story'
             );
             return stories.length >= 20;
           }),
@@ -519,7 +530,9 @@ export default {
           id: 'installVitest',
           label: 'Install Vitest addon',
           afterCompletion: 'unavailable',
-          available: () => true, // TODO check for compatibility with the project
+          available: () =>
+            !!globalThis.STORYBOOK_FRAMEWORK &&
+            SUPPORTED_FRAMEWORKS.includes(globalThis.STORYBOOK_FRAMEWORK),
           criteria: '@storybook/addon-vitest registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
             if (addons.experimental_getRegisteredAddons().includes(ADDON_TEST_ID)) {
@@ -662,9 +675,7 @@ export default {
           criteria: 'At least one story with a play or test function',
           subscribe: subscribeToIndex((entries) =>
             Object.values(entries).some(
-              ({ id, tags }) =>
-                !id.startsWith('example-') &&
-                (tags?.includes('play-fn') || tags?.includes('test-fn'))
+              (entry) => entry.tags?.includes('play-fn') || entry.tags?.includes('test-fn')
             )
           ),
           content: ({ api }) => (
@@ -1076,9 +1087,7 @@ export const Disabled: Story = {
           label: 'Automatically document your components',
           criteria: 'At least one component with the autodocs tag applied',
           subscribe: subscribeToIndex((entries) =>
-            Object.values(entries).some(
-              ({ id, tags }) => !id.startsWith('example-') && tags?.includes('autodocs')
-            )
+            Object.values(entries).some((entry) => entry.tags?.includes('autodocs'))
           ),
           content: ({ api }) => (
             <>
@@ -1088,12 +1097,14 @@ export const Disabled: Story = {
                 and a description.
               </p>
               <CodeSnippet language="typescript">
-                {`// Button.stories.ts
+                {`// Button.stories.js
 
-export default {
+const meta = {
   component: Button,
   tags: ['autodocs'], // 👈 Add this tag
-}`}
+}
+  
+export default meta;`}
               </CodeSnippet>
               <p>
                 That tag can also be applied in <code>.storybook/preview.ts</code>, to generate
@@ -1135,9 +1146,7 @@ export default {
           label: 'Custom content with MDX',
           criteria: 'At least one MDX page',
           subscribe: subscribeToIndex((entries) =>
-            Object.values(entries).some(
-              ({ id, type }) => type === 'docs' && !id.startsWith('example-')
-            )
+            Object.values(entries).some((entry) => entry.type === 'docs')
           ),
           content: ({ api }) => (
             <>

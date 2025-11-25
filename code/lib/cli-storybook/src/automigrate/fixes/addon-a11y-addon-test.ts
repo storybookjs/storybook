@@ -40,7 +40,7 @@ interface AddonA11yAddonTestOptions {
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   id: 'addon-a11y-addon-test',
-  link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration',
+  link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#with-the-vitest-addon',
 
   promptType: 'auto',
 
@@ -124,7 +124,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   },
 
   prompt() {
-    return 'We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed. The automigration will configure both for the new testing experience in Storybook 9';
+    return 'We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed. The automigration will configure both for the new testing experience';
   },
 
   async run({ result }) {

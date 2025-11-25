@@ -13,6 +13,7 @@ const PLUGIN_NAME = 'WebpackInjectMockerRuntimePlugin';
  * Storybook preview bundle, are executed.
  */
 export class WebpackInjectMockerRuntimePlugin {
+  private cachedRuntime: string | null = null;
   // We need to lazy-require HtmlWebpackPlugin because it's an optional peer dependency.
   private getHtmlWebpackPlugin(compiler: Compiler): typeof HtmlWebpackPlugin | null {
     try {
@@ -52,7 +53,8 @@ export class WebpackInjectMockerRuntimePlugin {
         PLUGIN_NAME,
         (data, cb) => {
           try {
-            const runtimeScriptContent = getMockerRuntime();
+            const runtimeScriptContent =
+              this.cachedRuntime ?? (this.cachedRuntime = getMockerRuntime());
             const runtimeAssetName = 'mocker-runtime-injected.js';
 
             // Use the documented `emitAsset` method to add the pre-bundled runtime script
@@ -62,10 +64,12 @@ export class WebpackInjectMockerRuntimePlugin {
               new compiler.webpack.sources.RawSource(runtimeScriptContent)
             );
 
-            // Prepend the name of our new asset to the list of JavaScript files.
+            // Prepend the name of our new asset to the list of JavaScript files, once.
             // HtmlWebpackPlugin will automatically create a <script> tag for it
             // and place it at the beginning of the body scripts.
-            data.assets.js.unshift(runtimeAssetName);
+            if (!data.assets.js.includes(runtimeAssetName)) {
+              data.assets.js.unshift(runtimeAssetName);
+            }
             cb(null, data);
           } catch (error) {
             // In case of an error (e.g., file not found), pass it to Webpack's compilation.

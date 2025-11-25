@@ -14,8 +14,16 @@ import { Button, type ButtonProps } from '../Button/Button';
 import { Form } from '../Form/Form';
 import { Popover } from '../Popover/Popover';
 import { SelectOption } from './SelectOption';
-import type { Option, ResetOption } from './helpers';
-import { Listbox, PAGE_STEP_SIZE, UNDEFINED_VALUE } from './helpers';
+import type { InternalOption, Option, ResetOption, Value } from './helpers';
+import {
+  Listbox,
+  PAGE_STEP_SIZE,
+  externalToValue,
+  isLiteralValue,
+  optionOrResetToInternal,
+  optionToInternal,
+  valueToExternal,
+} from './helpers';
 
 export interface SelectProps
   extends Omit<ButtonProps, 'onClick' | 'onChange' | 'onSelect' | 'variant'> {
@@ -54,7 +62,7 @@ export interface SelectProps
   options: Option[];
 
   /** IDs of the preselected options. */
-  defaultOptions?: Option['value'] | Option['value'][];
+  defaultOptions?: Value | Value[];
 
   /** Whether the Select should render open. */
   defaultOpen?: boolean;
@@ -65,13 +73,13 @@ export interface SelectProps
   /** Custom text label for the reset option when it exists. */
   resetLabel?: string;
 
-  onSelect?: (option: string) => void;
-  onDeselect?: (option: string) => void;
-  onChange?: (selected: string[]) => void;
+  onSelect?: (option: Value) => void;
+  onDeselect?: (option: Value) => void;
+  onChange?: (selected: Value[]) => void;
 }
 
-function valueToId(parentId: string, { value }: ResetOption | Option): string {
-  return `${parentId}-opt-${value ?? 'sb-reset'}`;
+function valueToId(parentId: string, { value }: InternalOption | ResetOption): string {
+  return `${parentId}-opt-${String(value) ?? 'sb-reset'}`;
 }
 
 const SelectedOptionCount = styled.span(({ theme }) => ({
@@ -83,12 +91,18 @@ const SelectedOptionCount = styled.span(({ theme }) => ({
 function setSelectedFromDefault(
   options: SelectProps['options'],
   defaultOptions: SelectProps['defaultOptions']
-): Option[] {
-  if (defaultOptions === UNDEFINED_VALUE || defaultOptions === null || typeof defaultOptions !== 'object') {
-    return options.filter((opt) => opt.value === defaultOptions);
+): InternalOption[] {
+  if (defaultOptions === undefined) {
+    return [];
   }
 
-  return options.filter((opt) => defaultOptions.some((def) => opt.value === def));
+  if (isLiteralValue(defaultOptions)) {
+    return options.filter((opt) => opt.value === defaultOptions).map(optionToInternal);
+  }
+
+  return options
+    .filter((opt) => defaultOptions.some((def) => opt.value === def))
+    .map(optionToInternal);
 }
 
 const StyledButton = styled(Button)<ButtonProps & { $hasSelection?: boolean; $isOpen?: boolean }>(
@@ -210,15 +224,15 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     }, [triggerRef]);
 
     // The last selected option(s), which will be used by the app.
-    const [selectedOptions, setSelectedOptions] = useState<Option[]>(
+    const [selectedOptions, setSelectedOptions] = useState<InternalOption[]>(
       setSelectedFromDefault(calleeOptions, defaultOptions)
     );
 
     // Selects an option (updating the selection state based on multiSelect).
     const handleSelectOption = useCallback(
-      (option: Option | ResetOption) => {
+      (option: InternalOption | ResetOption) => {
         // Reset option case. We check value === undefined for cleaner type handling in the other branch.
-        if (option.value === undefined) {
+        if (option.type === 'reset') {
           if (selectedOptions.length) {
             onChange?.([]);
             onReset?.();
@@ -226,25 +240,25 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           }
         } else if (multiSelect) {
           setSelectedOptions((previous) => {
-            let newSelected: Option[] = [];
+            let newSelected: InternalOption[] = [];
 
             const isSelected = previous?.some((opt) => opt.value === option.value);
             if (isSelected) {
-              onDeselect?.(option.value);
+              onDeselect?.(valueToExternal(option.value));
               newSelected = previous?.filter((opt) => opt.value !== option.value) ?? [];
             } else {
-              onSelect?.(option.value);
+              onSelect?.(valueToExternal(option.value));
               newSelected = [...(previous ?? []), option];
             }
 
-            onChange?.(newSelected.map((opt) => opt.value));
+            onChange?.(newSelected.map((opt) => valueToExternal(opt.value)));
             return newSelected;
           });
         } else {
           setSelectedOptions((current) => {
             if (current.every((opt) => opt.value !== option.value)) {
-              onSelect?.(option.value);
-              onChange?.([option.value]);
+              onSelect?.(valueToExternal(option.value));
+              onChange?.([valueToExternal(option.value)]);
               return [option];
             }
             return current;
@@ -259,6 +273,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       () =>
         onReset
           ? {
+              type: 'reset',
               value: undefined,
               title: resetLabel ?? 'Reset selection',
               icon: <RefreshIcon />,
@@ -286,7 +301,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     }, [defaultOptions, calleeOptions]);
 
     // The active option in the listbox, which will receive focus when the listbox is open.
-    const [activeOption, setActiveOptionState] = useState<Option | ResetOption | undefined>(
+    const [activeOption, setActiveOptionState] = useState<InternalOption | ResetOption | undefined>(
       undefined
     );
 
@@ -295,9 +310,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     // in that scenario.
     const setActiveOption = useCallback(
       (option: Option | ResetOption) => {
-        setActiveOptionState(option);
+        setActiveOptionState(optionOrResetToInternal(option));
         if (!multiSelect) {
-          handleSelectOption(option);
+          handleSelectOption(optionOrResetToInternal(option));
         }
       },
       [multiSelect, handleSelectOption]
@@ -309,7 +324,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           setActiveOption(options[step === 1 ? 0 : Math.min(step, options.length - 1)]);
           return;
         }
-        const currentIndex = options.findIndex((option) => option.value === activeOption.value);
+
+        const currentIndex = options.findIndex(
+          (option) => externalToValue(option.value) === activeOption.value
+        );
         const nextIndex = currentIndex + step;
 
         // Loop over to the start if we're already on the last option.
@@ -331,7 +349,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           setActiveOption(options[Math.max(0, options.length - step)]);
           return;
         }
-        const currentIndex = options.findIndex((option) => option.value === activeOption.value);
+        const currentIndex = options.findIndex(
+          (option) => externalToValue(option.value) === activeOption.value
+        );
         const nextIndex = currentIndex - step;
 
         // Loop over to the end if we're already on the first option.
@@ -358,7 +378,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
         // If there is a selection, we'll open the Select around the first selected option.
         // If not, around the edges of the list.
         const indexOfFirstSelected = options.findIndex((option) =>
-          selectedOptions.some((sel) => sel.value === option.value)
+          selectedOptions.some((sel) => sel.value === externalToValue(option.value))
         );
         const hasSelection = indexOfFirstSelected !== -1;
 
@@ -510,55 +530,60 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
               onKeyDown={handleListboxKeyDown}
               tabIndex={isOpen ? 0 : -1}
             >
-              {options.map((option) => {
-                const isSelected =
-                  selectedOptions?.some((sel) => sel.value === option.value) &&
-                  option !== resetOption;
-                const isReset = option === resetOption;
+              {options
+                .map((opt) => ({
+                  option: optionOrResetToInternal(opt),
+                  externalOption: opt,
+                }))
+                .map(({ externalOption, option }) => {
+                  const isSelected =
+                    selectedOptions?.some((sel) => sel.value === option.value) &&
+                    option !== resetOption;
+                  const isReset = option === resetOption;
 
-                return (
-                  <SelectOption
-                    key={option.value ?? 'sb-reset'}
-                    title={option.title}
-                    description={option.description}
-                    icon={
-                      !isReset && multiSelect ? (
-                        // Purely decorative.
-                        <Form.Checkbox checked={isSelected} hidden />
-                      ) : (
-                        option.icon
-                      )
-                    }
-                    id={valueToId(id, option)}
-                    isActive={isOpen && activeOption?.value === option.value}
-                    isSelected={isSelected}
-                    onClick={() => {
-                      handleSelectOption(option);
-                      if (!multiSelect) {
-                        handleClose();
+                  return (
+                    <SelectOption
+                      key={String(option.value) ?? 'sb-reset'}
+                      title={option.title}
+                      description={option.description}
+                      icon={
+                        !isReset && multiSelect ? (
+                          // Purely decorative.
+                          <Form.Checkbox checked={isSelected} hidden />
+                        ) : (
+                          option.icon
+                        )
                       }
-                    }}
-                    onFocus={() => setActiveOption(option)}
-                    shouldLookDisabled={isReset && selectedOptions.length === 0 && multiSelect}
-                    onKeyDown={(e: KeyboardEvent) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
+                      id={valueToId(id, option)}
+                      isActive={isOpen && activeOption?.value === option.value}
+                      isSelected={isSelected}
+                      onClick={() => {
                         handleSelectOption(option);
                         if (!multiSelect) {
                           handleClose();
                         }
-                      } else if (e.key === 'Tab') {
-                        if (!multiSelect) {
+                      }}
+                      onFocus={() => setActiveOption(externalOption)}
+                      shouldLookDisabled={isReset && selectedOptions.length === 0 && multiSelect}
+                      onKeyDown={(e: KeyboardEvent) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
                           handleSelectOption(option);
+                          if (!multiSelect) {
+                            handleClose();
+                          }
+                        } else if (e.key === 'Tab') {
+                          if (!multiSelect) {
+                            handleSelectOption(option);
+                          }
+                          handleClose();
                         }
-                        handleClose();
-                      }
-                    }}
-                  >
-                    {option.children}
-                  </SelectOption>
-                );
-              })}
+                      }}
+                    >
+                      {option.children}
+                    </SelectOption>
+                  );
+                })}
             </Listbox>
           </MinimalistPopover>
         )}

@@ -93,7 +93,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
 
     return (
       <Select
-        defaultOptions={currentValue}
+        defaultOptions={[currentValue]}
         options={options}
         disabled={isOverridden}
         ariaLabel={ariaLabel}

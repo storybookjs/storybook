@@ -147,7 +147,7 @@ export const getStorybookData = async ({
   return {
     configDir,
     mainConfig,
-    /** The version specifier of Storybook from the user'spackage.json */
+    /** The version specifier of Storybook from the user's package.json */
     versionSpecifier,
     /** The version of Storybook installed in the user's project */
     versionInstalled,

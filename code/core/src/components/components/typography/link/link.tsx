@@ -200,6 +200,7 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
       containsIcon = false,
       className = undefined,
       style = undefined,
+      isButton = false,
       ...rest
     },
     ref
@@ -207,6 +208,8 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
     <A
       {...rest}
       ref={ref}
+      isButton={isButton}
+      role={isButton ? 'button' : undefined}
       onClick={onClick && cancel ? (e) => cancelled(e, onClick) : onClick}
       className={className}
     >

@@ -15,6 +15,55 @@ import type { SourceParameters } from './blocks/blocks';
 import { Source } from './blocks/components/Source';
 
 addons.register(ADDON_ID, (api) => {
+  const CodePanel: React.FC<{ active?: boolean }> = ({ active }) => {
+    const channel = api.getChannel();
+    const currentStory = api.getCurrentStoryData();
+
+    const lastEvent = channel?.last(SNIPPET_RENDERED)?.[0];
+
+    const [codeSnippet, setSourceCode] = useState<{
+      source: string | undefined;
+      format: SyntaxHighlighterFormatTypes | undefined;
+    }>({
+      source: lastEvent?.source,
+      format: lastEvent?.format ?? undefined,
+    });
+
+    const parameter = useParameter(PARAM_KEY, {
+      source: { code: '' } as SourceParameters,
+      theme: 'dark',
+    });
+
+    useEffect(() => {
+      setSourceCode({
+        source: undefined,
+        format: undefined,
+      });
+    }, [currentStory?.id]);
+
+    useChannel({
+      [SNIPPET_RENDERED]: ({ source, format }) => {
+        setSourceCode({ source, format });
+      },
+    });
+
+    const theme = useTheme();
+    const isDark = theme.base !== 'light';
+
+    return (
+      <AddonPanel active={!!active}>
+        <SourceStyles>
+          <Source
+            {...parameter.source}
+            code={parameter.source?.code || codeSnippet.source || parameter.source?.originalSource}
+            format={codeSnippet.format}
+            dark={isDark}
+          />
+        </SourceStyles>
+      </AddonPanel>
+    );
+  };
+
   addons.add(PANEL_ID, {
     title: 'Code',
     type: types.PANEL,
@@ -34,56 +83,7 @@ addons.register(ADDON_ID, (api) => {
      */
     disabled: (parameters) => !parameters?.docs?.codePanel,
     match: ({ viewMode }) => viewMode === 'story',
-    render: ({ active }) => {
-      const channel = api.getChannel();
-      const currentStory = api.getCurrentStoryData();
-
-      const lastEvent = channel?.last(SNIPPET_RENDERED)?.[0];
-
-      const [codeSnippet, setSourceCode] = useState<{
-        source: string | undefined;
-        format: SyntaxHighlighterFormatTypes | undefined;
-      }>({
-        source: lastEvent?.source,
-        format: lastEvent?.format ?? undefined,
-      });
-
-      const parameter = useParameter(PARAM_KEY, {
-        source: { code: '' } as SourceParameters,
-        theme: 'dark',
-      });
-
-      useEffect(() => {
-        setSourceCode({
-          source: undefined,
-          format: undefined,
-        });
-      }, [currentStory?.id]);
-
-      useChannel({
-        [SNIPPET_RENDERED]: ({ source, format }) => {
-          setSourceCode({ source, format });
-        },
-      });
-
-      const theme = useTheme();
-      const isDark = theme.base !== 'light';
-
-      return (
-        <AddonPanel active={!!active}>
-          <SourceStyles>
-            <Source
-              {...parameter.source}
-              code={
-                parameter.source?.code || codeSnippet.source || parameter.source?.originalSource
-              }
-              format={codeSnippet.format}
-              dark={isDark}
-            />
-          </SourceStyles>
-        </AddonPanel>
-      );
-    },
+    render: ({ active }) => <CodePanel active={active} />,
   });
 });
 

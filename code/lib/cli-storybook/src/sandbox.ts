@@ -42,6 +42,7 @@ export const sandbox = async ({
   let selectedConfig: Template | undefined = TEMPLATES[filterValue as TemplateKey];
   let templateId: Choice | null = selectedConfig ? (filterValue as TemplateKey) : null;
 
+  console.log({ options, output: outputDirectory, filterValue, init, templateId, selectedConfig });
   const { packageManager: pkgMgr } = options;
 
   const packageManager = JsPackageManagerFactory.getPackageManager({

@@ -1272,7 +1272,6 @@ jobs:
                       STORYBOOK_TELEMETRY_DEBUG: 1
                       STORYBOOK_TELEMETRY_URL: http://127.0.0.1:6007/event-log
                   name: Create Sandboxes
-                  working_directory: .
             - store_artifacts:
                   path: sandbox/react-vite-default-ts/*.log
             - persist_to_workspace:

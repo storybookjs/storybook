@@ -108,6 +108,7 @@ export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRu
     }
     await cp(srcDir, sandboxDir, { recursive: true });
   } else {
+    console.log({ key, sandboxDir, parentDir, dryRun, debug });
     await executeCLIStep(steps.repro, {
       argument: key,
       optionValues: { output: sandboxDir, init: false, debug },

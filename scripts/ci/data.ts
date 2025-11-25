@@ -1788,7 +1788,6 @@ const jobs = {
             STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
           },
           name: 'Create Sandboxes',
-          working_directory: '.',
         },
       },
       {

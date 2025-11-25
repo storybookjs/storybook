@@ -314,7 +314,6 @@ export class TabsState extends Component<TabsStateProps, TabsStateState> {
     const { selected } = this.state;
     return (
       <Tabs
-        data-deprecated="TabsState"
         bordered={bordered}
         absolute={absolute}
         selected={selected}

@@ -46,7 +46,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     mainConfig,
     mainConfigPath,
     previewConfigPath,
-    storybookVersion,
+    versionInstalled,
     configDir,
     packageManager,
     storiesPaths,
@@ -55,7 +55,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     packageManagerName: options.packageManager,
   });
 
-  if (!storybookVersion) {
+  if (!versionInstalled) {
     throw new Error('Could not determine Storybook version');
   }
 
@@ -66,8 +66,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   const outcome = await automigrate({
     ...options,
     packageManager,
-    storybookVersion,
-    beforeVersion: storybookVersion,
+    storybookVersion: versionInstalled,
     mainConfigPath,
     mainConfig,
     previewConfigPath,
@@ -114,7 +113,6 @@ export const automigrate = async ({
   mainConfigPath,
   previewConfigPath,
   storybookVersion,
-  beforeVersion,
   renderer: rendererPackage,
   skipInstall,
   hideMigrationSummary = false,
@@ -184,7 +182,6 @@ export const automigrate = async ({
     mainConfig,
     mainConfigPath,
     storybookVersion,
-    beforeVersion,
     isUpgrade: !!isUpgrade,
     dryRun,
     yes,
@@ -219,7 +216,6 @@ type RunFixesOptions = {
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
   storybookVersion: string;
-  beforeVersion: string;
   isUpgrade?: boolean;
 };
 

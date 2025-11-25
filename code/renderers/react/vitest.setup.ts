@@ -39,10 +39,18 @@ beforeEach(() => {
       }) as unknown as JsPackageManager
   );
   vi.mocked(cachedResolveImport).mockImplementation((id) => {
-    return {
+    const pkg = {
+      '@design-system/button': './src/stories/Button.tsx',
+      '@ds/button': './src/stories/Button.tsx',
+      '@ds/header': './src/stories/Header.tsx',
       './Button': './src/stories/Button.tsx',
       './Header': './src/stories/Header.tsx',
-    }[id]!;
+    }[id];
+
+    if (pkg) {
+      return pkg;
+    }
+    throw new Error(`Unable to resolve ${id}`);
   });
   vi.mocked(register).mockImplementation(() => {});
 });

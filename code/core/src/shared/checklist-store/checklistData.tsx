@@ -29,8 +29,8 @@ import {
 } from '../../../../addons/vitest/src/constants';
 import { SUPPORTED_FRAMEWORKS } from '../../cli/AddonVitestService.constants';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
-import { LocationMonitor } from '../../manager/components/LocationMonitor';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
+import { LocationMonitor } from '../../manager/hooks/useLocation';
 import type { initialState } from './checklistData.state';
 
 const CodeWrapper = styled.div(({ theme }) => ({

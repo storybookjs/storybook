@@ -1,8 +1,15 @@
-import type { ComponentProps } from 'react';
-import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  type ComponentProps,
+  type ReactNode,
+  type SyntheticEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { once } from 'storybook/internal/client-logger';
-import { Button, Card, ToggleButton } from 'storybook/internal/components';
+import { ActionList, Card } from 'storybook/internal/components';
 import type {
   Addon_Collection,
   Addon_TestProviderType,
@@ -62,7 +69,7 @@ const Filters = styled.div({
   gap: 4,
 });
 
-const CollapseToggle = styled(Button)({
+const CollapseToggle = styled(ActionList.Button)({
   opacity: 0,
   transition: 'opacity 250ms',
   '&:focus, &:hover': {
@@ -70,15 +77,36 @@ const CollapseToggle = styled(Button)({
   },
 });
 
-const RunButton = ({ children, ...props }: ComponentProps<typeof Button>) => (
-  <Button size="medium" variant="ghost" padding="small" {...props}>
-    <PlayAllHollowIcon />
+const RunButton = ({
+  children,
+  isRunning,
+  onRunAll,
+  ...props
+}: { children?: ReactNode; isRunning: boolean; onRunAll: () => void } & ComponentProps<
+  typeof ActionList.Action
+>) => (
+  <ActionList.Button
+    ariaLabel={isRunning ? 'Running...' : 'Run tests'}
+    tooltip={isRunning ? 'Running tests...' : 'Start all tests'}
+    disabled={isRunning}
+    onClick={(e: SyntheticEvent) => {
+      e.stopPropagation();
+      onRunAll();
+    }}
+    {...props}
+  >
+    <ActionList.Icon>
+      <PlayAllHollowIcon />
+    </ActionList.Icon>
     {children}
-  </Button>
+  </ActionList.Button>
 );
 
-const StatusButton = styled(ToggleButton)<{ pressed: boolean; status: 'negative' | 'warning' }>(
-  { minWidth: 28 },
+const StatusButton = styled(ActionList.Toggle)<{
+  pressed: boolean;
+  status: 'negative' | 'warning';
+}>(
+  { minWidth: 28, outlineOffset: -2 },
   ({ pressed, status, theme }) =>
     !pressed &&
     (theme.base === 'light'
@@ -239,38 +267,17 @@ export const TestingWidget = ({
           {hasTestProviders && (
             <Optional
               content={
-                <RunButton
-                  ariaLabel={false}
-                  tooltip={isRunning ? 'Running tests...' : 'Start all tests'}
-                  disabled={isRunning}
-                  onClick={(e: SyntheticEvent) => {
-                    e.stopPropagation();
-                    onRunAll();
-                  }}
-                >
-                  <span>{isRunning ? 'Running...' : 'Run tests'}</span>
+                <RunButton isRunning={isRunning} onRunAll={onRunAll}>
+                  {isRunning ? 'Running...' : 'Run tests'}
                 </RunButton>
               }
-              fallback={
-                <RunButton
-                  ariaLabel={isRunning ? 'Running...' : 'Run tests'}
-                  tooltip={isRunning ? 'Running tests...' : 'Start all tests'}
-                  disabled={isRunning}
-                  onClick={(e: SyntheticEvent) => {
-                    e.stopPropagation();
-                    onRunAll();
-                  }}
-                />
-              }
+              fallback={<RunButton isRunning={isRunning} onRunAll={onRunAll} />}
             />
           )}
         </Action>
         <Filters>
           {hasTestProviders && (
             <CollapseToggle
-              size="medium"
-              variant="ghost"
-              padding="small"
               onClick={(e) => toggleCollapsed(e)}
               id="testing-module-collapse-toggle"
               ariaLabel={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
@@ -329,11 +336,8 @@ export const TestingWidget = ({
             </StatusButton>
           )}
           {hasStatuses && (
-            <Button
+            <ActionList.Button
               id="clear-statuses"
-              padding="small"
-              variant="ghost"
-              size="medium"
               onClick={(e: SyntheticEvent) => {
                 e.stopPropagation();
                 clearStatuses();
@@ -344,7 +348,7 @@ export const TestingWidget = ({
               }
             >
               <SweepIcon />
-            </Button>
+            </ActionList.Button>
           )}
         </Filters>
       </Bar>

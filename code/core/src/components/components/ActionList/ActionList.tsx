@@ -4,6 +4,7 @@ import type { TransitionStatus } from 'react-transition-state';
 import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button';
+import { ToggleButton } from '../ToggleButton/ToggleButton';
 
 const ActionListItem = styled.li<{
   active?: boolean;
@@ -89,12 +90,28 @@ const StyledButton = styled(Button)({
   },
 });
 
+const StyledToggleButton = styled(ToggleButton)({
+  '&:focus-visible': {
+    // Prevent focus outline from being cut off by overflow: hidden
+    outlineOffset: -2,
+  },
+});
+
 const ActionListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof StyledButton>>(
   function ActionListButton(
     { padding = 'small', size = 'medium', variant = 'ghost', ...props },
     ref
   ) {
-    return <StyledButton {...props} variant={variant} padding={padding} size={size} ref={ref} />;
+    return <StyledButton {...props} {...{ variant, padding, size, ref }} />;
+  }
+);
+
+const ActionListToggle = forwardRef<HTMLButtonElement, ComponentProps<typeof StyledToggleButton>>(
+  function ActionListToggle(
+    { padding = 'small', size = 'medium', variant = 'ghost', ...props },
+    ref
+  ) {
+    return <StyledToggleButton {...props} {...{ variant, padding, size, ref }} />;
   }
 );
 
@@ -173,6 +190,7 @@ export const ActionList = Object.assign(
     Item: ActionListItem,
     HoverItem: ActionListHoverItem,
     Button: ActionListButton,
+    Toggle: ActionListToggle,
     Action: ActionListAction,
     Link: ActionListLink,
     Text: ActionListText,

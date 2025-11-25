@@ -226,17 +226,6 @@ Finally, these packages are now either obsolete or part of `@storybook/sveltekit
 * `@storybook/builder-vite`
 
 
-### Error when starting Storybook
-
-When starting Storybook after upgrading to v7.0, it may quit with the following error:
-
-```sh
-ERR! SyntaxError: Identifier '__esbuild_register_import_meta_url__' has already been declared
-```
-
-This can occur when manually upgrading from 6.5 to 7.0. To resolve it, you'll need to remove the `svelteOptions` property in `.storybook/main.js`, as that is not supported (and no longer necessary) in Storybook 7+ with SvelteKit.
-
-
 ## API
 
 ### Parameters

@@ -127,12 +127,9 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   // TODO: Remove pnp compatibility code in SB11
-  public async getModulePackageJSON(
-    packageName: string,
-    cwd = this.cwd
-  ): Promise<PackageJson | null> {
+  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
-      cwd,
+      cwd: this.primaryPackageJson.operationDir,
       last: getProjectRoot(),
     });
 

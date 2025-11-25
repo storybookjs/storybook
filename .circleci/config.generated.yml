@@ -251,16 +251,60 @@ jobs:
             - persist_to_workspace:
                   paths:
                       - code/node_modules
-                      - code/addons
                       - scripts/node_modules
-                      - code/bench
-                      - code/examples
-                      - code/frameworks
-                      - code/lib
-                      - code/core
-                      - code/builders
-                      - code/renderers
-                      - code/presets
+                      - code/core/dist
+                      - code/addons/a11y/dist
+                      - code/addons/docs/dist
+                      - code/addons/links/dist
+                      - code/addons/onboarding/dist
+                      - code/addons/pseudo-states/dist
+                      - code/addons/themes/dist
+                      - code/addons/vitest/dist
+                      - code/builders/builder-vite/dist
+                      - code/builders/builder-webpack5/dist
+                      - code/frameworks/angular/dist
+                      - code/frameworks/ember/dist
+                      - code/frameworks/html-vite/dist
+                      - code/frameworks/nextjs/dist
+                      - code/frameworks/nextjs-vite/dist
+                      - code/frameworks/preact-vite/dist
+                      - code/frameworks/react-native-web-vite/dist
+                      - code/frameworks/react-vite/dist
+                      - code/frameworks/react-webpack5/dist
+                      - code/frameworks/server-webpack5/dist
+                      - code/frameworks/svelte-vite/dist
+                      - code/frameworks/sveltekit/dist
+                      - code/frameworks/vue3-vite/dist
+                      - code/frameworks/web-components-vite/dist
+                      - code/lib/cli-storybook/dist
+                      - code/lib/codemod/dist
+                      - code/lib/core-webpack/dist
+                      - code/lib/create-storybook/dist
+                      - code/lib/csf-plugin/dist
+                      - code/lib/eslint-plugin/dist
+                      - code/lib/react-dom-shim/dist
+                      - code/presets/create-react-app/dist
+                      - code/presets/react-webpack/dist
+                      - code/presets/server-webpack/dist
+                      - code/renderers/html/dist
+                      - code/renderers/preact/dist
+                      - code/renderers/react/dist
+                      - code/renderers/server/dist
+                      - code/renderers/svelte/dist
+                      - code/renderers/vue3/dist
+                      - code/renderers/web-components/dist
+                      - code/core/node_modules/human-signals/build/dist
+                      - code/core/dist/core-server/utils/__mockdata__/src
+                      - code/core/dist/core-server/utils/__search-files-tests__/src
+                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/minimal-config/src
+                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/some-config/src
+                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-angularBrowserTarget/src
+                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-nx/src
+                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-nx-workspace/src
+                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-options-styles/src
+                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/without-tsConfig/src
+                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-lib/projects/pattern-lib/src
+                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/without-projects-entry/projects/pattern-lib/src
                       - .verdaccio-cache
                       - .yarn/code-install-state.gz
                       - .yarn/scripts-install-state.gz

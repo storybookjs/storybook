@@ -1,3 +1,10 @@
+import { join } from 'node:path';
+
+// eslint-disable-next-line depend/ban-dependencies
+import glob from 'fast-glob';
+
+const dirname = import.meta.dirname;
+
 const commands = {
   'cancel-workflow-on-failure': {
     description: 'Cancels the entire workflow in case the previous step has failed',
@@ -338,16 +345,14 @@ const jobs = {
         persist_to_workspace: {
           paths: [
             'code/node_modules',
-            'code/addons',
             'scripts/node_modules',
-            'code/bench',
-            'code/examples',
-            'code/frameworks',
-            'code/lib',
-            'code/core',
-            'code/builders',
-            'code/renderers',
-            'code/presets',
+            ...glob
+              .sync('**/src', {
+                cwd: join(dirname, '../../code'),
+                onlyDirectories: true,
+                ignore: ['node_modules'],
+              })
+              .map((p) => `code/${p.replace('src', 'dist')}`),
             '.verdaccio-cache',
             '.yarn/code-install-state.gz',
             '.yarn/scripts-install-state.gz',

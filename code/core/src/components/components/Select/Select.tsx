@@ -549,7 +549,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                       icon={
                         !isReset && multiSelect ? (
                           // Purely decorative.
-                          <Form.Checkbox checked={isSelected} hidden />
+                          <Form.Checkbox checked={isSelected} hidden role="presentation" />
                         ) : (
                           option.icon
                         )

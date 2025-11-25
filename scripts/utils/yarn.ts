@@ -52,9 +52,10 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   // TODO: Remove in SB11
   const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
+  await writeFile(join(cwd, 'yarn.lock'), '', { flag: 'a' });
+  await writeFile(join(cwd, '.yarnrc.yml'), '', { flag: 'a' });
+
   const command = [
-    touch('yarn.lock'),
-    touch('.yarnrc.yml'),
     `yarn set version berry`,
 
     // Use the global cache so we aren't re-caching dependencies each time we run sandbox
@@ -67,7 +68,7 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   }
 
   await exec(
-    command,
+    command.join(' && '),
     { cwd },
     {
       dryRun,

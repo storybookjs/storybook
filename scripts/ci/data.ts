@@ -1751,7 +1751,11 @@ const jobs = {
       },
       {
         run: {
-          command: 'yarn wait-on tcp:127.0.0.1:6001\nyarn wait-on tcp:127.0.0.1:6002',
+          command: [
+            //
+            'yarn wait-on tcp:127.0.0.1:6001',
+            'yarn wait-on tcp:127.0.0.1:6002',
+          ].join('\n'),
           name: 'Wait on Verdaccio',
           working_directory: 'code',
         },
@@ -1777,7 +1781,7 @@ const jobs = {
       },
       {
         run: {
-          command: 'yarn dlx wait-on tcp:http://localhost:6007',
+          command: 'yarn dlx wait-on tcp:127.0.0.1:6007',
         },
       },
       {
@@ -1785,7 +1789,7 @@ const jobs = {
           command: 'yarn task --task sandbox --template react-vite/default-ts --no-link -s=never',
           environment: {
             STORYBOOK_TELEMETRY_DEBUG: 1,
-            STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log',
+            STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
           },
           name: 'Create Sandboxes',
         },

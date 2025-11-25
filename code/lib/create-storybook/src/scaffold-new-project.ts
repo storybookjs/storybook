@@ -179,7 +179,7 @@ export const scaffoldNewProject = async (
       cwd: targetDir,
     });
   } catch (e) {
-    spinner.stop(
+    spinner.error(
       `Failed to create a new "${projectDisplayName}" project with ${packageManagerName}`
     );
     throw new GenerateNewProjectOnInitError({

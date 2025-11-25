@@ -1758,6 +1758,41 @@ const jobs = {
       },
       {
         run: {
+          command: [
+            //
+            'sudo corepack enable',
+            'which yarn',
+            'yarn --version',
+          ].join('\n'),
+          name: 'Setup Corepack',
+        },
+      },
+      {
+        run: {
+          background: true,
+          command: 'yarn jiti ./event-log-collector.ts',
+          name: 'Start Event Collector',
+          working_directory: 'scripts',
+        },
+      },
+      {
+        run: {
+          command: 'yarn dlx wait-on tcp:http://localhost:6007',
+        },
+      },
+      {
+        run: {
+          command: 'yarn task --task sandbox --template react-vite/default-ts --no-link -s=never',
+          environment: {
+            STORYBOOK_TELEMETRY_DEBUG: 1,
+            STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log',
+          },
+          name: 'Create Sandboxes',
+        },
+      },
+
+      {
+        run: {
           command:
             'yarn task --task create-sandboxes --template react-vite/default-ts --no-link -s=never',
           name: 'Create sandbox',

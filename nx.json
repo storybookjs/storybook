@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/workspace-schema.json",
-  "nxCloudAccessToken": "NGVmYTkxMmItYzY3OS00MjkxLTk1ZDktZDFmYTFmNmVlNGY4fHJlYWQ=",
+  "nxCloudId": "691dbcdcb2822ca4fdc727c4",
   "defaultBase": "next",
   "parallel": 8,
   "pluginsConfig": {
@@ -211,6 +211,5 @@
       "{workspaceRoot}/code/**/*",
       "!{workspaceRoot}/code/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ]
-  },
-  "nxCloudId": "691dbcdcb2822ca4fdc727c4"
+  }
 }

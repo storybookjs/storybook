@@ -72,7 +72,6 @@ const meta = {
     api: {
       getDocsUrl: () => 'https://storybook.js.org/docs/',
     } as any,
-    isDevelopment: true,
   },
   tags: ['hoho'],
 } satisfies Meta<typeof TagsFilterPanel>;
@@ -89,10 +88,14 @@ export const BuiltInOnly: Story = {
   },
 };
 
+/**
+ * Production is equal to development now. We want to avoid a completely empty TagsFilterPanel and
+ * we can't easily detect if there'll be items matching the built-in filters. Plus, onboarding users
+ * on custom tags is still useful in production.
+ */
 export const BuiltInOnlyProduction: Story = {
   args: {
     ...BuiltInOnly.args,
-    isDevelopment: false,
   },
 };
 

@@ -510,7 +510,7 @@ export const baseTemplates = {
       renderer: 'storybook-solidjs-vite',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'vue3-vite/default-js': {
     name: 'Vue v3 (Vite | JavaScript)',

@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { program } from 'commander';
 import yml from 'yaml';
 
 import { data } from './data';
@@ -10,14 +11,10 @@ console.log('--------------------------------');
 
 const dirname = import.meta.dirname;
 
-// const existing = await yml.parse(
-//   await fs.readFile(join(dirname, '../../.circleci/config.original.yml'), 'utf-8')
-// );
-
-// await fs.writeFile(
-//   join(dirname, '../../.circleci/config.generated.json'),
-//   JSON.stringify(existing, null, 2)
-// );
+program
+  .description('Generate CircleCI config')
+  .requiredOption('-w, --workflow <string>', 'Workflow to generate config for')
+  .parse(process.argv);
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),

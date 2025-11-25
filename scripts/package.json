@@ -4,65 +4,7 @@
   "private": true,
   "type": "module",
   "nx": {
-    "name": "scripts",
-    "tags": [
-      "ci:normal"
-    ],
-    "includedScripts": [],
-    "targets": {
-      "pretty-docs": {
-        "cache": true,
-        "command": "yarn docs:prettier:check",
-        "inputs": [
-          "{workspaceRoot}/docs/**/*"
-        ]
-      },
-      "check": {
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": "{projectRoot}",
-          "command": "yarn check"
-        },
-        "inputs": [
-          "default"
-        ],
-        "dependsOn": [],
-        "cache": true
-      },
-      "lint": {
-        "cache": true,
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": "{projectRoot}",
-          "command": "yarn lint:js"
-        },
-        "inputs": [
-          "default"
-        ],
-        "dependsOn": []
-      },
-      "test": {
-        "cache": true,
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": "{projectRoot}",
-          "command": "yarn test"
-        },
-        "dependsOn": [
-          {
-            "projects": [
-              "core"
-            ],
-            "target": "build"
-          }
-        ],
-        "inputs": [
-          "default"
-        ]
-      },
-      "run-registry": {},
-      "publish": {}
-    }
+    "includedScripts": []
   },
   "scripts": {
     "bench-packages": "jiti ./bench/bench-packages.ts",
@@ -76,6 +18,7 @@
     "get-report-message": "jiti ./get-report-message.ts",
     "get-sandbox-dir": "jiti ./get-sandbox-dir.ts",
     "get-template": "jiti ./get-template.ts",
+    "lint": "yarn lint:js",
     "lint:js": "yarn lint:js:cmd .  --quiet",
     "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
     "lint:package": "sort-package-json",

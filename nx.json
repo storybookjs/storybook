@@ -97,6 +97,7 @@
     "vitest-integration": {
       "dependsOn": ["prepared-sandbox"],
       "command": "yarn task vitest-integration -s task --debug --no-link --template={projectName}",
+      "cache": true,
       "inputs": ["^production"],
       "configurations": { "production": {} }
     },
@@ -150,30 +151,39 @@
         "cwd": "{projectRoot}",
         "command": "yarn --no-immutable && yarn playwright-e2e"
       },
+      "inputs": ["default", "^production"],
       "configurations": { "production": {} }
     },
     "jest": {
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn jest" },
+      "cache": true,
+      "inputs": ["default", "^production"],
       "configurations": { "production": {} }
     },
     "vitest": {
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn vitest" },
+      "cache": true,
+      "inputs": ["default", "^production"],
       "configurations": { "production": {} }
     },
     "playwright-ct": {
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn playwright-ct" },
+      "cache": true,
+      "inputs": ["default", "^production"],
       "configurations": { "production": {} }
     },
     "cypress": {
       "dependsOn": [{ "projects": ["*"], "target": "build" }],
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn cypress" },
+      "cache": true,
+      "inputs": ["default", "^production"],
       "configurations": { "production": {} }
     }
   },

@@ -44,58 +44,7 @@
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
   },
   "nx": {
-    "name": "code",
-    "includedScripts": [],
-    "tags": [
-      "ci:normal"
-    ],
-    "targets": {
-      "lint": {
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": "{projectRoot}",
-          "command": "yarn lint"
-        },
-        "dependsOn": [
-          {
-            "projects": [
-              "*"
-            ],
-            "target": "build"
-          }
-        ]
-      },
-      "test": {
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": "{projectRoot}",
-          "command": "yarn test"
-        },
-        "dependsOn": [
-          {
-            "projects": [
-              "*"
-            ],
-            "target": "build"
-          }
-        ]
-      },
-      "knip": {
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": "{projectRoot}",
-          "command": "yarn knip --no-exit-code"
-        },
-        "dependsOn": [
-          {
-            "projects": [
-              "*"
-            ],
-            "target": "build"
-          }
-        ]
-      }
-    }
+    "includedScripts": []
   },
   "husky": {
     "hooks": {

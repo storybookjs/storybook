@@ -30,6 +30,7 @@ export const steps = {
       output: { type: 'string' },
       // TODO allow default values for strings
       branch: { type: 'string', values: ['main', 'next'] },
+      loglevel: { type: 'string' },
       init: { type: 'boolean', inverse: true },
       debug: { type: 'boolean' },
     }),
@@ -122,6 +123,8 @@ export async function executeCLIStep<TOptions extends OptionSpecifier>(
     cliStep.options,
     options.optionValues || {}
   );
+
+  console.log({ command, options });
 
   await exec(
     command,

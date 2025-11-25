@@ -200,6 +200,7 @@ export const sandbox = async ({
     try {
       // Download the sandbox based on subfolder "after-storybook" and selected branch
       const gitPath = `storybookjs/sandboxes/tree/${branch}/${templateId}/${downloadType}`;
+      console.log({ gitPath, templateDestination });
       spawnSync('npx', ['gitpick@4.12.4', gitPath, templateDestination, '-o']);
       // throw an error if templateDestination is an empty directory
       if ((await readdir(templateDestination)).length === 0) {

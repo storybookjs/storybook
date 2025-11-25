@@ -104,7 +104,7 @@ const Pure = memo(function PureTool(props: PureProps) {
           tooltip={isLocked ? 'Background set by story parameters' : 'Change background'}
           defaultOptions={backgroundName}
           options={options}
-          onSelect={(selected) => update({ value: selected, grid: isGrid })}
+          onSelect={(selected) => update({ value: selected as string, grid: isGrid })}
         />
       ) : null}
     </Fragment>

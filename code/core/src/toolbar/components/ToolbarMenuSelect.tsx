@@ -59,7 +59,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
     const options = items
       .filter((item): item is ToolbarItem => item.type === 'item')
       .map((item) => {
-        const itemTitle = item.title ?? item.value;
+        const itemTitle = item.title ?? item.value ?? 'Untitled';
         const iconComponent =
           !item.hideIcon && item.icon ? (
             <Icons icon={item.icon} __suppressDeprecationWarning={true} />

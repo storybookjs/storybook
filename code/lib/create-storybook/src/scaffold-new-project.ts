@@ -179,7 +179,7 @@ export const scaffoldNewProject = async (
       cwd: targetDir,
     });
   } catch (e) {
-    spinner.stop(
+    spinner.error(
       `Failed to create a new "${projectDisplayName}" project with ${packageManagerName}`
     );
     throw new GenerateNewProjectOnInitError({
@@ -189,7 +189,7 @@ export const scaffoldNewProject = async (
     });
   }
 
-  spinner.stop(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
+  spinner.cancel(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
 
   if (!disableTelemetry) {
     await telemetry('scaffolded-empty', {

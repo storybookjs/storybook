@@ -6,6 +6,7 @@ import {
 
 import { resolveModulePath } from 'exsolve';
 
+import { extractFrameworkPackageName } from '..';
 import { frameworkPackages } from './get-storybook-info';
 
 const renderers = ['html', 'preact', 'react', 'server', 'svelte', 'vue', 'vue3', 'web-components'];
@@ -27,7 +28,8 @@ export function validateFrameworkName(
   }
 
   // If we know about the framework, we don't need to validate it
-  if (Object.keys(frameworkPackages).includes(frameworkName)) {
+  const normalizedFrameworkName = extractFrameworkPackageName(frameworkName);
+  if (Object.keys(frameworkPackages).includes(normalizedFrameworkName)) {
     return;
   }
 

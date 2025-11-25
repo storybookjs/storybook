@@ -19,7 +19,11 @@ vi.mock('../../../cli-storybook/src/postinstallAddon', () => ({
 
 describe('AddonConfigurationCommand', () => {
   let command: AddonConfigurationCommand;
-  let mockPackageManager: JsPackageManager;
+  const mockPackageManager = {
+    type: 'npm',
+    getVersionedPackages: vi.fn(),
+    executeCommand: vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 }),
+  } as Partial<JsPackageManager> as JsPackageManager;
   let mockTask: {
     success: ReturnType<typeof vi.fn>;
     error: ReturnType<typeof vi.fn>;
@@ -36,19 +40,13 @@ describe('AddonConfigurationCommand', () => {
 
     // Mock the AddonVitestService
     const { AddonVitestService } = await import('storybook/internal/cli');
-    mockAddonVitestService = vi.mocked(AddonVitestService);
+    mockAddonVitestService = vi.mocked(AddonVitestService as any);
     const mockInstance = {
       installPlaywright: vi.fn().mockResolvedValue([]),
     };
     mockAddonVitestService.mockImplementation(() => mockInstance);
 
-    command = new AddonConfigurationCommand();
-
-    mockPackageManager = {
-      type: 'npm',
-      getVersionedPackages: vi.fn(),
-      executeCommand: vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 }),
-    } as Partial<JsPackageManager> as JsPackageManager;
+    command = new AddonConfigurationCommand(mockPackageManager);
 
     mockTask = {
       success: vi.fn(),
@@ -72,7 +70,6 @@ describe('AddonConfigurationCommand', () => {
       };
 
       const result = await command.execute({
-        packageManager: mockPackageManager,
         dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
@@ -93,7 +90,6 @@ describe('AddonConfigurationCommand', () => {
       };
 
       const result = await command.execute({
-        packageManager: mockPackageManager,
         dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
@@ -118,7 +114,6 @@ describe('AddonConfigurationCommand', () => {
       mockPostinstallAddon.mockRejectedValue(error);
 
       const result = await command.execute({
-        packageManager: mockPackageManager,
         dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
@@ -140,7 +135,6 @@ describe('AddonConfigurationCommand', () => {
       };
 
       const result = await command.execute({
-        packageManager: mockPackageManager,
         dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',

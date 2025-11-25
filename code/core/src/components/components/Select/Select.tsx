@@ -543,7 +543,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
 
                   return (
                     <SelectOption
-                      key={String(option.value) ?? 'sb-reset'}
+                      key={option.value === undefined ? 'sb-reset' : String(option.value)}
                       title={option.title}
                       description={option.description}
                       icon={

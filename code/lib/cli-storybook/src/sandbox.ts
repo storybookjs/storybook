@@ -72,6 +72,8 @@ export const sandbox = async ({
     prerelease: picocolors.yellow('This is a pre-release version.'),
   };
 
+  console.log({ isOutdated, isPrerelease });
+
   logger.logBox(
     [messages.welcome]
       .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
@@ -82,6 +84,8 @@ export const sandbox = async ({
       rounded: true,
     }
   );
+
+  console.log({ selectedConfig });
 
   if (!selectedConfig) {
     const filterRegex = new RegExp(`^${filterValue || ''}`, 'i');
@@ -162,7 +166,11 @@ export const sandbox = async ({
   }
 
   let selectedDirectory = outputDirectory;
+
   const outputDirectoryName = outputDirectory || templateId;
+
+  console.log({ selectedDirectory, outputDirectoryName });
+
   if (selectedDirectory && existsSync(`${selectedDirectory}`)) {
     logger.log(`⚠️  ${selectedDirectory} already exists! Overwriting...`);
     await rm(selectedDirectory, { recursive: true, force: true });
@@ -187,7 +195,7 @@ export const sandbox = async ({
     );
     selectedDirectory = directory;
   }
-  invariant(selectedDirectory);
+  // invariant(selectedDirectory);
 
   try {
     const templateDestination = isAbsolute(selectedDirectory)

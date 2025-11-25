@@ -34,7 +34,7 @@ const Sections = styled.ol(({ theme }) => ({
 
   '& > li': {
     background: theme.background.content,
-    border: `1px solid ${theme.color.border}`,
+    border: `1px solid ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
     borderRadius: 8,
   },
 }));
@@ -47,7 +47,7 @@ const Items = styled.ol(({ theme }) => ({
   padding: 0,
 
   '& > li:not(:last-child)': {
-    boxShadow: `inset 0 -1px 0 ${theme.color.border}`,
+    boxShadow: `inset 0 -1px 0 ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
   },
 
   '& > li:last-child': {
@@ -159,7 +159,7 @@ const ItemContent = styled.div(({ theme }) => ({
     listStyleType: 'disc',
 
     'li::marker': {
-      color: theme.color.medium,
+      color: theme.color.mediumdark,
     },
   },
 }));
@@ -170,9 +170,9 @@ const StatusIcon = styled.div(({ theme }) => ({
   minHeight: 16,
   minWidth: 16,
   margin: 0,
-  background: theme.background.app,
+  background: theme.base === 'dark' ? theme.color.darkest : theme.background.app,
   borderRadius: 9,
-  outline: `1px solid ${theme.color.border}`,
+  outline: `1px solid ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
   outlineOffset: -1,
 }));
 const Checked = styled(StatusPassIcon)<{ 'data-visible'?: boolean }>(

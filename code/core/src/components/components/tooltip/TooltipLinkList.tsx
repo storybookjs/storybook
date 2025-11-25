@@ -69,7 +69,7 @@ export interface TooltipLinkListProps extends ComponentProps<typeof List> {
 
 export const TooltipLinkList = ({ links, LinkWrapper, ...props }: TooltipLinkListProps) => {
   deprecate(
-    '`TooltipLinkList` is deprecated and will be removed in Storybook 11, use `MenuItem` and `WithMenu` instead.'
+    '`TooltipLinkList` is deprecated and will be removed in Storybook 11, use `ActionList` or `MenuItem` and `WithMenu` instead.'
   );
 
   const groups = Array.isArray(links[0]) ? (links as Link[][]) : [links as Link[]];
@@ -77,7 +77,7 @@ export const TooltipLinkList = ({ links, LinkWrapper, ...props }: TooltipLinkLis
     group.some((link) => ('icon' in link && link.icon) || ('input' in link && link.input))
   );
   return (
-    <List {...props} className="sb-list">
+    <List data-deprecated="TooltipLinkList" {...props} className="sb-list">
       {groups
         .filter((group) => group.length)
         .map((group, index) => {

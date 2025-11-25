@@ -15,7 +15,7 @@ import { styled } from 'storybook/theming';
 
 import { Focus } from '../../components/Focus/Focus';
 import type { ChecklistItem, useChecklist } from '../../components/sidebar/useChecklist';
-import { useLocationHash } from '../../components/useLocationHash';
+import { useLocationHash } from '../../hooks/useLocation';
 
 type ChecklistSection = {
   id: string;

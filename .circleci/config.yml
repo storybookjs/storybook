@@ -369,7 +369,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
-                    yarn task --task build --template $TEMPLATE
+                    yarn task --task build --template $TEMPLATE --no-link --start-from=sandbox --junit
                     if [[ $TEMPLATE != bench/* ]]; then
                       yarn --cwd scripts jiti ./event-log-checker.ts build $TEMPLATE
                     fi

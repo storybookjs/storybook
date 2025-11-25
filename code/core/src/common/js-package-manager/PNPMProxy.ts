@@ -158,7 +158,10 @@ export class PNPMProxy extends JsPackageManager {
     }
 
     const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;

@@ -107,6 +107,9 @@ test.describe("component testing", () => {
       await expandTestingModule.click();
     }
 
+    // Make sure any popover is closed
+    await page.click("body");
+
     // Ensure that all test results are removed and features are disabled, as previous tests might have enabled them
     const clearStatusesButton = page.getByLabel("Clear all statuses");
     if (await clearStatusesButton.isVisible()) {
@@ -647,11 +650,13 @@ test.describe("component testing", () => {
     ).toContainText("Ran 9 tests", { timeout: 30000 });
     // Assert - Failing test shows as a failed status
     await expect(
-      sidebarContextMenu.getByText("1 story with errors")
-    ).toBeVisible();
-    await expect(
       sidebarContextMenu.getByLabel("Component tests failed")
     ).toHaveCount(1);
+    await expect(
+      sidebarContextMenu.getByLabel(
+        "Component tests failed (1 errors or warnings so far)"
+      )
+    ).toBeVisible();
 
     // HACK: the testing module popover has poor tracking of focus due to how many disabled
     // buttons it has and how deeply it changes its UI on events. This would be solved once
@@ -702,7 +707,9 @@ test.describe("component testing", () => {
 
     // Assert - 1 failing test shows as a failed status
     await expect(
-      sidebarContextMenu.getByText("2 stories with errors")
+      sidebarContextMenu.getByLabel(
+        "Component tests failed (2 errors or warnings so far)"
+      )
     ).toBeVisible();
     await expect(
       sidebarContextMenu.getByLabel("Component tests failed")

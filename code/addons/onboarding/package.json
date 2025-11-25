@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-onboarding",
-  "version": "10.1.0-alpha.14",
+  "version": "10.1.0-beta.3",
   "description": "Storybook Onboarding: Help new users learn how to write stories",
   "keywords": [
     "storybook",

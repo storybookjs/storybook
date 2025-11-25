@@ -33,7 +33,7 @@ interface CommandWithPrivates {
 
 describe('UserPreferencesCommand', () => {
   let command: UserPreferencesCommand;
-  let mockPackageManager: JsPackageManager;
+  const mockPackageManager = {} as Partial<JsPackageManager> as JsPackageManager;
 
   beforeEach(() => {
     // Provide required CommandOptions to avoid undefined access
@@ -42,8 +42,7 @@ describe('UserPreferencesCommand', () => {
       disableTelemetry: true,
     };
 
-    command = new UserPreferencesCommand(commandOptions);
-    mockPackageManager = {} as Partial<JsPackageManager> as JsPackageManager;
+    command = new UserPreferencesCommand(commandOptions, mockPackageManager);
 
     // Mock globalSettings
     const mockSettings = {
@@ -87,7 +86,7 @@ describe('UserPreferencesCommand', () => {
 
   describe('execute', () => {
     it('should return recommended config for new users in non-interactive mode', async () => {
-      const result = await command.execute(mockPackageManager, {
+      const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
@@ -105,7 +104,7 @@ describe('UserPreferencesCommand', () => {
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
 
-      const result = await command.execute(mockPackageManager, {
+      const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
@@ -128,7 +127,7 @@ describe('UserPreferencesCommand', () => {
         .mockResolvedValueOnce(false) // not new user
         .mockResolvedValueOnce('light'); // minimal install
 
-      const result = await command.execute(mockPackageManager, {
+      const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
@@ -147,7 +146,7 @@ describe('UserPreferencesCommand', () => {
         .mockResolvedValueOnce(false) // not new user
         .mockResolvedValueOnce('light'); // minimal install
 
-      const result = await command.execute(mockPackageManager, {
+      const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
@@ -167,14 +166,13 @@ describe('UserPreferencesCommand', () => {
         compatible: true,
       });
 
-      await command.execute(mockPackageManager, {
+      await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
       });
 
       expect(featureService.validateTestFeatureCompatibility).toHaveBeenCalledWith(
-        mockPackageManager,
         null,
         'vite',
         process.cwd()
@@ -192,7 +190,7 @@ describe('UserPreferencesCommand', () => {
       });
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // continue without test
 
-      const result = await command.execute(mockPackageManager, {
+      const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,

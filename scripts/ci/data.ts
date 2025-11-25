@@ -1837,6 +1837,7 @@ const jobs = {
         run: {
           command: 'yarn wait-on tcp:127.0.0.1:8001',
           name: 'Wait on storybook',
+          working_directory: 'code',
         },
       },
       {

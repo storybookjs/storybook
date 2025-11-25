@@ -1,4 +1,4 @@
-import { access, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
@@ -51,8 +51,13 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   const [pnpApiExists] = await Promise.all([
     // TODO: Remove in SB11
     pathExists(join(cwd, '.pnp.cjs')),
-    writeFile(join(cwd, 'yarn.lock'), ''),
-    writeFile(join(cwd, '.yarnrc.yml'), ''),
+    mkdir(cwd, { recursive: true }).then(() =>
+      Promise.all([
+        //
+        writeFile(join(cwd, 'yarn.lock'), ''),
+        writeFile(join(cwd, '.yarnrc.yml'), ''),
+      ])
+    ),
   ]);
 
   const command = [

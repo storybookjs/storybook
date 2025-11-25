@@ -2,10 +2,11 @@ import { existsSync } from 'node:fs';
 import { cp, rm } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 
+import detectFreePort from 'detect-port';
 import { join } from 'path';
 import waitOn from 'wait-on';
 
-import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
+import { CODE_DIRECTORY, ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
 import { exec } from './utils/exec';
 
 process.setMaxListeners(50);
@@ -37,12 +38,22 @@ async function main() {
 
     if (!link) {
       console.log(`🧹 waiting on port 6001 and 6002`);
-      await waitOn({
-        log: true,
-        resources: ['http://localhost:6001', 'http://localhost:6002'],
-        interval: 16,
-        timeout: 10000,
-      });
+      try {
+        await waitOn({
+          log: true,
+          resources: ['http://localhost:6001', 'http://localhost:6002'],
+          interval: 16,
+          timeout: 2000,
+        });
+      } catch {
+        void exec('yarn local-registry --open', { cwd: CODE_DIRECTORY, debug: true });
+        await waitOn({
+          log: true,
+          resources: ['http://localhost:6001', 'http://localhost:6002'],
+          interval: 16,
+          timeout: 20000,
+        });
+      }
     }
 
     await exec('yarn install --immutable', { cwd: sandboxDir }, { debug: true });

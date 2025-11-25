@@ -196,7 +196,8 @@
     ],
     "default": ["sharedGlobals", "{projectRoot}/**/*"],
     "production": [
-      "default",
+      "sharedGlobals",
+      "{projectRoot}/**/*",
       "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ],
     "all-production": [

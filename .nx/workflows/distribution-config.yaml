@@ -1,0 +1,15 @@
+# see https://github.com/nrwl/nx/blob/master/.nx/workflows/dynamic-changesets.yaml for inspiration
+distribute-on:
+  default: 20 linux-extra-large-plus-js
+
+assignment-rules:
+  - targets:
+      - check
+    run-on:
+      - agent: linux-extra-large-plus-js
+        parallelism: 6
+  - targets:
+      - "*"
+    run-on:
+      - agent: linux-extra-large-plus-js
+        parallelism: 1

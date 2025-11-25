@@ -1,3 +1,5 @@
+# copied from https://github.com/nrwl/nx-cloud-workflows/blob/main/launch-templates/linux.yaml
+# see https://github.com/nrwl/nx/blob/master/.nx/workflows/agents.yaml for inspiration
 common-js-init-steps: &common-js-init-steps
   - name: Checkout
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
@@ -46,7 +48,7 @@ launch-templates:
     resource-class: 'docker_linux_amd64/extra_large'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *common-js-init-steps
-  my-linux-extra-large-plus-js:
+  linux-extra-large-plus-js:
     resource-class: 'docker_linux_amd64/extra_large+'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *common-js-init-steps

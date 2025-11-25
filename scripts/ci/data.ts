@@ -1822,7 +1822,7 @@ const jobs = {
       },
       {
         run: {
-          command: 'yarn task e2e-tests --template react-vite/default-ts --no-link -s build',
+          command: 'yarn task build --template react-vite/default-ts --no-link -s build',
           name: 'Build storybook',
         },
       },

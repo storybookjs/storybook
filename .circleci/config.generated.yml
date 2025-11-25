@@ -1289,7 +1289,7 @@ jobs:
             - attach_workspace:
                   at: .
             - run:
-                  command: yarn task e2e-tests --template react-vite/default-ts --no-link -s build
+                  command: yarn task build --template react-vite/default-ts --no-link -s build
                   name: Build storybook
             - run:
                   command: yarn task serve --template react-vite/default-ts --no-link -s serve

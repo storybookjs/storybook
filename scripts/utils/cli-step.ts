@@ -22,7 +22,7 @@ export type CLIStep<TOptions extends OptionSpecifier> = {
 
 export const steps = {
   repro: {
-    command: 'repro',
+    command: 'sandbox',
     description: 'Bootstrapping Template',
     icon: '👷',
     hasArgument: true,

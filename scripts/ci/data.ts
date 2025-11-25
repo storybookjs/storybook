@@ -1792,6 +1792,11 @@ const jobs = {
         },
       },
       {
+        store_artifacts: {
+          path: 'sandbox/react-vite-default-ts/*.log',
+        },
+      },
+      {
         persist_to_workspace: {
           paths: ['sandbox/react-vite-default-ts'],
           root: '.',

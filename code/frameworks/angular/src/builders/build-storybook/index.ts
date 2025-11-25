@@ -71,6 +71,8 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
   options,
   context
 ): Promise<BuilderOutput> => {
+  logger.intro('Building Storybook');
+
   const { tsConfig } = await setup(options, context);
 
   const docTSConfig = find.up('tsconfig.doc.json', {
@@ -145,6 +147,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
   };
 
   await runInstance({ ...standaloneOptions, mode: 'static' });
+  logger.outro('Storybook build completed successfully');
   return { success: true } as BuilderOutput;
 };
 
@@ -180,9 +183,7 @@ async function runInstance(options: StandaloneBuildOptions) {
         printError: printErrorDetails,
       },
       async () => {
-        logger.intro('Building storybook');
         const result = await buildStaticStandalone(options);
-        logger.outro('Storybook build completed successfully');
         return result;
       }
     );

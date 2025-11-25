@@ -76,6 +76,8 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
   options,
   context
 ): Promise<BuilderOutput> => {
+  logger.intro('Starting Storybook');
+
   const { tsConfig } = await setup(options, context);
 
   const docTSConfig = find.up('tsconfig.doc.json', {
@@ -207,7 +209,6 @@ async function runInstance(options: StandaloneOptions) {
         printError: printErrorDetails,
       },
       () => {
-        logger.intro('Starting storybook');
         return buildDevStandalone(options);
       }
     );

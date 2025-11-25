@@ -83,7 +83,7 @@ const RunButton = ({
   onRunAll,
   ...props
 }: { children?: ReactNode; isRunning: boolean; onRunAll: () => void } & ComponentProps<
-  typeof ActionList.Action
+  typeof ActionList.Button
 >) => (
   <ActionList.Button
     ariaLabel={isRunning ? 'Running...' : 'Run tests'}

@@ -102,7 +102,7 @@ const ActionListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof Sty
     { padding = 'small', size = 'medium', variant = 'ghost', ...props },
     ref
   ) {
-    return <StyledButton {...props} {...{ variant, padding, size, ref }} />;
+    return <StyledButton {...{ ...props, variant, padding, size, ref }} />;
   }
 );
 
@@ -111,7 +111,7 @@ const ActionListToggle = forwardRef<HTMLButtonElement, ComponentProps<typeof Sty
     { padding = 'small', size = 'medium', variant = 'ghost', ...props },
     ref
   ) {
-    return <StyledToggleButton {...props} {...{ variant, padding, size, ref }} />;
+    return <StyledToggleButton {...{ ...props, variant, padding, size, ref }} />;
   }
 );
 

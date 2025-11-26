@@ -9,6 +9,7 @@ assignment-rules:
       - lint
       - pretty-docs
       - knip
+      - jest
     run-on:
       - agent: linux-js
         parallelism: 6

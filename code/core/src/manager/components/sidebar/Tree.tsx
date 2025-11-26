@@ -46,7 +46,7 @@ import { useLayout } from '../layout/LayoutProvider';
 import { useContextMenu } from './ContextMenu';
 import { IconSymbols, UseSymbol } from './IconSymbols';
 import { StatusButton } from './StatusButton';
-import { StatusContext, useStatusSummary } from './StatusContext';
+import { StatusContext } from './StatusContext';
 import { ComponentNode, DocumentNode, GroupNode, RootNode, StoryNode, TestNode } from './TreeNode';
 import { CollapseIcon } from './components/CollapseIcon';
 import type { Highlight, Item } from './types';

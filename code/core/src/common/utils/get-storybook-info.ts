@@ -150,12 +150,12 @@ export const getStorybookInfo = async (
   const frameworkValue = mainConfig.framework;
   const frameworkField = typeof frameworkValue === 'string' ? frameworkValue : frameworkValue?.name;
   const addons = getAddonNames(mainConfig);
-  const version = getStorybookVersionSpecifier(configDir);
+  const versionSpecifier = getStorybookVersionSpecifier(configDir);
 
   if (!frameworkField) {
     return {
       ...configInfo,
-      version,
+      versionSpecifier,
       addons,
       mainConfig,
       mainConfigPath: configInfo.mainConfigPath ?? undefined,
@@ -183,7 +183,7 @@ export const getStorybookInfo = async (
     addons,
     mainConfig,
     framework,
-    version,
+    versionSpecifier,
     renderer: renderer ?? undefined,
     builder: builder ?? undefined,
     frameworkPackage,

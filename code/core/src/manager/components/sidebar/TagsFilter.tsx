@@ -27,12 +27,11 @@ const BUILT_IN_TAGS = new Set([
   'test-fn',
 ]);
 
-// Temporary to prevent regressions until TagFilterPanel can be refactored.
-const StyledIconButton = styled(Button)<{ active: boolean }>(({ active, theme }) => ({
+const StyledButton = styled(Button)<{ isHighlighted: boolean }>(({ isHighlighted, theme }) => ({
   '&:focus-visible': {
     outlineOffset: 4,
   },
-  ...(active && {
+  ...(isHighlighted && {
     background: theme.background.hoverable,
     color: theme.color.secondary,
   }),
@@ -51,10 +50,6 @@ const remove = (set: Set<string>, id: string) => {
 };
 const equal = (left: Set<string>, right: Set<string>) =>
   left.size === right.size && new Set([...left, ...right]).size === left.size;
-
-const Wrapper = styled.div({
-  position: 'relative',
-});
 
 const TagSelected = styled(Badge)(({ theme }) => ({
   position: 'absolute',
@@ -77,11 +72,10 @@ const TagSelected = styled(Badge)(({ theme }) => ({
 export interface TagsFilterProps {
   api: API;
   indexJson: StoryIndex;
-  isDevelopment: boolean;
   tagPresets: TagsOptions;
 }
 
-export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFilterProps) => {
+export const TagsFilter = ({ api, indexJson, tagPresets }: TagsFilterProps) => {
   const filtersById = useMemo<{ [id: string]: Filter }>(() => {
     const userTagsCounts = Object.values(indexJson.entries).reduce<{ [key: Tag]: number }>(
       (acc, entry) => {
@@ -228,11 +222,6 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
     [expanded, setExpanded]
   );
 
-  // Hide the entire UI if there are no tags and it's a built Storybook
-  if (Object.keys(filtersById).length === 0 && !isDevelopment) {
-    return null;
-  }
-
   return (
     <PopoverProvider
       placement="bottom"
@@ -248,7 +237,6 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
           toggleFilter={toggleFilter}
           setAllFilters={setAllFilters}
           resetFilters={resetFilters}
-          isDevelopment={isDevelopment}
           isDefaultSelection={
             equal(includedFilters, defaultIncluded) && equal(excludedFilters, defaultExcluded)
           }
@@ -256,18 +244,19 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
         />
       )}
     >
-      <StyledIconButton
+      <StyledButton
         key="tags"
         ariaLabel="Tag filters"
         ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
+        aria-haspopup="dialog"
         variant="ghost"
         padding="small"
-        active={tagsActive}
+        isHighlighted={tagsActive}
         onClick={handleToggleExpand}
       >
         <FilterIcon />
         {includedFilters.size + excludedFilters.size > 0 && <TagSelected />}
-      </StyledIconButton>
+      </StyledButton>
     </PopoverProvider>
   );
 };

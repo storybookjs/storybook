@@ -17,4 +17,4 @@ assignment-rules:
       - "*"
     run-on:
       - agent: linux-browsers-js
-        parallelism: 1
+        parallelism: 2

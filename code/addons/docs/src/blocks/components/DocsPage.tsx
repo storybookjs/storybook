@@ -255,6 +255,20 @@ export const DocsContent = styled.div(({ theme }) => {
       color: theme.color.defaultText,
       '& code': code,
     },
+    // Ensure keyboard focus is visible for interactive elements inside docs
+    [toGlobalSelector('a, button, input, textarea, select')]: {
+      '&:focus-visible': {
+        outline:
+          theme.base === 'light'
+            ? `2px solid ${theme.color.secondary}`
+            : `2px solid ${theme.color.secondary}`,
+        outlineOffset: '2px',
+        // fallback for high-contrast / forced-colors environments
+        '@media (forced-colors: active)': {
+          outline: '2px solid Highlight',
+        },
+      },
+    },
     [toGlobalSelector('pre')]: {
       ...reset,
       // reset

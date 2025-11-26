@@ -21,7 +21,7 @@ tsconfig.vitest-temp.json
 
 # Yarn stuff
 .yarn/cache/
-.yarn/install-state.gz
+.yarn/*-install-state.gz
 .pnp.data.json
 /**/.pnp.*
 

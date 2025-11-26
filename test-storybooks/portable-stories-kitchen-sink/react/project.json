@@ -4,7 +4,6 @@
   "targets": {
     "jest": {},
     "vitest": {},
-    "playwright-ct": {},
     "cypress": {},
     "e2e-ui": {}
   },

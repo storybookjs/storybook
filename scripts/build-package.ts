@@ -25,7 +25,7 @@ import { findMostMatchText } from './utils/diff';
 import { getCodeWorkspaces } from './utils/workspace';
 
 async function run() {
-  const packages = (await getCodeWorkspaces()).filter(({ name }) => name !== '@storybook/root');
+  const packages = (await getCodeWorkspaces()).filter(({ name }) => name !== '@storybook/code');
   const packageTasks = packages
     .map((pkg) => {
       let suffix = pkg.name.replace('@storybook/', '');

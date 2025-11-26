@@ -72,7 +72,6 @@ const projectJson = (name: string, framework: string, tags: string[], template: 
   tags,
 });
 Object.entries(allTemplates)
-  .filter(([key]) => key !== 'svelte-kit/skeleton-ts')
   .forEach(([key, value]) => {
     const p = key.replaceAll('/', '-');
     const full = join(process.cwd(), '../code/sandbox', p, 'project.json');

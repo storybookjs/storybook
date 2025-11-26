@@ -500,7 +500,6 @@ async function run() {
 
     let shouldRun = status === 'unready';
 
-    // Don't run services in NX, as NX starts them up itself
     if (status === 'notserving') {
       shouldRun =
         finalTask === task ||

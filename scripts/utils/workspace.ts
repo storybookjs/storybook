@@ -21,7 +21,7 @@ export async function getCodeWorkspaces(includePrivate = true) {
     }
   );
   return (JSON.parse(`[${stdout.split('\n').join(',')}]`) as Workspace[])
-    .filter(({ name }: any) => name !== '@storybook/scripts' && name !== '@storybook/code')
+    .filter(({ name }: any) => name !== '@storybook/root' && name !== '@storybook/scripts')
     .map((it) => {
       return {
         name: it.name,

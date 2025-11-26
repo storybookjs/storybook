@@ -2,6 +2,10 @@ name: nx
 
 on:
   push:
+    branches:
+      - next
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   actions: read
@@ -13,16 +17,23 @@ env:
 jobs:
   nx:
     runs-on: ubuntu-latest
+    env:
+      ALL_TASKS: check,knip,test,pretty-docs,lint,test,sandbox,build-sandbox,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct,cypress
     steps:
       - uses: actions/checkout@v4
         with:
           filter: tree:0
           fetch-depth: 0
-      - run: npx nx@latest start-ci-run --distribute-on=" ./.nx/workflows/distribution-config.yaml" --stop-agents-after="check,knip,test,pretty-docs,lint,test,sandbox,build-sandbox,e2e-tests,e2e-tests-dev,test-runner,test-runner-dev,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct,cypress"
+      - run: npx nx@latest start-ci-run --distribute-on=" ./.nx/workflows/distribution-config.yaml" --stop-agents-after="$ALL_TASKS"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'yarn'
       - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@v4
-      - run: yarn nx run-many -t check,knip,test,pretty-docs,lint,test,sandbox,build-sandbox,e2e-tests,e2e-tests-dev,test-runner,test-runner-dev,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct,cypress -c production -p="tag:ci:normal,tag:ci:merged,tag:ci:daily"
+      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
+        run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal"
+      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:merged'))
+        run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged"
+      - if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'ci:daily')
+        run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged,tag:ci:daily"

@@ -19,15 +19,15 @@ assignment-rules:
     run-on:
       - agent: linux-js
         parallelism: 6
-  - targets:
-      - e2e-tests
-      - e2e-tests-dev
-      - test-runner
-      - test-runner-dev
-      - check-sandbox
-    run-on:
-      - agent: linux-browsers-js
-        parallelism: 2
+#  - targets:
+#      - e2e-tests
+#      - e2e-tests-dev
+#      - test-runner
+#      - test-runner-dev
+#      - check-sandbox
+#    run-on:
+#      - agent: linux-browsers-js
+#        parallelism: 2
   - targets:
       - "*"
     run-on:

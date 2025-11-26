@@ -1,6 +1,7 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "noEmit": true,
     "baseUrl": ".",
     "incremental": false,
     "noImplicitAny": true,

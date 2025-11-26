@@ -7,7 +7,7 @@ import { ROOT_DIRECTORY } from '../../utils/constants';
 import type { BuildEntries } from './entry-utils';
 import { modifyCoreThemeTypes } from './modify-core-theme-types';
 
-const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
+const DIR_CODE = join(import.meta.dirname, '..', '..', '..');
 
 export async function generateTypesFiles(cwd: string, data: BuildEntries) {
   const DIR_CWD = cwd;

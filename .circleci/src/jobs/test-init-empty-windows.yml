@@ -23,11 +23,6 @@ steps:
       shell: bash.exe
       working_directory: code
       command: yarn install
-  - run:
-      name: Install script dependencies
-      shell: bash.exe
-      working_directory: scripts
-      command: yarn install
   - when:
       condition:
         equal: ['npm', << parameters.packageManager >>]
@@ -37,13 +32,11 @@ steps:
             background: true
             shell: bash.exe
             command: |
-              cd code
               yarn local-registry --open
         - run:
             name: Wait on Verdaccio
             shell: bash.exe
             command: |
-              cd code
               yarn wait-on tcp:127.0.0.1:6001
               yarn wait-on tcp:127.0.0.1:6002
         - run:
@@ -69,13 +62,11 @@ steps:
             background: true
             shell: bash.exe
             command: |
-              cd code
               yarn local-registry --open
         - run:
             name: Wait on Verdaccio
             shell: bash.exe
             command: |
-              cd code
               yarn wait-on tcp:127.0.0.1:6001
               yarn wait-on tcp:127.0.0.1:6002
         - run:
@@ -102,13 +93,11 @@ steps:
             background: true
             shell: bash.exe
             command: |
-              cd code
               yarn local-registry --open
         - run:
             name: Wait on Verdaccio
             shell: bash.exe
             command: |
-              cd code
               yarn wait-on tcp:127.0.0.1:6001
               yarn wait-on tcp:127.0.0.1:6002
         - run:
@@ -135,13 +124,11 @@ steps:
             background: true
             shell: bash.exe
             command: |
-              cd code
               yarn local-registry --open
         - run:
             name: Wait on Verdaccio
             shell: bash.exe
             command: |
-              cd code
               yarn wait-on tcp:127.0.0.1:6001
               yarn wait-on tcp:127.0.0.1:6002
         - run:

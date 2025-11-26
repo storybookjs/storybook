@@ -27,7 +27,7 @@ function intersection(a, b) {
   return a.filter((v) => b.includes(v));
 }
 
-const pkg = require('../code/package.json');
+const pkg = require('../package.json');
 
 const Versions = {
   PATCH: 'PATCH',

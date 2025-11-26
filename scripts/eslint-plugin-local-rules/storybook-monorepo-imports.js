@@ -11,7 +11,7 @@ module.exports = {
       description: 'Ensure the imports-paths of packages in the monorepo is correct',
       category: 'Best Practices',
       recommended: true,
-      url: 'https://github.com/storybookjs/storybook/blob/next/code/core/README.md',
+      url: 'https://github.com/storybookjs/storybook/blob/next/core/README.md',
     },
     fixable: 'code',
   },
@@ -24,7 +24,7 @@ module.exports = {
         const isInCreateStorybook = !!fileName.includes(
           path.join('code', 'lib', 'create-storybook')
         );
-        const isInCore = !!fileName.includes(path.join('code', 'core'));
+        const isInCore = !!fileName.includes(path.join('core', 'src'));
 
         if (
           node.source.value.startsWith('@storybook/core/') &&

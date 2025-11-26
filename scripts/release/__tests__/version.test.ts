@@ -6,13 +6,13 @@ import { describe, expect, it, vi } from 'vitest';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
-import type * as MockedFSPToExtra from '../../../code/__mocks__/fs/promises';
+import type * as MockedFSPToExtra from '../../../__mocks__/fs/promises';
 import { run as version } from '../version';
 
-vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs/promises'));
+vi.mock('node:fs/promises', async () => import('../../../__mocks__/fs/promises'));
 const fspExtra = fspImp as unknown as typeof MockedFSPToExtra;
 
-vi.mock('../../../code/core/src/common/src/versions', () => ({
+vi.mock('../../../core/src/common/src/versions', () => ({
   '@storybook/addon-a11y': '7.1.0-alpha.29',
 }));
 
@@ -32,7 +32,7 @@ vi.spyOn(console, 'warn').mockImplementation(() => {});
 vi.spyOn(console, 'error').mockImplementation(() => {});
 
 describe('Version', () => {
-  const CODE_DIR_PATH = join(__dirname, '..', '..', '..', 'code');
+  const CODE_DIR_PATH = join(__dirname, '..', '..', '..');
   const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
   const MANAGER_API_VERSION_PATH = join(CODE_DIR_PATH, 'core', 'src', 'manager-api', 'version.ts');
   const VERSIONS_PATH = join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts');
@@ -138,7 +138,7 @@ describe('Version', () => {
       [ZodError: [
   {
     "code": "custom",
-    "message": "--apply cannot be combined with --exact or --release-type, as it will always read from code/package.json#deferredNextVersion",
+    "message": "--apply cannot be combined with --exact or --release-type, as it will always read from /package.json#deferredNextVersion",
     "path": []
   }
 ]]
@@ -157,7 +157,7 @@ describe('Version', () => {
       [ZodError: [
   {
     "code": "custom",
-    "message": "--apply cannot be combined with --exact or --release-type, as it will always read from code/package.json#deferredNextVersion",
+    "message": "--apply cannot be combined with --exact or --release-type, as it will always read from /package.json#deferredNextVersion",
     "path": []
   }
 ]]
@@ -189,7 +189,7 @@ describe('Version', () => {
     });
 
     await expect(version({ apply: true })).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[Error: The 'deferredNextVersion' property in code/package.json is unset. This is necessary to apply a deferred version bump]`
+      `[Error: The 'deferredNextVersion' property in /package.json is unset. This is necessary to apply a deferred version bump]`
     );
 
     expect(fspExtra.writeFile).not.toHaveBeenCalled();

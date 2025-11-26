@@ -19,17 +19,14 @@ steps:
             name: Verdaccio
             background: true
             command: |
-              cd code
               yarn local-registry --open
         - run:
             name: Wait on Verdaccio
             command: |
-              cd code
               yarn wait-on tcp:127.0.0.1:6001
               yarn wait-on tcp:127.0.0.1:6002
         - run:
             name: Benchmarking packages against base branch
-            working_directory: scripts
             command: yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
   # if there is a NOT a base branch OR NOT a PR number in parameters, just upload benchmarks for the branch
   # this happens when run directly on branches, like next or main
@@ -43,17 +40,14 @@ steps:
             name: Verdaccio
             background: true
             command: |
-              cd code
               yarn local-registry --open
         - run:
             name: Wait on Verdaccio
             command: |
-              cd code
               yarn wait-on tcp:127.0.0.1:6001
               yarn wait-on tcp:127.0.0.1:6002
         - run:
             name: Uploading package benchmarks for branch
-            working_directory: scripts
             command: yarn bench-packages --upload
   - store_artifacts:
       path: bench/packages/results.json

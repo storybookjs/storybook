@@ -9,7 +9,7 @@ import { getChanges } from './utils/get-changes';
 program
   .name('get-version-changelog')
   .description(
-    'get changelog for specific version. If no version argument specified it will use the current version in code/package.json'
+    'get changelog for specific version. If no version argument specified it will use the current version in /package.json'
   )
   .arguments('[version]')
   .option('-V, --verbose', 'Enable verbose logging', false);

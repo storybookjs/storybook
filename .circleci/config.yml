@@ -30,9 +30,8 @@ commands:
         steps:
             - run:
                 background: true
-                command: yarn jiti ./event-log-collector.ts
+                command: yarn jiti ./scripts/event-log-collector.ts
                 name: Start Event Collector
-                working_directory: scripts
 executors:
     sb_node_18_browsers:
         docker:
@@ -125,19 +124,16 @@ jobs:
                     - run:
                         background: true
                         command: |
-                            cd code
                             yarn local-registry --open
                         name: Verdaccio
                     - run:
                         command: |
-                            cd code
                             yarn wait-on tcp:127.0.0.1:6001
                             yarn wait-on tcp:127.0.0.1:6002
                         name: Wait on Verdaccio
                     - run:
                         command: yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
                         name: Benchmarking packages against base branch
-                        working_directory: scripts
             - when:
                 condition:
                     or:
@@ -147,19 +143,16 @@ jobs:
                     - run:
                         background: true
                         command: |
-                            cd code
                             yarn local-registry --open
                         name: Verdaccio
                     - run:
                         command: |
-                            cd code
                             yarn wait-on tcp:127.0.0.1:6001
                             yarn wait-on tcp:127.0.0.1:6002
                         name: Wait on Verdaccio
                     - run:
                         command: yarn bench-packages --upload
                         name: Uploading package benchmarks for branch
-                        working_directory: scripts
             - store_artifacts:
                 path: bench/packages/results.json
             - report-workflow-on-failure
@@ -180,7 +173,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - run:
                 command: yarn task --task bench --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench) --no-link --start-from=never --junit
@@ -203,19 +196,21 @@ jobs:
                 name: Restore Yarn cache
             - run:
                 command: |
-                    yarn
+                    yarn install
+                name: Install
+            - run:
+                command: |
                     yarn task --task compile --start-from=auto --no-link --debug
                     git diff --exit-code
                     yarn dedupe --check
                 name: Compile
             - run:
                 command: |
-                    cd code
                     yarn local-registry --publish
                 name: Publish to Verdaccio
             - report-workflow-on-failure
             - store_artifacts:
-                path: code/bench/esbuild-metafiles
+                path: bench/esbuild-metafiles
             - save_cache:
                 key: build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
                 name: Save Yarn cache
@@ -224,17 +219,16 @@ jobs:
             - persist_to_workspace:
                 paths:
                     - node_modules
-                    - code/node_modules
-                    - code/addons
+                    - addons
                     - scripts/node_modules
-                    - code/bench
-                    - code/examples
-                    - code/frameworks
-                    - code/lib
-                    - code/core
-                    - code/builders
-                    - code/renderers
-                    - code/presets
+                    - bench
+                    - examples
+                    - frameworks
+                    - lib
+                    - core
+                    - builders
+                    - renderers
+                    - presets
                     - .verdaccio-cache
                 root: .
     check:
@@ -253,7 +247,10 @@ jobs:
                 name: Restore Yarn cache
             - run:
                 command: |
-                    yarn
+                    yarn install
+                name: Install
+            - run:
+                command: |
                     yarn task --task compile --start-from=auto --no-link --debug
                 name: Compile
             - run:
@@ -282,7 +279,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - run:
                 command: yarn task --task check-sandbox --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox) --no-link --start-from=never --junit
@@ -310,7 +307,7 @@ jobs:
                 path: test-results
     chromatic-sandboxes:
         executor:
-            class: medium+
+            class: medium
             name: sb_node_22_browsers
         parallelism: << parameters.parallelism >>
         parameters:
@@ -321,18 +318,12 @@ jobs:
             - attach_workspace:
                 at: .
             - run:
-                background: true
-                command: |
-                    cd code
-                    yarn local-registry --open
-                name: Verdaccio
-            - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
-                    SANDBOX_ROOT=./sandbox yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - run:
-                command: SANDBOX_ROOT=./sandbox yarn task --task chromatic --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic) --no-link --start-from=never --junit
+                command: yarn task --task chromatic --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic) --no-link --start-from=never --junit
                 name: Running Chromatic
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
@@ -408,11 +399,11 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - run:
                 command: |
-                    TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
+                    TEST_FILES=$(circleci tests glob "./e2e-tests/*.{test,spec}.{ts,js,mjs}")
                     echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev) --no-link --start-from=never --junit" --verbose --index=0 --total=1
                 name: Running E2E Tests
             - report-workflow-on-failure:
@@ -421,7 +412,7 @@ jobs:
                 path: test-results
             - store_artifacts:
                 destination: playwright
-                path: code/playwright-results/
+                path: playwright-results/
     e2e-production:
         executor:
             class: medium
@@ -438,11 +429,11 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - run:
                 command: |
-                    TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
+                    TEST_FILES=$(circleci tests glob "e2e-tests/*.{test,spec}.{ts,js,mjs}")
                     echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests) --no-link --start-from=never --junit" --verbose --index=0 --total=1
                 name: Running E2E Tests
             - report-workflow-on-failure:
@@ -451,7 +442,7 @@ jobs:
                 path: test-results
             - store_artifacts:
                 destination: playwright
-                path: code/playwright-results/
+                path: playwright-results/
     e2e-ui:
         executor:
             class: medium
@@ -513,7 +504,6 @@ jobs:
                 at: .
             - run:
                 command: |
-                    cd code
                     yarn knip --no-exit-code
                 name: Knip
             - report-workflow-on-failure
@@ -529,14 +519,13 @@ jobs:
                 at: .
             - run:
                 command: |
-                    cd code
                     yarn lint
                 name: Lint
             - report-workflow-on-failure
             - cancel-workflow-on-failure
     pretty-docs:
         executor:
-            class: medium+
+            class: medium
             name: sb_node_22_classic
         steps:
             - git-shallow-clone/checkout_advanced:
@@ -546,9 +535,10 @@ jobs:
                     - prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
                 name: Restore Yarn cache
             - run:
-                  command: |
-                      yarn install
-                  name: Install
+                command: |
+                    cd scripts
+                    yarn install
+                name: Install
             - save_cache:
                 key: prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
                 name: Save Yarn cache
@@ -559,32 +549,6 @@ jobs:
                     cd scripts
                     yarn docs:prettier:check
                 name: Prettier
-    script-checks:
-        executor: sb_node_22_browsers
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                clone_options: --depth 1 --verbose
-            - attach_workspace:
-                at: .
-            - run:
-                command: |
-                    cd scripts
-                    yarn get-template --check
-                name: Check parallelism count
-            - run:
-                command: |
-                    cd scripts
-                    yarn check
-                name: Type check
-            - run:
-                command: |
-                    cd scripts
-                    yarn test --coverage
-                name: Run tests
-            - store_test_results:
-                path: scripts/junit.xml
-            - report-workflow-on-failure
-            - cancel-workflow-on-failure
     smoke-test-sandboxes:
         executor:
             class: medium
@@ -617,7 +581,6 @@ jobs:
                 at: .
             - run:
                 command: |
-                    cd code
                     TEST_FILES=$(circleci tests glob "**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
                     echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
                 name: Run tests
@@ -648,12 +611,10 @@ jobs:
                     - run:
                         background: true
                         command: |
-                            cd code
                             yarn local-registry --open
                         name: Verdaccio
                     - run:
                         command: |
-                            cd code
                             yarn wait-on tcp:127.0.0.1:6001
                             yarn wait-on tcp:127.0.0.1:6002
                         name: Wait on Verdaccio
@@ -679,12 +640,10 @@ jobs:
                     - run:
                         background: true
                         command: |
-                            cd code
                             yarn local-registry --open
                         name: Verdaccio
                     - run:
                         command: |
-                            cd code
                             yarn wait-on tcp:127.0.0.1:6001
                             yarn wait-on tcp:127.0.0.1:6002
                         name: Wait on Verdaccio
@@ -711,12 +670,10 @@ jobs:
                     - run:
                         background: true
                         command: |
-                            cd code
                             yarn local-registry --open
                         name: Verdaccio
                     - run:
                         command: |
-                            cd code
                             yarn wait-on tcp:127.0.0.1:6001
                             yarn wait-on tcp:127.0.0.1:6002
                         name: Wait on Verdaccio
@@ -743,12 +700,10 @@ jobs:
                     - run:
                         background: true
                         command: |
-                            cd code
                             yarn local-registry --open
                         name: Verdaccio
                     - run:
                         command: |
-                            cd code
                             yarn wait-on tcp:127.0.0.1:6001
                             yarn wait-on tcp:127.0.0.1:6002
                         name: Wait on Verdaccio
@@ -787,6 +742,7 @@ jobs:
                 command: yarn install
                 name: Install code dependencies
                 shell: bash.exe
+                working_directory: code
             - when:
                 condition:
                     equal:
@@ -796,13 +752,11 @@ jobs:
                     - run:
                         background: true
                         command: |
-                            cd code
                             yarn local-registry --open
                         name: Verdaccio
                         shell: bash.exe
                     - run:
                         command: |
-                            cd code
                             yarn wait-on tcp:127.0.0.1:6001
                             yarn wait-on tcp:127.0.0.1:6002
                         name: Wait on Verdaccio
@@ -830,13 +784,11 @@ jobs:
                     - run:
                         background: true
                         command: |
-                            cd code
                             yarn local-registry --open
                         name: Verdaccio
                         shell: bash.exe
                     - run:
                         command: |
-                            cd code
                             yarn wait-on tcp:127.0.0.1:6001
                             yarn wait-on tcp:127.0.0.1:6002
                         name: Wait on Verdaccio
@@ -865,13 +817,11 @@ jobs:
                     - run:
                         background: true
                         command: |
-                            cd code
                             yarn local-registry --open
                         name: Verdaccio
                         shell: bash.exe
                     - run:
                         command: |
-                            cd code
                             yarn wait-on tcp:127.0.0.1:6001
                             yarn wait-on tcp:127.0.0.1:6002
                         name: Wait on Verdaccio
@@ -900,13 +850,11 @@ jobs:
                     - run:
                         background: true
                         command: |
-                            cd code
                             yarn local-registry --open
                         name: Verdaccio
                         shell: bash.exe
                     - run:
                         command: |
-                            cd code
                             yarn wait-on tcp:127.0.0.1:6001
                             yarn wait-on tcp:127.0.0.1:6002
                         name: Wait on Verdaccio
@@ -937,12 +885,10 @@ jobs:
             - run:
                 background: true
                 command: |
-                    cd code
                     yarn local-registry --open
                 name: Verdaccio
             - run:
                 command: |
-                    cd code
                     yarn wait-on tcp:127.0.0.1:6001
                     yarn wait-on tcp:127.0.0.1:6002
                 name: Wait on Verdaccio
@@ -961,7 +907,7 @@ jobs:
                 name: Storybook init for features
     test-portable-stories:
         executor:
-            class: medium+
+            class: medium
             name: sb_playwright
         parameters:
             directory:
@@ -1030,7 +976,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - start-event-collector
             - run:
@@ -1078,7 +1024,6 @@ jobs:
                 at: .
             - run:
                 command: |
-                    cd code
                     TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
                     echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
                 name: Run tests
@@ -1102,7 +1047,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - start-event-collector
             - run:
@@ -1165,9 +1110,6 @@ workflows:
                 requires:
                     - build
             - stories-tests:
-                requires:
-                    - build
-            - script-checks:
                 requires:
                     - build
             - chromatic-internal-storybook:
@@ -1278,9 +1220,6 @@ workflows:
             - stories-tests:
                 requires:
                     - build
-            - script-checks:
-                requires:
-                    - build
             - chromatic-internal-storybook:
                 requires:
                     - build
@@ -1371,9 +1310,6 @@ workflows:
                 requires:
                     - build
             - stories-tests:
-                requires:
-                    - build
-            - script-checks:
                 requires:
                     - build
             - chromatic-internal-storybook:

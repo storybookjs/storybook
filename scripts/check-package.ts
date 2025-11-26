@@ -113,9 +113,9 @@ async function run() {
   }
 
   selection?.filter(Boolean).forEach(async (v) => {
-    const content = await readFile(resolve('../code', v.location, 'package.json'), 'utf-8');
+    const content = await readFile(resolve('../', v.location, 'package.json'), 'utf-8');
     const command = JSON.parse(content).scripts.check;
-    const cwd = resolve(__dirname, '..', 'code', v.location);
+    const cwd = resolve(__dirname, '..', v.location);
     const sub = execaCommand(`${command}${watchMode ? ' --watch' : ''}`, {
       cwd,
       buffer: false,

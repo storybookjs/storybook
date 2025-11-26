@@ -12,13 +12,13 @@ import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
-import { PackageManagerName } from '../../code/core/src/common/js-package-manager';
-import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
-import storybookVersions from '../../code/core/src/common/versions';
+import { PackageManagerName } from '../../core/src/common/js-package-manager';
+import { temporaryDirectory } from '../../core/src/common/utils/cli';
+import storybookVersions from '../../core/src/common/versions';
 import {
   type Template,
   allTemplates as sandboxTemplates,
-} from '../../code/lib/cli-storybook/src/sandbox-templates';
+} from '../../lib/cli-storybook/src/sandbox-templates';
 import {
   AFTER_DIR_NAME,
   BEFORE_DIR_NAME,
@@ -43,7 +43,7 @@ const sbInit = async (
   flags?: string[],
   debug?: boolean
 ) => {
-  const sbCliBinaryPath = join(__dirname, `../../code/lib/create-storybook/dist/bin/index.js`);
+  const sbCliBinaryPath = join(__dirname, `../../lib/create-storybook/dist/bin/index.js`);
   console.log(`🎁 Installing Storybook`);
   const env = { STORYBOOK_DISABLE_TELEMETRY: 'true', ...envVars, CI: 'true' };
   const fullFlags = ['--yes', ...(flags || [])];

@@ -28,10 +28,7 @@
       "configurations": { "production": { "args": "--prod" } },
       "cache": true,
       "inputs": ["production", "^production"],
-      "outputs": [
-        "{projectRoot}/dist",
-        "{workspaceRoot}/code/bench/esbuild-metafiles/{projectName}"
-      ]
+      "outputs": ["{projectRoot}/dist", "{workspaceRoot}/bench/esbuild-metafiles/{projectName}"]
     },
     "check": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
@@ -198,7 +195,7 @@
   },
   "namedInputs": {
     "sharedGlobals": [
-      "{workspaceRoot}/code/tsconfig.json",
+      "{workspaceRoot}/tsconfig.json",
       "{workspaceRoot}/scripts/**/*",
       "{workspaceRoot}/.github/workflows/nx.yml",
       "{workspaceRoot}/.nx/workflows/*"
@@ -211,8 +208,8 @@
     ],
     "all-production": [
       "sharedGlobals",
-      "{workspaceRoot}/code/**/*",
-      "!{workspaceRoot}/code/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+      "{workspaceRoot}/**/*",
+      "!{workspaceRoot}/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ]
   }
 }

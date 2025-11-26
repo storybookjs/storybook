@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { render } from 'ejs';
 import prettier from 'prettier';
 
-import { allTemplates as sandboxTemplates } from '../../../code/lib/cli-storybook/src/sandbox-templates';
+import { allTemplates as sandboxTemplates } from '../../../lib/cli-storybook/src/sandbox-templates';
 import type { GeneratorConfig } from './types';
 
 export async function renderTemplate(templatePath: string, templateData: Record<string, any>) {

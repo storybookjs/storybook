@@ -10,13 +10,12 @@ linux-init-steps: &linux-init-steps
       paths: |
         ~/.yarn/berry
         node_modules
-        code/node_modules
-        code/addons/*/node_modules
-        code/frameworks/*/node_modules
-        code/lib/*/node_modules
-        code/builders/*/node_modules
-        code/presets/*/node_modules
-        code/renderers/*/node_modules
+        addons/*/node_modules
+        frameworks/*/node_modules
+        lib/*/node_modules
+        builders/*/node_modules
+        presets/*/node_modules
+        renderers/*/node_modules
         scripts/node_modules
       base-branch: 'next'
   - name: Install Node
@@ -35,13 +34,13 @@ linux-browsers-init-steps: &linux-browsers-init-steps
       paths: |
         ~/.yarn/berry
         node_modules
-        code/node_modules
-        code/addons/*/node_modules
-        code/frameworks/*/node_modules
-        code/lib/*/node_modules
-        code/builders/*/node_modules
-        code/presets/*/node_modules
-        code/renderers/*/node_modules
+        node_modules
+        addons/*/node_modules
+        frameworks/*/node_modules
+        lib/*/node_modules
+        builders/*/node_modules
+        presets/*/node_modules
+        renderers/*/node_modules
         scripts/node_modules
       base-branch: 'next'
   - name: Restore Browser Binary Cache

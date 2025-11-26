@@ -16,7 +16,7 @@ const dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 const checkDependencies = async () => {
   const scriptsPath = join(dirname);
-  const codePath = join(dirname, '..', 'code');
+  const codePath = join(dirname, '..');
 
   const tasks = [];
 

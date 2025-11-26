@@ -17,7 +17,7 @@ program
   .option('-H, --patch', 'Look for patch PR instead of next PR', false)
   .option('-V, --verbose', 'Enable verbose logging', false);
 
-const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_DIR_PATH = join(__dirname, '..', '..');
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 const getCurrentVersion = async () => {

@@ -1,0 +1,71 @@
+{
+  "name": "@storybook/web-components",
+  "version": "10.2.0-alpha.0",
+  "description": "Storybook Web Components renderer: Develop, document, and test UI components in isolation",
+  "keywords": [
+    "storybook",
+    "storybook-renderer",
+    "lit",
+    "lit-html",
+    "web-components",
+    "component",
+    "components"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/renderers/web-components",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "renderers/web-components"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./entry-preview": "./dist/entry-preview.js",
+    "./entry-preview-argtypes": "./dist/entry-preview-argtypes.js",
+    "./entry-preview-docs": "./dist/entry-preview-docs.js",
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
+  },
+  "files": [
+    "dist/**/*",
+    "template/cli/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "dependencies": {
+    "@storybook/global": "^5.0.0",
+    "tiny-invariant": "^1.3.1",
+    "ts-dedent": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
+    "@types/node": "^22.0.0",
+    "@types/tmp": "^0.2.6",
+    "cross-spawn": "^7.0.6",
+    "lit": "2.3.1",
+    "tmp": "^0.2.3",
+    "typescript": "^5.8.3",
+    "web-component-analyzer": "^1.1.6"
+  },
+  "peerDependencies": {
+    "lit": "^2.0.0 || ^3.0.0",
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
+}

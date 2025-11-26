@@ -8,13 +8,13 @@ import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info';
+import { globalsModuleInfoMap } from '../../../core/src/manager/globals/globals-module-info';
 import {
   BROWSER_TARGETS,
   NODE_TARGET,
   SUPPORTED_FEATURES,
-} from '../../../code/core/src/shared/constants/environments-support';
-import { resolvePackageDir } from '../../../code/core/src/shared/utils/module';
+} from '../../../core/src/shared/constants/environments-support';
+import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 import {
   type BuildEntries,
   type EntryType,
@@ -22,17 +22,8 @@ import {
   getExternal,
 } from './entry-utils';
 
-// repo root/bench/esbuild-metafiles/core
-const DIR_METAFILE_BASE = join(
-  import.meta.dirname,
-  '..',
-  '..',
-  '..',
-  'code',
-  'bench',
-  'esbuild-metafiles'
-);
-export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
+export const DIR_CODE = join(import.meta.dirname, '..', '..', '..');
+const DIR_METAFILE_BASE = join(DIR_CODE, 'bench', 'esbuild-metafiles');
 
 /*
  * This plugin writes the metafile to a file in the output directory.

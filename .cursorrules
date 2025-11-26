@@ -4,15 +4,15 @@ This Storybook repository uses Vitest as the test runner. Here are the key comma
 
 ### Test Scripts
 
-- `yarn test` - Run all tests (from root directory, delegates to `cd code; yarn test`)
+- `yarn test` - Run all tests (from root directory)
 - `yarn test <test-name>` - Run focused tests matching the pattern
 - `yarn test:watch` - Run tests in watch mode
 - `yarn test:watch <test-name>` - Run focused tests in watch mode
 
 ### Test Directory Structure
 
-- Tests are located in the `code/` directory
-- Vitest configuration is in `code/vitest.workspace.ts`
+- Tests are located in the `/` directory
+- Vitest configuration is in `/vitest.workspace.ts`
 - Test files typically follow the pattern `*.test.ts`, `*.test.tsx`, `*.spec.ts`, or `*.spec.tsx`
 
 ### Running Tests in Cursor
@@ -26,13 +26,13 @@ This Storybook repository uses Vitest as the test runner. Here are the key comma
 
 ### Vitest Configuration
 
-- Workspace configuration: `./code/vitest.workspace.ts`
-- Command line: `yarn --cwd code test`
-- Root directory for tests: `./code/`
+- Workspace configuration: `./vitest.workspace.ts`
+- Command line: `yarn test`
+- Root directory for tests: `./`
 
 ### Test Execution Context
 
-- Tests run from the `code/` directory
+- Tests run from the `/` directory
 - Use `NODE_OPTIONS=--max_old_space_size=4096` for memory optimization
 - Supports both watch mode and single-run execution
 

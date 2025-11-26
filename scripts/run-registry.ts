@@ -144,7 +144,7 @@ const startVerdaccio = async () => {
 };
 
 const currentVersion = async () => {
-  const content = await readFile(join(__dirname, '..', 'code', 'package.json'), 'utf-8');
+  const content = await readFile(join(__dirname, '..', 'package.json'), 'utf-8');
   const { version } = JSON.parse(content);
   return version;
 };
@@ -177,7 +177,7 @@ const publish = async (packages: { name: string; location: string }[], url: stri
         () =>
           new Promise((resolve, reject) => {
             const loggedLocation = location.replace(resolvePath(join(__dirname, '..')), '.');
-            const resolvedLocation = resolvePath('../code', location);
+            const resolvedLocation = resolvePath('./', location);
 
             logger.log(`🛫 publishing ${name} (${loggedLocation})`);
 

@@ -24,12 +24,12 @@ steps:
       # `circleci tests run` allows rerunning failed tests by passing a subset of test files to the command via `xargs`
       # --index=0 --total=1 ensures we run all tests on all runners, since each runner handles a different sandbox
       command: |
-        TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
+        TEST_FILES=$(circleci tests glob "e2e-tests/*.{test,spec}.{ts,js,mjs}")
         echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests) --no-link --start-from=never --junit" --verbose --index=0 --total=1
   - report-workflow-on-failure:
       template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
   - store_test_results:
       path: test-results
   - store_artifacts: # this is where playwright puts more complex stuff
-      path: code/playwright-results/
+      path: playwright-results/
       destination: playwright

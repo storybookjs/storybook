@@ -6,7 +6,7 @@ import picocolors from 'picocolors';
 
 import { esMain } from '../utils/esmain';
 
-const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_DIR_PATH = join(__dirname, '..', '..');
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 export const getCurrentVersion = async () => {

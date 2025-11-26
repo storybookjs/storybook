@@ -24,9 +24,6 @@ jobs:
   - stories-tests:
       requires:
         - build
-  - script-checks:
-      requires:
-        - build
   - chromatic-internal-storybook:
       requires:
         - build

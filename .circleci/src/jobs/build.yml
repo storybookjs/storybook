@@ -10,6 +10,10 @@ steps:
       keys:
         - build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
   - run:
+      name: Install
+      command: |
+        yarn install
+  - run:
       name: Compile
       command: |
         yarn task --task compile --start-from=auto --no-link --debug
@@ -18,11 +22,10 @@ steps:
   - run:
       name: Publish to Verdaccio
       command: |
-        cd code
         yarn local-registry --publish
   - report-workflow-on-failure
   - store_artifacts:
-      path: code/bench/esbuild-metafiles
+      path: bench/esbuild-metafiles
   - save_cache:
       name: Save Yarn cache
       key: build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
@@ -31,15 +34,15 @@ steps:
   - persist_to_workspace:
       root: .
       paths:
-        - code/node_modules
-        - code/addons
+        - node_modules
+        - addons
         - scripts/node_modules
-        - code/bench
-        - code/examples
-        - code/frameworks
-        - code/lib
-        - code/core
-        - code/builders
-        - code/renderers
-        - code/presets
+        - bench
+        - examples
+        - frameworks
+        - lib
+        - core
+        - builders
+        - renderers
+        - presets
         - .verdaccio-cache

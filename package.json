@@ -1,46 +1,115 @@
 {
   "name": "@storybook/root",
+  "version": "10.2.0-alpha.0",
   "private": true,
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
   "type": "module",
   "workspaces": {
     "packages": [
-      "code",
-      "code/core",
-      "code/addons/*",
-      "code/frameworks/*",
-      "code/lib/*",
-      "code/builders/*",
-      "code/presets/*",
-      "code/renderers/*",
+      "core",
+      "addons/*",
+      "frameworks/*",
+      "lib/*",
+      "builders/*",
+      "presets/*",
+      "renderers/*",
       "scripts"
     ]
   },
   "scripts": {
-    "ci-tests": "cd code; yarn ci-tests",
-    "get-report-message": "cd scripts; yarn get-report-message",
-    "get-sandbox-dir": "cd scripts; yarn get-sandbox-dir",
-    "get-template": "cd scripts; yarn get-template",
-    "i": "yarn",
-    "knip": "cd code; yarn knip",
-    "lint": "cd code; yarn lint",
+    "affected:test": "nx show projects --affected -t test | xargs -I # echo --project # | xargs yarn test:watch",
+    "await-serve-storybooks": "wait-on http://localhost:8001",
+    "bench-packages": "jiti ./scripts/bench/bench-packages.ts",
+    "build": "NODE_ENV=production yarn --cwd ./scripts build-package",
+    "build-package": "jiti ./scripts/build-package.ts",
+    "changelog": "pr-log --sloppy --cherry-pick",
+    "changelog:next": "pr-log --sloppy --since-prerelease",
+    "check": "jiti ./scripts/check/check-package.ts",
+    "check-package": "jiti ./scripts/check-package.ts",
+    "ci-tests": "yarn task --task check --no-link --start-from=install && yarn lint && yarn test && cd ./scripts && yarn test",
+    "danger": "danger",
+    "docs:codemod": "jiti ./scripts/snippets/codemod.ts",
+    "docs:prettier:check": "cd ./docs && prettier --check ./_snippets",
+    "docs:prettier:write": "cd ./docs && prettier --write ./_snippets",
+    "generate-sandboxes": "jiti ./scripts/sandbox/generate.ts",
+    "get-report-message": "jiti ./scripts/get-report-message.ts",
+    "get-sandbox-dir": "jiti ./scripts/get-sandbox-dir.ts",
+    "get-template": "jiti ./scripts/get-template.ts",
+    "github-release": "github-release-from-changelog",
+    "knip": "./node_modules/.bin/knip --config ./scripts/knip.config.ts",
+    "lint": "yarn lint:js",
+    "lint:ejs": "ejslint **/*.ejs",
+    "lint:js": "yarn lint:js:cmd .  --quiet",
+    "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=./.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
+    "lint:other": "yarn lint:prettier '**/*.{css,html,json,md,yml}'",
+    "lint:package": "sort-package-json",
+    "lint:prettier": "prettier --write",
+    "local-registry": "jiti ./scripts/run-registry.ts",
     "nx": "nx",
+    "prepare-sandbox": "jiti ./scripts/prepare-sandbox.ts",
     "pretty-docs": "cd scripts; yarn install >/dev/null; yarn docs:prettier:write",
+    "publish": "jiti ./scripts/sandbox/publish.ts",
+    "publish-sandboxes": "yarn --cwd ./scripts publish",
+    "release:cancel-preparation-runs": "jiti ./scripts/release/cancel-preparation-runs.ts",
+    "release:generate-pr-description": "jiti ./scripts/release/generate-pr-description.ts",
+    "release:get-changelog-from-file": "jiti ./scripts/release/get-changelog-from-file.ts",
+    "release:get-current-version": "jiti ./scripts/release/get-current-version.ts",
+    "release:get-version-changelog": "jiti ./scripts/release/get-version-changelog.ts",
+    "release:is-pr-frozen": "jiti ./scripts/release/is-pr-frozen.ts",
+    "release:is-prerelease": "jiti ./scripts/release/is-prerelease.ts",
+    "release:is-version-published": "jiti ./scripts/release/is-version-published.ts",
+    "release:label-patches": "jiti ./scripts/release/label-patches.ts",
+    "release:pick-patches": "jiti ./scripts/release/pick-patches.ts",
+    "release:publish": "jiti ./scripts/release/publish.ts",
+    "release:unreleased-changes-exists": "jiti ./scripts/release/unreleased-changes-exists.ts",
+    "release:version": "jiti ./scripts/release/version.ts",
+    "release:write-changelog": "jiti ./scripts/release/write-changelog.ts",
     "start": "yarn task --task dev --template react-vite/default-ts --start-from=install",
-    "svelte-ecosystem-ci:before-test": "node ./scripts/ecosystem-ci/before-test.js svelte-kit/skeleton-ts && cd ../storybook-sandboxes/svelte-kit-skeleton-ts && yarn install",
-    "svelte-ecosystem-ci:build": "yarn task --task install && yarn --cwd code build svelte && yarn task --task sandbox --template svelte-kit/skeleton-ts --start-from=compile --no-link --skip-cache",
+    "storybook:ui": "NODE_OPTIONS=\"--max_old_space_size=4096 --trace-deprecation\" core/dist/bin/dispatcher.js dev --port 6006 --config-dir ./.storybook",
+    "storybook:ui:build": "NODE_OPTIONS=\"--max_old_space_size=4096\" core/dist/bin/dispatcher.js build --config-dir ./.storybook --webpack-stats-json",
+    "storybook:ui:chromatic": "./node_modules/.bin/chromatic --build-script-name storybook:ui:build --storybook-base-dir ./ --exit-zero-on-changes --exit-once-uploaded",
+    "storybook:vitest": "yarn test:watch --project storybook-ui",
+    "storybook:vitest:inspect": "INSPECT=true yarn test --project storybook-ui",
+    "strict-ts": "jiti ./scripts/strict-ts.ts",
+    "svelte-ecosystem-ci:before-test": "node ./scripts/ecosystem-ci/before-test.js svelte-kit/skeleton-ts && cd ./storybook-sandboxes/svelte-kit-skeleton-ts && yarn install",
+    "svelte-ecosystem-ci:build": "yarn task --task install && yarn build svelte && yarn task --task sandbox --template svelte-kit/skeleton-ts --start-from=compile --no-link --skip-cache",
     "svelte-ecosystem-ci:test": "yarn task --task test-runner --template svelte-kit/skeleton-ts --start-from=build --no-link --skip-cache && yarn task --task vitest-integration --template svelte-kit/skeleton-ts --start-from vitest-integration --no-link --skip-cache",
-    "task": "yarn --cwd=./scripts task",
-    "test": "cd code; yarn test",
-    "test:watch": "cd code; yarn test:watch",
-    "upload-bench": "cd scripts; yarn upload-bench",
-    "vite-ecosystem-ci:before-test": "node ./scripts/ecosystem-ci/before-test.js react-vite/default-ts && cd ../storybook-sandboxes/react-vite-default-ts && yarn install",
+    "task": "jiti ./scripts/task.ts",
+    "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
+    "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",
+    "upgrade": "jiti ./scripts/task.ts",
+    "upload-bench": "jiti ./scripts/upload-bench.ts",
+    "vite-ecosystem-ci:before-test": "node ./scripts/ecosystem-ci/before-test.js react-vite/default-ts && cd ./storybook-sandboxes/react-vite-default-ts && yarn install",
     "vite-ecosystem-ci:build": "yarn task --task sandbox --template react-vite/default-ts --start-from=install --skip-cache",
     "vite-ecosystem-ci:test": "yarn task --task test-runner-dev --template react-vite/default-ts --start-from=dev && yarn task --task test-runner --template react-vite/default-ts --start-from=build && yarn task --task vitest-integration --template react-vite/default-ts --start-from vitest-integration"
   },
-  "packageManager": "yarn@4.10.3",
-  "engines": {
-    "node": ">=22.0.0"
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn lint-staged"
+    }
   },
+  "lint-staged": {
+    "*.{html,js,json,jsx,mjs,ts,tsx}": [
+      "yarn lint:js:cmd --fix"
+    ],
+    "package.json": [
+      "yarn lint:package"
+    ]
+  },
+  "browserslist": [
+    "chrome >= 131",
+    "android >= 131",
+    "and_chr >= 131",
+    "edge >= 134",
+    "firefox >= 136",
+    "safari >= 18.3",
+    "ios_saf >= 18.3",
+    "opera >= 117",
+    "node >= 20"
+  ],
   "resolutions": {
     "@babel/runtime": "latest",
     "@babel/traverse": "latest",
@@ -63,13 +132,183 @@
     "typescript": "^5.8.3"
   },
   "devDependencies": {
+    "@chromatic-com/storybook": "^4.1.2",
     "@nx/workspace": "^22.0.4",
-    "@playwright/test": "^1.52.0",
+    "@playwright/test": "1.52.0",
+    "@storybook/addon-a11y": "workspace:*",
+    "@storybook/addon-designs": "^11.0.1",
+    "@storybook/addon-docs": "workspace:*",
+    "@storybook/addon-links": "workspace:*",
+    "@storybook/addon-onboarding": "workspace:*",
+    "@storybook/addon-themes": "workspace:*",
+    "@storybook/addon-vitest": "workspace:*",
+    "@storybook/angular": "workspace:*",
+    "@storybook/bench": "next",
+    "@storybook/builder-vite": "workspace:*",
+    "@storybook/builder-webpack5": "workspace:*",
+    "@storybook/codemod": "workspace:*",
+    "@storybook/core-webpack": "workspace:*",
+    "@storybook/csf-plugin": "workspace:*",
+    "@storybook/ember": "workspace:*",
+    "@storybook/global": "^5.0.0",
+    "@storybook/html": "workspace:*",
+    "@storybook/html-vite": "workspace:*",
+    "@storybook/nextjs": "workspace:*",
+    "@storybook/preact": "workspace:*",
+    "@storybook/preact-vite": "workspace:*",
+    "@storybook/preset-create-react-app": "workspace:*",
+    "@storybook/preset-react-webpack": "workspace:*",
+    "@storybook/preset-server-webpack": "workspace:*",
+    "@storybook/react": "workspace:*",
+    "@storybook/react-vite": "workspace:*",
+    "@storybook/react-webpack5": "workspace:*",
+    "@storybook/server": "workspace:*",
+    "@storybook/server-webpack5": "workspace:*",
+    "@storybook/svelte": "workspace:*",
+    "@storybook/vue3": "workspace:*",
+    "@storybook/vue3-vite": "workspace:*",
+    "@storybook/web-components": "workspace:*",
+    "@storybook/web-components-vite": "workspace:*",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/kill-port": "^2.0.3",
+    "@types/lodash-es": "^4.17.12",
+    "@types/mock-require": "^2.0.3",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.0.37",
+    "@types/react-dom": "^18.0.11",
+    "@typescript-eslint/eslint-plugin": "^8.8.1",
+    "@typescript-eslint/parser": "^8.8.1",
+    "@vitejs/plugin-react": "^4.3.2",
+    "@vitejs/plugin-vue": "^4.4.0",
+    "@vitest/browser": "^3.2.4",
+    "@vitest/coverage-istanbul": "^3.2.4",
+    "@vitest/coverage-v8": "^3.2.4",
+    "create-storybook": "workspace:*",
+    "cross-env": "^7.0.3",
+    "danger": "^13.0.4",
+    "es-toolkit": "^1.36.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
+    "esbuild-loader": "^4.3.0",
+    "eslint": "8.57.1",
+    "eslint-config-airbnb-typescript": "^18.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-plugin-compat": "^6.0.2",
+    "eslint-plugin-depend": "^1.3.1",
+    "eslint-plugin-eslint-comments": "^3.2.0",
+    "eslint-plugin-file-progress": "^1.4.0",
+    "eslint-plugin-html": "^6.2.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-json": "^4.0.0",
+    "eslint-plugin-json-files": "^4.1.0",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-local-rules": "portal:./scripts/eslint-plugin-local-rules",
+    "eslint-plugin-playwright": "^1.6.2",
+    "eslint-plugin-prettier": "^5.1.3",
+    "eslint-plugin-react": "^7.34.2",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-storybook": "workspace:*",
+    "github-release-from-changelog": "^2.1.1",
+    "happy-dom": "^17.4.4",
     "http-server": "^14.1.1",
+    "husky": "^4.3.7",
     "jiti": "^2.4.2",
     "kill-port": "^2.0.1",
+    "lint-staged": "^13.2.2",
+    "mock-require": "^3.0.3",
     "nx": "^22.0.4",
-    "prettier": "^3.6.2"
+    "prettier": "^3.5.3",
+    "prettier-plugin-brace-style": "^0.6.2",
+    "prettier-plugin-css-order": "^2.1.2",
+    "prettier-plugin-curly": "^0.2.2",
+    "prettier-plugin-jsdoc": "^1.3.0",
+    "prettier-plugin-merge": "^0.7.0",
+    "process": "^0.11.10",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-popper-tooltip": "^4.4.2",
+    "rimraf": "^6.0.1",
+    "slash": "^5.0.0",
+    "sort-package-json": "^2.14.0",
+    "storybook": "workspace:^",
+    "storybook-addon-pseudo-states": "workspace:*",
+    "ts-dedent": "^2.0.0",
+    "typescript": "^5.8.3",
+    "uuid": "^11.1.0",
+    "vite": "^7.0.4",
+    "vite-plugin-inspect": "^11.0.0",
+    "vitest": "^3.2.4",
+    "wait-on": "^8.0.3"
+  },
+  "dependenciesMeta": {
+    "ejs": {
+      "built": false
+    },
+    "level": {
+      "built": false
+    },
+    "node-uuid": {
+      "built": false,
+      "unplugged": false
+    },
+    "nodemon": {
+      "built": false
+    },
+    "parcel": {
+      "built": false
+    },
+    "preact": {
+      "built": false
+    },
+    "yorkie": {
+      "built": false
+    }
+  },
+  "packageManager": "yarn@4.10.3",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "collective": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "pr-log": {
+    "skipLabels": [
+      "cleanup"
+    ],
+    "validLabels": [
+      [
+        "BREAKING CHANGE",
+        "Breaking Changes"
+      ],
+      [
+        "feature request",
+        "Features"
+      ],
+      [
+        "bug",
+        "Bug Fixes"
+      ],
+      [
+        "documentation",
+        "Documentation"
+      ],
+      [
+        "maintenance",
+        "Maintenance"
+      ],
+      [
+        "build",
+        "Build"
+      ],
+      [
+        "dependencies",
+        "Dependency Upgrades"
+      ]
+    ]
   }
 }

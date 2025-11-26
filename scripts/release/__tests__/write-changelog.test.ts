@@ -5,11 +5,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import type * as MockedFSPToExtra from '../../../code/__mocks__/fs/promises';
+import type * as MockedFSPToExtra from '../../../__mocks__/fs/promises';
 import * as changesUtils_ from '../utils/get-changes';
 import { run as writeChangelog } from '../write-changelog';
 
-vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs/promises'));
+vi.mock('node:fs/promises', async () => import('../../../__mocks__/fs/promises'));
 vi.mock('../utils/get-changes');
 
 const changesUtils = vi.mocked(changesUtils_);

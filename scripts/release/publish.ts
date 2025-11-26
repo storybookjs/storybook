@@ -39,7 +39,7 @@ type Options = {
   dryRun?: boolean;
 };
 
-const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_DIR_PATH = join(__dirname, '..', '..');
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 const validateOptions = (options: { [key: string]: any }): options is Options => {
@@ -173,7 +173,7 @@ export const run = async (options: unknown) => {
   }
   const { tag, dryRun, verbose } = options;
 
-  // Get the current version from code/package.json
+  // Get the current version from /package.json
   const currentVersion = await getCurrentVersion(verbose);
   const isAlreadyPublished = await isCurrentVersionPublished({
     currentVersion,

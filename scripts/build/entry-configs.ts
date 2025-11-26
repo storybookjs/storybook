@@ -1,85 +1,85 @@
 // @ts-ignore
-import a11yConfig from '../../../code/addons/a11y/build-config';
+import a11yConfig from '../../addons/a11y/build-config';
 // @ts-ignore
-import docsConfig from '../../../code/addons/docs/build-config';
+import docsConfig from '../../addons/docs/build-config';
 // @ts-ignore
-import linksConfig from '../../../code/addons/links/build-config';
+import linksConfig from '../../addons/links/build-config';
 // @ts-ignore
-import onboardingConfig from '../../../code/addons/onboarding/build-config';
+import onboardingConfig from '../../addons/onboarding/build-config';
 // @ts-ignore
-import pseudoStatesConfig from '../../../code/addons/pseudo-states/build-config';
+import pseudoStatesConfig from '../../addons/pseudo-states/build-config';
 // @ts-ignore
-import themesConfig from '../../../code/addons/themes/build-config';
+import themesConfig from '../../addons/themes/build-config';
 // @ts-ignore
-import vitestConfig from '../../../code/addons/vitest/build-config';
+import vitestConfig from '../../addons/vitest/build-config';
 // @ts-ignore
-import builderViteConfig from '../../../code/builders/builder-vite/build-config';
+import builderViteConfig from '../../builders/builder-vite/build-config';
 // @ts-ignore
-import builderWebpack5Config from '../../../code/builders/builder-webpack5/build-config';
+import builderWebpack5Config from '../../builders/builder-webpack5/build-config';
 // @ts-ignore
-import storybookConfig from '../../../code/core/build-config';
+import storybookConfig from '../../core/build-config';
 // @ts-ignore
-import angularFrameworkConfig from '../../../code/frameworks/angular/build-config';
+import angularFrameworkConfig from '../../frameworks/angular/build-config';
 // @ts-ignore
-import emberFrameworkConfig from '../../../code/frameworks/ember/build-config';
+import emberFrameworkConfig from '../../frameworks/ember/build-config';
 // @ts-ignore
-import htmlViteFrameworkConfig from '../../../code/frameworks/html-vite/build-config';
+import htmlViteFrameworkConfig from '../../frameworks/html-vite/build-config';
 // @ts-ignore
-import nextjsViteFrameworkConfig from '../../../code/frameworks/nextjs-vite/build-config';
+import nextjsViteFrameworkConfig from '../../frameworks/nextjs-vite/build-config';
 // @ts-ignore
-import nextjsFrameworkConfig from '../../../code/frameworks/nextjs/build-config';
+import nextjsFrameworkConfig from '../../frameworks/nextjs/build-config';
 // @ts-ignore
-import preactViteFrameworkConfig from '../../../code/frameworks/preact-vite/build-config';
+import preactViteFrameworkConfig from '../../frameworks/preact-vite/build-config';
 // @ts-ignore
-import reactNativeWebViteFrameworkConfig from '../../../code/frameworks/react-native-web-vite/build-config';
+import reactNativeWebViteFrameworkConfig from '../../frameworks/react-native-web-vite/build-config';
 // @ts-ignore
-import reactViteFrameworkConfig from '../../../code/frameworks/react-vite/build-config';
+import reactViteFrameworkConfig from '../../frameworks/react-vite/build-config';
 // @ts-ignore
-import reactWebpack5FrameworkConfig from '../../../code/frameworks/react-webpack5/build-config';
+import reactWebpack5FrameworkConfig from '../../frameworks/react-webpack5/build-config';
 // @ts-ignore
-import serverWebpack5FrameworkConfig from '../../../code/frameworks/server-webpack5/build-config';
+import serverWebpack5FrameworkConfig from '../../frameworks/server-webpack5/build-config';
 // @ts-ignore
-import svelteViteFrameworkConfig from '../../../code/frameworks/svelte-vite/build-config';
+import svelteViteFrameworkConfig from '../../frameworks/svelte-vite/build-config';
 // @ts-ignore
-import sveltekitFrameworkConfig from '../../../code/frameworks/sveltekit/build-config';
+import sveltekitFrameworkConfig from '../../frameworks/sveltekit/build-config';
 // @ts-ignore
-import vue3ViteFrameworkConfig from '../../../code/frameworks/vue3-vite/build-config';
+import vue3ViteFrameworkConfig from '../../frameworks/vue3-vite/build-config';
 // @ts-ignore
-import webComponentsViteFrameworkConfig from '../../../code/frameworks/web-components-vite/build-config';
+import webComponentsViteFrameworkConfig from '../../frameworks/web-components-vite/build-config';
 // @ts-ignore
-import cliConfig from '../../../code/lib/cli-storybook/build-config';
+import cliConfig from '../../lib/cli-storybook/build-config';
 // @ts-ignore
-import codemodConfig from '../../../code/lib/codemod/build-config';
+import codemodConfig from '../../lib/codemod/build-config';
 // @ts-ignore
-import coreWebpackConfig from '../../../code/lib/core-webpack/build-config';
+import coreWebpackConfig from '../../lib/core-webpack/build-config';
 // @ts-ignore
-import createStorybookConfig from '../../../code/lib/create-storybook/build-config';
+import createStorybookConfig from '../../lib/create-storybook/build-config';
 // @ts-ignore
-import csfPluginConfig from '../../../code/lib/csf-plugin/build-config';
+import csfPluginConfig from '../../lib/csf-plugin/build-config';
 // @ts-ignore
-import eslintPluginConfig from '../../../code/lib/eslint-plugin/build-config';
+import eslintPluginConfig from '../../lib/eslint-plugin/build-config';
 // @ts-ignore
-import reactDomShimConfig from '../../../code/lib/react-dom-shim/build-config';
+import reactDomShimConfig from '../../lib/react-dom-shim/build-config';
 // @ts-ignore
-import presetCraConfig from '../../../code/presets/create-react-app/build-config';
+import presetCraConfig from '../../presets/create-react-app/build-config';
 // @ts-ignore
-import presetReactWebpackConfig from '../../../code/presets/react-webpack/build-config';
+import presetReactWebpackConfig from '../../presets/react-webpack/build-config';
 // @ts-ignore
-import presetServerWebpackConfig from '../../../code/presets/server-webpack/build-config';
+import presetServerWebpackConfig from '../../presets/server-webpack/build-config';
 // @ts-ignore
-import htmlRendererConfig from '../../../code/renderers/html/build-config';
+import htmlRendererConfig from '../../renderers/html/build-config';
 // @ts-ignore
-import preactRendererConfig from '../../../code/renderers/preact/build-config';
+import preactRendererConfig from '../../renderers/preact/build-config';
 // @ts-ignore
-import reactRendererConfig from '../../../code/renderers/react/build-config';
+import reactRendererConfig from '../../renderers/react/build-config';
 // @ts-ignore
-import serverRendererConfig from '../../../code/renderers/server/build-config';
+import serverRendererConfig from '../../renderers/server/build-config';
 // @ts-ignore
-import svelteRendererConfig from '../../../code/renderers/svelte/build-config';
+import svelteRendererConfig from '../../renderers/svelte/build-config';
 // @ts-ignore
-import vue3RendererConfig from '../../../code/renderers/vue3/build-config';
+import vue3RendererConfig from '../../renderers/vue3/build-config';
 // @ts-ignore
-import webComponentsRendererConfig from '../../../code/renderers/web-components/build-config';
+import webComponentsRendererConfig from '../../renderers/web-components/build-config';
 import type { BuildEntriesByPackageName } from './utils/entry-utils';
 
 export const buildEntries = {

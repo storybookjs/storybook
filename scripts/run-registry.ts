@@ -248,14 +248,14 @@ const run = async () => {
   }
 
   if (!opts.open) {
-    await servers.close();
+    await servers?.close();
     process.exit(0);
   }
 };
 
 run().catch(async (e) => {
   logger.error(e);
-  await servers.close();
+  await servers?.close();
   await rm(join(root, '.npmrc'), { force: true });
   process.exit(1);
 });

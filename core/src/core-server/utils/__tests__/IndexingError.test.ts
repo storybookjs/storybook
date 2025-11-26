@@ -22,8 +22,8 @@ it('formats multi file errors', () => {
 describe('formatIndexingErrors', () => {
   it('formats one error with trace', () => {
     const stack = `Error: parse error
-          at Object.<anonymous> (/user/storybookjs/storybook/code/lib/core-server/src/utils/__tests__/IndexingError.test.ts:26:25)
-          at Promise.then.completed (/user/storybookjs/storybook/code/node_modules/jest-circus/build/utils.js:293:28)
+          at Object.<anonymous> (/user/storybookjs/storybook/lib/core-server/src/utils/__tests__/IndexingError.test.ts:26:25)
+          at Promise.then.completed (/user/storybookjs/storybook/node_modules/jest-circus/build/utils.js:293:28)
           at new Promise (<anonymous>)`;
     const error = new IndexingError('parse error', ['./stories/File.stories.ts'], stack);
     const multiError = new MultipleIndexingError([error]);
@@ -31,8 +31,8 @@ describe('formatIndexingErrors', () => {
     expect(multiError.toString()).toMatchInlineSnapshot(`
       "Unable to index ./stories/File.stories.ts:
         Error: parse error
-                at Object.<anonymous> (/user/storybookjs/storybook/code/lib/core-server/src/utils/__tests__/IndexingError.test.ts:26:25)
-                at Promise.then.completed (/user/storybookjs/storybook/code/node_modules/jest-circus/build/utils.js:293:28)
+                at Object.<anonymous> (/user/storybookjs/storybook/lib/core-server/src/utils/__tests__/IndexingError.test.ts:26:25)
+                at Promise.then.completed (/user/storybookjs/storybook/node_modules/jest-circus/build/utils.js:293:28)
                 at new Promise (<anonymous>)"
     `);
   });

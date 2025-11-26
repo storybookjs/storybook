@@ -14,7 +14,6 @@ steps:
       # TEST_FILES should include all relevant test files, including story files, but not e2e-tests
       # `circleci tests run` shards tests across parallel runners and allows rerunning failed tests by passing a subset of test files to the command via `xargs`
       command: |
-        cd code
         TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
         echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
   - store_test_results:
@@ -26,6 +25,6 @@ steps:
   # - persist_to_workspace:
   #     root: .
   #     paths:
-  #       - code/coverage
+  #       - coverage
   - report-workflow-on-failure
   - cancel-workflow-on-failure

@@ -22,7 +22,7 @@ export const AdditionalActions: Story = {
             title: 'Open in GitHub',
             onClick: () => {
               window.open(
-                'https://github.com/storybookjs/storybook/blob/next/code/lib/blocks/src/examples/Button.stories.tsx',
+                'https://github.com/storybookjs/storybook/blob/next/lib/blocks/src/examples/Button.stories.tsx',
                 '_blank'
               );
             },

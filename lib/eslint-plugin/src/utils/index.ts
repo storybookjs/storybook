@@ -16,7 +16,7 @@ import {
 } from './ast';
 
 export const docsUrl = (ruleName: string) =>
-  `https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/${ruleName}.md`;
+  `https://github.com/storybookjs/storybook/blob/next/lib/eslint-plugin/docs/rules/${ruleName}.md`;
 
 export const getMetaObjectExpression = (
   node: TSESTree.ExportDefaultDeclaration,

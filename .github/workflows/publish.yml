@@ -11,7 +11,7 @@ on:
     # Manual canary releases on PRs
     inputs:
       pr:
-        description: "⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for"
+        description: '⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for'
         required: true
         type: number
   pull_request:
@@ -69,8 +69,8 @@ jobs:
         env:
           REF_NAME: ${{ github.ref_name }}
         run: |
-          CURRENT_VERSION=$(cat ./code/package.json | jq '.version')
-          DEFERRED_NEXT_VERSION=$(cat ./code/package.json | jq '.deferredNextVersion')
+          CURRENT_VERSION=$(cat ./package.json | jq '.version')
+          DEFERRED_NEXT_VERSION=$(cat ./package.json | jq '.deferredNextVersion')
 
           if [[ "$DEFERRED_NEXT_VERSION" == "null" ]]; then
               echo "No deferred version set, not bumping versions"
@@ -216,7 +216,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
         with:
-          args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          args: 'The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
   publish-canary:
     name: Publish canary version
@@ -284,7 +284,7 @@ jobs:
         with:
           githubToken: ${{ secrets.GH_TOKEN }}
           prNumber: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || '' }}
-          find: "CANARY_RELEASE_SECTION"
+          find: 'CANARY_RELEASE_SECTION'
           isHtmlCommentTag: true
           replace: |
             This pull request has been released as version `${{ steps.version.outputs.next-version }}`. Try it out in a new sandbox by running `npx storybook@${{ steps.version.outputs.next-version }} sandbox` or in an existing project with `npx storybook@${{ steps.version.outputs.next-version }} upgrade`.

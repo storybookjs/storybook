@@ -1,0 +1,301 @@
+{
+  "inputs": {
+    "src/preview.ts": {
+      "bytes": 77,
+      "imports": [
+        {
+          "path": "src/index.ts",
+          "kind": "import-statement",
+          "original": "./index"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/constants.ts": {
+      "bytes": 202,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/utils.ts": {
+      "bytes": 3278,
+      "imports": [
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 233,
+      "imports": [
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/preview.ts",
+          "kind": "import-statement",
+          "original": "./preview"
+        },
+        {
+          "path": "src/utils.ts",
+          "kind": "import-statement",
+          "original": "./utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/react/components/link.tsx": {
+      "bytes": 2103,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils.ts",
+          "kind": "import-statement",
+          "original": "../../utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/react/index.ts": {
+      "bytes": 64,
+      "imports": [
+        {
+          "path": "src/react/components/link.tsx",
+          "kind": "import-statement",
+          "original": "./components/link"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager.ts": {
+      "bytes": 266,
+      "imports": [
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-PZ2KFUGG.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-LAYPZ6CY.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-FX5LXYO2.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "default",
+        "hrefTo",
+        "linkTo",
+        "navigate",
+        "withLinks"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {},
+      "bytes": 300
+    },
+    "dist/react/index.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-LAYPZ6CY.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-FX5LXYO2.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "default"
+      ],
+      "entryPoint": "src/react/index.ts",
+      "inputs": {
+        "src/react/components/link.tsx": {
+          "bytesInOutput": 1345
+        },
+        "src/react/index.ts": {
+          "bytesInOutput": 28
+        }
+      },
+      "bytes": 1593
+    },
+    "dist/preview.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-PZ2KFUGG.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-LAYPZ6CY.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-FX5LXYO2.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "decorators"
+      ],
+      "entryPoint": "src/preview.ts",
+      "inputs": {},
+      "bytes": 185
+    },
+    "dist/_browser-chunks/chunk-PZ2KFUGG.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-LAYPZ6CY.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-FX5LXYO2.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "decorators",
+        "index_default"
+      ],
+      "inputs": {
+        "src/preview.ts": {
+          "bytesInOutput": 119
+        },
+        "src/index.ts": {
+          "bytesInOutput": 124
+        }
+      },
+      "bytes": 442
+    },
+    "dist/_browser-chunks/chunk-LAYPZ6CY.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-FX5LXYO2.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "hrefTo",
+        "linkTo",
+        "navigate",
+        "withLinks"
+      ],
+      "inputs": {
+        "src/utils.ts": {
+          "bytesInOutput": 2203
+        }
+      },
+      "bytes": 2328
+    },
+    "dist/manager.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-FX5LXYO2.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "entryPoint": "src/manager.ts",
+      "inputs": {
+        "src/manager.ts": {
+          "bytesInOutput": 236
+        }
+      },
+      "bytes": 342
+    },
+    "dist/_browser-chunks/chunk-FX5LXYO2.js": {
+      "imports": [],
+      "exports": [
+        "ADDON_ID",
+        "PARAM_KEY",
+        "__export",
+        "constants_default"
+      ],
+      "inputs": {
+        "src/constants.ts": {
+          "bytesInOutput": 183
+        }
+      },
+      "bytes": 439
+    }
+  }
+}

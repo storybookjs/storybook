@@ -244,7 +244,7 @@ export class AngularLegacyBuildOptionsError extends StorybookError {
       code: 1,
       documentation: [
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-drop-support-for-calling-storybook-directly',
-        'https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular#how-do-i-migrate-to-an-angular-storybook-builder',
+        'https://github.com/storybookjs/storybook/tree/next/frameworks/angular#how-do-i-migrate-to-an-angular-storybook-builder',
       ],
       message: dedent`
         Your Storybook startup script uses a solution that is not supported anymore.
@@ -307,7 +307,7 @@ export class GoogleFontsDownloadError extends StorybookError {
       category: Category.FRAMEWORK_NEXTJS,
       code: 1,
       documentation:
-        'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md#nextjs-font-optimization',
+        'https://github.com/storybookjs/storybook/blob/next/frameworks/nextjs/README.md#nextjs-font-optimization',
       message: dedent`
         Failed to fetch \`${data.fontFamily}\` from Google Fonts with URL: \`${data.url}\``,
     });
@@ -321,7 +321,7 @@ export class GoogleFontsLoadingError extends StorybookError {
       category: Category.FRAMEWORK_NEXTJS,
       code: 2,
       documentation:
-        'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md#nextjs-font-optimization',
+        'https://github.com/storybookjs/storybook/blob/next/frameworks/nextjs/README.md#nextjs-font-optimization',
       message: dedent`
         An error occurred when trying to load Google Fonts with URL \`${data.url}\`.
         

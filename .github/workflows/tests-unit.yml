@@ -29,7 +29,7 @@ jobs:
         run: yarn task --task compile --start-from=compile
 
       - name: Install Playwright Dependencies
-        run: cd code && yarn exec playwright install chromium --with-deps
+        run: yarn exec playwright install chromium --with-deps
 
       - name: test
         run: yarn test

@@ -10,7 +10,7 @@ export const messageDivider = '\n\n';
 // These packages are aliased by Storybook, so it doesn't matter if they're duplicated
 export const allowList = [
   '@storybook/csf',
-  // see this file for more info: code/lib/preview/src/globals/types.ts
+  // see this file for more info: /core/src/preview/globals/types.ts
   '@storybook/addons',
   '@storybook/channel-postmessage',
   '@storybook/channel-websocket',
@@ -19,7 +19,7 @@ export const allowList = [
   '@storybook/preview-web',
   '@storybook/store',
 
-  // see this file for more info: code/ui/manager/src/globals/types.ts
+  // see this file for more info: core/src/manager/globals/types.ts
   '@storybook/components',
   '@storybook/router',
   '@storybook/theming',

@@ -1,0 +1,1429 @@
+{
+  "inputs": {
+    "src/constants.ts": {
+      "bytes": 859,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/a11yRunnerUtils.ts": {
+      "bytes": 1115,
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/a11yRunner.ts": {
+      "bytes": 4175,
+      "imports": [
+        {
+          "path": "storybook/internal/preview-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/a11yRunnerUtils.ts",
+          "kind": "import-statement",
+          "original": "./a11yRunnerUtils"
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        },
+        {
+          "path": "axe-core",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/utils.ts": {
+      "bytes": 538,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/vitest-axe/node_modules/chalk/source/vendor/ansi-styles/index.js": {
+      "bytes": 5256,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/vitest-axe/node_modules/chalk/source/vendor/supports-color/browser.js": {
+      "bytes": 607,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/vitest-axe/node_modules/chalk/source/utilities.js": {
+      "bytes": 997,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/vitest-axe/node_modules/chalk/source/index.js": {
+      "bytes": 5902,
+      "imports": [
+        {
+          "path": "../../node_modules/vitest-axe/node_modules/chalk/source/vendor/ansi-styles/index.js",
+          "kind": "import-statement",
+          "original": "#ansi-styles"
+        },
+        {
+          "path": "../../node_modules/vitest-axe/node_modules/chalk/source/vendor/supports-color/browser.js",
+          "kind": "import-statement",
+          "original": "#supports-color"
+        },
+        {
+          "path": "../../node_modules/vitest-axe/node_modules/chalk/source/utilities.js",
+          "kind": "import-statement",
+          "original": "./utilities.js"
+        },
+        {
+          "path": "../../node_modules/vitest-axe/node_modules/chalk/source/vendor/ansi-styles/index.js",
+          "kind": "import-statement",
+          "original": "./vendor/ansi-styles/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/vitest-axe/dist/chunk-X4FZIUYL.js": {
+      "bytes": 62569,
+      "imports": [
+        {
+          "path": "../../node_modules/vitest-axe/node_modules/chalk/source/index.js",
+          "kind": "import-statement",
+          "original": "chalk"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/vitest-axe/dist/matchers.js": {
+      "bytes": 1805,
+      "imports": [
+        {
+          "path": "../../node_modules/vitest-axe/dist/chunk-X4FZIUYL.js",
+          "kind": "import-statement",
+          "original": "./chunk-X4FZIUYL.js"
+        },
+        {
+          "path": "../../node_modules/vitest-axe/node_modules/chalk/source/index.js",
+          "kind": "import-statement",
+          "original": "chalk"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/vitest-axe/matchers.js": {
+      "bytes": 36,
+      "imports": [
+        {
+          "path": "../../node_modules/vitest-axe/dist/matchers.js",
+          "kind": "import-statement",
+          "original": "./dist/matchers.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preview.tsx": {
+      "bytes": 2868,
+      "imports": [
+        {
+          "path": "storybook/test",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/a11yRunner.ts",
+          "kind": "import-statement",
+          "original": "./a11yRunner"
+        },
+        {
+          "path": "src/utils.ts",
+          "kind": "import-statement",
+          "original": "./utils"
+        },
+        {
+          "path": "../../node_modules/vitest-axe/matchers.js",
+          "kind": "dynamic-import",
+          "original": "vitest-axe/matchers"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/params.ts": {
+      "bytes": 1384,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 332,
+      "imports": [
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/preview.tsx",
+          "kind": "import-statement",
+          "original": "./preview"
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        },
+        {
+          "path": "src/params.ts",
+          "kind": "import-statement",
+          "original": "./params"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/types.ts": {
+      "bytes": 1598,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/AccessibilityRuleMaps.ts": {
+      "bytes": 25628,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/axeRuleMappingHelper.ts": {
+      "bytes": 414,
+      "imports": [
+        {
+          "path": "src/AccessibilityRuleMaps.ts",
+          "kind": "import-statement",
+          "original": "./AccessibilityRuleMaps"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/components/A11yContext.tsx": {
+      "bytes": 15823,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/highlight",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/axeRuleMappingHelper.ts",
+          "kind": "import-statement",
+          "original": "../axeRuleMappingHelper"
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "../constants"
+        },
+        {
+          "path": "src/types.ts",
+          "kind": "import-statement",
+          "original": "../types"
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@babel/runtime/helpers/esm/extends.js": {
+      "bytes": 336,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/primitive/dist/index.mjs": {
+      "bytes": 603,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-context/dist/index.mjs": {
+      "bytes": 6116,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-compose-refs/dist/index.mjs": {
+      "bytes": 1091,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-collection/node_modules/@radix-ui/react-slot/dist/index.mjs": {
+      "bytes": 4960,
+      "imports": [
+        {
+          "path": "../../node_modules/@babel/runtime/helpers/esm/extends.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/extends"
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-compose-refs/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-compose-refs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-collection/dist/index.mjs": {
+      "bytes": 5030,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-context/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-context"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-compose-refs/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-compose-refs"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-collection/node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-slot"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-use-layout-effect/dist/index.mjs": {
+      "bytes": 680,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-id/dist/index.mjs": {
+      "bytes": 864,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-use-layout-effect/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-use-layout-effect"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-primitive/node_modules/@radix-ui/react-slot/dist/index.mjs": {
+      "bytes": 4960,
+      "imports": [
+        {
+          "path": "../../node_modules/@babel/runtime/helpers/esm/extends.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/extends"
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-compose-refs/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-compose-refs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-primitive/dist/index.mjs": {
+      "bytes": 4287,
+      "imports": [
+        {
+          "path": "../../node_modules/@babel/runtime/helpers/esm/extends.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/extends"
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-dom",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-primitive/node_modules/@radix-ui/react-slot/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-slot"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-use-callback-ref/dist/index.mjs": {
+      "bytes": 898,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs": {
+      "bytes": 1843,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-use-callback-ref/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-use-callback-ref"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-direction/dist/index.mjs": {
+      "bytes": 1305,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-roving-focus/dist/index.mjs": {
+      "bytes": 13373,
+      "imports": [
+        {
+          "path": "../../node_modules/@babel/runtime/helpers/esm/extends.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/extends"
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@radix-ui/primitive/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/primitive"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-collection/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-collection"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-compose-refs/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-compose-refs"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-context/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-context"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-id/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-id"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-primitive/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-primitive"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-use-callback-ref/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-use-callback-ref"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-use-controllable-state"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-direction/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-direction"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-presence/dist/index.mjs": {
+      "bytes": 6566,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-dom",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-compose-refs/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-compose-refs"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-use-layout-effect/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-use-layout-effect"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@radix-ui/react-tabs/dist/index.mjs": {
+      "bytes": 10112,
+      "imports": [
+        {
+          "path": "../../node_modules/@babel/runtime/helpers/esm/extends.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/extends"
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@radix-ui/primitive/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/primitive"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-context/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-context"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-roving-focus/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-roving-focus"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-presence/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-presence"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-primitive/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-primitive"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-direction/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-direction"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-use-controllable-state"
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-id/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-id"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/components/Report/Details.tsx": {
+      "bytes": 6329,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@radix-ui/react-tabs/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@radix-ui/react-tabs"
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/axeRuleMappingHelper.ts",
+          "kind": "import-statement",
+          "original": "../../axeRuleMappingHelper"
+        },
+        {
+          "path": "src/components/A11yContext.tsx",
+          "kind": "import-statement",
+          "original": "../A11yContext"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/components/Report/Report.tsx": {
+      "bytes": 4201,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/axeRuleMappingHelper.ts",
+          "kind": "import-statement",
+          "original": "../../axeRuleMappingHelper"
+        },
+        {
+          "path": "src/types.ts",
+          "kind": "import-statement",
+          "original": "../../types"
+        },
+        {
+          "path": "src/components/Report/Details.tsx",
+          "kind": "import-statement",
+          "original": "./Details"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/components/Tabs.tsx": {
+      "bytes": 2634,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/components/A11yContext.tsx",
+          "kind": "import-statement",
+          "original": "./A11yContext"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/components/TestDiscrepancyMessage.tsx": {
+      "bytes": 2074,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "../constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/components/A11YPanel.tsx": {
+      "bytes": 6610,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/types.ts",
+          "kind": "import-statement",
+          "original": "../types"
+        },
+        {
+          "path": "src/components/A11yContext.tsx",
+          "kind": "import-statement",
+          "original": "./A11yContext"
+        },
+        {
+          "path": "src/components/Report/Report.tsx",
+          "kind": "import-statement",
+          "original": "./Report/Report"
+        },
+        {
+          "path": "src/components/Tabs.tsx",
+          "kind": "import-statement",
+          "original": "./Tabs"
+        },
+        {
+          "path": "src/components/TestDiscrepancyMessage.tsx",
+          "kind": "import-statement",
+          "original": "./TestDiscrepancyMessage"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/components/ColorFilters.tsx": {
+      "bytes": 1807,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/components/VisionSimulator.tsx": {
+      "bytes": 2537,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/components/ColorFilters.tsx",
+          "kind": "import-statement",
+          "original": "./ColorFilters"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager.tsx": {
+      "bytes": 1856,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/components/A11YPanel.tsx",
+          "kind": "import-statement",
+          "original": "./components/A11YPanel"
+        },
+        {
+          "path": "src/components/A11yContext.tsx",
+          "kind": "import-statement",
+          "original": "./components/A11yContext"
+        },
+        {
+          "path": "src/components/VisionSimulator.tsx",
+          "kind": "import-statement",
+          "original": "./components/VisionSimulator"
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        },
+        {
+          "path": "src/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-CQ2APV2R.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-3FKQRDK3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-4BE7D4DS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "PARAM_KEY",
+        "default"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 124
+        }
+      },
+      "bytes": 379
+    },
+    "dist/preview.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-CQ2APV2R.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-3FKQRDK3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-4BE7D4DS.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "afterEach",
+        "initialGlobals",
+        "parameters"
+      ],
+      "entryPoint": "src/preview.tsx",
+      "inputs": {},
+      "bytes": 247
+    },
+    "dist/_browser-chunks/chunk-CQ2APV2R.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-3FKQRDK3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-4BE7D4DS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/test",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/preview-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "axe-core",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "dist/_browser-chunks/matchers-DMFSMG2O.js",
+          "kind": "dynamic-import"
+        }
+      ],
+      "exports": [
+        "afterEach",
+        "initialGlobals",
+        "parameters",
+        "preview_exports"
+      ],
+      "inputs": {
+        "src/preview.tsx": {
+          "bytesInOutput": 1763
+        },
+        "src/a11yRunner.ts": {
+          "bytesInOutput": 2607
+        },
+        "src/a11yRunnerUtils.ts": {
+          "bytesInOutput": 675
+        },
+        "src/utils.ts": {
+          "bytesInOutput": 136
+        }
+      },
+      "bytes": 5495
+    },
+    "dist/manager.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-3FKQRDK3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-4BE7D4DS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/highlight",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-dom",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-dom",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/theming",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "entryPoint": "src/manager.tsx",
+      "inputs": {
+        "src/manager.tsx": {
+          "bytesInOutput": 1394
+        },
+        "src/components/A11YPanel.tsx": {
+          "bytesInOutput": 5938
+        },
+        "src/types.ts": {
+          "bytesInOutput": 94
+        },
+        "src/components/A11yContext.tsx": {
+          "bytesInOutput": 12064
+        },
+        "src/AccessibilityRuleMaps.ts": {
+          "bytesInOutput": 24172
+        },
+        "src/axeRuleMappingHelper.ts": {
+          "bytesInOutput": 219
+        },
+        "src/components/Report/Report.tsx": {
+          "bytesInOutput": 3198
+        },
+        "src/components/Report/Details.tsx": {
+          "bytesInOutput": 5629
+        },
+        "../../node_modules/@babel/runtime/helpers/esm/extends.js": {
+          "bytesInOutput": 304
+        },
+        "../../node_modules/@radix-ui/react-tabs/dist/index.mjs": {
+          "bytesInOutput": 6530
+        },
+        "../../node_modules/@radix-ui/primitive/dist/index.mjs": {
+          "bytesInOutput": 298
+        },
+        "../../node_modules/@radix-ui/react-context/dist/index.mjs": {
+          "bytesInOutput": 2813
+        },
+        "../../node_modules/@radix-ui/react-roving-focus/dist/index.mjs": {
+          "bytesInOutput": 9119
+        },
+        "../../node_modules/@radix-ui/react-collection/dist/index.mjs": {
+          "bytesInOutput": 2848
+        },
+        "../../node_modules/@radix-ui/react-compose-refs/dist/index.mjs": {
+          "bytesInOutput": 499
+        },
+        "../../node_modules/@radix-ui/react-collection/node_modules/@radix-ui/react-slot/dist/index.mjs": {
+          "bytesInOutput": 2746
+        },
+        "../../node_modules/@radix-ui/react-id/dist/index.mjs": {
+          "bytesInOutput": 540
+        },
+        "../../node_modules/@radix-ui/react-use-layout-effect/dist/index.mjs": {
+          "bytesInOutput": 174
+        },
+        "../../node_modules/@radix-ui/react-primitive/dist/index.mjs": {
+          "bytesInOutput": 931
+        },
+        "../../node_modules/@radix-ui/react-primitive/node_modules/@radix-ui/react-slot/dist/index.mjs": {
+          "bytesInOutput": 2781
+        },
+        "../../node_modules/@radix-ui/react-use-callback-ref/dist/index.mjs": {
+          "bytesInOutput": 547
+        },
+        "../../node_modules/@radix-ui/react-use-controllable-state/dist/index.mjs": {
+          "bytesInOutput": 1360
+        },
+        "../../node_modules/@radix-ui/react-direction/dist/index.mjs": {
+          "bytesInOutput": 393
+        },
+        "../../node_modules/@radix-ui/react-presence/dist/index.mjs": {
+          "bytesInOutput": 3779
+        },
+        "src/components/Tabs.tsx": {
+          "bytesInOutput": 2246
+        },
+        "src/components/TestDiscrepancyMessage.tsx": {
+          "bytesInOutput": 1759
+        },
+        "src/components/VisionSimulator.tsx": {
+          "bytesInOutput": 2311
+        },
+        "src/components/ColorFilters.tsx": {
+          "bytesInOutput": 1864
+        }
+      },
+      "bytes": 98799
+    },
+    "dist/_browser-chunks/chunk-3FKQRDK3.js": {
+      "imports": [],
+      "exports": [
+        "ADDON_ID",
+        "DOCUMENTATION_DISCREPANCY_LINK",
+        "EVENTS",
+        "PANEL_ID",
+        "PARAM_KEY",
+        "STATUS_TYPE_ID_A11Y",
+        "STATUS_TYPE_ID_COMPONENT_TEST"
+      ],
+      "inputs": {
+        "src/constants.ts": {
+          "bytesInOutput": 640
+        }
+      },
+      "bytes": 809
+    },
+    "dist/_browser-chunks/matchers-DMFSMG2O.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-4BE7D4DS.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "toHaveNoViolations"
+      ],
+      "entryPoint": "../../node_modules/vitest-axe/matchers.js",
+      "inputs": {
+        "../../node_modules/vitest-axe/node_modules/chalk/source/vendor/ansi-styles/index.js": {
+          "bytesInOutput": 4841
+        },
+        "../../node_modules/vitest-axe/node_modules/chalk/source/vendor/supports-color/browser.js": {
+          "bytesInOutput": 560
+        },
+        "../../node_modules/vitest-axe/node_modules/chalk/source/utilities.js": {
+          "bytesInOutput": 883
+        },
+        "../../node_modules/vitest-axe/node_modules/chalk/source/index.js": {
+          "bytesInOutput": 4278
+        },
+        "../../node_modules/vitest-axe/dist/chunk-X4FZIUYL.js": {
+          "bytesInOutput": 54643
+        },
+        "../../node_modules/vitest-axe/dist/matchers.js": {
+          "bytesInOutput": 1401
+        },
+        "../../node_modules/vitest-axe/matchers.js": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 67100
+    },
+    "dist/_browser-chunks/chunk-4BE7D4DS.js": {
+      "imports": [],
+      "exports": [
+        "__export"
+      ],
+      "inputs": {},
+      "bytes": 189
+    }
+  }
+}

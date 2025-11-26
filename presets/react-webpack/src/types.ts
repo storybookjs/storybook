@@ -32,7 +32,7 @@ export type TypescriptOptions = TypescriptOptionsBase & {
    * Configures `react-docgen-typescript-plugin`
    *
    * @default
-   * @see https://github.com/storybookjs/storybook/blob/next/code/builders/builder-webpack5/src/config/defaults.js#L4-L6
+   * @see https://github.com/storybookjs/storybook/blob/next/builders/builder-webpack5/src/config/defaults.js#L4-L6
    */
   reactDocgenTypescriptOptions: ReactDocgenTypescriptOptions;
 };

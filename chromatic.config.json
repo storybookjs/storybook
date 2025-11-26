@@ -5,6 +5,6 @@
   "buildScriptName": "storybook:ui:build",
   "onlyChanged": false,
   "storybookConfigDir": ".storybook",
-  "storybookBaseDir": "./code",
+  "storybookBaseDir": "./",
   "zip": true
 }

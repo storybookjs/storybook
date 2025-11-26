@@ -1,0 +1,2785 @@
+{
+  "inputs": {
+    "../../node_modules/ts-dedent/dist/index.js": {
+      "bytes": 1757,
+      "imports": [],
+      "format": "cjs"
+    },
+    "src/scaffold-new-project.ts": {
+      "bytes": 6862,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/services/FeatureCompatibilityService.ts": {
+      "bytes": 1975,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/process-ancestry/dist/index.js": {
+      "bytes": 3771,
+      "imports": [
+        {
+          "path": "os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/services/VersionService.ts": {
+      "bytes": 2792,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/services/TelemetryService.ts": {
+      "bytes": 3074,
+      "imports": [
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/process-ancestry/dist/index.js",
+          "kind": "import-statement",
+          "original": "process-ancestry"
+        },
+        {
+          "path": "src/services/VersionService.ts",
+          "kind": "import-statement",
+          "original": "./VersionService"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/services/AddonService.ts": {
+      "bytes": 2287,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/services/index.ts": {
+      "bytes": 453,
+      "imports": [
+        {
+          "path": "src/services/FeatureCompatibilityService.ts",
+          "kind": "import-statement",
+          "original": "./FeatureCompatibilityService"
+        },
+        {
+          "path": "src/services/TelemetryService.ts",
+          "kind": "import-statement",
+          "original": "./TelemetryService"
+        },
+        {
+          "path": "src/services/AddonService.ts",
+          "kind": "import-statement",
+          "original": "./AddonService"
+        },
+        {
+          "path": "src/services/VersionService.ts",
+          "kind": "import-statement",
+          "original": "./VersionService"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/commands/PreflightCheckCommand.ts": {
+      "bytes": 4180,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/scaffold-new-project.ts",
+          "kind": "import-statement",
+          "original": "../scaffold-new-project"
+        },
+        {
+          "path": "src/services/index.ts",
+          "kind": "import-statement",
+          "original": "../services"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/picocolors/picocolors.js": {
+      "bytes": 2663,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/empathic/resolve.mjs": {
+      "bytes": 971,
+      "imports": [
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/walk.mjs": {
+      "bytes": 535,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/resolve.mjs",
+          "kind": "import-statement",
+          "original": "empathic/resolve"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/find.mjs": {
+      "bytes": 2033,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/walk.mjs",
+          "kind": "import-statement",
+          "original": "empathic/walk"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/services/ProjectTypeService.ts": {
+      "bytes": 13113,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/find.mjs",
+          "kind": "import-statement",
+          "original": "empathic/find"
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/commands/ProjectDetectionCommand.ts": {
+      "bytes": 3831,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/picocolors/picocolors.js",
+          "kind": "import-statement",
+          "original": "picocolors"
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/services/ProjectTypeService.ts",
+          "kind": "import-statement",
+          "original": "../services/ProjectTypeService"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/GeneratorRegistry.ts": {
+      "bytes": 1174,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/services/FrameworkDetectionService.ts": {
+      "bytes": 2847,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/find.mjs",
+          "kind": "import-statement",
+          "original": "empathic/find"
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/commands/FrameworkDetectionCommand.ts": {
+      "bytes": 3011,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/GeneratorRegistry.ts",
+          "kind": "import-statement",
+          "original": "../generators/GeneratorRegistry"
+        },
+        {
+          "path": "src/services/FrameworkDetectionService.ts",
+          "kind": "import-statement",
+          "original": "../services/FrameworkDetectionService"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/commands/UserPreferencesCommand.ts": {
+      "bytes": 6922,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/picocolors/picocolors.js",
+          "kind": "import-statement",
+          "original": "picocolors"
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/services/FeatureCompatibilityService.ts",
+          "kind": "import-statement",
+          "original": "../services/FeatureCompatibilityService"
+        },
+        {
+          "path": "src/services/TelemetryService.ts",
+          "kind": "import-statement",
+          "original": "../services/TelemetryService"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/tiny-invariant/dist/esm/tiny-invariant.js": {
+      "bytes": 452,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/generators/configure.ts": {
+      "bytes": 4393,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/baseGenerator.ts": {
+      "bytes": 9918,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/tiny-invariant/dist/esm/tiny-invariant.js",
+          "kind": "import-statement",
+          "original": "tiny-invariant"
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/services/index.ts",
+          "kind": "import-statement",
+          "original": "../services"
+        },
+        {
+          "path": "src/generators/configure.ts",
+          "kind": "import-statement",
+          "original": "./configure"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/commands/GeneratorExecutionCommand.ts": {
+      "bytes": 4898,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/GeneratorRegistry.ts",
+          "kind": "import-statement",
+          "original": "../generators/GeneratorRegistry"
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../generators/baseGenerator"
+        },
+        {
+          "path": "src/services/index.ts",
+          "kind": "import-statement",
+          "original": "../services"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/exsolve/dist/index.mjs": {
+      "bytes": 41441,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:v8",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:util",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs": {
+      "bytes": 6539,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/index.mjs": {
+      "bytes": 272,
+      "imports": [
+        {
+          "path": "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs",
+          "kind": "import-statement",
+          "original": "./shared/pathe.ff20891b.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../core/src/shared/utils/module.ts": {
+      "bytes": 4733,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path/win32",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/exsolve/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "exsolve"
+        },
+        {
+          "path": "../../node_modules/pathe/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "pathe"
+        }
+      ],
+      "format": "esm"
+    },
+    "../cli-storybook/src/postinstallAddon.ts": {
+      "bytes": 1391,
+      "imports": [
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../core/src/shared/utils/module.ts",
+          "kind": "import-statement",
+          "original": "../../../core/src/shared/utils/module"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/commands/AddonConfigurationCommand.ts": {
+      "bytes": 5058,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "../cli-storybook/src/postinstallAddon.ts",
+          "kind": "dynamic-import",
+          "original": "../../../cli-storybook/src/postinstallAddon"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/commands/DependencyInstallationCommand.ts": {
+      "bytes": 3250,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/commands/FinalizationCommand.ts": {
+      "bytes": 3197,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/find.mjs",
+          "kind": "import-statement",
+          "original": "empathic/find"
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/commands/index.ts": {
+      "bytes": 990,
+      "imports": [
+        {
+          "path": "src/commands/PreflightCheckCommand.ts",
+          "kind": "import-statement",
+          "original": "./PreflightCheckCommand"
+        },
+        {
+          "path": "src/commands/ProjectDetectionCommand.ts",
+          "kind": "import-statement",
+          "original": "./ProjectDetectionCommand"
+        },
+        {
+          "path": "src/commands/FrameworkDetectionCommand.ts",
+          "kind": "import-statement",
+          "original": "./FrameworkDetectionCommand"
+        },
+        {
+          "path": "src/commands/UserPreferencesCommand.ts",
+          "kind": "import-statement",
+          "original": "./UserPreferencesCommand"
+        },
+        {
+          "path": "src/commands/GeneratorExecutionCommand.ts",
+          "kind": "import-statement",
+          "original": "./GeneratorExecutionCommand"
+        },
+        {
+          "path": "src/commands/AddonConfigurationCommand.ts",
+          "kind": "import-statement",
+          "original": "./AddonConfigurationCommand"
+        },
+        {
+          "path": "src/commands/DependencyInstallationCommand.ts",
+          "kind": "import-statement",
+          "original": "./DependencyInstallationCommand"
+        },
+        {
+          "path": "src/commands/FinalizationCommand.ts",
+          "kind": "import-statement",
+          "original": "./FinalizationCommand"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/dependency-collector.ts": {
+      "bytes": 5315,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/generators/modules/GeneratorModule.ts": {
+      "bytes": 165,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/generators/ANGULAR/index.ts": {
+      "bytes": 5390,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/EMBER/index.ts": {
+      "bytes": 527,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/HTML/index.ts": {
+      "bytes": 492,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/NEXTJS/index.ts": {
+      "bytes": 3378,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/NUXT/index.ts": {
+      "bytes": 1454,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/PREACT/index.ts": {
+      "bytes": 496,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/QWIK/index.ts": {
+      "bytes": 428,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/REACT/index.ts": {
+      "bytes": 674,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/REACT_NATIVE/index.ts": {
+      "bytes": 3607,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/REACT_NATIVE_WEB/index.ts": {
+      "bytes": 1275,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/REACT_NATIVE_AND_RNW/index.ts": {
+      "bytes": 1176,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/REACT_NATIVE/index.ts",
+          "kind": "import-statement",
+          "original": "../REACT_NATIVE"
+        },
+        {
+          "path": "src/generators/REACT_NATIVE_WEB/index.ts",
+          "kind": "import-statement",
+          "original": "../REACT_NATIVE_WEB"
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/REACT_SCRIPTS/index.ts": {
+      "bytes": 2360,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/SERVER/index.ts": {
+      "bytes": 542,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/SOLID/index.ts": {
+      "bytes": 526,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/SVELTE/index.ts": {
+      "bytes": 471,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/SVELTEKIT/index.ts": {
+      "bytes": 601,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/VUE3/index.ts": {
+      "bytes": 679,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/WEB-COMPONENTS/index.ts": {
+      "bytes": 542,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/modules/GeneratorModule.ts",
+          "kind": "import-statement",
+          "original": "../modules/GeneratorModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/registerGenerators.ts": {
+      "bytes": 1531,
+      "imports": [
+        {
+          "path": "src/generators/ANGULAR/index.ts",
+          "kind": "import-statement",
+          "original": "./ANGULAR"
+        },
+        {
+          "path": "src/generators/EMBER/index.ts",
+          "kind": "import-statement",
+          "original": "./EMBER"
+        },
+        {
+          "path": "src/generators/GeneratorRegistry.ts",
+          "kind": "import-statement",
+          "original": "./GeneratorRegistry"
+        },
+        {
+          "path": "src/generators/HTML/index.ts",
+          "kind": "import-statement",
+          "original": "./HTML"
+        },
+        {
+          "path": "src/generators/NEXTJS/index.ts",
+          "kind": "import-statement",
+          "original": "./NEXTJS"
+        },
+        {
+          "path": "src/generators/NUXT/index.ts",
+          "kind": "import-statement",
+          "original": "./NUXT"
+        },
+        {
+          "path": "src/generators/PREACT/index.ts",
+          "kind": "import-statement",
+          "original": "./PREACT"
+        },
+        {
+          "path": "src/generators/QWIK/index.ts",
+          "kind": "import-statement",
+          "original": "./QWIK"
+        },
+        {
+          "path": "src/generators/REACT/index.ts",
+          "kind": "import-statement",
+          "original": "./REACT"
+        },
+        {
+          "path": "src/generators/REACT_NATIVE/index.ts",
+          "kind": "import-statement",
+          "original": "./REACT_NATIVE"
+        },
+        {
+          "path": "src/generators/REACT_NATIVE_AND_RNW/index.ts",
+          "kind": "import-statement",
+          "original": "./REACT_NATIVE_AND_RNW"
+        },
+        {
+          "path": "src/generators/REACT_NATIVE_WEB/index.ts",
+          "kind": "import-statement",
+          "original": "./REACT_NATIVE_WEB"
+        },
+        {
+          "path": "src/generators/REACT_SCRIPTS/index.ts",
+          "kind": "import-statement",
+          "original": "./REACT_SCRIPTS"
+        },
+        {
+          "path": "src/generators/SERVER/index.ts",
+          "kind": "import-statement",
+          "original": "./SERVER"
+        },
+        {
+          "path": "src/generators/SOLID/index.ts",
+          "kind": "import-statement",
+          "original": "./SOLID"
+        },
+        {
+          "path": "src/generators/SVELTE/index.ts",
+          "kind": "import-statement",
+          "original": "./SVELTE"
+        },
+        {
+          "path": "src/generators/SVELTEKIT/index.ts",
+          "kind": "import-statement",
+          "original": "./SVELTEKIT"
+        },
+        {
+          "path": "src/generators/VUE3/index.ts",
+          "kind": "import-statement",
+          "original": "./VUE3"
+        },
+        {
+          "path": "src/generators/WEB-COMPONENTS/index.ts",
+          "kind": "import-statement",
+          "original": "./WEB-COMPONENTS"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/index.ts": {
+      "bytes": 259,
+      "imports": [
+        {
+          "path": "src/generators/GeneratorRegistry.ts",
+          "kind": "import-statement",
+          "original": "./GeneratorRegistry"
+        },
+        {
+          "path": "src/generators/registerGenerators.ts",
+          "kind": "import-statement",
+          "original": "./registerGenerators"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/initiate.ts": {
+      "bytes": 6406,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-server",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/commands/index.ts",
+          "kind": "import-statement",
+          "original": "./commands"
+        },
+        {
+          "path": "src/dependency-collector.ts",
+          "kind": "import-statement",
+          "original": "./dependency-collector"
+        },
+        {
+          "path": "src/generators/index.ts",
+          "kind": "import-statement",
+          "original": "./generators"
+        },
+        {
+          "path": "src/services/FeatureCompatibilityService.ts",
+          "kind": "import-statement",
+          "original": "./services/FeatureCompatibilityService"
+        },
+        {
+          "path": "src/services/TelemetryService.ts",
+          "kind": "import-statement",
+          "original": "./services/TelemetryService"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 53,
+      "imports": [
+        {
+          "path": "src/initiate.ts",
+          "kind": "import-statement",
+          "original": "./initiate"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/commander/lib/error.js": {
+      "bytes": 1170,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/lib/argument.js": {
+      "bytes": 3208,
+      "imports": [
+        {
+          "path": "../../node_modules/commander/lib/error.js",
+          "kind": "require-call",
+          "original": "./error.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/lib/help.js": {
+      "bytes": 21130,
+      "imports": [
+        {
+          "path": "../../node_modules/commander/lib/argument.js",
+          "kind": "require-call",
+          "original": "./argument.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/lib/option.js": {
+      "bytes": 10289,
+      "imports": [
+        {
+          "path": "../../node_modules/commander/lib/error.js",
+          "kind": "require-call",
+          "original": "./error.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/lib/suggestSimilar.js": {
+      "bytes": 2774,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/lib/command.js": {
+      "bytes": 87209,
+      "imports": [
+        {
+          "path": "node:events",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:child_process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/commander/lib/argument.js",
+          "kind": "require-call",
+          "original": "./argument.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/error.js",
+          "kind": "require-call",
+          "original": "./error.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/help.js",
+          "kind": "require-call",
+          "original": "./help.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/option.js",
+          "kind": "require-call",
+          "original": "./option.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/suggestSimilar.js",
+          "kind": "require-call",
+          "original": "./suggestSimilar"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/index.js": {
+      "bytes": 812,
+      "imports": [
+        {
+          "path": "../../node_modules/commander/lib/argument.js",
+          "kind": "require-call",
+          "original": "./lib/argument.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/command.js",
+          "kind": "require-call",
+          "original": "./lib/command.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/error.js",
+          "kind": "require-call",
+          "original": "./lib/error.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/help.js",
+          "kind": "require-call",
+          "original": "./lib/help.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/option.js",
+          "kind": "require-call",
+          "original": "./lib/option.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/esm.mjs": {
+      "bytes": 310,
+      "imports": [
+        {
+          "path": "../../node_modules/commander/index.js",
+          "kind": "import-statement",
+          "original": "./index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "package.json": {
+      "bytes": 1454,
+      "imports": []
+    },
+    "src/bin/run.ts": {
+      "bytes": 4429,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/commander/esm.mjs",
+          "kind": "import-statement",
+          "original": "commander"
+        },
+        {
+          "path": "package.json",
+          "kind": "import-statement",
+          "original": "../../package.json"
+        },
+        {
+          "path": "src/initiate.ts",
+          "kind": "import-statement",
+          "original": "../initiate"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/bin/index.ts": {
+      "bytes": 587,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/bin/run.ts",
+          "kind": "dynamic-import",
+          "original": "./run"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-PJEG2NWK.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-OXDM64E4.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-3STLOHLV.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "initiate"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 808
+    },
+    "dist/bin/index.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-OXDM64E4.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-3STLOHLV.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "dist/_node-chunks/run-3JK6BTEY.js",
+          "kind": "dynamic-import"
+        }
+      ],
+      "exports": [],
+      "entryPoint": "src/bin/index.ts",
+      "inputs": {
+        "src/bin/index.ts": {
+          "bytesInOutput": 597
+        }
+      },
+      "bytes": 1389
+    },
+    "dist/_node-chunks/postinstallAddon-XZYYMXSZ.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-3STLOHLV.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path/win32",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:v8",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:util",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "postinstallAddon"
+      ],
+      "entryPoint": "../cli-storybook/src/postinstallAddon.ts",
+      "inputs": {
+        "../cli-storybook/src/postinstallAddon.ts": {
+          "bytesInOutput": 1174
+        },
+        "../../core/src/shared/utils/module.ts": {
+          "bytesInOutput": 1299
+        },
+        "../../node_modules/exsolve/dist/index.mjs": {
+          "bytesInOutput": 8715
+        },
+        "../../node_modules/pathe/dist/index.mjs": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 12089
+    },
+    "dist/_node-chunks/run-3JK6BTEY.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-PJEG2NWK.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-OXDM64E4.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-3STLOHLV.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:events",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:child_process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "entryPoint": "src/bin/run.ts",
+      "inputs": {
+        "../../node_modules/commander/lib/error.js": {
+          "bytesInOutput": 1170
+        },
+        "../../node_modules/commander/lib/argument.js": {
+          "bytesInOutput": 3301
+        },
+        "../../node_modules/commander/lib/help.js": {
+          "bytesInOutput": 18618
+        },
+        "../../node_modules/commander/lib/option.js": {
+          "bytesInOutput": 9052
+        },
+        "../../node_modules/commander/lib/suggestSimilar.js": {
+          "bytesInOutput": 2016
+        },
+        "../../node_modules/commander/lib/command.js": {
+          "bytesInOutput": 78161
+        },
+        "../../node_modules/commander/index.js": {
+          "bytesInOutput": 925
+        },
+        "src/bin/run.ts": {
+          "bytesInOutput": 3167
+        },
+        "../../node_modules/commander/esm.mjs": {
+          "bytesInOutput": 279
+        },
+        "package.json": {
+          "bytesInOutput": 32
+        }
+      },
+      "bytes": 117925
+    },
+    "dist/_node-chunks/chunk-PJEG2NWK.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-OXDM64E4.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-3STLOHLV.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-server",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "dist/_node-chunks/postinstallAddon-XZYYMXSZ.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "doInitiate",
+        "initiate"
+      ],
+      "inputs": {
+        "../../node_modules/picocolors/picocolors.js": {
+          "bytesInOutput": 3079
+        },
+        "src/initiate.ts": {
+          "bytesInOutput": 3594
+        },
+        "src/commands/PreflightCheckCommand.ts": {
+          "bytesInOutput": 2838
+        },
+        "src/scaffold-new-project.ts": {
+          "bytesInOutput": 5702
+        },
+        "src/services/FeatureCompatibilityService.ts": {
+          "bytesInOutput": 1383
+        },
+        "src/services/index.ts": {
+          "bytesInOutput": 0
+        },
+        "src/services/TelemetryService.ts": {
+          "bytesInOutput": 2023
+        },
+        "../../node_modules/process-ancestry/dist/index.js": {
+          "bytesInOutput": 3347
+        },
+        "src/services/VersionService.ts": {
+          "bytesInOutput": 2065
+        },
+        "src/services/AddonService.ts": {
+          "bytesInOutput": 1493
+        },
+        "src/commands/index.ts": {
+          "bytesInOutput": 0
+        },
+        "src/commands/ProjectDetectionCommand.ts": {
+          "bytesInOutput": 2860
+        },
+        "src/services/ProjectTypeService.ts": {
+          "bytesInOutput": 10031
+        },
+        "../../node_modules/empathic/find.mjs": {
+          "bytesInOutput": 517
+        },
+        "../../node_modules/empathic/walk.mjs": {
+          "bytesInOutput": 289
+        },
+        "../../node_modules/empathic/resolve.mjs": {
+          "bytesInOutput": 156
+        },
+        "src/commands/FrameworkDetectionCommand.ts": {
+          "bytesInOutput": 1370
+        },
+        "src/generators/GeneratorRegistry.ts": {
+          "bytesInOutput": 681
+        },
+        "src/services/FrameworkDetectionService.ts": {
+          "bytesInOutput": 2228
+        },
+        "src/commands/UserPreferencesCommand.ts": {
+          "bytesInOutput": 4794
+        },
+        "src/generators/baseGenerator.ts": {
+          "bytesInOutput": 8002
+        },
+        "../../node_modules/tiny-invariant/dist/esm/tiny-invariant.js": {
+          "bytesInOutput": 376
+        },
+        "src/generators/configure.ts": {
+          "bytesInOutput": 3344
+        },
+        "src/commands/GeneratorExecutionCommand.ts": {
+          "bytesInOutput": 3189
+        },
+        "src/commands/AddonConfigurationCommand.ts": {
+          "bytesInOutput": 3687
+        },
+        "src/commands/DependencyInstallationCommand.ts": {
+          "bytesInOutput": 2535
+        },
+        "src/commands/FinalizationCommand.ts": {
+          "bytesInOutput": 2486
+        },
+        "src/dependency-collector.ts": {
+          "bytesInOutput": 3935
+        },
+        "src/generators/index.ts": {
+          "bytesInOutput": 0
+        },
+        "src/generators/ANGULAR/index.ts": {
+          "bytesInOutput": 4879
+        },
+        "src/generators/EMBER/index.ts": {
+          "bytesInOutput": 502
+        },
+        "src/generators/HTML/index.ts": {
+          "bytesInOutput": 437
+        },
+        "src/generators/NEXTJS/index.ts": {
+          "bytesInOutput": 2789
+        },
+        "src/generators/NUXT/index.ts": {
+          "bytesInOutput": 1250
+        },
+        "src/generators/PREACT/index.ts": {
+          "bytesInOutput": 443
+        },
+        "src/generators/QWIK/index.ts": {
+          "bytesInOutput": 387
+        },
+        "src/generators/REACT/index.ts": {
+          "bytesInOutput": 596
+        },
+        "src/generators/REACT_NATIVE/index.ts": {
+          "bytesInOutput": 3332
+        },
+        "src/generators/REACT_NATIVE_AND_RNW/index.ts": {
+          "bytesInOutput": 964
+        },
+        "src/generators/REACT_NATIVE_WEB/index.ts": {
+          "bytesInOutput": 1155
+        },
+        "src/generators/REACT_SCRIPTS/index.ts": {
+          "bytesInOutput": 2124
+        },
+        "src/generators/SERVER/index.ts": {
+          "bytesInOutput": 478
+        },
+        "src/generators/SOLID/index.ts": {
+          "bytesInOutput": 506
+        },
+        "src/generators/SVELTE/index.ts": {
+          "bytesInOutput": 403
+        },
+        "src/generators/SVELTEKIT/index.ts": {
+          "bytesInOutput": 586
+        },
+        "src/generators/VUE3/index.ts": {
+          "bytesInOutput": 584
+        },
+        "src/generators/WEB-COMPONENTS/index.ts": {
+          "bytesInOutput": 501
+        },
+        "src/generators/registerGenerators.ts": {
+          "bytesInOutput": 542
+        }
+      },
+      "bytes": 101457
+    },
+    "dist/_node-chunks/chunk-OXDM64E4.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-3STLOHLV.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "require_dist"
+      ],
+      "inputs": {
+        "../../node_modules/ts-dedent/dist/index.js": {
+          "bytesInOutput": 1727
+        }
+      },
+      "bytes": 2474
+    },
+    "dist/_node-chunks/chunk-3STLOHLV.js": {
+      "imports": [],
+      "exports": [
+        "__commonJS",
+        "__require",
+        "__toESM"
+      ],
+      "inputs": {},
+      "bytes": 2281
+    }
+  }
+}

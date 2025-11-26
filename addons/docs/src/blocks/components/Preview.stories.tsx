@@ -330,7 +330,7 @@ export const WithAdditionalActions = () => (
         title: 'Open on GitHub',
         onClick: () => {
           globalThis.location.href =
-            'https://github.com/storybookjs/storybook/blob/next/code/lib/blocks/src/components/Preview.stories.tsx#L165-L186';
+            'https://github.com/storybookjs/storybook/blob/next/lib/blocks/src/components/Preview.stories.tsx#L165-L186';
         },
       },
     ]}

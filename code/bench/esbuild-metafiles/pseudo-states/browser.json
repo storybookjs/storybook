@@ -1,0 +1,294 @@
+{
+  "inputs": {
+    "src/constants.ts": {
+      "bytes": 1249,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/preview/splitSelectors.ts": {
+      "bytes": 806,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/preview/rewriteStyleSheet.ts": {
+      "bytes": 8575,
+      "imports": [
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "../constants"
+        },
+        {
+          "path": "src/preview/splitSelectors.ts",
+          "kind": "import-statement",
+          "original": "./splitSelectors"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preview/withPseudoState.ts": {
+      "bytes": 8277,
+      "imports": [
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "../constants"
+        },
+        {
+          "path": "src/preview/rewriteStyleSheet.ts",
+          "kind": "import-statement",
+          "original": "./rewriteStyleSheet"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preview.ts": {
+      "bytes": 206,
+      "imports": [
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        },
+        {
+          "path": "src/preview/withPseudoState.ts",
+          "kind": "import-statement",
+          "original": "./preview/withPseudoState"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 313,
+      "imports": [
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/preview.ts",
+          "kind": "import-statement",
+          "original": "./preview"
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/PseudoStateTool.tsx": {
+      "bytes": 1285,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "../constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager.ts": {
+      "bytes": 369,
+      "imports": [
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        },
+        {
+          "path": "src/manager/PseudoStateTool.tsx",
+          "kind": "import-statement",
+          "original": "./manager/PseudoStateTool"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-7YGVKEB6.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-FLRMKMJW.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "PARAM_KEY",
+        "default"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 124
+        }
+      },
+      "bytes": 333
+    },
+    "dist/manager.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-FLRMKMJW.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "entryPoint": "src/manager.ts",
+      "inputs": {
+        "src/manager.ts": {
+          "bytesInOutput": 256
+        },
+        "src/manager/PseudoStateTool.tsx": {
+          "bytesInOutput": 1119
+        }
+      },
+      "bytes": 1556
+    },
+    "dist/preview.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-7YGVKEB6.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-FLRMKMJW.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "decorators",
+        "initialGlobals"
+      ],
+      "entryPoint": "src/preview.ts",
+      "inputs": {},
+      "bytes": 175
+    },
+    "dist/_browser-chunks/chunk-7YGVKEB6.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-FLRMKMJW.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "decorators",
+        "initialGlobals",
+        "preview_exports"
+      ],
+      "inputs": {
+        "src/preview.ts": {
+          "bytesInOutput": 205
+        },
+        "src/preview/withPseudoState.ts": {
+          "bytesInOutput": 5053
+        },
+        "src/preview/splitSelectors.ts": {
+          "bytesInOutput": 695
+        },
+        "src/preview/rewriteStyleSheet.ts": {
+          "bytesInOutput": 5201
+        }
+      },
+      "bytes": 11547
+    },
+    "dist/_browser-chunks/chunk-FLRMKMJW.js": {
+      "imports": [],
+      "exports": [
+        "ADDON_ID",
+        "EXCLUDED_PSEUDO_ELEMENT_PATTERNS",
+        "EXCLUDED_PSEUDO_ESCAPE_SEQUENCE",
+        "PARAM_KEY",
+        "PSEUDO_STATES",
+        "TOOL_ID",
+        "__export"
+      ],
+      "inputs": {
+        "src/constants.ts": {
+          "bytesInOutput": 483
+        }
+      },
+      "bytes": 817
+    }
+  }
+}

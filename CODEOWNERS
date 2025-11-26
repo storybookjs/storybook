@@ -13,53 +13,53 @@
 # /scripts/release/ @jreinhold @ndelangen @kasperpeulen
 
 # Addons
-# /code/addons/a11y/                 @ndelangen @yannbf
-# /code/addons/docs/                 @JReinhold @kasperpeulen
-# /code/addons/gfm/                  @ndelangen @valentinpalkovic
-# /code/addons/jest/                 @ndelangen
-# /code/addons/links/                @yannbf @JReinhold
-# /code/addons/storysource/          @ndelangen
-# /code/addons/themes/               @JReinhold @yannbf
+# /addons/a11y/                 @ndelangen @yannbf
+# /addons/docs/                 @JReinhold @kasperpeulen
+# /addons/gfm/                  @ndelangen @valentinpalkovic
+# /addons/jest/                 @ndelangen
+# /addons/links/                @yannbf @JReinhold
+# /addons/storysource/          @ndelangen
+# /addons/themes/               @JReinhold @yannbf
 
 # Builder
-# /code/builders/builder-manager/  @ndelangen @valentinpalkovic
-# /code/builders/builder-vite/     @JReinhold @valentinpalkovic @IanVS
-# /code/builders/builder-webpack5/ @ndelangen @valentinpalkovic
+# /builders/builder-manager/  @ndelangen @valentinpalkovic
+# /builders/builder-vite/     @JReinhold @valentinpalkovic @IanVS
+# /builders/builder-webpack5/ @ndelangen @valentinpalkovic
 
 # Frameworks
-# /code/frameworks/angular/                 @valentinpalkovic @yannbf
-# /code/frameworks/html-vite/               @kasperpeulen @JReinhold
-# /code/frameworks/nextjs/                  @valentinpalkovic @kasperpeulen @yannbf
-# /code/frameworks/react-vite/              @valentinpalkovic @kasperpeulen
-# /code/frameworks/react-webpack5/          @valentinpalkovic @kasperpeulen
-# /code/frameworks/svelte-vite/             @kasperpeulen @JReinhold
-# /code/frameworks/sveltekit/               @kasperpeulen @JReinhold
-# /code/frameworks/vue3-vite/               @kasperpeulen @yannbf @JReinhold
-# /code/frameworks/web-components-vite/     @kasperpeulen @JReinhold
-# /code/frameworks/web-components-webpack5/ @kasperpeulen @JReinhold
+# /frameworks/angular/                 @valentinpalkovic @yannbf
+# /frameworks/html-vite/               @kasperpeulen @JReinhold
+# /frameworks/nextjs/                  @valentinpalkovic @kasperpeulen @yannbf
+# /frameworks/react-vite/              @valentinpalkovic @kasperpeulen
+# /frameworks/react-webpack5/          @valentinpalkovic @kasperpeulen
+# /frameworks/svelte-vite/             @kasperpeulen @JReinhold
+# /frameworks/sveltekit/               @kasperpeulen @JReinhold
+# /frameworks/vue3-vite/               @kasperpeulen @yannbf @JReinhold
+# /frameworks/web-components-vite/     @kasperpeulen @JReinhold
+# /frameworks/web-components-webpack5/ @kasperpeulen @JReinhold
 
 # Lib
-# /code/lib/cli/            @yannbf @valentinpalkovic @ndelangen
-# /code/lib/cli-sb/         @yannbf @valentinpalkovic @ndelangen
-# /code/lib/cli-storybook/  @yannbf @valentinpalkovic @ndelangen
-# /code/lib/codemod/        @kasperpeulen @ndelangen
-# /code/lib/core-webpack/   @valentinpalkovic @ndelangen
-# /code/lib/csf-plugin/     @ndelangen @valentinpalkovic
-# /code/lib/node-logger/    @yannbf @ndelangen
-# /code/lib/react-dom-shim/ @ndelangen @valentinpalkovic @tmeasday
-# /code/lib/telemetry/      @shilman @yannbf @ndelangen
-# /code/lib/types/          @kasperpeulen @ndelangen
+# /lib/cli/            @yannbf @valentinpalkovic @ndelangen
+# /lib/cli-sb/         @yannbf @valentinpalkovic @ndelangen
+# /lib/cli-storybook/  @yannbf @valentinpalkovic @ndelangen
+# /lib/codemod/        @kasperpeulen @ndelangen
+# /lib/core-webpack/   @valentinpalkovic @ndelangen
+# /lib/csf-plugin/     @ndelangen @valentinpalkovic
+# /lib/node-logger/    @yannbf @ndelangen
+# /lib/react-dom-shim/ @ndelangen @valentinpalkovic @tmeasday
+# /lib/telemetry/      @shilman @yannbf @ndelangen
+# /lib/types/          @kasperpeulen @ndelangen
 
 # Presets
-# /code/presets/create-react-app/ @valentinpalkovic @ndelangen
+# /presets/create-react-app/ @valentinpalkovic @ndelangen
 
 # Renderers
-# /code/renderers/html/           @kasperpeulen @JReinhold
-# /code/renderers/react/          @valentinpalkovic @kasperpeulen
-# /code/renderers/server/         @shilman @valentinpalkovic
-# /code/renderers/svelte/         @JReinhold @kasperpeulen
-# /code/renderers/vue3/           @kasperpeulen @JReinhold
-# /code/renderers/web-components/ @kasperpeulen @JReinhold
+# /renderers/html/           @kasperpeulen @JReinhold
+# /renderers/react/          @valentinpalkovic @kasperpeulen
+# /renderers/server/         @shilman @valentinpalkovic
+# /renderers/svelte/         @JReinhold @kasperpeulen
+# /renderers/vue3/           @kasperpeulen @JReinhold
+# /renderers/web-components/ @kasperpeulen @JReinhold
 
 # E2E
-# /code/e2e-tests/ @yannbf @valentinpalkovic
+# /e2e-tests/ @yannbf @valentinpalkovic

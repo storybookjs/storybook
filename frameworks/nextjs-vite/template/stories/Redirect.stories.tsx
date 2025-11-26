@@ -36,7 +36,7 @@ export default {
       //         console.error(error);
       //       },
       //     },
-      // See: code/frameworks/nextjs/src/preview.tsx
+      // See: /frameworks/nextjs/src/preview.tsx
       dangerouslyIgnoreUnhandledErrors: true,
     },
     nextjs: {

@@ -18,7 +18,7 @@ export type TRuleListWithoutName = TRulesList extends readonly [string, ...infer
   : never;
 
 const ruleDocsPath =
-  'https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/';
+  'https://github.com/storybookjs/storybook/blob/next/lib/eslint-plugin/docs/rules/';
 const createRuleLink = (ruleName: string) =>
   `[\`storybook/${ruleName}\`](${ruleDocsPath}${ruleName}.md)`;
 

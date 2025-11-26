@@ -16,11 +16,7 @@ import { babelParse, types as t } from '../../core/src/babel';
 import { JsPackageManagerFactory } from '../../core/src/common/js-package-manager';
 import storybookPackages from '../../core/src/common/versions';
 import type { ConfigFile } from '../../core/src/csf-tools';
-import {
-  readConfig as csfReadConfig,
-  formatConfig,
-  writeConfig,
-} from '../../core/src/csf-tools';
+import { readConfig as csfReadConfig, formatConfig, writeConfig } from '../../core/src/csf-tools';
 import { SupportedLanguage } from '../../core/src/types';
 import type { TemplateKey } from '../../lib/cli-storybook/src/sandbox-templates';
 import { ProjectTypeService } from '../../lib/create-storybook/src/services/ProjectTypeService';
@@ -252,7 +248,7 @@ export const init: Task['run'] = async (
   }
 };
 
-// Ensure that sandboxes can refer to story files defined in `code/`.
+// Ensure that sandboxes can refer to story files defined in `/`.
 // Most WP-based build systems will not compile files outside of the project root or 'src/` or
 // similar. Plus they aren't guaranteed to handle TS files. So we need to patch in esbuild
 // loader for such files. NOTE this isn't necessary for Vite, as far as we know.

@@ -9,7 +9,7 @@ import { getCurrentVersion } from './get-current-version';
 program
   .name('is-prerelease')
   .description(
-    'returns true if the specified version is a prerelease. If no version argument specified it will use the current version in code/package.json'
+    'returns true if the specified version is a prerelease. If no version argument specified it will use the current version in /package.json'
   )
   .arguments('[version]')
   .option('-V, --verbose', 'Enable verbose logging', false);
@@ -20,7 +20,7 @@ export const isPrerelease = async (args: { version?: string; verbose?: boolean }
       console.log(`📦 Checking if version ${picocolors.blue(args.version)} is a prerelease`);
     } else {
       console.log(
-        `📦 Checking if current version in ${picocolors.blue('code/package.json')} is a prerelease`
+        `📦 Checking if current version in ${picocolors.blue('/package.json')} is a prerelease`
       );
     }
   }

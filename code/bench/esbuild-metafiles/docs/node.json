@@ -1,0 +1,5255 @@
+{
+  "inputs": {
+    "../../node_modules/exsolve/dist/index.mjs": {
+      "bytes": 41441,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:v8",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:util",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs": {
+      "bytes": 6539,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/index.mjs": {
+      "bytes": 272,
+      "imports": [
+        {
+          "path": "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs",
+          "kind": "import-statement",
+          "original": "./shared/pathe.ff20891b.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../core/src/shared/utils/module.ts": {
+      "bytes": 4733,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path/win32",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/exsolve/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "exsolve"
+        },
+        {
+          "path": "../../node_modules/pathe/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "pathe"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/github-slugger/regex.js": {
+      "bytes": 8321,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/github-slugger/index.js": {
+      "bytes": 1843,
+      "imports": [
+        {
+          "path": "../../node_modules/github-slugger/regex.js",
+          "kind": "import-statement",
+          "original": "./regex.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-heading-rank/lib/index.js": {
+      "bytes": 571,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-heading-rank/index.js": {
+      "bytes": 43,
+      "imports": [
+        {
+          "path": "../../node_modules/hast-util-heading-rank/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-string/lib/index.js": {
+      "bytes": 985,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-string/index.js": {
+      "bytes": 1122,
+      "imports": [
+        {
+          "path": "../../node_modules/hast-util-to-string/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-is/lib/index.js": {
+      "bytes": 8989,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-is/index.js": {
+      "bytes": 217,
+      "imports": [
+        {
+          "path": "../../node_modules/unist-util-is/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-visit-parents/lib/color.node.js": {
+      "bytes": 120,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-visit-parents/lib/index.js": {
+      "bytes": 11752,
+      "imports": [
+        {
+          "path": "../../node_modules/unist-util-is/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-is"
+        },
+        {
+          "path": "../../node_modules/unist-util-visit-parents/lib/color.node.js",
+          "kind": "import-statement",
+          "original": "unist-util-visit-parents/do-not-use-color"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-visit-parents/index.js": {
+      "bytes": 108,
+      "imports": [
+        {
+          "path": "../../node_modules/unist-util-visit-parents/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-visit/lib/index.js": {
+      "bytes": 9624,
+      "imports": [
+        {
+          "path": "../../node_modules/unist-util-visit-parents/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-visit-parents"
+        },
+        {
+          "path": "../../node_modules/unist-util-visit-parents/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-visit-parents"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-visit/index.js": {
+      "bytes": 101,
+      "imports": [
+        {
+          "path": "../../node_modules/unist-util-visit/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/rehype-slug/lib/index.js": {
+      "bytes": 1053,
+      "imports": [
+        {
+          "path": "../../node_modules/github-slugger/index.js",
+          "kind": "import-statement",
+          "original": "github-slugger"
+        },
+        {
+          "path": "../../node_modules/hast-util-heading-rank/index.js",
+          "kind": "import-statement",
+          "original": "hast-util-heading-rank"
+        },
+        {
+          "path": "../../node_modules/hast-util-to-string/index.js",
+          "kind": "import-statement",
+          "original": "hast-util-to-string"
+        },
+        {
+          "path": "../../node_modules/unist-util-visit/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-visit"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/rehype-slug/index.js": {
+      "bytes": 103,
+      "imports": [
+        {
+          "path": "../../node_modules/rehype-slug/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@ungap/structured-clone/esm/types.js": {
+      "bytes": 319,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@ungap/structured-clone/esm/deserialize.js": {
+      "bytes": 2169,
+      "imports": [
+        {
+          "path": "../../node_modules/@ungap/structured-clone/esm/types.js",
+          "kind": "import-statement",
+          "original": "./types.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@ungap/structured-clone/esm/serialize.js": {
+      "bytes": 4414,
+      "imports": [
+        {
+          "path": "../../node_modules/@ungap/structured-clone/esm/types.js",
+          "kind": "import-statement",
+          "original": "./types.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@ungap/structured-clone/esm/index.js": {
+      "bytes": 829,
+      "imports": [
+        {
+          "path": "../../node_modules/@ungap/structured-clone/esm/deserialize.js",
+          "kind": "import-statement",
+          "original": "./deserialize.js"
+        },
+        {
+          "path": "../../node_modules/@ungap/structured-clone/esm/serialize.js",
+          "kind": "import-statement",
+          "original": "./serialize.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-is-element/lib/index.js": {
+      "bytes": 7777,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-is-element/index.js": {
+      "bytes": 231,
+      "imports": [
+        {
+          "path": "../../node_modules/hast-util-is-element/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/is-absolute-url/index.js": {
+      "bytes": 503,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/space-separated-tokens/index.js": {
+      "bytes": 551,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/rehype-external-links/lib/index.js": {
+      "bytes": 5848,
+      "imports": [
+        {
+          "path": "../../node_modules/@ungap/structured-clone/esm/index.js",
+          "kind": "import-statement",
+          "original": "@ungap/structured-clone"
+        },
+        {
+          "path": "../../node_modules/hast-util-is-element/index.js",
+          "kind": "import-statement",
+          "original": "hast-util-is-element"
+        },
+        {
+          "path": "../../node_modules/is-absolute-url/index.js",
+          "kind": "import-statement",
+          "original": "is-absolute-url"
+        },
+        {
+          "path": "../../node_modules/space-separated-tokens/index.js",
+          "kind": "import-statement",
+          "original": "space-separated-tokens"
+        },
+        {
+          "path": "../../node_modules/unist-util-visit/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-visit"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/rehype-external-links/index.js": {
+      "bytes": 420,
+      "imports": [
+        {
+          "path": "../../node_modules/rehype-external-links/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@rollup/pluginutils/node_modules/estree-walker/dist/esm/estree-walker.js": {
+      "bytes": 7158,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/constants.js": {
+      "bytes": 4458,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/utils.js": {
+      "bytes": 1994,
+      "imports": [
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/constants.js",
+          "kind": "require-call",
+          "original": "./constants"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/scan.js": {
+      "bytes": 9189,
+      "imports": [
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/utils.js",
+          "kind": "require-call",
+          "original": "./utils"
+        },
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/constants.js",
+          "kind": "require-call",
+          "original": "./constants"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/parse.js": {
+      "bytes": 27544,
+      "imports": [
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/constants.js",
+          "kind": "require-call",
+          "original": "./constants"
+        },
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/utils.js",
+          "kind": "require-call",
+          "original": "./utils"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/picomatch.js": {
+      "bytes": 9881,
+      "imports": [
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/scan.js",
+          "kind": "require-call",
+          "original": "./scan"
+        },
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/parse.js",
+          "kind": "require-call",
+          "original": "./parse"
+        },
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/utils.js",
+          "kind": "require-call",
+          "original": "./utils"
+        },
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/constants.js",
+          "kind": "require-call",
+          "original": "./constants"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@rollup/pluginutils/node_modules/picomatch/index.js": {
+      "bytes": 479,
+      "imports": [
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/picomatch.js",
+          "kind": "require-call",
+          "original": "./lib/picomatch"
+        },
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/utils.js",
+          "kind": "require-call",
+          "original": "./lib/utils"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@rollup/pluginutils/dist/es/index.js": {
+      "bytes": 15441,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/estree-walker/dist/esm/estree-walker.js",
+          "kind": "import-statement",
+          "original": "estree-walker"
+        },
+        {
+          "path": "../../node_modules/@rollup/pluginutils/node_modules/picomatch/index.js",
+          "kind": "import-statement",
+          "original": "picomatch"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-stringify-position/lib/index.js": {
+      "bytes": 2123,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-stringify-position/index.js": {
+      "bytes": 49,
+      "imports": [
+        {
+          "path": "../../node_modules/unist-util-stringify-position/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/vfile-message/lib/index.js": {
+      "bytes": 8215,
+      "imports": [
+        {
+          "path": "../../node_modules/unist-util-stringify-position/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-stringify-position"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/vfile-message/index.js": {
+      "bytes": 108,
+      "imports": [
+        {
+          "path": "../../node_modules/vfile-message/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/vfile/lib/minpath.js": {
+      "bytes": 45,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/vfile/lib/minproc.js": {
+      "bytes": 48,
+      "imports": [
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/vfile/lib/minurl.shared.js": {
+      "bytes": 1087,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/vfile/lib/minurl.js": {
+      "bytes": 93,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/vfile/lib/minurl.shared.js",
+          "kind": "import-statement",
+          "original": "./minurl.shared.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/vfile/lib/index.js": {
+      "bytes": 16952,
+      "imports": [
+        {
+          "path": "../../node_modules/vfile-message/index.js",
+          "kind": "import-statement",
+          "original": "vfile-message"
+        },
+        {
+          "path": "../../node_modules/vfile/lib/minpath.js",
+          "kind": "import-statement",
+          "original": "#minpath"
+        },
+        {
+          "path": "../../node_modules/vfile/lib/minproc.js",
+          "kind": "import-statement",
+          "original": "#minproc"
+        },
+        {
+          "path": "../../node_modules/vfile/lib/minurl.js",
+          "kind": "import-statement",
+          "original": "#minurl"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/vfile/index.js": {
+      "bytes": 78,
+      "imports": [
+        {
+          "path": "../../node_modules/vfile/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/markdown-extensions/index.js": {
+      "bytes": 198,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/util/extnames.js": {
+      "bytes": 158,
+      "imports": [
+        {
+          "path": "../../node_modules/markdown-extensions/index.js",
+          "kind": "import-statement",
+          "original": "markdown-extensions"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/util/resolve-file-and-options.js": {
+      "bytes": 1314,
+      "imports": [
+        {
+          "path": "../../node_modules/vfile/index.js",
+          "kind": "import-statement",
+          "original": "vfile"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/extnames.js",
+          "kind": "import-statement",
+          "original": "./extnames.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/devlop/lib/default.js": {
+      "bytes": 133,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-is-identifier-name/lib/index.js": {
+      "bytes": 1855,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-is-identifier-name/index.js": {
+      "bytes": 113,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-is-identifier-name/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/estree-walker/src/walker.js": {
+      "bytes": 1393,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/estree-walker/src/sync.js": {
+      "bytes": 3418,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-walker/src/walker.js",
+          "kind": "import-statement",
+          "original": "./walker.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/estree-walker/src/async.js": {
+      "bytes": 3474,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-walker/src/walker.js",
+          "kind": "import-statement",
+          "original": "./walker.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/estree-walker/src/index.js": {
+      "bytes": 806,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-walker/src/sync.js",
+          "kind": "import-statement",
+          "original": "./sync.js"
+        },
+        {
+          "path": "../../node_modules/estree-walker/src/async.js",
+          "kind": "import-statement",
+          "original": "./async.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-build-jsx/lib/index.js": {
+      "bytes": 19256,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        },
+        {
+          "path": "../../node_modules/estree-util-is-identifier-name/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-is-identifier-name"
+        },
+        {
+          "path": "../../node_modules/estree-walker/src/index.js",
+          "kind": "import-statement",
+          "original": "estree-walker"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-build-jsx/index.js": {
+      "bytes": 159,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-build-jsx/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/recma-build-jsx/lib/index.js": {
+      "bytes": 586,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-build-jsx/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-build-jsx"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/recma-build-jsx/index.js": {
+      "bytes": 81,
+      "imports": [
+        {
+          "path": "../../node_modules/recma-build-jsx/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/node_modules/acorn-jsx/xhtml.js": {
+      "bytes": 4718,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@mdx-js/mdx/node_modules/acorn/dist/acorn.js": {
+      "bytes": 241575,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@mdx-js/mdx/node_modules/acorn-jsx/index.js": {
+      "bytes": 15827,
+      "imports": [
+        {
+          "path": "../../node_modules/@mdx-js/mdx/node_modules/acorn-jsx/xhtml.js",
+          "kind": "require-call",
+          "original": "./xhtml"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/node_modules/acorn/dist/acorn.js",
+          "kind": "require-call",
+          "original": "acorn"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/node_modules/acorn/dist/acorn.js",
+          "kind": "require-call",
+          "original": "acorn"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/astring/dist/astring.mjs": {
+      "bytes": 35359,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-to-js/lib/index.js": {
+      "bytes": 5408,
+      "imports": [
+        {
+          "path": "../../node_modules/astring/dist/astring.mjs",
+          "kind": "import-statement",
+          "original": "astring"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-to-js/lib/jsx.js": {
+      "bytes": 8334,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-to-js/index.js": {
+      "bytes": 349,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-to-js/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        },
+        {
+          "path": "../../node_modules/estree-util-to-js/lib/jsx.js",
+          "kind": "import-statement",
+          "original": "./lib/jsx.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/node_modules/recma-jsx/lib/index.js": {
+      "bytes": 695,
+      "imports": [
+        {
+          "path": "../../node_modules/@mdx-js/mdx/node_modules/acorn-jsx/index.js",
+          "kind": "import-statement",
+          "original": "acorn-jsx"
+        },
+        {
+          "path": "../../node_modules/estree-util-to-js/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-to-js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/node_modules/recma-jsx/index.js": {
+      "bytes": 81,
+      "imports": [
+        {
+          "path": "../../node_modules/@mdx-js/mdx/node_modules/recma-jsx/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/recma-stringify/lib/index.js": {
+      "bytes": 1043,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-to-js/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-to-js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/recma-stringify/index.js": {
+      "bytes": 81,
+      "imports": [
+        {
+          "path": "../../node_modules/recma-stringify/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-estree/lib/handlers/comment.js": {
+      "bytes": 1164,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/comma-separated-tokens/index.js": {
+      "bytes": 1592,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/util/schema.js": {
+      "bytes": 587,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/util/merge.js": {
+      "bytes": 607,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/util/schema.js",
+          "kind": "import-statement",
+          "original": "./schema.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/normalize.js": {
+      "bytes": 326,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/util/info.js": {
+      "bytes": 769,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/util/types.js": {
+      "bytes": 350,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/util/defined-info.js": {
+      "bytes": 1198,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/util/info.js",
+          "kind": "import-statement",
+          "original": "./info.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/util/types.js",
+          "kind": "import-statement",
+          "original": "./types.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/util/create.js": {
+      "bytes": 1710,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/normalize.js",
+          "kind": "import-statement",
+          "original": "../normalize.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/util/defined-info.js",
+          "kind": "import-statement",
+          "original": "./defined-info.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/util/schema.js",
+          "kind": "import-statement",
+          "original": "./schema.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/aria.js": {
+      "bytes": 1644,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/util/create.js",
+          "kind": "import-statement",
+          "original": "./util/create.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/util/types.js",
+          "kind": "import-statement",
+          "original": "./util/types.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/util/case-sensitive-transform.js": {
+      "bytes": 300,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/util/case-insensitive-transform.js": {
+      "bytes": 367,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/util/case-sensitive-transform.js",
+          "kind": "import-statement",
+          "original": "./case-sensitive-transform.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/html.js": {
+      "bytes": 8649,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/util/case-insensitive-transform.js",
+          "kind": "import-statement",
+          "original": "./util/case-insensitive-transform.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/util/create.js",
+          "kind": "import-statement",
+          "original": "./util/create.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/util/types.js",
+          "kind": "import-statement",
+          "original": "./util/types.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/svg.js": {
+      "bytes": 14350,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/util/case-sensitive-transform.js",
+          "kind": "import-statement",
+          "original": "./util/case-sensitive-transform.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/util/create.js",
+          "kind": "import-statement",
+          "original": "./util/create.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/util/types.js",
+          "kind": "import-statement",
+          "original": "./util/types.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/xlink.js": {
+      "bytes": 351,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/util/create.js",
+          "kind": "import-statement",
+          "original": "./util/create.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/xmlns.js": {
+      "bytes": 298,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/util/create.js",
+          "kind": "import-statement",
+          "original": "./util/create.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/util/case-insensitive-transform.js",
+          "kind": "import-statement",
+          "original": "./util/case-insensitive-transform.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/xml.js": {
+      "bytes": 233,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/util/create.js",
+          "kind": "import-statement",
+          "original": "./util/create.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/hast-to-react.js": {
+      "bytes": 859,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/lib/find.js": {
+      "bytes": 2344,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/util/defined-info.js",
+          "kind": "import-statement",
+          "original": "./util/defined-info.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/util/info.js",
+          "kind": "import-statement",
+          "original": "./util/info.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/normalize.js",
+          "kind": "import-statement",
+          "original": "./normalize.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/property-information/index.js": {
+      "bytes": 591,
+      "imports": [
+        {
+          "path": "../../node_modules/property-information/lib/util/merge.js",
+          "kind": "import-statement",
+          "original": "./lib/util/merge.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/aria.js",
+          "kind": "import-statement",
+          "original": "./lib/aria.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/html.js",
+          "kind": "import-statement",
+          "original": "./lib/html.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/svg.js",
+          "kind": "import-statement",
+          "original": "./lib/svg.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/xlink.js",
+          "kind": "import-statement",
+          "original": "./lib/xlink.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/xmlns.js",
+          "kind": "import-statement",
+          "original": "./lib/xmlns.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/xml.js",
+          "kind": "import-statement",
+          "original": "./lib/xml.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/hast-to-react.js",
+          "kind": "import-statement",
+          "original": "./lib/hast-to-react.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/find.js",
+          "kind": "import-statement",
+          "original": "./lib/find.js"
+        },
+        {
+          "path": "../../node_modules/property-information/lib/normalize.js",
+          "kind": "import-statement",
+          "original": "./lib/normalize.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/inline-style-parser/cjs/index.js": {
+      "bytes": 5099,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/style-to-object/cjs/index.js": {
+      "bytes": 1363,
+      "imports": [
+        {
+          "path": "../../node_modules/inline-style-parser/cjs/index.js",
+          "kind": "require-call",
+          "original": "inline-style-parser"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/style-to-js/cjs/utilities.js": {
+      "bytes": 1511,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/style-to-js/cjs/index.js": {
+      "bytes": 806,
+      "imports": [
+        {
+          "path": "../../node_modules/style-to-object/cjs/index.js",
+          "kind": "require-call",
+          "original": "style-to-object"
+        },
+        {
+          "path": "../../node_modules/style-to-js/cjs/utilities.js",
+          "kind": "require-call",
+          "original": "./utilities"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/hast-util-to-estree/lib/handlers/element.js": {
+      "bytes": 7762,
+      "imports": [
+        {
+          "path": "../../node_modules/comma-separated-tokens/index.js",
+          "kind": "import-statement",
+          "original": "comma-separated-tokens"
+        },
+        {
+          "path": "../../node_modules/estree-util-is-identifier-name/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-is-identifier-name"
+        },
+        {
+          "path": "../../node_modules/property-information/index.js",
+          "kind": "import-statement",
+          "original": "property-information"
+        },
+        {
+          "path": "../../node_modules/space-separated-tokens/index.js",
+          "kind": "import-statement",
+          "original": "space-separated-tokens"
+        },
+        {
+          "path": "../../node_modules/style-to-js/cjs/index.js",
+          "kind": "import-statement",
+          "original": "style-to-js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-attach-comments/lib/index.js": {
+      "bytes": 4987,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-attach-comments/index.js": {
+      "bytes": 46,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-attach-comments/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-estree/lib/handlers/mdx-expression.js": {
+      "bytes": 1454,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-attach-comments/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-attach-comments"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-estree/lib/handlers/mdx-jsx-element.js": {
+      "bytes": 4892,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-attach-comments/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-attach-comments"
+        },
+        {
+          "path": "../../node_modules/property-information/index.js",
+          "kind": "import-statement",
+          "original": "property-information"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-estree/lib/handlers/mdxjs-esm.js": {
+      "bytes": 657,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-attach-comments/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-attach-comments"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-whitespace/lib/index.js": {
+      "bytes": 885,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-whitespace/index.js": {
+      "bytes": 42,
+      "imports": [
+        {
+          "path": "../../node_modules/hast-util-whitespace/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-estree/lib/handlers/root.js": {
+      "bytes": 1646,
+      "imports": [
+        {
+          "path": "../../node_modules/hast-util-whitespace/index.js",
+          "kind": "import-statement",
+          "original": "hast-util-whitespace"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-estree/lib/handlers/text.js": {
+      "bytes": 896,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-estree/lib/handlers/index.js": {
+      "bytes": 623,
+      "imports": [
+        {
+          "path": "../../node_modules/hast-util-to-estree/lib/handlers/comment.js",
+          "kind": "import-statement",
+          "original": "./comment.js"
+        },
+        {
+          "path": "../../node_modules/hast-util-to-estree/lib/handlers/element.js",
+          "kind": "import-statement",
+          "original": "./element.js"
+        },
+        {
+          "path": "../../node_modules/hast-util-to-estree/lib/handlers/mdx-expression.js",
+          "kind": "import-statement",
+          "original": "./mdx-expression.js"
+        },
+        {
+          "path": "../../node_modules/hast-util-to-estree/lib/handlers/mdx-jsx-element.js",
+          "kind": "import-statement",
+          "original": "./mdx-jsx-element.js"
+        },
+        {
+          "path": "../../node_modules/hast-util-to-estree/lib/handlers/mdxjs-esm.js",
+          "kind": "import-statement",
+          "original": "./mdxjs-esm.js"
+        },
+        {
+          "path": "../../node_modules/hast-util-to-estree/lib/handlers/root.js",
+          "kind": "import-statement",
+          "original": "./root.js"
+        },
+        {
+          "path": "../../node_modules/hast-util-to-estree/lib/handlers/text.js",
+          "kind": "import-statement",
+          "original": "./text.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-position/lib/index.js": {
+      "bytes": 1924,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-position/index.js": {
+      "bytes": 62,
+      "imports": [
+        {
+          "path": "../../node_modules/unist-util-position/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/zwitch/index.js": {
+      "bytes": 3787,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-estree/lib/state.js": {
+      "bytes": 11142,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        },
+        {
+          "path": "../../node_modules/property-information/index.js",
+          "kind": "import-statement",
+          "original": "property-information"
+        },
+        {
+          "path": "../../node_modules/unist-util-position/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-position"
+        },
+        {
+          "path": "../../node_modules/zwitch/index.js",
+          "kind": "import-statement",
+          "original": "zwitch"
+        },
+        {
+          "path": "../../node_modules/hast-util-to-estree/lib/handlers/index.js",
+          "kind": "import-statement",
+          "original": "./handlers/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-estree/lib/index.js": {
+      "bytes": 3272,
+      "imports": [
+        {
+          "path": "../../node_modules/hast-util-to-estree/lib/state.js",
+          "kind": "import-statement",
+          "original": "./state.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/hast-util-to-estree/index.js": {
+      "bytes": 499,
+      "imports": [
+        {
+          "path": "../../node_modules/hast-util-to-estree/lib/handlers/index.js",
+          "kind": "import-statement",
+          "original": "./lib/handlers/index.js"
+        },
+        {
+          "path": "../../node_modules/hast-util-to-estree/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/rehype-recma/lib/index.js": {
+      "bytes": 550,
+      "imports": [
+        {
+          "path": "../../node_modules/hast-util-to-estree/index.js",
+          "kind": "import-statement",
+          "original": "hast-util-to-estree"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/rehype-recma/index.js": {
+      "bytes": 81,
+      "imports": [
+        {
+          "path": "../../node_modules/rehype-recma/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-mdx-expression/lib/index.js": {
+      "bytes": 3403,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-mdx-expression/index.js": {
+      "bytes": 130,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-mdx-expression/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/ccount/index.js": {
+      "bytes": 619,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/character-entities-legacy/index.js": {
+      "bytes": 1316,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/character-reference-invalid/index.js": {
+      "bytes": 558,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/is-decimal/index.js": {
+      "bytes": 374,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/is-hexadecimal/index.js": {
+      "bytes": 503,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/is-alphabetical/index.js": {
+      "bytes": 445,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/is-alphanumerical/index.js": {
+      "bytes": 406,
+      "imports": [
+        {
+          "path": "../../node_modules/is-alphabetical/index.js",
+          "kind": "import-statement",
+          "original": "is-alphabetical"
+        },
+        {
+          "path": "../../node_modules/is-decimal/index.js",
+          "kind": "import-statement",
+          "original": "is-decimal"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/character-entities/index.js": {
+      "bytes": 37342,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/decode-named-character-reference/index.js": {
+      "bytes": 591,
+      "imports": [
+        {
+          "path": "../../node_modules/character-entities/index.js",
+          "kind": "import-statement",
+          "original": "character-entities"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/parse-entities/lib/index.js": {
+      "bytes": 11738,
+      "imports": [
+        {
+          "path": "../../node_modules/character-entities-legacy/index.js",
+          "kind": "import-statement",
+          "original": "character-entities-legacy"
+        },
+        {
+          "path": "../../node_modules/character-reference-invalid/index.js",
+          "kind": "import-statement",
+          "original": "character-reference-invalid"
+        },
+        {
+          "path": "../../node_modules/is-decimal/index.js",
+          "kind": "import-statement",
+          "original": "is-decimal"
+        },
+        {
+          "path": "../../node_modules/is-hexadecimal/index.js",
+          "kind": "import-statement",
+          "original": "is-hexadecimal"
+        },
+        {
+          "path": "../../node_modules/is-alphanumerical/index.js",
+          "kind": "import-statement",
+          "original": "is-alphanumerical"
+        },
+        {
+          "path": "../../node_modules/decode-named-character-reference/index.js",
+          "kind": "import-statement",
+          "original": "decode-named-character-reference"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/parse-entities/index.js": {
+      "bytes": 145,
+      "imports": [
+        {
+          "path": "../../node_modules/parse-entities/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/stringify-entities/lib/core.js": {
+      "bytes": 3040,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/stringify-entities/lib/util/to-hexadecimal.js": {
+      "bytes": 436,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/stringify-entities/lib/util/to-decimal.js": {
+      "bytes": 392,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/character-entities-html4/index.js": {
+      "bytes": 3908,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/stringify-entities/lib/constant/dangerous.js": {
+      "bytes": 290,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/stringify-entities/lib/util/to-named.js": {
+      "bytes": 1290,
+      "imports": [
+        {
+          "path": "../../node_modules/character-entities-legacy/index.js",
+          "kind": "import-statement",
+          "original": "character-entities-legacy"
+        },
+        {
+          "path": "../../node_modules/character-entities-html4/index.js",
+          "kind": "import-statement",
+          "original": "character-entities-html4"
+        },
+        {
+          "path": "../../node_modules/stringify-entities/lib/constant/dangerous.js",
+          "kind": "import-statement",
+          "original": "../constant/dangerous.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/stringify-entities/lib/util/format-smart.js": {
+      "bytes": 2478,
+      "imports": [
+        {
+          "path": "../../node_modules/stringify-entities/lib/util/to-hexadecimal.js",
+          "kind": "import-statement",
+          "original": "./to-hexadecimal.js"
+        },
+        {
+          "path": "../../node_modules/stringify-entities/lib/util/to-decimal.js",
+          "kind": "import-statement",
+          "original": "./to-decimal.js"
+        },
+        {
+          "path": "../../node_modules/stringify-entities/lib/util/to-named.js",
+          "kind": "import-statement",
+          "original": "./to-named.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/stringify-entities/lib/util/format-basic.js": {
+      "bytes": 192,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/stringify-entities/lib/index.js": {
+      "bytes": 961,
+      "imports": [
+        {
+          "path": "../../node_modules/stringify-entities/lib/core.js",
+          "kind": "import-statement",
+          "original": "./core.js"
+        },
+        {
+          "path": "../../node_modules/stringify-entities/lib/util/format-smart.js",
+          "kind": "import-statement",
+          "original": "./util/format-smart.js"
+        },
+        {
+          "path": "../../node_modules/stringify-entities/lib/util/format-basic.js",
+          "kind": "import-statement",
+          "original": "./util/format-basic.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/stringify-entities/index.js": {
+      "bytes": 160,
+      "imports": [
+        {
+          "path": "../../node_modules/stringify-entities/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-mdx-jsx/lib/index.js": {
+      "bytes": 22975,
+      "imports": [
+        {
+          "path": "../../node_modules/ccount/index.js",
+          "kind": "import-statement",
+          "original": "ccount"
+        },
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        },
+        {
+          "path": "../../node_modules/parse-entities/index.js",
+          "kind": "import-statement",
+          "original": "parse-entities"
+        },
+        {
+          "path": "../../node_modules/stringify-entities/index.js",
+          "kind": "import-statement",
+          "original": "stringify-entities"
+        },
+        {
+          "path": "../../node_modules/unist-util-stringify-position/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-stringify-position"
+        },
+        {
+          "path": "../../node_modules/vfile-message/index.js",
+          "kind": "import-statement",
+          "original": "vfile-message"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-mdx-jsx/index.js": {
+      "bytes": 110,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-mdx-jsx/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-mdxjs-esm/lib/index.js": {
+      "bytes": 2160,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-mdxjs-esm/index.js": {
+      "bytes": 114,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-mdxjs-esm/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-mdx/lib/index.js": {
+      "bytes": 1516,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-mdx-expression/index.js",
+          "kind": "import-statement",
+          "original": "mdast-util-mdx-expression"
+        },
+        {
+          "path": "../../node_modules/mdast-util-mdx-jsx/index.js",
+          "kind": "import-statement",
+          "original": "mdast-util-mdx-jsx"
+        },
+        {
+          "path": "../../node_modules/mdast-util-mdxjs-esm/index.js",
+          "kind": "import-statement",
+          "original": "mdast-util-mdxjs-esm"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-mdx/index.js": {
+      "bytes": 104,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-mdx/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdxjs/node_modules/acorn/dist/acorn.mjs": {
+      "bytes": 229792,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdxjs/node_modules/acorn-jsx/xhtml.js": {
+      "bytes": 4718,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/micromark-extension-mdxjs/node_modules/acorn/dist/acorn.js": {
+      "bytes": 241575,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/micromark-extension-mdxjs/node_modules/acorn-jsx/index.js": {
+      "bytes": 15827,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-extension-mdxjs/node_modules/acorn-jsx/xhtml.js",
+          "kind": "require-call",
+          "original": "./xhtml"
+        },
+        {
+          "path": "../../node_modules/micromark-extension-mdxjs/node_modules/acorn/dist/acorn.js",
+          "kind": "require-call",
+          "original": "acorn"
+        },
+        {
+          "path": "../../node_modules/micromark-extension-mdxjs/node_modules/acorn/dist/acorn.js",
+          "kind": "require-call",
+          "original": "acorn"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/micromark-util-character/index.js": {
+      "bytes": 7171,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-factory-space/index.js": {
+      "bytes": 1618,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-visit/lib/color.node.js": {
+      "bytes": 120,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-visit/lib/index.js": {
+      "bytes": 6514,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-visit/lib/color.node.js",
+          "kind": "import-statement",
+          "original": "estree-util-visit/do-not-use-color"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-visit/index.js": {
+      "bytes": 347,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-visit/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-events-to-acorn/lib/index.js": {
+      "bytes": 10408,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-visit/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-visit"
+        },
+        {
+          "path": "../../node_modules/vfile-message/index.js",
+          "kind": "import-statement",
+          "original": "vfile-message"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-events-to-acorn/index.js": {
+      "bytes": 89,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-events-to-acorn/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-position-from-estree/lib/index.js": {
+      "bytes": 2049,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/unist-util-position-from-estree/index.js": {
+      "bytes": 50,
+      "imports": [
+        {
+          "path": "../../node_modules/unist-util-position-from-estree/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-factory-mdx-expression/index.js": {
+      "bytes": 9765,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-util-events-to-acorn/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-events-to-acorn"
+        },
+        {
+          "path": "../../node_modules/unist-util-position-from-estree/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-position-from-estree"
+        },
+        {
+          "path": "../../node_modules/vfile-message/index.js",
+          "kind": "import-statement",
+          "original": "vfile-message"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdx-expression/lib/syntax.js": {
+      "bytes": 5540,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-mdx-expression/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-mdx-expression"
+        },
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdx-expression/index.js": {
+      "bytes": 90,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-extension-mdx-expression/lib/syntax.js",
+          "kind": "import-statement",
+          "original": "./lib/syntax.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdx-jsx/lib/factory-tag.js": {
+      "bytes": 24042,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-is-identifier-name/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-is-identifier-name"
+        },
+        {
+          "path": "../../node_modules/micromark-factory-mdx-expression/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-mdx-expression"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/vfile-message/index.js",
+          "kind": "import-statement",
+          "original": "vfile-message"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdx-jsx/lib/jsx-text.js": {
+      "bytes": 1735,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-extension-mdx-jsx/lib/factory-tag.js",
+          "kind": "import-statement",
+          "original": "./factory-tag.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdx-jsx/lib/jsx-flow.js": {
+      "bytes": 3999,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-extension-mdx-jsx/lib/factory-tag.js",
+          "kind": "import-statement",
+          "original": "./factory-tag.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdx-jsx/lib/syntax.js": {
+      "bytes": 1462,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-extension-mdx-jsx/lib/jsx-text.js",
+          "kind": "import-statement",
+          "original": "./jsx-text.js"
+        },
+        {
+          "path": "../../node_modules/micromark-extension-mdx-jsx/lib/jsx-flow.js",
+          "kind": "import-statement",
+          "original": "./jsx-flow.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdx-jsx/index.js": {
+      "bytes": 88,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-extension-mdx-jsx/lib/syntax.js",
+          "kind": "import-statement",
+          "original": "./lib/syntax.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdx-md/index.js": {
+      "bytes": 480,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-chunked/index.js": {
+      "bytes": 2317,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-classify-character/index.js": {
+      "bytes": 832,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-resolve-all/index.js": {
+      "bytes": 899,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/attention.js": {
+      "bytes": 7884,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-chunked/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-chunked"
+        },
+        {
+          "path": "../../node_modules/micromark-util-classify-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-classify-character"
+        },
+        {
+          "path": "../../node_modules/micromark-util-resolve-all/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-resolve-all"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/autolink.js": {
+      "bytes": 4878,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/blank-line.js": {
+      "bytes": 1307,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/block-quote.js": {
+      "bytes": 2932,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/character-escape.js": {
+      "bytes": 1297,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/character-reference.js": {
+      "bytes": 3470,
+      "imports": [
+        {
+          "path": "../../node_modules/decode-named-character-reference/index.js",
+          "kind": "import-statement",
+          "original": "decode-named-character-reference"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/code-fenced.js": {
+      "bytes": 9576,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/code-indented.js": {
+      "bytes": 4190,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/code-text.js": {
+      "bytes": 5129,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-subtokenize/index.js": {
+      "bytes": 6308,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-chunked/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-chunked"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/content.js": {
+      "bytes": 3530,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-util-subtokenize/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-subtokenize"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-factory-destination/index.js": {
+      "bytes": 4547,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-factory-label/index.js": {
+      "bytes": 3464,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-factory-title/index.js": {
+      "bytes": 3205,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-factory-whitespace/index.js": {
+      "bytes": 1283,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-normalize-identifier/index.js": {
+      "bytes": 1309,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/definition.js": {
+      "bytes": 5939,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-destination/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-destination"
+        },
+        {
+          "path": "../../node_modules/micromark-factory-label/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-label"
+        },
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-factory-title/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-title"
+        },
+        {
+          "path": "../../node_modules/micromark-factory-whitespace/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-whitespace"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-util-normalize-identifier/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-normalize-identifier"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/hard-break-escape.js": {
+      "bytes": 1113,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/heading-atx.js": {
+      "bytes": 4650,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-util-chunked/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-chunked"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-html-tag-name/index.js": {
+      "bytes": 1680,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/html-flow.js": {
+      "bytes": 18935,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-util-html-tag-name/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-html-tag-name"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/blank-line.js",
+          "kind": "import-statement",
+          "original": "./blank-line.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/html-text.js": {
+      "bytes": 13635,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/label-end.js": {
+      "bytes": 13075,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-destination/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-destination"
+        },
+        {
+          "path": "../../node_modules/micromark-factory-label/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-label"
+        },
+        {
+          "path": "../../node_modules/micromark-factory-title/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-title"
+        },
+        {
+          "path": "../../node_modules/micromark-factory-whitespace/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-whitespace"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-util-chunked/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-chunked"
+        },
+        {
+          "path": "../../node_modules/micromark-util-normalize-identifier/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-normalize-identifier"
+        },
+        {
+          "path": "../../node_modules/micromark-util-resolve-all/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-resolve-all"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/label-start-image.js": {
+      "bytes": 2079,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/label-end.js",
+          "kind": "import-statement",
+          "original": "./label-end.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/label-start-link.js": {
+      "bytes": 1255,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/label-end.js",
+          "kind": "import-statement",
+          "original": "./label-end.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/line-ending.js": {
+      "bytes": 804,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/thematic-break.js": {
+      "bytes": 2045,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/list.js": {
+      "bytes": 6808,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/blank-line.js",
+          "kind": "import-statement",
+          "original": "./blank-line.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/thematic-break.js",
+          "kind": "import-statement",
+          "original": "./thematic-break.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/lib/setext-underline.js": {
+      "bytes": 4517,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-core-commonmark/index.js": {
+      "bytes": 1086,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/attention.js",
+          "kind": "import-statement",
+          "original": "./lib/attention.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/autolink.js",
+          "kind": "import-statement",
+          "original": "./lib/autolink.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/blank-line.js",
+          "kind": "import-statement",
+          "original": "./lib/blank-line.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/block-quote.js",
+          "kind": "import-statement",
+          "original": "./lib/block-quote.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/character-escape.js",
+          "kind": "import-statement",
+          "original": "./lib/character-escape.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/character-reference.js",
+          "kind": "import-statement",
+          "original": "./lib/character-reference.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/code-fenced.js",
+          "kind": "import-statement",
+          "original": "./lib/code-fenced.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/code-indented.js",
+          "kind": "import-statement",
+          "original": "./lib/code-indented.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/code-text.js",
+          "kind": "import-statement",
+          "original": "./lib/code-text.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/content.js",
+          "kind": "import-statement",
+          "original": "./lib/content.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/definition.js",
+          "kind": "import-statement",
+          "original": "./lib/definition.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/hard-break-escape.js",
+          "kind": "import-statement",
+          "original": "./lib/hard-break-escape.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/heading-atx.js",
+          "kind": "import-statement",
+          "original": "./lib/heading-atx.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/html-flow.js",
+          "kind": "import-statement",
+          "original": "./lib/html-flow.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/html-text.js",
+          "kind": "import-statement",
+          "original": "./lib/html-text.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/label-end.js",
+          "kind": "import-statement",
+          "original": "./lib/label-end.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/label-start-image.js",
+          "kind": "import-statement",
+          "original": "./lib/label-start-image.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/label-start-link.js",
+          "kind": "import-statement",
+          "original": "./lib/label-start-link.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/line-ending.js",
+          "kind": "import-statement",
+          "original": "./lib/line-ending.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/list.js",
+          "kind": "import-statement",
+          "original": "./lib/list.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/setext-underline.js",
+          "kind": "import-statement",
+          "original": "./lib/setext-underline.js"
+        },
+        {
+          "path": "../../node_modules/micromark-core-commonmark/lib/thematic-break.js",
+          "kind": "import-statement",
+          "original": "./lib/thematic-break.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdxjs-esm/lib/syntax.js": {
+      "bytes": 7892,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-core-commonmark/index.js",
+          "kind": "import-statement",
+          "original": "micromark-core-commonmark"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-util-events-to-acorn/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-events-to-acorn"
+        },
+        {
+          "path": "../../node_modules/unist-util-position-from-estree/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-position-from-estree"
+        },
+        {
+          "path": "../../node_modules/vfile-message/index.js",
+          "kind": "import-statement",
+          "original": "vfile-message"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdxjs-esm/index.js": {
+      "bytes": 90,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-extension-mdxjs-esm/lib/syntax.js",
+          "kind": "import-statement",
+          "original": "./lib/syntax.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-combine-extensions/index.js": {
+      "bytes": 3352,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-chunked/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-chunked"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-extension-mdxjs/index.js": {
+      "bytes": 1114,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-extension-mdxjs/node_modules/acorn/dist/acorn.mjs",
+          "kind": "import-statement",
+          "original": "acorn"
+        },
+        {
+          "path": "../../node_modules/micromark-extension-mdxjs/node_modules/acorn-jsx/index.js",
+          "kind": "import-statement",
+          "original": "acorn-jsx"
+        },
+        {
+          "path": "../../node_modules/micromark-extension-mdx-expression/index.js",
+          "kind": "import-statement",
+          "original": "micromark-extension-mdx-expression"
+        },
+        {
+          "path": "../../node_modules/micromark-extension-mdx-jsx/index.js",
+          "kind": "import-statement",
+          "original": "micromark-extension-mdx-jsx"
+        },
+        {
+          "path": "../../node_modules/micromark-extension-mdx-md/index.js",
+          "kind": "import-statement",
+          "original": "micromark-extension-mdx-md"
+        },
+        {
+          "path": "../../node_modules/micromark-extension-mdxjs-esm/index.js",
+          "kind": "import-statement",
+          "original": "micromark-extension-mdxjs-esm"
+        },
+        {
+          "path": "../../node_modules/micromark-util-combine-extensions/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-combine-extensions"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/remark-mdx/lib/index.js": {
+      "bytes": 1308,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-mdx/index.js",
+          "kind": "import-statement",
+          "original": "mdast-util-mdx"
+        },
+        {
+          "path": "../../node_modules/micromark-extension-mdxjs/index.js",
+          "kind": "import-statement",
+          "original": "micromark-extension-mdxjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/remark-mdx/index.js": {
+      "bytes": 168,
+      "imports": [
+        {
+          "path": "../../node_modules/remark-mdx/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-string/lib/index.js": {
+      "bytes": 2626,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-string/index.js": {
+      "bytes": 104,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-to-string/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-decode-numeric-character-reference/index.js": {
+      "bytes": 1061,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-encode/index.js": {
+      "bytes": 661,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-sanitize-uri/index.js": {
+      "bytes": 3180,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-util-encode/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-encode"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark/lib/compile.js": {
+      "bytes": 27415,
+      "imports": [
+        {
+          "path": "../../node_modules/decode-named-character-reference/index.js",
+          "kind": "import-statement",
+          "original": "decode-named-character-reference"
+        },
+        {
+          "path": "../../node_modules/micromark-util-chunked/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-chunked"
+        },
+        {
+          "path": "../../node_modules/micromark-util-combine-extensions/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-combine-extensions"
+        },
+        {
+          "path": "../../node_modules/micromark-util-decode-numeric-character-reference/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-decode-numeric-character-reference"
+        },
+        {
+          "path": "../../node_modules/micromark-util-encode/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-encode"
+        },
+        {
+          "path": "../../node_modules/micromark-util-normalize-identifier/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-normalize-identifier"
+        },
+        {
+          "path": "../../node_modules/micromark-util-sanitize-uri/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-sanitize-uri"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark/lib/initialize/content.js": {
+      "bytes": 1886,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark/lib/initialize/document.js": {
+      "bytes": 11192,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-util-chunked/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-chunked"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark/lib/initialize/flow.js": {
+      "bytes": 1725,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-core-commonmark/index.js",
+          "kind": "import-statement",
+          "original": "micromark-core-commonmark"
+        },
+        {
+          "path": "../../node_modules/micromark-factory-space/index.js",
+          "kind": "import-statement",
+          "original": "micromark-factory-space"
+        },
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark/lib/initialize/text.js": {
+      "bytes": 5639,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/micromark/lib/create-tokenizer.js": {
+      "bytes": 15002,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-character/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-character"
+        },
+        {
+          "path": "../../node_modules/micromark-util-chunked/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-chunked"
+        },
+        {
+          "path": "../../node_modules/micromark-util-resolve-all/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-resolve-all"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark/lib/constructs.js": {
+      "bytes": 2006,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-core-commonmark/index.js",
+          "kind": "import-statement",
+          "original": "micromark-core-commonmark"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/initialize/text.js",
+          "kind": "import-statement",
+          "original": "./initialize/text.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark/lib/parse.js": {
+      "bytes": 1515,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-combine-extensions/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-combine-extensions"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/initialize/content.js",
+          "kind": "import-statement",
+          "original": "./initialize/content.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/initialize/document.js",
+          "kind": "import-statement",
+          "original": "./initialize/document.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/initialize/flow.js",
+          "kind": "import-statement",
+          "original": "./initialize/flow.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/initialize/text.js",
+          "kind": "import-statement",
+          "original": "./initialize/text.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/create-tokenizer.js",
+          "kind": "import-statement",
+          "original": "./create-tokenizer.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/constructs.js",
+          "kind": "import-statement",
+          "original": "./constructs.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark/lib/postprocess.js": {
+      "bytes": 295,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-subtokenize/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-subtokenize"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark/lib/preprocess.js": {
+      "bytes": 2949,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/micromark/index.js": {
+      "bytes": 1941,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark/lib/compile.js",
+          "kind": "import-statement",
+          "original": "./lib/compile.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/parse.js",
+          "kind": "import-statement",
+          "original": "./lib/parse.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/postprocess.js",
+          "kind": "import-statement",
+          "original": "./lib/postprocess.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/preprocess.js",
+          "kind": "import-statement",
+          "original": "./lib/preprocess.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/compile.js",
+          "kind": "import-statement",
+          "original": "./lib/compile.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/parse.js",
+          "kind": "import-statement",
+          "original": "./lib/parse.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/postprocess.js",
+          "kind": "import-statement",
+          "original": "./lib/postprocess.js"
+        },
+        {
+          "path": "../../node_modules/micromark/lib/preprocess.js",
+          "kind": "import-statement",
+          "original": "./lib/preprocess.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/micromark-util-decode-string/index.js": {
+      "bytes": 1159,
+      "imports": [
+        {
+          "path": "../../node_modules/decode-named-character-reference/index.js",
+          "kind": "import-statement",
+          "original": "decode-named-character-reference"
+        },
+        {
+          "path": "../../node_modules/micromark-util-decode-numeric-character-reference/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-decode-numeric-character-reference"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-from-markdown/lib/index.js": {
+      "bytes": 33802,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-to-string/index.js",
+          "kind": "import-statement",
+          "original": "mdast-util-to-string"
+        },
+        {
+          "path": "../../node_modules/micromark/index.js",
+          "kind": "import-statement",
+          "original": "micromark"
+        },
+        {
+          "path": "../../node_modules/micromark-util-decode-numeric-character-reference/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-decode-numeric-character-reference"
+        },
+        {
+          "path": "../../node_modules/micromark-util-decode-string/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-decode-string"
+        },
+        {
+          "path": "../../node_modules/micromark-util-normalize-identifier/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-normalize-identifier"
+        },
+        {
+          "path": "../../node_modules/decode-named-character-reference/index.js",
+          "kind": "import-statement",
+          "original": "decode-named-character-reference"
+        },
+        {
+          "path": "../../node_modules/unist-util-stringify-position/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-stringify-position"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-from-markdown/index.js": {
+      "bytes": 87,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-from-markdown/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/remark-parse/lib/index.js": {
+      "bytes": 1200,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-from-markdown/index.js",
+          "kind": "import-statement",
+          "original": "mdast-util-from-markdown"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/remark-parse/index.js": {
+      "bytes": 81,
+      "imports": [
+        {
+          "path": "../../node_modules/remark-parse/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/blockquote.js": {
+      "bytes": 674,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/break.js": {
+      "bytes": 689,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/code.js": {
+      "bytes": 1087,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/delete.js": {
+      "bytes": 636,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/emphasis.js": {
+      "bytes": 638,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/footnote-reference.js": {
+      "bytes": 1715,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-sanitize-uri/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-sanitize-uri"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/heading.js": {
+      "bytes": 645,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/html.js": {
+      "bytes": 743,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/revert.js": {
+      "bytes": 1278,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/image-reference.js": {
+      "bytes": 1191,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-sanitize-uri/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-sanitize-uri"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/revert.js",
+          "kind": "import-statement",
+          "original": "../revert.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/image.js": {
+      "bytes": 904,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-sanitize-uri/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-sanitize-uri"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/inline-code.js": {
+      "bytes": 804,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/link-reference.js": {
+      "bytes": 1203,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-sanitize-uri/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-sanitize-uri"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/revert.js",
+          "kind": "import-statement",
+          "original": "../revert.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/link.js": {
+      "bytes": 843,
+      "imports": [
+        {
+          "path": "../../node_modules/micromark-util-sanitize-uri/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-sanitize-uri"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/list-item.js": {
+      "bytes": 3097,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/list.js": {
+      "bytes": 1316,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/paragraph.js": {
+      "bytes": 642,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/root.js": {
+      "bytes": 638,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/strong.js": {
+      "bytes": 632,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/table.js": {
+      "bytes": 1405,
+      "imports": [
+        {
+          "path": "../../node_modules/unist-util-position/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-position"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/table-row.js": {
+      "bytes": 1890,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/table-cell.js": {
+      "bytes": 777,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/trim-lines/index.js": {
+      "bytes": 1530,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/text.js": {
+      "bytes": 630,
+      "imports": [
+        {
+          "path": "../../node_modules/trim-lines/index.js",
+          "kind": "import-statement",
+          "original": "trim-lines"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/thematic-break.js": {
+      "bytes": 650,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/handlers/index.js": {
+      "bytes": 1546,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/blockquote.js",
+          "kind": "import-statement",
+          "original": "./blockquote.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/break.js",
+          "kind": "import-statement",
+          "original": "./break.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/code.js",
+          "kind": "import-statement",
+          "original": "./code.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/delete.js",
+          "kind": "import-statement",
+          "original": "./delete.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/emphasis.js",
+          "kind": "import-statement",
+          "original": "./emphasis.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/footnote-reference.js",
+          "kind": "import-statement",
+          "original": "./footnote-reference.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/heading.js",
+          "kind": "import-statement",
+          "original": "./heading.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/html.js",
+          "kind": "import-statement",
+          "original": "./html.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/image-reference.js",
+          "kind": "import-statement",
+          "original": "./image-reference.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/image.js",
+          "kind": "import-statement",
+          "original": "./image.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/inline-code.js",
+          "kind": "import-statement",
+          "original": "./inline-code.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/link-reference.js",
+          "kind": "import-statement",
+          "original": "./link-reference.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/link.js",
+          "kind": "import-statement",
+          "original": "./link.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/list-item.js",
+          "kind": "import-statement",
+          "original": "./list-item.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/list.js",
+          "kind": "import-statement",
+          "original": "./list.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/paragraph.js",
+          "kind": "import-statement",
+          "original": "./paragraph.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/root.js",
+          "kind": "import-statement",
+          "original": "./root.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/strong.js",
+          "kind": "import-statement",
+          "original": "./strong.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/table.js",
+          "kind": "import-statement",
+          "original": "./table.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/table-row.js",
+          "kind": "import-statement",
+          "original": "./table-row.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/table-cell.js",
+          "kind": "import-statement",
+          "original": "./table-cell.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/text.js",
+          "kind": "import-statement",
+          "original": "./text.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/thematic-break.js",
+          "kind": "import-statement",
+          "original": "./thematic-break.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/footer.js": {
+      "bytes": 7673,
+      "imports": [
+        {
+          "path": "../../node_modules/@ungap/structured-clone/esm/index.js",
+          "kind": "import-statement",
+          "original": "@ungap/structured-clone"
+        },
+        {
+          "path": "../../node_modules/micromark-util-sanitize-uri/index.js",
+          "kind": "import-statement",
+          "original": "micromark-util-sanitize-uri"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/state.js": {
+      "bytes": 15054,
+      "imports": [
+        {
+          "path": "../../node_modules/@ungap/structured-clone/esm/index.js",
+          "kind": "import-statement",
+          "original": "@ungap/structured-clone"
+        },
+        {
+          "path": "../../node_modules/unist-util-visit/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-visit"
+        },
+        {
+          "path": "../../node_modules/unist-util-position/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-position"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/index.js",
+          "kind": "import-statement",
+          "original": "./handlers/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/lib/index.js": {
+      "bytes": 3631,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/footer.js",
+          "kind": "import-statement",
+          "original": "./footer.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/state.js",
+          "kind": "import-statement",
+          "original": "./state.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/mdast-util-to-hast/index.js": {
+      "bytes": 239,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/handlers/index.js",
+          "kind": "import-statement",
+          "original": "./lib/handlers/index.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        },
+        {
+          "path": "../../node_modules/mdast-util-to-hast/lib/footer.js",
+          "kind": "import-statement",
+          "original": "./lib/footer.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/remark-rehype/lib/index.js": {
+      "bytes": 5367,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-to-hast/index.js",
+          "kind": "import-statement",
+          "original": "mdast-util-to-hast"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/remark-rehype/index.js": {
+      "bytes": 216,
+      "imports": [
+        {
+          "path": "../../node_modules/mdast-util-to-hast/index.js",
+          "kind": "import-statement",
+          "original": "mdast-util-to-hast"
+        },
+        {
+          "path": "../../node_modules/remark-rehype/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/bail/index.js": {
+      "bytes": 207,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/extend/index.js": {
+      "bytes": 3321,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/is-plain-obj/index.js": {
+      "bytes": 344,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/trough/lib/index.js": {
+      "bytes": 5001,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/trough/index.js": {
+      "bytes": 322,
+      "imports": [
+        {
+          "path": "../../node_modules/trough/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/unified/lib/callable-instance.js": {
+      "bytes": 1401,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/unified/lib/index.js": {
+      "bytes": 40285,
+      "imports": [
+        {
+          "path": "../../node_modules/bail/index.js",
+          "kind": "import-statement",
+          "original": "bail"
+        },
+        {
+          "path": "../../node_modules/extend/index.js",
+          "kind": "import-statement",
+          "original": "extend"
+        },
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        },
+        {
+          "path": "../../node_modules/is-plain-obj/index.js",
+          "kind": "import-statement",
+          "original": "is-plain-obj"
+        },
+        {
+          "path": "../../node_modules/trough/index.js",
+          "kind": "import-statement",
+          "original": "trough"
+        },
+        {
+          "path": "../../node_modules/vfile/index.js",
+          "kind": "import-statement",
+          "original": "vfile"
+        },
+        {
+          "path": "../../node_modules/unified/lib/callable-instance.js",
+          "kind": "import-statement",
+          "original": "./callable-instance.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/unified/index.js": {
+      "bytes": 81,
+      "imports": [
+        {
+          "path": "../../node_modules/unified/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/util/estree-util-create.js": {
+      "bytes": 573,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/util/estree-util-specifiers-to-declarations.js": {
+      "bytes": 2919,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/estree-util-create.js",
+          "kind": "import-statement",
+          "original": "./estree-util-create.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/util/estree-util-to-id-or-member-expression.js": {
+      "bytes": 1969,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        },
+        {
+          "path": "../../node_modules/estree-util-is-identifier-name/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-is-identifier-name"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/plugin/recma-build-jsx-transform.js": {
+      "bytes": 2360,
+      "imports": [
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/estree-util-specifiers-to-declarations.js",
+          "kind": "import-statement",
+          "original": "../util/estree-util-specifiers-to-declarations.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/estree-util-to-id-or-member-expression.js",
+          "kind": "import-statement",
+          "original": "../util/estree-util-to-id-or-member-expression.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-scope/lib/index.js": {
+      "bytes": 5029,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/estree-util-scope/index.js": {
+      "bytes": 88,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-scope/lib/index.js",
+          "kind": "import-statement",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/util/estree-util-declaration-to-expression.js": {
+      "bytes": 1032,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/util/estree-util-is-declaration.js": {
+      "bytes": 686,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/plugin/recma-document.js": {
+      "bytes": 27689,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        },
+        {
+          "path": "../../node_modules/estree-util-scope/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-scope"
+        },
+        {
+          "path": "../../node_modules/estree-walker/src/index.js",
+          "kind": "import-statement",
+          "original": "estree-walker"
+        },
+        {
+          "path": "../../node_modules/unist-util-position-from-estree/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-position-from-estree"
+        },
+        {
+          "path": "../../node_modules/unist-util-stringify-position/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-stringify-position"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/estree-util-create.js",
+          "kind": "import-statement",
+          "original": "../util/estree-util-create.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/estree-util-declaration-to-expression.js",
+          "kind": "import-statement",
+          "original": "../util/estree-util-declaration-to-expression.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/estree-util-is-declaration.js",
+          "kind": "import-statement",
+          "original": "../util/estree-util-is-declaration.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/estree-util-specifiers-to-declarations.js",
+          "kind": "import-statement",
+          "original": "../util/estree-util-specifiers-to-declarations.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/estree-util-to-id-or-member-expression.js",
+          "kind": "import-statement",
+          "original": "../util/estree-util-to-id-or-member-expression.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/util/estree-util-to-binary-addition.js": {
+      "bytes": 565,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/plugin/recma-jsx-rewrite.js": {
+      "bytes": 19908,
+      "imports": [
+        {
+          "path": "../../node_modules/estree-util-is-identifier-name/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-is-identifier-name"
+        },
+        {
+          "path": "../../node_modules/estree-util-scope/index.js",
+          "kind": "import-statement",
+          "original": "estree-util-scope"
+        },
+        {
+          "path": "../../node_modules/estree-walker/src/index.js",
+          "kind": "import-statement",
+          "original": "estree-walker"
+        },
+        {
+          "path": "../../node_modules/unist-util-stringify-position/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-stringify-position"
+        },
+        {
+          "path": "../../node_modules/unist-util-position-from-estree/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-position-from-estree"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/estree-util-specifiers-to-declarations.js",
+          "kind": "import-statement",
+          "original": "../util/estree-util-specifiers-to-declarations.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/estree-util-to-binary-addition.js",
+          "kind": "import-statement",
+          "original": "../util/estree-util-to-binary-addition.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/estree-util-to-id-or-member-expression.js",
+          "kind": "import-statement",
+          "original": "../util/estree-util-to-id-or-member-expression.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/plugin/rehype-remove-raw.js": {
+      "bytes": 609,
+      "imports": [
+        {
+          "path": "../../node_modules/unist-util-visit/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-visit"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/collapse-white-space/index.js": {
+      "bytes": 1978,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/plugin/remark-mark-and-unravel.js": {
+      "bytes": 3030,
+      "imports": [
+        {
+          "path": "../../node_modules/collapse-white-space/index.js",
+          "kind": "import-statement",
+          "original": "collapse-white-space"
+        },
+        {
+          "path": "../../node_modules/estree-walker/src/index.js",
+          "kind": "import-statement",
+          "original": "estree-walker"
+        },
+        {
+          "path": "../../node_modules/unist-util-visit/index.js",
+          "kind": "import-statement",
+          "original": "unist-util-visit"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/node-types.js": {
+      "bytes": 296,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/core.js": {
+      "bytes": 10234,
+      "imports": [
+        {
+          "path": "../../node_modules/devlop/lib/default.js",
+          "kind": "import-statement",
+          "original": "devlop"
+        },
+        {
+          "path": "../../node_modules/recma-build-jsx/index.js",
+          "kind": "import-statement",
+          "original": "recma-build-jsx"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/node_modules/recma-jsx/index.js",
+          "kind": "import-statement",
+          "original": "recma-jsx"
+        },
+        {
+          "path": "../../node_modules/recma-stringify/index.js",
+          "kind": "import-statement",
+          "original": "recma-stringify"
+        },
+        {
+          "path": "../../node_modules/rehype-recma/index.js",
+          "kind": "import-statement",
+          "original": "rehype-recma"
+        },
+        {
+          "path": "../../node_modules/remark-mdx/index.js",
+          "kind": "import-statement",
+          "original": "remark-mdx"
+        },
+        {
+          "path": "../../node_modules/remark-parse/index.js",
+          "kind": "import-statement",
+          "original": "remark-parse"
+        },
+        {
+          "path": "../../node_modules/remark-rehype/index.js",
+          "kind": "import-statement",
+          "original": "remark-rehype"
+        },
+        {
+          "path": "../../node_modules/unified/index.js",
+          "kind": "import-statement",
+          "original": "unified"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/plugin/recma-build-jsx-transform.js",
+          "kind": "import-statement",
+          "original": "./plugin/recma-build-jsx-transform.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/plugin/recma-document.js",
+          "kind": "import-statement",
+          "original": "./plugin/recma-document.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/plugin/recma-jsx-rewrite.js",
+          "kind": "import-statement",
+          "original": "./plugin/recma-jsx-rewrite.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/plugin/rehype-remove-raw.js",
+          "kind": "import-statement",
+          "original": "./plugin/rehype-remove-raw.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/plugin/remark-mark-and-unravel.js",
+          "kind": "import-statement",
+          "original": "./plugin/remark-mark-and-unravel.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/node-types.js",
+          "kind": "import-statement",
+          "original": "./node-types.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/compile.js": {
+      "bytes": 1872,
+      "imports": [
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/resolve-file-and-options.js",
+          "kind": "import-statement",
+          "original": "./util/resolve-file-and-options.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/core.js",
+          "kind": "import-statement",
+          "original": "./core.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/util/resolve-evaluate-options.js": {
+      "bytes": 3154,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/run.js": {
+      "bytes": 1246,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/lib/evaluate.js": {
+      "bytes": 2153,
+      "imports": [
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/util/resolve-evaluate-options.js",
+          "kind": "import-statement",
+          "original": "./util/resolve-evaluate-options.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/compile.js",
+          "kind": "import-statement",
+          "original": "./compile.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/run.js",
+          "kind": "import-statement",
+          "original": "./run.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@mdx-js/mdx/index.js": {
+      "bytes": 861,
+      "imports": [
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/compile.js",
+          "kind": "import-statement",
+          "original": "./lib/compile.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/core.js",
+          "kind": "import-statement",
+          "original": "./lib/core.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/evaluate.js",
+          "kind": "import-statement",
+          "original": "./lib/evaluate.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/node-types.js",
+          "kind": "import-statement",
+          "original": "./lib/node-types.js"
+        },
+        {
+          "path": "../../node_modules/@mdx-js/mdx/lib/run.js",
+          "kind": "import-statement",
+          "original": "./lib/run.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/compiler/index.ts": {
+      "bytes": 891,
+      "imports": [
+        {
+          "path": "../../node_modules/@mdx-js/mdx/index.js",
+          "kind": "import-statement",
+          "original": "@mdx-js/mdx"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/mdx-plugin.ts": {
+      "bytes": 1762,
+      "imports": [
+        {
+          "path": "../../node_modules/@rollup/pluginutils/dist/es/index.js",
+          "kind": "import-statement",
+          "original": "@rollup/pluginutils"
+        },
+        {
+          "path": "src/compiler/index.ts",
+          "kind": "import-statement",
+          "original": "./compiler"
+        },
+        {
+          "path": "../../node_modules/rehype-slug/index.js",
+          "kind": "dynamic-import",
+          "original": "rehype-slug"
+        },
+        {
+          "path": "../../node_modules/rehype-external-links/index.js",
+          "kind": "dynamic-import",
+          "original": "rehype-external-links"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preset.ts": {
+      "bytes": 7026,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../core/src/shared/utils/module.ts",
+          "kind": "import-statement",
+          "original": "../../../core/src/shared/utils/module"
+        },
+        {
+          "path": "../../node_modules/rehype-slug/index.js",
+          "kind": "dynamic-import",
+          "original": "rehype-slug"
+        },
+        {
+          "path": "../../node_modules/rehype-external-links/index.js",
+          "kind": "dynamic-import",
+          "original": "rehype-external-links"
+        },
+        {
+          "path": "@storybook/csf-plugin",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "src/mdx-plugin.ts",
+          "kind": "dynamic-import",
+          "original": "./mdx-plugin"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/mdx-loader.ts": {
+      "bytes": 1138,
+      "imports": [
+        {
+          "path": "src/compiler/index.ts",
+          "kind": "import-statement",
+          "original": "./compiler"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/preset.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-VBA2G7HW.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:v8",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:util",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "dist/_node-chunks/rehype-slug-QOJ2KTEF.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/rehype-external-links-RXBZFTEI.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "@storybook/csf-plugin",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "dist/_node-chunks/mdx-plugin-BGWNYGLJ.js",
+          "kind": "dynamic-import"
+        }
+      ],
+      "exports": [
+        "addons",
+        "docs",
+        "optimizeViteDeps",
+        "resolvedReact",
+        "viteFinal",
+        "webpack"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/preset.ts": {
+          "bytesInOutput": 4487
+        },
+        "../../core/src/shared/utils/module.ts": {
+          "bytesInOutput": 680
+        },
+        "../../node_modules/exsolve/dist/index.mjs": {
+          "bytesInOutput": 8715
+        },
+        "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs": {
+          "bytesInOutput": 2931
+        },
+        "../../node_modules/pathe/dist/index.mjs": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 17813
+    },
+    "dist/mdx-loader.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-DKFK5WPQ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-FGXM7DVB.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-VEYUXNZJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-VBA2G7HW.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "default"
+      ],
+      "entryPoint": "src/mdx-loader.ts",
+      "inputs": {
+        "src/mdx-loader.ts": {
+          "bytesInOutput": 450
+        }
+      },
+      "bytes": 1327
+    },
+    "dist/_node-chunks/rehype-slug-QOJ2KTEF.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-VEYUXNZJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-VBA2G7HW.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "default"
+      ],
+      "entryPoint": "../../node_modules/rehype-slug/index.js",
+      "inputs": {
+        "../../node_modules/github-slugger/regex.js": {
+          "bytesInOutput": 8183
+        },
+        "../../node_modules/github-slugger/index.js": {
+          "bytesInOutput": 1223
+        },
+        "../../node_modules/hast-util-heading-rank/lib/index.js": {
+          "bytesInOutput": 238
+        },
+        "../../node_modules/hast-util-heading-rank/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/hast-util-to-string/lib/index.js": {
+          "bytesInOutput": 380
+        },
+        "../../node_modules/hast-util-to-string/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/rehype-slug/lib/index.js": {
+          "bytesInOutput": 345
+        },
+        "../../node_modules/rehype-slug/index.js": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 11359
+    },
+    "dist/_node-chunks/rehype-external-links-RXBZFTEI.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-FGXM7DVB.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-VEYUXNZJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-VBA2G7HW.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "default"
+      ],
+      "entryPoint": "../../node_modules/rehype-external-links/index.js",
+      "inputs": {
+        "../../node_modules/hast-util-is-element/lib/index.js": {
+          "bytesInOutput": 2281
+        },
+        "../../node_modules/hast-util-is-element/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/is-absolute-url/index.js": {
+          "bytesInOutput": 302
+        },
+        "../../node_modules/rehype-external-links/lib/index.js": {
+          "bytesInOutput": 1605
+        },
+        "../../node_modules/rehype-external-links/index.js": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 5155
+    },
+    "dist/_node-chunks/mdx-plugin-BGWNYGLJ.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-DKFK5WPQ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-FGXM7DVB.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-VEYUXNZJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-VBA2G7HW.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "dist/_node-chunks/rehype-slug-QOJ2KTEF.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/rehype-external-links-RXBZFTEI.js",
+          "kind": "dynamic-import"
+        }
+      ],
+      "exports": [
+        "mdxPlugin"
+      ],
+      "entryPoint": "src/mdx-plugin.ts",
+      "inputs": {
+        "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/constants.js": {
+          "bytesInOutput": 4872
+        },
+        "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/utils.js": {
+          "bytesInOutput": 2064
+        },
+        "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/scan.js": {
+          "bytesInOutput": 7903
+        },
+        "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/parse.js": {
+          "bytesInOutput": 23180
+        },
+        "../../node_modules/@rollup/pluginutils/node_modules/picomatch/lib/picomatch.js": {
+          "bytesInOutput": 4556
+        },
+        "../../node_modules/@rollup/pluginutils/node_modules/picomatch/index.js": {
+          "bytesInOutput": 525
+        },
+        "../../node_modules/@rollup/pluginutils/dist/es/index.js": {
+          "bytesInOutput": 2888
+        },
+        "src/mdx-plugin.ts": {
+          "bytesInOutput": 1071
+        }
+      },
+      "bytes": 48434
+    },
+    "dist/_node-chunks/chunk-DKFK5WPQ.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-FGXM7DVB.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-VEYUXNZJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-VBA2G7HW.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "compile"
+      ],
+      "inputs": {
+        "../../node_modules/@mdx-js/mdx/node_modules/acorn-jsx/xhtml.js": {
+          "bytesInOutput": 5661
+        },
+        "../../node_modules/@mdx-js/mdx/node_modules/acorn/dist/acorn.js": {
+          "bytesInOutput": 203499
+        },
+        "../../node_modules/@mdx-js/mdx/node_modules/acorn-jsx/index.js": {
+          "bytesInOutput": 14897
+        },
+        "../../node_modules/inline-style-parser/cjs/index.js": {
+          "bytesInOutput": 3725
+        },
+        "../../node_modules/style-to-object/cjs/index.js": {
+          "bytesInOutput": 1031
+        },
+        "../../node_modules/style-to-js/cjs/utilities.js": {
+          "bytesInOutput": 1137
+        },
+        "../../node_modules/style-to-js/cjs/index.js": {
+          "bytesInOutput": 727
+        },
+        "../../node_modules/micromark-extension-mdxjs/node_modules/acorn-jsx/xhtml.js": {
+          "bytesInOutput": 5676
+        },
+        "../../node_modules/micromark-extension-mdxjs/node_modules/acorn/dist/acorn.js": {
+          "bytesInOutput": 203514
+        },
+        "../../node_modules/micromark-extension-mdxjs/node_modules/acorn-jsx/index.js": {
+          "bytesInOutput": 14915
+        },
+        "../../node_modules/extend/index.js": {
+          "bytesInOutput": 2399
+        },
+        "../../node_modules/unist-util-stringify-position/lib/index.js": {
+          "bytesInOutput": 548
+        },
+        "../../node_modules/unist-util-stringify-position/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/vfile-message/lib/index.js": {
+          "bytesInOutput": 4242
+        },
+        "../../node_modules/vfile-message/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/vfile/lib/minpath.js": {
+          "bytesInOutput": 49
+        },
+        "../../node_modules/vfile/lib/minproc.js": {
+          "bytesInOutput": 52
+        },
+        "../../node_modules/vfile/lib/minurl.js": {
+          "bytesInOutput": 42
+        },
+        "../../node_modules/vfile/lib/minurl.shared.js": {
+          "bytesInOutput": 287
+        },
+        "../../node_modules/vfile/lib/index.js": {
+          "bytesInOutput": 13029
+        },
+        "../../node_modules/vfile/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/markdown-extensions/index.js": {
+          "bytesInOutput": 160
+        },
+        "../../node_modules/@mdx-js/mdx/lib/util/extnames.js": {
+          "bytesInOutput": 77
+        },
+        "../../node_modules/@mdx-js/mdx/lib/util/resolve-file-and-options.js": {
+          "bytesInOutput": 524
+        },
+        "../../node_modules/estree-util-is-identifier-name/lib/index.js": {
+          "bytesInOutput": 655
+        },
+        "../../node_modules/estree-util-is-identifier-name/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/estree-walker/src/walker.js": {
+          "bytesInOutput": 953
+        },
+        "../../node_modules/estree-walker/src/sync.js": {
+          "bytesInOutput": 2596
+        },
+        "../../node_modules/estree-walker/src/index.js": {
+          "bytesInOutput": 97
+        },
+        "../../node_modules/estree-util-build-jsx/lib/index.js": {
+          "bytesInOutput": 10081
+        },
+        "../../node_modules/estree-util-build-jsx/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/recma-build-jsx/lib/index.js": {
+          "bytesInOutput": 131
+        },
+        "../../node_modules/recma-build-jsx/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/@mdx-js/mdx/node_modules/recma-jsx/lib/index.js": {
+          "bytesInOutput": 337
+        },
+        "../../node_modules/astring/dist/astring.mjs": {
+          "bytesInOutput": 28166
+        },
+        "../../node_modules/estree-util-to-js/lib/index.js": {
+          "bytesInOutput": 554
+        },
+        "../../node_modules/estree-util-to-js/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/estree-util-to-js/lib/jsx.js": {
+          "bytesInOutput": 3417
+        },
+        "../../node_modules/@mdx-js/mdx/node_modules/recma-jsx/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/recma-stringify/lib/index.js": {
+          "bytesInOutput": 397
+        },
+        "../../node_modules/recma-stringify/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/hast-util-to-estree/lib/handlers/comment.js": {
+          "bytesInOutput": 479
+        },
+        "../../node_modules/comma-separated-tokens/index.js": {
+          "bytesInOutput": 242
+        },
+        "../../node_modules/property-information/lib/util/schema.js": {
+          "bytesInOutput": 462
+        },
+        "../../node_modules/property-information/lib/util/merge.js": {
+          "bytesInOutput": 252
+        },
+        "../../node_modules/property-information/lib/normalize.js": {
+          "bytesInOutput": 60
+        },
+        "../../node_modules/property-information/lib/util/info.js": {
+          "bytesInOutput": 657
+        },
+        "../../node_modules/property-information/lib/util/types.js": {
+          "bytesInOutput": 581
+        },
+        "../../node_modules/property-information/lib/util/defined-info.js": {
+          "bytesInOutput": 856
+        },
+        "../../node_modules/property-information/lib/util/create.js": {
+          "bytesInOutput": 602
+        },
+        "../../node_modules/property-information/lib/aria.js": {
+          "bytesInOutput": 1518
+        },
+        "../../node_modules/property-information/lib/util/case-sensitive-transform.js": {
+          "bytesInOutput": 129
+        },
+        "../../node_modules/property-information/lib/util/case-insensitive-transform.js": {
+          "bytesInOutput": 129
+        },
+        "../../node_modules/property-information/lib/html.js": {
+          "bytesInOutput": 8608
+        },
+        "../../node_modules/property-information/lib/svg.js": {
+          "bytesInOutput": 14125
+        },
+        "../../node_modules/property-information/lib/xlink.js": {
+          "bytesInOutput": 304
+        },
+        "../../node_modules/property-information/lib/xmlns.js": {
+          "bytesInOutput": 176
+        },
+        "../../node_modules/property-information/lib/xml.js": {
+          "bytesInOutput": 188
+        },
+        "../../node_modules/property-information/lib/hast-to-react.js": {
+          "bytesInOutput": 520
+        },
+        "../../node_modules/property-information/index.js": {
+          "bytesInOutput": 113
+        },
+        "../../node_modules/property-information/lib/find.js": {
+          "bytesInOutput": 897
+        },
+        "../../node_modules/hast-util-to-estree/lib/handlers/element.js": {
+          "bytesInOutput": 5028
+        },
+        "../../node_modules/estree-util-attach-comments/lib/index.js": {
+          "bytesInOutput": 1842
+        },
+        "../../node_modules/estree-util-attach-comments/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/hast-util-to-estree/lib/handlers/mdx-expression.js": {
+          "bytesInOutput": 554
+        },
+        "../../node_modules/hast-util-to-estree/lib/handlers/mdx-jsx-element.js": {
+          "bytesInOutput": 2903
+        },
+        "../../node_modules/hast-util-to-estree/lib/handlers/mdxjs-esm.js": {
+          "bytesInOutput": 242
+        },
+        "../../node_modules/hast-util-whitespace/lib/index.js": {
+          "bytesInOutput": 221
+        },
+        "../../node_modules/hast-util-whitespace/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/hast-util-to-estree/lib/handlers/root.js": {
+          "bytesInOutput": 654
+        },
+        "../../node_modules/hast-util-to-estree/lib/handlers/text.js": {
+          "bytesInOutput": 300
+        },
+        "../../node_modules/hast-util-to-estree/lib/handlers/index.js": {
+          "bytesInOutput": 254
+        },
+        "../../node_modules/hast-util-to-estree/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/unist-util-position/lib/index.js": {
+          "bytesInOutput": 643
+        },
+        "../../node_modules/unist-util-position/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/zwitch/index.js": {
+          "bytesInOutput": 532
+        },
+        "../../node_modules/hast-util-to-estree/lib/state.js": {
+          "bytesInOutput": 3186
+        },
+        "../../node_modules/hast-util-to-estree/lib/index.js": {
+          "bytesInOutput": 708
+        },
+        "../../node_modules/rehype-recma/lib/index.js": {
+          "bytesInOutput": 101
+        },
+        "../../node_modules/rehype-recma/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/mdast-util-mdx-expression/lib/index.js": {
+          "bytesInOutput": 1522
+        },
+        "../../node_modules/mdast-util-mdx-expression/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/ccount/index.js": {
+          "bytesInOutput": 322
+        },
+        "../../node_modules/character-entities-legacy/index.js": {
+          "bytesInOutput": 1182
+        },
+        "../../node_modules/character-reference-invalid/index.js": {
+          "bytesInOutput": 510
+        },
+        "../../node_modules/is-decimal/index.js": {
+          "bytesInOutput": 153
+        },
+        "../../node_modules/is-hexadecimal/index.js": {
+          "bytesInOutput": 218
+        },
+        "../../node_modules/is-alphabetical/index.js": {
+          "bytesInOutput": 189
+        },
+        "../../node_modules/is-alphanumerical/index.js": {
+          "bytesInOutput": 101
+        },
+        "../../node_modules/character-entities/index.js": {
+          "bytesInOutput": 44264
+        },
+        "../../node_modules/decode-named-character-reference/index.js": {
+          "bytesInOutput": 158
+        },
+        "../../node_modules/parse-entities/lib/index.js": {
+          "bytesInOutput": 6288
+        },
+        "../../node_modules/parse-entities/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/stringify-entities/lib/core.js": {
+          "bytesInOutput": 1486
+        },
+        "../../node_modules/character-entities-html4/index.js": {
+          "bytesInOutput": 4513
+        },
+        "../../node_modules/stringify-entities/lib/util/to-named.js": {
+          "bytesInOutput": 181
+        },
+        "../../node_modules/stringify-entities/lib/util/format-basic.js": {
+          "bytesInOutput": 89
+        },
+        "../../node_modules/stringify-entities/lib/index.js": {
+          "bytesInOutput": 123
+        },
+        "../../node_modules/stringify-entities/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/mdast-util-mdx-jsx/lib/index.js": {
+          "bytesInOutput": 14587
+        },
+        "../../node_modules/mdast-util-mdx-jsx/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/mdast-util-mdxjs-esm/lib/index.js": {
+          "bytesInOutput": 762
+        },
+        "../../node_modules/mdast-util-mdxjs-esm/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/mdast-util-mdx/lib/index.js": {
+          "bytesInOutput": 302
+        },
+        "../../node_modules/mdast-util-mdx/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/micromark-extension-mdxjs/node_modules/acorn/dist/acorn.mjs": {
+          "bytesInOutput": 183177
+        },
+        "../../node_modules/micromark-extension-mdxjs/index.js": {
+          "bytesInOutput": 419
+        },
+        "../../node_modules/micromark-util-character/index.js": {
+          "bytesInOutput": 1111
+        },
+        "../../node_modules/micromark-factory-space/index.js": {
+          "bytesInOutput": 402
+        },
+        "../../node_modules/estree-util-visit/lib/color.node.js": {
+          "bytesInOutput": 60
+        },
+        "../../node_modules/estree-util-visit/lib/index.js": {
+          "bytesInOutput": 2361
+        },
+        "../../node_modules/estree-util-visit/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/micromark-util-events-to-acorn/lib/index.js": {
+          "bytesInOutput": 6432
+        },
+        "../../node_modules/micromark-util-events-to-acorn/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/unist-util-position-from-estree/lib/index.js": {
+          "bytesInOutput": 857
+        },
+        "../../node_modules/unist-util-position-from-estree/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/micromark-factory-mdx-expression/index.js": {
+          "bytesInOutput": 5380
+        },
+        "../../node_modules/micromark-extension-mdx-expression/lib/syntax.js": {
+          "bytesInOutput": 2254
+        },
+        "../../node_modules/micromark-extension-mdx-expression/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/micromark-extension-mdx-jsx/lib/factory-tag.js": {
+          "bytesInOutput": 14829
+        },
+        "../../node_modules/micromark-extension-mdx-jsx/lib/jsx-text.js": {
+          "bytesInOutput": 1131
+        },
+        "../../node_modules/micromark-extension-mdx-jsx/lib/jsx-flow.js": {
+          "bytesInOutput": 2096
+        },
+        "../../node_modules/micromark-extension-mdx-jsx/lib/syntax.js": {
+          "bytesInOutput": 827
+        },
+        "../../node_modules/micromark-extension-mdx-jsx/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/micromark-extension-mdx-md/index.js": {
+          "bytesInOutput": 113
+        },
+        "../../node_modules/micromark-util-chunked/index.js": {
+          "bytesInOutput": 717
+        },
+        "../../node_modules/micromark-util-classify-character/index.js": {
+          "bytesInOutput": 185
+        },
+        "../../node_modules/micromark-util-resolve-all/index.js": {
+          "bytesInOutput": 304
+        },
+        "../../node_modules/micromark-core-commonmark/lib/attention.js": {
+          "bytesInOutput": 4586
+        },
+        "../../node_modules/micromark-core-commonmark/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/micromark-core-commonmark/lib/autolink.js": {
+          "bytesInOutput": 2159
+        },
+        "../../node_modules/micromark-core-commonmark/lib/blank-line.js": {
+          "bytesInOutput": 376
+        },
+        "../../node_modules/micromark-core-commonmark/lib/block-quote.js": {
+          "bytesInOutput": 1386
+        },
+        "../../node_modules/micromark-core-commonmark/lib/character-escape.js": {
+          "bytesInOutput": 554
+        },
+        "../../node_modules/micromark-core-commonmark/lib/character-reference.js": {
+          "bytesInOutput": 1553
+        },
+        "../../node_modules/micromark-core-commonmark/lib/code-fenced.js": {
+          "bytesInOutput": 4880
+        },
+        "../../node_modules/micromark-core-commonmark/lib/code-indented.js": {
+          "bytesInOutput": 1707
+        },
+        "../../node_modules/micromark-core-commonmark/lib/code-text.js": {
+          "bytesInOutput": 2656
+        },
+        "../../node_modules/micromark-util-subtokenize/index.js": {
+          "bytesInOutput": 3538
+        },
+        "../../node_modules/micromark-core-commonmark/lib/content.js": {
+          "bytesInOutput": 1819
+        },
+        "../../node_modules/micromark-factory-destination/index.js": {
+          "bytesInOutput": 2053
+        },
+        "../../node_modules/micromark-factory-label/index.js": {
+          "bytesInOutput": 1557
+        },
+        "../../node_modules/micromark-factory-title/index.js": {
+          "bytesInOutput": 1280
+        },
+        "../../node_modules/micromark-factory-whitespace/index.js": {
+          "bytesInOutput": 381
+        },
+        "../../node_modules/micromark-util-normalize-identifier/index.js": {
+          "bytesInOutput": 134
+        },
+        "../../node_modules/micromark-core-commonmark/lib/definition.js": {
+          "bytesInOutput": 2655
+        },
+        "../../node_modules/micromark-core-commonmark/lib/hard-break-escape.js": {
+          "bytesInOutput": 399
+        },
+        "../../node_modules/micromark-core-commonmark/lib/heading-atx.js": {
+          "bytesInOutput": 2337
+        },
+        "../../node_modules/micromark-util-html-tag-name/index.js": {
+          "bytesInOutput": 746
+        },
+        "../../node_modules/micromark-core-commonmark/lib/html-flow.js": {
+          "bytesInOutput": 8954
+        },
+        "../../node_modules/micromark-core-commonmark/lib/html-text.js": {
+          "bytesInOutput": 6407
+        },
+        "../../node_modules/micromark-core-commonmark/lib/label-end.js": {
+          "bytesInOutput": 6766
+        },
+        "../../node_modules/micromark-core-commonmark/lib/label-start-image.js": {
+          "bytesInOutput": 712
+        },
+        "../../node_modules/micromark-core-commonmark/lib/label-start-link.js": {
+          "bytesInOutput": 537
+        },
+        "../../node_modules/micromark-core-commonmark/lib/line-ending.js": {
+          "bytesInOutput": 303
+        },
+        "../../node_modules/micromark-core-commonmark/lib/thematic-break.js": {
+          "bytesInOutput": 825
+        },
+        "../../node_modules/micromark-core-commonmark/lib/list.js": {
+          "bytesInOutput": 4679
+        },
+        "../../node_modules/micromark-core-commonmark/lib/setext-underline.js": {
+          "bytesInOutput": 2256
+        },
+        "../../node_modules/micromark-extension-mdxjs-esm/lib/syntax.js": {
+          "bytesInOutput": 4325
+        },
+        "../../node_modules/micromark-extension-mdxjs-esm/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/micromark-util-combine-extensions/index.js": {
+          "bytesInOutput": 972
+        },
+        "../../node_modules/remark-mdx/lib/index.js": {
+          "bytesInOutput": 547
+        },
+        "../../node_modules/remark-mdx/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/mdast-util-to-string/lib/index.js": {
+          "bytesInOutput": 1063
+        },
+        "../../node_modules/mdast-util-to-string/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/micromark-util-decode-numeric-character-reference/index.js": {
+          "bytesInOutput": 652
+        },
+        "../../node_modules/micromark-util-sanitize-uri/index.js": {
+          "bytesInOutput": 947
+        },
+        "../../node_modules/micromark/lib/compile.js": {
+          "bytesInOutput": 41
+        },
+        "../../node_modules/micromark/lib/initialize/content.js": {
+          "bytesInOutput": 1151
+        },
+        "../../node_modules/micromark/lib/initialize/document.js": {
+          "bytesInOutput": 5449
+        },
+        "../../node_modules/micromark/lib/initialize/flow.js": {
+          "bytesInOutput": 1093
+        },
+        "../../node_modules/micromark/lib/initialize/text.js": {
+          "bytesInOutput": 3484
+        },
+        "../../node_modules/micromark/lib/create-tokenizer.js": {
+          "bytesInOutput": 7721
+        },
+        "../../node_modules/micromark/lib/constructs.js": {
+          "bytesInOutput": 1295
+        },
+        "../../node_modules/micromark/lib/parse.js": {
+          "bytesInOutput": 559
+        },
+        "../../node_modules/micromark/lib/postprocess.js": {
+          "bytesInOutput": 89
+        },
+        "../../node_modules/micromark/lib/preprocess.js": {
+          "bytesInOutput": 1729
+        },
+        "../../node_modules/micromark/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/micromark-util-decode-string/index.js": {
+          "bytesInOutput": 492
+        },
+        "../../node_modules/mdast-util-from-markdown/lib/index.js": {
+          "bytesInOutput": 19639
+        },
+        "../../node_modules/mdast-util-from-markdown/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/remark-parse/lib/index.js": {
+          "bytesInOutput": 479
+        },
+        "../../node_modules/remark-parse/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/blockquote.js": {
+          "bytesInOutput": 244
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/break.js": {
+          "bytesInOutput": 219
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/code.js": {
+          "bytesInOutput": 538
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/delete.js": {
+          "bytesInOutput": 224
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/emphasis.js": {
+          "bytesInOutput": 218
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/footnote-reference.js": {
+          "bytesInOutput": 1094
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/heading.js": {
+          "bytesInOutput": 230
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/html.js": {
+          "bytesInOutput": 204
+        },
+        "../../node_modules/mdast-util-to-hast/lib/revert.js": {
+          "bytesInOutput": 646
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/image-reference.js": {
+          "bytesInOutput": 522
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/image.js": {
+          "bytesInOutput": 395
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/inline-code.js": {
+          "bytesInOutput": 320
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/link-reference.js": {
+          "bytesInOutput": 536
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/link.js": {
+          "bytesInOutput": 349
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/list-item.js": {
+          "bytesInOutput": 1795
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/list.js": {
+          "bytesInOutput": 725
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/paragraph.js": {
+          "bytesInOutput": 218
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/root.js": {
+          "bytesInOutput": 175
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/strong.js": {
+          "bytesInOutput": 220
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/table.js": {
+          "bytesInOutput": 876
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/table-row.js": {
+          "bytesInOutput": 917
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/table-cell.js": {
+          "bytesInOutput": 244
+        },
+        "../../node_modules/trim-lines/index.js": {
+          "bytesInOutput": 900
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/text.js": {
+          "bytesInOutput": 174
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/thematic-break.js": {
+          "bytesInOutput": 210
+        },
+        "../../node_modules/mdast-util-to-hast/lib/handlers/index.js": {
+          "bytesInOutput": 530
+        },
+        "../../node_modules/mdast-util-to-hast/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/mdast-util-to-hast/lib/footer.js": {
+          "bytesInOutput": 3670
+        },
+        "../../node_modules/mdast-util-to-hast/lib/state.js": {
+          "bytesInOutput": 3872
+        },
+        "../../node_modules/mdast-util-to-hast/lib/index.js": {
+          "bytesInOutput": 349
+        },
+        "../../node_modules/remark-rehype/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/remark-rehype/lib/index.js": {
+          "bytesInOutput": 406
+        },
+        "../../node_modules/bail/index.js": {
+          "bytesInOutput": 55
+        },
+        "../../node_modules/unified/lib/index.js": {
+          "bytesInOutput": 19990
+        },
+        "../../node_modules/is-plain-obj/index.js": {
+          "bytesInOutput": 322
+        },
+        "../../node_modules/trough/lib/index.js": {
+          "bytesInOutput": 1747
+        },
+        "../../node_modules/trough/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/unified/lib/callable-instance.js": {
+          "bytesInOutput": 690
+        },
+        "../../node_modules/unified/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/@mdx-js/mdx/lib/util/estree-util-create.js": {
+          "bytesInOutput": 216
+        },
+        "../../node_modules/@mdx-js/mdx/lib/util/estree-util-specifiers-to-declarations.js": {
+          "bytesInOutput": 1535
+        },
+        "../../node_modules/@mdx-js/mdx/lib/util/estree-util-to-id-or-member-expression.js": {
+          "bytesInOutput": 809
+        },
+        "../../node_modules/@mdx-js/mdx/lib/plugin/recma-build-jsx-transform.js": {
+          "bytesInOutput": 952
+        },
+        "../../node_modules/estree-util-scope/lib/index.js": {
+          "bytesInOutput": 2961
+        },
+        "../../node_modules/estree-util-scope/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/@mdx-js/mdx/lib/util/estree-util-declaration-to-expression.js": {
+          "bytesInOutput": 218
+        },
+        "../../node_modules/@mdx-js/mdx/lib/util/estree-util-is-declaration.js": {
+          "bytesInOutput": 158
+        },
+        "../../node_modules/@mdx-js/mdx/lib/plugin/recma-document.js": {
+          "bytesInOutput": 19099
+        },
+        "../../node_modules/@mdx-js/mdx/lib/util/estree-util-to-binary-addition.js": {
+          "bytesInOutput": 252
+        },
+        "../../node_modules/@mdx-js/mdx/lib/plugin/recma-jsx-rewrite.js": {
+          "bytesInOutput": 12435
+        },
+        "../../node_modules/@mdx-js/mdx/lib/plugin/rehype-remove-raw.js": {
+          "bytesInOutput": 228
+        },
+        "../../node_modules/collapse-white-space/index.js": {
+          "bytesInOutput": 740
+        },
+        "../../node_modules/@mdx-js/mdx/lib/plugin/remark-mark-and-unravel.js": {
+          "bytesInOutput": 1777
+        },
+        "../../node_modules/@mdx-js/mdx/lib/node-types.js": {
+          "bytesInOutput": 167
+        },
+        "../../node_modules/@mdx-js/mdx/lib/core.js": {
+          "bytesInOutput": 1487
+        },
+        "../../node_modules/@mdx-js/mdx/lib/compile.js": {
+          "bytesInOutput": 186
+        },
+        "../../node_modules/@mdx-js/mdx/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/@mdx-js/mdx/lib/run.js": {
+          "bytesInOutput": 151
+        },
+        "src/compiler/index.ts": {
+          "bytesInOutput": 337
+        }
+      },
+      "bytes": 1092119
+    },
+    "dist/_node-chunks/chunk-FGXM7DVB.js": {
+      "imports": [],
+      "exports": [
+        "esm_default",
+        "parse",
+        "stringify"
+      ],
+      "inputs": {
+        "../../node_modules/@ungap/structured-clone/esm/deserialize.js": {
+          "bytesInOutput": 1782
+        },
+        "../../node_modules/@ungap/structured-clone/esm/serialize.js": {
+          "bytesInOutput": 3429
+        },
+        "../../node_modules/@ungap/structured-clone/esm/index.js": {
+          "bytesInOutput": 278
+        },
+        "../../node_modules/space-separated-tokens/index.js": {
+          "bytesInOutput": 185
+        }
+      },
+      "bytes": 6588
+    },
+    "dist/_node-chunks/chunk-VEYUXNZJ.js": {
+      "imports": [],
+      "exports": [
+        "visit"
+      ],
+      "inputs": {
+        "../../node_modules/unist-util-is/lib/index.js": {
+          "bytesInOutput": 2800
+        },
+        "../../node_modules/unist-util-is/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/unist-util-visit-parents/lib/color.node.js": {
+          "bytesInOutput": 60
+        },
+        "../../node_modules/unist-util-visit-parents/lib/index.js": {
+          "bytesInOutput": 1983
+        },
+        "../../node_modules/unist-util-visit-parents/index.js": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/unist-util-visit/lib/index.js": {
+          "bytesInOutput": 559
+        },
+        "../../node_modules/unist-util-visit/index.js": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 6273
+    },
+    "dist/_node-chunks/chunk-VBA2G7HW.js": {
+      "imports": [],
+      "exports": [
+        "__commonJS",
+        "__export",
+        "__toESM"
+      ],
+      "inputs": {},
+      "bytes": 2077
+    }
+  }
+}

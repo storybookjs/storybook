@@ -17,8 +17,8 @@ import prompts from 'prompts';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { configToCsfFactory } from '../../code/lib/cli-storybook/src/codemod/helpers/config-to-csf-factory';
-import { storyToCsfFactory } from '../../code/lib/cli-storybook/src/codemod/helpers/story-to-csf-factory';
+import { configToCsfFactory } from '../../lib/cli-storybook/src/codemod/helpers/config-to-csf-factory';
+import { storyToCsfFactory } from '../../lib/cli-storybook/src/codemod/helpers/story-to-csf-factory';
 import { SNIPPETS_DIRECTORY } from '../utils/constants';
 
 const logger = console;

@@ -151,7 +151,7 @@ export default createStorybookRule({
         throw new Error(
           dedent`The provided path in your eslintrc.json - ${path} is not a valid path to a package.json file or your package.json file is not in the same folder as ESLint is running from.
 
-          Read more at: https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-uninstalled-addons.md
+          Read more at: https://github.com/storybookjs/storybook/blob/next/lib/eslint-plugin/docs/rules/no-uninstalled-addons.md
           `
         );
       }

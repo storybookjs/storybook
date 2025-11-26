@@ -11,12 +11,10 @@ steps:
       name: Verdaccio
       background: true
       command: |
-        cd code
         yarn local-registry --open
   - run:
       name: Wait on Verdaccio
       command: |
-        cd code
         yarn wait-on tcp:127.0.0.1:6001
         yarn wait-on tcp:127.0.0.1:6002
   - run:

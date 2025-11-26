@@ -40,7 +40,7 @@ jobs:
           install-code-deps: true
 
       - name: prettier
-        run: cd code && yarn lint:prettier --check .
+        run: yarn lint:prettier --check .
 
   test:
     strategy:
@@ -63,7 +63,7 @@ jobs:
         run: yarn task --task compile --start-from=compile
 
       - name: Install Playwright Dependencies
-        run: cd code && yarn exec playwright install chromium --with-deps
+        run: yarn exec playwright install chromium --with-deps
 
       - name: test
         run: yarn test

@@ -43,8 +43,8 @@ async function temporaryFile({ name, extension }: { name?: string; extension?: s
   );
 }
 
-// read code/frameworks subfolders and generate a list of available frameworks
-// save this list into ./code/core/src/types/frameworks.ts and export it as a union type.
+// read ./frameworks subfolders and generate a list of available frameworks
+// save this list into ./core/src/types/frameworks.ts and export it as a union type.
 // The name of the type is `SupportedFrameworks`. Add additionally 'qwik' and `solid` to that list.
 export const generateSourceFiles = async () => {
   const prettierConfig = await prettier.resolveConfig(join(CORE_ROOT_DIR, 'src'));

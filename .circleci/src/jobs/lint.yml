@@ -10,7 +10,6 @@ steps:
   - run:
       name: Lint
       command: |
-        cd code
         yarn lint
   - report-workflow-on-failure
   - cancel-workflow-on-failure

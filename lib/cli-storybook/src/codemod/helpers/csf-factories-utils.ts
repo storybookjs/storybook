@@ -66,7 +66,7 @@ export function cleanupTypeImports(programNode: t.Program, disallowList: string[
     // Retain all other nodes
     return true;
     // @TODO adding any for now, unsure how to fix the following error:
-    // error TS4058: Return type of exported function has or is using name 'BlockStatement' from external module "/code/core/dist/babel/index" but cannot be named
+    // error TS4058: Return type of exported function has or is using name 'BlockStatement' from external module "/core/dist/babel/index" but cannot be named
   }) as any;
 }
 
@@ -90,7 +90,7 @@ export function removeExportDeclarations(
     }
     return true;
     // @TODO adding any for now, unsure how to fix the following error:
-    // error TS4058: Return type of exported function has or is using name 'ObjectProperty' from external module "/tmp/storybook/code/core/dist/babel/index" but cannot be named.
+    // error TS4058: Return type of exported function has or is using name 'ObjectProperty' from external module "/tmp/storybook/core/dist/babel/index" but cannot be named.
   }) as any;
 }
 
@@ -116,6 +116,6 @@ export function getConfigProperties(
   }
 
   // @TODO adding any for now, unsure how to fix the following error:
-  // error TS4058: Return type of exported function has or is using name 'ObjectProperty' from external module "/tmp/storybook/code/core/dist/babel/index" but cannot be named.
+  // error TS4058: Return type of exported function has or is using name 'ObjectProperty' from external module "/tmp/storybook/core/dist/babel/index" but cannot be named.
   return properties as any;
 }

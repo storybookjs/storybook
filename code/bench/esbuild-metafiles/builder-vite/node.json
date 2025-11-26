@@ -1,0 +1,1847 @@
+{
+  "inputs": {
+    "src/envs.ts": {
+      "bytes": 2047,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/picocolors/picocolors.js": {
+      "bytes": 2663,
+      "imports": [],
+      "format": "cjs"
+    },
+    "src/logger.ts": {
+      "bytes": 781,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/picocolors/picocolors.js",
+          "kind": "import-statement",
+          "original": "picocolors"
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/utils/has-vite-plugins.ts": {
+      "bytes": 754,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/utils/without-vite-plugins.ts": {
+      "bytes": 696,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-module-lexer/dist/lexer.js": {
+      "bytes": 14204,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@jridgewell/sourcemap-codec/dist/sourcemap-codec.mjs": {
+      "bytes": 12869,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/magic-string/dist/magic-string.es.mjs": {
+      "bytes": 38739,
+      "imports": [
+        {
+          "path": "../../node_modules/@jridgewell/sourcemap-codec/dist/sourcemap-codec.mjs",
+          "kind": "import-statement",
+          "original": "@jridgewell/sourcemap-codec"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/inject-export-order-plugin.ts": {
+      "bytes": 1359,
+      "imports": [
+        {
+          "path": "../../node_modules/es-module-lexer/dist/lexer.js",
+          "kind": "import-statement",
+          "original": "es-module-lexer"
+        },
+        {
+          "path": "../../node_modules/magic-string/dist/magic-string.es.mjs",
+          "kind": "import-statement",
+          "original": "magic-string"
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/strip-story-hmr-boundaries.ts": {
+      "bytes": 910,
+      "imports": [
+        {
+          "path": "../../node_modules/magic-string/dist/magic-string.es.mjs",
+          "kind": "import-statement",
+          "original": "magic-string"
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/exsolve/dist/index.mjs": {
+      "bytes": 41441,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:v8",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:util",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs": {
+      "bytes": 6539,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/index.mjs": {
+      "bytes": 272,
+      "imports": [
+        {
+          "path": "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs",
+          "kind": "import-statement",
+          "original": "./shared/pathe.ff20891b.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../core/src/shared/utils/module.ts": {
+      "bytes": 4733,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path/win32",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/exsolve/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "exsolve"
+        },
+        {
+          "path": "../../node_modules/pathe/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "pathe"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/knitwork/dist/index.mjs": {
+      "bytes": 7685,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/balanced-match/index.js": {
+      "bytes": 1219,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/brace-expansion/index.js": {
+      "bytes": 4992,
+      "imports": [
+        {
+          "path": "../../node_modules/balanced-match/index.js",
+          "kind": "require-call",
+          "original": "balanced-match"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/glob/node_modules/minimatch/dist/esm/assert-valid-pattern.js": {
+      "bytes": 336,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/glob/node_modules/minimatch/dist/esm/brace-expressions.js": {
+      "bytes": 5631,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/glob/node_modules/minimatch/dist/esm/unescape.js": {
+      "bytes": 847,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/glob/node_modules/minimatch/dist/esm/ast.js": {
+      "bytes": 22588,
+      "imports": [
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/brace-expressions.js",
+          "kind": "import-statement",
+          "original": "./brace-expressions.js"
+        },
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/unescape.js",
+          "kind": "import-statement",
+          "original": "./unescape.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/glob/node_modules/minimatch/dist/esm/escape.js": {
+      "bytes": 848,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/glob/node_modules/minimatch/dist/esm/index.js": {
+      "bytes": 39098,
+      "imports": [
+        {
+          "path": "../../node_modules/brace-expansion/index.js",
+          "kind": "import-statement",
+          "original": "brace-expansion"
+        },
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/assert-valid-pattern.js",
+          "kind": "import-statement",
+          "original": "./assert-valid-pattern.js"
+        },
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/ast.js",
+          "kind": "import-statement",
+          "original": "./ast.js"
+        },
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/escape.js",
+          "kind": "import-statement",
+          "original": "./escape.js"
+        },
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/unescape.js",
+          "kind": "import-statement",
+          "original": "./unescape.js"
+        },
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/ast.js",
+          "kind": "import-statement",
+          "original": "./ast.js"
+        },
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/escape.js",
+          "kind": "import-statement",
+          "original": "./escape.js"
+        },
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/unescape.js",
+          "kind": "import-statement",
+          "original": "./unescape.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/path-scurry/node_modules/lru-cache/dist/esm/index.js": {
+      "bytes": 50864,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/path-scurry/node_modules/minipass/dist/esm/index.js": {
+      "bytes": 33228,
+      "imports": [
+        {
+          "path": "node:events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:stream",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:string_decoder",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/path-scurry/dist/esm/index.js": {
+      "bytes": 64317,
+      "imports": [
+        {
+          "path": "../../node_modules/path-scurry/node_modules/lru-cache/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "lru-cache"
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/path-scurry/node_modules/minipass/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "minipass"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/glob/dist/esm/pattern.js": {
+      "bytes": 7161,
+      "imports": [
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "minimatch"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/glob/node_modules/minipass/dist/esm/index.js": {
+      "bytes": 33228,
+      "imports": [
+        {
+          "path": "node:events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:stream",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:string_decoder",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/glob/dist/esm/ignore.js": {
+      "bytes": 4101,
+      "imports": [
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "minimatch"
+        },
+        {
+          "path": "../../node_modules/glob/dist/esm/pattern.js",
+          "kind": "import-statement",
+          "original": "./pattern.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/glob/dist/esm/processor.js": {
+      "bytes": 10453,
+      "imports": [
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "minimatch"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/glob/dist/esm/walker.js": {
+      "bytes": 12569,
+      "imports": [
+        {
+          "path": "../../node_modules/glob/node_modules/minipass/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "minipass"
+        },
+        {
+          "path": "../../node_modules/glob/dist/esm/ignore.js",
+          "kind": "import-statement",
+          "original": "./ignore.js"
+        },
+        {
+          "path": "../../node_modules/glob/dist/esm/processor.js",
+          "kind": "import-statement",
+          "original": "./processor.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/glob/dist/esm/glob.js": {
+      "bytes": 8339,
+      "imports": [
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "minimatch"
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/path-scurry/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "path-scurry"
+        },
+        {
+          "path": "../../node_modules/glob/dist/esm/pattern.js",
+          "kind": "import-statement",
+          "original": "./pattern.js"
+        },
+        {
+          "path": "../../node_modules/glob/dist/esm/walker.js",
+          "kind": "import-statement",
+          "original": "./walker.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/glob/dist/esm/has-magic.js": {
+      "bytes": 917,
+      "imports": [
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "minimatch"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/glob/dist/esm/index.js": {
+      "bytes": 1647,
+      "imports": [
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "minimatch"
+        },
+        {
+          "path": "../../node_modules/glob/dist/esm/glob.js",
+          "kind": "import-statement",
+          "original": "./glob.js"
+        },
+        {
+          "path": "../../node_modules/glob/dist/esm/has-magic.js",
+          "kind": "import-statement",
+          "original": "./has-magic.js"
+        },
+        {
+          "path": "../../node_modules/glob/node_modules/minimatch/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "minimatch"
+        },
+        {
+          "path": "../../node_modules/glob/dist/esm/glob.js",
+          "kind": "import-statement",
+          "original": "./glob.js"
+        },
+        {
+          "path": "../../node_modules/glob/dist/esm/has-magic.js",
+          "kind": "import-statement",
+          "original": "./has-magic.js"
+        },
+        {
+          "path": "../../node_modules/glob/dist/esm/ignore.js",
+          "kind": "import-statement",
+          "original": "./ignore.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/slash/index.js": {
+      "bytes": 181,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/list-stories.ts": {
+      "bytes": 1326,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/glob/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "glob"
+        },
+        {
+          "path": "../../node_modules/slash/index.js",
+          "kind": "import-statement",
+          "original": "slash"
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/codegen-importfn-script.ts": {
+      "bytes": 2085,
+      "imports": [
+        {
+          "path": "../../node_modules/knitwork/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "knitwork"
+        },
+        {
+          "path": "../../node_modules/pathe/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "pathe"
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/list-stories.ts",
+          "kind": "import-statement",
+          "original": "./list-stories"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/utils.mjs": {
+      "bytes": 1726,
+      "imports": [
+        {
+          "path": "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs",
+          "kind": "import-statement",
+          "original": "./shared/pathe.ff20891b.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/utils/process-preview-annotation.ts": {
+      "bytes": 1185,
+      "imports": [
+        {
+          "path": "../../node_modules/pathe/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "pathe"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/virtual-file-names.ts": {
+      "bytes": 573,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/codegen-modern-iframe-script.ts": {
+      "bytes": 5784,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/knitwork/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "knitwork"
+        },
+        {
+          "path": "../../node_modules/pathe/dist/utils.mjs",
+          "kind": "import-statement",
+          "original": "pathe/utils"
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils/process-preview-annotation.ts",
+          "kind": "import-statement",
+          "original": "./utils/process-preview-annotation"
+        },
+        {
+          "path": "src/virtual-file-names.ts",
+          "kind": "import-statement",
+          "original": "./virtual-file-names"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/codegen-set-addon-channel.ts": {
+      "bytes": 456,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/transform-iframe-html.ts": {
+      "bytes": 2482,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/virtual-file-names.ts",
+          "kind": "import-statement",
+          "original": "./virtual-file-names"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/code-generator-plugin.ts": {
+      "bytes": 4512,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../core/src/shared/utils/module.ts",
+          "kind": "import-statement",
+          "original": "../../../../core/src/shared/utils/module"
+        },
+        {
+          "path": "src/codegen-importfn-script.ts",
+          "kind": "import-statement",
+          "original": "../codegen-importfn-script"
+        },
+        {
+          "path": "src/codegen-modern-iframe-script.ts",
+          "kind": "import-statement",
+          "original": "../codegen-modern-iframe-script"
+        },
+        {
+          "path": "src/codegen-set-addon-channel.ts",
+          "kind": "import-statement",
+          "original": "../codegen-set-addon-channel"
+        },
+        {
+          "path": "src/transform-iframe-html.ts",
+          "kind": "import-statement",
+          "original": "../transform-iframe-html"
+        },
+        {
+          "path": "src/virtual-file-names.ts",
+          "kind": "import-statement",
+          "original": "../virtual-file-names"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/csf-plugin.ts": {
+      "bytes": 676,
+      "imports": [
+        {
+          "path": "@storybook/csf-plugin",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/access.mjs": {
+      "bytes": 726,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/resolve.mjs": {
+      "bytes": 971,
+      "imports": [
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/walk.mjs": {
+      "bytes": 535,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/resolve.mjs",
+          "kind": "import-statement",
+          "original": "empathic/resolve"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/find.mjs": {
+      "bytes": 2033,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/walk.mjs",
+          "kind": "import-statement",
+          "original": "empathic/walk"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/package.mjs": {
+      "bytes": 1650,
+      "imports": [
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/access.mjs",
+          "kind": "import-statement",
+          "original": "empathic/access"
+        },
+        {
+          "path": "../../node_modules/empathic/find.mjs",
+          "kind": "import-statement",
+          "original": "empathic/find"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/external-globals-plugin.ts": {
+      "bytes": 4324,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/package.mjs",
+          "kind": "import-statement",
+          "original": "empathic/package"
+        },
+        {
+          "path": "../../node_modules/es-module-lexer/dist/lexer.js",
+          "kind": "import-statement",
+          "original": "es-module-lexer"
+        },
+        {
+          "path": "../../node_modules/magic-string/dist/magic-string.es.mjs",
+          "kind": "import-statement",
+          "original": "magic-string"
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/webpack-stats-plugin.ts": {
+      "bytes": 5101,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/slash/index.js",
+          "kind": "import-statement",
+          "original": "slash"
+        },
+        {
+          "path": "src/virtual-file-names.ts",
+          "kind": "import-statement",
+          "original": "../virtual-file-names"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/index.ts": {
+      "bytes": 246,
+      "imports": [
+        {
+          "path": "src/plugins/inject-export-order-plugin.ts",
+          "kind": "import-statement",
+          "original": "./inject-export-order-plugin"
+        },
+        {
+          "path": "src/plugins/strip-story-hmr-boundaries.ts",
+          "kind": "import-statement",
+          "original": "./strip-story-hmr-boundaries"
+        },
+        {
+          "path": "src/plugins/code-generator-plugin.ts",
+          "kind": "import-statement",
+          "original": "./code-generator-plugin"
+        },
+        {
+          "path": "src/plugins/csf-plugin.ts",
+          "kind": "import-statement",
+          "original": "./csf-plugin"
+        },
+        {
+          "path": "src/plugins/external-globals-plugin.ts",
+          "kind": "import-statement",
+          "original": "./external-globals-plugin"
+        },
+        {
+          "path": "src/plugins/webpack-stats-plugin.ts",
+          "kind": "import-statement",
+          "original": "./webpack-stats-plugin"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/vite-config.ts": {
+      "bytes": 4151,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/preview/globals",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/plugins/index.ts",
+          "kind": "import-statement",
+          "original": "./plugins"
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/build.ts": {
+      "bytes": 2749,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/envs.ts",
+          "kind": "import-statement",
+          "original": "./envs"
+        },
+        {
+          "path": "src/logger.ts",
+          "kind": "import-statement",
+          "original": "./logger"
+        },
+        {
+          "path": "src/utils/has-vite-plugins.ts",
+          "kind": "import-statement",
+          "original": "./utils/has-vite-plugins"
+        },
+        {
+          "path": "src/utils/without-vite-plugins.ts",
+          "kind": "import-statement",
+          "original": "./utils/without-vite-plugins"
+        },
+        {
+          "path": "src/vite-config.ts",
+          "kind": "import-statement",
+          "original": "./vite-config"
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/constants.ts": {
+      "bytes": 2923,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/optimizeDeps.ts": {
+      "bytes": 2209,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        },
+        {
+          "path": "src/list-stories.ts",
+          "kind": "import-statement",
+          "original": "./list-stories"
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/vite-server.ts": {
+      "bytes": 2007,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/envs.ts",
+          "kind": "import-statement",
+          "original": "./envs"
+        },
+        {
+          "path": "src/logger.ts",
+          "kind": "import-statement",
+          "original": "./logger"
+        },
+        {
+          "path": "src/optimizeDeps.ts",
+          "kind": "import-statement",
+          "original": "./optimizeDeps"
+        },
+        {
+          "path": "src/vite-config.ts",
+          "kind": "import-statement",
+          "original": "./vite-config"
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/types.ts": {
+      "bytes": 589,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 1838,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/build.ts",
+          "kind": "import-statement",
+          "original": "./build"
+        },
+        {
+          "path": "src/vite-server.ts",
+          "kind": "import-statement",
+          "original": "./vite-server"
+        },
+        {
+          "path": "src/utils/without-vite-plugins.ts",
+          "kind": "import-statement",
+          "original": "./utils/without-vite-plugins"
+        },
+        {
+          "path": "src/utils/has-vite-plugins.ts",
+          "kind": "import-statement",
+          "original": "./utils/has-vite-plugins"
+        },
+        {
+          "path": "src/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/@rolldown/pluginutils/dist/index.js": {
+      "bytes": 6797,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/plugins/vite-inject-mocker/plugin.ts": {
+      "bytes": 2979,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@rolldown/pluginutils/dist/index.js",
+          "kind": "import-statement",
+          "original": "@rolldown/pluginutils"
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/vite-mock/utils.ts": {
+      "bytes": 1004,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/plugins/vite-mock/plugin.ts": {
+      "bytes": 5632,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/mocking-utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@vitest/mocker/redirect",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/pathe/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "pathe"
+        },
+        {
+          "path": "src/plugins/vite-mock/utils.ts",
+          "kind": "import-statement",
+          "original": "./utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preset.ts": {
+      "bytes": 1206,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/plugins/vite-inject-mocker/plugin.ts",
+          "kind": "import-statement",
+          "original": "./plugins/vite-inject-mocker/plugin"
+        },
+        {
+          "path": "src/plugins/vite-mock/plugin.ts",
+          "kind": "import-statement",
+          "original": "./plugins/vite-mock/plugin"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-FNDCI6C5.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/preview/globals",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:v8",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:util",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:stream",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:string_decoder",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:stream",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:string_decoder",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/csf-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "exports": [
+        "bail",
+        "build",
+        "corePresets",
+        "hasVitePlugins",
+        "start",
+        "withoutVitePlugins"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "../../node_modules/picocolors/picocolors.js": {
+          "bytesInOutput": 3084
+        },
+        "../../node_modules/balanced-match/index.js": {
+          "bytesInOutput": 1256
+        },
+        "../../node_modules/brace-expansion/index.js": {
+          "bytesInOutput": 4091
+        },
+        "src/index.ts": {
+          "bytesInOutput": 1141
+        },
+        "src/build.ts": {
+          "bytesInOutput": 2021
+        },
+        "src/envs.ts": {
+          "bytesInOutput": 1163
+        },
+        "src/logger.ts": {
+          "bytesInOutput": 719
+        },
+        "src/utils/has-vite-plugins.ts": {
+          "bytesInOutput": 412
+        },
+        "src/utils/without-vite-plugins.ts": {
+          "bytesInOutput": 434
+        },
+        "src/vite-config.ts": {
+          "bytesInOutput": 2406
+        },
+        "../../node_modules/es-module-lexer/dist/lexer.js": {
+          "bytesInOutput": 14553
+        },
+        "../../node_modules/@jridgewell/sourcemap-codec/dist/sourcemap-codec.mjs": {
+          "bytesInOutput": 2114
+        },
+        "../../node_modules/magic-string/dist/magic-string.es.mjs": {
+          "bytesInOutput": 28566
+        },
+        "src/plugins/inject-export-order-plugin.ts": {
+          "bytesInOutput": 863
+        },
+        "src/plugins/index.ts": {
+          "bytesInOutput": 0
+        },
+        "src/plugins/strip-story-hmr-boundaries.ts": {
+          "bytesInOutput": 534
+        },
+        "src/plugins/code-generator-plugin.ts": {
+          "bytesInOutput": 2871
+        },
+        "../../core/src/shared/utils/module.ts": {
+          "bytesInOutput": 444
+        },
+        "../../node_modules/exsolve/dist/index.mjs": {
+          "bytesInOutput": 8722
+        },
+        "../../node_modules/knitwork/dist/index.mjs": {
+          "bytesInOutput": 4514
+        },
+        "src/codegen-importfn-script.ts": {
+          "bytesInOutput": 685
+        },
+        "src/list-stories.ts": {
+          "bytesInOutput": 799
+        },
+        "../../node_modules/glob/node_modules/minimatch/dist/esm/index.js": {
+          "bytesInOutput": 21036
+        },
+        "../../node_modules/glob/node_modules/minimatch/dist/esm/assert-valid-pattern.js": {
+          "bytesInOutput": 199
+        },
+        "../../node_modules/glob/node_modules/minimatch/dist/esm/brace-expressions.js": {
+          "bytesInOutput": 2770
+        },
+        "../../node_modules/glob/node_modules/minimatch/dist/esm/unescape.js": {
+          "bytesInOutput": 194
+        },
+        "../../node_modules/glob/node_modules/minimatch/dist/esm/ast.js": {
+          "bytesInOutput": 14050
+        },
+        "../../node_modules/glob/node_modules/minimatch/dist/esm/escape.js": {
+          "bytesInOutput": 148
+        },
+        "../../node_modules/glob/dist/esm/glob.js": {
+          "bytesInOutput": 5849
+        },
+        "../../node_modules/path-scurry/node_modules/lru-cache/dist/esm/index.js": {
+          "bytesInOutput": 33884
+        },
+        "../../node_modules/path-scurry/dist/esm/index.js": {
+          "bytesInOutput": 44245
+        },
+        "../../node_modules/path-scurry/node_modules/minipass/dist/esm/index.js": {
+          "bytesInOutput": 23343
+        },
+        "../../node_modules/glob/dist/esm/pattern.js": {
+          "bytesInOutput": 4956
+        },
+        "../../node_modules/glob/node_modules/minipass/dist/esm/index.js": {
+          "bytesInOutput": 23691
+        },
+        "../../node_modules/glob/dist/esm/ignore.js": {
+          "bytesInOutput": 2063
+        },
+        "../../node_modules/glob/dist/esm/processor.js": {
+          "bytesInOutput": 5610
+        },
+        "../../node_modules/glob/dist/esm/walker.js": {
+          "bytesInOutput": 8589
+        },
+        "../../node_modules/glob/dist/esm/has-magic.js": {
+          "bytesInOutput": 199
+        },
+        "../../node_modules/glob/dist/esm/index.js": {
+          "bytesInOutput": 1115
+        },
+        "../../node_modules/slash/index.js": {
+          "bytesInOutput": 100
+        },
+        "src/codegen-modern-iframe-script.ts": {
+          "bytesInOutput": 4191
+        },
+        "../../node_modules/pathe/dist/utils.mjs": {
+          "bytesInOutput": 190
+        },
+        "src/utils/process-preview-annotation.ts": {
+          "bytesInOutput": 260
+        },
+        "src/virtual-file-names.ts": {
+          "bytesInOutput": 531
+        },
+        "src/codegen-set-addon-channel.ts": {
+          "bytesInOutput": 449
+        },
+        "src/transform-iframe-html.ts": {
+          "bytesInOutput": 1998
+        },
+        "src/plugins/csf-plugin.ts": {
+          "bytesInOutput": 436
+        },
+        "src/plugins/external-globals-plugin.ts": {
+          "bytesInOutput": 3199
+        },
+        "../../node_modules/empathic/package.mjs": {
+          "bytesInOutput": 724
+        },
+        "../../node_modules/empathic/access.mjs": {
+          "bytesInOutput": 222
+        },
+        "../../node_modules/empathic/find.mjs": {
+          "bytesInOutput": 274
+        },
+        "../../node_modules/empathic/walk.mjs": {
+          "bytesInOutput": 302
+        },
+        "../../node_modules/empathic/resolve.mjs": {
+          "bytesInOutput": 194
+        },
+        "src/plugins/webpack-stats-plugin.ts": {
+          "bytesInOutput": 2031
+        },
+        "src/vite-server.ts": {
+          "bytesInOutput": 1359
+        },
+        "src/optimizeDeps.ts": {
+          "bytesInOutput": 1081
+        },
+        "src/constants.ts": {
+          "bytesInOutput": 2646
+        }
+      },
+      "bytes": 297567
+    },
+    "dist/preset.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-FNDCI6C5.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/mocking-utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@vitest/mocker/redirect",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "viteFinal"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/preset.ts": {
+          "bytesInOutput": 560
+        },
+        "src/plugins/vite-inject-mocker/plugin.ts": {
+          "bytesInOutput": 2468
+        },
+        "../../node_modules/@rolldown/pluginutils/dist/index.js": {
+          "bytesInOutput": 209
+        },
+        "src/plugins/vite-mock/plugin.ts": {
+          "bytesInOutput": 3763
+        },
+        "src/plugins/vite-mock/utils.ts": {
+          "bytesInOutput": 355
+        }
+      },
+      "bytes": 8361
+    },
+    "dist/_node-chunks/chunk-FNDCI6C5.js": {
+      "imports": [],
+      "exports": [
+        "__commonJS",
+        "__toESM",
+        "isAbsolute",
+        "normalize",
+        "relative",
+        "resolve"
+      ],
+      "inputs": {
+        "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs": {
+          "bytesInOutput": 3608
+        },
+        "../../node_modules/pathe/dist/index.mjs": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 5667
+    }
+  }
+}

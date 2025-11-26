@@ -1,0 +1,395 @@
+{
+  "inputs": {
+    "src/constants.ts": {
+      "bytes": 557,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/preview.ts": {
+      "bytes": 225,
+      "imports": [
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/decorators/helpers.ts": {
+      "bytes": 1310,
+      "imports": [
+        {
+          "path": "storybook/internal/client-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "../constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/decorators/class-name.decorator.tsx": {
+      "bytes": 1879,
+      "imports": [
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "../constants"
+        },
+        {
+          "path": "src/decorators/helpers.ts",
+          "kind": "import-statement",
+          "original": "./helpers"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/decorators/data-attribute.decorator.tsx": {
+      "bytes": 1448,
+      "imports": [
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "../constants"
+        },
+        {
+          "path": "src/decorators/helpers.ts",
+          "kind": "import-statement",
+          "original": "./helpers"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/decorators/provider.decorator.tsx": {
+      "bytes": 1913,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "../constants"
+        },
+        {
+          "path": "src/decorators/helpers.ts",
+          "kind": "import-statement",
+          "original": "./helpers"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/decorators/index.ts": {
+      "bytes": 170,
+      "imports": [
+        {
+          "path": "src/decorators/class-name.decorator.tsx",
+          "kind": "import-statement",
+          "original": "./class-name.decorator"
+        },
+        {
+          "path": "src/decorators/data-attribute.decorator.tsx",
+          "kind": "import-statement",
+          "original": "./data-attribute.decorator"
+        },
+        {
+          "path": "src/decorators/provider.decorator.tsx",
+          "kind": "import-statement",
+          "original": "./provider.decorator"
+        },
+        {
+          "path": "src/decorators/helpers.ts",
+          "kind": "import-statement",
+          "original": "./helpers"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 302,
+      "imports": [
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/preview.ts",
+          "kind": "import-statement",
+          "original": "./preview"
+        },
+        {
+          "path": "src/decorators/index.ts",
+          "kind": "import-statement",
+          "original": "./decorators"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/theme-switcher.tsx": {
+      "bytes": 3110,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager.tsx": {
+      "bytes": 446,
+      "imports": [
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        },
+        {
+          "path": "src/theme-switcher.tsx",
+          "kind": "import-statement",
+          "original": "./theme-switcher"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-R3GPJ3N7.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-DN7ZGZUH.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/client-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "DecoratorHelpers",
+        "default",
+        "withThemeByClassName",
+        "withThemeByDataAttribute",
+        "withThemeFromJSXProvider"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 124
+        },
+        "src/decorators/class-name.decorator.tsx": {
+          "bytesInOutput": 1107
+        },
+        "src/decorators/helpers.ts": {
+          "bytesInOutput": 1002
+        },
+        "src/decorators/index.ts": {
+          "bytesInOutput": 0
+        },
+        "src/decorators/data-attribute.decorator.tsx": {
+          "bytesInOutput": 757
+        },
+        "src/decorators/provider.decorator.tsx": {
+          "bytesInOutput": 1031
+        }
+      },
+      "bytes": 4633
+    },
+    "dist/manager.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-DN7ZGZUH.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/components",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/icons",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "entryPoint": "src/manager.tsx",
+      "inputs": {
+        "src/manager.tsx": {
+          "bytesInOutput": 336
+        },
+        "src/theme-switcher.tsx": {
+          "bytesInOutput": 2440
+        }
+      },
+      "bytes": 3026
+    },
+    "dist/preview.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-R3GPJ3N7.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-DN7ZGZUH.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "initialGlobals"
+      ],
+      "entryPoint": "src/preview.ts",
+      "inputs": {},
+      "bytes": 147
+    },
+    "dist/_browser-chunks/chunk-R3GPJ3N7.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-DN7ZGZUH.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "initialGlobals",
+        "preview_exports"
+      ],
+      "inputs": {
+        "src/preview.ts": {
+          "bytesInOutput": 142
+        }
+      },
+      "bytes": 274
+    },
+    "dist/_browser-chunks/chunk-DN7ZGZUH.js": {
+      "imports": [],
+      "exports": [
+        "ADDON_ID",
+        "DEFAULT_ADDON_STATE",
+        "DEFAULT_THEME_PARAMETERS",
+        "GLOBAL_KEY",
+        "PARAM_KEY",
+        "THEME_SWITCHER_ID",
+        "THEMING_EVENTS",
+        "__export"
+      ],
+      "inputs": {
+        "src/constants.ts": {
+          "bytesInOutput": 305
+        }
+      },
+      "bytes": 644
+    }
+  }
+}

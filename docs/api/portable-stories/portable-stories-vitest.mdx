@@ -196,7 +196,7 @@ sidebar:
 
   Sometimes a story can require an addon's [decorator](../../writing-stories/decorators.mdx) or [loader](../../writing-stories/loaders.mdx) to render properly. For example, an addon can apply a decorator that wraps your story in the necessary router context. In this case, you must include that addon's `preview` export in the project annotations set. See `addonAnnotations` in the example above.
 
-  Note: If the addon doesn't automatically apply the decorator or loader itself, but instead exports them for you to apply manually in `.storybook/preview.js|ts` (e.g. using `withThemeFromJSXProvider` from [@storybook/addon-themes](https://github.com/storybookjs/storybook/blob/next/code/addons/themes/docs/api.md#withthemefromjsxprovider)), then you do not need to do anything else. They are already included in the `previewAnnotations` in the example above.
+  Note: If the addon doesn't automatically apply the decorator or loader itself, but instead exports them for you to apply manually in `.storybook/preview.js|ts` (e.g. using `withThemeFromJSXProvider` from [@storybook/addon-themes](https://github.com/storybookjs/storybook/blob/next/addons/themes/docs/api.md#withthemefromjsxprovider)), then you do not need to do anything else. They are already included in the `previewAnnotations` in the example above.
 
   If you need to configure Testing Library's `render` or use a different render function, please let us know in [this discussion](https://github.com/storybookjs/storybook/discussions/28532) so we can learn more about your needs.
 

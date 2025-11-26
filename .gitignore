@@ -12,7 +12,6 @@ test-results
 /repros
 /sandbox
 /bench
-/code/bench
 .verdaccio-cache
 .next
 /.npmrc
@@ -37,7 +36,7 @@ npm-shrinkwrap.json
 coverage/
 *.lerna_backup
 /**/LICENSE
-code/docs/public
+/docs/public
 package-lock.json
 storybook-static
 .jest-test-results.json
@@ -46,18 +45,18 @@ storybook-static
 /addons/docs/common/config-*
 tsconfig.tsbuildinfo
 
-code/test-results/
-code/playwright-results/
-code/playwright-report/
-code/playwright/.cache/
-code/bench-results/
+/test-results/
+/playwright-results/
+/playwright-report/
+/playwright/.cache/
+/bench-results/
 
 /packs
 .vite-inspect
 .nx/cache
 .nx/workspace-data
 !**/fixtures/**/yarn.lock
-code/core/report
+/core/report
 
 *storybook.log
 

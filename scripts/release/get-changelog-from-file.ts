@@ -13,7 +13,7 @@ import { getCurrentVersion } from './get-current-version';
 program
   .name('get-changelog-from-file')
   .description(
-    'get changelog entry for specific version. If no version argument specified it will use the current version in code/package.json'
+    'get changelog entry for specific version. If no version argument specified it will use the current version in /package.json'
   )
   .arguments('[version]')
   .option('-E, --no-escape', 'Escape quote-like characters, so the output is safe in CLIs', true)

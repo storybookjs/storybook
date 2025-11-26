@@ -16,7 +16,7 @@ program
   .description('generate a PR description for a release')
   .option(
     '-C, --current-version <version>',
-    'Which version to generate changelog from, eg. "7.0.7". Defaults to the version at code/package.json'
+    'Which version to generate changelog from, eg. "7.0.7". Defaults to the version at /package.json'
   )
   .option('-N, --next-version <version>', 'Which version to generate changelog to, eg. "7.0.8"')
   .option('-P, --unpicked-patches', 'Set to only consider PRs labeled with "patch:yes" label')

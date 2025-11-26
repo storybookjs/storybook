@@ -11,7 +11,7 @@ module.exports = {
       description: 'Ensure the imports-paths of packages in the monorepo is correct',
       category: 'Best Practices',
       recommended: true,
-      url: 'https://github.com/storybookjs/storybook/blob/next/code/core/README.md',
+      url: 'https://github.com/storybookjs/storybook/blob/next/core/README.md',
     },
     fixable: 'code',
   },

@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import * as simpleGitImp from 'simple-git';
 
-import type * as MockedFSPExtra from '../../../code/__mocks__/fs/promises';
+import type * as MockedFSPExtra from '../../../__mocks__/fs/promises';
 import type * as MockedSimpleGit from '../../__mocks__/simple-git';
 import { CODE_DIRECTORY } from '../../utils/constants';
 import { run as isPrFrozen } from '../is-pr-frozen';
@@ -14,7 +14,7 @@ import { getPullInfoFromCommit } from '../utils/get-github-info';
 
 vi.mock('../utils/get-github-info');
 vi.mock('simple-git');
-vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs/promises'));
+vi.mock('node:fs/promises', async () => import('../../../__mocks__/fs/promises'));
 const fsp = fspImp as unknown as typeof MockedFSPExtra;
 const simpleGit = simpleGitImp as unknown as typeof MockedSimpleGit;
 

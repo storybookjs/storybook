@@ -2,7 +2,7 @@
   "name": "vue3-vite/default-ts",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "vue3-vite"],
+  "implicitDependencies": ["core", "addon-links", "vue3-vite"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

@@ -2,7 +2,7 @@
   "name": "ember/3-js",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "ember"],
+  "implicitDependencies": ["core", "addon-links", "ember"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

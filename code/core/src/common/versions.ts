@@ -3,7 +3,6 @@ export default {
   '@storybook/addon-a11y': '10.1.0',
   '@storybook/addon-docs': '10.1.0',
   '@storybook/addon-links': '10.1.0',
-  '@storybook/addon-onboarding': '10.1.0',
   'storybook-addon-pseudo-states': '10.1.0',
   '@storybook/addon-themes': '10.1.0',
   '@storybook/addon-vitest': '10.1.0',

@@ -39,10 +39,6 @@ export class AddonService {
       addons.push('@storybook/addon-docs');
     }
 
-    if (features.has(Feature.ONBOARDING)) {
-      addons.push('@storybook/addon-onboarding');
-    }
-
     return addons;
   }
 

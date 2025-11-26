@@ -20,10 +20,6 @@ import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
 import { ADDON_ID as ADDON_A11Y_ID } from '../../../../addons/a11y/src/constants';
 import {
-  ADDON_ONBOARDING_CHANNEL,
-  ADDON_ID as ADDON_ONBOARDING_ID,
-} from '../../../../addons/onboarding/src/constants';
-import {
   ADDON_ID as ADDON_TEST_ID,
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/vitest/src/constants';
@@ -31,6 +27,10 @@ import { SUPPORTED_FRAMEWORKS } from '../../cli/AddonVitestService.constants';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
 import { LocationMonitor } from '../../manager/hooks/useLocation';
+import {
+  ADDON_ONBOARDING_CHANNEL,
+  ADDON_ID as ADDON_ONBOARDING_ID,
+} from '../../onboarding/constants';
 import type { initialState } from './checklistData.state';
 
 const CodeWrapper = styled.div(({ theme }) => ({
@@ -154,10 +154,7 @@ export const checklistData = {
           id: 'guidedTour',
           label: 'Take the guided tour',
           available: ({ index }) =>
-            !!index &&
-            'example-button--primary' in index &&
-            !!globalThis?.FEATURES?.controls &&
-            addons.experimental_getRegisteredAddons().includes(ADDON_ONBOARDING_ID),
+            !!index && 'example-button--primary' in index && !!globalThis?.FEATURES?.controls,
           criteria: 'Guided tour is completed',
           subscribe: ({ api, accept }) =>
             api.on(ADDON_ONBOARDING_CHANNEL, ({ step, type }) => {

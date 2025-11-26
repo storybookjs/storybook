@@ -2,7 +2,7 @@
   "name": "svelte-vite/default-js",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "svelte-vite"],
+  "implicitDependencies": ["core", "addon-links", "svelte-vite"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

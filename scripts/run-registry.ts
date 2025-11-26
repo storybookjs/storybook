@@ -47,7 +47,7 @@ const startVerdaccio = async () => {
     await killProcessOnPort(6001);
 
     let attempts = 0;
-    while ((await isPortUsed(6002)) && attempts < 10) {
+    while ((await isPortUsed(6001)) && attempts < 10) {
       await sleep(1000);
       attempts++;
     }

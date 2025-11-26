@@ -78,7 +78,10 @@ export class NPMProxy extends JsPackageManager {
 
   async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;
@@ -93,6 +96,10 @@ export class NPMProxy extends JsPackageManager {
       this.installArgs = [];
     }
     return this.installArgs;
+  }
+
+  public getPackageCommand(args: string[]): string {
+    return `npx ${args.join(' ')}`;
   }
 
   public runPackageCommand(

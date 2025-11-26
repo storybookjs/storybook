@@ -12,7 +12,8 @@ import * as find from 'empathic/find';
 import { coerce, minVersion, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { SupportedBuilder, SupportedFramework } from '../types';
+import { SupportedBuilder, type SupportedFramework } from '../types';
+import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants';
 
 type Result = {
   compatible: boolean;
@@ -38,17 +39,6 @@ export interface AddonVitestCompatibilityOptions {
 export class AddonVitestService {
   constructor(private readonly packageManager: JsPackageManager) {}
 
-  readonly supportedFrameworks: SupportedFramework[] = [
-    SupportedFramework.HTML_VITE,
-    SupportedFramework.NEXTJS_VITE,
-    SupportedFramework.PREACT_VITE,
-    SupportedFramework.REACT_NATIVE_WEB_VITE,
-    SupportedFramework.REACT_VITE,
-    SupportedFramework.SVELTE_VITE,
-    SupportedFramework.SVELTEKIT,
-    SupportedFramework.VUE3_VITE,
-    SupportedFramework.WEB_COMPONENTS_VITE,
-  ];
   /**
    * Collect all dependencies needed for @storybook/addon-vitest
    *
@@ -128,6 +118,7 @@ export class AddonVitestService {
     const errors: string[] = [];
 
     const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
+    const playwrightCommandString = this.packageManager.getPackageCommand(playwrightCommand);
 
     try {
       const shouldBeInstalled = options.yes
@@ -135,7 +126,7 @@ export class AddonVitestService {
         : await (async () => {
             logger.log(dedent`
             Playwright browser binaries are necessary for @storybook/addon-vitest. The download can take some time. If you don't want to wait, you can skip the installation and run the following command manually later:
-            ${CLI_COLORS.cta(`npx ${playwrightCommand.join(' ')}`)}
+            ${CLI_COLORS.cta(playwrightCommandString)}
             `);
             return prompt.confirm({
               message: 'Do you want to install Playwright with Chromium now?',
@@ -153,8 +144,8 @@ export class AddonVitestService {
             }),
           {
             id: 'playwright-installation',
-            intro: 'Installing Playwright browser binaries (Press "c" to abort)',
-            error: `An error occurred while installing Playwright browser binaries. Please run the following command later: npx ${playwrightCommand.join(' ')}`,
+            intro: 'Installing Playwright browser binaries (press "c" to abort)',
+            error: `An error occurred while installing Playwright browser binaries. Please run the following command later: ${playwrightCommandString}`,
             success: 'Playwright browser binaries installed successfully',
             abortable: true,
           }
@@ -196,7 +187,7 @@ export class AddonVitestService {
     }
 
     // Check renderer/framework support
-    const isFrameworkSupported = this.supportedFrameworks.some(
+    const isFrameworkSupported = SUPPORTED_FRAMEWORKS.some(
       (framework) => options.framework === framework
     );
 

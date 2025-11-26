@@ -73,6 +73,10 @@ export class PNPMProxy extends JsPackageManager {
     return this.installArgs;
   }
 
+  getPackageCommand(args: string[]): string {
+    return `pnpm exec ${args.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     ...options

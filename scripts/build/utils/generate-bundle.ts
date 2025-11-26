@@ -22,17 +22,8 @@ import {
   getExternal,
 } from './entry-utils';
 
-// repo root/bench/esbuild-metafiles/core
-const DIR_METAFILE_BASE = join(
-  import.meta.dirname,
-  '..',
-  '..',
-  '..',
-  'code',
-  'bench',
-  'esbuild-metafiles'
-);
 export const DIR_CODE = join(import.meta.dirname, '..', '..', '..');
+const DIR_METAFILE_BASE = join(DIR_CODE, 'bench', 'esbuild-metafiles');
 
 /*
  * This plugin writes the metafile to a file in the output directory.

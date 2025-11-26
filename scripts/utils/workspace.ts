@@ -26,7 +26,7 @@ export async function getCodeWorkspaces(includePrivate = true) {
       return {
         name: it.name,
         // strip code from the location for backwards compatibility
-        location: it.location.replace('code/', '').replace('code', '.'),
+        location: it.location === 'code' ? '.' : it.location.replace('code/', ''),
       };
     }) as Workspace[];
 }

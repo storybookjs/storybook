@@ -17,7 +17,7 @@ Storybook is a large monorepo built with TypeScript, React, and various other fr
 ```
 storybook/
 ├── .github/           # GitHub configurations and workflows
-├── code/              # Main monorepo codebase
+├── code/              # Main codebase
 │   ├── .storybook/    # Configuration for internal UI Storybook
 │   ├── core/          # Core Storybook package
 │   ├── lib/           # Core supporting libraries
@@ -30,7 +30,7 @@ storybook/
 ├── sandbox/           # Generated sandbox environments (created by yarn task --task sandbox)
 ├── scripts/           # Build and development scripts
 ├── docs/              # Documentation
-└── test-storybooks/   # Test configurations
+└── test-storybooks/   # Test repos
 ```
 
 ## Essential Commands and Build Times
@@ -38,7 +38,7 @@ storybook/
 ### Installation & Setup
 ```bash
 # Install all dependencies (run from repository root)
-yarn i
+yarn
 # Time: ~2.5 minutes
 # Timeout: Use 300+ seconds for bash commands
 ```
@@ -148,7 +148,7 @@ The repository includes 20 task scripts in `scripts/tasks/`:
 ## Recommended Development Workflow
 
 ### For Code Changes
-1. Install dependencies: `yarn i` (if needed)
+1. Install dependencies: `yarn` (if needed)
 2. Compile packages: `yarn task --task compile`
 3. Make your changes
 4. Compile packages with `cd code && yarn task --task compile`
@@ -285,7 +285,7 @@ cd code && yarn storybook:vitest
 ## Troubleshooting
 
 ### Common Issues
-1. **Build Failures**: Often resolved by running `yarn i` followed by `yarn task --task compile`
+1. **Build Failures**: Often resolved by running `yarn` followed by `yarn task --task compile`
 2. **Port Conflicts**: Storybook UI uses port 6006 by default
 3. **Memory Issues**: Large compilation tasks may require increased Node.js memory limits
 4. **Environment-Specific Issues**: Sandbox generation may occasionally fail due to dependency conflicts - use Storybook UI for testing as fallback

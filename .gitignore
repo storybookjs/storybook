@@ -62,5 +62,3 @@ code/core/report
 *storybook.log
 
 .junie
-
-test-storybooks/**/yarn.lock

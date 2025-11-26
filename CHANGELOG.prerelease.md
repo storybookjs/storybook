@@ -1,3 +1,11 @@
+## 10.1.0-beta.6
+
+- Angular: Don't kill dev command by using observables - [#33185](https://github.com/storybookjs/storybook/pull/33185), thanks @valentinpalkovic!
+- Angular: Replace deprecated import of ApplicationConfig - [#33125](https://github.com/storybookjs/storybook/pull/33125), thanks @EtiennePasteur!
+- CLI: Fix passing flags for bun users during init - [#33166](https://github.com/storybookjs/storybook/pull/33166), thanks @valentinpalkovic!
+- CLI: Minor improvements - [#33180](https://github.com/storybookjs/storybook/pull/33180), thanks @valentinpalkovic!
+- CLI: Update upgrade message - [#33182](https://github.com/storybookjs/storybook/pull/33182), thanks @yannbf!
+
 ## 10.1.0-beta.5
 
 - Checklist: Autocomplete "See what's new" on URL navigation - [#33167](https://github.com/storybookjs/storybook/pull/33167), thanks @ghengeveld!

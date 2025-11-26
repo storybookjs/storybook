@@ -1,3 +1,4 @@
+/// <reference types="./typings.d.ts" />
 import type { Channel } from 'storybook/internal/channels';
 import { once } from 'storybook/internal/client-logger';
 import {
@@ -24,7 +25,6 @@ import type {
   SyncPayload,
 } from './types';
 import { CallStates } from './types';
-import './typings';
 
 type PatchedObj<TObj extends Record<string, unknown>> = {
   [Property in keyof TObj]: TObj[Property] & { __originalFn__: TObj[Property] };

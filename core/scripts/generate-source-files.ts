@@ -16,8 +16,8 @@ import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../src/shared/constants/env
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 
-const CODE_DIR = join(import.meta.dirname, '..', '..', '..');
-const CORE_ROOT_DIR = join(CODE_DIR);
+const CODE_DIR = join(import.meta.dirname, '..', '..');
+const CORE_ROOT_DIR = join(CODE_DIR, 'core');
 const tempDir = () => realpath(os.tmpdir());
 const getPath = async (prefix = '') =>
   join(await tempDir(), prefix + (Math.random() + 1).toString(36).substring(7));

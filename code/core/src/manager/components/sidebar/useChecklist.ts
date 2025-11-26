@@ -226,8 +226,12 @@ export const useChecklist = () => {
 
   useEffect(() => {
     const initialize = () => setInitialized(true);
+    const timeout = setTimeout(initialize, 1000);
     api.once(PREVIEW_INITIALIZED, initialize);
-    return () => api.off(PREVIEW_INITIALIZED, initialize);
+    return () => {
+      clearTimeout(timeout);
+      api.off(PREVIEW_INITIALIZED, initialize);
+    };
   }, [api]);
 
   useEffect(() => {

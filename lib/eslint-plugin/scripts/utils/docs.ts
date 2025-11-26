@@ -6,10 +6,7 @@ import type { TRuleListWithoutName, TRulesList } from '../update-rules-list';
 import { categoryIds } from './categories';
 
 const prettierConfig = resolveConfig(__dirname);
-const readmePath = resolve(
-  __dirname,
-  `../../../../../docs/configure/integration/eslint-plugin.mdx`
-);
+const readmePath = resolve(__dirname, `../../../../docs/configure/integration/eslint-plugin.mdx`);
 const ruleDocsPath = resolve(__dirname, `../../docs/rules`);
 
 export const configBadges = categoryIds.reduce(

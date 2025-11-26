@@ -10,27 +10,15 @@
     "addon-onboarding"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "react-rsbuild-default-ts"
-      }
-    },
+    "sandbox": { "options": { "dir": "react-rsbuild-default-ts" } },
     "prepared-sandbox": {},
     "dev": {},
-    "build-sandbox": {
-      "options": {
-        "dir": "react-rsbuild-default-ts"
-      }
-    },
+    "build-sandbox": { "options": { "dir": "react-rsbuild-default-ts" } },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
     "test-runner": {},
     "test-runner-dev": {}
   },
-  "tags": [
-    "ci:normal",
-    "ci:merged",
-    "ci:daily"
-  ]
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
 }

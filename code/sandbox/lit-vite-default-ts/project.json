@@ -11,18 +11,10 @@
     "web-components-vite"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "lit-vite-default-ts"
-      }
-    },
+    "sandbox": { "options": { "dir": "lit-vite-default-ts" } },
     "prepared-sandbox": {},
     "dev": {},
-    "build-sandbox": {
-      "options": {
-        "dir": "lit-vite-default-ts"
-      }
-    },
+    "build-sandbox": { "options": { "dir": "lit-vite-default-ts" } },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
@@ -30,9 +22,5 @@
     "test-runner": {},
     "test-runner-dev": {}
   },
-  "tags": [
-    "ci:normal",
-    "ci:merged",
-    "ci:daily"
-  ]
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
 }

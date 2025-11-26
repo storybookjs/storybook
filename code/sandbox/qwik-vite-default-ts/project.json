@@ -10,18 +10,10 @@
     "addon-onboarding"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "qwik-vite-default-ts"
-      }
-    },
+    "sandbox": { "options": { "dir": "qwik-vite-default-ts" } },
     "prepared-sandbox": {},
     "dev": {},
-    "build-sandbox": {
-      "options": {
-        "dir": "qwik-vite-default-ts"
-      }
-    },
+    "build-sandbox": { "options": { "dir": "qwik-vite-default-ts" } },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},

@@ -11,25 +11,15 @@
     "react-vite"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "bench-react-vite-default-ts-nodocs"
-      }
-    },
+    "sandbox": { "options": { "dir": "bench-react-vite-default-ts-nodocs" } },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
-      "options": {
-        "dir": "bench-react-vite-default-ts-nodocs"
-      }
+      "options": { "dir": "bench-react-vite-default-ts-nodocs" }
     },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {}
   },
-  "tags": [
-    "ci:normal",
-    "ci:merged",
-    "ci:daily"
-  ]
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
 }

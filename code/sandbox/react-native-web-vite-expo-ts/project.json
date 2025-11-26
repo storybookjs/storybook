@@ -11,18 +11,10 @@
     "react-native-web-vite"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "react-native-web-vite-expo-ts"
-      }
-    },
+    "sandbox": { "options": { "dir": "react-native-web-vite-expo-ts" } },
     "prepared-sandbox": {},
     "dev": {},
-    "build-sandbox": {
-      "options": {
-        "dir": "react-native-web-vite-expo-ts"
-      }
-    },
+    "build-sandbox": { "options": { "dir": "react-native-web-vite-expo-ts" } },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
@@ -31,7 +23,5 @@
     "test-runner": {},
     "test-runner-dev": {}
   },
-  "tags": [
-    "ci:daily"
-  ]
+  "tags": ["ci:daily"]
 }

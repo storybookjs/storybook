@@ -11,25 +11,15 @@
     "react-webpack5"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "bench-react-webpack-18-ts-test-build"
-      }
-    },
+    "sandbox": { "options": { "dir": "bench-react-webpack-18-ts-test-build" } },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
-      "options": {
-        "dir": "bench-react-webpack-18-ts-test-build"
-      }
+      "options": { "dir": "bench-react-webpack-18-ts-test-build" }
     },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {}
   },
-  "tags": [
-    "ci:normal",
-    "ci:merged",
-    "ci:daily"
-  ]
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
 }

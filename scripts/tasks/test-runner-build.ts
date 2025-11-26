@@ -19,7 +19,7 @@ export const testRunnerBuild: Task & { port: number } = {
 
     const execOptions = { cwd: sandboxDir };
     const flags = [
-      `--url http://127.0.0.1:${port}`,
+      `--url http://localhost:${port}`,
       '--junit',
       '--maxWorkers=2',
       '--failOnConsole',

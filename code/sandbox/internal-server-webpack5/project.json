@@ -11,18 +11,10 @@
     "server-webpack5"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "internal-server-webpack5"
-      }
-    },
+    "sandbox": { "options": { "dir": "internal-server-webpack5" } },
     "prepared-sandbox": {},
     "dev": {},
-    "build-sandbox": {
-      "options": {
-        "dir": "internal-server-webpack5"
-      }
-    },
+    "build-sandbox": { "options": { "dir": "internal-server-webpack5" } },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},

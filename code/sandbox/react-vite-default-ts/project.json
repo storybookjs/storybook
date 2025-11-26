@@ -11,20 +11,12 @@
     "react-vite"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "react-vite-default-ts"
-      }
-    },
+    "sandbox": { "options": { "dir": "react-vite-default-ts" } },
     "prepared-sandbox": {},
     "dev": {},
     "check-sandbox": {},
     "vitest-integration": {},
-    "build-sandbox": {
-      "options": {
-        "dir": "react-vite-default-ts"
-      }
-    },
+    "build-sandbox": { "options": { "dir": "react-vite-default-ts" } },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
@@ -33,9 +25,5 @@
     "test-runner": {},
     "test-runner-dev": {}
   },
-  "tags": [
-    "ci:normal",
-    "ci:merged",
-    "ci:daily"
-  ]
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
 }

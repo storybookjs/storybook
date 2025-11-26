@@ -11,19 +11,11 @@
     "ember"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "ember-3-js"
-      }
-    },
+    "sandbox": { "options": { "dir": "ember-3-js" } },
     "prepared-sandbox": {},
     "dev": {},
     "vitest-integration": {},
-    "build-sandbox": {
-      "options": {
-        "dir": "ember-3-js"
-      }
-    },
+    "build-sandbox": { "options": { "dir": "ember-3-js" } },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},

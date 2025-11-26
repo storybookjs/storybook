@@ -10,18 +10,10 @@
     "addon-onboarding"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "solid-vite-default-js"
-      }
-    },
+    "sandbox": { "options": { "dir": "solid-vite-default-js" } },
     "prepared-sandbox": {},
     "dev": {},
-    "build-sandbox": {
-      "options": {
-        "dir": "solid-vite-default-js"
-      }
-    },
+    "build-sandbox": { "options": { "dir": "solid-vite-default-js" } },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},

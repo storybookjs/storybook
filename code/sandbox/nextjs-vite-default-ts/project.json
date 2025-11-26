@@ -11,19 +11,11 @@
     "nextjs-vite"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "nextjs-vite-default-ts"
-      }
-    },
+    "sandbox": { "options": { "dir": "nextjs-vite-default-ts" } },
     "prepared-sandbox": {},
     "dev": {},
     "vitest-integration": {},
-    "build-sandbox": {
-      "options": {
-        "dir": "nextjs-vite-default-ts"
-      }
-    },
+    "build-sandbox": { "options": { "dir": "nextjs-vite-default-ts" } },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
@@ -32,9 +24,5 @@
     "test-runner": {},
     "test-runner-dev": {}
   },
-  "tags": [
-    "ci:normal",
-    "ci:merged",
-    "ci:daily"
-  ]
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
 }

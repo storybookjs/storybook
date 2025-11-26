@@ -11,18 +11,10 @@
     "nextjs"
   ],
   "targets": {
-    "sandbox": {
-      "options": {
-        "dir": "nextjs-15-ts"
-      }
-    },
+    "sandbox": { "options": { "dir": "nextjs-15-ts" } },
     "prepared-sandbox": {},
     "dev": {},
-    "build-sandbox": {
-      "options": {
-        "dir": "nextjs-15-ts"
-      }
-    },
+    "build-sandbox": { "options": { "dir": "nextjs-15-ts" } },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {},
@@ -30,8 +22,5 @@
     "test-runner": {},
     "test-runner-dev": {}
   },
-  "tags": [
-    "ci:merged",
-    "ci:daily"
-  ]
+  "tags": ["ci:merged", "ci:daily"]
 }

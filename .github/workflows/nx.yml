@@ -3,8 +3,7 @@ name: nx
 on:
   push:
     branches:
-      # change to next
-      - '**'
+      - next
   pull_request:
     types: [opened, synchronize, labeled, reopened]
 
@@ -32,9 +31,9 @@ jobs:
           cache: 'yarn'
       - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@v4
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
+      - if: github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
         run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal"
-      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:merged'))
+      - if: github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'ci:merged'))
         run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged"
       - if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'ci:daily')
         run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged,tag:ci:daily"

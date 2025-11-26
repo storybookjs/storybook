@@ -1,6 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
+import prettier from 'prettier';
+
 import { type Template } from '../code/lib/cli-storybook/src/sandbox-templates';
 import * as templates from '../code/lib/cli-storybook/src/sandbox-templates';
 
@@ -71,29 +73,31 @@ const projectJson = (name: string, framework: string, tags: string[], template: 
   },
   tags,
 });
-Object.entries(allTemplates)
-  .forEach(([key, value]) => {
-    const p = key.replaceAll('/', '-');
-    const full = join(process.cwd(), '../code/sandbox', p, 'project.json');
+Object.entries(allTemplates).forEach(async ([key, value]) => {
+  const p = key.replaceAll('/', '-');
+  const full = join(process.cwd(), '../code/sandbox', p, 'project.json');
 
-    console.log(full);
-    const framework = value.expected.framework;
-    const project = framework.includes('@storybook/')
-      ? framework.replace('@storybook/', '')
-      : undefined;
-    console.log(project);
-    console.log();
-    const tags = [
-      ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
-      ...(merged.includes(key as any) && !value.inDevelopment ? ['ci:merged'] : []),
-      ...(daily.includes(key as any) && !value.inDevelopment ? ['ci:daily'] : []),
-    ];
-    ensureDirectoryExistence(full);
-    console.log(full);
-    writeFileSync(full, JSON.stringify(projectJson(key, project, tags, value), null, 2), {
-      encoding: 'utf-8',
-    });
+  console.log(full);
+  const framework = value.expected.framework;
+  const project = framework.includes('@storybook/')
+    ? framework.replace('@storybook/', '')
+    : undefined;
+  console.log(project);
+  console.log();
+  const tags = [
+    ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
+    ...(merged.includes(key as any) && !value.inDevelopment ? ['ci:merged'] : []),
+    ...(daily.includes(key as any) && !value.inDevelopment ? ['ci:daily'] : []),
+  ];
+  ensureDirectoryExistence(full);
+  console.log(full);
+
+  const data = await prettier.format(JSON.stringify(projectJson(key, project, tags, value)), {
+    filepath: full,
   });
+
+  writeFileSync(full, data, { encoding: 'utf-8' });
+});
 
 function ensureDirectoryExistence(filePath: string): void {
   const dir = dirname(filePath);

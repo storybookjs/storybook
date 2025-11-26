@@ -12,24 +12,16 @@
   ],
   "targets": {
     "sandbox": {
-      "options": {
-        "dir": "bench-react-vite-default-ts-test-build"
-      }
+      "options": { "dir": "bench-react-vite-default-ts-test-build" }
     },
     "prepared-sandbox": {},
     "dev": {},
     "build-sandbox": {
-      "options": {
-        "dir": "bench-react-vite-default-ts-test-build"
-      }
+      "options": { "dir": "bench-react-vite-default-ts-test-build" }
     },
     "prepared-build-sandbox": {},
     "chromatic": {},
     "serve": {}
   },
-  "tags": [
-    "ci:normal",
-    "ci:merged",
-    "ci:daily"
-  ]
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
 }

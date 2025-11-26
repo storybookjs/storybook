@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs';
 import { cp, rm } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 
-import detectFreePort from 'detect-port';
 import { join } from 'path';
 import waitOn from 'wait-on';
 
@@ -46,7 +45,7 @@ async function main() {
           timeout: 2000,
         });
       } catch {
-        void exec('yarn local-registry --open', { cwd: CODE_DIRECTORY, debug: true });
+        void exec('yarn local-registry --open', { cwd: CODE_DIRECTORY });
         await waitOn({
           log: true,
           resources: ['http://localhost:6001', 'http://localhost:6002'],
@@ -68,4 +67,11 @@ async function main() {
   }
 }
 
-main();
+main()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

@@ -217,7 +217,11 @@ const run = async () => {
 
   logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
 
-  const [_servers, packages, version] = await Promise.all([startVerdaccio(), getCodeWorkspaces(false), currentVersion()]);
+  const [_servers, packages, version] = await Promise.all([
+    startVerdaccio(),
+    getCodeWorkspaces(false),
+    currentVersion(),
+  ]);
   servers = _servers;
 
   logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);

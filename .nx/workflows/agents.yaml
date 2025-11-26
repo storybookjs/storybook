@@ -59,7 +59,7 @@ linux-browsers-init-steps: &linux-browsers-init-steps
       yarn install --immutable
   - name: Install Browsers
     script: |
-      yarn exec cypress install
+      yarn dlx cypress install
       yarn exec playwright install --with-deps
   - name: Verify
     script: |

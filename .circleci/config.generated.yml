@@ -250,8 +250,6 @@ jobs:
                   path: code/bench/esbuild-metafiles
             - persist_to_workspace:
                   paths:
-                      - code/node_modules
-                      - scripts/node_modules
                       - code/core/dist
                       - code/core/node_modules
                       - code/addons/a11y/dist
@@ -359,9 +357,6 @@ jobs:
                       - code/frameworks/angular/dist/server/__mocks-ng-workspace__/without-projects-entry/projects/pattern-lib/src
                       - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/without-projects-entry/projects/pattern-lib/src
                       - .verdaccio-cache
-                      - .yarn/code-install-state.gz
-                      - .yarn/scripts-install-state.gz
-                      - .yarn/root-install-state.gz
                   root: .
     check:
         executor:
@@ -372,6 +367,12 @@ jobs:
                   clone_options: --depth 1 --verbose
             - attach_workspace:
                   at: .
+            - node/install-packages:
+                  app-dir: code
+                  pkg-manager: yarn
+            - node/install-packages:
+                  app-dir: scripts
+                  pkg-manager: yarn
             - run:
                   command: yarn task --task check --no-link
                   name: TypeCheck code
@@ -1243,6 +1244,12 @@ jobs:
                   clone_options: --depth 1 --verbose
             - attach_workspace:
                   at: .
+            - node/install-packages:
+                  app-dir: code
+                  pkg-manager: yarn
+            - node/install-packages:
+                  app-dir: scripts
+                  pkg-manager: yarn
             - run:
                   command: yarn local-registry --open
                   name: Verdaccio
@@ -1288,6 +1295,12 @@ jobs:
                   clone_options: --depth 1 --verbose
             - attach_workspace:
                   at: .
+            - node/install-packages:
+                  app-dir: code
+                  pkg-manager: yarn
+            - node/install-packages:
+                  app-dir: scripts
+                  pkg-manager: yarn
             - run:
                   command: yarn task build --template react-vite/default-ts --no-link -s build
                   name: Build storybook
@@ -1313,6 +1326,12 @@ jobs:
                   clone_options: --depth 1 --verbose
             - attach_workspace:
                   at: .
+            - node/install-packages:
+                  app-dir: code
+                  pkg-manager: yarn
+            - node/install-packages:
+                  app-dir: scripts
+                  pkg-manager: yarn
             - run:
                   command: yarn task dev --template react-vite/default-ts --no-link -s dev
                   name: Run storybook

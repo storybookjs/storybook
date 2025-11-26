@@ -344,8 +344,8 @@ const jobs = {
       {
         persist_to_workspace: {
           paths: [
-            'code/node_modules',
-            'scripts/node_modules',
+            // 'code/node_modules',
+            // 'scripts/node_modules',
             ...glob
               .sync('**/src', {
                 cwd: join(dirname, '../../code'),
@@ -357,9 +357,9 @@ const jobs = {
                 `code/${p.replace('src', 'node_modules')}`,
               ]),
             '.verdaccio-cache',
-            '.yarn/code-install-state.gz',
-            '.yarn/scripts-install-state.gz',
-            '.yarn/root-install-state.gz',
+            // '.yarn/code-install-state.gz',
+            // '.yarn/scripts-install-state.gz',
+            // '.yarn/root-install-state.gz',
           ],
           root: '.',
         },
@@ -380,6 +380,18 @@ const jobs = {
       {
         attach_workspace: {
           at: '.',
+        },
+      },
+      {
+        'node/install-packages': {
+          'app-dir': 'code',
+          'pkg-manager': 'yarn',
+        },
+      },
+      {
+        'node/install-packages': {
+          'app-dir': 'scripts',
+          'pkg-manager': 'yarn',
         },
       },
       {
@@ -1742,6 +1754,18 @@ const jobs = {
         },
       },
       {
+        'node/install-packages': {
+          'app-dir': 'code',
+          'pkg-manager': 'yarn',
+        },
+      },
+      {
+        'node/install-packages': {
+          'app-dir': 'scripts',
+          'pkg-manager': 'yarn',
+        },
+      },
+      {
         run: {
           command: 'yarn local-registry --open',
           name: 'Verdaccio',
@@ -1821,6 +1845,18 @@ const jobs = {
         },
       },
       {
+        'node/install-packages': {
+          'app-dir': 'code',
+          'pkg-manager': 'yarn',
+        },
+      },
+      {
+        'node/install-packages': {
+          'app-dir': 'scripts',
+          'pkg-manager': 'yarn',
+        },
+      },
+      {
         run: {
           command: 'yarn task build --template react-vite/default-ts --no-link -s build',
           name: 'Build storybook',
@@ -1865,6 +1901,18 @@ const jobs = {
       {
         attach_workspace: {
           at: '.',
+        },
+      },
+      {
+        'node/install-packages': {
+          'app-dir': 'code',
+          'pkg-manager': 'yarn',
+        },
+      },
+      {
+        'node/install-packages': {
+          'app-dir': 'scripts',
+          'pkg-manager': 'yarn',
         },
       },
       {

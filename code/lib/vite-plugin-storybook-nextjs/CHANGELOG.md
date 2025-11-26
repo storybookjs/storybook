@@ -1,3 +1,15 @@
+# v3.1.2 (Wed Nov 26 2025)
+
+#### 🐛 Bug Fix
+
+- Update storybook peer dependency to include version 10.2.0-0 [#73](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/73) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v3.1.1 (Thu Nov 06 2025)
 
 #### 🐛 Bug Fix

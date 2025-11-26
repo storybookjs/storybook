@@ -3,9 +3,10 @@ name: nx
 on:
   push:
     branches:
-      - next
+      # change to next
+      - '**'
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, labeled, reopened]
 
 permissions:
   actions: read

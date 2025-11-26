@@ -199,6 +199,10 @@ jobs:
                 name: Restore Yarn cache
             - run:
                 command: |
+                    yarn install
+                name: Install
+            - run:
+                command: |
                     yarn task --task compile --start-from=auto --no-link --debug
                     git diff --exit-code
                     yarn dedupe --check
@@ -244,6 +248,10 @@ jobs:
                 keys:
                     - build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
                 name: Restore Yarn cache
+            - run:
+                command: |
+                    yarn install
+                name: Install
             - run:
                 command: |
                     yarn task --task compile --start-from=auto --no-link --debug

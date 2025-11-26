@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.1.0-alpha.13",
+  "version": "10.1.0-beta.5",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -220,7 +220,7 @@
     "@babel/parser": "^7.26.9",
     "@babel/traverse": "^7.26.9",
     "@babel/types": "^7.26.8",
-    "@clack/prompts": "1.0.0-alpha.6",
+    "@clack/prompts": "1.0.0-alpha.7",
     "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
     "@emotion/cache": "^11.14.0",
@@ -261,7 +261,6 @@
     "@types/semver": "^7.5.8",
     "@types/ws": "^8",
     "@vitest/utils": "^3.2.4",
-    "@yarnpkg/esbuild-plugin-pnp": "^3.0.0-rc.10",
     "@yarnpkg/fslib": "2.10.3",
     "@yarnpkg/libzip": "2.3.0",
     "ansi-to-html": "^0.7.2",

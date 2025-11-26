@@ -2104,24 +2104,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@clack/core@npm:1.0.0-alpha.6":
-  version: 1.0.0-alpha.6
-  resolution: "@clack/core@npm:1.0.0-alpha.6"
+"@clack/core@npm:1.0.0-alpha.7":
+  version: 1.0.0-alpha.7
+  resolution: "@clack/core@npm:1.0.0-alpha.7"
   dependencies:
     picocolors: "npm:^1.0.0"
     sisteransi: "npm:^1.0.5"
-  checksum: 10c0/5d8949d74bccda55d31510f481a93828f8341e2ecfde1c5809cdd3e5b4d9f2c8fd74e34a3a38062b73fcf8897178edceaa3f884b48943b6473991e878e69eda2
+  checksum: 10c0/e3d706101c57252d41c77abfb16d1f163bc9e4b81cacbc70c022a859c500ceb7024049d8ff907c8869dcaa9e141e4ef6bb57b83c46027fcdc188072f7b0cc728
   languageName: node
   linkType: hard
 
-"@clack/prompts@npm:1.0.0-alpha.6":
-  version: 1.0.0-alpha.6
-  resolution: "@clack/prompts@npm:1.0.0-alpha.6"
+"@clack/prompts@npm:1.0.0-alpha.7":
+  version: 1.0.0-alpha.7
+  resolution: "@clack/prompts@npm:1.0.0-alpha.7"
   dependencies:
-    "@clack/core": "npm:1.0.0-alpha.6"
+    "@clack/core": "npm:1.0.0-alpha.7"
     picocolors: "npm:^1.0.0"
     sisteransi: "npm:^1.0.5"
-  checksum: 10c0/c6a18a805aba72ffc879d7870dda28596f5081ccba30808e0e1d7f7cd9c3fad93101ff252de3e0001de564fbe8d162ebd637de2c7c06c39c12301d2d876c9544
+  checksum: 10c0/21f657868fe538e260f0c79026cca909b51013ad8017a6951869c976dded786383b604db616fed2a799b40c300f7df672fa3e7f4c2e1484819c7fc482b2bd9bb
   languageName: node
   linkType: hard
 
@@ -10821,17 +10821,6 @@ __metadata:
   version: 4.2.2
   resolution: "@xtuc/long@npm:4.2.2"
   checksum: 10c0/8582cbc69c79ad2d31568c412129bf23d2b1210a1dfb60c82d5a1df93334da4ee51f3057051658569e2c196d8dc33bc05ae6b974a711d0d16e801e1d0647ccd1
-  languageName: node
-  linkType: hard
-
-"@yarnpkg/esbuild-plugin-pnp@npm:^3.0.0-rc.10":
-  version: 3.0.0-rc.15
-  resolution: "@yarnpkg/esbuild-plugin-pnp@npm:3.0.0-rc.15"
-  dependencies:
-    tslib: "npm:^2.4.0"
-  peerDependencies:
-    esbuild: ">=0.10.0"
-  checksum: 10c0/5095bc316862971add31ca1fadb0095b6ad15f25120f6ab3a06086bb6a7be93c2f3c45bff80d5976689fc89b0e9bf82bd3d410e205c852739874d32d050c4e57
   languageName: node
   linkType: hard
 
@@ -25889,7 +25878,7 @@ __metadata:
     "@babel/parser": "npm:^7.26.9"
     "@babel/traverse": "npm:^7.26.9"
     "@babel/types": "npm:^7.26.8"
-    "@clack/prompts": "npm:1.0.0-alpha.6"
+    "@clack/prompts": "npm:1.0.0-alpha.7"
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@discoveryjs/json-ext": "npm:^0.5.3"
     "@emotion/cache": "npm:^11.14.0"
@@ -25936,7 +25925,6 @@ __metadata:
     "@vitest/expect": "npm:3.2.4"
     "@vitest/spy": "npm:3.2.4"
     "@vitest/utils": "npm:^3.2.4"
-    "@yarnpkg/esbuild-plugin-pnp": "npm:^3.0.0-rc.10"
     "@yarnpkg/fslib": "npm:2.10.3"
     "@yarnpkg/libzip": "npm:2.3.0"
     ansi-to-html: "npm:^0.7.2"

@@ -94,6 +94,10 @@ export class Yarn2Proxy extends JsPackageManager {
     return `yarn ${command}`;
   }
 
+  getPackageCommand(args: string[]): string {
+    return `yarn exec ${args.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     ...options
@@ -148,7 +152,7 @@ export class Yarn2Proxy extends JsPackageManager {
   // TODO: Remove pnp compatibility code in SB11
   async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
-      cwd: this.cwd,
+      cwd: this.primaryPackageJson.operationDir,
       last: getProjectRoot(),
     });
 

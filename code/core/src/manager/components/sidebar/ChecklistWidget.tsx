@@ -220,7 +220,8 @@ export const ChecklistWidget = () => {
     <CollapsibleWithMargin collapsed={!hasItems || !loaded}>
       <HoverCard id="storybook-checklist-widget" outlineAnimation="rainbow">
         <Collapsible
-          collapsed={!hasItems}
+          storageKey="checklist-widget"
+          initialCollapsed={!hasItems}
           disabled={!hasItems}
           summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
             <ActionList as="div" onClick={toggleCollapsed}>

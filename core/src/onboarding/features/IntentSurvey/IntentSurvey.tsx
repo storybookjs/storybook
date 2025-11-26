@@ -4,7 +4,7 @@ import { Button, Form, Modal } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
 
-import { isChromatic } from '../../../../../../.storybook/isChromatic';
+import { isChromatic } from '../../../../../.storybook/isChromatic';
 
 interface BaseField {
   label: string;

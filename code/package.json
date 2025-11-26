@@ -43,9 +43,6 @@
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
   },
-  "nx": {
-    "includedScripts": []
-  },
   "husky": {
     "hooks": {
       "pre-commit": "if [ -z \"$SKIP_STORYBOOK_GIT_HOOKS\" ]; then yarn lint-staged; fi"
@@ -212,6 +209,9 @@
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
+  },
+  "nx": {
+    "includedScripts": []
   },
   "pr-log": {
     "skipLabels": [

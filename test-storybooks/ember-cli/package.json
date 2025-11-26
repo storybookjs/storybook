@@ -7,8 +7,8 @@
     "build": "ember build --output-path ember-output",
     "dev": "ember serve",
     "storybook": "yarn build && storybook dev -p 9009",
-    "storybook-prebuild": "yarn build && shx cp -r public/* ember-output",
-    "storybook:dev": "yarn dev & NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" storybook dev -p 9009"
+    "storybook:dev": "yarn dev & NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" storybook dev -p 9009",
+    "storybook-prebuild": "yarn build && shx cp -r public/* ember-output"
   },
   "resolutions": {
     "@storybook/addon-a11y": "file:../../code/addons/a11y",
@@ -19,7 +19,6 @@
     "@storybook/builder-vite": "file:../../code/builders/builder-vite",
     "@storybook/builder-webpack5": "file:../../code/builders/builder-webpack5",
     "@storybook/codemod": "file:../../code/lib/codemod",
-    "storybook": "file:../../code/core",
     "@storybook/core-webpack": "file:../../code/lib/core-webpack",
     "@storybook/csf-plugin": "file:../../code/lib/csf-plugin",
     "@storybook/ember": "file:../../code/frameworks/ember",
@@ -42,7 +41,8 @@
     "@storybook/vue3": "file:../../code/renderers/vue3",
     "@storybook/vue3-vite": "file:../../code/frameworks/vue3-vite",
     "@storybook/web-components": "file:../../code/renderers/web-components",
-    "@storybook/web-components-vite": "file:../../code/frameworks/web-components-vite"
+    "@storybook/web-components-vite": "file:../../code/frameworks/web-components-vite",
+    "storybook": "file:../../code/core"
   },
   "dependencies": {
     "ember-named-blocks-polyfill": "^0.2.3",

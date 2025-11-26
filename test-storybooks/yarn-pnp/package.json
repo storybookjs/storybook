@@ -4,14 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "build-storybook": "storybook build",
+    "dev": "vite",
     "preview": "vite preview",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
-  },
-  "nx": {
-    "includedScripts": []
+    "storybook": "storybook dev -p 6006"
   },
   "resolutions": {
     "@playwright/test": "1.52.0",
@@ -75,5 +72,8 @@
     "vite": "^7.1.7",
     "vitest": "^4.0.7",
     "vue-tsc": "^3.1.0"
+  },
+  "nx": {
+    "includedScripts": []
   }
 }

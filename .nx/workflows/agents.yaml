@@ -19,16 +19,6 @@ linux-init-steps: &linux-init-steps
   - name: Install Node Modules
     script: |
       yarn install --immutable
-  - name: Verify toolchain versions
-    script: |
-      echo "node:         $(node --version)"
-      echo "pnpm:         $(pnpm --version)"
-      echo "yarn:         $(yarn --version)"
-      echo "yarn cache:   $(yarn config get cacheFolder)"
-      ls ~
-      ls ~/.cache/Cypress
-      ls ~/.yarn/berry
-      ls ~/.cache/ms-playwright
 
 linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Checkout
@@ -61,6 +51,16 @@ linux-browsers-init-steps: &linux-browsers-init-steps
     script: |
       yarn exec cypress install
       yarn exec playwright install --with-deps
+  - name: Verify toolchain versions
+    script: |
+      echo "node:         $(node --version)"
+      echo "pnpm:         $(pnpm --version)"
+      echo "yarn:         $(yarn --version)"
+      echo "yarn cache:   $(yarn config get cacheFolder)"
+      ls ~
+      ls ~/.cache/Cypress
+      ls ~/.yarn/berry
+      ls ~/.cache/ms-playwright
 
 common-env-vars: &common-env-vars
   STORYBOOK_DISABLE_TELEMETRY: true

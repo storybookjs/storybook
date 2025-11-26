@@ -8,6 +8,7 @@
       "analyzeSourceFiles": false
     }
   },
+  "defaultProject": "react-vite/default-ts",
   "useInferencePlugins": false,
   "tasksRunnerOptions": {
     "default": {

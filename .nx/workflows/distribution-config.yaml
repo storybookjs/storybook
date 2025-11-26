@@ -1,15 +1,24 @@
 # see https://github.com/nrwl/nx/blob/master/.nx/workflows/dynamic-changesets.yaml for inspiration
 distribute-on:
-  default: 20 linux-extra-large-plus-js
+  default: auto linux-browsers-js, 1 linux-js
 
 assignment-rules:
   - targets:
+      - build
       - check
+      - lint
+      - pretty-docs
+      - knip
     run-on:
-      - agent: linux-extra-large-plus-js
+      - agent: linux-js
         parallelism: 6
+  - targets:
+      - test
+    run-on:
+      - agent: linux-js
+        parallelism: 1
   - targets:
       - "*"
     run-on:
-      - agent: linux-extra-large-plus-js
+      - agent: linux-browsers-js
         parallelism: 1

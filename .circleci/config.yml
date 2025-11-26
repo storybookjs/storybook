@@ -321,6 +321,12 @@ jobs:
             - attach_workspace:
                 at: .
             - run:
+                background: true
+                command: |
+                    cd code
+                    yarn local-registry --open
+                name: Verdaccio
+            - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
                     yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link

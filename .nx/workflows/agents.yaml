@@ -1,27 +1,56 @@
 # copied from https://github.com/nrwl/nx-cloud-workflows/blob/main/launch-templates/linux.yaml
 # see https://github.com/nrwl/nx/blob/master/.nx/workflows/agents.yaml for inspiration
-common-js-init-steps: &common-js-init-steps
+linux-init-steps: &linux-init-steps
   - name: Checkout
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
   - name: Restore Node Modules Cache
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
     inputs:
-      key: 'package-lock.json|yarn.lock|pnpm-lock.yaml|patches/**|.yarn/patches/**'
-      paths: 'node_modules'
-      base-branch: 'next'
-  - name: Restore Browser Binary Cache
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
-    inputs:
-      key: 'package-lock.json|yarn.lock|pnpm-lock.yaml|"browsers"'
+      key: 'yarn.lock|.yarn/patches/**'
       paths: |
-        '../.cache/Cypress'
+        ~/.yarn/berry
+        node_modules
+        code/node_modules
+        code/**/node_modules
+        scripts/node_modules
       base-branch: 'next'
   - name: Install Node
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node-modules/main.yaml'
-  - name: Install Browsers (if needed)
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-browsers/main.yaml'
+    script: |
+      yarn install --immutable
+
+linux-browsers-init-steps: &linux-browsers-init-steps
+  - name: Checkout
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
+  - name: Restore Node Modules Cache
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
+    inputs:
+      key: 'yarn.lock|.yarn/patches/**'
+      paths: |
+        ~/.yarn/berry
+        node_modules
+        code/node_modules
+        code/**/node_modules
+        scripts/node_modules
+      base-branch: 'next'
+  - name: Restore Browser Binary Cache
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
+    inputs:
+      key: '"browsers"|yarn.lock|.yarn/patches/**'
+      paths: |
+        ~/.cache/Cypress
+        ~/.cache/ms-playwright
+      base-branch: 'next'
+  - name: Install Node
+    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
+  - name: Install Node Modules
+    script: |
+      yarn install --immutable
+  - name: Install Browsers
+    script: |
+      yarn exec cypress install
+      yarn exec playwright install --with-deps
 
 common-env-vars: &common-env-vars
   STORYBOOK_DISABLE_TELEMETRY: true
@@ -29,38 +58,20 @@ common-env-vars: &common-env-vars
   SANDBOX_ROOT: ../storybook-sandboxes
 
 launch-templates:
-  linux-small-js:
-    resource-class: 'docker_linux_amd64/small'
-    image: 'ubuntu22.04-node20.19-v2'
-    init-steps: *common-js-init-steps
-    env: *common-env-vars
-  linux-medium-js:
-    resource-class: 'docker_linux_amd64/medium'
-    image: 'ubuntu22.04-node20.19-v2'
-    init-steps: *common-js-init-steps
-    env: *common-env-vars
-  linux-medium-plus-js:
-    resource-class: 'docker_linux_amd64/medium+'
-    image: 'ubuntu22.04-node20.19-v2'
-    init-steps: *common-js-init-steps
-    env: *common-env-vars
-  linux-large-js:
-    resource-class: 'docker_linux_amd64/large'
-    image: 'ubuntu22.04-node20.19-v2'
-    init-steps: *common-js-init-steps
-    env: *common-env-vars
-  linux-large-plus-js:
-    resource-class: 'docker_linux_amd64/large+'
-    image: 'ubuntu22.04-node20.19-v2'
-    init-steps: *common-js-init-steps
-    env: *common-env-vars
-  linux-extra-large-js:
-    resource-class: 'docker_linux_amd64/extra_large'
-    image: 'ubuntu22.04-node20.19-v2'
-    init-steps: *common-js-init-steps
-    env: *common-env-vars
-  linux-extra-large-plus-js:
+  linux-js:
+    # see https://nx.dev/docs/reference/nx-cloud/launch-templates#launch-templatestemplate-nameresource-class
+    # for options
     resource-class: 'docker_linux_amd64/extra_large+'
     image: 'ubuntu22.04-node20.19-v2'
-    init-steps: *common-js-init-steps
+    init-steps: *linux-init-steps
+    env: *common-env-vars
+  linux-browsers-js:
+    resource-class: 'docker_linux_amd64/extra_large+'
+    image: 'ubuntu22.04-node20.19-v2'
+    init-steps: *linux-browsers-init-steps
+    env: *common-env-vars
+  windows-js:
+    resource-class: 'windows/medium'
+    image: 'windows-2022'
+    # TODO init-steps:
     env: *common-env-vars

@@ -1,0 +1,63 @@
+{
+  "name": "@storybook/addon-onboarding",
+  "version": "10.2.0-alpha.0",
+  "description": "Storybook Onboarding: Help new users learn how to write stories",
+  "keywords": [
+    "storybook",
+    "storybook-addon",
+    "onboarding",
+    "getting started",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/addons/onboarding",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "addons/onboarding"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./manager": "./dist/manager.js",
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "devDependencies": {
+    "@neoconfetti/react": "^1.0.0",
+    "@storybook/icons": "^2.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-joyride": "^2.8.2",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

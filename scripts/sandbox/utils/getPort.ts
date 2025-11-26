@@ -1,4 +1,4 @@
-import { allTemplates } from '../../../code/lib/cli-storybook/src/sandbox-templates';
+import { allTemplates } from '../../../lib/cli-storybook/src/sandbox-templates';
 import { type TemplateDetails, tasks } from '../../task';
 
 export function getPort(template: Pick<TemplateDetails, 'key' | 'selectedTask'>) {

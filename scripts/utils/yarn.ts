@@ -2,7 +2,7 @@ import { access, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
-import storybookVersions from '../../code/core/src/common/versions';
+import storybookVersions from '../../core/src/common/versions';
 import type { TemplateKey } from '../get-template';
 import { exec } from './exec';
 import touch from './touch';

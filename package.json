@@ -207,7 +207,7 @@
     "eslint-plugin-json": "^4.0.0",
     "eslint-plugin-json-files": "^4.1.0",
     "eslint-plugin-jsx-a11y": "^6.8.0",
-    "eslint-plugin-local-rules": "portal:../scripts/eslint-plugin-local-rules",
+    "eslint-plugin-local-rules": "portal:./scripts/eslint-plugin-local-rules",
     "eslint-plugin-playwright": "^1.6.2",
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-react": "^7.34.2",

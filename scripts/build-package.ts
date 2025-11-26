@@ -169,7 +169,7 @@ async function run() {
     const script = join(ROOT_DIRECTORY, 'scripts', 'build', 'build-package.ts');
     const command = `yarn exec jiti ${script}`;
 
-    const cwd = resolve(__dirname, '..', 'code', v.location);
+    const cwd = resolve(__dirname, '..', v.location);
     const sub = exec(`${command}${watchMode ? ' --watch' : ''}${prodMode ? ' --prod' : ''}`, {
       cwd,
       env: {

@@ -9,12 +9,12 @@ import picocolors from 'picocolors';
 import { x } from 'tinyexec';
 import { dedent } from 'ts-dedent';
 
-import versions from '../../code/core/src/common/versions';
+import versions from '../../core/src/common/versions';
 import { maxConcurrentTasks } from '../utils/concurrency';
 import { esMain } from '../utils/esmain';
 import { safeMetafileArg } from './safe-args';
 
-const METAFILES_DIR = path.join(__dirname, '..', '..', 'code', 'bench', 'esbuild-metafiles');
+const METAFILES_DIR = path.join(__dirname, '..', '..', 'bench', 'esbuild-metafiles');
 /**
  * Returns a map of package names to their metafile arguments, that will be used in the bench story.
  *

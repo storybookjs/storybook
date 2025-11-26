@@ -11,7 +11,7 @@ import {
   type Template as TTemplate,
   allTemplates,
   templatesByCadence,
-} from '../code/lib/cli-storybook/src/sandbox-templates';
+} from '../lib/cli-storybook/src/sandbox-templates';
 import { esMain } from './utils/esmain';
 
 type Template = Pick<TTemplate, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;

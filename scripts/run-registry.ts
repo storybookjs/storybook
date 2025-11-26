@@ -144,7 +144,7 @@ const startVerdaccio = async () => {
 };
 
 const currentVersion = async () => {
-  const content = await readFile(join(__dirname, '..', 'code', 'package.json'), 'utf-8');
+  const content = await readFile(join(__dirname, '..', 'package.json'), 'utf-8');
   const { version } = JSON.parse(content);
   return version;
 };

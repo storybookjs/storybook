@@ -39,7 +39,7 @@ type Options = {
   dryRun?: boolean;
 };
 
-const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_DIR_PATH = join(__dirname, '..', '..');
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 const validateOptions = (options: { [key: string]: any }): options is Options => {

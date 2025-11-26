@@ -32,7 +32,7 @@ vi.spyOn(console, 'warn').mockImplementation(() => {});
 vi.spyOn(console, 'error').mockImplementation(() => {});
 
 describe('Version', () => {
-  const CODE_DIR_PATH = join(__dirname, '..', '..', '..', 'code');
+  const CODE_DIR_PATH = join(__dirname, '..', '..', '..');
   const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
   const MANAGER_API_VERSION_PATH = join(CODE_DIR_PATH, 'core', 'src', 'manager-api', 'version.ts');
   const VERSIONS_PATH = join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts');

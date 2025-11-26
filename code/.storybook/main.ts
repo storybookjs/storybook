@@ -5,7 +5,7 @@ import { defineMain } from '@storybook/react-vite/node';
 
 import react from '@vitejs/plugin-react';
 
-import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support.ts';
+import { BROWSER_TARGETS } from '../../core/src/shared/constants/environments-support.ts';
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirPath = dirname(currentFilePath);

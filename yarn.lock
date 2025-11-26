@@ -7835,9 +7835,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-a11y@workspace:*, @storybook/addon-a11y@workspace:code/addons/a11y":
+"@storybook/addon-a11y@workspace:*, @storybook/addon-a11y@workspace:addons/a11y":
   version: 0.0.0-use.local
-  resolution: "@storybook/addon-a11y@workspace:code/addons/a11y"
+  resolution: "@storybook/addon-a11y@workspace:addons/a11y"
   dependencies:
     "@radix-ui/react-tabs": "npm:1.0.4"
     "@storybook/global": "npm:^5.0.0"
@@ -7876,9 +7876,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-docs@workspace:*, @storybook/addon-docs@workspace:code/addons/docs":
+"@storybook/addon-docs@workspace:*, @storybook/addon-docs@workspace:addons/docs":
   version: 0.0.0-use.local
-  resolution: "@storybook/addon-docs@workspace:code/addons/docs"
+  resolution: "@storybook/addon-docs@workspace:addons/docs"
   dependencies:
     "@mdx-js/mdx": "npm:^3.0.0"
     "@mdx-js/react": "npm:^3.0.0"
@@ -7909,9 +7909,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-links@workspace:*, @storybook/addon-links@workspace:code/addons/links":
+"@storybook/addon-links@workspace:*, @storybook/addon-links@workspace:addons/links":
   version: 0.0.0-use.local
-  resolution: "@storybook/addon-links@workspace:code/addons/links"
+  resolution: "@storybook/addon-links@workspace:addons/links"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     typescript: "npm:^5.8.3"
@@ -7924,9 +7924,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-onboarding@workspace:*, @storybook/addon-onboarding@workspace:code/addons/onboarding":
+"@storybook/addon-onboarding@workspace:*, @storybook/addon-onboarding@workspace:addons/onboarding":
   version: 0.0.0-use.local
-  resolution: "@storybook/addon-onboarding@workspace:code/addons/onboarding"
+  resolution: "@storybook/addon-onboarding@workspace:addons/onboarding"
   dependencies:
     "@neoconfetti/react": "npm:^1.0.0"
     "@storybook/icons": "npm:^2.0.0"
@@ -7939,9 +7939,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:code/addons/themes":
+"@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:addons/themes":
   version: 0.0.0-use.local
-  resolution: "@storybook/addon-themes@workspace:code/addons/themes"
+  resolution: "@storybook/addon-themes@workspace:addons/themes"
   dependencies:
     "@storybook/icons": "npm:^2.0.0"
     react: "npm:^18.2.0"
@@ -7953,9 +7953,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-vitest@workspace:*, @storybook/addon-vitest@workspace:code/addons/vitest":
+"@storybook/addon-vitest@workspace:*, @storybook/addon-vitest@workspace:addons/vitest":
   version: 0.0.0-use.local
-  resolution: "@storybook/addon-vitest@workspace:code/addons/vitest"
+  resolution: "@storybook/addon-vitest@workspace:addons/vitest"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.0"
@@ -7999,9 +7999,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/angular@workspace:*, @storybook/angular@workspace:code/frameworks/angular":
+"@storybook/angular@workspace:*, @storybook/angular@workspace:frameworks/angular":
   version: 0.0.0-use.local
-  resolution: "@storybook/angular@workspace:code/frameworks/angular"
+  resolution: "@storybook/angular@workspace:frameworks/angular"
   dependencies:
     "@analogjs/vite-plugin-angular": "npm:^1.12.1"
     "@angular-devkit/architect": "npm:^0.1901.1"
@@ -8078,9 +8078,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/builder-vite@workspace:*, @storybook/builder-vite@workspace:code/builders/builder-vite":
+"@storybook/builder-vite@workspace:*, @storybook/builder-vite@workspace:builders/builder-vite":
   version: 0.0.0-use.local
-  resolution: "@storybook/builder-vite@workspace:code/builders/builder-vite"
+  resolution: "@storybook/builder-vite@workspace:builders/builder-vite"
   dependencies:
     "@storybook/csf-plugin": "workspace:*"
     "@types/node": "npm:^22.0.0"
@@ -8100,9 +8100,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/builder-webpack5@workspace:*, @storybook/builder-webpack5@workspace:code/builders/builder-webpack5":
+"@storybook/builder-webpack5@workspace:*, @storybook/builder-webpack5@workspace:builders/builder-webpack5":
   version: 0.0.0-use.local
-  resolution: "@storybook/builder-webpack5@workspace:code/builders/builder-webpack5"
+  resolution: "@storybook/builder-webpack5@workspace:builders/builder-webpack5"
   dependencies:
     "@storybook/core-webpack": "workspace:*"
     "@types/node": "npm:^22.0.0"
@@ -8135,9 +8135,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/cli@workspace:code/lib/cli-storybook":
+"@storybook/cli@workspace:lib/cli-storybook":
   version: 0.0.0-use.local
-  resolution: "@storybook/cli@workspace:code/lib/cli-storybook"
+  resolution: "@storybook/cli@workspace:lib/cli-storybook"
   dependencies:
     "@storybook/codemod": "workspace:*"
     "@types/cross-spawn": "npm:^6.0.6"
@@ -8165,139 +8165,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/code@workspace:code":
+"@storybook/codemod@workspace:*, @storybook/codemod@workspace:lib/codemod":
   version: 0.0.0-use.local
-  resolution: "@storybook/code@workspace:code"
-  dependencies:
-    "@chromatic-com/storybook": "npm:^4.1.2"
-    "@playwright/test": "npm:1.52.0"
-    "@storybook/addon-a11y": "workspace:*"
-    "@storybook/addon-designs": "npm:^11.0.1"
-    "@storybook/addon-docs": "workspace:*"
-    "@storybook/addon-links": "workspace:*"
-    "@storybook/addon-onboarding": "workspace:*"
-    "@storybook/addon-themes": "workspace:*"
-    "@storybook/addon-vitest": "workspace:*"
-    "@storybook/angular": "workspace:*"
-    "@storybook/bench": "npm:next"
-    "@storybook/builder-vite": "workspace:*"
-    "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/codemod": "workspace:*"
-    "@storybook/core-webpack": "workspace:*"
-    "@storybook/csf-plugin": "workspace:*"
-    "@storybook/ember": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
-    "@storybook/html": "workspace:*"
-    "@storybook/html-vite": "workspace:*"
-    "@storybook/nextjs": "workspace:*"
-    "@storybook/preact": "workspace:*"
-    "@storybook/preact-vite": "workspace:*"
-    "@storybook/preset-create-react-app": "workspace:*"
-    "@storybook/preset-react-webpack": "workspace:*"
-    "@storybook/preset-server-webpack": "workspace:*"
-    "@storybook/react": "workspace:*"
-    "@storybook/react-vite": "workspace:*"
-    "@storybook/react-webpack5": "workspace:*"
-    "@storybook/server": "workspace:*"
-    "@storybook/server-webpack5": "workspace:*"
-    "@storybook/svelte": "workspace:*"
-    "@storybook/vue3": "workspace:*"
-    "@storybook/vue3-vite": "workspace:*"
-    "@storybook/web-components": "workspace:*"
-    "@storybook/web-components-vite": "workspace:*"
-    "@testing-library/dom": "npm:^10.4.0"
-    "@testing-library/jest-dom": "npm:^6.6.3"
-    "@testing-library/react": "npm:^16.2.0"
-    "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch"
-    "@trivago/prettier-plugin-sort-imports": "npm:^4.3.0"
-    "@types/lodash-es": "npm:^4.17.12"
-    "@types/mock-require": "npm:^2.0.3"
-    "@types/node": "npm:^22.0.0"
-    "@types/react": "npm:^18.0.37"
-    "@types/react-dom": "npm:^18.0.11"
-    "@typescript-eslint/eslint-plugin": "npm:^8.8.1"
-    "@typescript-eslint/parser": "npm:^8.8.1"
-    "@vitejs/plugin-react": "npm:^4.3.2"
-    "@vitejs/plugin-vue": "npm:^4.4.0"
-    "@vitest/browser": "npm:^3.2.4"
-    "@vitest/coverage-istanbul": "npm:^3.2.4"
-    "@vitest/coverage-v8": "npm:^3.2.4"
-    create-storybook: "workspace:*"
-    cross-env: "npm:^7.0.3"
-    danger: "npm:^13.0.4"
-    es-toolkit: "npm:^1.36.0"
-    esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0"
-    esbuild-loader: "npm:^4.3.0"
-    eslint: "npm:8.57.1"
-    eslint-config-airbnb-typescript: "npm:^18.0.0"
-    eslint-config-prettier: "npm:^9.1.0"
-    eslint-import-resolver-typescript: "npm:^3.6.1"
-    eslint-plugin-compat: "npm:^6.0.2"
-    eslint-plugin-depend: "npm:^1.3.1"
-    eslint-plugin-eslint-comments: "npm:^3.2.0"
-    eslint-plugin-file-progress: "npm:^1.4.0"
-    eslint-plugin-html: "npm:^6.2.0"
-    eslint-plugin-import: "npm:^2.29.1"
-    eslint-plugin-json: "npm:^4.0.0"
-    eslint-plugin-json-files: "npm:^4.1.0"
-    eslint-plugin-jsx-a11y: "npm:^6.8.0"
-    eslint-plugin-local-rules: "portal:../scripts/eslint-plugin-local-rules"
-    eslint-plugin-playwright: "npm:^1.6.2"
-    eslint-plugin-prettier: "npm:^5.1.3"
-    eslint-plugin-react: "npm:^7.34.2"
-    eslint-plugin-react-hooks: "npm:^4.6.2"
-    eslint-plugin-storybook: "workspace:*"
-    github-release-from-changelog: "npm:^2.1.1"
-    happy-dom: "npm:^17.4.4"
-    http-server: "npm:^14.1.1"
-    husky: "npm:^4.3.7"
-    jiti: "npm:^2.4.2"
-    lint-staged: "npm:^13.2.2"
-    mock-require: "npm:^3.0.3"
-    prettier: "npm:^3.5.3"
-    prettier-plugin-brace-style: "npm:^0.6.2"
-    prettier-plugin-css-order: "npm:^2.1.2"
-    prettier-plugin-curly: "npm:^0.2.2"
-    prettier-plugin-jsdoc: "npm:^1.3.0"
-    prettier-plugin-merge: "npm:^0.7.0"
-    process: "npm:^0.11.10"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    react-popper-tooltip: "npm:^4.4.2"
-    rimraf: "npm:^6.0.1"
-    slash: "npm:^5.0.0"
-    sort-package-json: "npm:^2.14.0"
-    storybook: "workspace:^"
-    storybook-addon-pseudo-states: "workspace:*"
-    ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.8.3"
-    uuid: "npm:^11.1.0"
-    vite: "npm:^7.0.4"
-    vite-plugin-inspect: "npm:^11.0.0"
-    vitest: "npm:^3.2.4"
-    wait-on: "npm:^8.0.3"
-  dependenciesMeta:
-    ejs:
-      built: false
-    level:
-      built: false
-    node-uuid:
-      built: false
-      unplugged: false
-    nodemon:
-      built: false
-    parcel:
-      built: false
-    preact:
-      built: false
-    yorkie:
-      built: false
-  languageName: unknown
-  linkType: soft
-
-"@storybook/codemod@workspace:*, @storybook/codemod@workspace:code/lib/codemod":
-  version: 0.0.0-use.local
-  resolution: "@storybook/codemod@workspace:code/lib/codemod"
+  resolution: "@storybook/codemod@workspace:lib/codemod"
   dependencies:
     "@types/cross-spawn": "npm:^6.0.6"
     "@types/jscodeshift": "npm:^0.11.10"
@@ -8314,9 +8184,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/core-webpack@workspace:*, @storybook/core-webpack@workspace:code/lib/core-webpack":
+"@storybook/core-webpack@workspace:*, @storybook/core-webpack@workspace:lib/core-webpack":
   version: 0.0.0-use.local
-  resolution: "@storybook/core-webpack@workspace:code/lib/core-webpack"
+  resolution: "@storybook/core-webpack@workspace:lib/core-webpack"
   dependencies:
     "@types/node": "npm:^22.0.0"
     ts-dedent: "npm:^2.0.0"
@@ -8327,9 +8197,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/csf-plugin@workspace:*, @storybook/csf-plugin@workspace:code/lib/csf-plugin":
+"@storybook/csf-plugin@workspace:*, @storybook/csf-plugin@workspace:lib/csf-plugin":
   version: 0.0.0-use.local
-  resolution: "@storybook/csf-plugin@workspace:code/lib/csf-plugin"
+  resolution: "@storybook/csf-plugin@workspace:lib/csf-plugin"
   dependencies:
     typescript: "npm:^5.8.3"
     unplugin: "npm:^2.3.5"
@@ -8360,9 +8230,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/ember@workspace:*, @storybook/ember@workspace:code/frameworks/ember":
+"@storybook/ember@workspace:*, @storybook/ember@workspace:frameworks/ember":
   version: 0.0.0-use.local
-  resolution: "@storybook/ember@workspace:code/frameworks/ember"
+  resolution: "@storybook/ember@workspace:frameworks/ember"
   dependencies:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
@@ -8388,9 +8258,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/html-vite@workspace:*, @storybook/html-vite@workspace:code/frameworks/html-vite":
+"@storybook/html-vite@workspace:*, @storybook/html-vite@workspace:frameworks/html-vite":
   version: 0.0.0-use.local
-  resolution: "@storybook/html-vite@workspace:code/frameworks/html-vite"
+  resolution: "@storybook/html-vite@workspace:frameworks/html-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/html": "workspace:*"
@@ -8401,9 +8271,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/html@workspace:*, @storybook/html@workspace:code/renderers/html":
+"@storybook/html@workspace:*, @storybook/html@workspace:renderers/html":
   version: 0.0.0-use.local
-  resolution: "@storybook/html@workspace:code/renderers/html"
+  resolution: "@storybook/html@workspace:renderers/html"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     ts-dedent: "npm:^2.0.0"
@@ -8423,9 +8293,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/nextjs-vite@workspace:code/frameworks/nextjs-vite":
+"@storybook/nextjs-vite@workspace:frameworks/nextjs-vite":
   version: 0.0.0-use.local
-  resolution: "@storybook/nextjs-vite@workspace:code/frameworks/nextjs-vite"
+  resolution: "@storybook/nextjs-vite@workspace:frameworks/nextjs-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
@@ -8450,9 +8320,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/nextjs@workspace:*, @storybook/nextjs@workspace:code/frameworks/nextjs":
+"@storybook/nextjs@workspace:*, @storybook/nextjs@workspace:frameworks/nextjs":
   version: 0.0.0-use.local
-  resolution: "@storybook/nextjs@workspace:code/frameworks/nextjs"
+  resolution: "@storybook/nextjs@workspace:frameworks/nextjs"
   dependencies:
     "@babel/core": "npm:^7.24.4"
     "@babel/plugin-syntax-bigint": "npm:^7.8.3"
@@ -8511,9 +8381,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preact-vite@workspace:*, @storybook/preact-vite@workspace:code/frameworks/preact-vite":
+"@storybook/preact-vite@workspace:*, @storybook/preact-vite@workspace:frameworks/preact-vite":
   version: 0.0.0-use.local
-  resolution: "@storybook/preact-vite@workspace:code/frameworks/preact-vite"
+  resolution: "@storybook/preact-vite@workspace:frameworks/preact-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/preact": "workspace:*"
@@ -8526,9 +8396,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preact@workspace:*, @storybook/preact@workspace:code/renderers/preact":
+"@storybook/preact@workspace:*, @storybook/preact@workspace:renderers/preact":
   version: 0.0.0-use.local
-  resolution: "@storybook/preact@workspace:code/renderers/preact"
+  resolution: "@storybook/preact@workspace:renderers/preact"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     preact: "npm:^10.5.13"
@@ -8540,9 +8410,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preset-create-react-app@workspace:*, @storybook/preset-create-react-app@workspace:code/presets/create-react-app":
+"@storybook/preset-create-react-app@workspace:*, @storybook/preset-create-react-app@workspace:presets/create-react-app":
   version: 0.0.0-use.local
-  resolution: "@storybook/preset-create-react-app@workspace:code/presets/create-react-app"
+  resolution: "@storybook/preset-create-react-app@workspace:presets/create-react-app"
   dependencies:
     "@pmmmwh/react-refresh-webpack-plugin": "npm:^0.5.1"
     "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
@@ -8557,9 +8427,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preset-react-webpack@workspace:*, @storybook/preset-react-webpack@workspace:code/presets/react-webpack":
+"@storybook/preset-react-webpack@workspace:*, @storybook/preset-react-webpack@workspace:presets/react-webpack":
   version: 0.0.0-use.local
-  resolution: "@storybook/preset-react-webpack@workspace:code/presets/react-webpack"
+  resolution: "@storybook/preset-react-webpack@workspace:presets/react-webpack"
   dependencies:
     "@storybook/core-webpack": "workspace:*"
     "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
@@ -8583,9 +8453,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preset-server-webpack@workspace:*, @storybook/preset-server-webpack@workspace:code/presets/server-webpack":
+"@storybook/preset-server-webpack@workspace:*, @storybook/preset-server-webpack@workspace:presets/server-webpack":
   version: 0.0.0-use.local
-  resolution: "@storybook/preset-server-webpack@workspace:code/presets/server-webpack"
+  resolution: "@storybook/preset-server-webpack@workspace:presets/server-webpack"
   dependencies:
     "@storybook/core-webpack": "workspace:*"
     "@types/node": "npm:^22.0.0"
@@ -8617,9 +8487,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/react-dom-shim@workspace:*, @storybook/react-dom-shim@workspace:code/lib/react-dom-shim":
+"@storybook/react-dom-shim@workspace:*, @storybook/react-dom-shim@workspace:lib/react-dom-shim":
   version: 0.0.0-use.local
-  resolution: "@storybook/react-dom-shim@workspace:code/lib/react-dom-shim"
+  resolution: "@storybook/react-dom-shim@workspace:lib/react-dom-shim"
   dependencies:
     typescript: "npm:^5.8.3"
   peerDependencies:
@@ -8629,9 +8499,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/react-native-web-vite@workspace:code/frameworks/react-native-web-vite":
+"@storybook/react-native-web-vite@workspace:frameworks/react-native-web-vite":
   version: 0.0.0-use.local
-  resolution: "@storybook/react-native-web-vite@workspace:code/frameworks/react-native-web-vite"
+  resolution: "@storybook/react-native-web-vite@workspace:frameworks/react-native-web-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
@@ -8650,9 +8520,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/react-vite@workspace:*, @storybook/react-vite@workspace:code/frameworks/react-vite":
+"@storybook/react-vite@workspace:*, @storybook/react-vite@workspace:frameworks/react-vite":
   version: 0.0.0-use.local
-  resolution: "@storybook/react-vite@workspace:code/frameworks/react-vite"
+  resolution: "@storybook/react-vite@workspace:frameworks/react-vite"
   dependencies:
     "@joshwooding/vite-plugin-react-docgen-typescript": "npm:0.6.1"
     "@rollup/pluginutils": "npm:^5.0.2"
@@ -8674,9 +8544,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/react-webpack5@workspace:*, @storybook/react-webpack5@workspace:code/frameworks/react-webpack5":
+"@storybook/react-webpack5@workspace:*, @storybook/react-webpack5@workspace:frameworks/react-webpack5":
   version: 0.0.0-use.local
-  resolution: "@storybook/react-webpack5@workspace:code/frameworks/react-webpack5"
+  resolution: "@storybook/react-webpack5@workspace:frameworks/react-webpack5"
   dependencies:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/preset-react-webpack": "workspace:*"
@@ -8693,9 +8563,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/react@workspace:*, @storybook/react@workspace:code/renderers/react":
+"@storybook/react@workspace:*, @storybook/react@workspace:renderers/react":
   version: 0.0.0-use.local
-  resolution: "@storybook/react@workspace:code/renderers/react"
+  resolution: "@storybook/react@workspace:renderers/react"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/react-dom-shim": "workspace:*"
@@ -8734,14 +8604,133 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/root@workspace:."
   dependencies:
+    "@chromatic-com/storybook": "npm:^4.1.2"
     "@nx/workspace": "npm:^22.0.4"
-    "@playwright/test": "npm:^1.52.0"
+    "@playwright/test": "npm:1.52.0"
+    "@storybook/addon-a11y": "workspace:*"
+    "@storybook/addon-designs": "npm:^11.0.1"
+    "@storybook/addon-docs": "workspace:*"
+    "@storybook/addon-links": "workspace:*"
+    "@storybook/addon-onboarding": "workspace:*"
+    "@storybook/addon-themes": "workspace:*"
+    "@storybook/addon-vitest": "workspace:*"
+    "@storybook/angular": "workspace:*"
+    "@storybook/bench": "npm:next"
+    "@storybook/builder-vite": "workspace:*"
+    "@storybook/builder-webpack5": "workspace:*"
+    "@storybook/codemod": "workspace:*"
+    "@storybook/core-webpack": "workspace:*"
+    "@storybook/csf-plugin": "workspace:*"
+    "@storybook/ember": "workspace:*"
+    "@storybook/global": "npm:^5.0.0"
+    "@storybook/html": "workspace:*"
+    "@storybook/html-vite": "workspace:*"
+    "@storybook/nextjs": "workspace:*"
+    "@storybook/preact": "workspace:*"
+    "@storybook/preact-vite": "workspace:*"
+    "@storybook/preset-create-react-app": "workspace:*"
+    "@storybook/preset-react-webpack": "workspace:*"
+    "@storybook/preset-server-webpack": "workspace:*"
+    "@storybook/react": "workspace:*"
+    "@storybook/react-vite": "workspace:*"
+    "@storybook/react-webpack5": "workspace:*"
+    "@storybook/server": "workspace:*"
+    "@storybook/server-webpack5": "workspace:*"
+    "@storybook/svelte": "workspace:*"
+    "@storybook/vue3": "workspace:*"
+    "@storybook/vue3-vite": "workspace:*"
+    "@storybook/web-components": "workspace:*"
+    "@storybook/web-components-vite": "workspace:*"
+    "@testing-library/dom": "npm:^10.4.0"
+    "@testing-library/jest-dom": "npm:^6.6.3"
+    "@testing-library/react": "npm:^16.2.0"
+    "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch"
+    "@trivago/prettier-plugin-sort-imports": "npm:^4.3.0"
     "@types/kill-port": "npm:^2.0.3"
+    "@types/lodash-es": "npm:^4.17.12"
+    "@types/mock-require": "npm:^2.0.3"
+    "@types/node": "npm:^22.0.0"
+    "@types/react": "npm:^18.0.37"
+    "@types/react-dom": "npm:^18.0.11"
+    "@typescript-eslint/eslint-plugin": "npm:^8.8.1"
+    "@typescript-eslint/parser": "npm:^8.8.1"
+    "@vitejs/plugin-react": "npm:^4.3.2"
+    "@vitejs/plugin-vue": "npm:^4.4.0"
+    "@vitest/browser": "npm:^3.2.4"
+    "@vitest/coverage-istanbul": "npm:^3.2.4"
+    "@vitest/coverage-v8": "npm:^3.2.4"
+    create-storybook: "workspace:*"
+    cross-env: "npm:^7.0.3"
+    danger: "npm:^13.0.4"
+    es-toolkit: "npm:^1.36.0"
+    esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0"
+    esbuild-loader: "npm:^4.3.0"
+    eslint: "npm:8.57.1"
+    eslint-config-airbnb-typescript: "npm:^18.0.0"
+    eslint-config-prettier: "npm:^9.1.0"
+    eslint-import-resolver-typescript: "npm:^3.6.1"
+    eslint-plugin-compat: "npm:^6.0.2"
+    eslint-plugin-depend: "npm:^1.3.1"
+    eslint-plugin-eslint-comments: "npm:^3.2.0"
+    eslint-plugin-file-progress: "npm:^1.4.0"
+    eslint-plugin-html: "npm:^6.2.0"
+    eslint-plugin-import: "npm:^2.29.1"
+    eslint-plugin-json: "npm:^4.0.0"
+    eslint-plugin-json-files: "npm:^4.1.0"
+    eslint-plugin-jsx-a11y: "npm:^6.8.0"
+    eslint-plugin-local-rules: "portal:./scripts/eslint-plugin-local-rules"
+    eslint-plugin-playwright: "npm:^1.6.2"
+    eslint-plugin-prettier: "npm:^5.1.3"
+    eslint-plugin-react: "npm:^7.34.2"
+    eslint-plugin-react-hooks: "npm:^4.6.2"
+    eslint-plugin-storybook: "workspace:*"
+    github-release-from-changelog: "npm:^2.1.1"
+    happy-dom: "npm:^17.4.4"
     http-server: "npm:^14.1.1"
+    husky: "npm:^4.3.7"
     jiti: "npm:^2.4.2"
     kill-port: "npm:^2.0.1"
+    lint-staged: "npm:^13.2.2"
+    mock-require: "npm:^3.0.3"
     nx: "npm:^22.0.4"
-    prettier: "npm:^3.6.2"
+    prettier: "npm:^3.5.3"
+    prettier-plugin-brace-style: "npm:^0.6.2"
+    prettier-plugin-css-order: "npm:^2.1.2"
+    prettier-plugin-curly: "npm:^0.2.2"
+    prettier-plugin-jsdoc: "npm:^1.3.0"
+    prettier-plugin-merge: "npm:^0.7.0"
+    process: "npm:^0.11.10"
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
+    react-popper-tooltip: "npm:^4.4.2"
+    rimraf: "npm:^6.0.1"
+    slash: "npm:^5.0.0"
+    sort-package-json: "npm:^2.14.0"
+    storybook: "workspace:^"
+    storybook-addon-pseudo-states: "workspace:*"
+    ts-dedent: "npm:^2.0.0"
+    typescript: "npm:^5.8.3"
+    uuid: "npm:^11.1.0"
+    vite: "npm:^7.0.4"
+    vite-plugin-inspect: "npm:^11.0.0"
+    vitest: "npm:^3.2.4"
+    wait-on: "npm:^8.0.3"
+  dependenciesMeta:
+    ejs:
+      built: false
+    level:
+      built: false
+    node-uuid:
+      built: false
+      unplugged: false
+    nodemon:
+      built: false
+    parcel:
+      built: false
+    preact:
+      built: false
+    yorkie:
+      built: false
   languageName: unknown
   linkType: soft
 
@@ -8882,9 +8871,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/server-webpack5@workspace:*, @storybook/server-webpack5@workspace:code/frameworks/server-webpack5":
+"@storybook/server-webpack5@workspace:*, @storybook/server-webpack5@workspace:frameworks/server-webpack5":
   version: 0.0.0-use.local
-  resolution: "@storybook/server-webpack5@workspace:code/frameworks/server-webpack5"
+  resolution: "@storybook/server-webpack5@workspace:frameworks/server-webpack5"
   dependencies:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/preset-server-webpack": "workspace:*"
@@ -8896,9 +8885,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/server@workspace:*, @storybook/server@workspace:code/renderers/server":
+"@storybook/server@workspace:*, @storybook/server@workspace:renderers/server":
   version: 0.0.0-use.local
-  resolution: "@storybook/server@workspace:code/renderers/server"
+  resolution: "@storybook/server@workspace:renderers/server"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     ts-dedent: "npm:^2.0.0"
@@ -8909,9 +8898,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/svelte-vite@workspace:*, @storybook/svelte-vite@workspace:code/frameworks/svelte-vite":
+"@storybook/svelte-vite@workspace:*, @storybook/svelte-vite@workspace:frameworks/svelte-vite":
   version: 0.0.0-use.local
-  resolution: "@storybook/svelte-vite@workspace:code/frameworks/svelte-vite"
+  resolution: "@storybook/svelte-vite@workspace:frameworks/svelte-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/svelte": "workspace:*"
@@ -8931,9 +8920,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/svelte@workspace:*, @storybook/svelte@workspace:code/renderers/svelte":
+"@storybook/svelte@workspace:*, @storybook/svelte@workspace:renderers/svelte":
   version: 0.0.0-use.local
-  resolution: "@storybook/svelte@workspace:code/renderers/svelte"
+  resolution: "@storybook/svelte@workspace:renderers/svelte"
   dependencies:
     "@sveltejs/vite-plugin-svelte": "npm:^6.2.0"
     "@testing-library/svelte": "npm:^5.2.4"
@@ -8950,9 +8939,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/sveltekit@workspace:code/frameworks/sveltekit":
+"@storybook/sveltekit@workspace:frameworks/sveltekit":
   version: 0.0.0-use.local
-  resolution: "@storybook/sveltekit@workspace:code/frameworks/sveltekit"
+  resolution: "@storybook/sveltekit@workspace:frameworks/sveltekit"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/svelte": "workspace:*"
@@ -8967,9 +8956,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/vue3-vite@workspace:*, @storybook/vue3-vite@workspace:code/frameworks/vue3-vite":
+"@storybook/vue3-vite@workspace:*, @storybook/vue3-vite@workspace:frameworks/vue3-vite":
   version: 0.0.0-use.local
-  resolution: "@storybook/vue3-vite@workspace:code/frameworks/vue3-vite"
+  resolution: "@storybook/vue3-vite@workspace:frameworks/vue3-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/vue3": "workspace:*"
@@ -8985,9 +8974,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/vue3@workspace:*, @storybook/vue3@workspace:code/renderers/vue3":
+"@storybook/vue3@workspace:*, @storybook/vue3@workspace:renderers/vue3":
   version: 0.0.0-use.local
-  resolution: "@storybook/vue3@workspace:code/renderers/vue3"
+  resolution: "@storybook/vue3@workspace:renderers/vue3"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
@@ -9003,9 +8992,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/web-components-vite@workspace:*, @storybook/web-components-vite@workspace:code/frameworks/web-components-vite":
+"@storybook/web-components-vite@workspace:*, @storybook/web-components-vite@workspace:frameworks/web-components-vite":
   version: 0.0.0-use.local
-  resolution: "@storybook/web-components-vite@workspace:code/frameworks/web-components-vite"
+  resolution: "@storybook/web-components-vite@workspace:frameworks/web-components-vite"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/web-components": "workspace:*"
@@ -9016,9 +9005,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/web-components@workspace:*, @storybook/web-components@workspace:code/renderers/web-components":
+"@storybook/web-components@workspace:*, @storybook/web-components@workspace:renderers/web-components":
   version: 0.0.0-use.local
-  resolution: "@storybook/web-components@workspace:code/renderers/web-components"
+  resolution: "@storybook/web-components@workspace:renderers/web-components"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@types/cross-spawn": "npm:^6.0.6"
@@ -14684,9 +14673,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"create-storybook@workspace:*, create-storybook@workspace:code/lib/create-storybook":
+"create-storybook@workspace:*, create-storybook@workspace:lib/create-storybook":
   version: 0.0.0-use.local
-  resolution: "create-storybook@workspace:code/lib/create-storybook"
+  resolution: "create-storybook@workspace:lib/create-storybook"
   dependencies:
     "@types/prompts": "npm:^2.0.9"
     "@types/semver": "npm:^7.3.4"
@@ -16841,15 +16830,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-local-rules@portal:../scripts/eslint-plugin-local-rules::locator=%40storybook%2Fcode%40workspace%3Acode":
-  version: 0.0.0-use.local
-  resolution: "eslint-plugin-local-rules@portal:../scripts/eslint-plugin-local-rules::locator=%40storybook%2Fcode%40workspace%3Acode"
-  languageName: node
-  linkType: soft
-
 "eslint-plugin-local-rules@portal:./eslint-plugin-local-rules::locator=%40storybook%2Fscripts%40workspace%3Ascripts":
   version: 0.0.0-use.local
   resolution: "eslint-plugin-local-rules@portal:./eslint-plugin-local-rules::locator=%40storybook%2Fscripts%40workspace%3Ascripts"
+  languageName: node
+  linkType: soft
+
+"eslint-plugin-local-rules@portal:./scripts/eslint-plugin-local-rules::locator=%40storybook%2Froot%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "eslint-plugin-local-rules@portal:./scripts/eslint-plugin-local-rules::locator=%40storybook%2Froot%40workspace%3A."
   languageName: node
   linkType: soft
 
@@ -16941,9 +16930,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-storybook@workspace:*, eslint-plugin-storybook@workspace:code/lib/eslint-plugin":
+"eslint-plugin-storybook@workspace:*, eslint-plugin-storybook@workspace:lib/eslint-plugin":
   version: 0.0.0-use.local
-  resolution: "eslint-plugin-storybook@workspace:code/lib/eslint-plugin"
+  resolution: "eslint-plugin-storybook@workspace:lib/eslint-plugin"
   dependencies:
     "@types/eslint": "npm:^8.56.2"
     "@types/node": "npm:^22.0.0"
@@ -28097,9 +28086,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sb@workspace:code/lib/cli-sb":
+"sb@workspace:lib/cli-sb":
   version: 0.0.0-use.local
-  resolution: "sb@workspace:code/lib/cli-sb"
+  resolution: "sb@workspace:lib/cli-sb"
   dependencies:
     storybook: "workspace:*"
   bin:
@@ -29186,9 +29175,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"storybook-addon-pseudo-states@workspace:*, storybook-addon-pseudo-states@workspace:code/addons/pseudo-states":
+"storybook-addon-pseudo-states@workspace:*, storybook-addon-pseudo-states@workspace:addons/pseudo-states":
   version: 0.0.0-use.local
-  resolution: "storybook-addon-pseudo-states@workspace:code/addons/pseudo-states"
+  resolution: "storybook-addon-pseudo-states@workspace:addons/pseudo-states"
   dependencies:
     "@storybook/icons": "npm:^2.0.0"
     react: "npm:^18.2.0"
@@ -29199,9 +29188,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"storybook@workspace:*, storybook@workspace:^, storybook@workspace:code/core":
+"storybook@workspace:*, storybook@workspace:^, storybook@workspace:core":
   version: 0.0.0-use.local
-  resolution: "storybook@workspace:code/core"
+  resolution: "storybook@workspace:core"
   dependencies:
     "@aw-web-design/x-default-browser": "npm:1.4.126"
     "@babel/core": "npm:^7.26.9"

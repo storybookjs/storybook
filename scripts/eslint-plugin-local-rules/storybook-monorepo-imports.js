@@ -24,7 +24,7 @@ module.exports = {
         const isInCreateStorybook = !!fileName.includes(
           path.join('code', 'lib', 'create-storybook')
         );
-        const isInCore = !!fileName.includes(path.join('code', 'core'));
+        const isInCore = !!fileName.includes(path.join('core', 'src'));
 
         if (
           node.source.value.startsWith('@storybook/core/') &&

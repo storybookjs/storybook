@@ -1,4 +1,4 @@
-// This file requires many imports from `../code`, which requires both an install and bootstrap of
+// This file requires many imports from `..`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
 import { existsSync } from 'node:fs';
 import { access, cp, lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
@@ -12,18 +12,18 @@ import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
-import { babelParse, types as t } from '../../code/core/src/babel';
-import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
-import storybookPackages from '../../code/core/src/common/versions';
-import type { ConfigFile } from '../../code/core/src/csf-tools';
+import { babelParse, types as t } from '../../core/src/babel';
+import { JsPackageManagerFactory } from '../../core/src/common/js-package-manager';
+import storybookPackages from '../../core/src/common/versions';
+import type { ConfigFile } from '../../core/src/csf-tools';
 import {
   readConfig as csfReadConfig,
   formatConfig,
   writeConfig,
-} from '../../code/core/src/csf-tools';
-import { SupportedLanguage } from '../../code/core/src/types';
-import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService';
+} from '../../core/src/csf-tools';
+import { SupportedLanguage } from '../../core/src/types';
+import type { TemplateKey } from '../../lib/cli-storybook/src/sandbox-templates';
+import { ProjectTypeService } from '../../lib/create-storybook/src/services/ProjectTypeService';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
 import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants';
@@ -405,7 +405,7 @@ async function linkPackageStories(
   const source = join(CODE_DIRECTORY, packageDir, 'template', storiesFolderName);
 
   // By default we link `stories` directories
-  //   e.g '../../../code/lib/preview-api/template/stories' to 'template-stories/lib/preview-api'
+  //   e.g '../../../lib/preview-api/template/stories' to 'template-stories/lib/preview-api'
   // if the directory <code>/lib/preview-api/template/stories exists
   //
   // The files must be linked in the cwd, in order to ensure that any dependencies they

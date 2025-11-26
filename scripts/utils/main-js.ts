@@ -3,9 +3,9 @@ import { join, resolve } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { getInterpretedFile } from '../../code/core/src/common/utils/interpret-files';
-import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { readConfig as csfReadConfig } from '../../code/core/src/csf-tools/ConfigFile';
+import { getInterpretedFile } from '../../core/src/common/utils/interpret-files';
+import type { ConfigFile } from '../../core/src/csf-tools';
+import { readConfig as csfReadConfig } from '../../core/src/csf-tools/ConfigFile';
 
 export async function readConfig({ fileName, cwd }: { fileName: string; cwd: string }) {
   const configDir = join(cwd, '.storybook');

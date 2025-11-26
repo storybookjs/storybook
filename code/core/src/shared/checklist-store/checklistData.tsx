@@ -18,15 +18,15 @@ import {
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
-import { ADDON_ID as ADDON_A11Y_ID } from '../../../../addons/a11y/src/constants';
+import { ADDON_ID as ADDON_A11Y_ID } from '../../../../../addons/a11y/src/constants';
 import {
   ADDON_ONBOARDING_CHANNEL,
   ADDON_ID as ADDON_ONBOARDING_ID,
-} from '../../../../addons/onboarding/src/constants';
+} from '../../../../../addons/onboarding/src/constants';
 import {
   ADDON_ID as ADDON_TEST_ID,
   STORYBOOK_ADDON_TEST_CHANNEL,
-} from '../../../../addons/vitest/src/constants';
+} from '../../../../../addons/vitest/src/constants';
 import { SUPPORTED_FRAMEWORKS } from '../../cli/AddonVitestService.constants';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide';

@@ -1,8 +1,8 @@
 import assert from 'assert';
 import picocolors from 'picocolors';
 
-// import versions from '../code/core/src/common/versions';
-import { allTemplates } from '../code/lib/cli-storybook/src/sandbox-templates';
+// import versions from '../core/src/common/versions';
+import { allTemplates } from '../lib/cli-storybook/src/sandbox-templates';
 import { esMain } from './utils/esmain';
 
 const PORT = process.env.PORT || 6007;

@@ -192,6 +192,12 @@ export const sandbox: Task = {
         recursive: true,
         force: true,
         filter: (src) => {
+          if (process.env.NX_RUN !== 'true') {
+            // Just copy everything if run in NX
+            return true;
+          }
+          // For NX we remove this, to keep the remote cache small and fast
+          // node_modules are already cached in the global yarn cache
           const name = path.basename(src);
           return (
             name !== 'node_modules' &&

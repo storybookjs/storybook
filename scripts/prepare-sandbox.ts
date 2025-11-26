@@ -58,6 +58,10 @@ async function main() {
     await exec('yarn install --immutable', { cwd: sandboxDir }, { debug: true });
   }
 
+  if (template.includes('svelte-kit')) {
+    await exec('yarn exec svelte-kit sync', { cwd: sandboxDir }, { debug: true });
+  }
+
   if (existsSync(storybookStaticCacheDir) && !existsSync(storybookStaticSandboxDir)) {
     console.log(`🧹 copying cached ${storybookStaticCacheDir} to ${storybookStaticSandboxDir}`);
     await cp(storybookStaticCacheDir, storybookStaticSandboxDir, {

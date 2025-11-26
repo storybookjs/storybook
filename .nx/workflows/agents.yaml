@@ -11,7 +11,12 @@ linux-init-steps: &linux-init-steps
         ~/.yarn/berry
         node_modules
         code/node_modules
-        code/**/node_modules
+        code/addons/*/node_modules
+        code/frameworks/*/node_modules
+        code/lib/*/node_modules
+        code/builders/*/node_modules
+        code/presets/*/node_modules
+        code/renderers/*/node_modules
         scripts/node_modules
       base-branch: 'next'
   - name: Install Node
@@ -31,7 +36,12 @@ linux-browsers-init-steps: &linux-browsers-init-steps
         ~/.yarn/berry
         node_modules
         code/node_modules
-        code/**/node_modules
+        code/addons/*/node_modules
+        code/frameworks/*/node_modules
+        code/lib/*/node_modules
+        code/builders/*/node_modules
+        code/presets/*/node_modules
+        code/renderers/*/node_modules
         scripts/node_modules
       base-branch: 'next'
   - name: Restore Browser Binary Cache
@@ -49,18 +59,15 @@ linux-browsers-init-steps: &linux-browsers-init-steps
       yarn install --immutable
   - name: Install Browsers
     script: |
-      yarn dlx cypress install
+      yarn exec cypress install
       yarn exec playwright install --with-deps
-  - name: Verify toolchain versions
+  - name: Verify
     script: |
       echo "node:         $(node --version)"
-      echo "pnpm:         $(pnpm --version)"
       echo "yarn:         $(yarn --version)"
-      echo "yarn cache:   $(yarn config get cacheFolder)"
-      ls ~
-      ls ~/.cache/Cypress
-      ls ~/.yarn/berry
-      ls ~/.cache/ms-playwright
+      echo "home:         $HOME"
+      git diff --exit-code
+      yarn dedupe --check
 
 common-env-vars: &common-env-vars
   STORYBOOK_DISABLE_TELEMETRY: true

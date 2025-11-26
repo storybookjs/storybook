@@ -59,17 +59,17 @@ export class WebpackInjectMockerRuntimePlugin {
 
             // Use the documented `emitAsset` method to add the pre-bundled runtime script
             // to the compilation's assets. This is the standard Webpack way.
-            compilation.emitAsset(
-              runtimeAssetName,
-              new compiler.webpack.sources.RawSource(runtimeScriptContent)
-            );
+            if (!compilation.getAsset(runtimeAssetName)) {
+              compilation.emitAsset(
+                runtimeAssetName,
+                new compiler.webpack.sources.RawSource(runtimeScriptContent)
+              );
+              data.assets.js.unshift(runtimeAssetName);
+            }
 
             // Prepend the name of our new asset to the list of JavaScript files, once.
             // HtmlWebpackPlugin will automatically create a <script> tag for it
             // and place it at the beginning of the body scripts.
-            if (!data.assets.js.includes(runtimeAssetName)) {
-              data.assets.js.unshift(runtimeAssetName);
-            }
             cb(null, data);
           } catch (error) {
             // In case of an error (e.g., file not found), pass it to Webpack's compilation.

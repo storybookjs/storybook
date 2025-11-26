@@ -192,23 +192,24 @@ export const sandbox: Task = {
         recursive: true,
         force: true,
         filter: (src) => {
-          if (process.env.NX_RUN !== 'true') {
-            // Just copy everything if run in NX
-            return true;
-          }
-          // For NX we remove this, to keep the remote cache small and fast
+          // For NX we remove node_modules to keep the remote cache small and fast
           // node_modules are already cached in the global yarn cache
-          const name = path.basename(src);
-          return (
-            name !== 'node_modules' &&
-            !(name === 'cache' && path.basename(path.dirname(src)) === '.yarn')
-          );
+          if (process.env.NX_CLI_SET === 'true') {
+            const name = path.basename(src);
+            return (
+              name !== 'node_modules' &&
+              !(name === 'cache' && path.basename(path.dirname(src)) === '.yarn')
+            );
+          }
+          return true;
         },
       });
     } else {
-      logger.info(`✅ Removing node_modules from cache directory ${cacheDir}`);
-      await rm(path.join(cacheDir, 'node_modules'), { force: true, recursive: true });
-      await rm(path.join(cacheDir, '.yarn', 'cache'), { force: true, recursive: true });
+      if (process.env.NX_CLI_SET === 'true') {
+        logger.info(`✅ Removing node_modules from cache directory ${cacheDir}`);
+        await rm(path.join(cacheDir, 'node_modules'), { force: true, recursive: true });
+        await rm(path.join(cacheDir, '.yarn', 'cache'), { force: true, recursive: true });
+      }
     }
 
     logger.info(`✅ Storybook sandbox created at ${details.sandboxDir}`);

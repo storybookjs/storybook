@@ -23,32 +23,44 @@ common-js-init-steps: &common-js-init-steps
   - name: Install Browsers (if needed)
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-browsers/main.yaml'
 
+common-env-vars: &common-env-vars
+  STORYBOOK_DISABLE_TELEMETRY: true
+  IN_STORYBOOK_SANDBOX: true
+  SANDBOX_ROOT: ../storybook-sandboxes
+
 launch-templates:
   linux-small-js:
     resource-class: 'docker_linux_amd64/small'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *common-js-init-steps
+    env: *common-env-vars
   linux-medium-js:
     resource-class: 'docker_linux_amd64/medium'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *common-js-init-steps
+    env: *common-env-vars
   linux-medium-plus-js:
     resource-class: 'docker_linux_amd64/medium+'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *common-js-init-steps
+    env: *common-env-vars
   linux-large-js:
     resource-class: 'docker_linux_amd64/large'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *common-js-init-steps
+    env: *common-env-vars
   linux-large-plus-js:
     resource-class: 'docker_linux_amd64/large+'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *common-js-init-steps
+    env: *common-env-vars
   linux-extra-large-js:
     resource-class: 'docker_linux_amd64/extra_large'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *common-js-init-steps
+    env: *common-env-vars
   linux-extra-large-plus-js:
     resource-class: 'docker_linux_amd64/extra_large+'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *common-js-init-steps
+    env: *common-env-vars

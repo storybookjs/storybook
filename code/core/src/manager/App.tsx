@@ -27,6 +27,29 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
     document.body.setAttribute('data-shortcuts-enabled', enableShortcuts ? 'true' : 'false');
   }, [enableShortcuts]);
 
+  useEffect(() => {
+    const rootElement = document.getElementById('root');
+    if (!rootElement) {
+      return;
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'inert') {
+          const hasInert = rootElement.hasAttribute('inert');
+          addons.getChannel().emit('managerFocusTrapChange', hasInert);
+        }
+      });
+    });
+
+    observer.observe(rootElement, {
+      attributes: true,
+      attributeFilter: ['inert'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
       <Global styles={createGlobal} />

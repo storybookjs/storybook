@@ -1,4 +1,4 @@
-import { TELEMETRY_ERROR } from 'storybook/internal/core-events';
+import { MANAGER_FOCUS_TRAP_CHANGE, TELEMETRY_ERROR } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 
@@ -30,6 +30,17 @@ export function setup() {
     const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
     channel.emit(TELEMETRY_ERROR, prepareForTelemetry(error));
   };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
+    channel.on(MANAGER_FOCUS_TRAP_CHANGE, (isActive: boolean) => {
+      if (isActive) {
+        document.body.setAttribute('inert', 'true');
+      } else {
+        document.body.removeAttribute('inert');
+      }
+    });
+  });
 
   // handle all uncaught StorybookError at the root of the application and log to telemetry if applicable
   global.addEventListener('error', errorListener);

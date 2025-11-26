@@ -1279,7 +1279,7 @@ jobs:
                   paths:
                       - sandbox/react-vite-default-ts
                   root: .
-    sandboxes-a-e2e:
+    sandboxes-a-build:
         executor:
             class: xlarge
             name: sb_playwright
@@ -1459,7 +1459,7 @@ workflows:
             - sandboxes-a-create:
                   requires:
                       - sandboxes
-            - sandboxes-a-e2e:
+            - sandboxes-a-build:
                   requires:
                       - sandboxes-a-create
             - sandboxes-a-dev:

@@ -1804,7 +1804,7 @@ const jobs = {
       },
     ],
   },
-  'sandboxes-a-e2e': {
+  'sandboxes-a-build': {
     executor: {
       class: 'xlarge',
       name: 'sb_playwright',
@@ -2107,7 +2107,7 @@ const workflows = {
         },
       },
       {
-        'sandboxes-a-e2e': {
+        'sandboxes-a-build': {
           requires: ['sandboxes-a-create'],
         },
       },

@@ -17,6 +17,50 @@ const CACHE_KEYS = [
 
 const dirname = import.meta.dirname;
 
+const workspace = {
+  attach: () => {
+    return {
+      attach_workspace: {
+        at: '.',
+      },
+    };
+  },
+  persist: (root: string, paths: string[]) => {
+    return {
+      persist_to_workspace: {
+        paths,
+        root,
+      },
+    };
+  },
+};
+
+const cache = {
+  attach: (keys: string[]) => {
+    return {
+      restore_cache: {
+        keys,
+      },
+    };
+  },
+  persist: (paths: string[], key: string) => {
+    return {
+      save_cache: {
+        paths,
+        key,
+      },
+    };
+  },
+};
+
+function checkout(shallow: boolean = true) {
+  return {
+    'git-shallow-clone/checkout_advanced': {
+      clone_options: shallow ? '--depth 1' : '',
+    },
+  };
+}
+
 const commands = {
   'cancel-workflow-on-failure': {
     description: 'Cancels the entire workflow in case the previous step has failed',
@@ -210,22 +254,9 @@ function defineSandboxFlow<K extends string>(name: K) {
           name: 'sb_node_22_browsers',
         },
         steps: [
-          {
-            'git-shallow-clone/checkout_advanced': {
-              clone_options: '--depth 1 --verbose',
-            },
-          },
-          {
-            attach_workspace: {
-              at: '.',
-            },
-          },
-          {
-            restore_cache: {
-              keys: CACHE_KEYS,
-            },
-          },
-
+          checkout(),
+          workspace.attach(),
+          cache.attach(CACHE_KEYS),
           {
             run: {
               command: 'yarn local-registry --open',
@@ -280,12 +311,7 @@ function defineSandboxFlow<K extends string>(name: K) {
               destination: 'logs',
             },
           },
-          {
-            persist_to_workspace: {
-              paths: [`sandbox/${id}`],
-              root: '.',
-            },
-          },
+          workspace.persist('.', [`sandbox/${id}`]),
         ],
       },
       ['sandboxes']
@@ -298,21 +324,9 @@ function defineSandboxFlow<K extends string>(name: K) {
           name: 'sb_playwright',
         },
         steps: [
-          {
-            'git-shallow-clone/checkout_advanced': {
-              clone_options: '--depth 1 --verbose',
-            },
-          },
-          {
-            attach_workspace: {
-              at: '.',
-            },
-          },
-          {
-            restore_cache: {
-              keys: CACHE_KEYS,
-            },
-          },
+          checkout(),
+          workspace.attach(),
+          cache.attach(CACHE_KEYS),
           {
             run: {
               command: `yarn task build --template ${name} --no-link -s build`,
@@ -354,21 +368,9 @@ function defineSandboxFlow<K extends string>(name: K) {
           name: 'sb_playwright',
         },
         steps: [
-          {
-            'git-shallow-clone/checkout_advanced': {
-              clone_options: '--depth 1 --verbose',
-            },
-          },
-          {
-            attach_workspace: {
-              at: '.',
-            },
-          },
-          {
-            restore_cache: {
-              keys: CACHE_KEYS,
-            },
-          },
+          checkout(),
+          workspace.attach(),
+          cache.attach(CACHE_KEYS),
           {
             run: {
               command: `yarn task dev --template ${name} --no-link -s dev`,
@@ -416,11 +418,7 @@ const build = defineJob('build', {
     name: 'sb_node_22_classic',
   },
   steps: [
-    {
-      'git-shallow-clone/checkout_advanced': {
-        clone_options: '--depth 1 --verbose',
-      },
-    },
+    checkout(),
     {
       'node/install-packages': {
         'app-dir': 'code',
@@ -435,19 +433,18 @@ const build = defineJob('build', {
         'pkg-manager': 'yarn',
       },
     },
-    {
-      save_cache: {
-        paths: [
-          //
-          '.yarn/code-install-state.gz',
-          '.yarn/scripts-install-state.gz',
-          '.yarn/root-install-state.gz',
-          'code/node_modules',
-          'scripts/node_modules',
-        ],
-        key: CACHE_KEYS[0],
-      },
-    },
+
+    cache.persist(
+      [
+        '.yarn/code-install-state.gz',
+        '.yarn/scripts-install-state.gz',
+        '.yarn/root-install-state.gz',
+        'code/node_modules',
+        'scripts/node_modules',
+      ],
+      CACHE_KEYS[0]
+    ),
+
     {
       run: {
         command: 'git diff --exit-code',
@@ -480,29 +477,19 @@ const build = defineJob('build', {
         path: 'code/bench/esbuild-metafiles',
       },
     },
-    {
-      persist_to_workspace: {
-        paths: [
-          // 'code/node_modules',
-          // 'scripts/node_modules',
-          ...glob
-            .sync('**/src', {
-              cwd: join(dirname, '../../code'),
-              onlyDirectories: true,
-              ignore: ['node_modules'],
-            })
-            .flatMap((p) => [
-              `code/${p.replace('src', 'dist')}`,
-              `code/${p.replace('src', 'node_modules')}`,
-            ]),
-          '.verdaccio-cache',
-          // '.yarn/code-install-state.gz',
-          // '.yarn/scripts-install-state.gz',
-          // '.yarn/root-install-state.gz',
-        ],
-        root: '.',
-      },
-    },
+    workspace.persist('.', [
+      ...glob
+        .sync('**/src', {
+          cwd: join(dirname, '../../code'),
+          onlyDirectories: true,
+          ignore: ['node_modules'],
+        })
+        .flatMap((p) => [
+          `code/${p.replace('src', 'dist')}`,
+          `code/${p.replace('src', 'node_modules')}`,
+        ]),
+      '.verdaccio-cache',
+    ]),
   ],
 });
 
@@ -664,21 +651,9 @@ const jobs = {
       name: 'sb_node_22_classic',
     },
     steps: [
-      {
-        'git-shallow-clone/checkout_advanced': {
-          clone_options: '--depth 1 --verbose',
-        },
-      },
-      {
-        attach_workspace: {
-          at: '.',
-        },
-      },
-      {
-        restore_cache: {
-          keys: CACHE_KEYS,
-        },
-      },
+      checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS),
       {
         run: {
           command: 'yarn task --task check --no-link',
@@ -1169,11 +1144,7 @@ const jobs = {
       name: 'sb_node_22_classic',
     },
     steps: [
-      {
-        'git-shallow-clone/checkout_advanced': {
-          clone_options: '--depth 1 --verbose',
-        },
-      },
+      checkout(),
       {
         'node/install-packages': {
           'app-dir': 'scripts',
@@ -2245,7 +2216,6 @@ const jobs = {
   // },
 };
 
-console.log(Object.keys(jobs));
 const orbs = {
   'browser-tools': 'circleci/browser-tools@2.3.2',
   codecov: 'codecov/codecov@5.4.3',

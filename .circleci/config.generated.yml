@@ -142,7 +142,7 @@ jobs:
             name: sb_node_22_classic
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
+                  clone_options: --depth 1
             - node/install-packages:
                   app-dir: code
                   cache-only-lockfile: true
@@ -292,7 +292,7 @@ jobs:
             name: sb_node_22_classic
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
+                  clone_options: --depth 1
             - attach_workspace:
                   at: .
             - restore_cache:
@@ -321,7 +321,7 @@ jobs:
             name: sb_node_22_classic
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
+                  clone_options: --depth 1
             - node/install-packages:
                   app-dir: scripts
                   pkg-manager: yarn
@@ -344,7 +344,7 @@ jobs:
             name: sb_node_22_browsers
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
+                  clone_options: --depth 1
             - attach_workspace:
                   at: .
             - restore_cache:
@@ -392,7 +392,7 @@ jobs:
             name: sb_playwright
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
+                  clone_options: --depth 1
             - attach_workspace:
                   at: .
             - restore_cache:
@@ -420,7 +420,7 @@ jobs:
             name: sb_playwright
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
+                  clone_options: --depth 1
             - attach_workspace:
                   at: .
             - restore_cache:
@@ -446,7 +446,7 @@ jobs:
             name: sb_node_22_browsers
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
+                  clone_options: --depth 1
             - attach_workspace:
                   at: .
             - restore_cache:
@@ -494,7 +494,7 @@ jobs:
             name: sb_playwright
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
+                  clone_options: --depth 1
             - attach_workspace:
                   at: .
             - restore_cache:
@@ -522,7 +522,7 @@ jobs:
             name: sb_playwright
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
+                  clone_options: --depth 1
             - attach_workspace:
                   at: .
             - restore_cache:

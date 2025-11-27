@@ -9,7 +9,7 @@ export default () => definePreviewAddon({});
 export async function triggerTestRun(actor: string, storyIds?: StoryId[]) {
   // TODO: there must be a smarter way to share the store here
   // while still lazy initializing it in the experimental_serverChannel preset
-  const store: Store | undefined = globalThis.__STORYBOOK_ADDON_VITEST_STORE__;
+  const store: Store | undefined = (globalThis as any).__STORYBOOK_ADDON_VITEST_STORE__;
   if (!store) {
     throw new Error('store not ready yet');
   }

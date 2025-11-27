@@ -84,9 +84,9 @@ const publish = async (options: PublishOptions & { tmpFolder: string }) => {
     `);
 
   if (push) {
-    // await execaCommand(`git push --set-upstream origin ${branch}`, {
-    //   cwd: tmpFolder,
-    // });
+    await execaCommand(`git push --set-upstream origin ${branch}`, {
+      cwd: tmpFolder,
+    });
     const remoteRepoUrl = `${remote.replace('.git', '')}/tree/${branch}`;
     logger.info(`🚀 Everything was pushed on ${remoteRepoUrl}`);
   } else {

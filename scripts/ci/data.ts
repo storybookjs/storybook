@@ -310,6 +310,22 @@ const jobs = {
         },
       },
       {
+        save_cache: {
+          paths: [
+            //
+            '.yarn/code-install-state.gz',
+            '.yarn/scripts-install-state.gz',
+            '.yarn/root-install-state.gz',
+            'code/node_modules',
+            'scripts/node_modules',
+          ],
+          keys: [
+            'node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}',
+            'node_modules-',
+          ],
+        },
+      },
+      {
         run: {
           command: 'git diff --exit-code',
           name: 'Check for changes',
@@ -383,15 +399,11 @@ const jobs = {
         },
       },
       {
-        'node/install-packages': {
-          'app-dir': 'code',
-          'pkg-manager': 'yarn',
-        },
-      },
-      {
-        'node/install-packages': {
-          'app-dir': 'scripts',
-          'pkg-manager': 'yarn',
+        restore_cache: {
+          keys: [
+            'node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}',
+            'node_modules-',
+          ],
         },
       },
       {
@@ -1754,17 +1766,14 @@ const jobs = {
         },
       },
       {
-        'node/install-packages': {
-          'app-dir': 'code',
-          'pkg-manager': 'yarn',
+        restore_cache: {
+          keys: [
+            'node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}',
+            'node_modules-',
+          ],
         },
       },
-      {
-        'node/install-packages': {
-          'app-dir': 'scripts',
-          'pkg-manager': 'yarn',
-        },
-      },
+
       {
         run: {
           command: 'yarn local-registry --open',
@@ -1845,15 +1854,11 @@ const jobs = {
         },
       },
       {
-        'node/install-packages': {
-          'app-dir': 'code',
-          'pkg-manager': 'yarn',
-        },
-      },
-      {
-        'node/install-packages': {
-          'app-dir': 'scripts',
-          'pkg-manager': 'yarn',
+        restore_cache: {
+          keys: [
+            'node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}',
+            'node_modules-',
+          ],
         },
       },
       {
@@ -1904,15 +1909,11 @@ const jobs = {
         },
       },
       {
-        'node/install-packages': {
-          'app-dir': 'code',
-          'pkg-manager': 'yarn',
-        },
-      },
-      {
-        'node/install-packages': {
-          'app-dir': 'scripts',
-          'pkg-manager': 'yarn',
+        restore_cache: {
+          keys: [
+            'node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}',
+            'node_modules-',
+          ],
         },
       },
       {

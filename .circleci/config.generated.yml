@@ -231,6 +231,16 @@ jobs:
             - node/install-packages:
                   app-dir: scripts
                   pkg-manager: yarn
+            - save_cache:
+                  paths:
+                      - .yarn/code-install-state.gz
+                      - .yarn/scripts-install-state.gz
+                      - .yarn/root-install-state.gz
+                      - code/node_modules
+                      - scripts/node_modules
+                  keys:
+                      - node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}
+                      - node_modules-
             - run:
                   command: git diff --exit-code
                   name: Check for changes
@@ -367,12 +377,10 @@ jobs:
                   clone_options: --depth 1 --verbose
             - attach_workspace:
                   at: .
-            - node/install-packages:
-                  app-dir: code
-                  pkg-manager: yarn
-            - node/install-packages:
-                  app-dir: scripts
-                  pkg-manager: yarn
+            - restore_cache:
+                  keys:
+                      - node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}
+                      - node_modules-
             - run:
                   command: yarn task --task check --no-link
                   name: TypeCheck code
@@ -1244,12 +1252,10 @@ jobs:
                   clone_options: --depth 1 --verbose
             - attach_workspace:
                   at: .
-            - node/install-packages:
-                  app-dir: code
-                  pkg-manager: yarn
-            - node/install-packages:
-                  app-dir: scripts
-                  pkg-manager: yarn
+            - restore_cache:
+                  keys:
+                      - node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}
+                      - node_modules-
             - run:
                   command: yarn local-registry --open
                   name: Verdaccio
@@ -1295,12 +1301,10 @@ jobs:
                   clone_options: --depth 1 --verbose
             - attach_workspace:
                   at: .
-            - node/install-packages:
-                  app-dir: code
-                  pkg-manager: yarn
-            - node/install-packages:
-                  app-dir: scripts
-                  pkg-manager: yarn
+            - restore_cache:
+                  keys:
+                      - node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}
+                      - node_modules-
             - run:
                   command: yarn task build --template react-vite/default-ts --no-link -s build
                   name: Build storybook
@@ -1326,12 +1330,10 @@ jobs:
                   clone_options: --depth 1 --verbose
             - attach_workspace:
                   at: .
-            - node/install-packages:
-                  app-dir: code
-                  pkg-manager: yarn
-            - node/install-packages:
-                  app-dir: scripts
-                  pkg-manager: yarn
+            - restore_cache:
+                  keys:
+                      - node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}
+                      - node_modules-
             - run:
                   command: yarn task dev --template react-vite/default-ts --no-link -s dev
                   name: Run storybook

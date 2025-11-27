@@ -3,6 +3,9 @@
   "version": "10.2.0-alpha.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "check": "jiti ./check/check-package.ts"
+  },
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",

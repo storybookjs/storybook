@@ -83,6 +83,7 @@ export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageMana
   isUpgrade: boolean;
   isLatest: boolean;
   storiesPaths: string[];
+  hasCsfFactoryPreview: boolean;
 }
 export interface AutofixOptionsFromCLI {
   fixId?: FixId;

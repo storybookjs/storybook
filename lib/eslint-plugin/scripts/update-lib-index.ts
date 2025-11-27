@@ -9,7 +9,7 @@ import type { Options } from 'prettier';
 import { format } from 'prettier';
 
 // @ts-expect-error this file has no types
-import prettierConfig from '../../../../prettier.config.mjs';
+import prettierConfig from '../../../../prettier.config.js';
 import { categoryIds } from './utils/categories';
 import rules from './utils/rules';
 

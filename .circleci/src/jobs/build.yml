@@ -34,15 +34,14 @@ steps:
   - persist_to_workspace:
       root: .
       paths:
-        - node_modules
-        - addons
+        - /node_modules
+        - /addons
         - scripts/node_modules
-        - bench
-        - examples
-        - frameworks
-        - lib
-        - core
-        - builders
-        - renderers
-        - presets
+        - /bench
+        - /frameworks
+        - /lib
+        - /core
+        - /builders
+        - /renderers
+        - /presets
         - .verdaccio-cache

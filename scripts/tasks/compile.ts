@@ -1,5 +1,5 @@
 import { readFile, rm } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 
 import type { Task } from '../task';
 import { ROOT_DIRECTORY } from '../utils/constants';
@@ -21,9 +21,9 @@ export const compile: Task = {
   async ready({ codeDir }, { link }) {
     try {
       // To check if the code has been compiled as we need, we check the compiled output of
-      // `@storybook/preview`. To check if it has been built for publishing (i.e. `--no-link`),
+      // `storybook/manager-api`. To check if it has been built for publishing (i.e. `--no-link`),
       // we check if it built types or references source files directly.
-      const contents = await readFile(resolve(codeDir, './dist/manager-api/index.d.ts'), 'utf8');
+      const contents = await readFile(join(codeDir, './dist/manager-api/index.d.ts'), 'utf8');
       const isLinkedContents = contents.indexOf(linkedContents) !== -1;
 
       if (link) {
@@ -31,6 +31,7 @@ export const compile: Task = {
       }
       return !isLinkedContents;
     } catch (err) {
+      console.error(err);
       return false;
     }
   },

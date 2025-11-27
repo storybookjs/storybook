@@ -1,3 +1,36 @@
+## 10.2.0-alpha.0
+
+
+## 10.1.0-beta.6
+
+- Angular: Don't kill dev command by using observables - [#33185](https://github.com/storybookjs/storybook/pull/33185), thanks @valentinpalkovic!
+- Angular: Replace deprecated import of ApplicationConfig - [#33125](https://github.com/storybookjs/storybook/pull/33125), thanks @EtiennePasteur!
+- CLI: Fix passing flags for bun users during init - [#33166](https://github.com/storybookjs/storybook/pull/33166), thanks @valentinpalkovic!
+- CLI: Minor improvements - [#33180](https://github.com/storybookjs/storybook/pull/33180), thanks @valentinpalkovic!
+- CLI: Update upgrade message - [#33182](https://github.com/storybookjs/storybook/pull/33182), thanks @yannbf!
+
+## 10.1.0-beta.5
+
+- Checklist: Autocomplete "See what's new" on URL navigation - [#33167](https://github.com/storybookjs/storybook/pull/33167), thanks @ghengeveld!
+- Core: Fix testing widget focus outline - [#33172](https://github.com/storybookjs/storybook/pull/33172), thanks @ghengeveld!
+- Core: Rename `Listbox` component to `ActionList` and use it in `TagsFilterPanel` - [#33140](https://github.com/storybookjs/storybook/pull/33140), thanks @ghengeveld!
+- UI: Add padding for ArgsTable shadow in TabbedArgsTable - [#33034](https://github.com/storybookjs/storybook/pull/33034), thanks @Sidnioulz!
+- UI: Fix crashes in Select when passed falsy non-string options - [#33164](https://github.com/storybookjs/storybook/pull/33164), thanks @Sidnioulz!
+- UI: Fix regression on addon panel empty content fontsize - [#33021](https://github.com/storybookjs/storybook/pull/33021), thanks @Sidnioulz!
+- UI: Fix trivial RefBlocks ARIA violations - [#33026](https://github.com/storybookjs/storybook/pull/33026), thanks @Sidnioulz!
+- UI: Refocus search input after clearing it - [#33165](https://github.com/storybookjs/storybook/pull/33165), thanks @Sidnioulz!
+- UI: Rework default background of Color swatch for dark mode - [#33023](https://github.com/storybookjs/storybook/pull/33023), thanks @Sidnioulz!
+
+## 10.1.0-beta.4
+
+- Angular: Migrate from RxJS to async/await in command builders and run Compodoc utility as spinner - [#33156](https://github.com/storybookjs/storybook/pull/33156), thanks @valentinpalkovic!
+- CLI: Fix 'beforeVersion' evaluation for Storybook package - [#33141](https://github.com/storybookjs/storybook/pull/33141), thanks @valentinpalkovic!
+- CLI: Update clack - [#33151](https://github.com/storybookjs/storybook/pull/33151), thanks @valentinpalkovic!
+- Checklist: Data improvements - [#33129](https://github.com/storybookjs/storybook/pull/33129), thanks @ghengeveld!
+- Guide: Collapse checklist items by default - [#33160](https://github.com/storybookjs/storybook/pull/33160), thanks @ghengeveld!
+- React: Add isPackage flag to component imports for better package identification - [#33090](https://github.com/storybookjs/storybook/pull/33090), thanks @kasperpeulen!
+- UI: Improve status handling in sidebar nodes - [#32965](https://github.com/storybookjs/storybook/pull/32965), thanks @yannbf!
+
 ## 10.1.0-beta.3
 
 - A11y: Make search clear button keyboard accessible - [#32590](https://github.com/storybookjs/storybook/pull/32590), thanks @ritoban23!

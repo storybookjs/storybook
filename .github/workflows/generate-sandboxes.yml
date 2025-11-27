@@ -59,6 +59,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: yann/fix-sandbox-generation
+          fetch-depth: 1
 
       - name: Disk usage after cloning
         working-directory: ${{ github.workspace }}
@@ -127,55 +128,73 @@ jobs:
             The generation of some or all sandboxes on the **next** branch has failed.
             [See the job summary for details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-  # generate-main:
-  #   name: Generate to main
-  #   if: github.repository_owner == 'storybookjs'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         ref: main
+  generate-main:
+    name: Generate to main
+    if: github.repository_owner == 'storybookjs'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove unnecessary files to release disk space
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo rm -rf \
+            /opt/ghc \
+            /opt/google/chrome \
+            /opt/microsoft/msedge \
+            /opt/microsoft/powershell \
+            /usr/lib/mono \
+            /usr/local/julia* \
+            /usr/local/lib/android \
+            /usr/local/share/chromium \
+            /usr/local/share/powershell \
+            /usr/local/share/powershell \
+            /usr/share/dotnet \
+            /usr/share/swift
 
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version-file: ".nvmrc"
+      - uses: actions/checkout@v4
+        with:
+          ref: yann/fix-sandbox-generation
+          fetch-depth: 1
 
-  #     - name: Setup git user
-  #       run: |
-  #         git config --global user.name "storybook-bot"
-  #         git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
 
-  #     - name: Install dependencies
-  #       working-directory: ./scripts
-  #       run: node --experimental-modules ./check-dependencies.js
+      - name: Setup git user
+        run: |
+          git config --global user.name "storybook-bot"
+          git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
 
-  #     - name: Compile Storybook libraries
-  #       run: yarn task --task compile --start-from=auto --no-link
+      - name: Install dependencies
+        working-directory: ./scripts
+        run: node --experimental-modules ./check-dependencies.js
 
-  #     - name: Publish to local registry
-  #       run: yarn local-registry --publish
+      - name: Compile Storybook libraries
+        run: yarn task --task compile --start-from=auto --no-link
 
-  #     - name: Run local registry
-  #       run: yarn local-registry --open &
+      - name: Publish to local registry
+        run: yarn local-registry --publish
 
-  #     - name: Wait for registry
-  #       run: yarn wait-on tcp:127.0.0.1:6001
+      - name: Run local registry
+        run: yarn local-registry --open &
 
-  #     - name: Generate
-  #       id: generate
-  #       run: yarn generate-sandboxes --local-registry
+      - name: Wait for registry
+        run: yarn wait-on tcp:127.0.0.1:6001
 
-  #     - name: Publish
-  #       # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
-  #       if: ${{ !cancelled() }}
-  #       run: yarn publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=main
+      - name: Generate
+        id: generate
+        run: yarn generate-sandboxes --local-registry
 
-  #     - name: Report failure to Discord
-  #       if: failure()
-  #       env:
-  #         DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
-  #       uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
-  #       with:
-  #         args: |
-  #           The generation of some or all sandboxes on the **main** branch has failed.
-  #           [See the job summary for details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+      - name: Publish
+        # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
+        if: ${{ !cancelled() }}
+        run: yarn publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=main
+
+      - name: Report failure to Discord
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
+        with:
+          args: |
+            The generation of some or all sandboxes on the **main** branch has failed.
+            [See the job summary for details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})

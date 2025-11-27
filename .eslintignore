@@ -20,3 +20,4 @@ ember-output
 core/assets
 core/src/core-server/utils/__search-files-tests__
 core/report
+test-storybooks

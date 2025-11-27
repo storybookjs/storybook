@@ -40,26 +40,23 @@ const pathExists = async (p: string) => {
 const isPortUsed = async (port: number) => (await detectFreePort(port)) !== port;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const kill = async (port: number) => {
+  if (await isPortUsed(port)) {
+    await killProcessOnPort(port);
+
+    let attempts = 0;
+    while ((await isPortUsed(port)) && attempts < 10) {
+      await sleep(1000);
+      attempts++;
+    }
+  }
+};
+
 type Servers = { close: () => Promise<void> };
 const startVerdaccio = async () => {
   // Kill Verdaccio related processes if they are already running
-  if (await isPortUsed(6001)) {
-    await killProcessOnPort(6001);
-
-    let attempts = 0;
-    while ((await isPortUsed(6001)) && attempts < 10) {
-      await sleep(1000);
-      attempts++;
-    }
-  }
-  if (await isPortUsed(6002)) {
-    await killProcessOnPort(6002);
-    let attempts = 0;
-    while ((await isPortUsed(6002)) && attempts < 10) {
-      await sleep(1000);
-      attempts++;
-    }
-  }
+  await kill(6001);
+  await kill(6002);
 
   const ready = {
     proxy: false,

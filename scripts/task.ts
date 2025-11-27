@@ -450,7 +450,11 @@ async function run() {
   } else if (startFrom === 'task') {
     // just run that one task
   } else if (startFrom === 'never') {
-    if (firstUnready && firstUnready !== finalTask) {
+    if (!firstUnready) {
+      throw new Error(`Task ${taskKey} is ready`);
+    }
+
+    if (firstUnready !== finalTask) {
       throw new Error(`Task ${getTaskKey(firstUnready)} was not ready`);
     }
   } else if (startFrom) {
@@ -499,7 +503,6 @@ async function run() {
     const status = statuses.get(task);
 
     let shouldRun = status === 'unready';
-
     if (status === 'notserving') {
       shouldRun =
         finalTask === task ||

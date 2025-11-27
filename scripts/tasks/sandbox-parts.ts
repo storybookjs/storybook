@@ -28,7 +28,7 @@ import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
 import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
-import { filterExistsInCodeDir } from '../utils/filterExistsInRootDir';
+import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir';
 import { addPreviewAnnotations, readConfig } from '../utils/main-js';
 import { updatePackageScripts } from '../utils/package-json';
 import { findFirstPath } from '../utils/paths';
@@ -403,7 +403,6 @@ async function linkPackageStories(
 ) {
   const storiesFolderName = variant ? getStoriesFolderWithVariant(variant) : 'stories';
   const source = join(CODE_DIRECTORY, packageDir, 'template', storiesFolderName);
-
   // By default we link `stories` directories
   //   e.g '../../../code/lib/preview-api/template/stories' to 'template-stories/lib/preview-api'
   // if the directory <code>/lib/preview-api/template/stories exists

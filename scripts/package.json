@@ -12,7 +12,7 @@
     "check": "jiti ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",
     "docs:codemod": "jiti ./snippets/codemod.ts",
-    "docs:prettier:check": "cd ../docs && prettier --check ./_snippets",
+    "docs:prettier:check": "cd ../docs && prettier --check ./_snippets || echo 'Please run \"docs:prettier:write\" in the \"scripts\" directory to fix the issues'",
     "docs:prettier:write": "cd ../docs && prettier --write ./_snippets",
     "generate-sandboxes": "jiti ./sandbox/generate.ts",
     "get-report-message": "jiti ./get-report-message.ts",

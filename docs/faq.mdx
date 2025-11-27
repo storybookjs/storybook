@@ -101,18 +101,23 @@ To fix this, you can wrap the package name inside your Storybook configuration f
 
 {/* prettier-ignore-end */}
 
-## Extensionless imports in `.storybook/main.ts` and required `.ts` extensions
+## Extensionless imports in Storybook main config
 
-When upgrading, you may see warnings about extensionless relative imports in `.storybook/main.ts` (for example: `import sharedMain from '../main'`). Storybook requires explicit extensions in config imports to avoid this deprecation warning.
+When upgrading or running Storybook, you may see warnings about extensionless relative imports in `.storybook/main.<js|ts>` (for example: `import sharedMain from '../main'`). 
+Storybook requires explicit extensions in config imports to avoid this deprecation warning.
 
-### Context
-This is primarily a TypeScript constraint: the TypeScript compiler and language server validate import specifiers. While bundlers may rewrite or resolve extensions at build time, TypeScript does not unless configured.
+To fix the issue, just make sure to include the extension of the file (TypeScript or Javascript) you're importing:
 
-Storybook’s config loader surfaces a warning for extensionless imports to keep configuration explicit and predictable. We do not introduce a non-standard runtime mapping from `.js` to `.ts`. Keep imports explicit with `.ts` in configuration files.
+```ts title=".storybook/main.<js|ts>"
+// Change from this 👇
+import sharedMain from '../main';
 
-### Recommended setup (use `.ts` extensions)
-- Update imports to include the `.ts` extension (e.g., `import sharedMain from '../main.ts'`).
-- Configure TypeScript so these imports type-check without emitting JavaScript:
+// To this 👇
+import sharedMain from '../main.js'; // or .ts
+```
+
+### For TypeScript users (`.storybook/main.ts`)
+You will also need to configure TypeScript so these imports type-check without emitting JavaScript:
 
 ```json title=".storybook/tsconfig.json"
 {
@@ -125,7 +130,9 @@ Storybook’s config loader surfaces a warning for extensionless imports to keep
 }
 ```
 
-Alternatively, if your tooling requires emitting declarations, set `emitDeclarationOnly: true` instead of `noEmit`.
+<Callout variant="info">
+  It is advisable to add a `.storybook/tsconfig.json` file so that you apply changes only to Storybook config files, and not your entire project.
+</Callout>
 
 ## How do I setup the new React Context Root API with Storybook?
 

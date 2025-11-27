@@ -4,7 +4,7 @@ import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 
 import Inspect from 'vite-plugin-inspect';
 
-import { vitestCommonConfig } from '../vitest.shared';
+import { vitestCommonConfig } from './vitest.shared';
 
 const extraPlugins: any[] = [];
 if (process.env.INSPECT === 'true') {

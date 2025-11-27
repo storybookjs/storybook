@@ -3,6 +3,7 @@ import { createRequire, register } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { resolveModulePath } from 'exsolve';
 import { dirname, join } from 'pathe';
 
 /**
@@ -28,7 +29,12 @@ export const resolvePackageDir = (
   pkg: Parameters<ImportMeta['resolve']>[0],
   parent?: Parameters<ImportMeta['resolve']>[0]
 ) => {
-  return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'), parent)));
+  try {
+    return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'), parent)));
+  } catch {
+    // Necessary fallback for Bun runtime
+    return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'))));
+  }
 };
 
 let isTypescriptLoaderRegistered = false;
@@ -50,7 +56,10 @@ let isTypescriptLoaderRegistered = false;
  * // Returns the default export or the entire module
  * ```
  */
-export async function importModule(path: string) {
+export async function importModule(
+  path: string,
+  { skipCache = false }: { skipCache?: boolean } = {}
+) {
   if (!isTypescriptLoaderRegistered) {
     const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
     register(typescriptLoaderUrl, import.meta.url);
@@ -60,12 +69,17 @@ export async function importModule(path: string) {
   let mod;
   try {
     const resolvedPath = win32.isAbsolute(path) ? pathToFileURL(path).href : path;
-    mod = await import(resolvedPath);
+    // When applicable, add a hash to the import URL to bypass cache
+    const importUrl = skipCache ? `${resolvedPath}?${Date.now()}` : resolvedPath;
+    mod = await import(importUrl);
   } catch (importError) {
     try {
       // fallback to require to support older behavior
       // this is relevant for presets that are only available with the "require" condition in a package's export map
       const require = createRequire(import.meta.url);
+      if (skipCache) {
+        delete require.cache[require.resolve(path)];
+      }
       mod = require(path);
     } catch (requireError) {
       /*
@@ -112,13 +126,13 @@ export const safeResolveModule = ({
   parent?: string;
   extensions?: string[];
 }) => {
-  for (const extension of [''].concat(extensions)) {
-    try {
-      const resolvedPath = fileURLToPath(importMetaResolve(specifier + extension, parent));
-      if (statSync(resolvedPath).isFile()) {
-        return resolvedPath;
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {}
-  }
+  try {
+    const resolvedPath = resolveModulePath(specifier, {
+      from: parent,
+      extensions: [''].concat(extensions),
+    });
+    if (statSync(resolvedPath).isFile()) {
+      return resolvedPath;
+    }
+  } catch (e: any) {}
 };

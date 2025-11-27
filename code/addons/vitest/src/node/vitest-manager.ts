@@ -6,17 +6,16 @@ import type {
   TestProject,
   TestSpecification,
   Vitest,
-  WorkspaceProject,
 } from 'vitest/node';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import path, { dirname, join, normalize } from 'pathe';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
 import { COVERAGE_DIRECTORY } from '../constants';
 import { log } from '../logger';
 import type { TriggerRunEvent } from '../types';
@@ -29,6 +28,17 @@ const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
 
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';
+
+/**
+ * The Storybook vitest plugin adds double space characters so that it's possible to do a regex for
+ * all test run use cases. Otherwise, if there were two unrelated stories like "Primary Button" and
+ * "Primary Button Mobile", once you run tests for "Primary Button" and its children it would also
+ * match "Primary Button Mobile". As it turns out, this limitation is also present in the Vitest
+ * VSCode extension and the issue would occur with normal vitest tests as well, but because we use
+ * double spaces, we circumvent the issue.
+ */
+export const DOUBLE_SPACES = '  ';
+const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
 export class VitestManager {
   vitest: Vitest | null = null;
@@ -64,12 +74,12 @@ export class VitestManager {
         : { enabled: false }
     ) as CoverageOptions;
 
-    const vitestWorkspaceConfig = await findUp(
+    const vitestWorkspaceConfig = find.any(
       [
         ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
         ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
       ],
-      { stopAt: getProjectRoot() }
+      { last: getProjectRoot() }
     );
 
     const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
@@ -155,11 +165,15 @@ export class VitestManager {
   }
 
   private updateLastChanged(filepath: string) {
-    const projects = this.vitest!.getModuleProjects(filepath);
-    projects.forEach(({ server, browser }) => {
+    // @ts-expect-error `server` only exists in Vitest 3
+    this.vitest!.projects.forEach(({ browser, vite, server }) => {
       if (server) {
         const serverMods = server.moduleGraph.getModulesByFile(filepath);
-        serverMods?.forEach((mod) => server.moduleGraph.invalidateModule(mod));
+        serverMods?.forEach((mod: any) => server.moduleGraph.invalidateModule(mod));
+      }
+      if (vite) {
+        const serverMods = vite.moduleGraph.getModulesByFile(filepath);
+        serverMods?.forEach((mod) => vite.moduleGraph.invalidateModule(mod));
       }
       if (browser) {
         const browserMods = browser.vite.moduleGraph.getModulesByFile(filepath);
@@ -168,7 +182,7 @@ export class VitestManager {
     });
   }
 
-  private async fetchStories(requestStoryIds?: string[]) {
+  private async fetchStories(requestStoryIds?: string[]): Promise<StoryIndexEntry[]> {
     const indexUrl = this.testManager.store.getState().indexUrl;
     if (!indexUrl) {
       throw new Error(
@@ -264,18 +278,50 @@ export class VitestManager {
     await this.cancelCurrentRun();
 
     const testSpecifications = await this.getStorybookTestSpecifications();
-    const stories = await this.fetchStories(runPayload?.storyIds);
+    const allStories = await this.fetchStories();
+
+    const filteredStories = runPayload.storyIds
+      ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
+      : allStories;
 
     const isSingleStoryRun = runPayload.storyIds?.length === 1;
     if (isSingleStoryRun) {
-      const storyName = stories[0].name;
-      const regex = new RegExp(`^${storyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
+      const selectedStory = filteredStories.find((story) => story.id === runPayload.storyIds?.[0]);
+      if (!selectedStory) {
+        throw new Error(`Story ${runPayload.storyIds?.[0]} not found`);
+      }
+
+      const storyName = selectedStory.name;
+      let regex: RegExp;
+
+      const isParentStory = allStories.some((story) => selectedStory.id === story.parent);
+      const hasParentStory = allStories.some((story) => selectedStory.parent === story.id);
+
+      if (isParentStory) {
+        // Use case 1: "Single" story run on a story with tests
+        // -> run all tests of that story, as storyName is a describe block
+        const parentName = getTestName(selectedStory.name);
+        regex = new RegExp(`^${parentName}`);
+      } else if (hasParentStory) {
+        // Use case 2: Single story run on a specific story test
+        // in this case the regex pattern should be the story parentName + space + story.name
+        const parentStory = allStories.find((story) => story.id === selectedStory.parent);
+        if (!parentStory) {
+          throw new Error(`Parent story not found for story ${selectedStory.id}`);
+        }
+
+        const parentName = getTestName(parentStory.name);
+        regex = new RegExp(`^${parentName} ${storyName}$`);
+      } else {
+        // Use case 3: Single story run on a story without tests, should be exact match of story name
+        regex = new RegExp(`^${storyName}$`);
+      }
       this.vitest!.setGlobalTestNamePattern(regex);
     }
 
     const { filteredTestSpecifications, filteredStoryIds } = this.filterTestSpecifications(
       testSpecifications,
-      stories
+      filteredStories
     );
 
     this.testManager.store.setState((s) => ({
@@ -465,7 +511,7 @@ export class VitestManager {
     this.registerVitestConfigListener();
   }
 
-  isStorybookProject(project: TestProject | WorkspaceProject) {
+  isStorybookProject(project: TestProject) {
     return !!project.config.env?.__STORYBOOK_URL__;
   }
 }

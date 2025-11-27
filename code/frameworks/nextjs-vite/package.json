@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs-vite",
-  "version": "10.0.0-beta.0",
+  "version": "10.2.0-alpha.0",
   "description": "Storybook for Next.js and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -35,6 +35,7 @@
       "types": "./dist/export-mocks/cache/index.d.ts",
       "default": "./dist/export-mocks/cache/index.js"
     },
+    "./config/preview": "./dist/config/preview.js",
     "./headers.mock": {
       "types": "./dist/export-mocks/headers/index.d.ts",
       "default": "./dist/export-mocks/headers/index.js"
@@ -82,16 +83,18 @@
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "^2.0.5"
+    "vite-plugin-storybook-nextjs": "^3.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "lilconfig": "^3.0.0",
     "next": "^15.2.3",
     "postcss-load-config": "^6.0.1",
+    "semver": "^7.3.5",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "next": "^14.1.0 || ^15.0.0",
+    "next": "^14.1.0 || ^15.0.0 || ^16.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",
@@ -105,5 +108,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

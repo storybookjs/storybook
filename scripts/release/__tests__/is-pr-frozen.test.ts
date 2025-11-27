@@ -1,12 +1,11 @@
+import * as fspImp from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-// eslint-disable-next-line depend/ban-dependencies
-import * as fsExtraImp from 'fs-extra';
 import * as simpleGitImp from 'simple-git';
 
-import type * as MockedFSExtra from '../../../code/__mocks__/fs-extra';
+import type * as MockedFSPExtra from '../../../code/__mocks__/fs/promises';
 import type * as MockedSimpleGit from '../../__mocks__/simple-git';
 import { CODE_DIRECTORY } from '../../utils/constants';
 import { run as isPrFrozen } from '../is-pr-frozen';
@@ -15,13 +14,13 @@ import { getPullInfoFromCommit } from '../utils/get-github-info';
 
 vi.mock('../utils/get-github-info');
 vi.mock('simple-git');
-vi.mock('fs-extra', async () => import('../../../code/__mocks__/fs-extra'));
-const fsExtra = fsExtraImp as unknown as typeof MockedFSExtra;
+vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs/promises'));
+const fsp = fspImp as unknown as typeof MockedFSPExtra;
 const simpleGit = simpleGitImp as unknown as typeof MockedSimpleGit;
 
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIRECTORY, 'package.json');
 
-fsExtra.__setMockFiles({
+fsp.__setMockFiles({
   [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: '1.0.0' }),
 });
 

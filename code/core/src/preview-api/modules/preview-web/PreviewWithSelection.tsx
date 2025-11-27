@@ -280,9 +280,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
 
     const { selection } = this.selectionStore;
-    // Protected function, shouldn't be possible
-
-    // Protected function, shouldn't be possible
 
     if (!selection) {
       throw new Error('Cannot call renderSelection as no selection was made');

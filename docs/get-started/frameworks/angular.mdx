@@ -276,7 +276,7 @@ export const WithCustomProvider: Story = {
 
 The Storybook [Angular builder](https://angular.io/guide/glossary#builder) is a way to run Storybook in an Angular workspace. It is a drop-in replacement for running `storybook dev` and `storybook build` directly.
 
-You can run `npx storybook@next automigrate` to try letting Storybook detect and automatically fix your configuration. Otherwise, you can follow the next steps to adjust your configuration manually.
+You can run `npx storybook@latest automigrate` to try letting Storybook detect and automatically fix your configuration. Otherwise, you can follow the next steps to adjust your configuration manually.
 
 #### Do you have only one Angular project in your workspace?
 
@@ -367,12 +367,13 @@ These are common options you may need for the Angular builder:
 | `"webpackStatsJson"`         | Write Webpack Stats JSON to disk. <br /> `"webpackStatsJson": true`                                                                                                                             |
 | `"previewUrl"`               | Disables the default storybook preview and lets you use your own. <br /> `"previewUrl": "iframe.html"`                                                                                          |
 | `"loglevel"`                 | Controls level of logging during build. Can be one of: [silly, verbose, info (default), warn, error, silent]. <br /> `"loglevel": "info"`                                                       |
-| `"sourceMap"`                | Configure [sourcemaps](https://angular.io/guide/workspace-config#source-map-configuration.). <br /> `"sourceMap": true`                                                                         |
+| `"sourceMap"`                | Configure [sourcemaps](https://angular.dev/reference/configs/workspace-config#source-map-configuration.). <br /> `"sourceMap": true`                                                                         |
+| `"experimentalZoneless"`     | Configure [zoneless change detection](https://angular.dev/guide/zoneless). <br /> `"experimentalZoneless": true`                                                                 |
 
 The full list of options can be found in the Angular builder schemas:
 
-* [Build Storybook](https://github.com/storybookjs/storybook/blob/main/code/frameworks/angular/src/builders/build-storybook/schema.json)
-* [Start Storybook](https://github.com/storybookjs/storybook/blob/main/code/frameworks/angular/src/builders/start-storybook/schema.json)
+* [Build Storybook](https://github.com/storybookjs/storybook/blob/main/code/frameworks/angular/build-schema.json)
+* [Start Storybook](https://github.com/storybookjs/storybook/blob/main/code/frameworks/angular/start-schema.json)
 
 ## API
 

@@ -34,9 +34,7 @@ vi.mock('@angular-devkit/architect', () => ({
   targetFromTargetString: vi.fn(),
 }));
 
-vi.mock('find-up', () => ({
-  findUp: vi.fn(),
-}));
+vi.mock('empathic/find', () => ({ up: vi.fn() }));
 
 vi.mock('./utils/module-is-available', () => ({
   moduleIsAvailable: vi.fn(),
@@ -58,7 +56,7 @@ const mockedLogger = vi.mocked(logger);
 const mockedTargetFromTargetString = vi.mocked(
   await import('@angular-devkit/architect')
 ).targetFromTargetString;
-const mockedFindUp = vi.mocked(await import('find-up')).findUp;
+const mockedFindUp = vi.mocked(await import('empathic/find')).up;
 const mockedGetProjectRoot = vi.mocked(await import('storybook/internal/common')).getProjectRoot;
 
 describe('framework-preset-angular-cli', () => {
@@ -77,7 +75,7 @@ describe('framework-preset-angular-cli', () => {
 
     beforeEach(() => {
       mockedGetProjectRoot.mockReturnValue('/test/project');
-      mockedFindUp.mockResolvedValue('/test/tsconfig.json');
+      mockedFindUp.mockReturnValue('/test/tsconfig.json');
     });
 
     it('should get browser target options when angularBrowserTarget is provided', async () => {
@@ -97,7 +95,7 @@ describe('framework-preset-angular-cli', () => {
 
       expect(mockedTargetFromTargetString).toHaveBeenCalledWith('test-project:build:development');
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular browser target options from "test-project:build:development"'
+        'Using angular browser target options from "test-project:build:development"'
       );
       expect(mockBuilderContext.getTargetOptions).toHaveBeenCalledWith(mockTarget);
     });
@@ -109,7 +107,9 @@ describe('framework-preset-angular-cli', () => {
       const browserTargetOptions = { a: 1, nested: { x: 10 } };
       const storybookOptions = { b: 2, nested: { y: 20 } };
 
-      vi.mocked(mockBuilderContext.getTargetOptions).mockResolvedValue(browserTargetOptions);
+      vi.mocked(mockBuilderContext.getTargetOptions)
+        .mockResolvedValueOnce(browserTargetOptions)
+        .mockResolvedValueOnce(storybookOptions);
 
       const options: PresetOptions = {
         configType: 'DEVELOPMENT',
@@ -145,7 +145,7 @@ describe('framework-preset-angular-cli', () => {
 
       expect(result.tsConfig).toBe('/custom/tsconfig.json');
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular project with "tsConfig:/custom/tsconfig.json"'
+        'Using angular project with "tsConfig:../../custom/tsconfig.json"'
       );
     });
 
@@ -162,7 +162,7 @@ describe('framework-preset-angular-cli', () => {
 
       expect(mockedFindUp).toHaveBeenCalledWith('tsconfig.json', {
         cwd: '/test/config',
-        stopAt: '/test/project',
+        last: '/test/project',
       });
       expect(result.tsConfig).toBe('/test/tsconfig.json');
     });
@@ -170,7 +170,7 @@ describe('framework-preset-angular-cli', () => {
     it('should use browser target tsConfig when no other tsConfig is available', async () => {
       const mockTarget = { project: 'test-project', target: 'build' };
       mockedTargetFromTargetString.mockReturnValue(mockTarget);
-      mockedFindUp.mockResolvedValue(null);
+      mockedFindUp.mockReturnValue(null);
 
       const browserTargetOptions = { tsConfig: '/browser/tsconfig.json' };
       vi.mocked(mockBuilderContext.getTargetOptions).mockResolvedValue(browserTargetOptions);
@@ -201,7 +201,7 @@ describe('framework-preset-angular-cli', () => {
       const result = await getBuilderOptions(options, mockBuilderContext);
 
       expect(mockedTargetFromTargetString).not.toHaveBeenCalled();
-      expect(mockBuilderContext.getTargetOptions).not.toHaveBeenCalled();
+      expect(mockBuilderContext.getTargetOptions).toHaveBeenCalledOnce();
       expect(result).toEqual({
         tsConfig: '/test/tsconfig.json',
       });
@@ -223,7 +223,7 @@ describe('framework-preset-angular-cli', () => {
       const result = await getBuilderOptions(options, mockBuilderContext);
 
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular browser target options from "test-project:build"'
+        'Using angular browser target options from "test-project:build"'
       );
     });
 
@@ -243,7 +243,7 @@ describe('framework-preset-angular-cli', () => {
       const result = await getBuilderOptions(options, mockBuilderContext);
 
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular browser target options from "test-project:build:production"'
+        'Using angular browser target options from "test-project:build:production"'
       );
     });
 

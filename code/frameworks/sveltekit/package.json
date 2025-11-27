@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "10.0.0-beta.0",
+  "version": "10.2.0-alpha.0",
   "description": "Storybook for SvelteKit: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -32,8 +32,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./internal/MockProvider.svelte": "./static/MockProvider.svelte",
     "./internal/mocks/app/forms": "./dist/mocks/app/forms.js",
     "./internal/mocks/app/navigation": "./dist/mocks/app/navigation.js",
+    "./internal/mocks/app/state.svelte.js": "./static/app-state-mock.svelte.js",
     "./internal/mocks/app/stores": "./dist/mocks/app/stores.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
@@ -46,11 +48,11 @@
   },
   "files": [
     "dist/**/*",
+    "static/**/*",
     "template/**/*",
     "README.md",
     "*.js",
-    "*.d.ts",
-    "src/mocks/**/*"
+    "*.d.ts"
   ],
   "scripts": {
     "check": "jiti ../../../scripts/check/check-package.ts",
@@ -74,5 +76,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

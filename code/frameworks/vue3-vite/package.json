@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3-vite",
-  "version": "10.0.0-beta.0",
+  "version": "10.2.0-alpha.0",
   "description": "Storybook for Vue3 and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -53,14 +53,12 @@
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/vue3": "workspace:*",
-    "find-package-json": "^1.2.0",
     "magic-string": "^0.30.0",
     "typescript": "^5.8.3",
     "vue-component-meta": "^2.0.0",
     "vue-docgen-api": "^4.75.1"
   },
   "devDependencies": {
-    "@types/find-package-json": "^1.2.6",
     "@types/node": "^22.0.0",
     "typescript": "^5.8.3",
     "vite": "^7.0.4"
@@ -72,5 +70,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

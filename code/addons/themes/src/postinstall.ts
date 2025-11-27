@@ -1,26 +1,24 @@
-import { spawn } from 'child_process';
+import { PackageManagerName } from 'storybook/internal/common';
+
+import { spawnSync } from 'child_process';
 
 const PACKAGE_MANAGER_TO_COMMAND = {
-  npm: ['npx'],
-  pnpm: ['pnpm', 'dlx'],
-  yarn1: ['npx'],
-  yarn2: ['yarn', 'dlx'],
-  bun: ['bunx'],
+  [PackageManagerName.NPM]: 'npx',
+  [PackageManagerName.PNPM]: 'pnpm dlx',
+  [PackageManagerName.YARN1]: 'npx',
+  [PackageManagerName.YARN2]: 'yarn dlx',
+  [PackageManagerName.BUN]: 'bunx',
 };
 
 const selectPackageManagerCommand = (packageManager: string) =>
   PACKAGE_MANAGER_TO_COMMAND[packageManager as keyof typeof PACKAGE_MANAGER_TO_COMMAND];
 
-const spawnPackageManagerScript = async (packageManager: string, args: string[]) => {
-  const [command, ...baseArgs] = selectPackageManagerCommand(packageManager);
+export default async function postinstall({ packageManager = PackageManagerName.NPM }) {
+  const commandString = selectPackageManagerCommand(packageManager);
+  const [command, ...commandArgs] = commandString.split(' ');
 
-  await spawn(command, [...baseArgs, ...args], {
+  spawnSync(command, [...commandArgs, '@storybook/auto-config', 'themes'], {
     stdio: 'inherit',
     cwd: process.cwd(),
-    shell: true,
   });
-};
-
-export default async function postinstall({ packageManager = 'npm' }) {
-  await spawnPackageManagerScript(packageManager, ['@storybook/auto-config', 'themes']);
 }

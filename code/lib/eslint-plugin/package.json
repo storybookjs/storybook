@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-storybook",
-  "version": "10.0.0-beta.0",
+  "version": "10.2.0-alpha.0",
   "description": "Storybook ESLint Plugin: Best practice rules for writing stories",
   "keywords": [
     "eslint",
@@ -8,7 +8,7 @@
     "eslint-plugin",
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/code/lib/eslint-plugin#readme",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/eslint-plugin#readme",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },
@@ -68,5 +68,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

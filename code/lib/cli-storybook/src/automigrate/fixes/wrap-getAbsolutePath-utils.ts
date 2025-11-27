@@ -2,6 +2,7 @@ import { types as t } from 'storybook/internal/babel';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 
 const PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME = 'getAbsolutePath';
+// TODO: Remove in SB11
 const ALTERNATIVE_GET_ABSOLUTE_PATH_WRAPPER_NAME = 'wrapForPnp';
 
 /**
@@ -134,7 +135,7 @@ export function getFieldsForGetAbsolutePathWrapper(config: ConfigFile): t.Node[]
  *
  * ```ts
  * function getAbsolutePath(value) {
- *   return dirname(fileURLToPath(import.meta.resolve(join(value, 'package.json'))));
+ *   return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
  * }
  * ```
  */
@@ -162,10 +163,13 @@ export function getAbsolutePathWrapperAsCallExpression(
                   t.identifier('resolve')
                 ),
                 [
-                  t.callExpression(t.identifier('join'), [
-                    t.identifier('value'),
-                    t.stringLiteral('package.json'),
-                  ]),
+                  t.templateLiteral(
+                    [
+                      t.templateElement({ raw: '' }),
+                      t.templateElement({ raw: '/package.json' }, true),
+                    ],
+                    [t.identifier('value')]
+                  ),
                 ]
               ),
             ]),

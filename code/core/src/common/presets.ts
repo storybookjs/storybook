@@ -12,15 +12,15 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { parseNodeModulePath } from 'mlly';
 import { join, parse, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { importModule, safeResolveModule } from '../shared/utils/module';
 import { getInterpretedFile } from './utils/interpret-files';
+import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
 import { validateConfigurationFiles } from './utils/validate-configuration-files';
 
-type InterPresetOptions = Omit<
+export type InterPresetOptions = Omit<
   CLIOptions &
     LoadOptions &
     BuilderOptions & { isCritical?: boolean; build?: StorybookConfigRaw['build'] },
@@ -85,10 +85,10 @@ export const resolveAddonName = (
   if (managerFile || previewFile || presetFile) {
     const previewAnnotations = [];
     if (previewFile) {
-      const parsedPreviewFile = parseNodeModulePath(previewFile);
-      if (parsedPreviewFile.name) {
+      const parsedPreviewFile = stripAbsNodeModulesPath(previewFile);
+      if (parsedPreviewFile !== previewFile) {
         previewAnnotations.push({
-          bare: join(parsedPreviewFile.name, parsedPreviewFile.subpath || ''),
+          bare: parsedPreviewFile,
           absolute: previewFile,
         });
       } else {
@@ -321,7 +321,7 @@ export async function getPresets(
   const loadedPresets: LoadedPreset[] = await loadPresets(presets, 0, storybookOptions);
 
   return {
-    apply: async (extension: string, config: any, args = {}) =>
+    apply: async (extension: string, config?: any, args = {}) =>
       applyPresets(loadedPresets, extension, config, args, storybookOptions),
   };
 }

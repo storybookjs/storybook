@@ -1,3 +1,4 @@
+import { cp, mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
@@ -7,15 +8,17 @@ import { program } from 'commander';
 import type { Options as ExecaOptions } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { copy, emptyDir, ensureDir, move, remove, writeFile } from 'fs-extra';
 import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
+import { PackageManagerName } from '../../code/core/src/common/js-package-manager';
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
 import storybookVersions from '../../code/core/src/common/versions';
-import { allTemplates as sandboxTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import {
+  type Template,
+  allTemplates as sandboxTemplates,
+} from '../../code/lib/cli-storybook/src/sandbox-templates';
 import {
   AFTER_DIR_NAME,
   BEFORE_DIR_NAME,
@@ -27,7 +30,6 @@ import { esMain } from '../utils/esmain';
 import type { OptionValues } from '../utils/options';
 import { createOptions } from '../utils/options';
 import { getStackblitzUrl, renderTemplate } from './utils/template';
-import type { GeneratorConfig } from './utils/types';
 import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
@@ -76,6 +78,13 @@ const withLocalRegistry = async ({ action, cwd, env, debug }: LocalRegistryProps
   }
 };
 
+const emptyDir = async (dir: string): Promise<void> => {
+  await mkdir(dir, { recursive: true });
+
+  const names = await readdir(dir);
+  await Promise.all(names.map((name) => rm(join(dir, name), { recursive: true, force: true })));
+};
+
 const addStorybook = async ({
   localRegistry,
   baseDir,
@@ -95,21 +104,21 @@ const addStorybook = async ({
   const tmpDir = await temporaryDirectory();
 
   try {
-    await copy(beforeDir, tmpDir);
+    await cp(beforeDir, tmpDir, { recursive: true });
 
     if (localRegistry) {
       await addResolutions(tmpDir);
     }
 
-    await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
+    await sbInit(tmpDir, env, [...flags, `--package-manager=${PackageManagerName.YARN1}`], debug);
   } catch (e) {
     console.log('error', e);
-    await remove(tmpDir);
+    await rm(tmpDir, { recursive: true, force: true });
     throw e;
   }
 
-  await copy(tmpDir, afterDir);
-  await remove(tmpDir);
+  await cp(tmpDir, afterDir, { recursive: true });
+  await rm(tmpDir, { recursive: true, force: true });
 };
 
 export const runCommand = async (script: string, options: ExecaOptions, debug = false) => {
@@ -133,7 +142,7 @@ const addDocumentation = async (
   const stackblitzConfigPath = join(__dirname, 'templates', '.stackblitzrc');
   const readmePath = join(__dirname, 'templates', 'item.ejs');
 
-  await copy(stackblitzConfigPath, join(afterDir, '.stackblitzrc'));
+  await cp(stackblitzConfigPath, join(afterDir, '.stackblitzrc'));
 
   const stackblitzUrl = getStackblitzUrl(dirName);
   const contents = await renderTemplate(readmePath, {
@@ -143,8 +152,34 @@ const addDocumentation = async (
   await writeFile(join(afterDir, 'README.md'), contents);
 };
 
+const toFlags = (opts: Record<string, any>): string[] => {
+  const result: string[] = [];
+  for (const [key, value] of Object.entries(opts)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+    if (typeof value === 'boolean') {
+      if (value) {
+        result.push(`--${key}`);
+      }
+    } else if (Array.isArray(value)) {
+      for (const v of value) {
+        result.push(`--${key} ${String(v)}`);
+      }
+    } else if (typeof value === 'string') {
+      // Normalize ProjectType-like values to lower-case for CLI
+      const val = key === 'type' ? value.toLowerCase() : value;
+      result.push(`--${key} ${val}`);
+    } else {
+      // Fallback: stringify
+      result.push(`--${key} ${JSON.stringify(value)}`);
+    }
+  }
+  return result;
+};
+
 const runGenerators = async (
-  generators: (GeneratorConfig & { dirName: string })[],
+  generators: (Template & { dirName: string })[],
   localRegistry = true,
   debug = false
 ) => {
@@ -157,19 +192,15 @@ const runGenerators = async (
   const limit = pLimit(1);
 
   const generationResults = await Promise.allSettled(
-    generators.map(({ dirName, name, script, expected, env }) =>
+    generators.map(({ dirName, name, script, env, initOptions }) =>
       limit(async () => {
         const baseDir = join(REPROS_DIRECTORY, dirName);
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
         try {
           let flags: string[] = ['--no-dev'];
 
-          if (expected.renderer === '@storybook/html') {
-            flags = ['--type html'];
-          } else if (expected.renderer === '@storybook/server') {
-            flags = ['--type server'];
-          } else if (expected.framework === '@storybook/react-native-web-vite') {
-            flags = ['--type react_native_web'];
+          if (initOptions && typeof initOptions === 'object') {
+            flags = [...flags, ...toFlags(initOptions as Record<string, any>)];
           }
 
           const time = process.hrtime();
@@ -215,7 +246,7 @@ const runGenerators = async (
                 debug
               );
             } else {
-              await ensureDir(createBeforeDir);
+              await mkdir(createBeforeDir, { recursive: true });
               await runCommand(script, { cwd: createBeforeDir, timeout: SCRIPT_TIMEOUT }, debug);
             }
           } catch (error) {
@@ -233,10 +264,10 @@ const runGenerators = async (
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
 
           // Now move the created before dir into it's final location and add storybook
-          await move(createBeforeDir, beforeDir);
+          await rename(createBeforeDir, beforeDir);
 
           // Make sure there are no git projects in the folder
-          await remove(join(beforeDir, '.git'));
+          await rm(join(beforeDir, '.git'), { recursive: true, force: true });
 
           try {
             await addStorybook({ baseDir, localRegistry, flags, debug, env });
@@ -269,9 +300,12 @@ const runGenerators = async (
           // They're not uploaded to the git sandboxes repo anyway
           if (process.env.CLEANUP_SANDBOX_NODE_MODULES) {
             console.log(`🗑️ Removing ${join(beforeDir, 'node_modules')}`);
-            await remove(join(beforeDir, 'node_modules'));
+            await rm(join(beforeDir, 'node_modules'), { recursive: true, force: true });
             console.log(`🗑️ Removing ${join(baseDir, AFTER_DIR_NAME, 'node_modules')}`);
-            await remove(join(baseDir, AFTER_DIR_NAME, 'node_modules'));
+            await rm(join(baseDir, AFTER_DIR_NAME, 'node_modules'), {
+              recursive: true,
+              force: true,
+            });
           }
         }
       })

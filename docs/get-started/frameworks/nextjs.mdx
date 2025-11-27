@@ -1,12 +1,12 @@
 ---
-title: Storybook for Next.js
+title: Storybook for Next.js with Webpack
 hideRendererSelector: true
 sidebar:
-  order: 2
-  title: Next.js
+  order: 3
+  title: Next.js (Webpack)
 ---
 
-Storybook for Next.js is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Next.js](https://nextjs.org/) applications. It includes:
+Storybook for Next.js (Webpack) is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Next.js](https://nextjs.org/) applications using Webpack 5. It includes:
 
 * 🔀 Routing
 * 🖼 Image optimization
@@ -15,6 +15,17 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 * 🎛 Webpack & Babel config
 * 💫 and more!
 
+<Callout variant="info">
+
+**We recommend using [`@storybook/nextjs-vite`](./nextjs-vite.mdx)** for most Next.js projects. The Vite-based framework is faster, more modern, and offers better support for testing features.
+
+Use this Webpack-based framework (`@storybook/nextjs`) only if:
+- Your project has custom Webpack configurations that are incompatible with Vite
+- Your project has custom Babel configurations that require Webpack
+- You need specific Webpack features not available in Vite
+
+</Callout>
+
 ## Requirements
 
 * Next.js ≥ 14.1
@@ -22,6 +33,21 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 ## Getting started
 
 ### In a project without Storybook
+
+When you run `storybook init` in your Next.js project, Storybook will automatically detect your project and select the [`@storybook/nextjs-vite`](./nextjs-vite.mdx) framework (which we recommend) unless your project has custom Webpack or Babel configurations that may be incompatible with Vite.
+
+
+<details>
+<summary>If your project has custom Webpack/Babel configurations</summary>
+
+If `storybook init` detects a custom Webpack configuration in your Next.js config file or `.babelrc` file, it will prompt you to choose between:
+
+- **`@storybook/nextjs-vite`** (recommended) - Faster, more modern, supports latest testing features, but may be incompatible with your custom Webpack/Babel config
+- **`@storybook/nextjs`** (Webpack 5) - Better compatibility with custom Webpack/Babel configurations
+
+Choose `@storybook/nextjs` (Webpack 5) if you need to keep your existing Webpack/Babel setup and cannot migrate to Vite.
+
+</details>
 
 Follow the prompts after running this command in your Next.js project's root directory:
 
@@ -73,37 +99,9 @@ Finally, if you were using Storybook plugins to integrate with Next.js, those ar
 
 {/* prettier-ignore-end */}
 
-#### With Vite
+#### Migrating to Vite
 
-Storybook recommends using the `@storybook/nextjs-vite` framework, which is based on Vite and removes the need for Webpack and Babel. It supports all of the features documented here.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="nextjs-vite-install.md" />
-
-{/* prettier-ignore-end */}
-
-Then, update your `.storybook/main.js|ts` to change the framework property:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="nextjs-vite-add-framework.md" />
-
-{/* prettier-ignore-end */}
-
-<Callout variant="info">
-  If your Storybook configuration contains custom Webpack operations in [`webpackFinal`](../../api/main-config/main-config-webpack-final.mdx), you will likely need to create equivalents in [`viteFinal`](../../api/main-config/main-config-vite-final.mdx).
-
-  For more information, see the [Vite builder documentation](../../builders/vite.mdx#migrating-from-webpack).
-</Callout>
-
-Finally, if you were using Storybook plugins to integrate with Next.js, those are no longer necessary when using this framework and can be removed:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="nextjs-vite-remove-addons.md" />
-
-{/* prettier-ignore-end */}
+Please refer to the [migration instructions for `@storybook/nextjs-vite`](./nextjs-vite.mdx#migrating-from-webpack).
 
 ## Run the Setup Wizard
 
@@ -183,10 +181,6 @@ const localRubikStorm = localFont({ src: './fonts/RubikStorm-Regular.ttf' });
 ```
 
 #### `staticDir` mapping
-
-<Callout variant="info">
-  You can safely skip this section if you are using [`@storybook/nextjs-vite`](#with-vite) instead of `@storybook/nextjs`. The Vite-based framework takes care of the mapping automatically.
-</Callout>
 
 You have to tell Storybook where the `fonts` directory is located, via the [`staticDirs` configuration](../../api/main-config/main-config-static-dirs.mdx#with-configuration-objects). The `from` value is relative to the `.storybook` directory. The `to` value is relative to the execution context of Storybook. Very likely it is the root of your project.
 
@@ -298,11 +292,10 @@ Additionally, the [`router` object](https://nextjs.org/docs/pages/api-reference/
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
 ```ts title=".storybook/preview.js|ts"
-// Replace your-framework with nextjs or nextjs-vite
-import type { Preview } from '@storybook/your-framework';
+import type { Preview } from '@storybook/nextjs';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from "@storybook/your-framework/router.mock";
+import { getRouter } from "@storybook/nextjs/router.mock";
 
 const preview: Preview = {
   parameters: {
@@ -427,11 +420,10 @@ Additionally, the [`router` object](https://nextjs.org/docs/app/api-reference/fu
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
 ```ts title=".storybook/preview.js|ts"
-// Replace your-framework with nextjs or nextjs-vite
-import type { Preview } from '@storybook/your-framework';
+import type { Preview } from '@storybook/nextjs';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from '@storybook/your-framework/navigation.mock';
+import { getRouter } from '@storybook/nextjs/navigation.mock';
 
 const preview: Preview = {
   parameters: {
@@ -695,11 +687,6 @@ Calls to `getConfig` would return the following object when called within Storyb
 
 ## Custom Webpack config
 
-<Callout variant="info">
-  You can safely skip this section if you are using `@storybook/nextjs-vite` instead of `@storybook/nextjs`.
-  The Vite-based Next.js framework does not support Webpack settings.
-</Callout>
-
 Next.js comes with a lot of things for free out of the box like Sass support, but sometimes you add [custom Webpack config modifications to Next.js](https://nextjs.org/docs/pages/api-reference/next-config-js/webpack). This framework takes care of most of the Webpack modifications you would want to add. If Next.js supports a feature out of the box, then that feature will work out of the box in Storybook. If Next.js doesn't support something out of the box, but makes it easy to configure, then this framework will do the same for that thing for Storybook.
 
 Any Webpack modifications desired for Storybook should be made in [`.storybook/main.js|ts`](../../builders/webpack.mdx#extending-storybooks-webpack-config).
@@ -840,9 +827,9 @@ See [local images](https://nextjs.org/docs/pages/building-your-application/optim
 
 You might get this if you're using Yarn v2 or v3. See [Notes for Yarn v2 and v3 users](#notes-for-yarn-v2-and-v3-users) for more details.
 
-### What if I'm using the Vite builder?
+### Should I use the Vite or Webpack version?
 
-Storybook provides a Vite-based framework for Next.js. Follow the [installation instructions](#with-vite) and replace all instances of `@storybook/nextjs` with `@storybook/nextjs-vite`.
+We recommend using [`@storybook/nextjs-vite`](./nextjs-vite.mdx) (Vite-based) for most projects because it offers faster builds, better test support, and a simpler configuration. However, if your project has custom Webpack configurations that are incompatible with Vite, use this framework instead.
 
 ### Error: You are importing avif images, but you don't have sharp installed. You have to install sharp in order to use image optimization features in Next.js.
 
@@ -866,7 +853,7 @@ You can refer to the [Install `sharp` to Use Built-In Image Optimization](https:
 
 ### Modules
 
-The `@storybook/nextjs` package exports several modules that enable you to [mock](#mocking-modules) Next.js's internal behavior.
+The `@storybook/nextjs` package exports several modules that enable you to [mock](#mocking-modules) Next.js's internal behavior.
 
 #### `@storybook/nextjs/export-mocks`
 
@@ -961,11 +948,10 @@ You can pass an options object for additional configuration if needed:
 ```js title=".storybook/main.js"
 import * as path from 'path';
 
-// Replace your-framework with nextjs or nextjs-vite
 export default {
   // ...
   framework: {
-    name: '@storybook/your-framework',
+    name: '@storybook/nextjs',
     options: {
       image: {
         loading: 'eager',

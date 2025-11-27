@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte-vite",
-  "version": "10.0.0-beta.0",
+  "version": "10.2.0-alpha.0",
   "description": "Storybook for Svelte and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -56,13 +56,13 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/svelte": "workspace:*",
     "magic-string": "^0.30.0",
-    "svelte2tsx": "^0.7.35",
+    "svelte2tsx": "^0.7.44",
     "typescript": "^4.9.4 || ^5.0.0"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@sveltejs/vite-plugin-svelte": "^6.2.0",
     "@types/node": "^22.0.0",
-    "svelte": "^5.0.5",
+    "svelte": "^5.39.5",
     "sveltedoc-parser": "^4.2.1",
     "typescript": "^5.8.3",
     "vite": "^7.0.4"
@@ -76,5 +76,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

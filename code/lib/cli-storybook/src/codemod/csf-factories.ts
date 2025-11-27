@@ -27,23 +27,14 @@ async function runStoriesCodemod(options: {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
-        initialValue: 'src/**/*.stories.*',
+        initialValue: '**/*.stories.*',
       });
     }
 
-    logger.log('\n🛠️  Applying codemod on your stories, this might take some time...');
+    logger.step('Applying codemod on your stories, this might take some time...');
 
-    // TODO: Move the csf-2-to-3 codemod into automigrations
-    await packageManager.executeCommand({
-      command: packageManager.getRemoteRunCommand('storybook', [
-        'migrate',
-        'csf-2-to-3',
-        '--glob',
-        globString,
-      ]),
-      args: [],
-      stdio: 'ignore',
-      ignoreError: true,
+    await packageManager.runPackageCommand({
+      args: ['storybook', 'migrate', 'csf-2-to-3', `--glob="${globString}"`],
     });
 
     await runCodemod(globString, (info) => storyToCsfFactory(info, codemodOptions), {
@@ -63,26 +54,25 @@ export const csfFactories: CommandFix = {
   promptType: 'command',
   async run({ dryRun, mainConfig, mainConfigPath, previewConfigPath, packageManager, configDir }) {
     let useSubPathImports = true;
+
     if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
-        The CSF factories format benefits from subpath imports (the imports property in your \`package.json\`), which is a node standard for module resolution. This makes it more convenient to import the preview config in your story files.
-      
-        However, please note that this might not work if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
-      
-        More info: ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports?ref=upgrade')}
-
-        As we modify your story files, we can create two types of imports:
-      
-        - ${picocolors.bold('Subpath imports (recommended):')} ${picocolors.cyan("`import preview from '#.storybook/preview'`")}
-        - ${picocolors.bold('Relative imports (suitable for mono repos):')} ${picocolors.cyan("`import preview from '../../.storybook/preview'`")}
+        The CSF Factories format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
+        
+        However, we cannot broadly recommend it for all projects, because it might not work in some monorepo setups or if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
+        
+        More info: ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next#subpath-imports?ref=upgrade')}
       `);
 
       useSubPathImports = await prompt.select<boolean>({
-        message: 'Which would you like to use?',
+        message: 'Which import type would you like to use for your story files?',
         options: [
-          { label: 'Subpath imports', value: true },
-          { label: 'Relative imports', value: false },
+          {
+            label: "Relative imports (import preview from '../../.storybook/preview')",
+            value: false,
+          },
+          { label: "Subpath imports (import preview from '#.storybook/preview')", value: true },
         ],
       });
     }
@@ -90,8 +80,8 @@ export const csfFactories: CommandFix = {
     const { packageJson } = packageManager.primaryPackageJson;
 
     if (useSubPathImports && !packageJson.imports?.['#*']) {
-      logger.log(
-        `🗺️ Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
+      logger.step(
+        `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
       );
       packageJson.imports = {
         ...packageJson.imports,
@@ -108,14 +98,14 @@ export const csfFactories: CommandFix = {
       previewConfigPath: previewConfigPath!,
     });
 
-    logger.log('\n🛠️  Applying codemod on your main config...');
+    logger.step('Applying codemod on your main config...');
     const frameworkPackage =
       getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
     await runCodemod(mainConfigPath, (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage }, { dryRun })
     );
 
-    logger.log('\n🛠️  Applying codemod on your preview config...');
+    logger.step('Applying codemod on your preview config...');
     await runCodemod(previewConfigPath, (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage }, { dryRun })
     );
@@ -127,7 +117,7 @@ export const csfFactories: CommandFix = {
           You can now run Storybook with the new CSF factories format.
           
           For more info, check out the docs:
-          ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories?ref=upgrade')}
+          ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next?ref=upgrade')}
         `
     );
   },

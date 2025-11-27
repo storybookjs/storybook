@@ -1,7 +1,7 @@
 import type { FC, MouseEventHandler, PropsWithChildren, ReactNode } from 'react';
 import React, { useCallback, useEffect } from 'react';
 
-import { Button, IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
@@ -10,11 +10,12 @@ import { TrashIcon } from '@storybook/icons';
 import type { ControllerStateAndHelpers } from 'downshift';
 import { transparentize } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
-import { statusMapping } from '../../utils/status';
+import { getStatus } from '../../utils/status';
 import { UseSymbol } from './IconSymbols';
+import { NoResults } from './NoResults';
 import { StatusLabel } from './StatusButton';
 import { TypeIcon } from './TreeNode';
 import type { DownshiftItem, Match, SearchResult } from './types';
@@ -63,18 +64,6 @@ const ResultRowContent = styled.div({
   flexDirection: 'column',
 });
 
-const NoResults = styled.div(({ theme }) => ({
-  marginTop: 20,
-  textAlign: 'center',
-  fontSize: `${theme.typography.size.s2}px`,
-  lineHeight: `18px`,
-  color: theme.color.defaultText,
-  small: {
-    color: theme.textMutedColor,
-    fontSize: `${theme.typography.size.s1}px`,
-  },
-}));
-
 const Mark = styled.mark(({ theme }) => ({
   background: 'transparent',
   color: theme.color.secondary,
@@ -93,7 +82,6 @@ const RecentlyOpenedTitle = styled.div(({ theme }) => ({
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
   color: theme.textMutedColor,
-  marginTop: 16,
   marginBottom: 4,
   alignItems: 'center',
 
@@ -130,7 +118,7 @@ const Highlight: FC<PropsWithChildren<{ match?: Match }>> = React.memo(function 
   return <span>{result}</span>;
 });
 
-const Title = styled.div(({ theme }) => ({
+const Title = styled.div({
   display: 'grid',
   justifyContent: 'start',
   gridAutoColumns: 'auto',
@@ -142,7 +130,7 @@ const Title = styled.div(({ theme }) => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
-}));
+});
 
 const Path = styled.div(({ theme }) => ({
   display: 'grid',
@@ -170,6 +158,7 @@ const Result: FC<
     isHighlighted: boolean;
   } & React.DetailedHTMLProps<React.LiHTMLAttributes<HTMLLIElement>, HTMLLIElement>
 > = React.memo(function Result({ item, matches, onClick, ...props }) {
+  const theme = useTheme();
   const click: MouseEventHandler<HTMLLIElement> = useCallback(
     (event) => {
       event.preventDefault();
@@ -183,12 +172,12 @@ const Result: FC<
     if (api && props.isHighlighted && item.type === 'component') {
       api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]] }, { options: { target: item.refId } });
     }
-  }, [props.isHighlighted, item]);
+  }, [api, props.isHighlighted, item]);
 
   const nameMatch = matches.find((match: Match) => match.key === 'name');
   const pathMatches = matches.filter((match: Match) => match.key === 'path');
 
-  const [icon] = item.status ? statusMapping[item.status] : [];
+  const [icon] = item.status ? getStatus(theme, item.status) : [];
 
   return (
     <ResultRow {...props} onClick={click}>
@@ -199,8 +188,8 @@ const Result: FC<
           </TypeIcon>
         )}
         {item.type === 'story' && (
-          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="story">
-            <UseSymbol type="story" />
+          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type={item.subtype}>
+            <UseSymbol type={item.subtype} />
           </TypeIcon>
         )}
         {!(item.type === 'component' || item.type === 'story') && (
@@ -300,19 +289,21 @@ export const SearchResults: FC<{
       {results.length > 0 && !query && (
         <RecentlyOpenedTitle className="search-result-recentlyOpened">
           Recently opened
-          <IconButton
+          <Button
+            padding="small"
+            variant="ghost"
             className="search-result-recentlyOpened-clear"
             onClick={handleClearLastViewed}
+            ariaLabel="Clear recently opened items"
           >
             <TrashIcon />
-          </IconButton>
+          </Button>
         </RecentlyOpenedTitle>
       )}
       {results.length === 0 && query && (
         <li>
           <NoResults>
             <strong>No components found</strong>
-            <br />
             <small>Find components by name or path.</small>
           </NoResults>
         </li>
@@ -323,7 +314,6 @@ export const SearchResults: FC<{
           const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
-              {/* @ts-expect-error (non strict) */}
               <Button key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>

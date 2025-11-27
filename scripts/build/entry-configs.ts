@@ -3,8 +3,6 @@ import a11yConfig from '../../../code/addons/a11y/build-config';
 // @ts-ignore
 import docsConfig from '../../../code/addons/docs/build-config';
 // @ts-ignore
-import jestConfig from '../../../code/addons/jest/build-config';
-// @ts-ignore
 import linksConfig from '../../../code/addons/links/build-config';
 // @ts-ignore
 import onboardingConfig from '../../../code/addons/onboarding/build-config';
@@ -95,7 +93,6 @@ export const buildEntries = {
   'storybook-addon-pseudo-states': pseudoStatesConfig,
   '@storybook/addon-themes': themesConfig,
   '@storybook/addon-vitest': vitestConfig,
-  '@storybook/addon-jest': jestConfig,
 
   // builders
   '@storybook/builder-vite': builderViteConfig,

@@ -1,59 +1,27 @@
-import { sep } from 'node:path';
-
 import {
-  extractProperRendererNameFromFramework,
+  extractFrameworkPackageName,
+  frameworkPackages,
+  frameworkToRenderer,
   getFrameworkName,
 } from 'storybook/internal/common';
-import type { Options } from 'storybook/internal/types';
-
-interface PropertyObject {
-  name: string;
-  options?: Record<string, any>;
-}
-
-type Property = string | PropertyObject | undefined;
-
-export const pluckNameFromConfigProperty = (property: Property) => {
-  if (!property) {
-    return undefined;
-  }
-
-  return typeof property === 'string' ? property : property.name;
-};
-
-// For replacing Windows backslashes with forward slashes
-const normalizePath = (packagePath: string) => packagePath.replaceAll(sep, '/');
-
-export const pluckStorybookPackageFromPath = (packagePath: string) =>
-  normalizePath(packagePath).match(/(@storybook\/.*)$/)?.[1];
-
-export const pluckThirdPartyPackageFromPath = (packagePath: string) =>
-  normalizePath(packagePath).split('node_modules/')[1] ?? packagePath;
+import { type Options, SupportedBuilder } from 'storybook/internal/types';
 
 export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
-  const globals: Record<string, any> = {};
+  const globals: Record<string, string | undefined> = {};
 
-  const { builder } = await options.presets.apply('core');
+  const builderConfig = (await options.presets.apply('core')).builder;
+  const builderName = typeof builderConfig === 'string' ? builderConfig : builderConfig?.name;
+  const builder = Object.values(SupportedBuilder).find((builder) => builderName?.includes(builder));
 
   const frameworkName = await getFrameworkName(options);
-  const rendererName = await extractProperRendererNameFromFramework(frameworkName);
+  const frameworkPackageName = extractFrameworkPackageName(frameworkName);
+  const framework = frameworkPackages[frameworkPackageName];
+  const renderer = frameworkToRenderer[framework];
 
-  if (rendererName) {
-    globals.STORYBOOK_RENDERER =
-      (await extractProperRendererNameFromFramework(frameworkName)) ?? undefined;
-  }
-
-  const resolvedPreviewBuilder = pluckNameFromConfigProperty(builder);
-  if (resolvedPreviewBuilder) {
-    globals.STORYBOOK_BUILDER =
-      pluckStorybookPackageFromPath(resolvedPreviewBuilder) ??
-      pluckThirdPartyPackageFromPath(resolvedPreviewBuilder);
-  }
-
-  const framework = pluckNameFromConfigProperty(await options.presets.apply('framework'));
-  if (framework) {
-    globals.STORYBOOK_FRAMEWORK = framework;
-  }
+  globals.STORYBOOK_BUILDER = builder;
+  globals.STORYBOOK_FRAMEWORK = framework;
+  globals.STORYBOOK_RENDERER = renderer;
+  globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
 
   return globals;
 };

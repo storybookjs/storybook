@@ -11,11 +11,10 @@
  *
  * When you pass no package names, you will be prompted to select which packages to build.
  */
+import { readFile } from 'node:fs/promises';
+
 import { exec } from 'child_process';
 import { program } from 'commander';
-// eslint-disable-next-line depend/ban-dependencies
-// eslint-disable-next-line depend/ban-dependencies
-import { readJSON } from 'fs-extra';
 import { posix, resolve, sep } from 'path';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
@@ -166,9 +165,8 @@ async function run() {
   let lastName = '';
 
   selection.forEach(async (v) => {
-    const command = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts?.prep
-      .split(posix.sep)
-      .join(sep);
+    const content = await readFile(resolve('../code', v.location, 'package.json'), 'utf-8');
+    const command = JSON.parse(content).scripts?.prep.split(posix.sep).join(sep);
 
     if (!command) {
       console.log(`No prep script found for ${v.name}`);

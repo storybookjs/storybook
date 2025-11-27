@@ -1,7 +1,5 @@
+import { access, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists, readJSON, writeJSON } from 'fs-extra';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
@@ -17,6 +15,15 @@ export type YarnOptions = {
 
 const logger = console;
 
+const pathExists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   logger.info(`🔢 Adding package resolutions:`);
 
@@ -25,7 +32,8 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   }
 
   const packageJsonPath = join(cwd, 'package.json');
-  const packageJson = await readJSON(packageJsonPath);
+  const content = await readFile(packageJsonPath, 'utf-8');
+  const packageJson = JSON.parse(content);
   packageJson.resolutions = {
     ...packageJson.resolutions,
     ...storybookVersions,
@@ -35,10 +43,13 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     '@playwright/test': '1.52.0',
     rollup: '4.44.2',
   };
-  await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
 
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
+  await rm(join(cwd, '.yarnrc.yml'), { force: true }).catch(() => {});
+
+  // TODO: Remove in SB11
   const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
   const command = [
@@ -79,7 +90,8 @@ export const addWorkaroundResolutions = async ({
   }
 
   const packageJsonPath = join(cwd, 'package.json');
-  const packageJson = await readJSON(packageJsonPath);
+  const content = await readFile(packageJsonPath, 'utf-8');
+  const packageJson = JSON.parse(content);
 
   const additionalReact19Resolutions = ['nextjs/default-ts', 'nextjs/prerelease'].includes(key)
     ? {
@@ -91,7 +103,11 @@ export const addWorkaroundResolutions = async ({
           react: packageJson.dependencies.react,
           'react-dom': packageJson.dependencies['react-dom'],
         }
-      : {};
+      : key === 'react-rsbuild/default-ts'
+        ? {
+            'react-docgen': '^8.0.2',
+          }
+        : {};
 
   packageJson.resolutions = {
     ...packageJson.resolutions,
@@ -99,11 +115,10 @@ export const addWorkaroundResolutions = async ({
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
-    typescript: '~5.7.3',
     rollup: '4.44.2',
   };
 
-  await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
 
 export const configureYarn2ForVerdaccio = async ({
@@ -132,7 +147,11 @@ export const configureYarn2ForVerdaccio = async ({
     // React prereleases will have INCOMPATIBLE_PEER_DEPENDENCY errors because of transitive dependencies not allowing v19 betas
     key.includes('nextjs') ||
     key.includes('react-vite/prerelease') ||
-    key.includes('react-webpack/prerelease')
+    key.includes('react-webpack/prerelease') ||
+    key.includes('react-rsbuild/default-ts') ||
+    key.includes('vue-rsbuild/default-ts') ||
+    key.includes('html-rsbuild/default-ts') ||
+    key.includes('web-components-rsbuild/default-ts')
   ) {
     // Don't error with INCOMPATIBLE_PEER_DEPENDENCY for SvelteKit sandboxes, it is expected to happen with @sveltejs/vite-plugin-svelte
     command.push(

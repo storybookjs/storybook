@@ -1,15 +1,18 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { platform } from 'node:os';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
+// eslint-disable-next-line depend/ban-dependencies
+import type { ExecaChildProcess } from 'execa';
 import sort from 'semver/functions/sort.js';
 
+import type { ExecuteCommandOptions } from '../utils/command';
+import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 
@@ -64,12 +67,12 @@ const NPM_ERROR_CODES = {
 };
 
 export class BUNProxy extends JsPackageManager {
-  readonly type = 'bun';
+  readonly type = PackageManagerName.BUN;
 
   installArgs: string[] | undefined;
 
   async initPackageJson() {
-    return this.executeCommand({ command: 'bun', args: ['init'] });
+    return executeCommand({ command: 'bun', args: ['init'] });
   }
 
   getRunStorybookCommand(): string {
@@ -84,14 +87,16 @@ export class BUNProxy extends JsPackageManager {
     return `bunx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
   }
 
+  getPackageCommand(args: string[]): string {
+    return `bunx ${args.join(' ')}`;
+  }
+
   public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const packageJsonPath = findUpSync(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: this.cwd, stopAt: getProjectRoot() }
-    );
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;
@@ -108,31 +113,21 @@ export class BUNProxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  public runPackageCommandSync(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ): string {
-    return this.executeCommandSync({
-      command: 'bun',
-      args: ['run', command, ...args],
-      cwd,
-      stdio,
-    });
-  }
-
   public runPackageCommand(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ) {
-    return this.executeCommand({
-      command: 'bun',
-      args: ['run', command, ...args],
-      cwd,
-      stdio,
+    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
+  ): ExecaChildProcess {
+    // The following command is unsafe to use with `bun run`
+    // because it will always favour a equally script named in the package.json instead of the installed binary.
+    // so running `bun storybook automigrate` will run the
+    // `storybook` script (dev) instead of the `storybook`. binary.
+    // return executeCommand({
+    //   command: 'bun',
+    //   args: ['run', ...args],
+    //   ...options,
+    // });
+    return executeCommand({
+      command: 'bunx',
+      ...options,
     });
   }
 
@@ -142,15 +137,21 @@ export class BUNProxy extends JsPackageManager {
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
   ) {
-    return this.executeCommand({ command: 'bun', args: [command, ...args], cwd, stdio });
+    return executeCommand({
+      command: 'bun',
+      args: [command, ...args],
+      cwd: cwd ?? this.cwd,
+      stdio,
+    });
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     const exec = async ({ packageDepth }: { packageDepth: number }) => {
-      const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
-      return this.executeCommand({
+      return executeCommand({
         command: 'npm',
-        args: ['ls', '--json', `--depth=${packageDepth}`, pipeToNull],
+        args: ['ls', '--json', `--depth=${packageDepth}`],
+        cwd: this.cwd,
+        stdio: ['ignore', 'pipe', 'ignore'],
         env: {
           FORCE_COLOR: 'false',
         },
@@ -175,7 +176,9 @@ export class BUNProxy extends JsPackageManager {
 
         return this.mapDependencies(parsedOutput, pattern);
       } catch (err) {
-        logger.debug(`An issue occurred while trying to find dependencies metadata using npm.`);
+        logger.debug(
+          `An issue occurred while trying to find dependencies metadata using npm: ${err}`
+        );
         return undefined;
       }
     }
@@ -191,17 +194,18 @@ export class BUNProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
-    return this.executeCommand({
+    return executeCommand({
       command: 'bun',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
-      stdio: 'inherit',
       cwd: this.cwd,
+      stdio: prompt.getPreferredStdio(),
     });
   }
 
   public async getRegistryURL() {
-    const process = this.executeCommand({
+    const process = executeCommand({
       command: 'npm',
+      cwd: this.cwd,
       // "npm config" commands are not allowed in workspaces per default
       // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
       args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
@@ -218,7 +222,7 @@ export class BUNProxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
-    return this.executeCommand({
+    return executeCommand({
       command: 'bun',
       args: ['add', ...args, ...this.getInstallArgs()],
       stdio: 'pipe',
@@ -232,8 +236,9 @@ export class BUNProxy extends JsPackageManager {
   ): Promise<T extends true ? string[] : string> {
     const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
     try {
-      const process = this.executeCommand({
+      const process = executeCommand({
         command: 'npm',
+        cwd: this.cwd,
         args: ['info', packageName, ...args],
       });
       const result = await process;

@@ -41,7 +41,8 @@ export const steps = {
     options: createOptions({
       yes: { type: 'boolean' },
       type: { type: 'string' },
-      debug: { type: 'boolean' },
+      loglevel: { type: 'string' },
+      builder: { type: 'string' },
       'skip-install': { type: 'boolean' },
     }),
   },
@@ -114,7 +115,7 @@ export async function executeCLIStep<TOptions extends OptionSpecifier>(
   const prefix = ['dev', 'build'].includes(cliCommand)
     ? `node "${cliExecutable}" ${cliCommand}`
     : cliCommand === 'init'
-      ? `node "${createStorybookExecutable}" ${cliCommand}`
+      ? `node "${createStorybookExecutable}"`
       : `node "${toolboxExecutable}" ${cliCommand}`;
   const command = getCommand(
     cliStep.hasArgument ? `${prefix} ${options.argument}` : prefix,

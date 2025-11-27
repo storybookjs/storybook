@@ -1,11 +1,8 @@
-import { global } from '@storybook/global';
-
 import type { API_KeyCollection } from '../modules/shortcuts';
+import { isMacLike } from './platform';
 
-const { navigator } = global;
+export type { API_KeyCollection } from '../modules/shortcuts';
 
-export const isMacLike = () =>
-  navigator && navigator.platform ? !!navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) : false;
 export const controlOrMetaSymbol = () => (isMacLike() ? '⌘' : 'ctrl');
 export const controlOrMetaKey = () => (isMacLike() ? 'meta' : 'control');
 export const optionOrAltSymbol = () => (isMacLike() ? '⌥' : 'alt');
@@ -23,7 +20,7 @@ export type KeyboardEventLike = Pick<
 // NOTE: if we change the fields on the event that we need, we'll need to update the serialization in core/preview/start.js
 export const eventToShortcut = (e: KeyboardEventLike): (string | string[])[] | null => {
   // Meta key only doesn't map to a shortcut
-  if (['Meta', 'Alt', 'Control', 'Shift'].includes(e.key)) {
+  if (['Meta', 'Alt', 'Control', 'Shift', 'Tab'].includes(e.key)) {
     return null;
   }
 
@@ -41,18 +38,44 @@ export const eventToShortcut = (e: KeyboardEventLike): (string | string[])[] | n
     keys.push('shift');
   }
 
+  // Derive a key from the physical code (letter/digit/punctuation) when needed
+  const codeUpper = e.code?.toUpperCase();
+  const codeToCharMap: Record<string, string> = {
+    MINUS: '-',
+    EQUAL: '=',
+    BRACKETLEFT: '[',
+    BRACKETRIGHT: ']',
+    BACKSLASH: '\\',
+    SEMICOLON: ';',
+    QUOTE: "'",
+    BACKQUOTE: '`',
+    COMMA: ',',
+    PERIOD: '.',
+    SLASH: '/',
+  };
+  const codeChar = codeUpper
+    ? codeUpper.startsWith('KEY') && codeUpper.length === 4
+      ? codeUpper.replace('KEY', '')
+      : codeUpper.startsWith('DIGIT')
+        ? codeUpper.replace('DIGIT', '')
+        : codeToCharMap[codeUpper]
+    : undefined;
+
   if (e.key && e.key.length === 1 && e.key !== ' ') {
     const key = e.key.toUpperCase();
-    // Using `event.code` to support `alt (option) + <key>` on macos which returns special characters
+    // Using `event.code` to support `alt (option) + <key>` on macOS which returns special characters
     // See full list of event.code here:
     // https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_code_values
-    const code = e.code?.toUpperCase().replace('KEY', '').replace('DIGIT', '');
+    const code = codeChar;
 
     if (code && code.length === 1 && code !== key) {
       keys.push([key, code]);
     } else {
       keys.push(key);
     }
+  } else if (e.key === 'Dead' && codeChar) {
+    // Handle dead keys (e.g., Option+E on macOS) by using the physical key from code
+    keys.push(codeChar);
   }
   if (e.key === ' ') {
     keys.push('space');
@@ -105,6 +128,12 @@ export const eventMatchesShortcut = (
   return shortcutMatchesShortcut(eventToShortcut(e)!, shortcut);
 };
 
+/**
+ * Returns a human-readable symbol for a keyboard key.
+ *
+ * @param key The key to convert to a symbol.
+ * @returns A string that a human could understand as that keyboard key.
+ */
 export const keyToSymbol = (key: string): string => {
   if (key === 'alt') {
     return optionOrAltSymbol();
@@ -139,10 +168,28 @@ export const keyToSymbol = (key: string): string => {
   if (key === 'ArrowRight') {
     return '→';
   }
-  return key.toUpperCase();
+  return key?.toUpperCase();
 };
 
 // Display the shortcut as a human readable string
 export const shortcutToHumanString = (shortcut: API_KeyCollection): string => {
   return shortcut.map(keyToSymbol).join(' ');
+};
+
+// Display the shortcut for use in an aria-keyshortcuts attribute
+export const shortcutToAriaKeyshortcuts = (shortcut: API_KeyCollection): string => {
+  return shortcut
+    .map((shortcut) => {
+      // aria-keyshortcuts needs `+` translated
+      if (shortcut === '+') {
+        return 'plus';
+      }
+
+      if (shortcut === ' ') {
+        return 'space';
+      }
+
+      return shortcut;
+    })
+    .join('+');
 };

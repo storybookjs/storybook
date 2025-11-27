@@ -17,6 +17,8 @@ import {
   useAddonState,
   useChannel,
   useParameter,
+  useStorybookApi,
+  useStorybookState,
 } from 'storybook/manager-api';
 
 import {
@@ -65,6 +67,8 @@ const playStatusMap: Record<
   errored: 'errored',
   aborted: 'aborted',
 };
+
+const terminalStatuses: PlayStatus[] = ['completed', 'errored', 'aborted'];
 
 const storyStatusMap: Record<CallStates, StatusValue> = {
   [CallStates.DONE]: 'status-value:success',
@@ -191,6 +195,12 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     });
 
     // shared state
+    const state = useStorybookState();
+    const api = useStorybookApi();
+    const data = api.getData(state.storyId, state.refId);
+    const importPath = data?.importPath as string | undefined;
+    const canOpenInEditor = global.CONFIG_TYPE === 'DEVELOPMENT' && !state.refId;
+
     const [panelState, set] = useAddonState<PanelState>(ADDON_ID, {
       status: 'rendering' as PlayStatus,
       controlStates: INITIAL_CONTROL_STATES,
@@ -229,7 +239,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       if (global.IntersectionObserver) {
         observer = new global.IntersectionObserver(
           ([end]: any) => setScrollTarget(end.isIntersecting ? undefined : end.target),
-          { root: global.document.querySelector('#panel-tab-content') }
+          { root: global.document.querySelector('#storybook-panel-root [role="tabpanel"]') }
         );
 
         if (endRef.current) {
@@ -239,6 +249,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       return () => observer?.disconnect();
     }, []);
 
+    const lastStoryId = useRef<string>(undefined);
     const lastRenderId = useRef<number>(0);
     const emit = useChannel(
       {
@@ -253,12 +264,16 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           );
         },
         [STORY_RENDER_PHASE_CHANGED]: (event) => {
-          if (event.newPhase === 'preparing' || event.newPhase === 'loading') {
-            // A render cycle may not actually make it to the rendering phase.
+          if (
+            lastStoryId.current === event.storyId &&
+            ['preparing', 'loading'].includes(event.newPhase)
+          ) {
+            // A rerender cycle may not actually make it to the rendering phase.
             // We don't want to update any state until it does.
             return;
           }
 
+          lastStoryId.current = event.storyId;
           lastRenderId.current = Math.max(lastRenderId.current, event.renderId || 0);
           if (lastRenderId.current !== event.renderId) {
             return;
@@ -280,7 +295,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           } else {
             set((state) => {
               const status =
-                event.newPhase in playStatusMap
+                event.newPhase in playStatusMap && !terminalStatuses.includes(state.status)
                   ? playStatusMap[event.newPhase as keyof typeof playStatusMap]
                   : state.status;
               return getPanelState(
@@ -406,6 +421,9 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           // @ts-expect-error TODO
           endRef={endRef}
           onScrollToEnd={scrollTarget && scrollToTarget}
+          importPath={importPath}
+          canOpenInEditor={canOpenInEditor}
+          api={api}
         />
       </Fragment>
     );

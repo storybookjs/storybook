@@ -1,4 +1,8 @@
+import { fn } from 'storybook/test';
+
 export * from './root';
+
+export const openInEditor = fn();
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
 export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-manager';

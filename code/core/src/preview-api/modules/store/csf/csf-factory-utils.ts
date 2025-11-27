@@ -1,4 +1,4 @@
-import { isStory } from 'storybook/internal/csf';
+import { type Meta, type Story, isMeta, isStory } from 'storybook/internal/csf';
 import type {
   Args,
   ComponentAnnotations,
@@ -11,8 +11,8 @@ export function getCsfFactoryAnnotations<
   TRenderer extends Renderer = Renderer,
   TArgs extends Args = Args,
 >(
-  story: LegacyStoryAnnotationsOrFn<TRenderer>,
-  meta?: ComponentAnnotations<TRenderer, TArgs>,
+  story: LegacyStoryAnnotationsOrFn<TRenderer> | Story<Renderer>,
+  meta?: ComponentAnnotations<TRenderer, TArgs> | Meta<Renderer>,
   projectAnnotations?: ProjectAnnotations<TRenderer>
 ) {
   return isStory(story)
@@ -21,5 +21,5 @@ export function getCsfFactoryAnnotations<
         meta: story.meta.input,
         preview: story.meta.preview.composed,
       }
-    : { story, meta, preview: projectAnnotations };
+    : { story, meta: isMeta(meta) ? meta.input : meta, preview: projectAnnotations };
 }

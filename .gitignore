@@ -57,7 +57,7 @@ code/bench-results/
 /packs
 code/.nx/cache
 code/.nx/workspace-data
-code/.vite-inspect
+.vite-inspect
 .nx/cache
 .nx/workspace-data
 !**/fixtures/**/yarn.lock
@@ -65,3 +65,5 @@ code/core/report
 node_modules/.svelte2tsx-language-server-files
 
 *storybook.log
+
+.junie

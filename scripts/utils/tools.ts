@@ -1,12 +1,10 @@
-import { writeFile } from 'node:fs/promises';
+import { access, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import * as process from 'node:process';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { spawn } from 'cross-spawn';
 import * as esbuild from 'esbuild';
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists, readJson } from 'fs-extra';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import limit from 'p-limit';
@@ -15,6 +13,7 @@ import * as prettier from 'prettier';
 import prettyTime from 'pretty-hrtime';
 import * as rollup from 'rollup';
 import * as rpd from 'rollup-plugin-dts';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import sortPackageJson from 'sort-package-json';
 import { dedent } from 'ts-dedent';
@@ -25,6 +24,15 @@ import ts from 'typescript';
 import { CODE_DIRECTORY } from './constants';
 
 export { globalExternals };
+
+const pathExists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export const dts = async (entry: string, externals: string[], tsconfig: string) => {
   const dir = dirname(entry).replace('src', 'dist');
@@ -124,7 +132,8 @@ type PackageJson = typefest.PackageJson &
   Required<Pick<typefest.PackageJson, 'name' | 'version'>> & { path: string };
 
 export const getWorkspace = async (): Promise<PackageJson[]> => {
-  const codePackage = await readJson(join(CODE_DIRECTORY, 'package.json'));
+  const content = await readFile(join(CODE_DIRECTORY, 'package.json'), 'utf-8');
+  const codePackage = JSON.parse(content);
   const {
     workspaces: { packages: patterns },
   } = codePackage;
@@ -146,7 +155,8 @@ export const getWorkspace = async (): Promise<PackageJson[]> => {
           );
           return null;
         }
-        const pkg = await readJson(packageJsonPath);
+        const content = await readFile(packageJsonPath, 'utf-8');
+        const pkg = JSON.parse(content);
         return { ...pkg, path: packagePath } as PackageJson;
       })
   ).then((packages) => packages.filter((p) => p !== null));

@@ -63,9 +63,10 @@ export const Open = {
 };
 ```
 
-```js filename="Dialog.stories.js|jsx" renderer="common" language="js"
-import { Dialog } from './Dialog';
+```js filename="Dialog.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { screen } from 'storybook/test';
+
+import { Dialog } from './Dialog';
 
 export default {
   component: Dialog,
@@ -130,7 +131,7 @@ export const Open: Story = {
 };
 ```
 
-```ts filename="Dialog.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="Dialog.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { screen } from 'storybook/test';
@@ -193,4 +194,48 @@ export const Open: Story = {
     await expect(dialog).toBeVisible();
   },
 };
+```
+
+```ts filename="Dialog.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { screen } from 'storybook/test';
+
+import { Dialog } from './Dialog';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Open = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Open dialog' }));
+
+    // Starts querying from the document
+    const dialog = screen.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Dialog.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { screen } from 'storybook/test';
+
+import { Dialog } from './Dialog';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Open = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Open dialog' }));
+
+    // Starts querying from the document
+    const dialog = screen.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+  },
+});
 ```

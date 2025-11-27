@@ -6,11 +6,8 @@ import path from 'path';
 
 import type { FileInfo } from '../../automigrate/codemod';
 import { cleanupTypeImports } from './csf-factories-utils';
+import { removeUnusedTypes } from './remove-unused-types';
 
-// Name of properties that should not be renamed to `Story.input.xyz`
-const reuseDisallowList = ['play', 'run', 'extends', 'story'];
-
-// Name of types that should be removed from the import list
 const typesDisallowList = [
   'Story',
   'StoryFn',
@@ -20,6 +17,9 @@ const typesDisallowList = [
   'ComponentStory',
   'ComponentMeta',
 ];
+
+// Name of properties that should not be renamed to `Story.input.xyz`
+const reuseDisallowList = ['play', 'run', 'extends', 'story'];
 
 type Options = { previewConfigPath: string; useSubPathImports: boolean };
 
@@ -34,6 +34,11 @@ export async function storyToCsfFactory(
     logger.log(`Error when parsing ${info.path}, skipping:\n${err}`);
     return info.source;
   }
+
+  // Track detected stories and which ones we actually transform
+  const detectedStories = csf.stories;
+  const detectedStoryNames = detectedStories.map((story) => story.name);
+  const transformedStoryExports = new Set<string>();
 
   const metaVariableName = csf._metaVariableName ?? 'meta';
 
@@ -95,7 +100,7 @@ export async function storyToCsfFactory(
   // @TODO: Support unconventional formats:
   // `export function Story() { };` and `export { Story };
   // These are not part of csf._storyExports but rather csf._storyStatements and are tricky to support.
-  Object.entries(csf._storyExports).forEach(([_key, decl]) => {
+  Object.entries(csf._storyExports).forEach(([exportName, decl]) => {
     const id = decl.id;
     const declarator = decl as t.VariableDeclarator;
     let init = t.isVariableDeclarator(declarator) ? declarator.init : undefined;
@@ -118,12 +123,47 @@ export async function storyToCsfFactory(
           t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
           init.properties.length === 0 ? [] : [init]
         );
+        if (t.isIdentifier(id)) {
+          transformedStoryExports.add(exportName);
+        }
       } else if (t.isArrowFunctionExpression(init)) {
         // Transform CSF1 to meta.story({ render: <originalFn> })
         declarator.init = t.callExpression(
           t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
           [init]
         );
+        if (t.isIdentifier(id)) {
+          transformedStoryExports.add(exportName);
+        }
+      }
+    }
+  });
+
+  // Support function-declared stories
+  Object.entries(csf._storyExports).forEach(([exportName, decl]) => {
+    if (t.isFunctionDeclaration(decl) && decl.id) {
+      const arrowFn = t.arrowFunctionExpression(decl.params, decl.body);
+      arrowFn.async = !!decl.async;
+
+      const wrappedCall = t.callExpression(
+        t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
+        [arrowFn]
+      );
+
+      const replacement = t.exportNamedDeclaration(
+        t.variableDeclaration('const', [
+          t.variableDeclarator(t.identifier(exportName), wrappedCall),
+        ])
+      );
+
+      const pathForExport = (
+        csf as unknown as {
+          _storyPaths?: Record<string, { replaceWith?: (node: t.Node) => void }>;
+        }
+      )._storyPaths?.[exportName];
+      if (pathForExport && pathForExport.replaceWith) {
+        pathForExport.replaceWith(replacement);
+        transformedStoryExports.add(exportName);
       }
     }
   });
@@ -199,6 +239,24 @@ export async function storyToCsfFactory(
     },
   });
 
+  // If no stories were transformed, bail early to avoid having a mixed CSF syntax and therefore a broken indexer.
+  if (transformedStoryExports.size === 0) {
+    logger.warn(
+      `Skipping codemod for ${info.path}: no stories were transformed. Either there are no stories, file has been already transformed or some stories are written in an unsupported format.`
+    );
+    return info.source;
+  }
+
+  // If some stories were detected but not all could be transformed, we skip the codemod to avoid mixed csf syntax and therefore a broken indexer.
+  if (detectedStoryNames.length > 0 && transformedStoryExports.size !== detectedStoryNames.length) {
+    logger.warn(
+      `Skipping codemod for ${info.path}:\nSome of the detected stories [${detectedStoryNames
+        .map((name) => `"${name}"`)
+        .join(', ')}] would not be transformed because they are written in an unsupported format.`
+    );
+    return info.source;
+  }
+
   // modify meta
   if (csf._metaPath) {
     let declaration = csf._metaPath.node.declaration;
@@ -269,27 +327,7 @@ export async function storyToCsfFactory(
     programNode.body.unshift(configImport);
   }
 
-  // Remove unused type aliases e.g. `type Story = StoryObj<typeof meta>;`
-  programNode.body.forEach((node, index) => {
-    if (t.isTSTypeAliasDeclaration(node)) {
-      const isUsed = programNode.body.some((otherNode) => {
-        if (t.isVariableDeclaration(otherNode)) {
-          return otherNode.declarations.some(
-            (declaration) =>
-              t.isIdentifier(declaration.init) && declaration.init.name === node.id.name
-          );
-        }
-        return false;
-      });
-
-      if (!isUsed) {
-        programNode.body.splice(index, 1);
-      }
-    }
-  });
-
-  // Remove type imports – now inferred – from @storybook/* packages
-  programNode.body = cleanupTypeImports(programNode, typesDisallowList);
+  removeUnusedTypes(programNode, csf._ast);
 
   return printCsf(csf).code;
 }

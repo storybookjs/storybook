@@ -1,1 +1,1 @@
-{"version":"9.1.0","info":{"plain":"- Core: Disable dynamic favicon behavior when using custom favicon filename - [#32147](https://github.com/storybookjs/storybook/pull/32147), thanks @ghengeveld!\n- Core: Don't update interactions panel state until we reach the rendering phase - [#32163](https://github.com/storybookjs/storybook/pull/32163), thanks @ghengeveld!"}}
+{"version":"10.1.0","info":{"plain":""}}

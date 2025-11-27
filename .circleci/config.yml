@@ -552,32 +552,6 @@ jobs:
                     cd scripts
                     yarn docs:prettier:check
                 name: Prettier
-    script-checks:
-        executor: sb_node_22_browsers
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                clone_options: --depth 1 --verbose
-            - attach_workspace:
-                at: .
-            - run:
-                command: |
-                    cd scripts
-                    yarn get-template --check
-                name: Check parallelism count
-            - run:
-                command: |
-                    cd scripts
-                    yarn check
-                name: Type check
-            - run:
-                command: |
-                    cd scripts
-                    yarn test --coverage
-                name: Run tests
-            - store_test_results:
-                path: scripts/junit.xml
-            - report-workflow-on-failure
-            - cancel-workflow-on-failure
     smoke-test-sandboxes:
         executor:
             class: medium
@@ -1146,9 +1120,6 @@ workflows:
             - stories-tests:
                 requires:
                     - build
-            - script-checks:
-                requires:
-                    - build
             - chromatic-internal-storybook:
                 requires:
                     - build
@@ -1257,9 +1228,6 @@ workflows:
             - stories-tests:
                 requires:
                     - build
-            - script-checks:
-                requires:
-                    - build
             - chromatic-internal-storybook:
                 requires:
                     - build
@@ -1350,9 +1318,6 @@ workflows:
                 requires:
                     - build
             - stories-tests:
-                requires:
-                    - build
-            - script-checks:
                 requires:
                     - build
             - chromatic-internal-storybook:

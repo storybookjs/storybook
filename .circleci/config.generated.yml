@@ -1246,7 +1246,8 @@ jobs:
             - run:
                   command: echo "Grouping sandboxes in CI graph"
                   name: Grouping sandboxes in CI graph
-    sandboxes-a-create:
+    react-vite-default-ts-create:
+        name: react-vite/default-ts (create)
         executor:
             class: large
             name: sb_node_22_browsers
@@ -1293,7 +1294,8 @@ jobs:
                   paths:
                       - sandbox/react-vite-default-ts
                   root: .
-    sandboxes-a-build:
+    react-vite-default-ts-build:
+        name: react-vite/default-ts (build)
         executor:
             class: xlarge
             name: sb_playwright
@@ -1320,7 +1322,8 @@ jobs:
                       TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
                   name: Running E2E Tests
-    sandboxes-a-dev:
+    react-vite-default-ts-dev:
+        name: react-vite/default-ts (dev)
         executor:
             class: xlarge
             name: sb_playwright
@@ -1345,20 +1348,6 @@ jobs:
                       TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
                   name: Running E2E Tests
-    sandboxes-b-create:
-        executor:
-            class: xlarge
-            name: sb_playwright
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
-    sandboxes-b-e2e:
-        executor:
-            class: xlarge
-            name: sb_playwright
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1 --verbose
 workflows:
     daily:
         jobs:
@@ -1474,21 +1463,15 @@ workflows:
             - sandboxes:
                   requires:
                       - build
-            - sandboxes-a-create:
-                  requires:
-                      - sandboxes
-            - sandboxes-a-build:
-                  requires:
-                      - sandboxes-a-create
-            - sandboxes-a-dev:
-                  requires:
-                      - sandboxes-a-create
-            - sandboxes-b-create:
-                  requires:
-                      - sandboxes
-            - sandboxes-b-e2e:
-                  requires:
-                      - sandboxes-b-create
+            - - react-vite-default-ts-create:
+                    requires:
+                        - react-vite-default-ts-create
+              - react-vite-default-ts-build:
+                    requires:
+                        - react-vite-default-ts-create
+              - react-vite-default-ts-dev:
+                    requires:
+                        - react-vite-default-ts-create
         when:
             equal:
                 - docs

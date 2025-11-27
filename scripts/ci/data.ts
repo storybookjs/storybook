@@ -166,11 +166,233 @@ type SomethingImplementation = {
 
 function defineJob<K extends string, I extends SomethingImplementation>(
   name: K,
-  implementation: I
+  implementation: I,
+  requires = [] as string[]
 ) {
   return {
+    id: name.toLowerCase().replace(/\//g, '-'),
     name,
     implementation,
+    requires,
+  };
+}
+
+function defineSandboxFlow<K extends string>(name: K) {
+  const id = name.toLowerCase().replace(/\//g, '-');
+  const ids = {
+    create: `${id}-create`,
+    build: `${id}-build`,
+    dev: `${id}-dev`,
+  };
+  const jobs = [
+    defineJob(
+      ids.create,
+      {
+        name: `${name} (create)`,
+        executor: {
+          class: 'large',
+          name: 'sb_node_22_browsers',
+        },
+        steps: [
+          {
+            'git-shallow-clone/checkout_advanced': {
+              clone_options: '--depth 1 --verbose',
+            },
+          },
+          {
+            attach_workspace: {
+              at: '.',
+            },
+          },
+          {
+            restore_cache: {
+              keys: CACHE_KEYS,
+            },
+          },
+
+          {
+            run: {
+              command: 'yarn local-registry --open',
+              name: 'Verdaccio',
+              background: true,
+              working_directory: 'code',
+            },
+          },
+          {
+            run: {
+              background: true,
+              command: 'yarn jiti ./event-log-collector.ts',
+              name: 'Start Event Collector',
+              working_directory: 'scripts',
+            },
+          },
+          {
+            run: {
+              command: [
+                'yarn wait-on tcp:127.0.0.1:6001', // verdaccio
+                'yarn wait-on tcp:127.0.0.1:6002', // reverse proxy
+                'yarn wait-on tcp:127.0.0.1:6007', // event collector
+              ].join('\n'),
+              name: 'Wait on servers',
+              working_directory: 'code',
+            },
+          },
+          {
+            run: {
+              command: [
+                //
+                'sudo corepack enable',
+                'which yarn',
+                'yarn --version',
+              ].join('\n'),
+              name: 'Setup Corepack',
+            },
+          },
+          {
+            run: {
+              command: `yarn task sandbox --template ${name} --no-link -s sandbox --debug`,
+              environment: {
+                STORYBOOK_TELEMETRY_DEBUG: 1,
+                STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
+              },
+              name: 'Create Sandboxes',
+            },
+          },
+          {
+            store_artifacts: {
+              path: `sandbox/${id}/debug-storybook.log`,
+              destination: 'logs',
+            },
+          },
+          {
+            persist_to_workspace: {
+              paths: [`sandbox/${id}`],
+              root: '.',
+            },
+          },
+        ],
+      },
+      [ids.create]
+    ),
+    defineJob(
+      ids.build,
+      {
+        name: `${name} (build)`,
+        executor: {
+          class: 'xlarge',
+          name: 'sb_playwright',
+        },
+        steps: [
+          {
+            'git-shallow-clone/checkout_advanced': {
+              clone_options: '--depth 1 --verbose',
+            },
+          },
+          {
+            attach_workspace: {
+              at: '.',
+            },
+          },
+          {
+            restore_cache: {
+              keys: CACHE_KEYS,
+            },
+          },
+          {
+            run: {
+              command: `yarn task build --template ${name} --no-link -s build`,
+              name: 'Build storybook',
+            },
+          },
+          {
+            run: {
+              command: `yarn task serve --template ${name} --no-link -s serve`,
+              background: true,
+              name: 'Serve storybook',
+            },
+          },
+          {
+            run: {
+              command: 'yarn wait-on tcp:127.0.0.1:8001',
+              name: 'Wait on storybook',
+              working_directory: 'code',
+            },
+          },
+          {
+            run: {
+              command: [
+                'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
+                `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
+              ].join('\n'),
+              name: 'Running E2E Tests',
+            },
+          },
+        ],
+      },
+      [ids.create]
+    ),
+    defineJob(
+      ids.dev,
+      {
+        name: `${name} (dev)`,
+        executor: {
+          class: 'xlarge',
+          name: 'sb_playwright',
+        },
+        steps: [
+          {
+            'git-shallow-clone/checkout_advanced': {
+              clone_options: '--depth 1 --verbose',
+            },
+          },
+          {
+            attach_workspace: {
+              at: '.',
+            },
+          },
+          {
+            restore_cache: {
+              keys: CACHE_KEYS,
+            },
+          },
+          {
+            run: {
+              command: `yarn task dev --template ${name} --no-link -s dev`,
+              name: 'Run storybook',
+              working_directory: 'code',
+              background: true,
+            },
+          },
+          {
+            run: {
+              command: 'yarn wait-on tcp:127.0.0.1:6006',
+              name: 'Wait on storybook',
+              working_directory: 'code',
+            },
+          },
+          {
+            run: {
+              command: [
+                'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
+                `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
+              ].join('\n'),
+              name: 'Running E2E Tests',
+            },
+          },
+        ],
+      },
+      [ids.create]
+    ),
+  ];
+  return {
+    jobs,
+    workflow: jobs.map((job) => {
+      return {
+        [job.id]: {
+          requires: job.requires,
+        },
+      };
+    }),
   };
 }
 
@@ -269,6 +491,8 @@ const build = defineJob('build', {
     },
   ],
 });
+
+const sandboxes = ['react-vite/default-ts'].map(defineSandboxFlow);
 
 const jobs = {
   'bench-packages': {
@@ -415,7 +639,7 @@ const jobs = {
       },
     ],
   },
-  [build.name]: build.implementation,
+  [build.id]: build.implementation,
   check: {
     executor: {
       class: 'xlarge',
@@ -1780,216 +2004,227 @@ const jobs = {
       },
     ],
   },
-  'sandboxes-a-create': {
-    executor: {
-      class: 'large',
-      name: 'sb_node_22_browsers',
-    },
-    steps: [
-      {
-        'git-shallow-clone/checkout_advanced': {
-          clone_options: '--depth 1 --verbose',
-        },
-      },
-      {
-        attach_workspace: {
-          at: '.',
-        },
-      },
-      {
-        restore_cache: {
-          keys: CACHE_KEYS,
-        },
-      },
+  ...sandboxes.reduce(
+    (acc, sandbox) => {
+      for (const job of sandbox.jobs) {
+        acc[job.id] = job.implementation;
+      }
 
-      {
-        run: {
-          command: 'yarn local-registry --open',
-          name: 'Verdaccio',
-          background: true,
-          working_directory: 'code',
-        },
-      },
-      {
-        run: {
-          background: true,
-          command: 'yarn jiti ./event-log-collector.ts',
-          name: 'Start Event Collector',
-          working_directory: 'scripts',
-        },
-      },
-      {
-        run: {
-          command: [
-            'yarn wait-on tcp:127.0.0.1:6001', // verdaccio
-            'yarn wait-on tcp:127.0.0.1:6002', // reverse proxy
-            'yarn wait-on tcp:127.0.0.1:6007', // event collector
-          ].join('\n'),
-          name: 'Wait on servers',
-          working_directory: 'code',
-        },
-      },
-      {
-        run: {
-          command: [
-            //
-            'sudo corepack enable',
-            'which yarn',
-            'yarn --version',
-          ].join('\n'),
-          name: 'Setup Corepack',
-        },
-      },
-      {
-        run: {
-          command:
-            'yarn task sandbox --template react-vite/default-ts --no-link -s sandbox --debug',
-          environment: {
-            STORYBOOK_TELEMETRY_DEBUG: 1,
-            STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
-          },
-          name: 'Create Sandboxes',
-        },
-      },
-      {
-        store_artifacts: {
-          path: 'sandbox/react-vite-default-ts/debug-storybook.log',
-          destination: 'logs',
-        },
-      },
-      {
-        persist_to_workspace: {
-          paths: ['sandbox/react-vite-default-ts'],
-          root: '.',
-        },
-      },
-    ],
-  },
-  'sandboxes-a-build': {
-    executor: {
-      class: 'xlarge',
-      name: 'sb_playwright',
+      return acc;
     },
-    steps: [
-      {
-        'git-shallow-clone/checkout_advanced': {
-          clone_options: '--depth 1 --verbose',
-        },
-      },
-      {
-        attach_workspace: {
-          at: '.',
-        },
-      },
-      {
-        restore_cache: {
-          keys: CACHE_KEYS,
-        },
-      },
-      {
-        run: {
-          command: 'yarn task build --template react-vite/default-ts --no-link -s build',
-          name: 'Build storybook',
-        },
-      },
-      {
-        run: {
-          command: 'yarn task serve --template react-vite/default-ts --no-link -s serve',
-          background: true,
-          name: 'Serve storybook',
-        },
-      },
-      {
-        run: {
-          command: 'yarn wait-on tcp:127.0.0.1:8001',
-          name: 'Wait on storybook',
-          working_directory: 'code',
-        },
-      },
-      {
-        run: {
-          command: [
-            'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
-            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1',
-          ].join('\n'),
-          name: 'Running E2E Tests',
-        },
-      },
-    ],
-  },
-  'sandboxes-a-dev': {
-    executor: {
-      class: 'xlarge',
-      name: 'sb_playwright',
-    },
-    steps: [
-      {
-        'git-shallow-clone/checkout_advanced': {
-          clone_options: '--depth 1 --verbose',
-        },
-      },
-      {
-        attach_workspace: {
-          at: '.',
-        },
-      },
-      {
-        restore_cache: {
-          keys: CACHE_KEYS,
-        },
-      },
-      {
-        run: {
-          command: 'yarn task dev --template react-vite/default-ts --no-link -s dev',
-          name: 'Run storybook',
-          working_directory: 'code',
-          background: true,
-        },
-      },
-      {
-        run: {
-          command: 'yarn wait-on tcp:127.0.0.1:6006',
-          name: 'Wait on storybook',
-          working_directory: 'code',
-        },
-      },
-      {
-        run: {
-          command: [
-            'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
-            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1',
-          ].join('\n'),
-          name: 'Running E2E Tests',
-        },
-      },
-    ],
-  },
-  'sandboxes-b-create': {
-    executor: {
-      class: 'xlarge',
-      name: 'sb_playwright',
-    },
-    steps: [
-      {
-        'git-shallow-clone/checkout_advanced': {
-          clone_options: '--depth 1 --verbose',
-        },
-      },
-    ],
-  },
-  'sandboxes-b-e2e': {
-    executor: {
-      class: 'xlarge',
-      name: 'sb_playwright',
-    },
-    steps: [
-      {
-        'git-shallow-clone/checkout_advanced': {
-          clone_options: '--depth 1 --verbose',
-        },
-      },
-    ],
-  },
+    {} as Record<string, SomethingImplementation>
+  ),
+
+  // 'sandboxes-a-create': {
+  //   executor: {
+  //     class: 'large',
+  //     name: 'sb_node_22_browsers',
+  //   },
+  //   steps: [
+  //     {
+  //       'git-shallow-clone/checkout_advanced': {
+  //         clone_options: '--depth 1 --verbose',
+  //       },
+  //     },
+  //     {
+  //       attach_workspace: {
+  //         at: '.',
+  //       },
+  //     },
+  //     {
+  //       restore_cache: {
+  //         keys: CACHE_KEYS,
+  //       },
+  //     },
+
+  //     {
+  //       run: {
+  //         command: 'yarn local-registry --open',
+  //         name: 'Verdaccio',
+  //         background: true,
+  //         working_directory: 'code',
+  //       },
+  //     },
+  //     {
+  //       run: {
+  //         background: true,
+  //         command: 'yarn jiti ./event-log-collector.ts',
+  //         name: 'Start Event Collector',
+  //         working_directory: 'scripts',
+  //       },
+  //     },
+  //     {
+  //       run: {
+  //         command: [
+  //           'yarn wait-on tcp:127.0.0.1:6001', // verdaccio
+  //           'yarn wait-on tcp:127.0.0.1:6002', // reverse proxy
+  //           'yarn wait-on tcp:127.0.0.1:6007', // event collector
+  //         ].join('\n'),
+  //         name: 'Wait on servers',
+  //         working_directory: 'code',
+  //       },
+  //     },
+  //     {
+  //       run: {
+  //         command: [
+  //           //
+  //           'sudo corepack enable',
+  //           'which yarn',
+  //           'yarn --version',
+  //         ].join('\n'),
+  //         name: 'Setup Corepack',
+  //       },
+  //     },
+  //     {
+  //       run: {
+  //         command:
+  //           'yarn task sandbox --template react-vite/default-ts --no-link -s sandbox --debug',
+  //         environment: {
+  //           STORYBOOK_TELEMETRY_DEBUG: 1,
+  //           STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
+  //         },
+  //         name: 'Create Sandboxes',
+  //       },
+  //     },
+  //     {
+  //       store_artifacts: {
+  //         path: 'sandbox/react-vite-default-ts/debug-storybook.log',
+  //         destination: 'logs',
+  //       },
+  //     },
+  //     {
+  //       persist_to_workspace: {
+  //         paths: ['sandbox/react-vite-default-ts'],
+  //         root: '.',
+  //       },
+  //     },
+  //   ],
+  // },
+  // 'sandboxes-a-build': {
+  //   executor: {
+  //     class: 'xlarge',
+  //     name: 'sb_playwright',
+  //   },
+  //   steps: [
+  //     {
+  //       'git-shallow-clone/checkout_advanced': {
+  //         clone_options: '--depth 1 --verbose',
+  //       },
+  //     },
+  //     {
+  //       attach_workspace: {
+  //         at: '.',
+  //       },
+  //     },
+  //     {
+  //       restore_cache: {
+  //         keys: CACHE_KEYS,
+  //       },
+  //     },
+  //     {
+  //       run: {
+  //         command: 'yarn task build --template react-vite/default-ts --no-link -s build',
+  //         name: 'Build storybook',
+  //       },
+  //     },
+  //     {
+  //       run: {
+  //         command: 'yarn task serve --template react-vite/default-ts --no-link -s serve',
+  //         background: true,
+  //         name: 'Serve storybook',
+  //       },
+  //     },
+  //     {
+  //       run: {
+  //         command: 'yarn wait-on tcp:127.0.0.1:8001',
+  //         name: 'Wait on storybook',
+  //         working_directory: 'code',
+  //       },
+  //     },
+  //     {
+  //       run: {
+  //         command: [
+  //           'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
+  //           'echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1',
+  //         ].join('\n'),
+  //         name: 'Running E2E Tests',
+  //       },
+  //     },
+  //   ],
+  // },
+  // 'sandboxes-a-dev': {
+  //   executor: {
+  //     class: 'xlarge',
+  //     name: 'sb_playwright',
+  //   },
+  //   steps: [
+  //     {
+  //       'git-shallow-clone/checkout_advanced': {
+  //         clone_options: '--depth 1 --verbose',
+  //       },
+  //     },
+  //     {
+  //       attach_workspace: {
+  //         at: '.',
+  //       },
+  //     },
+  //     {
+  //       restore_cache: {
+  //         keys: CACHE_KEYS,
+  //       },
+  //     },
+  //     {
+  //       run: {
+  //         command: 'yarn task dev --template react-vite/default-ts --no-link -s dev',
+  //         name: 'Run storybook',
+  //         working_directory: 'code',
+  //         background: true,
+  //       },
+  //     },
+  //     {
+  //       run: {
+  //         command: 'yarn wait-on tcp:127.0.0.1:6006',
+  //         name: 'Wait on storybook',
+  //         working_directory: 'code',
+  //       },
+  //     },
+  //     {
+  //       run: {
+  //         command: [
+  //           'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
+  //           'echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1',
+  //         ].join('\n'),
+  //         name: 'Running E2E Tests',
+  //       },
+  //     },
+  //   ],
+  // },
+  // 'sandboxes-b-create': {
+  //   executor: {
+  //     class: 'xlarge',
+  //     name: 'sb_playwright',
+  //   },
+  //   steps: [
+  //     {
+  //       'git-shallow-clone/checkout_advanced': {
+  //         clone_options: '--depth 1 --verbose',
+  //       },
+  //     },
+  //   ],
+  // },
+  // 'sandboxes-b-e2e': {
+  //   executor: {
+  //     class: 'xlarge',
+  //     name: 'sb_playwright',
+  //   },
+  //   steps: [
+  //     {
+  //       'git-shallow-clone/checkout_advanced': {
+  //         clone_options: '--depth 1 --verbose',
+  //       },
+  //     },
+  //   ],
+  // },
 };
 const orbs = {
   'browser-tools': 'circleci/browser-tools@2.3.2',
@@ -2022,47 +2257,47 @@ const workflows = {
   daily: {
     jobs: [
       'pretty-docs',
-      build.name,
+      build.id,
       {
         lint: {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         knip: {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'bench-packages': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       'check',
       {
         'unit-tests': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'stories-tests': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'script-checks': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'chromatic-internal-storybook': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'create-sandboxes': {
           parallelism: 38,
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
@@ -2108,27 +2343,27 @@ const workflows = {
               directory: ['react', 'vue3', 'nextjs', 'svelte'],
             },
           },
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'test-yarn-pnp': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'e2e-ui': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'e2e-ui-vitest-3': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'test-init-features': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
@@ -2139,7 +2374,7 @@ const workflows = {
               template: ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'],
             },
           },
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
@@ -2150,7 +2385,7 @@ const workflows = {
               template: ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'],
             },
           },
-          requires: [build.name],
+          requires: [build.id],
         },
       },
     ],
@@ -2161,42 +2396,18 @@ const workflows = {
   docs: {
     jobs: [
       'pretty-docs',
-      build.name,
+      build.id,
       {
         check: {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         sandboxes: {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
-      {
-        'sandboxes-a-create': {
-          requires: ['sandboxes'],
-        },
-      },
-      {
-        'sandboxes-a-build': {
-          requires: ['sandboxes-a-create'],
-        },
-      },
-      {
-        'sandboxes-a-dev': {
-          requires: ['sandboxes-a-create'],
-        },
-      },
-      {
-        'sandboxes-b-create': {
-          requires: ['sandboxes'],
-        },
-      },
-      {
-        'sandboxes-b-e2e': {
-          requires: ['sandboxes-b-create'],
-        },
-      },
+      ...sandboxes.map((sandbox) => sandbox.workflow),
     ],
     when: {
       equal: ['docs', '<< pipeline.parameters.workflow >>'],
@@ -2205,41 +2416,41 @@ const workflows = {
   merged: {
     jobs: [
       'pretty-docs',
-      build.name,
+      build.id,
       {
         lint: {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         knip: {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'bench-packages': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       'check',
       {
         'unit-tests': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'stories-tests': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'script-checks': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'chromatic-internal-storybook': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
@@ -2250,7 +2461,7 @@ const workflows = {
       {
         'create-sandboxes': {
           parallelism: 21,
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
@@ -2296,27 +2507,27 @@ const workflows = {
               directory: ['react', 'vue3', 'nextjs', 'svelte'],
             },
           },
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'test-yarn-pnp': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'e2e-ui': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'e2e-ui-vitest-3': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'test-init-features': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
@@ -2327,7 +2538,7 @@ const workflows = {
               template: ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'],
             },
           },
-          requires: [build.name],
+          requires: [build.id],
         },
       },
     ],
@@ -2338,41 +2549,41 @@ const workflows = {
   normal: {
     jobs: [
       'pretty-docs',
-      build.name,
+      build.id,
       {
         lint: {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         knip: {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'bench-packages': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       'check',
       {
         'unit-tests': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'stories-tests': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'script-checks': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'chromatic-internal-storybook': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
@@ -2383,7 +2594,7 @@ const workflows = {
       {
         'create-sandboxes': {
           parallelism: 14,
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
@@ -2424,22 +2635,22 @@ const workflows = {
       },
       {
         'test-yarn-pnp': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'e2e-ui': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'e2e-ui-vitest-3': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
         'test-init-features': {
-          requires: [build.name],
+          requires: [build.id],
         },
       },
       {
@@ -2449,7 +2660,7 @@ const workflows = {
               directory: ['react', 'vue3', 'nextjs', 'svelte'],
             },
           },
-          requires: [build.name],
+          requires: [build.id],
         },
       },
     ],

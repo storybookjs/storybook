@@ -148,8 +148,10 @@ export const getStorybookData = async ({
   logger.debug('Getting Storybook version...');
   const versionInstalled = (await packageManager.getModulePackageJSON('storybook'))?.version;
 
-  logger.debug('Getting csf version...');
-  const csf4 = previewConfigPath ? isCsfFactoryPreview(await readConfig(previewConfigPath)) : false;
+  logger.debug('Detecting CSF factory usage...');
+  const hasCsfFactoryPreview = previewConfigPath
+    ? isCsfFactoryPreview(await readConfig(previewConfigPath))
+    : false;
 
   return {
     configDir,
@@ -162,7 +164,7 @@ export const getStorybookData = async ({
     previewConfigPath,
     packageManager,
     storiesPaths,
-    csf4,
+    hasCsfFactoryPreview,
   };
 };
 export type GetStorybookData = typeof getStorybookData;

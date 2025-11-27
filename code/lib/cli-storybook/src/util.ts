@@ -46,7 +46,7 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly latestCLIVersionOnNPM: string;
   readonly autoblockerCheckResults: AutoblockerResult<unknown>[] | null;
   readonly storiesPaths: string[];
-  readonly csf4: boolean;
+  readonly hasCsfFactoryPreview: boolean;
 }
 
 /** Result when project collection fails */
@@ -292,7 +292,7 @@ const processProject = async ({
       previewConfigPath,
       storiesPaths,
       versionInstalled,
-      csf4,
+      hasCsfFactoryPreview,
     } = await getStorybookData({ configDir });
 
     // Validate version and upgrade compatibility
@@ -350,7 +350,7 @@ const processProject = async ({
       autoblockerCheckResults,
       previewConfigPath,
       storiesPaths,
-      csf4,
+      hasCsfFactoryPreview,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
     logger.debug(String(error));

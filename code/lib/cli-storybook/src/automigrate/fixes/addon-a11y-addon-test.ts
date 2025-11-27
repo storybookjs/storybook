@@ -44,7 +44,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
 
   promptType: 'auto',
 
-  async check({ mainConfig, configDir, csf4 }) {
+  async check({ mainConfig, configDir, hasCsfFactoryPreview }) {
     const addons = getAddonNames(mainConfig);
 
     const frameworkPackageName = getFrameworkPackageName(mainConfig);
@@ -72,7 +72,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
         .map((ext) => path.join(configDir, `preview${ext}`))
         .find((filePath) => existsSync(filePath)) ?? null;
 
-    let skipVitestSetupTransformation = csf4;
+    let skipVitestSetupTransformation = hasCsfFactoryPreview;
     let skipPreviewTransformation = false;
 
     if (vitestSetupFile && previewFile) {

@@ -10,7 +10,7 @@ export interface CheckOptions {
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];
-  csf4: boolean;
+  hasCsfFactoryPreview: boolean;
 }
 
 export interface RunOptions<ResultType> {

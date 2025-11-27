@@ -173,7 +173,8 @@ export interface CLIBaseOptions {
   disableTelemetry?: boolean;
   enableCrashReports?: boolean;
   configDir?: string;
-  loglevel?: string;
+  loglevel?: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent';
+  logfile?: string;
   quiet?: boolean;
 }
 

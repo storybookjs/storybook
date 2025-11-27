@@ -53,6 +53,17 @@ const cache = {
   },
 };
 
+const artifact = {
+  persist: (path: string, destination: string) => {
+    return {
+      store_artifacts: {
+        path,
+        destination,
+      },
+    };
+  },
+};
+
 function checkout(shallow: boolean = true) {
   return {
     'git-shallow-clone/checkout_advanced': {
@@ -217,7 +228,7 @@ function defineJob<K extends string, I extends SomethingImplementation>(
     id: toId(name),
     name,
     implementation: {
-      description: `${name} (create)`,
+      description: name,
       ...implementation,
     },
     requires,
@@ -259,58 +270,53 @@ function defineSandboxFlow<K extends string>(name: K) {
           cache.attach(CACHE_KEYS),
           {
             run: {
-              command: 'yarn local-registry --open',
               name: 'Verdaccio',
-              background: true,
               working_directory: 'code',
+              background: true,
+              command: 'yarn local-registry --open',
             },
           },
           {
             run: {
-              background: true,
-              command: 'yarn jiti ./event-log-collector.ts',
               name: 'Start Event Collector',
               working_directory: 'scripts',
+              background: true,
+              command: 'yarn jiti ./event-log-collector.ts',
             },
           },
           {
             run: {
+              name: 'Wait on servers',
+              working_directory: 'code',
               command: [
                 'yarn wait-on tcp:127.0.0.1:6001', // verdaccio
                 'yarn wait-on tcp:127.0.0.1:6002', // reverse proxy
                 'yarn wait-on tcp:127.0.0.1:6007', // event collector
               ].join('\n'),
-              name: 'Wait on servers',
-              working_directory: 'code',
             },
           },
           {
             run: {
+              name: 'Setup Corepack',
               command: [
                 //
                 'sudo corepack enable',
                 'which yarn',
                 'yarn --version',
               ].join('\n'),
-              name: 'Setup Corepack',
             },
           },
           {
             run: {
+              name: 'Create Sandboxes',
               command: `yarn task sandbox --template ${name} --no-link -s sandbox --debug`,
               environment: {
                 STORYBOOK_TELEMETRY_DEBUG: 1,
                 STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
               },
-              name: 'Create Sandboxes',
             },
           },
-          {
-            store_artifacts: {
-              path: `sandbox/${id}/debug-storybook.log`,
-              destination: 'logs',
-            },
-          },
+          artifact.persist(`sandbox/${id}/debug-storybook.log`, 'logs'),
           workspace.persist('.', [`sandbox/${id}`]),
         ],
       },
@@ -329,31 +335,31 @@ function defineSandboxFlow<K extends string>(name: K) {
           cache.attach(CACHE_KEYS),
           {
             run: {
-              command: `yarn task build --template ${name} --no-link -s build`,
               name: 'Build storybook',
+              command: `yarn task build --template ${name} --no-link -s build`,
             },
           },
           {
             run: {
-              command: `yarn task serve --template ${name} --no-link -s serve`,
-              background: true,
               name: 'Serve storybook',
+              background: true,
+              command: `yarn task serve --template ${name} --no-link -s serve`,
             },
           },
           {
             run: {
-              command: 'yarn wait-on tcp:127.0.0.1:8001',
               name: 'Wait on storybook',
               working_directory: 'code',
+              command: 'yarn wait-on tcp:127.0.0.1:8001',
             },
           },
           {
             run: {
+              name: 'Running E2E Tests',
               command: [
                 'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
                 `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
               ].join('\n'),
-              name: 'Running E2E Tests',
             },
           },
         ],
@@ -373,26 +379,26 @@ function defineSandboxFlow<K extends string>(name: K) {
           cache.attach(CACHE_KEYS),
           {
             run: {
-              command: `yarn task dev --template ${name} --no-link -s dev`,
               name: 'Run storybook',
               working_directory: 'code',
               background: true,
+              command: `yarn task dev --template ${name} --no-link -s dev`,
             },
           },
           {
             run: {
-              command: 'yarn wait-on tcp:127.0.0.1:6006',
               name: 'Wait on storybook',
               working_directory: 'code',
+              command: 'yarn wait-on tcp:127.0.0.1:6006',
             },
           },
           {
             run: {
+              name: 'Running E2E Tests',
               command: [
                 'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
                 `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
               ].join('\n'),
-              name: 'Running E2E Tests',
             },
           },
         ],
@@ -472,11 +478,7 @@ const build = defineJob('build', {
       },
     },
     'report-workflow-on-failure',
-    {
-      store_artifacts: {
-        path: 'code/bench/esbuild-metafiles',
-      },
-    },
+    artifact.persist('code/bench/esbuild-metafiles'),
     workspace.persist('.', [
       ...glob
         .sync('**/src', {

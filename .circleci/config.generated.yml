@@ -136,7 +136,7 @@ parameters:
         type: enum
 jobs:
     build:
-        description: build (create)
+        description: build
         executor:
             class: xlarge
             name: sb_node_22_classic
@@ -338,7 +338,7 @@ jobs:
                   command: echo "Grouping sandboxes in CI graph"
                   name: Grouping sandboxes in CI graph
     react-vite-default-ts--create:
-        description: react-vite/default-ts (create) (create)
+        description: react-vite/default-ts (create)
         executor:
             class: large
             name: sb_node_22_browsers
@@ -350,34 +350,34 @@ jobs:
             - restore_cache:
                   keys: *a1
             - run:
-                  command: yarn local-registry --open
                   name: Verdaccio
-                  background: true
                   working_directory: code
-            - run:
                   background: true
-                  command: yarn jiti ./event-log-collector.ts
+                  command: yarn local-registry --open
+            - run:
                   name: Start Event Collector
                   working_directory: scripts
+                  background: true
+                  command: yarn jiti ./event-log-collector.ts
             - run:
+                  name: Wait on servers
+                  working_directory: code
                   command: |-
                       yarn wait-on tcp:127.0.0.1:6001
                       yarn wait-on tcp:127.0.0.1:6002
                       yarn wait-on tcp:127.0.0.1:6007
-                  name: Wait on servers
-                  working_directory: code
             - run:
+                  name: Setup Corepack
                   command: |-
                       sudo corepack enable
                       which yarn
                       yarn --version
-                  name: Setup Corepack
             - run:
+                  name: Create Sandboxes
                   command: yarn task sandbox --template react-vite/default-ts --no-link -s sandbox --debug
                   environment:
                       STORYBOOK_TELEMETRY_DEBUG: 1
                       STORYBOOK_TELEMETRY_URL: http://127.0.0.1:6007/event-log
-                  name: Create Sandboxes
             - store_artifacts:
                   path: sandbox/react-vite-default-ts/debug-storybook.log
                   destination: logs
@@ -386,7 +386,7 @@ jobs:
                       - sandbox/react-vite-default-ts
                   root: .
     react-vite-default-ts--build:
-        description: react-vite/default-ts (build) (create)
+        description: react-vite/default-ts (build)
         executor:
             class: xlarge
             name: sb_playwright
@@ -398,23 +398,23 @@ jobs:
             - restore_cache:
                   keys: *a1
             - run:
-                  command: yarn task build --template react-vite/default-ts --no-link -s build
                   name: Build storybook
+                  command: yarn task build --template react-vite/default-ts --no-link -s build
             - run:
-                  command: yarn task serve --template react-vite/default-ts --no-link -s serve
-                  background: true
                   name: Serve storybook
+                  background: true
+                  command: yarn task serve --template react-vite/default-ts --no-link -s serve
             - run:
-                  command: yarn wait-on tcp:127.0.0.1:8001
                   name: Wait on storybook
                   working_directory: code
+                  command: yarn wait-on tcp:127.0.0.1:8001
             - run:
+                  name: Running E2E Tests
                   command: |-
                       TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
-                  name: Running E2E Tests
     react-vite-default-ts--dev:
-        description: react-vite/default-ts (dev) (create)
+        description: react-vite/default-ts (dev)
         executor:
             class: xlarge
             name: sb_playwright
@@ -426,21 +426,21 @@ jobs:
             - restore_cache:
                   keys: *a1
             - run:
-                  command: yarn task dev --template react-vite/default-ts --no-link -s dev
                   name: Run storybook
                   working_directory: code
                   background: true
+                  command: yarn task dev --template react-vite/default-ts --no-link -s dev
             - run:
-                  command: yarn wait-on tcp:127.0.0.1:6006
                   name: Wait on storybook
                   working_directory: code
+                  command: yarn wait-on tcp:127.0.0.1:6006
             - run:
+                  name: Running E2E Tests
                   command: |-
                       TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
-                  name: Running E2E Tests
     react-vite-default-js--create:
-        description: react-vite/default-js (create) (create)
+        description: react-vite/default-js (create)
         executor:
             class: large
             name: sb_node_22_browsers
@@ -452,34 +452,34 @@ jobs:
             - restore_cache:
                   keys: *a1
             - run:
-                  command: yarn local-registry --open
                   name: Verdaccio
-                  background: true
                   working_directory: code
-            - run:
                   background: true
-                  command: yarn jiti ./event-log-collector.ts
+                  command: yarn local-registry --open
+            - run:
                   name: Start Event Collector
                   working_directory: scripts
+                  background: true
+                  command: yarn jiti ./event-log-collector.ts
             - run:
+                  name: Wait on servers
+                  working_directory: code
                   command: |-
                       yarn wait-on tcp:127.0.0.1:6001
                       yarn wait-on tcp:127.0.0.1:6002
                       yarn wait-on tcp:127.0.0.1:6007
-                  name: Wait on servers
-                  working_directory: code
             - run:
+                  name: Setup Corepack
                   command: |-
                       sudo corepack enable
                       which yarn
                       yarn --version
-                  name: Setup Corepack
             - run:
+                  name: Create Sandboxes
                   command: yarn task sandbox --template react-vite/default-js --no-link -s sandbox --debug
                   environment:
                       STORYBOOK_TELEMETRY_DEBUG: 1
                       STORYBOOK_TELEMETRY_URL: http://127.0.0.1:6007/event-log
-                  name: Create Sandboxes
             - store_artifacts:
                   path: sandbox/react-vite-default-js/debug-storybook.log
                   destination: logs
@@ -488,7 +488,7 @@ jobs:
                       - sandbox/react-vite-default-js
                   root: .
     react-vite-default-js--build:
-        description: react-vite/default-js (build) (create)
+        description: react-vite/default-js (build)
         executor:
             class: xlarge
             name: sb_playwright
@@ -500,23 +500,23 @@ jobs:
             - restore_cache:
                   keys: *a1
             - run:
-                  command: yarn task build --template react-vite/default-js --no-link -s build
                   name: Build storybook
+                  command: yarn task build --template react-vite/default-js --no-link -s build
             - run:
-                  command: yarn task serve --template react-vite/default-js --no-link -s serve
-                  background: true
                   name: Serve storybook
+                  background: true
+                  command: yarn task serve --template react-vite/default-js --no-link -s serve
             - run:
-                  command: yarn wait-on tcp:127.0.0.1:8001
                   name: Wait on storybook
                   working_directory: code
+                  command: yarn wait-on tcp:127.0.0.1:8001
             - run:
+                  name: Running E2E Tests
                   command: |-
                       TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-js --no-link -s never" --verbose --index=0 --total=1
-                  name: Running E2E Tests
     react-vite-default-js--dev:
-        description: react-vite/default-js (dev) (create)
+        description: react-vite/default-js (dev)
         executor:
             class: xlarge
             name: sb_playwright
@@ -528,19 +528,19 @@ jobs:
             - restore_cache:
                   keys: *a1
             - run:
-                  command: yarn task dev --template react-vite/default-js --no-link -s dev
                   name: Run storybook
                   working_directory: code
                   background: true
+                  command: yarn task dev --template react-vite/default-js --no-link -s dev
             - run:
-                  command: yarn wait-on tcp:127.0.0.1:6006
                   name: Wait on storybook
                   working_directory: code
+                  command: yarn wait-on tcp:127.0.0.1:6006
             - run:
+                  name: Running E2E Tests
                   command: |-
                       TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-js --no-link -s never" --verbose --index=0 --total=1
-                  name: Running E2E Tests
 workflows:
     docs:
         jobs:

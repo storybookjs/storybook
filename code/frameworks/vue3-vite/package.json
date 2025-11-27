@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3-vite",
-  "version": "10.1.0-beta.4",
+  "version": "10.2.0-alpha.0",
   "description": "Storybook for Vue3 and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

@@ -94,6 +94,10 @@ export class Yarn2Proxy extends JsPackageManager {
     return `yarn ${command}`;
   }
 
+  getPackageCommand(args: string[]): string {
+    return `yarn exec ${args.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     ...options

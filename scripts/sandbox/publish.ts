@@ -36,8 +36,10 @@ const publish = async (options: PublishOptions & { tmpFolder: string }) => {
   const templatesData = await getTemplatesData(branch === 'main' ? 'main' : 'next');
 
   logger.log(`👯‍♂️ Cloning the repository ${remote} in branch ${branch}`);
-  await execaCommand(`git clone ${remote} .`, { cwd: tmpFolder, cleanup: true });
-  await execaCommand(`git checkout ${branch}`, { cwd: tmpFolder, cleanup: true });
+  await execaCommand(`git clone --depth 1 --branch ${branch} ${remote} .`, {
+    cwd: tmpFolder,
+    cleanup: true,
+  });
 
   // otherwise old files will stick around and result inconsistent states
   logger.log(`🗑 Delete existing template dirs from clone`);
@@ -82,9 +84,9 @@ const publish = async (options: PublishOptions & { tmpFolder: string }) => {
     `);
 
   if (push) {
-    await execaCommand(`git push --set-upstream origin ${branch}`, {
-      cwd: tmpFolder,
-    });
+    // await execaCommand(`git push --set-upstream origin ${branch}`, {
+    //   cwd: tmpFolder,
+    // });
     const remoteRepoUrl = `${remote.replace('.git', '')}/tree/${branch}`;
     logger.info(`🚀 Everything was pushed on ${remoteRepoUrl}`);
   } else {

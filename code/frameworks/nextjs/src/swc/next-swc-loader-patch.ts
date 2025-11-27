@@ -29,7 +29,7 @@ DEALINGS IN THE SOFTWARE.
 import { isAbsolute, relative } from 'node:path';
 
 import type { NextConfig } from 'next';
-import { isWasm, transform } from 'next/dist/build/swc/index.js';
+import * as nextSwcUtils from 'next/dist/build/swc/index.js';
 import { getLoaderSWCOptions } from 'next/dist/build/swc/options.js';
 
 export interface SWCLoaderOptions {
@@ -136,7 +136,7 @@ async function loaderTransform(this: any, parentTrace: any, source?: string, inp
 
   const swcSpan = parentTrace.traceChild('next-swc-transform');
   return swcSpan.traceAsyncFn(() =>
-    transform(source as any, programmaticOptions).then((output) => {
+    nextSwcUtils.transform(source as any, programmaticOptions).then((output) => {
       if (output.eliminatedPackages && this.eliminatedPackages) {
         for (const pkg of JSON.parse(output.eliminatedPackages)) {
           this.eliminatedPackages.add(pkg);
@@ -152,13 +152,25 @@ const EXCLUDED_PATHS = /[\\/](cache[\\/][^\\/]+\.zip[\\/]node_modules|__virtual_
 export function pitch(this: any) {
   const callback = this.async();
   (async () => {
+    let isWasm: boolean = false;
+
+    if (!!nextSwcUtils.isWasm) {
+      isWasm = await nextSwcUtils.isWasm();
+      // @ts-expect-error Relevant from Next.js >= 16.0.2-canary.12
+    } else if (!!nextSwcUtils.getBindingsSync) {
+      await nextSwcUtils.loadBindings();
+      // @ts-expect-error Relevant from Next.js >= 16.0.2-canary.12
+      isWasm = nextSwcUtils.getBindingsSync().isWasm;
+    }
+
     if (
+      // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
       // TODO: investigate swc file reading in PnP mode?
       !process.versions.pnp &&
       !EXCLUDED_PATHS.test(this.resourcePath) &&
       this.loaders.length - 1 === this.loaderIndex &&
       isAbsolute(this.resourcePath) &&
-      !(await isWasm())
+      !isWasm
     ) {
       const loaderSpan = mockCurrentTraceSpan.traceChild('next-swc-loader');
       this.addDependency(this.resourcePath);

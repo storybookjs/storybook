@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-webpack5",
-  "version": "10.0.0-beta.9",
+  "version": "10.2.0-alpha.0",
   "description": "A Storybook builder to dev and build with Webpack",
   "keywords": [
     "storybook",
@@ -32,6 +32,8 @@
       "default": "./dist/index.js"
     },
     "./loaders/export-order-loader": "./dist/loaders/export-order-loader.js",
+    "./loaders/storybook-mock-transform-loader": "./dist/loaders/storybook-mock-transform-loader.js",
+    "./loaders/webpack-automock-loader": "./dist/loaders/webpack-automock-loader.js",
     "./package.json": "./package.json",
     "./presets/custom-webpack-preset": "./dist/presets/custom-webpack-preset.js",
     "./presets/preview-preset": "./dist/presets/preview-preset.js",
@@ -54,6 +56,7 @@
   },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
+    "@vitest/mocker": "3.2.4",
     "case-sensitive-paths-webpack-plugin": "^2.4.0",
     "cjs-module-lexer": "^1.2.3",
     "css-loader": "^7.1.2",
@@ -89,5 +92,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

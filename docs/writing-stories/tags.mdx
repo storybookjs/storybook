@@ -11,17 +11,40 @@ Tags allow you to control which stories are included in your Storybook, enabling
 
 The following tags are available in every Storybook project:
 
-| Tag        | Applied by default? | Description                                                                                                                                                                                                              |
-| ---------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `autodocs` | No                  | Stories tagged with `autodocs` are included in the [docs page](../writing-docs/autodocs.mdx). If a CSF file does not contain at least one story tagged with `autodocs`, that component will not generate a docs page.    |
-| `dev`      | Yes                 | Stories tagged with `dev` are rendered in Storybook's sidebar.                                                                                                                                                           |
-| `test`     | Yes                 | Stories tagged with `test` are included in [test runner](../writing-tests/integrations/test-runner.mdx#run-tests-for-a-subset-of-stories) or [Vitest addon](../writing-tests/integrations/vitest-addon.mdx#including-excluding-or-skipping-tests) runs. |
+| Tag        | Applied by default? | Description                                                                                                                                                                                                                                             |
+| ---------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dev`      | Yes                 | Stories tagged with `dev` are rendered in Storybook's sidebar.                                                                                                                                                                                          |
+| `test`     | Yes                 | Stories tagged with `test` are included in [test runner](../writing-tests/integrations/test-runner.mdx#run-tests-for-a-subset-of-stories) or [Vitest addon](../writing-tests/integrations/vitest-addon/index.mdx#including-excluding-or-skipping-tests) runs. |
+| `autodocs` | No                  | Stories tagged with `autodocs` are included in the [docs page](../writing-docs/autodocs.mdx). If a CSF file does not contain at least one story tagged with `autodocs`, that component will not generate a docs page.                                   |
+| `play-fn`  | No                  | Applied automatically to stories with a [play function](./play-function.mdx) defined.                                                                                                                                                                   |
+| `test-fn`  | No                  | Applied automatically to tests defined using the [experimental `.test` method on CSF Factories](https://github.com/storybookjs/storybook/discussions/30119).                                                                                            |
 
 The `dev` and `test` tags are automatically, implicitly applied to every story in your Storybook project.
 
+## Custom tags
+
+You're not limited to the built-in tags. Custom tags enable a flexible layer of categorization on top of Storybook's sidebar hierarchy. Sample uses might include:
+
+- Status, such as `experimental`, `new`, `stable`, or `deprecated`
+- User persona, such as `admin`, `user`, or `developer`
+- Component/code ownership
+
+There are two ways to create a custom tag:
+
+1. Apply it to a story, component (meta), or project (preview.js|ts) as described below.
+2. Define it in your Storybook configuration file (`.storybook/main.js|ts`) to provide more configuration options, like default [filter selection](#filtering-the-sidebar-by-tags).
+
+For example, to define an "experimental" tag that is excluded by default in the sidebar, you can add this to your Storybook config:
+
+<CodeSnippets path="main-config-tags.md" />
+
+If `defaultFilterSelection` is set to `include`, stories with this tag are selected as included in the filter menu. If set to `exclude`, stories with this tag are selected as excluded, and must be explicitly included by selecting the tag in the sidebar filter menu. If not set, the tag has no default selection.
+
+You can also use the [`tags` configuration](../api/main-config/main-config-tags.mdx) to alter the configuration of built-in tags.
+
 ## Applying tags
 
-A tag can be any static (i.e. not created dynamically) string, either the [built-in tags](#built-in-tags) or custom tags of your own design. To apply tags to a story, assign an array of strings to the `tags` property. Tags may be applied at the project, component (meta), or story levels.
+A tag can be any static (i.e. not created dynamically) string, either the [built-in tags](#built-in-tags) or [custom tags](#custom-tags) of your own design. To apply tags to a story, assign an array of strings to the `tags` property. Tags may be applied at the project, component (meta), or story levels.
 
 For example, to apply the `autodocs` tag to all stories in your project, you can use `.storybook/preview.js|ts`:
 
@@ -51,21 +74,19 @@ To remove a tag from a story, prefix it with `!`. For example:
 
 Tags can be removed for all stories in your project (in `.storybook/preview.js|ts`), all stories for a component (in the CSF file meta), or a single story (as above).
 
-## Filtering by custom tags
+## Filtering the sidebar by tags
 
-Custom tags enable a flexible layer of categorization on top of Storybook's sidebar hierarchy. In the example above, we created an `experimental` tag to indicate that a story is not yet stable.
+Both built-in and custom tags are available as filters in Storybook's sidebar. Selecting a tag in the filter causes the sidebar to only show stories with that tag. Selecting multiple tags shows stories that contain any of those tags.
 
-You can create custom tags for any purpose. Sample uses might include:
+Pressing the Exclude button for a tag in the filter menu excludes stories with that tag from the sidebar. You can exclude multiple tags, and stories with any of those tags will be excluded. You can also mix inclusion and exclusion.
 
-- Status, such as `experimental`, `new`, `stable`, or `deprecated`
-- User persona, such as `admin`, `user`, or `developer`
-- Component/code ownership
+When no tags are selected, all stories are shown.
 
-Custom tags are useful because they show up as filters in Storybook's sidebar. Selecting a tag in the filter causes the sidebar to only show stories with that tag. Selecting multiple tags shows stories that contain any of those tags.
+In this example, the `experimental` tag has been excluded and the Documentation tag (`autodocs`) has been included, so only stories tagged with `autodocs` but not `experimental` are shown.
 
-![Filtering by custom tag](../_assets/writing-stories/custom-tag-filter.png)
+![Filtering by tags](../_assets/writing-stories/tag-filter.png)
 
-Filtering by tags is a powerful way to focus on a subset of stories, especially in large Storybook projects. You can also narrow your stories by tag and then search within that subset.
+Filtering by tags is a powerful way to focus on a subset of stories, especially in large Storybook projects. When searching, the filter is applied first, so search results are limited to the currently filtered tags.
 
 ## Recipes
 
@@ -88,3 +109,11 @@ For a component with many variants, like a Button, a grid of those variants all 
 <CodeSnippets path="tags-combo-example.md" />
 
 {/* prettier-ignore-end */}
+
+### Test cases that don't clutter the sidebar
+
+(⚠️ **Experimental**: While this API is available for all tags, the built-in `_test` tag is experimental)
+
+If you're using the [experimental `.test` method on CSF Factories](https://github.com/storybookjs/storybook/discussions/30119), you can alter the default behavior of the `_test` tag to exclude tests from the sidebar by default. This reduces clutter in the sidebar while still allowing you to run tests for all stories, or adjust the filter to show tests when needed.
+
+<CodeSnippets path="main-config-tags-test-fn-exclude.md" />

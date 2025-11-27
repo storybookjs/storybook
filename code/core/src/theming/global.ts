@@ -116,7 +116,9 @@ export const createGlobal = memoize(1)(({
       padding: 0,
       margin: -1,
       overflow: 'hidden',
+      whiteSpace: 'nowrap',
       clip: 'rect(0, 0, 0, 0)',
+      clipPath: 'inset(50%)',
       border: 0,
     },
 
@@ -127,6 +129,10 @@ export const createGlobal = memoize(1)(({
 
     '.sb-hidden-until-focus:focus': {
       opacity: 1,
+    },
+
+    '.react-aria-Popover:focus-visible': {
+      outline: 'none',
     },
   };
 });

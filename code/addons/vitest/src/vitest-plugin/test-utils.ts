@@ -1,6 +1,6 @@
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
-import { type Meta, type Story, getStoryChildren, isStory, toTestId } from 'storybook/internal/csf';
+import { type Meta, type Story, getStoryChildren, isStory } from 'storybook/internal/csf';
 import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';

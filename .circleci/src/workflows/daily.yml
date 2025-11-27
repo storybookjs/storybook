@@ -21,6 +21,9 @@ jobs:
   - unit-tests:
       requires:
         - build
+  - stories-tests:
+      requires:
+        - build
   - script-checks:
       requires:
         - build
@@ -28,30 +31,34 @@ jobs:
       requires:
         - build
   - create-sandboxes:
-      parallelism: 30
+      parallelism: 38
       requires:
         - build
+  - check-sandboxes:
+      parallelism: 1
+      requires:
+        - create-sandboxes
   # - smoke-test-sandboxes: # disabled for now
   #     requires:
   #       - create-sandboxes
   - chromatic-sandboxes:
-      parallelism: 27
+      parallelism: 35
       requires:
         - create-sandboxes
   - e2e-production:
-      parallelism: 25
+      parallelism: 7
       requires:
         - create-sandboxes
   - e2e-dev:
-      parallelism: 1
+      parallelism: 28
       requires:
         - create-sandboxes
   - test-runner-production:
-      parallelism: 25
+      parallelism: 33
       requires:
         - create-sandboxes
   - vitest-integration:
-      parallelism: 9
+      parallelism: 13
       requires:
         - create-sandboxes
   - test-portable-stories:
@@ -60,7 +67,13 @@ jobs:
       matrix:
         parameters:
           directory: ['react', 'vue3', 'nextjs', 'svelte']
+  - test-yarn-pnp:
+      requires:
+        - build
   - e2e-ui:
+      requires:
+        - build
+  - e2e-ui-vitest-3:
       requires:
         - build
   - test-init-features:
@@ -83,6 +96,18 @@ jobs:
             - 'vue-vite-ts'
             # --smoke-test is not supported for the angular builder right now
             # - "angular-cli"
+            - 'lit-vite-ts'
+  - test-init-empty-windows:
+      requires:
+        - build
+      matrix:
+        parameters:
+          packageManager:
+            - 'npm'
+          template:
+            - 'react-vite-ts'
+            - 'nextjs-ts'
+            - 'vue-vite-ts'
             - 'lit-vite-ts'
 # TODO: don't forget to reenable this
 #      - bench-sandboxes:

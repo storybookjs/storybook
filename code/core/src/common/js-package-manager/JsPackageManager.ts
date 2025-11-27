@@ -1,32 +1,33 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, normalize, resolve } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
+import { type ExecaChildProcess } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
-import { gt, satisfies } from 'semver';
+import { coerce, gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError';
+import type { ExecuteCommandOptions } from '../utils/command';
 import { findFilesUp, getProjectRoot } from '../utils/paths';
 import storybookPackagesVersions from '../versions';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
 import type { InstallationMetadata } from './types';
 
-export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm' | 'bun';
+export enum PackageManagerName {
+  NPM = 'npm',
+  YARN1 = 'yarn1',
+  YARN2 = 'yarn2',
+  PNPM = 'pnpm',
+  BUN = 'bun',
+}
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
-
-export const COMMON_ENV_VARS = {
-  COREPACK_ENABLE_STRICT: '0',
-  COREPACK_ENABLE_AUTO_PIN: '0',
-  NO_UPDATE_NOTIFIER: 'true',
-};
 
 /**
  * Extract package name and version from input
@@ -83,6 +84,9 @@ export abstract class JsPackageManager {
   /** Cache for installed version results to avoid repeated file system calls. */
   static readonly installedVersionCache = new Map<string, string | null>();
 
+  /** Cache for package.json files to avoid repeated file system calls. */
+  static readonly packageJsonCache = new Map<string, PackageJsonWithDepsAndDevDeps>();
+
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
     this.instanceDir = options?.configDir
@@ -97,16 +101,14 @@ export abstract class JsPackageManager {
     this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
 
-  /** Runs arbitrary package scripts. */
+  /** Runs arbitrary package scripts (as a string for display). */
   abstract getRunCommand(command: string): string;
-  /**
-   * Run a command from a local or remote. Fetches a package from the registry without installing it
-   * as a dependency, hotloads it, and runs whatever default command binary it exposes.
-   */
-  abstract getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string;
+
+  /** Returns the command to run the binary of a local package */
+  abstract getPackageCommand(args: string[]): string;
 
   /** Get the package.json file for a given module. */
-  abstract getModulePackageJSON(packageName: string): Promise<PackageJson | null>;
+  abstract getModulePackageJSON(packageName: string, cwd?: string): Promise<PackageJson | null>;
 
   isStorybookInMonorepo() {
     const turboJsonPath = find.up(`turbo.json`, { last: getProjectRoot() });
@@ -135,10 +137,10 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies(options?: { force?: boolean }) {
-    await prompt.executeTask(() => this.runInstall(options), {
+    await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
       id: 'install-dependencies',
       intro: 'Installing dependencies...',
-      error: 'An error occurred while installing dependencies.',
+      error: 'Installation of dependencies failed!',
       success: 'Dependencies installed',
     });
 
@@ -148,9 +150,9 @@ export abstract class JsPackageManager {
 
   async dedupeDependencies(options?: { force?: boolean }) {
     await prompt.executeTask(
-      () => this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
+      (_signal) =>
+        this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
       {
-        id: 'dedupe-dependencies',
         intro: 'Deduplicating dependencies...',
         error: 'An error occurred while deduplicating dependencies.',
         success: 'Dependencies deduplicated',
@@ -163,15 +165,34 @@ export abstract class JsPackageManager {
 
   /** Read the `package.json` file available in the provided directory */
   static getPackageJson(packageJsonPath: string): PackageJsonWithDepsAndDevDeps {
-    const jsonContent = readFileSync(packageJsonPath, 'utf8');
+    // Normalize path to absolute for consistent cache keys
+    // Always use resolve() to ensure consistent format on Windows
+    // (handles drive letter casing and path separator differences)
+    // resolve() normalizes absolute paths too, ensuring consistent cache keys
+    const absolutePath = normalize(resolve(packageJsonPath));
+
+    // Check cache first
+    const cached = JsPackageManager.packageJsonCache.get(absolutePath);
+    if (cached) {
+      logger.debug(`Using cached package.json for ${absolutePath}...`);
+      return cached;
+    }
+
+    // Read from disk if not in cache
+    const jsonContent = readFileSync(absolutePath, 'utf8');
     const packageJSON = JSON.parse(jsonContent);
 
-    return {
+    const result: PackageJsonWithDepsAndDevDeps = {
       ...packageJSON,
-      dependencies: { ...packageJSON.dependencies },
-      devDependencies: { ...packageJSON.devDependencies },
-      peerDependencies: { ...packageJSON.peerDependencies },
+      dependencies: { ...(packageJSON.dependencies || {}) },
+      devDependencies: { ...(packageJSON.devDependencies || {}) },
+      peerDependencies: { ...(packageJSON.peerDependencies || {}) },
     };
+
+    // Store in cache
+    JsPackageManager.packageJsonCache.set(absolutePath, result);
+
+    return result;
   }
 
   writePackageJson(packageJson: PackageJson, directory = this.cwd) {
@@ -185,8 +206,19 @@ export abstract class JsPackageManager {
       }
     });
 
+    const packageJsonPath = normalize(resolve(directory, 'package.json'));
     const content = `${JSON.stringify(packageJsonToWrite, null, 2)}\n`;
-    writeFileSync(resolve(directory, 'package.json'), content, 'utf8');
+    writeFileSync(packageJsonPath, content, 'utf8');
+
+    // Update cache with the written content
+    // Ensure dependencies and devDependencies exist (even if empty) to match PackageJsonWithDepsAndDevDeps type
+    const cachedPackageJson: PackageJsonWithDepsAndDevDeps = {
+      ...packageJsonToWrite,
+      dependencies: { ...(packageJsonToWrite.dependencies || {}) },
+      devDependencies: { ...(packageJsonToWrite.devDependencies || {}) },
+      peerDependencies: { ...(packageJsonToWrite.peerDependencies || {}) },
+    };
+    JsPackageManager.packageJsonCache.set(packageJsonPath, cachedPackageJson);
   }
 
   getAllDependencies() {
@@ -271,8 +303,8 @@ export abstract class JsPackageManager {
 
         return result;
       } catch (e: any) {
-        logger.error('\nAn error occurred while installing dependencies:');
-        logger.log(e.message);
+        logger.error('\nAn error occurred while adding dependencies to your package.json:');
+        logger.log(String(e));
         throw new HandledError(e);
       }
     }
@@ -572,17 +604,8 @@ export abstract class JsPackageManager {
     stdio?: 'inherit' | 'pipe' | 'ignore'
   ): ExecaChildProcess;
   public abstract runPackageCommand(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'inherit' | 'pipe' | 'ignore'
+    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
   ): ExecaChildProcess;
-  public abstract runPackageCommandSync(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'inherit' | 'pipe' | 'ignore'
-  ): string;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
   public abstract findInstallations(
     pattern?: string[],
@@ -590,87 +613,7 @@ export abstract class JsPackageManager {
   ): Promise<InstallationMetadata | undefined>;
   public abstract parseErrorFromLogs(logs?: string): string;
 
-  public executeCommandSync({
-    command,
-    args = [],
-    stdio,
-    cwd,
-    ignoreError = false,
-    env,
-    ...execaOptions
-  }: CommonOptions<'utf8'> & {
-    command: string;
-    args: string[];
-    cwd?: string;
-    ignoreError?: boolean;
-  }): string {
-    try {
-      const commandResult = execaCommandSync([command, ...args].join(' '), {
-        cwd: cwd ?? this.cwd,
-        stdio: stdio ?? 'pipe',
-        shell: true,
-        cleanup: true,
-        env: {
-          ...COMMON_ENV_VARS,
-          ...env,
-        },
-        ...execaOptions,
-      });
-
-      return commandResult.stdout ?? '';
-    } catch (err) {
-      if (ignoreError !== true) {
-        throw err;
-      }
-      return '';
-    }
-  }
-
-  /**
-   * Execute a command asynchronously and return the execa process. This allows you to hook into
-   * stdout/stderr streams and monitor the process.
-   *
-   * @example Const process = packageManager.executeCommand({ command: 'npm', args: ['install'] });
-   * process.stdout?.on('data', (data) => console.log(data.toString())); const result = await
-   * process;
-   */
-  public executeCommand({
-    command,
-    args = [],
-    stdio,
-    cwd,
-    ignoreError = false,
-    env,
-    ...execaOptions
-  }: CommonOptions<'utf8'> & {
-    command: string;
-    args: string[];
-    cwd?: string;
-    ignoreError?: boolean;
-  }): ExecaChildProcess {
-    const execaProcess = execa([command, ...args].join(' '), {
-      cwd: cwd ?? this.cwd,
-      stdio: stdio ?? 'pipe',
-      encoding: 'utf8',
-      shell: true,
-      cleanup: true,
-      env: {
-        ...COMMON_ENV_VARS,
-        ...env,
-      },
-      ...execaOptions,
-    });
-
-    // If ignoreError is true, catch and suppress errors
-    if (ignoreError) {
-      execaProcess.catch((err) => {
-        // Silently ignore errors when ignoreError is true
-      });
-    }
-
-    return execaProcess;
-  }
-
+  // TODO: Remove pnp compatibility code in SB11
   /** Returns the installed (within node_modules or pnp zip) version of a specified package */
   public async getInstalledVersion(packageName: string): Promise<string | null> {
     const cacheKey = packageName;
@@ -695,10 +638,13 @@ export abstract class JsPackageManager {
 
       const version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
 
-      // Cache the result
-      JsPackageManager.installedVersionCache.set(cacheKey, version);
+      const coercedVersion = coerce(version, { includePrerelease: true })?.toString() ?? version;
 
-      return version;
+      logger.debug(`Installed version for ${packageName}: ${coercedVersion}`);
+      // Cache the result
+      JsPackageManager.installedVersionCache.set(cacheKey, coercedVersion);
+
+      return coercedVersion;
     } catch (e) {
       JsPackageManager.installedVersionCache.set(cacheKey, null);
       return null;
@@ -715,6 +661,7 @@ export abstract class JsPackageManager {
    * the dependency.
    */
   public getDependencyVersion(dependency: string): string | null {
+    logger.debug(`Getting dependency version for ${dependency}...`);
     const dependencyVersion = this.packageJsonPaths
       .map((path) => {
         const packageJson = JsPackageManager.getPackageJson(path);
@@ -813,6 +760,7 @@ export abstract class JsPackageManager {
   }
 
   static getPackageJsonInfo(packageJsonPath: string): PackageJsonInfo {
+    logger.debug(`Getting package.json info for ${packageJsonPath}...`);
     const operationDir = dirname(packageJsonPath);
     return {
       packageJsonPath,

@@ -39,6 +39,7 @@ export enum Category {
 export class MissingStoryAfterHmrError extends StorybookError {
   constructor(public data: { storyId: string }) {
     super({
+      name: 'MissingStoryAfterHmrError',
       category: Category.PREVIEW_API,
       code: 1,
       message: dedent`
@@ -55,6 +56,7 @@ export class MissingStoryAfterHmrError extends StorybookError {
 export class ImplicitActionsDuringRendering extends StorybookError {
   constructor(public data: { phase: string; name: string; deprecated: boolean }) {
     super({
+      name: 'ImplicitActionsDuringRendering',
       category: Category.PREVIEW_API,
       code: 2,
       documentation:
@@ -75,6 +77,7 @@ export class ImplicitActionsDuringRendering extends StorybookError {
 export class CalledExtractOnStoreError extends StorybookError {
   constructor() {
     super({
+      name: 'CalledExtractOnStoreError',
       category: Category.PREVIEW_API,
       code: 3,
       message: dedent`
@@ -88,6 +91,7 @@ export class CalledExtractOnStoreError extends StorybookError {
 export class MissingRenderToCanvasError extends StorybookError {
   constructor() {
     super({
+      name: 'MissingRenderToCanvasError',
       category: Category.PREVIEW_API,
       code: 4,
       message: dedent`
@@ -103,6 +107,7 @@ export class MissingRenderToCanvasError extends StorybookError {
 export class CalledPreviewMethodBeforeInitializationError extends StorybookError {
   constructor(public data: { methodName: string }) {
     super({
+      name: 'CalledPreviewMethodBeforeInitializationError',
       category: Category.PREVIEW_API,
       code: 5,
       message: dedent`
@@ -120,6 +125,7 @@ export class CalledPreviewMethodBeforeInitializationError extends StorybookError
 export class StoryIndexFetchError extends StorybookError {
   constructor(public data: { text: string }) {
     super({
+      name: 'StoryIndexFetchError',
       category: Category.PREVIEW_API,
       code: 6,
       message: dedent`
@@ -139,6 +145,7 @@ export class StoryIndexFetchError extends StorybookError {
 export class MdxFileWithNoCsfReferencesError extends StorybookError {
   constructor(public data: { storyId: string }) {
     super({
+      name: 'MdxFileWithNoCsfReferencesError',
       category: Category.PREVIEW_API,
       code: 7,
       message: dedent`
@@ -154,6 +161,7 @@ export class MdxFileWithNoCsfReferencesError extends StorybookError {
 export class EmptyIndexError extends StorybookError {
   constructor() {
     super({
+      name: 'EmptyIndexError',
       category: Category.PREVIEW_API,
       code: 8,
       message: dedent`
@@ -168,6 +176,7 @@ export class EmptyIndexError extends StorybookError {
 export class NoStoryMatchError extends StorybookError {
   constructor(public data: { storySpecifier: string }) {
     super({
+      name: 'NoStoryMatchError',
       category: Category.PREVIEW_API,
       code: 9,
       message: dedent`
@@ -183,6 +192,7 @@ export class NoStoryMatchError extends StorybookError {
 export class MissingStoryFromCsfFileError extends StorybookError {
   constructor(public data: { storyId: string }) {
     super({
+      name: 'MissingStoryFromCsfFileError',
       category: Category.PREVIEW_API,
       code: 10,
       message: dedent`
@@ -201,6 +211,7 @@ export class MissingStoryFromCsfFileError extends StorybookError {
 export class StoryStoreAccessedBeforeInitializationError extends StorybookError {
   constructor() {
     super({
+      name: 'StoryStoreAccessedBeforeInitializationError',
       category: Category.PREVIEW_API,
       code: 11,
       message: dedent`
@@ -213,8 +224,11 @@ export class StoryStoreAccessedBeforeInitializationError extends StorybookError 
 }
 
 export class MountMustBeDestructuredError extends StorybookError {
+  // name: 'MountMustBeDestructuredError';
   constructor(public data: { playFunction: string }) {
+    // this.name = 'MountMustBeDestructuredError';
     super({
+      name: 'MountMustBeDestructuredError',
       category: Category.PREVIEW_API,
       code: 12,
       message: dedent`
@@ -242,6 +256,7 @@ export class MountMustBeDestructuredError extends StorybookError {
 export class NoRenderFunctionError extends StorybookError {
   constructor(public data: { id: string }) {
     super({
+      name: 'NoRenderFunctionError',
       category: Category.PREVIEW_API,
       code: 14,
       message: dedent`
@@ -254,6 +269,7 @@ export class NoRenderFunctionError extends StorybookError {
 export class NoStoryMountedError extends StorybookError {
   constructor() {
     super({
+      name: 'NoStoryMountedError',
       category: Category.PREVIEW_API,
       code: 15,
       message: dedent`
@@ -284,6 +300,7 @@ export class StatusTypeIdMismatchError extends StorybookError {
     }
   ) {
     super({
+      name: 'StatusTypeIdMismatchError',
       category: Category.PREVIEW_API,
       code: 16,
       message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(
@@ -298,6 +315,7 @@ export class StatusTypeIdMismatchError extends StorybookError {
 export class NextJsSharpError extends StorybookError {
   constructor() {
     super({
+      name: 'NextJsSharpError',
       category: Category.FRAMEWORK_NEXTJS,
       code: 1,
       documentation: 'https://storybook.js.org/docs/get-started/nextjs#faq',
@@ -313,6 +331,7 @@ export class NextJsSharpError extends StorybookError {
 export class NextjsRouterMocksNotAvailable extends StorybookError {
   constructor(public data: { importType: string }) {
     super({
+      name: 'NextjsRouterMocksNotAvailable',
       category: Category.FRAMEWORK_NEXTJS,
       code: 2,
       message: dedent`
@@ -325,6 +344,7 @@ export class NextjsRouterMocksNotAvailable extends StorybookError {
 export class UnknownArgTypesError extends StorybookError {
   constructor(public data: { type: object; language: string }) {
     super({
+      name: 'UnknownArgTypesError',
       category: Category.DOCS_TOOLS,
       code: 1,
       documentation: 'https://github.com/storybookjs/storybook/issues/26606',
@@ -344,6 +364,7 @@ export class UnknownArgTypesError extends StorybookError {
 export class UnsupportedViewportDimensionError extends StorybookError {
   constructor(public data: { dimension: string; value: string }) {
     super({
+      name: 'UnsupportedViewportDimensionError',
       category: Category.ADDON_VITEST,
       code: 1,
       // TODO: Add documentation about viewports support
@@ -363,6 +384,7 @@ export class UnsupportedViewportDimensionError extends StorybookError {
 export class ElementA11yParameterError extends StorybookError {
   constructor() {
     super({
+      name: 'ElementA11yParameterError',
       category: Category.ADDON_A11Y,
       code: 1,
       documentation:

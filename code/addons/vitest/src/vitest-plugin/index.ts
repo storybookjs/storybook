@@ -24,7 +24,7 @@ import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
-import { dirname, join, normalize, relative, resolve, sep } from 'pathe';
+import { join, normalize, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
@@ -267,6 +267,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           ],
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything
+          // TODO: Remove the check once we don't support Vitest 3 anymore
           ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
             ? {
                 server: {

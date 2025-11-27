@@ -31,7 +31,7 @@ export const ComplexStory: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 import someData from './data.json';
@@ -58,7 +58,7 @@ export const ComplexStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -366,4 +366,64 @@ export const ComplexStory: Story = {
     data: complexData,
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+import someData from './data.json';
+
+const meta = preview.meta({
+  component: MyComponent,
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+import someData from './data.json';
+
+const meta = preview.meta({
+  component: MyComponent,
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
 ```

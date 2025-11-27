@@ -2627,6 +2627,23 @@ describe('PreviewWeb', () => {
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_RENDERED, 'component-one--docs');
       });
+
+      it('cleans up document.documentElement modifications when switching from story to docs (issue #33112)', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview();
+
+        mockChannel.emit.mockClear();
+        emitter.emit(SET_CURRENT_STORY, {
+          storyId: 'component-one--docs',
+          viewMode: 'docs',
+        });
+        await waitForSetCurrentStory();
+        await waitForRender();
+
+        // The core fix in WebView.prepareForDocs() restores documentElement attributes
+        // Since WebView is mocked, verify PreviewWeb calls prepareForDocs on transition
+        expect(preview.view.prepareForDocs).toHaveBeenCalled();
+      });
     });
 
     describe('when changing from docs viewMode to story', () => {

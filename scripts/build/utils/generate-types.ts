@@ -66,7 +66,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
 
               dtsProcess.kill(408); // timed out
               resolve(void 0);
-            }, 1200000);
+            }, 120000);
           }),
         ]);
 

@@ -4,14 +4,14 @@ distribute-on:
 
 assignment-rules:
   - targets:
-      - build
+      - compile
     projects:
       - core
     run-on:
       - agent: linux-js
         parallelism: 1
   - targets:
-      - build
+      - compile
       - check
       - lint
       - pretty-docs

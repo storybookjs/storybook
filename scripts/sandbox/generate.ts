@@ -400,6 +400,10 @@ export const generate = async ({
       ...configuration,
     }))
     .filter(({ dirName }) => {
+      if (dirName.includes('solid')) {
+        return false;
+      }
+
       let include = Array.isArray(templates) ? templates.includes(dirName) : true;
       if (Array.isArray(exclude) && include) {
         include = !exclude.includes(dirName);

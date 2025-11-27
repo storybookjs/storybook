@@ -59,7 +59,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: yann/fix-sandbox-generation
-          fetch-depth: 1
 
       - name: Disk usage after cloning
         working-directory: ${{ github.workspace }}
@@ -153,7 +152,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: yann/fix-sandbox-generation
-          fetch-depth: 1
 
       - uses: actions/setup-node@v4
         with:

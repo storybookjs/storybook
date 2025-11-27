@@ -4,5 +4,4 @@ steps:
   - run:
       name: Start Event Collector
       command: yarn jiti ./event-log-collector.ts
-      working_directory: scripts
       background: true

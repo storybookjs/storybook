@@ -23,11 +23,6 @@ steps:
       shell: bash.exe
       working_directory: code
       command: yarn install
-  - run:
-      name: Install script dependencies
-      shell: bash.exe
-      working_directory: scripts
-      command: yarn install
   - when:
       condition:
         equal: ['npm', << parameters.packageManager >>]

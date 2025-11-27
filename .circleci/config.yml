@@ -32,7 +32,6 @@ commands:
                 background: true
                 command: yarn jiti ./event-log-collector.ts
                 name: Start Event Collector
-                working_directory: scripts
 executors:
     sb_node_18_browsers:
         docker:
@@ -135,7 +134,6 @@ jobs:
                     - run:
                         command: yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
                         name: Benchmarking packages against base branch
-                        working_directory: scripts
             - when:
                 condition:
                     or:
@@ -155,7 +153,6 @@ jobs:
                     - run:
                         command: yarn bench-packages --upload
                         name: Uploading package benchmarks for branch
-                        working_directory: scripts
             - store_artifacts:
                 path: bench/packages/results.json
             - report-workflow-on-failure
@@ -746,11 +743,6 @@ jobs:
                 name: Install code dependencies
                 shell: bash.exe
                 working_directory: code
-            - run:
-                command: yarn install
-                name: Install script dependencies
-                shell: bash.exe
-                working_directory: scripts
             - when:
                 condition:
                     equal:

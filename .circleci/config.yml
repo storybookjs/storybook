@@ -30,7 +30,7 @@ commands:
         steps:
             - run:
                 background: true
-                command: yarn jiti ./event-log-collector.ts
+                command: yarn jiti ./scripts/event-log-collector.ts
                 name: Start Event Collector
 executors:
     sb_node_18_browsers:

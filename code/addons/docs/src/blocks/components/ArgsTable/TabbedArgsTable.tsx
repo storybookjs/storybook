@@ -3,6 +3,8 @@ import React from 'react';
 
 import { TabsView } from 'storybook/internal/components';
 
+import { styled } from 'storybook/theming';
+
 import type { ArgsTableProps } from './ArgsTable';
 import { ArgsTable } from './ArgsTable';
 
@@ -11,6 +13,10 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends any ? Omit<T, K> : n
 export type TabbedArgsTableProps = DistributiveOmit<ArgsTableProps, 'rows'> & {
   tabs: Record<string, ArgsTableProps>;
 };
+
+const StyledTabsView = styled(TabsView)({
+  height: 'fit-content',
+});
 
 export const TabbedArgsTable: FC<TabbedArgsTableProps> = ({ tabs, ...props }) => {
   const entries = Object.entries(tabs);
@@ -34,5 +40,5 @@ export const TabbedArgsTable: FC<TabbedArgsTableProps> = ({ tabs, ...props }) =>
     },
   }));
 
-  return <TabsView tabs={tabsFromEntries} />;
+  return <StyledTabsView tabs={tabsFromEntries} />;
 };

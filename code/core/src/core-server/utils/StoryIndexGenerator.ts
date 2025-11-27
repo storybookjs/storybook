@@ -161,19 +161,16 @@ export class StoryIndexGenerator {
 
     const pathToSubIndex = {} as SpecifierStoriesCache;
 
-    // Calculate a new CWD for each glob to handle paths that go above the workingDir.
-    const globCwd = slash(resolve(workingDir, specifier.directory));
-    const globPattern = specifier.files;
+    const fullGlob = slash(join(specifier.directory, specifier.files));
 
     // Dynamically import globby because it is a pure ESM module
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
-    // Execute globby within the new CWD to ensure `ignore` patterns work correctly.
-    const files = await globby(globPattern, {
+    const files = await globby(fullGlob, {
       absolute: true,
-      cwd: globCwd,
-      ...commonGlobOptions(globPattern),
+      cwd: workingDir,
+      ...commonGlobOptions(fullGlob),
     });
 
     if (files.length === 0 && !ignoreWarnings) {

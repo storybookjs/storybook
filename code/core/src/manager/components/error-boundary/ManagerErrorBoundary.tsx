@@ -5,6 +5,7 @@ import { StorybookLogo } from 'storybook/internal/components';
 
 import { AlertIcon, SyncIcon } from '@storybook/icons';
 
+import { transparentize } from 'polished';
 import { keyframes, styled, useTheme } from 'storybook/theming';
 
 const fadeIn = keyframes({
@@ -37,7 +38,7 @@ const IconWrapper = styled.div(({ theme }) => ({
   width: 80,
   height: 80,
   borderRadius: '50%',
-  backgroundColor: theme.base === 'light' ? 'rgba(255, 71, 71, 0.1)' : 'rgba(255, 71, 71, 0.2)',
+  backgroundColor: transparentize(theme.base === 'light' ? 0.9 : 0.8, theme.color.negative),
   marginBottom: 24,
   margin: '0 auto 24px',
 }));
@@ -83,7 +84,7 @@ const ErrorMessage = styled.pre(({ theme }) => ({
   margin: 0,
   fontSize: theme.typography.size.s1,
   color: theme.color.negative,
-  backgroundColor: theme.base === 'light' ? 'rgba(255, 71, 71, 0.05)' : 'rgba(255, 71, 71, 0.1)',
+  backgroundColor: transparentize(theme.base === 'light' ? 0.95 : 0.9, theme.color.negative),
   borderTop: `1px solid ${theme.appBorderColor}`,
   overflow: 'auto',
   whiteSpace: 'pre-wrap',
@@ -120,11 +121,11 @@ const Button = styled.button(({ theme }) => ({
   cursor: 'pointer',
   transition: 'background-color 0.2s ease',
   '&:hover': {
-    backgroundColor: theme.base === 'light' ? '#0b5eb5' : '#4ba2ff',
+    backgroundColor: theme.barHoverColor,
   },
   '&:focus': {
     outline: 'none',
-    boxShadow: `0 0 0 2px ${theme.color.secondary}40`,
+    boxShadow: `0 0 0 2px ${transparentize(0.75, theme.color.secondary)}`,
   },
 }));
 

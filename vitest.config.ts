@@ -7,7 +7,7 @@ export default defineConfig({
     },
 
     projects: [
-      'vitest-storybook.config.mts',
+      'vitest-storybook.config.ts',
       'addons/*/vitest.config.ts',
       'frameworks/*/vitest.config.ts',
       'lib/*/vitest.config.ts',

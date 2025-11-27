@@ -319,7 +319,7 @@ const jobs = {
             'code/node_modules',
             'scripts/node_modules',
           ],
-          key: 'node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}',
+          key: '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}',
         },
       },
       {
@@ -398,8 +398,8 @@ const jobs = {
       {
         restore_cache: {
           keys: [
-            'node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}',
-            'node_modules-',
+            '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}',
+            '{{ arch }}-node_modules-',
           ],
         },
       },
@@ -1765,8 +1765,8 @@ const jobs = {
       {
         restore_cache: {
           keys: [
-            'node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}',
-            'node_modules-',
+            '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}',
+            '{{ arch }}-node_modules-',
           ],
         },
       },
@@ -1853,8 +1853,8 @@ const jobs = {
       {
         restore_cache: {
           keys: [
-            'node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}',
-            'node_modules-',
+            '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}',
+            '{{ arch }}-node_modules-',
           ],
         },
       },
@@ -1908,8 +1908,8 @@ const jobs = {
       {
         restore_cache: {
           keys: [
-            'node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}',
-            'node_modules-',
+            '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}',
+            '{{ arch }}-node_modules-',
           ],
         },
       },

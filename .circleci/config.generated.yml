@@ -452,7 +452,7 @@ workflows:
                       - build
             - react-vite-default-ts--create:
                   requires:
-                      - react-vite-default-ts--create
+                      - sandboxes
             - react-vite-default-ts--build:
                   requires:
                       - react-vite-default-ts--create

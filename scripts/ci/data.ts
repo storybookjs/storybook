@@ -288,7 +288,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           },
         ],
       },
-      [ids.create]
+      ['sandboxes']
     ),
     defineJob(
       names.build,

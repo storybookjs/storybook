@@ -1,10 +1,19 @@
 import os from 'node:os';
 import { join } from 'node:path';
 
-const PLATFORM = os.platform();
-
 // eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';
+
+const PLATFORM = os.platform();
+const CACHE_KEYS = [
+  `${PLATFORM}-node_modules`,
+  '{{ checksum ".nvmrc" }}',
+  '{{ checksum ".yarnrc.yml" }}',
+  '{{ checksum "scripts/yarn.lock" }}',
+  '{{ checksum "code/yarn.lock" }}',
+].map((_, index, list) => {
+  return list.slice(0, list.length - index).join('/');
+});
 
 const dirname = import.meta.dirname;
 
@@ -144,18 +153,122 @@ const executors = {
     working_directory: '/tmp/storybook',
   },
 };
-const cacheKeys = [
-  `${PLATFORM}-node_modules`,
-  '{{ checksum ".nvmrc" }}', 
-  '{{ checksum ".yarnrc.yml" }}',
-  '{{ checksum "scripts/yarn.lock" }}', 
-  '{{ checksum "code/yarn.lock" }}', 
-].map((_, index, list) => {
-  const length = list.length;
-  return list.slice(0, length - index).join('/');
+
+type SomethingImplementation = {
+  executor: {
+    class: string;
+    name: string;
+  };
+  steps: unknown[];
+  parameters?: Record<string, unknown>;
+  parallelism?: number;
+};
+
+function defineJob<K extends string, I extends SomethingImplementation>(
+  name: K,
+  implementation: I
+) {
+  return {
+    name,
+    implementation,
+  };
+}
+
+const build = defineJob('build', {
+  executor: {
+    class: 'xlarge',
+    name: 'sb_node_22_classic',
+  },
+  steps: [
+    {
+      'git-shallow-clone/checkout_advanced': {
+        clone_options: '--depth 1 --verbose',
+      },
+    },
+    {
+      'node/install-packages': {
+        'app-dir': 'code',
+        'cache-only-lockfile': true,
+        'pkg-manager': 'yarn',
+      },
+    },
+    {
+      'node/install-packages': {
+        'app-dir': 'scripts',
+        'cache-only-lockfile': true,
+        'pkg-manager': 'yarn',
+      },
+    },
+    {
+      save_cache: {
+        paths: [
+          //
+          '.yarn/code-install-state.gz',
+          '.yarn/scripts-install-state.gz',
+          '.yarn/root-install-state.gz',
+          'code/node_modules',
+          'scripts/node_modules',
+        ],
+        key: CACHE_KEYS[0],
+      },
+    },
+    {
+      run: {
+        command: 'git diff --exit-code',
+        name: 'Check for changes',
+      },
+    },
+    {
+      run: {
+        command: 'yarn dedupe --check',
+        name: 'Check for dedupe',
+      },
+    },
+    {
+      run: {
+        command: 'yarn task --task compile --start-from=auto --no-link --debug',
+        name: 'Compile',
+        working_directory: 'code',
+      },
+    },
+    {
+      run: {
+        command: 'yarn local-registry --publish',
+        name: 'Publish to Verdaccio',
+        working_directory: 'code',
+      },
+    },
+    'report-workflow-on-failure',
+    {
+      store_artifacts: {
+        path: 'code/bench/esbuild-metafiles',
+      },
+    },
+    {
+      persist_to_workspace: {
+        paths: [
+          // 'code/node_modules',
+          // 'scripts/node_modules',
+          ...glob
+            .sync('**/src', {
+              cwd: join(dirname, '../../code'),
+              onlyDirectories: true,
+              ignore: ['node_modules'],
+            })
+            .flatMap((p) => [
+              `code/${p.replace('src', 'dist')}`,
+              `code/${p.replace('src', 'node_modules')}`,
+            ]),
+          '.verdaccio-cache',
+          // '.yarn/code-install-state.gz',
+          // '.yarn/scripts-install-state.gz',
+          // '.yarn/root-install-state.gz',
+        ],
+        root: '.',
+      },
+    },
+  ],
 });
-
-
 
 const jobs = {
   'bench-packages': {
@@ -302,101 +415,7 @@ const jobs = {
       },
     ],
   },
-  build: {
-    executor: {
-      class: 'xlarge',
-      name: 'sb_node_22_classic',
-    },
-    steps: [
-      {
-        'git-shallow-clone/checkout_advanced': {
-          clone_options: '--depth 1 --verbose',
-        },
-      },
-      {
-        'node/install-packages': {
-          'app-dir': 'code',
-          'cache-only-lockfile': true,
-          'pkg-manager': 'yarn',
-        },
-      },
-      {
-        'node/install-packages': {
-          'app-dir': 'scripts',
-          'cache-only-lockfile': true,
-          'pkg-manager': 'yarn',
-        },
-      },
-      {
-        save_cache: {
-          paths: [
-            //
-            '.yarn/code-install-state.gz',
-            '.yarn/scripts-install-state.gz',
-            '.yarn/root-install-state.gz',
-            'code/node_modules',
-            'scripts/node_modules',
-          ],
-          key: cacheKeys[0],
-        },
-      },
-      {
-        run: {
-          command: 'git diff --exit-code',
-          name: 'Check for changes',
-        },
-      },
-      {
-        run: {
-          command: 'yarn dedupe --check',
-          name: 'Check for dedupe',
-        },
-      },
-      {
-        run: {
-          command: 'yarn task --task compile --start-from=auto --no-link --debug',
-          name: 'Compile',
-          working_directory: 'code',
-        },
-      },
-      {
-        run: {
-          command: 'yarn local-registry --publish',
-          name: 'Publish to Verdaccio',
-          working_directory: 'code',
-        },
-      },
-      'report-workflow-on-failure',
-      {
-        store_artifacts: {
-          path: 'code/bench/esbuild-metafiles',
-        },
-      },
-      {
-        persist_to_workspace: {
-          paths: [
-            // 'code/node_modules',
-            // 'scripts/node_modules',
-            ...glob
-              .sync('**/src', {
-                cwd: join(dirname, '../../code'),
-                onlyDirectories: true,
-                ignore: ['node_modules'],
-              })
-              .flatMap((p) => [
-                `code/${p.replace('src', 'dist')}`,
-                `code/${p.replace('src', 'node_modules')}`,
-              ]),
-            '.verdaccio-cache',
-            // '.yarn/code-install-state.gz',
-            // '.yarn/scripts-install-state.gz',
-            // '.yarn/root-install-state.gz',
-          ],
-          root: '.',
-        },
-      },
-    ],
-  },
+  [build.name]: build.implementation,
   check: {
     executor: {
       class: 'xlarge',
@@ -415,7 +434,7 @@ const jobs = {
       },
       {
         restore_cache: {
-          keys: cacheKeys,
+          keys: CACHE_KEYS,
         },
       },
       {
@@ -1779,7 +1798,7 @@ const jobs = {
       },
       {
         restore_cache: {
-          keys: cacheKeys,
+          keys: CACHE_KEYS,
         },
       },
 
@@ -1864,7 +1883,7 @@ const jobs = {
       },
       {
         restore_cache: {
-          keys: cacheKeys,
+          keys: CACHE_KEYS,
         },
       },
       {
@@ -1916,7 +1935,7 @@ const jobs = {
       },
       {
         restore_cache: {
-          keys: cacheKeys,
+          keys: CACHE_KEYS,
         },
       },
       {
@@ -2003,47 +2022,47 @@ const workflows = {
   daily: {
     jobs: [
       'pretty-docs',
-      'build',
+      build.name,
       {
         lint: {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         knip: {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'bench-packages': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       'check',
       {
         'unit-tests': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'stories-tests': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'script-checks': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'chromatic-internal-storybook': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'create-sandboxes': {
           parallelism: 38,
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
@@ -2089,27 +2108,27 @@ const workflows = {
               directory: ['react', 'vue3', 'nextjs', 'svelte'],
             },
           },
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'test-yarn-pnp': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'e2e-ui': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'e2e-ui-vitest-3': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'test-init-features': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
@@ -2120,7 +2139,7 @@ const workflows = {
               template: ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'],
             },
           },
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
@@ -2131,7 +2150,7 @@ const workflows = {
               template: ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'],
             },
           },
-          requires: ['build'],
+          requires: [build.name],
         },
       },
     ],
@@ -2142,15 +2161,15 @@ const workflows = {
   docs: {
     jobs: [
       'pretty-docs',
-      'build',
+      build.name,
       {
         check: {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         sandboxes: {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
@@ -2186,41 +2205,41 @@ const workflows = {
   merged: {
     jobs: [
       'pretty-docs',
-      'build',
+      build.name,
       {
         lint: {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         knip: {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'bench-packages': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       'check',
       {
         'unit-tests': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'stories-tests': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'script-checks': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'chromatic-internal-storybook': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
@@ -2231,7 +2250,7 @@ const workflows = {
       {
         'create-sandboxes': {
           parallelism: 21,
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
@@ -2277,27 +2296,27 @@ const workflows = {
               directory: ['react', 'vue3', 'nextjs', 'svelte'],
             },
           },
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'test-yarn-pnp': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'e2e-ui': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'e2e-ui-vitest-3': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'test-init-features': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
@@ -2308,7 +2327,7 @@ const workflows = {
               template: ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'],
             },
           },
-          requires: ['build'],
+          requires: [build.name],
         },
       },
     ],
@@ -2319,41 +2338,41 @@ const workflows = {
   normal: {
     jobs: [
       'pretty-docs',
-      'build',
+      build.name,
       {
         lint: {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         knip: {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'bench-packages': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       'check',
       {
         'unit-tests': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'stories-tests': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'script-checks': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'chromatic-internal-storybook': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
@@ -2364,7 +2383,7 @@ const workflows = {
       {
         'create-sandboxes': {
           parallelism: 14,
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
@@ -2405,22 +2424,22 @@ const workflows = {
       },
       {
         'test-yarn-pnp': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'e2e-ui': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'e2e-ui-vitest-3': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
         'test-init-features': {
-          requires: ['build'],
+          requires: [build.name],
         },
       },
       {
@@ -2430,7 +2449,7 @@ const workflows = {
               directory: ['react', 'vue3', 'nextjs', 'svelte'],
             },
           },
-          requires: ['build'],
+          requires: [build.name],
         },
       },
     ],

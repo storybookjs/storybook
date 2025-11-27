@@ -300,12 +300,14 @@ const jobs = {
       {
         'node/install-packages': {
           'app-dir': 'code',
+          'cache-only-lockfile': true,
           'pkg-manager': 'yarn',
         },
       },
       {
         'node/install-packages': {
           'app-dir': 'scripts',
+          'cache-only-lockfile': true,
           'pkg-manager': 'yarn',
         },
       },

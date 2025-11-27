@@ -57,6 +57,7 @@ tsconfig.tsbuildinfo
 .nx/workspace-data
 !**/fixtures/**/yarn.lock
 /core/report
+/code/bench
 
 *storybook.log
 

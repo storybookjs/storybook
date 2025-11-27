@@ -506,7 +506,11 @@ const build = defineJob('build', {
   ],
 });
 
-const sandboxes = ['react-vite/default-ts'].map(defineSandboxFlow);
+const sandboxes = [
+  //
+  'react-vite/default-ts',
+  'react-vite/default-js',
+].map(defineSandboxFlow);
 
 const jobs = {
   // 'bench-packages': {

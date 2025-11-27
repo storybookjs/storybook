@@ -319,7 +319,7 @@ const jobs = {
             'code/node_modules',
             'scripts/node_modules',
           ],
-          keys: [
+          key: [
             'node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}',
             'node_modules-',
           ],

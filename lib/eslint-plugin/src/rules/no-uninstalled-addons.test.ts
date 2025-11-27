@@ -14,6 +14,12 @@ import { sep } from 'path';
 import ruleTester from '../test-utils';
 import rule from './no-uninstalled-addons';
 
+function getProjectRoot(): string {
+  return process.cwd().split(sep).pop() || '';
+}
+
+const packageJsonPath = getProjectRoot() + '/';
+
 vi.mock('fs', () => ({
   ...vi.importActual('fs'),
   readFileSync: () => `
@@ -177,7 +183,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/not-installed-addon',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
       ],
@@ -201,7 +207,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/not-installed-addon',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
       ],
@@ -224,7 +230,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
       ],
@@ -245,7 +251,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/adon-essentials',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
       ],
@@ -268,7 +274,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: 'addon-withut-the-prefix',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
         {
@@ -276,7 +282,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
       ],
@@ -299,7 +305,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: 'addon-withut-the-prefix',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
         {
@@ -307,7 +313,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
       ],
@@ -330,7 +336,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: 'addon-withut-the-prefix',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
         {
@@ -338,7 +344,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
       ],
@@ -362,7 +368,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: 'addon-withut-the-prefix',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
         {
@@ -370,7 +376,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
       ],
@@ -392,7 +398,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: 'addon-withut-the-prefix',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
         {
@@ -400,7 +406,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `code${sep}`,
+            packageJsonPath,
           },
         },
       ],

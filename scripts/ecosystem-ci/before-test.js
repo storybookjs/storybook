@@ -27,13 +27,13 @@ const sandboxPackageJson = JSON.parse(await readFile(sandboxPackageJsonPath, 'ut
 
 const resolutions = rootPackageJson.resolutions
   ? Object.fromEntries(
-      Object.entries(rootPackageJson.resolutions).filter(([_, v]) => v.includes('patch:'))
+      Object.entries(rootPackageJson.resolutions).filter(([_, v]) => !v.includes('patch:'))
     )
   : {};
 
 sandboxPackageJson.resolutions = {
   ...(sandboxPackageJson.resolutions ?? {}),
-  resolutions,
+  ...resolutions,
 };
 
 await writeFile(sandboxPackageJsonPath, JSON.stringify(sandboxPackageJson, null, 2));

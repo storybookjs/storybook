@@ -20,11 +20,23 @@ tsconfig.vitest-temp.json
 
 .env.local
 
-# Yarn stuff
-.yarn/cache/
-.yarn/install-state.gz
-.pnp.data.json
+# https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# For sandboxes
 /**/.pnp.*
+/**/.yarn/*
+!/**/.yarn/patches
+!/**/.yarn/plugins
+!/**/.yarn/releases
+!/**/.yarn/sdks
+!/**/.yarn/versions
 
 # test-storybooks
 test-storybooks/ember-cli/ember-output

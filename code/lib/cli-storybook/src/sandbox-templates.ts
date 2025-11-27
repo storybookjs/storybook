@@ -491,7 +491,7 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      extraDependencies: ['prop-types', 'storybook-react-rsbuild@^3.0.0-beta.1'],
+      extraDependencies: ['prop-types'],
       useCsfFactory: true,
       mainConfig: {
         features: {
@@ -608,10 +608,12 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      extraDependencies: ['storybook-html-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.HTML,
+    },
   },
   'svelte-vite/default-js': {
     name: 'Svelte Latest (Vite | JavaScript)',
@@ -708,7 +710,6 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      extraDependencies: ['storybook-web-components-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],

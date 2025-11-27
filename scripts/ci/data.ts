@@ -64,13 +64,43 @@ const artifact = {
   },
 };
 
-function checkout(shallow: boolean = true) {
-  return {
-    'git-shallow-clone/checkout_advanced': {
-      clone_options: shallow ? '--depth 1' : '',
-    },
-  };
-}
+const git = {
+  checkout: (shallow: boolean = true) => {
+    return {
+      'git-shallow-clone/checkout_advanced': {
+        clone_options: shallow ? '--depth 1' : '',
+      },
+    };
+  },
+  check: () => {
+    return {
+      run: {
+        name: 'Ensure no changes pending',
+        command: 'git diff --exit-code',
+      },
+    };
+  },
+};
+
+const npm = {
+  install: (appDir: string, pkgManager: string = 'yarn') => {
+    return {
+      'node/install-packages': {
+        'app-dir': appDir,
+        'pkg-manager': pkgManager,
+        'cache-only-lockfile': true,
+      },
+    };
+  },
+  check: () => {
+    return {
+      run: {
+        name: 'Check for dedupe',
+        command: 'yarn dedupe --check',
+      },
+    };
+  },
+};
 
 const commands = {
   'cancel-workflow-on-failure': {
@@ -265,7 +295,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           name: 'sb_node_22_browsers',
         },
         steps: [
-          checkout(),
+          git.checkout(),
           workspace.attach(),
           cache.attach(CACHE_KEYS),
           {
@@ -330,7 +360,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           name: 'sb_playwright',
         },
         steps: [
-          checkout(),
+          git.checkout(),
           workspace.attach(),
           cache.attach(CACHE_KEYS),
           {
@@ -374,7 +404,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           name: 'sb_playwright',
         },
         steps: [
-          checkout(),
+          git.checkout(),
           workspace.attach(),
           cache.attach(CACHE_KEYS),
           {
@@ -424,22 +454,9 @@ const build = defineJob('build', {
     name: 'sb_node_22_classic',
   },
   steps: [
-    checkout(),
-    {
-      'node/install-packages': {
-        'app-dir': 'code',
-        'cache-only-lockfile': true,
-        'pkg-manager': 'yarn',
-      },
-    },
-    {
-      'node/install-packages': {
-        'app-dir': 'scripts',
-        'cache-only-lockfile': true,
-        'pkg-manager': 'yarn',
-      },
-    },
-
+    git.checkout(),
+    npm.install('scripts'),
+    npm.install('code'),
     cache.persist(
       [
         '.yarn/code-install-state.gz',
@@ -450,19 +467,8 @@ const build = defineJob('build', {
       ],
       CACHE_KEYS[0]
     ),
-
-    {
-      run: {
-        command: 'git diff --exit-code',
-        name: 'Check for changes',
-      },
-    },
-    {
-      run: {
-        command: 'yarn dedupe --check',
-        name: 'Check for dedupe',
-      },
-    },
+    git.check(),
+    npm.check(),
     {
       run: {
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
@@ -478,7 +484,7 @@ const build = defineJob('build', {
       },
     },
     'report-workflow-on-failure',
-    artifact.persist('code/bench/esbuild-metafiles'),
+    artifact.persist('code/bench/esbuild-metafiles', 'bench'),
     workspace.persist('.', [
       ...glob
         .sync('**/src', {
@@ -492,6 +498,40 @@ const build = defineJob('build', {
         ]),
       '.verdaccio-cache',
     ]),
+  ],
+});
+
+const check = defineJob('check', {
+  executor: {
+    class: 'xlarge',
+    name: 'sb_node_22_classic',
+  },
+  steps: [
+    git.checkout(),
+    workspace.attach(),
+    cache.attach(CACHE_KEYS),
+    {
+      run: {
+        command: 'yarn task --task check --no-link',
+        name: 'TypeCheck code',
+        working_directory: 'code',
+      },
+    },
+    {
+      run: {
+        command: 'yarn check',
+        name: 'TypeCheck scripts',
+        working_directory: 'scripts',
+      },
+    },
+    {
+      run: {
+        command: 'git diff --exit-code',
+        name: 'Ensure no changes pending',
+      },
+    },
+    'report-workflow-on-failure',
+    'cancel-workflow-on-failure',
   ],
 });
 
@@ -647,39 +687,7 @@ const jobs = {
   //   ],
   // },
   [build.id]: build.implementation,
-  check: {
-    executor: {
-      class: 'xlarge',
-      name: 'sb_node_22_classic',
-    },
-    steps: [
-      checkout(),
-      workspace.attach(),
-      cache.attach(CACHE_KEYS),
-      {
-        run: {
-          command: 'yarn task --task check --no-link',
-          name: 'TypeCheck code',
-          working_directory: 'code',
-        },
-      },
-      {
-        run: {
-          command: 'yarn check',
-          name: 'TypeCheck scripts',
-          working_directory: 'scripts',
-        },
-      },
-      {
-        run: {
-          command: 'git diff --exit-code',
-          name: 'Ensure no changes pending',
-        },
-      },
-      'report-workflow-on-failure',
-      'cancel-workflow-on-failure',
-    ],
-  },
+  [check.id]: check.implementation,
   // 'check-sandboxes': {
   //   executor: {
   //     class: 'medium',
@@ -1146,13 +1154,8 @@ const jobs = {
       name: 'sb_node_22_classic',
     },
     steps: [
-      checkout(),
-      {
-        'node/install-packages': {
-          'app-dir': 'scripts',
-          'pkg-manager': 'yarn',
-        },
-      },
+      git.checkout(),
+      npm.install('scripts'),
       {
         run: {
           command: 'yarn docs:prettier:check',
@@ -2005,217 +2008,6 @@ const jobs = {
     },
     {} as Record<string, SomethingImplementation>
   ),
-
-  // 'sandboxes-a-create': {
-  //   executor: {
-  //     class: 'large',
-  //     name: 'sb_node_22_browsers',
-  //   },
-  //   steps: [
-  //     {
-  //       'git-shallow-clone/checkout_advanced': {
-  //         clone_options: '--depth 1 --verbose',
-  //       },
-  //     },
-  //     {
-  //       attach_workspace: {
-  //         at: '.',
-  //       },
-  //     },
-  //     {
-  //       restore_cache: {
-  //         keys: CACHE_KEYS,
-  //       },
-  //     },
-
-  //     {
-  //       run: {
-  //         command: 'yarn local-registry --open',
-  //         name: 'Verdaccio',
-  //         background: true,
-  //         working_directory: 'code',
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         background: true,
-  //         command: 'yarn jiti ./event-log-collector.ts',
-  //         name: 'Start Event Collector',
-  //         working_directory: 'scripts',
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: [
-  //           'yarn wait-on tcp:127.0.0.1:6001', // verdaccio
-  //           'yarn wait-on tcp:127.0.0.1:6002', // reverse proxy
-  //           'yarn wait-on tcp:127.0.0.1:6007', // event collector
-  //         ].join('\n'),
-  //         name: 'Wait on servers',
-  //         working_directory: 'code',
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: [
-  //           //
-  //           'sudo corepack enable',
-  //           'which yarn',
-  //           'yarn --version',
-  //         ].join('\n'),
-  //         name: 'Setup Corepack',
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command:
-  //           'yarn task sandbox --template react-vite/default-ts --no-link -s sandbox --debug',
-  //         environment: {
-  //           STORYBOOK_TELEMETRY_DEBUG: 1,
-  //           STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
-  //         },
-  //         name: 'Create Sandboxes',
-  //       },
-  //     },
-  //     {
-  //       store_artifacts: {
-  //         path: 'sandbox/react-vite-default-ts/debug-storybook.log',
-  //         destination: 'logs',
-  //       },
-  //     },
-  //     {
-  //       persist_to_workspace: {
-  //         paths: ['sandbox/react-vite-default-ts'],
-  //         root: '.',
-  //       },
-  //     },
-  //   ],
-  // },
-  // 'sandboxes-a-build': {
-  //   executor: {
-  //     class: 'xlarge',
-  //     name: 'sb_playwright',
-  //   },
-  //   steps: [
-  //     {
-  //       'git-shallow-clone/checkout_advanced': {
-  //         clone_options: '--depth 1 --verbose',
-  //       },
-  //     },
-  //     {
-  //       attach_workspace: {
-  //         at: '.',
-  //       },
-  //     },
-  //     {
-  //       restore_cache: {
-  //         keys: CACHE_KEYS,
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: 'yarn task build --template react-vite/default-ts --no-link -s build',
-  //         name: 'Build storybook',
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: 'yarn task serve --template react-vite/default-ts --no-link -s serve',
-  //         background: true,
-  //         name: 'Serve storybook',
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: 'yarn wait-on tcp:127.0.0.1:8001',
-  //         name: 'Wait on storybook',
-  //         working_directory: 'code',
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: [
-  //           'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
-  //           'echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1',
-  //         ].join('\n'),
-  //         name: 'Running E2E Tests',
-  //       },
-  //     },
-  //   ],
-  // },
-  // 'sandboxes-a-dev': {
-  //   executor: {
-  //     class: 'xlarge',
-  //     name: 'sb_playwright',
-  //   },
-  //   steps: [
-  //     {
-  //       'git-shallow-clone/checkout_advanced': {
-  //         clone_options: '--depth 1 --verbose',
-  //       },
-  //     },
-  //     {
-  //       attach_workspace: {
-  //         at: '.',
-  //       },
-  //     },
-  //     {
-  //       restore_cache: {
-  //         keys: CACHE_KEYS,
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: 'yarn task dev --template react-vite/default-ts --no-link -s dev',
-  //         name: 'Run storybook',
-  //         working_directory: 'code',
-  //         background: true,
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: 'yarn wait-on tcp:127.0.0.1:6006',
-  //         name: 'Wait on storybook',
-  //         working_directory: 'code',
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: [
-  //           'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
-  //           'echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1',
-  //         ].join('\n'),
-  //         name: 'Running E2E Tests',
-  //       },
-  //     },
-  //   ],
-  // },
-  // 'sandboxes-b-create': {
-  //   executor: {
-  //     class: 'xlarge',
-  //     name: 'sb_playwright',
-  //   },
-  //   steps: [
-  //     {
-  //       'git-shallow-clone/checkout_advanced': {
-  //         clone_options: '--depth 1 --verbose',
-  //       },
-  //     },
-  //   ],
-  // },
-  // 'sandboxes-b-e2e': {
-  //   executor: {
-  //     class: 'xlarge',
-  //     name: 'sb_playwright',
-  //   },
-  //   steps: [
-  //     {
-  //       'git-shallow-clone/checkout_advanced': {
-  //         clone_options: '--depth 1 --verbose',
-  //       },
-  //     },
-  //   ],
-  // },
 };
 
 const orbs = {
@@ -2246,151 +2038,12 @@ const parameters = {
   },
 };
 const workflows = {
-  // daily: {
-  //   jobs: [
-  //     'pretty-docs',
-  //     build.id,
-  //     {
-  //       lint: {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       knip: {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'bench-packages': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     'check',
-  //     {
-  //       'unit-tests': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'stories-tests': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'script-checks': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'chromatic-internal-storybook': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'create-sandboxes': {
-  //         parallelism: 38,
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'check-sandboxes': {
-  //         parallelism: 1,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'chromatic-sandboxes': {
-  //         parallelism: 35,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'e2e-production': {
-  //         parallelism: 7,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'e2e-dev': {
-  //         parallelism: 28,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'test-runner-production': {
-  //         parallelism: 33,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'vitest-integration': {
-  //         parallelism: 13,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'test-portable-stories': {
-  //         matrix: {
-  //           parameters: {
-  //             directory: ['react', 'vue3', 'nextjs', 'svelte'],
-  //           },
-  //         },
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'test-yarn-pnp': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'e2e-ui': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'e2e-ui-vitest-3': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'test-init-features': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'test-init-empty': {
-  //         matrix: {
-  //           parameters: {
-  //             packageManager: ['npm'],
-  //             template: ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'],
-  //           },
-  //         },
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'test-init-empty-windows': {
-  //         matrix: {
-  //           parameters: {
-  //             packageManager: ['npm'],
-  //             template: ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'],
-  //           },
-  //         },
-  //         requires: [build.id],
-  //       },
-  //     },
-  //   ],
-  //   when: {
-  //     equal: ['daily', '<< pipeline.parameters.workflow >>'],
-  //   },
-  // },
   docs: {
     jobs: [
       'pretty-docs',
       build.id,
       {
-        check: {
+        [check.id]: {
           requires: [build.id],
         },
       },
@@ -2405,261 +2058,6 @@ const workflows = {
       equal: ['docs', '<< pipeline.parameters.workflow >>'],
     },
   },
-  // merged: {
-  //   jobs: [
-  //     'pretty-docs',
-  //     build.id,
-  //     {
-  //       lint: {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       knip: {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'bench-packages': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     'check',
-  //     {
-  //       'unit-tests': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'stories-tests': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'script-checks': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'chromatic-internal-storybook': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       coverage: {
-  //         requires: ['unit-tests'],
-  //       },
-  //     },
-  //     {
-  //       'create-sandboxes': {
-  //         parallelism: 21,
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'chromatic-sandboxes': {
-  //         parallelism: 18,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'e2e-production': {
-  //         parallelism: 6,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'e2e-dev': {
-  //         parallelism: 14,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'test-runner-production': {
-  //         parallelism: 16,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'vitest-integration': {
-  //         parallelism: 7,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'check-sandboxes': {
-  //         parallelism: 1,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'test-portable-stories': {
-  //         matrix: {
-  //           parameters: {
-  //             directory: ['react', 'vue3', 'nextjs', 'svelte'],
-  //           },
-  //         },
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'test-yarn-pnp': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'e2e-ui': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'e2e-ui-vitest-3': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'test-init-features': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'test-init-empty-windows': {
-  //         matrix: {
-  //           parameters: {
-  //             packageManager: ['npm'],
-  //             template: ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'],
-  //           },
-  //         },
-  //         requires: [build.id],
-  //       },
-  //     },
-  //   ],
-  //   when: {
-  //     equal: ['merged', '<< pipeline.parameters.workflow >>'],
-  //   },
-  // },
-  // normal: {
-  //   jobs: [
-  //     'pretty-docs',
-  //     build.id,
-  //     {
-  //       lint: {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       knip: {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'bench-packages': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     'check',
-  //     {
-  //       'unit-tests': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'stories-tests': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'script-checks': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'chromatic-internal-storybook': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       coverage: {
-  //         requires: ['unit-tests'],
-  //       },
-  //     },
-  //     {
-  //       'create-sandboxes': {
-  //         parallelism: 14,
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'chromatic-sandboxes': {
-  //         parallelism: 11,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'e2e-production': {
-  //         parallelism: 6,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'e2e-dev': {
-  //         parallelism: 8,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'test-runner-production': {
-  //         parallelism: 9,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'vitest-integration': {
-  //         parallelism: 5,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'check-sandboxes': {
-  //         parallelism: 1,
-  //         requires: ['create-sandboxes'],
-  //       },
-  //     },
-  //     {
-  //       'test-yarn-pnp': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'e2e-ui': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'e2e-ui-vitest-3': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'test-init-features': {
-  //         requires: [build.id],
-  //       },
-  //     },
-  //     {
-  //       'test-portable-stories': {
-  //         matrix: {
-  //           parameters: {
-  //             directory: ['react', 'vue3', 'nextjs', 'svelte'],
-  //           },
-  //         },
-  //         requires: [build.id],
-  //       },
-  //     },
-  //   ],
-  //   when: {
-  //     equal: ['normal', '<< pipeline.parameters.workflow >>'],
-  //   },
-  // },
 };
 
 export const data = {

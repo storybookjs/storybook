@@ -144,13 +144,13 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - node/install-packages:
-                  app-dir: code
-                  cache-only-lockfile: true
-                  pkg-manager: yarn
-            - node/install-packages:
                   app-dir: scripts
-                  cache-only-lockfile: true
                   pkg-manager: yarn
+                  cache-only-lockfile: true
+            - node/install-packages:
+                  app-dir: code
+                  pkg-manager: yarn
+                  cache-only-lockfile: true
             - save_cache:
                   paths:
                       - .yarn/code-install-state.gz
@@ -160,11 +160,11 @@ jobs:
                       - scripts/node_modules
                   key: darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "scripts/yarn.lock" }}/{{ checksum "code/yarn.lock" }}
             - run:
+                  name: Ensure no changes pending
                   command: git diff --exit-code
-                  name: Check for changes
             - run:
-                  command: yarn dedupe --check
                   name: Check for dedupe
+                  command: yarn dedupe --check
             - run:
                   command: yarn task --task compile --start-from=auto --no-link --debug
                   name: Compile
@@ -176,6 +176,7 @@ jobs:
             - report-workflow-on-failure
             - store_artifacts:
                   path: code/bench/esbuild-metafiles
+                  destination: bench
             - persist_to_workspace:
                   paths:
                       - code/core/dist
@@ -287,6 +288,7 @@ jobs:
                       - .verdaccio-cache
                   root: .
     check:
+        description: check
         executor:
             class: xlarge
             name: sb_node_22_classic
@@ -325,6 +327,7 @@ jobs:
             - node/install-packages:
                   app-dir: scripts
                   pkg-manager: yarn
+                  cache-only-lockfile: true
             - run:
                   command: yarn docs:prettier:check
                   name: Prettier

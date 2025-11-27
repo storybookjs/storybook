@@ -1,4 +1,8 @@
+import { rm } from 'node:fs/promises';
+
 import { expect, test } from '@playwright/test';
+import { homedir } from 'node:os';
+import { join } from 'pathe';
 import process from 'process';
 
 import { SbPage, hasOnboardingFeature } from './util';
@@ -14,6 +18,8 @@ test.describe('addon-onboarding', () => {
     `Skipping ${templateName}, which does not have addon-onboarding set up.`
   );
   test('the onboarding flow', async ({ page }) => {
+    await rm(join(homedir(), '.storybook', 'settings.json'), { force: true });
+
     await page.goto(`${storybookUrl}/?path=/onboarding`);
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();

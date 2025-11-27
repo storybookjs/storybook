@@ -35,6 +35,12 @@ async function main() {
     if (sandboxDir !== cacheDir) {
       console.log(`🧹 copying cached ${cacheDir} to ${sandboxDir}`);
       await rm(sandboxDir, { recursive: true, force: true });
+      if (!existsSync(join(cacheDir))) {
+        throw new Error(
+          `Sandbox should exist at ${cacheDir}. Did you forget to run the sandbox command first?`
+        );
+      }
+      // cache dir is created in the sandbox command that should be run before this script
       await cp(cacheDir, sandboxDir, { recursive: true, force: true });
     }
 
@@ -48,7 +54,9 @@ async function main() {
           timeout: 2000,
         });
       } catch {
-        void exec('yarn local-registry --open', { cwd: CODE_DIRECTORY });
+        void exec('yarn local-registry --open', { cwd: CODE_DIRECTORY }).catch(() => {
+          // best-effort background registry; waitOn below will surface failures
+        });
         await waitOn({
           log: true,
           resources: ['http://localhost:6001', 'http://localhost:6002'],

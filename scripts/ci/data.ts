@@ -1,4 +1,7 @@
+import os from 'node:os';
 import { join } from 'node:path';
+
+const PLATFORM = os.platform();
 
 // eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';
@@ -141,6 +144,19 @@ const executors = {
     working_directory: '/tmp/storybook',
   },
 };
+const cacheKeys = [
+  `${PLATFORM}-node_modules`,
+  '{{ checksum ".nvmrc" }}', 
+  '{{ checksum ".yarnrc.yml" }}',
+  '{{ checksum "scripts/yarn.lock" }}', 
+  '{{ checksum "code/yarn.lock" }}', 
+].map((_, index, list) => {
+  const length = list.length;
+  return list.slice(0, length - index).join('/');
+});
+
+
+
 const jobs = {
   'bench-packages': {
     executor: {
@@ -321,7 +337,7 @@ const jobs = {
             'code/node_modules',
             'scripts/node_modules',
           ],
-          key: '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}',
+          key: cacheKeys[0],
         },
       },
       {
@@ -399,10 +415,7 @@ const jobs = {
       },
       {
         restore_cache: {
-          keys: [
-            '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}',
-            '{{ arch }}-node_modules-',
-          ],
+          keys: cacheKeys,
         },
       },
       {
@@ -1766,10 +1779,7 @@ const jobs = {
       },
       {
         restore_cache: {
-          keys: [
-            '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}',
-            '{{ arch }}-node_modules-',
-          ],
+          keys: cacheKeys,
         },
       },
 
@@ -1854,10 +1864,7 @@ const jobs = {
       },
       {
         restore_cache: {
-          keys: [
-            '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}',
-            '{{ arch }}-node_modules-',
-          ],
+          keys: cacheKeys,
         },
       },
       {
@@ -1909,10 +1916,7 @@ const jobs = {
       },
       {
         restore_cache: {
-          keys: [
-            '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}',
-            '{{ arch }}-node_modules-',
-          ],
+          keys: cacheKeys,
         },
       },
       {

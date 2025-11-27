@@ -240,7 +240,7 @@ jobs:
                       - .yarn/root-install-state.gz
                       - code/node_modules
                       - scripts/node_modules
-                  key: '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}'
+                  key: darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "scripts/yarn.lock" }}/{{ checksum "code/yarn.lock" }}
             - run:
                   command: git diff --exit-code
                   name: Check for changes
@@ -378,9 +378,12 @@ jobs:
             - attach_workspace:
                   at: .
             - restore_cache:
-                  keys:
-                      - '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}'
-                      - "{{ arch }}-node_modules-"
+                  keys: &a1
+                      - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "scripts/yarn.lock" }}/{{ checksum "code/yarn.lock" }}
+                      - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "scripts/yarn.lock" }}
+                      - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - darwin-node_modules/{{ checksum ".nvmrc" }}
+                      - darwin-node_modules
             - run:
                   command: yarn task --task check --no-link
                   name: TypeCheck code
@@ -1253,9 +1256,7 @@ jobs:
             - attach_workspace:
                   at: .
             - restore_cache:
-                  keys:
-                      - '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}'
-                      - "{{ arch }}-node_modules-"
+                  keys: *a1
             - run:
                   command: yarn local-registry --open
                   name: Verdaccio
@@ -1302,9 +1303,7 @@ jobs:
             - attach_workspace:
                   at: .
             - restore_cache:
-                  keys:
-                      - '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}'
-                      - "{{ arch }}-node_modules-"
+                  keys: *a1
             - run:
                   command: yarn task build --template react-vite/default-ts --no-link -s build
                   name: Build storybook
@@ -1331,9 +1330,7 @@ jobs:
             - attach_workspace:
                   at: .
             - restore_cache:
-                  keys:
-                      - '{{ arch }}-node_modules-{{ checksum "code/yarn.lock" }}-{{ checksum "scripts/yarn.lock" }}--{{ checksum ".nvmrc" }}-{{ checksum ".yarnrc.yml" }}'
-                      - "{{ arch }}-node_modules-"
+                  keys: *a1
             - run:
                   command: yarn task dev --template react-vite/default-ts --no-link -s dev
                   name: Run storybook

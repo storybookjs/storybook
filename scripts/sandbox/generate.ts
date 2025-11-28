@@ -302,7 +302,6 @@ const runGenerators = async (
             console.log(`🗑️ Removing ${join(beforeDir, 'node_modules')}`);
             await rm(join(beforeDir, 'node_modules'), { recursive: true, force: true });
             console.log(`🗑️ Removing ${join(baseDir, AFTER_DIR_NAME, 'node_modules')}`);
-            console.log(1);
             await rm(join(baseDir, AFTER_DIR_NAME, 'node_modules'), {
               recursive: true,
               force: true,

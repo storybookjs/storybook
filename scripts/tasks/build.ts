@@ -64,7 +64,7 @@ export const build: Task = {
     );
 
     const cacheDir = join(ROOT_DIRECTORY, 'sandbox', key.replace('/', '-'), 'storybook-static');
-    if (builtSandboxDir !== cacheDir) {
+    if (process.env.NX_CLI_SET === 'true' && builtSandboxDir !== cacheDir) {
       console.info(`✅ Removing cache directory ${cacheDir}`);
       await rm(cacheDir, { recursive: true, force: true });
 

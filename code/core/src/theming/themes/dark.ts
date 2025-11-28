@@ -40,6 +40,9 @@ const theme: ThemeVars = {
   inputBorder: 'hsl(0 0 100 / 0.1)',
   inputTextColor: '#C9CCCF',
   inputBorderRadius: 4,
+
+  // Highlight styles
+  highlightOpacity: 0.85,
 };
 
 export default theme;

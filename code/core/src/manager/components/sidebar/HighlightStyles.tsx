@@ -9,8 +9,8 @@ import type { Highlight } from './types';
 // @ts-expect-error (non strict)
 export const HighlightStyles: FC<Highlight> = ({ refId, itemId }) => (
   <Global
-    styles={({ color }) => {
-      const background = transparentize(0.85, color.secondary);
+    styles={({ color, highlightOpacity }) => {
+      const background = transparentize(highlightOpacity ?? 0.85, color.secondary);
       return {
         [`[data-ref-id="${refId}"][data-item-id="${itemId}"]:not([data-selected="true"])`]: {
           [`&[data-nodetype="component"], &[data-nodetype="group"]`]: {

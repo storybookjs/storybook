@@ -102,6 +102,7 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
     inputBorder,
     inputTextColor,
     inputBorderRadius,
+    highlightOpacity,
     brandTitle,
     brandUrl,
     brandImage,
@@ -154,6 +155,9 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
       background: booleanBg || inputBorder,
       selectedBackground: booleanSelectedBg || inputBg,
     },
+
+    // Highlight styles
+    highlightOpacity: highlightOpacity ?? 0.85,
 
     // UI
     layoutMargin: 10,

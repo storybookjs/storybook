@@ -12,9 +12,11 @@ steps:
   - checkout
   - attach_workspace:
       at: /tmp
+  - run:
       name: Install sandbox dependencies
       # chromatic can only run in a git directory
       command: |
+        sudo corepack enable
         cp /tmp/storybook-sandboxes /tmp/storybook/sandbox -r --remove-destination
         TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
         cd $(STORYBOOK_SANDBOX_ROOT=./sandbox yarn get-sandbox-dir --template $TEMPLATE) && yarn

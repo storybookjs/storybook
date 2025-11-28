@@ -282,6 +282,7 @@ jobs:
                 at: /tmp
             - run:
                 command: |
+                    sudo corepack enable
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
                     cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
@@ -321,6 +322,7 @@ jobs:
             - checkout
             - attach_workspace:
                 at: /tmp
+            - run:
                 command: |
                     sudo corepack enable
                     cp /tmp/storybook-sandboxes /tmp/storybook/sandbox -r --remove-destination

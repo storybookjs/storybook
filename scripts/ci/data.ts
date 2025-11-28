@@ -392,10 +392,9 @@ const build = defineJob('build', {
     artifact.persist(`${WORKING_DIR}/code/bench/esbuild-metafiles`, 'bench'),
     workspace.persist([
       ...glob
-        .sync('**/src', {
+        .sync(['*/src', '*/*/src'], {
           cwd: join(dirname, '../../code'),
           onlyDirectories: true,
-          ignore: ['node_modules'],
         })
         .flatMap((p) => [
           `${WORKING_DIR}/code/${p.replace('src', 'dist')}`,

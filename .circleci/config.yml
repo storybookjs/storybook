@@ -775,7 +775,7 @@ jobs:
         steps:
             - checkout
             - attach_workspace:
-                at: '%HOME%'
+                at: \%HOME%
             - run:
                 command: |
                     choco install nodejs-lts --version=22.11.0 -y
@@ -924,7 +924,7 @@ jobs:
                             STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
                         name: Storybook init from empty directory (Windows --skip-install)
                         shell: bash.exe
-        working_directory: '%HOME%\storybook'
+        working_directory: \%HOME%\storybook
     test-init-features:
         executor:
             class: small

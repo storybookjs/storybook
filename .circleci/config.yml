@@ -43,6 +43,10 @@ jobs:
           cache-only-lockfile: true
           pkg-manager: pnpm
       - run:
+          name: Corepack
+          command: |
+            corepack prepare pnpm@latest --activate
+      - run:
           name: Generate config
           command: |
             pnpx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>

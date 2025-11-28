@@ -89,6 +89,10 @@ test.describe("component testing", () => {
         await descriptionButton.isVisible({ timeout: 4000 }).catch(() => false)
       ) {
         await descriptionButton.click({ timeout: 4000, force: true });
+
+        await page
+          .getByLabel("Close modal")
+          .click({ timeout: 4000, force: true });
       }
     } catch {
       // Ignore any errors when trying to open the modal

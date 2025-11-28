@@ -4,7 +4,17 @@ import { join } from 'node:path';
 // eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';
 
-import { ROOT_DIR, WORKING_DIR, artifact, cache, git, npm, toId, workspace } from './utils';
+import {
+  ROOT_DIR,
+  SANDBOX_DIR,
+  WORKING_DIR,
+  artifact,
+  cache,
+  git,
+  npm,
+  toId,
+  workspace,
+} from './utils';
 
 const PLATFORM = os.platform();
 const CACHE_KEYS = [
@@ -99,7 +109,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: `${ROOT_DIR}${WORKING_DIR}`,
+    working_directory: `${ROOT_DIR}/${WORKING_DIR}`,
   },
   sb_node_22_browsers: {
     docker: [
@@ -119,7 +129,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: `${ROOT_DIR}${WORKING_DIR}`,
+    working_directory: `${ROOT_DIR}/${WORKING_DIR}`,
   },
   sb_node_22_classic: {
     docker: [
@@ -139,7 +149,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: `${ROOT_DIR}${WORKING_DIR}`,
+    working_directory: `${ROOT_DIR}/${WORKING_DIR}`,
   },
   sb_playwright: {
     docker: [
@@ -159,7 +169,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: `${ROOT_DIR}${WORKING_DIR}`,
+    working_directory: `${ROOT_DIR}/${WORKING_DIR}`,
   },
 };
 
@@ -261,8 +271,8 @@ function defineSandboxFlow<K extends string>(name: K) {
               },
             },
           },
-          artifact.persist(`${ROOT_DIR}/storybook-sandboxes/${id}/debug-storybook.log`, 'logs'),
-          workspace.persist([`${ROOT_DIR}/storybook-sandboxes/${id}`]),
+          artifact.persist(`${ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
+          workspace.persist([`${SANDBOX_DIR}/${id}`]),
         ],
       },
       ['sandboxes']

@@ -1,4 +1,4 @@
-export const ROOT_DIR = '/';
+export const ROOT_DIR = '/tmp';
 export const WORKING_DIR = `storybook`;
 export const SANDBOX_DIR = `storybook-sandboxes`;
 
@@ -54,7 +54,7 @@ export const git = {
     return {
       'git-shallow-clone/checkout_advanced': {
         clone_options: shallow ? '--depth 1' : '',
-        path: `${ROOT_DIR}${WORKING_DIR}`,
+        path: `${ROOT_DIR}/${WORKING_DIR}`,
       },
     };
   },

@@ -30,25 +30,21 @@ parameters:
 
 jobs:
   generate-and-run-config:
-    executor: continuation/default
+    executor: 
+      name: node/default
+      class: medium
     steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1'
-      - node/install
-      # - node/install:
-      #     install-yarn: true
-      # - node/install-packages:
-      #     cache-only-lockfile: true
-      #     pkg-manager: yarn
-
+      - node/install:
+          install-yarn: true
+      - node/install-packages:
+          cache-only-lockfile: true
+          pkg-manager: yarn
       - run:
           name: Generate config
           command: |
-            npx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
-
-      # https://circleci.com/developer/orbs/orb/circleci/continuation
-      - continuation/continue:
-          configuration_path: .circleci/config.generated.yml
+            yarn dlx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
+      - git-shallow-clone/checkout_advanced:
+          clone_options: '--depth 1'
 workflows:
   setup:
     jobs:

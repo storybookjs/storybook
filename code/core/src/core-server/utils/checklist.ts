@@ -64,10 +64,12 @@ export async function initializeChecklist() {
     );
 
     store.onStateChange((state: StoreState, previousState: StoreState) => {
+      const entries = Object.entries(state.items);
+
       // Split values into project-local (done) and user-local (accepted, skipped) persistence
       const projectValues: Partial<StoreState['items']> = {};
       const userValues: Partial<StoreState['items']> = {};
-      Object.entries(state.items).forEach(([id, { status, mutedAt }]) => {
+      entries.forEach(([id, { status, mutedAt }]) => {
         if (status === 'done') {
           projectValues[id as keyof StoreState['items']] = { status };
         } else if (status === 'accepted' || status === 'skipped') {
@@ -83,12 +85,34 @@ export async function initializeChecklist() {
       saveProjectState({ items: projectValues as StoreState['items'] });
       saveUserState({ items: userValues, widget: state.widget });
 
-      const changedValues = Object.entries(state.items).filter(
-        ([key, value]) => value !== previousState.items[key as keyof typeof state.items]
+      // Gather items that have changed state
+      const { mutedItems, statusItems } = entries.reduce(
+        (acc, [item, { mutedAt, status }]) => {
+          const prev = previousState.items[item as keyof typeof state.items];
+          if (mutedAt !== prev?.mutedAt) {
+            acc.mutedItems.push(item);
+          }
+          if (status !== prev?.status) {
+            acc.statusItems.push(item);
+          }
+          return acc;
+        },
+        { mutedItems: [] as string[], statusItems: [] as string[] }
       );
-      telemetry('onboarding-checklist', {
-        ...(changedValues.length > 0 ? { items: Object.fromEntries(changedValues) } : {}),
-        ...(!deepEqual(state.widget, previousState.widget) ? { widget: state.widget } : {}),
+      if (mutedItems.length > 0) {
+        telemetry('onboarding-checklist-muted', {
+          items: mutedItems,
+          completedItems: entries.reduce<string[]>((acc, [id, { status }]) => {
+            return status === 'done' || status === 'accepted' ? acc.concat([id]) : acc;
+          }, []),
+          skippedItems: entries.reduce<string[]>((acc, [id, { status }]) => {
+            return status === 'skipped' ? acc.concat([id]) : acc;
+          }, []),
+        });
+      }
+      statusItems.forEach((item) => {
+        const { status } = state.items[item as keyof typeof state.items];
+        telemetry('onboarding-checklist-status', { item, status });
       });
     });
   } catch (err) {

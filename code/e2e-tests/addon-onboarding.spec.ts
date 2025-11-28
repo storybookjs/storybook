@@ -1,7 +1,7 @@
 import { rm } from 'node:fs/promises';
+import { homedir } from 'node:os';
 
 import { expect, test } from '@playwright/test';
-import { homedir } from 'node:os';
 import { join } from 'pathe';
 import process from 'process';
 

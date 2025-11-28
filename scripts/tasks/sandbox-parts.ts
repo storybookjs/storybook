@@ -199,7 +199,7 @@ export const init: Task['run'] = async (
   await executeCLIStep(steps.init, {
     cwd,
     optionValues: {
-      loglevel: debug ? 'debug' : 'info',
+      loglevel: 'debug',
       yes: true,
       ...extra,
       ...(template.initOptions || {}),

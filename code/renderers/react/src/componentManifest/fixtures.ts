@@ -31,7 +31,7 @@ export const fsMocks = {
         
         /** 
          * Primary UI component for user interaction
-         * @import import { Button } from '@design-system/components/Button';
+         * @import import { Button } from '@design-system/components/override';
          */
         export const Button = ({
           primary = false,
@@ -60,7 +60,6 @@ export const fsMocks = {
         /** 
           * Description from meta and very long.
           * @summary Component summary
-          * @import import { Header } from '@design-system/components/Header';
           */
         const meta = {
           component: Header,
@@ -85,9 +84,6 @@ export const fsMocks = {
           onCreateAccount?: () => void;
         }
         
-        /**
-         * @import import { Header } from '@design-system/components/Header';
-         */
         export default ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps) => (
           <header>
             <div className="storybook-header">

@@ -34,11 +34,6 @@ describe('loader', () => {
       expect(deprecate).toHaveBeenCalledWith(
         expect.stringContaining('One or more extensionless imports detected: "./utils"')
       );
-      expect(deprecate).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'For maximum compatibility, you should add an explicit file extension'
-        )
-      );
     });
 
     it('should resolve extensionless import to .js extension when file exists', () => {

@@ -1,6 +1,6 @@
 # see https://github.com/nrwl/nx/blob/master/.nx/workflows/dynamic-changesets.yaml for inspiration
 distribute-on:
-  default: 30 linux-browsers-js, 1 linux-js
+  default: 19 linux-browsers-js, 1 linux-js
 
 assignment-rules:
   - targets:

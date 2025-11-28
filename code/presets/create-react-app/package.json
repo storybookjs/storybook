@@ -35,12 +35,12 @@
   "dependencies": {
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.1",
     "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
-    "@types/semver": "^7.5.6",
+    "@types/semver": "^7.7.1",
     "pnp-webpack-plugin": "^1.7.0",
-    "semver": "^7.5.4"
+    "semver": "^7.7.3"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {

@@ -33,7 +33,7 @@ jobs:
     executor: continuation/default
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: '--depth 1'
       - node/install:
           install-yarn: true
       - node/install-packages:

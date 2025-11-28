@@ -38,12 +38,12 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "semver": "^7.6.2",
+    "semver": "^7.7.3",
     "storybook": "workspace:*"
   },
   "devDependencies": {
     "@types/prompts": "^2.0.9",
-    "@types/semver": "^7.3.4",
+    "@types/semver": "^7.7.1",
     "commander": "^14.0.1",
     "empathic": "^2.0.0",
     "picocolors": "^1.1.0",

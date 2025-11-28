@@ -69,7 +69,7 @@
     "webpack-virtual-modules": "^0.6.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/webpack-hot-middleware": "^2.25.6",
     "pretty-hrtime": "^1.0.3",

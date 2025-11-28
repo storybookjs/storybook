@@ -42,9 +42,9 @@
     "yaml-loader": "^0.8.1"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "typescript": "^5.8.3",
-    "yaml": "^2.8.0"
+    "yaml": "^2.8.1"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

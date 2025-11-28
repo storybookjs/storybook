@@ -82,11 +82,11 @@
     "vite-plugin-storybook-nextjs": "^3.1.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "lilconfig": "^3.0.0",
     "next": "^15.2.3",
     "postcss-load-config": "^6.0.1",
-    "semver": "^7.3.5",
+    "semver": "^7.7.3",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {

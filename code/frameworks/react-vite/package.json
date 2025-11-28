@@ -60,7 +60,7 @@
     "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "typescript": "^5.8.3",
     "vite": "^7.0.4"
   },

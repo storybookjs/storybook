@@ -247,8 +247,10 @@ export const baseTemplates = {
   },
   'nextjs/prerelease': {
     name: 'Next.js Prerelease (Webpack | TypeScript)',
+    // TODO: use @canary once the issue with NPM is fixed.
+    // Nextjs 16.1.0-canary.5 is a bad release.
     script:
-      'npx create-next-app@canary {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@16.1.0-canary.4 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -629,9 +631,7 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      // Angular 21 has introduced a peer dependency requirement on standard-schema via @angular/forms`
-      // TODO: use @angular/forms@next as soon as @angular/cli@next points to the same version
-      extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@^21.0.0'],
+      extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
     },
     expected: {
       framework: '@storybook/angular',

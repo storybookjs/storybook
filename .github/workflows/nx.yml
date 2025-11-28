@@ -5,7 +5,7 @@ on:
     branches:
       - next
       # TODO remove
-      - kasper/nx-agents
+      - kasper/yarn-monorepo-refactor
   pull_request:
     types: [opened, synchronize, labeled, reopened]
 
@@ -51,5 +51,5 @@ jobs:
         run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged"
       # TODO remove
       - if: github.event_name == 'push' &&
-          github.ref == 'refs/heads/kasper/nx-agents'
+          github.ref == 'refs/heads/kasper/yarn-monorepo-refactor'
         run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal"

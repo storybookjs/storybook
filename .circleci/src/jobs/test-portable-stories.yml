@@ -1,6 +1,6 @@
 executor:
   name: sb_playwright
-  class: medium
+  class: medium+
 
 parameters:
   directory:

@@ -12,6 +12,7 @@ steps:
   - run:
       name: Compile
       command: |
+        yarn
         yarn task --task compile --start-from=auto --no-link --debug
         git diff --exit-code
         yarn dedupe --check
@@ -31,6 +32,7 @@ steps:
   - persist_to_workspace:
       root: /tmp
       paths:
+        - storybook/node_modules
         - storybook/code/node_modules
         - storybook/code/addons
         - storybook/scripts/node_modules

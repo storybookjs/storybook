@@ -1,5 +1,5 @@
 executor:
-  class: medium
+  class: medium+
   name: sb_node_22_classic
 
 steps:
@@ -12,7 +12,6 @@ steps:
   - run:
       name: Install
       command: |
-        cd scripts
         yarn install
   - save_cache:
       name: Save Yarn cache

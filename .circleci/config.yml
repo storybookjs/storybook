@@ -178,15 +178,9 @@ jobs:
             - attach_workspace:
                 at: /tmp
             - run:
-                background: true
-                command: |
-                  cd code
-                  yarn local-registry --open
-                name: Verdaccio
-            - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - run:
                 command: yarn task --task bench --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench) --no-link --start-from=never --junit
@@ -286,15 +280,9 @@ jobs:
             - attach_workspace:
                 at: /tmp
             - run:
-                background: true
-                command: |
-                  cd code
-                  yarn local-registry --open
-                name: Verdaccio
-            - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - run:
                 command: yarn task --task check-sandbox --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox) --no-link --start-from=never --junit
@@ -322,7 +310,7 @@ jobs:
                 path: storybook/test-results
     chromatic-sandboxes:
         executor:
-            class: medium+
+            class: medium
             name: sb_node_22_browsers
         parallelism: << parameters.parallelism >>
         parameters:
@@ -332,16 +320,10 @@ jobs:
             - checkout
             - attach_workspace:
                 at: /tmp
-            - run:
-                background: true
                 command: |
-                    cd code
-                    yarn local-registry --open
-                name: Verdaccio
-            - run:
-                command: |
+                    cp /tmp/storybook-sandboxes /tmp/storybook/sandbox -r --remove-destination
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
-                    STORYBOOK_SANDBOX_ROOT=./sandbox yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(STORYBOOK_SANDBOX_ROOT=./sandbox yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - run:
                 command: STORYBOOK_SANDBOX_ROOT=./sandbox yarn task --task chromatic --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic) --no-link --start-from=never --junit
@@ -399,9 +381,8 @@ jobs:
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
             - persist_to_workspace:
-                paths:
-                    - storybook-sandboxes/**
-                root: .
+                paths: storybook-sandboxes/**
+                root: /tmp
             - store_test_results:
                 path: storybook/test-results
     e2e-dev:
@@ -418,15 +399,9 @@ jobs:
             - attach_workspace:
                 at: /tmp
             - run:
-                background: true
-                command: |
-                  cd code
-                  yarn local-registry --open
-                name: Verdaccio
-            - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - run:
                 command: |
@@ -454,15 +429,9 @@ jobs:
             - attach_workspace:
                 at: /tmp
             - run:
-                background: true
-                command: |
-                  cd code
-                  yarn local-registry --open
-                name: Verdaccio
-            - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - run:
                 command: |
@@ -570,9 +539,9 @@ jobs:
                     - prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
                 name: Restore Yarn cache
             - run:
-                  command: |
-                      yarn install
-                  name: Install
+                command: |
+                    yarn install
+                name: Install
             - save_cache:
                 key: prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
                 name: Save Yarn cache
@@ -809,7 +778,7 @@ jobs:
                 shell: bash.exe
             - run:
                 command: yarn install
-                name: Install code dependencies
+                name: Install dependencies
                 shell: bash.exe
             - when:
                 condition:
@@ -1054,7 +1023,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - start-event-collector
             - run:
@@ -1126,7 +1095,7 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
-                    yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
             - start-event-collector
             - run:

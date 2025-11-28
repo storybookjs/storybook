@@ -12,14 +12,15 @@ steps:
   - checkout
   - attach_workspace:
       at: /tmp
-  - run:
       name: Install sandbox dependencies
+      # chromatic can only run in a git directory
       command: |
+        cp /tmp/storybook-sandboxes /tmp/storybook/sandbox -r --remove-destination
         TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
-        cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+        cd $(STORYBOOK_SANDBOX_ROOT=./sandbox yarn get-sandbox-dir --template $TEMPLATE) && yarn
   - run:
       name: Running Chromatic
-      command: yarn task --task chromatic --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic) --no-link --start-from=never --junit
+      command: STORYBOOK_SANDBOX_ROOT=./sandbox yarn task --task chromatic --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic) --no-link --start-from=never --junit
   - report-workflow-on-failure:
       template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
   - store_test_results:

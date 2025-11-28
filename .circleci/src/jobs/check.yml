@@ -15,6 +15,7 @@ steps:
   - run:
       name: Compile
       command: |
+        yarn
         yarn task --task compile --start-from=auto --no-link --debug
   - run:
       name: Check

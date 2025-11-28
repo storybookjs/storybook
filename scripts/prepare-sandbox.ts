@@ -28,8 +28,6 @@ async function main() {
 
   const sandboxDir = join(SANDBOX_DIRECTORY, templateDir);
   const cacheDir = join(ROOT_DIRECTORY, 'sandbox', templateDir);
-  const storybookStaticSandboxDir = join(sandboxDir, 'storybook-static');
-  const storybookStaticCacheDir = join(cacheDir, 'storybook-static');
 
   if (!existsSync(join(sandboxDir, 'node_modules'))) {
     if (sandboxDir !== cacheDir) {
@@ -45,7 +43,6 @@ async function main() {
     }
 
     if (!link) {
-      console.log(`🧹 waiting on port 6001 and 6002`);
       await waitOn({
         log: true,
         resources: ['http://localhost:6001', 'http://localhost:6002'],
@@ -60,6 +57,9 @@ async function main() {
   if (template.includes('svelte-kit')) {
     await exec('yarn exec svelte-kit sync', { cwd: sandboxDir }, { debug: true });
   }
+
+  const storybookStaticSandboxDir = join(sandboxDir, 'storybook-static');
+  const storybookStaticCacheDir = join(cacheDir, 'storybook-static');
 
   if (existsSync(storybookStaticCacheDir) && !existsSync(storybookStaticSandboxDir)) {
     console.log(`🧹 copying cached ${storybookStaticCacheDir} to ${storybookStaticSandboxDir}`);

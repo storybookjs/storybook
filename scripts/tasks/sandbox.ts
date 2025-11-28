@@ -179,29 +179,27 @@ export const sandbox: Task = {
     const sandboxDir = join(details.sandboxDir);
     const cacheDir = join(ROOT_DIRECTORY, 'sandbox', details.key.replace('/', '-'));
 
-    if (sandboxDir !== cacheDir) {
-      logger.info(`✅ Removing cache directory ${cacheDir}`);
-      await rm(cacheDir, { recursive: true, force: true });
+    // For NX we move the sandbox to a directory that can be cached.
+    // We remove node_modules to keep the remote cache small and fast
+    // node_modules are already cached in the global yarn cache
+    if (process.env.NX_CLI_SET === 'true') {
+      if (sandboxDir !== cacheDir) {
+        logger.info(`✅ Removing cache directory ${cacheDir}`);
+        await rm(cacheDir, { recursive: true, force: true });
 
-      logger.info(`✅ Copy ${sandboxDir} to cache directory`);
-      await cp(sandboxDir, cacheDir, {
-        recursive: true,
-        force: true,
-        filter: (src) => {
-          // For NX we remove node_modules to keep the remote cache small and fast
-          // node_modules are already cached in the global yarn cache
-          if (process.env.NX_CLI_SET === 'true') {
+        logger.info(`✅ Copy ${sandboxDir} to cache directory`);
+        await cp(sandboxDir, cacheDir, {
+          recursive: true,
+          force: true,
+          filter: (src) => {
             const name = path.basename(src);
             return (
               name !== 'node_modules' &&
               !(name === 'cache' && path.basename(path.dirname(src)) === '.yarn')
             );
-          }
-          return true;
-        },
-      });
-    } else {
-      if (process.env.NX_CLI_SET === 'true') {
+          },
+        });
+      } else {
         logger.info(`✅ Removing node_modules from cache directory ${cacheDir}`);
         await rm(path.join(cacheDir, 'node_modules'), { force: true, recursive: true });
         await rm(path.join(cacheDir, '.yarn', 'cache'), { force: true, recursive: true });

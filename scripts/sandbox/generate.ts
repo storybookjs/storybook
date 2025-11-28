@@ -303,13 +303,18 @@ const runGenerators = async (
           if (process.env.CLEANUP_SANDBOX_NODE_MODULES) {
             console.log(`🗑️ Removing ${join(beforeDir, 'node_modules')}`);
             await rm(join(beforeDir, 'node_modules'), { recursive: true, force: true });
+            await rm(join(beforeDir, '.yarn', 'cache'), { recursive: true, force: true });
             console.log(`🗑️ Removing ${join(baseDir, AFTER_DIR_NAME, 'node_modules')}`);
             await rm(join(baseDir, AFTER_DIR_NAME, 'node_modules'), {
               recursive: true,
               force: true,
             });
+            await rm(join(baseDir, AFTER_DIR_NAME, '.yarn', 'cache'), {
+              recursive: true,
+              force: true,
+            });
           }
-          
+
           // Clean up the temporary base directory
           if (createBaseDir) {
             await rm(createBaseDir, { recursive: true, force: true });

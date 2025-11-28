@@ -15,6 +15,7 @@ export async function setupYarn({ cwd, pnp = false, version = 'classic' }: Setup
   // force yarn
   await writeFile(join(cwd, 'yarn.lock'), '', { flag: 'a' });
   await runCommand(`yarn set version ${version}`, { cwd });
+  await runCommand(`yarn config set enableGlobalCache false`, { cwd });
   if (version === 'berry' && !pnp) {
     await runCommand('yarn config set nodeLinker node-modules', { cwd });
   }

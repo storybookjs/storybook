@@ -1,1 +1,1 @@
-{"version":"10.1.0","info":{"plain":""}}
+{"version":"10.1.1","info":{"plain":"- Core: Improve globbing using dynamic CWD (REVERT) - [#33201](https://github.com/storybookjs/storybook/pull/33201), thanks @ndelangen!\n- Solid: Add Solid to the list of supported frameworks for addon-vitest - [#33084](https://github.com/storybookjs/storybook/pull/33084), thanks @valentinpalkovic!\n- UI: Fix excessive height in TabbedArgsTable - [#33205](https://github.com/storybookjs/storybook/pull/33205), thanks @Sidnioulz!"}}

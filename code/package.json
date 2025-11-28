@@ -286,5 +286,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "10.1.1"
 }

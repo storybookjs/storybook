@@ -144,11 +144,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - node/install-packages:
-                  app-dir: scripts
-                  pkg-manager: yarn
-                  cache-only-lockfile: true
-            - node/install-packages:
-                  app-dir: code
+                  app-dir: /tmp/storybook
                   pkg-manager: yarn
                   cache-only-lockfile: true
             - save_cache:
@@ -156,9 +152,10 @@ jobs:
                       - .yarn/code-install-state.gz
                       - .yarn/scripts-install-state.gz
                       - .yarn/root-install-state.gz
+                      - node_modules
                       - code/node_modules
                       - scripts/node_modules
-                  key: darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "scripts/yarn.lock" }}/{{ checksum "code/yarn.lock" }}
+                  key: darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
             - run:
                   name: Ensure no changes pending
                   command: git diff --exit-code
@@ -168,125 +165,125 @@ jobs:
             - run:
                   command: yarn task --task compile --start-from=auto --no-link --debug
                   name: Compile
-                  working_directory: code
+                  working_directory: /tmp/storybook/code
             - run:
                   command: yarn local-registry --publish
                   name: Publish to Verdaccio
-                  working_directory: code
+                  working_directory: /tmp/storybook/code
             - report-workflow-on-failure
             - store_artifacts:
-                  path: code/bench/esbuild-metafiles
+                  path: /tmp/storybook/code/bench/esbuild-metafiles
                   destination: bench
             - persist_to_workspace:
                   paths:
-                      - code/core/dist
-                      - code/core/node_modules
-                      - code/addons/a11y/dist
-                      - code/addons/a11y/node_modules
-                      - code/addons/docs/dist
-                      - code/addons/docs/node_modules
-                      - code/addons/links/dist
-                      - code/addons/links/node_modules
-                      - code/addons/onboarding/dist
-                      - code/addons/onboarding/node_modules
-                      - code/addons/pseudo-states/dist
-                      - code/addons/pseudo-states/node_modules
-                      - code/addons/themes/dist
-                      - code/addons/themes/node_modules
-                      - code/addons/vitest/dist
-                      - code/addons/vitest/node_modules
-                      - code/builders/builder-vite/dist
-                      - code/builders/builder-vite/node_modules
-                      - code/builders/builder-webpack5/dist
-                      - code/builders/builder-webpack5/node_modules
-                      - code/frameworks/angular/dist
-                      - code/frameworks/angular/node_modules
-                      - code/frameworks/ember/dist
-                      - code/frameworks/ember/node_modules
-                      - code/frameworks/html-vite/dist
-                      - code/frameworks/html-vite/node_modules
-                      - code/frameworks/nextjs/dist
-                      - code/frameworks/nextjs/node_modules
-                      - code/frameworks/nextjs-vite/dist
-                      - code/frameworks/nextjs-vite/node_modules
-                      - code/frameworks/preact-vite/dist
-                      - code/frameworks/preact-vite/node_modules
-                      - code/frameworks/react-native-web-vite/dist
-                      - code/frameworks/react-native-web-vite/node_modules
-                      - code/frameworks/react-vite/dist
-                      - code/frameworks/react-vite/node_modules
-                      - code/frameworks/react-webpack5/dist
-                      - code/frameworks/react-webpack5/node_modules
-                      - code/frameworks/server-webpack5/dist
-                      - code/frameworks/server-webpack5/node_modules
-                      - code/frameworks/svelte-vite/dist
-                      - code/frameworks/svelte-vite/node_modules
-                      - code/frameworks/sveltekit/dist
-                      - code/frameworks/sveltekit/node_modules
-                      - code/frameworks/vue3-vite/dist
-                      - code/frameworks/vue3-vite/node_modules
-                      - code/frameworks/web-components-vite/dist
-                      - code/frameworks/web-components-vite/node_modules
-                      - code/lib/cli-storybook/dist
-                      - code/lib/cli-storybook/node_modules
-                      - code/lib/codemod/dist
-                      - code/lib/codemod/node_modules
-                      - code/lib/core-webpack/dist
-                      - code/lib/core-webpack/node_modules
-                      - code/lib/create-storybook/dist
-                      - code/lib/create-storybook/node_modules
-                      - code/lib/csf-plugin/dist
-                      - code/lib/csf-plugin/node_modules
-                      - code/lib/eslint-plugin/dist
-                      - code/lib/eslint-plugin/node_modules
-                      - code/lib/react-dom-shim/dist
-                      - code/lib/react-dom-shim/node_modules
-                      - code/presets/create-react-app/dist
-                      - code/presets/create-react-app/node_modules
-                      - code/presets/react-webpack/dist
-                      - code/presets/react-webpack/node_modules
-                      - code/presets/server-webpack/dist
-                      - code/presets/server-webpack/node_modules
-                      - code/renderers/html/dist
-                      - code/renderers/html/node_modules
-                      - code/renderers/preact/dist
-                      - code/renderers/preact/node_modules
-                      - code/renderers/react/dist
-                      - code/renderers/react/node_modules
-                      - code/renderers/server/dist
-                      - code/renderers/server/node_modules
-                      - code/renderers/svelte/dist
-                      - code/renderers/svelte/node_modules
-                      - code/renderers/vue3/dist
-                      - code/renderers/vue3/node_modules
-                      - code/renderers/web-components/dist
-                      - code/renderers/web-components/node_modules
-                      - code/core/node_modules/human-signals/build/dist
-                      - code/core/node_modules/human-signals/build/node_modules
-                      - code/core/dist/core-server/utils/__mockdata__/src
-                      - code/core/node_modules/core-server/utils/__mockdata__/src
-                      - code/core/dist/core-server/utils/__search-files-tests__/src
-                      - code/core/node_modules/core-server/utils/__search-files-tests__/src
-                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/minimal-config/src
-                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/minimal-config/src
-                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/some-config/src
-                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/some-config/src
-                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-angularBrowserTarget/src
-                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-angularBrowserTarget/src
-                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-nx/src
-                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-nx/src
-                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-nx-workspace/src
-                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-nx-workspace/src
-                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-options-styles/src
-                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-options-styles/src
-                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/without-tsConfig/src
-                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/without-tsConfig/src
-                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-lib/projects/pattern-lib/src
-                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-lib/projects/pattern-lib/src
-                      - code/frameworks/angular/dist/server/__mocks-ng-workspace__/without-projects-entry/projects/pattern-lib/src
-                      - code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/without-projects-entry/projects/pattern-lib/src
-                      - .verdaccio-cache
-                  root: .
+                      - /tmp/storybook/code/core/dist
+                      - /tmp/storybook/code/core/node_modules
+                      - /tmp/storybook/code/addons/a11y/dist
+                      - /tmp/storybook/code/addons/a11y/node_modules
+                      - /tmp/storybook/code/addons/docs/dist
+                      - /tmp/storybook/code/addons/docs/node_modules
+                      - /tmp/storybook/code/addons/links/dist
+                      - /tmp/storybook/code/addons/links/node_modules
+                      - /tmp/storybook/code/addons/onboarding/dist
+                      - /tmp/storybook/code/addons/onboarding/node_modules
+                      - /tmp/storybook/code/addons/pseudo-states/dist
+                      - /tmp/storybook/code/addons/pseudo-states/node_modules
+                      - /tmp/storybook/code/addons/themes/dist
+                      - /tmp/storybook/code/addons/themes/node_modules
+                      - /tmp/storybook/code/addons/vitest/dist
+                      - /tmp/storybook/code/addons/vitest/node_modules
+                      - /tmp/storybook/code/builders/builder-vite/dist
+                      - /tmp/storybook/code/builders/builder-vite/node_modules
+                      - /tmp/storybook/code/builders/builder-webpack5/dist
+                      - /tmp/storybook/code/builders/builder-webpack5/node_modules
+                      - /tmp/storybook/code/frameworks/angular/dist
+                      - /tmp/storybook/code/frameworks/angular/node_modules
+                      - /tmp/storybook/code/frameworks/ember/dist
+                      - /tmp/storybook/code/frameworks/ember/node_modules
+                      - /tmp/storybook/code/frameworks/html-vite/dist
+                      - /tmp/storybook/code/frameworks/html-vite/node_modules
+                      - /tmp/storybook/code/frameworks/nextjs/dist
+                      - /tmp/storybook/code/frameworks/nextjs/node_modules
+                      - /tmp/storybook/code/frameworks/nextjs-vite/dist
+                      - /tmp/storybook/code/frameworks/nextjs-vite/node_modules
+                      - /tmp/storybook/code/frameworks/preact-vite/dist
+                      - /tmp/storybook/code/frameworks/preact-vite/node_modules
+                      - /tmp/storybook/code/frameworks/react-native-web-vite/dist
+                      - /tmp/storybook/code/frameworks/react-native-web-vite/node_modules
+                      - /tmp/storybook/code/frameworks/react-vite/dist
+                      - /tmp/storybook/code/frameworks/react-vite/node_modules
+                      - /tmp/storybook/code/frameworks/react-webpack5/dist
+                      - /tmp/storybook/code/frameworks/react-webpack5/node_modules
+                      - /tmp/storybook/code/frameworks/server-webpack5/dist
+                      - /tmp/storybook/code/frameworks/server-webpack5/node_modules
+                      - /tmp/storybook/code/frameworks/svelte-vite/dist
+                      - /tmp/storybook/code/frameworks/svelte-vite/node_modules
+                      - /tmp/storybook/code/frameworks/sveltekit/dist
+                      - /tmp/storybook/code/frameworks/sveltekit/node_modules
+                      - /tmp/storybook/code/frameworks/vue3-vite/dist
+                      - /tmp/storybook/code/frameworks/vue3-vite/node_modules
+                      - /tmp/storybook/code/frameworks/web-components-vite/dist
+                      - /tmp/storybook/code/frameworks/web-components-vite/node_modules
+                      - /tmp/storybook/code/lib/cli-storybook/dist
+                      - /tmp/storybook/code/lib/cli-storybook/node_modules
+                      - /tmp/storybook/code/lib/codemod/dist
+                      - /tmp/storybook/code/lib/codemod/node_modules
+                      - /tmp/storybook/code/lib/core-webpack/dist
+                      - /tmp/storybook/code/lib/core-webpack/node_modules
+                      - /tmp/storybook/code/lib/create-storybook/dist
+                      - /tmp/storybook/code/lib/create-storybook/node_modules
+                      - /tmp/storybook/code/lib/csf-plugin/dist
+                      - /tmp/storybook/code/lib/csf-plugin/node_modules
+                      - /tmp/storybook/code/lib/eslint-plugin/dist
+                      - /tmp/storybook/code/lib/eslint-plugin/node_modules
+                      - /tmp/storybook/code/lib/react-dom-shim/dist
+                      - /tmp/storybook/code/lib/react-dom-shim/node_modules
+                      - /tmp/storybook/code/presets/create-react-app/dist
+                      - /tmp/storybook/code/presets/create-react-app/node_modules
+                      - /tmp/storybook/code/presets/react-webpack/dist
+                      - /tmp/storybook/code/presets/react-webpack/node_modules
+                      - /tmp/storybook/code/presets/server-webpack/dist
+                      - /tmp/storybook/code/presets/server-webpack/node_modules
+                      - /tmp/storybook/code/renderers/html/dist
+                      - /tmp/storybook/code/renderers/html/node_modules
+                      - /tmp/storybook/code/renderers/preact/dist
+                      - /tmp/storybook/code/renderers/preact/node_modules
+                      - /tmp/storybook/code/renderers/react/dist
+                      - /tmp/storybook/code/renderers/react/node_modules
+                      - /tmp/storybook/code/renderers/server/dist
+                      - /tmp/storybook/code/renderers/server/node_modules
+                      - /tmp/storybook/code/renderers/svelte/dist
+                      - /tmp/storybook/code/renderers/svelte/node_modules
+                      - /tmp/storybook/code/renderers/vue3/dist
+                      - /tmp/storybook/code/renderers/vue3/node_modules
+                      - /tmp/storybook/code/renderers/web-components/dist
+                      - /tmp/storybook/code/renderers/web-components/node_modules
+                      - /tmp/storybook/code/core/node_modules/human-signals/build/dist
+                      - /tmp/storybook/code/core/node_modules/human-signals/build/node_modules
+                      - /tmp/storybook/code/core/dist/core-server/utils/__mockdata__/src
+                      - /tmp/storybook/code/core/node_modules/core-server/utils/__mockdata__/src
+                      - /tmp/storybook/code/core/dist/core-server/utils/__search-files-tests__/src
+                      - /tmp/storybook/code/core/node_modules/core-server/utils/__search-files-tests__/src
+                      - /tmp/storybook/code/frameworks/angular/dist/server/__mocks-ng-workspace__/minimal-config/src
+                      - /tmp/storybook/code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/minimal-config/src
+                      - /tmp/storybook/code/frameworks/angular/dist/server/__mocks-ng-workspace__/some-config/src
+                      - /tmp/storybook/code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/some-config/src
+                      - /tmp/storybook/code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-angularBrowserTarget/src
+                      - /tmp/storybook/code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-angularBrowserTarget/src
+                      - /tmp/storybook/code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-nx/src
+                      - /tmp/storybook/code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-nx/src
+                      - /tmp/storybook/code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-nx-workspace/src
+                      - /tmp/storybook/code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-nx-workspace/src
+                      - /tmp/storybook/code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-options-styles/src
+                      - /tmp/storybook/code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-options-styles/src
+                      - /tmp/storybook/code/frameworks/angular/dist/server/__mocks-ng-workspace__/without-tsConfig/src
+                      - /tmp/storybook/code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/without-tsConfig/src
+                      - /tmp/storybook/code/frameworks/angular/dist/server/__mocks-ng-workspace__/with-lib/projects/pattern-lib/src
+                      - /tmp/storybook/code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/with-lib/projects/pattern-lib/src
+                      - /tmp/storybook/code/frameworks/angular/dist/server/__mocks-ng-workspace__/without-projects-entry/projects/pattern-lib/src
+                      - /tmp/storybook/code/frameworks/angular/node_modules/server/__mocks-ng-workspace__/without-projects-entry/projects/pattern-lib/src
+                      - /tmp/storybook/.verdaccio-cache
+                  root: /tmp
     check:
         description: check
         executor:
@@ -296,21 +293,20 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - attach_workspace:
-                  at: .
+                  at: /tmp
             - restore_cache:
                   keys: &a1
-                      - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "scripts/yarn.lock" }}/{{ checksum "code/yarn.lock" }}
-                      - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "scripts/yarn.lock" }}
+                      - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
                       - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
                       - darwin-node_modules/{{ checksum ".nvmrc" }}
                       - darwin-node_modules
             - run:
                   name: TypeCheck code
-                  working_directory: code
+                  working_directory: /tmp/storybook/code
                   command: yarn task --task check --no-link
             - run:
                   name: TypeCheck scripts
-                  working_directory: scripts
+                  working_directory: /tmp/storybook/scripts
                   command: yarn check
             - run:
                   name: Ensure no changes pending
@@ -326,17 +322,17 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - attach_workspace:
-                  at: .
+                  at: /tmp
             - restore_cache:
                   keys: *a1
             - run:
                   name: Run tests
-                  working_directory: code
+                  working_directory: /tmp/storybook/code
                   command: |-
                       TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
             - store_test_results:
-                  path: test-results
+                  path: /tmp/storybook/test-results
             - run:
                   name: Ensure no changes pending
                   command: git diff --exit-code
@@ -350,12 +346,12 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - node/install-packages:
-                  app-dir: scripts
+                  app-dir: /tmp/storybook
                   pkg-manager: yarn
                   cache-only-lockfile: true
             - run:
                   name: Prettier
-                  working_directory: scripts
+                  working_directory: /tmp/storybook/scripts
                   command: yarn docs:prettier:check
     sandboxes:
         type: no-op
@@ -368,22 +364,22 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - attach_workspace:
-                  at: .
+                  at: /tmp
             - restore_cache:
                   keys: *a1
             - run:
                   name: Verdaccio
-                  working_directory: code
+                  working_directory: /tmp/storybook/code
                   background: true
                   command: yarn local-registry --open
             - run:
                   name: Start Event Collector
-                  working_directory: scripts
+                  working_directory: /tmp/storybook/scripts
                   background: true
                   command: yarn jiti ./event-log-collector.ts
             - run:
                   name: Wait on servers
-                  working_directory: code
+                  working_directory: /tmp/storybook/code
                   command: |-
                       yarn wait-on tcp:127.0.0.1:6001
                       yarn wait-on tcp:127.0.0.1:6002
@@ -401,22 +397,22 @@ jobs:
                       STORYBOOK_TELEMETRY_DEBUG: 1
                       STORYBOOK_TELEMETRY_URL: http://127.0.0.1:6007/event-log
             - store_artifacts:
-                  path: sandbox/react-vite-default-ts/debug-storybook.log
+                  path: /tmp/storybook-sandboxes/react-vite-default-ts/debug-storybook.log
                   destination: logs
             - persist_to_workspace:
                   paths:
-                      - sandbox/react-vite-default-ts
-                  root: .
+                      - /tmp/storybook-sandboxes/react-vite-default-ts
+                  root: /tmp
     react-vite-default-ts--build:
         description: react-vite/default-ts (build)
         executor:
-            class: xlarge
             name: sb_playwright
+            class: xlarge
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - attach_workspace:
-                  at: .
+                  at: /tmp
             - restore_cache:
                   keys: *a1
             - run:
@@ -428,12 +424,12 @@ jobs:
                   command: yarn task serve --template react-vite/default-ts --no-link -s serve
             - run:
                   name: Wait on storybook
-                  working_directory: code
+                  working_directory: /tmp/storybook/code
                   command: yarn wait-on tcp:127.0.0.1:8001
             - run:
                   name: Running E2E Tests
                   command: |-
-                      TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
+                      TEST_FILES=$(circleci tests glob "/tmp/storybook/code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
     react-vite-default-ts--dev:
         description: react-vite/default-ts (dev)
@@ -444,7 +440,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - attach_workspace:
-                  at: .
+                  at: /tmp
             - restore_cache:
                   keys: *a1
             - run:

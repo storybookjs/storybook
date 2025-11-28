@@ -4,15 +4,14 @@ import { join } from 'node:path';
 // eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';
 
-import { artifact, cache, git, npm, toId, workspace } from './utils';
+import { ROOT_DIR, WORKING_DIR, artifact, cache, git, npm, toId, workspace } from './utils';
 
 const PLATFORM = os.platform();
 const CACHE_KEYS = [
   `${PLATFORM}-node_modules`,
   '{{ checksum ".nvmrc" }}',
   '{{ checksum ".yarnrc.yml" }}',
-  '{{ checksum "scripts/yarn.lock" }}',
-  '{{ checksum "code/yarn.lock" }}',
+  '{{ checksum "yarn.lock" }}',
 ].map((_, index, list) => {
   return list.slice(0, list.length - index).join('/');
 });
@@ -20,10 +19,10 @@ const CACHE_PATHS = [
   '.yarn/code-install-state.gz',
   '.yarn/scripts-install-state.gz',
   '.yarn/root-install-state.gz',
+  'node_modules',
   'code/node_modules',
   'scripts/node_modules',
 ];
-const MAIN_WORKING_DIR = '/tmp/storybook';
 
 const dirname = import.meta.dirname;
 
@@ -100,7 +99,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: MAIN_WORKING_DIR,
+    working_directory: WORKING_DIR,
   },
   sb_node_22_browsers: {
     docker: [
@@ -120,7 +119,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: MAIN_WORKING_DIR,
+    working_directory: WORKING_DIR,
   },
   sb_node_22_classic: {
     docker: [
@@ -140,7 +139,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: MAIN_WORKING_DIR,
+    working_directory: WORKING_DIR,
   },
   sb_playwright: {
     docker: [
@@ -160,7 +159,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: MAIN_WORKING_DIR,
+    working_directory: WORKING_DIR,
   },
 };
 
@@ -217,7 +216,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           {
             run: {
               name: 'Verdaccio',
-              working_directory: 'code',
+              working_directory: `${WORKING_DIR}/code`,
               background: true,
               command: 'yarn local-registry --open',
             },
@@ -225,7 +224,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           {
             run: {
               name: 'Start Event Collector',
-              working_directory: 'scripts',
+              working_directory: `${WORKING_DIR}/scripts`,
               background: true,
               command: 'yarn jiti ./event-log-collector.ts',
             },
@@ -233,7 +232,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           {
             run: {
               name: 'Wait on servers',
-              working_directory: 'code',
+              working_directory: `${WORKING_DIR}/code`,
               command: [
                 'yarn wait-on tcp:127.0.0.1:6001', // verdaccio
                 'yarn wait-on tcp:127.0.0.1:6002', // reverse proxy
@@ -262,8 +261,8 @@ function defineSandboxFlow<K extends string>(name: K) {
               },
             },
           },
-          artifact.persist(`sandbox/${id}/debug-storybook.log`, 'logs'),
-          workspace.persist('.', [`sandbox/${id}`]),
+          artifact.persist(`${ROOT_DIR}/storybook-sandboxes/${id}/debug-storybook.log`, 'logs'),
+          workspace.persist([`${ROOT_DIR}/storybook-sandboxes/${id}`]),
         ],
       },
       ['sandboxes']
@@ -272,8 +271,8 @@ function defineSandboxFlow<K extends string>(name: K) {
       names.build,
       {
         executor: {
-          class: 'xlarge',
           name: 'sb_playwright',
+          class: 'xlarge',
         },
         steps: [
           git.checkout(),
@@ -295,7 +294,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           {
             run: {
               name: 'Wait on storybook',
-              working_directory: 'code',
+              working_directory: `${WORKING_DIR}/code`,
               command: 'yarn wait-on tcp:127.0.0.1:8001',
             },
           },
@@ -303,7 +302,7 @@ function defineSandboxFlow<K extends string>(name: K) {
             run: {
               name: 'Running E2E Tests',
               command: [
-                'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
+                `TEST_FILES=$(circleci tests glob "${WORKING_DIR}/code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
                 `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
               ].join('\n'),
             },
@@ -371,8 +370,7 @@ const build = defineJob('build', {
   },
   steps: [
     git.checkout(),
-    npm.install('scripts'),
-    npm.install('code'),
+    npm.install(WORKING_DIR),
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
     git.check(),
     npm.check(),
@@ -380,19 +378,19 @@ const build = defineJob('build', {
       run: {
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
         name: 'Compile',
-        working_directory: 'code',
+        working_directory: `${WORKING_DIR}/code`,
       },
     },
     {
       run: {
         command: 'yarn local-registry --publish',
         name: 'Publish to Verdaccio',
-        working_directory: 'code',
+        working_directory: `${WORKING_DIR}/code`,
       },
     },
     'report-workflow-on-failure',
-    artifact.persist('code/bench/esbuild-metafiles', 'bench'),
-    workspace.persist('.', [
+    artifact.persist(`${WORKING_DIR}/code/bench/esbuild-metafiles`, 'bench'),
+    workspace.persist([
       ...glob
         .sync('**/src', {
           cwd: join(dirname, '../../code'),
@@ -400,10 +398,10 @@ const build = defineJob('build', {
           ignore: ['node_modules'],
         })
         .flatMap((p) => [
-          `code/${p.replace('src', 'dist')}`,
-          `code/${p.replace('src', 'node_modules')}`,
+          `${WORKING_DIR}/code/${p.replace('src', 'dist')}`,
+          `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`,
         ]),
-      '.verdaccio-cache',
+      `${WORKING_DIR}/.verdaccio-cache`,
     ]),
   ],
 });
@@ -420,14 +418,14 @@ const check = defineJob('check', {
     {
       run: {
         name: 'TypeCheck code',
-        working_directory: 'code',
+        working_directory: `${WORKING_DIR}/code`,
         command: 'yarn task --task check --no-link',
       },
     },
     {
       run: {
         name: 'TypeCheck scripts',
-        working_directory: 'scripts',
+        working_directory: `${WORKING_DIR}/scripts`,
         command: 'yarn check',
       },
     },
@@ -449,14 +447,14 @@ const unitTests = defineJob('unit-tests', {
     {
       run: {
         name: 'Run tests',
-        working_directory: 'code',
+        working_directory: `${WORKING_DIR}/code`,
         command:
           'TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")\necho "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose',
       },
     },
     {
       store_test_results: {
-        path: 'test-results',
+        path: `${WORKING_DIR}/test-results`,
       },
     },
     git.check(),
@@ -482,11 +480,11 @@ const jobs = {
     },
     steps: [
       git.checkout(),
-      npm.install('scripts'),
+      npm.install(WORKING_DIR),
       {
         run: {
           name: 'Prettier',
-          working_directory: 'scripts',
+          working_directory: `${WORKING_DIR}/scripts`,
           command: 'yarn docs:prettier:check',
         },
       },

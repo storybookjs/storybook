@@ -1,16 +1,20 @@
+export const ROOT_DIR = '/tmp';
+export const WORKING_DIR = `${ROOT_DIR}/storybook`;
+export const SANDBOX_DIR = `${ROOT_DIR}/storybook-sandboxes`;
+
 export const workspace = {
   attach: () => {
     return {
       attach_workspace: {
-        at: '.',
+        at: ROOT_DIR,
       },
     };
   },
-  persist: (root: string, paths: string[]) => {
+  persist: (paths: string[]) => {
     return {
       persist_to_workspace: {
         paths,
-        root,
+        root: ROOT_DIR,
       },
     };
   },

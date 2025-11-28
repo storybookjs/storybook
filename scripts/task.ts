@@ -39,8 +39,6 @@ import { findMostMatchText } from './utils/diff';
 import type { OptionValues } from './utils/options';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
-const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
-
 export const extraAddons = ['@storybook/addon-a11y'];
 
 export type Path = string;
@@ -122,7 +120,7 @@ export const options = createOptions({
   startFrom: {
     type: 'string',
     description: 'Which task should we start execution from?',
-    values: [...(Object.keys(tasks) as TaskKey[]), 'never', 'auto'] as const,
+    values: [...(Object.keys(tasks) as TaskKey[]), 'never', 'auto', 'task'] as const,
     // This is prompted later based on information about what's ready
     promptType: false,
     default: process.env.CI ? 'auto' : undefined,
@@ -150,6 +148,12 @@ export const options = createOptions({
     type: 'boolean',
     description: 'Build code and link for local development?',
     inverse: true,
+    promptType: false,
+  },
+  dir: {
+    type: 'string',
+    description: 'Name of sandbox directory',
+    required: false,
     promptType: false,
   },
   prod: {
@@ -389,10 +393,11 @@ async function run() {
   }
 
   const finalTask = tasks[taskKey];
-  const { template: templateKey } = optionValues;
+  const { template: templateKey, dir } = optionValues;
   const template = TEMPLATES[templateKey];
 
-  const templateSandboxDir = templateKey && join(sandboxDir, templateKey.replace('/', '-'));
+  const templateSandboxDir =
+    templateKey && join(SANDBOX_DIRECTORY, dir ?? templateKey.replace('/', '-'));
   const details: TemplateDetails = {
     key: templateKey,
     template,
@@ -435,8 +440,8 @@ async function run() {
     }
     tasksThatDepend
       .get(task)
-      .filter((t) => !t.service)
-      .forEach(setUnready);
+      ?.filter((t) => !t.service)
+      ?.forEach(setUnready);
   }
 
   // NOTE: we don't include services in the first unready task. We only need to rewind back to a
@@ -444,6 +449,8 @@ async function run() {
   const firstUnready = sortedTasks.find((task) => statuses.get(task) === 'unready');
   if (startFrom === 'auto') {
     // Don't reset anything!
+  } else if (startFrom === 'task') {
+    // just run that one task
   } else if (startFrom === 'never') {
     if (!firstUnready) {
       throw new Error(`Task ${taskKey} is ready`);
@@ -502,6 +509,10 @@ async function run() {
       shouldRun =
         finalTask === task ||
         !!tasksThatDepend.get(task).find((t) => statuses.get(t) === 'unready');
+    }
+
+    if (startFrom === 'task') {
+      shouldRun = finalTask === task;
     }
 
     if (shouldRun) {

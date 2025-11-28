@@ -16,7 +16,7 @@ steps:
   - run:
       name: Install sandbox dependencies
       command: |
-        sudo corepack enable
+        corepack enable
         TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
         cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
   - start-event-collector

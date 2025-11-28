@@ -16,7 +16,7 @@ steps:
   - run:
       name: Install sandbox dependencies
       command: |
-        sudo corepack enable
+        corepack enable
         TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
         cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
   - run:

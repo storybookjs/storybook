@@ -155,6 +155,7 @@
         "cwd": "{projectRoot}",
         "command": "yarn --no-immutable && yarn playwright-e2e"
       },
+      "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }

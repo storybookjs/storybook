@@ -23,10 +23,10 @@ export const dev: Task = {
     const port = getDevPort(key);
     return (await detectFreePort(port)) !== port;
   },
-  async run({ sandboxDir, key }, { dryRun, debug }) {
+  async run({ sandboxDir, key, selectedTask }, { dryRun, debug }) {
     const controller = new AbortController();
     const port = getDevPort(key);
-    const devCommand = `yarn storybook --port ${port}`;
+    const devCommand = `yarn storybook --port ${port}${selectedTask === 'dev' ? '' : ' --ci'}`;
 
     const start = now();
     exec(

@@ -179,7 +179,7 @@ jobs:
                 at: /tmp
             - run:
                 command: |
-                    sudo corepack enable
+                    corepack enable
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench)
                     cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
@@ -282,7 +282,7 @@ jobs:
                 at: /tmp
             - run:
                 command: |
-                    sudo corepack enable
+                    corepack enable
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
                     cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
@@ -324,7 +324,7 @@ jobs:
                 at: /tmp
             - run:
                 command: |
-                    sudo corepack enable
+                    corepack enable
                     cp /tmp/storybook-sandboxes /tmp/storybook/sandbox -r --remove-destination
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
                     cd $(STORYBOOK_SANDBOX_ROOT=./sandbox yarn get-sandbox-dir --template $TEMPLATE) && yarn
@@ -404,7 +404,7 @@ jobs:
                 at: /tmp
             - run:
                 command: |
-                    sudo corepack enable
+                    corepack enable
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
                     cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
@@ -435,7 +435,7 @@ jobs:
                 at: /tmp
             - run:
                 command: |
-                    sudo corepack enable
+                    corepack enable
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
                     cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
@@ -1028,7 +1028,7 @@ jobs:
                 at: /tmp
             - run:
                 command: |
-                    sudo corepack enable
+                    corepack enable
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
                     cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies
@@ -1101,7 +1101,7 @@ jobs:
                 at: /tmp
             - run:
                 command: |
-                    sudo corepack enable
+                    corepack enable
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
                     cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
                 name: Install sandbox dependencies

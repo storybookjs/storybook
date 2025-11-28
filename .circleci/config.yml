@@ -30,7 +30,9 @@ parameters:
 
 jobs:
   generate-and-run-config:
-    executor: continuation/default
+    executor: 
+      name: continuation/default
+      resource_class: medium+
     steps:
       - node/install:
           install-yarn: true

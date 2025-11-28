@@ -22,7 +22,6 @@ export function npmAuth(opts: AuthOptions & { outputDir?: string }): Promise<voi
   const { username, password, email, registry, outputDir } = opts;
   const client = new (npmpkg as any)();
 
-  console.log(1);
   return new Promise((resolve, reject) => {
     client.adduser(
       registry,

@@ -32,24 +32,20 @@ jobs:
   generate-and-run-config:
     executor: 
       name: node/default
-      resource_class: medium
+      resource_class: medium+
     steps:
       - node/install:
-          install-pnpm: true
+          install-yarn: true
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1'
-      - run:
-          name: Corepack
-          command: |
-            corepack prepare pnpm@latest --activate
       - node/install-packages:
           app-dir: .
           cache-only-lockfile: true
-          pkg-manager: pnpm
+          pkg-manager: yarn
       - run:
           name: Generate config
           command: |
-            pnpx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
+            yarn dlx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
 workflows:
   setup:
     jobs:

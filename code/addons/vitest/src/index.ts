@@ -38,14 +38,7 @@ export async function triggerTestRun(actor: string, storyIds?: StoryId[]) {
           console.log('Completed!');
           console.dir(event.payload, { depth: 5 });
           unsubscribe();
-
-          const storyStatuses = Object.values(
-            experimental_getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST).getAll()
-          ).filter((statusByTypeId) =>
-            event.payload.storyIds?.includes(statusByTypeId[STATUS_TYPE_ID_COMPONENT_TEST].storyId)
-          );
-
-          resolve({ ...event.payload, storyStatuses });
+          resolve(event.payload);
           return;
         }
         case 'FATAL_ERROR': {

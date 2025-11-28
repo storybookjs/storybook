@@ -36,6 +36,8 @@ export const storeOptions = {
         coverage: false,
         a11y: false,
       },
+      componentTestStatuses: [],
+      a11yStatuses: [],
       componentTestCount: {
         success: 0,
         error: 0,

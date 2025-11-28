@@ -196,46 +196,6 @@ export class TestManager {
     const testCaseResultsToFlush = this.batchedTestCaseResults;
     this.batchedTestCaseResults = [];
 
-    this.store.setState((s) => {
-      let { success: ctSuccess, error: ctError } = s.currentRun.componentTestCount;
-      let { success: a11ySuccess, warning: a11yWarning, error: a11yError } = s.currentRun.a11yCount;
-      testCaseResultsToFlush.forEach(({ testResult, reports }) => {
-        if (testResult.state === 'passed') {
-          ctSuccess++;
-        } else if (testResult.state === 'failed') {
-          ctError++;
-        }
-        reports
-          ?.filter((r) => r.type === 'a11y')
-          .forEach((report) => {
-            if (report.status === 'passed') {
-              a11ySuccess++;
-            } else if (report.status === 'warning') {
-              a11yWarning++;
-            } else if (report.status === 'failed') {
-              a11yError++;
-            }
-          });
-      });
-      const finishedTestCount = ctSuccess + ctError;
-
-      return {
-        ...s,
-        currentRun: {
-          ...s.currentRun,
-          componentTestCount: { success: ctSuccess, error: ctError },
-          a11yCount: { success: a11ySuccess, warning: a11yWarning, error: a11yError },
-          // in some cases successes and errors can exceed the anticipated totalTestCount
-          // e.g. when testing more tests than the stories we know about upfront
-          // in those cases, we set the totalTestCount to the sum of successes and errors
-          totalTestCount:
-            finishedTestCount > (s.currentRun.totalTestCount ?? 0)
-              ? finishedTestCount
-              : s.currentRun.totalTestCount,
-        },
-      };
-    });
-
     const componentTestStatuses = testCaseResultsToFlush.map(({ storyId, testResult }) => ({
       storyId,
       typeId: STATUS_TYPE_ID_COMPONENT_TEST,
@@ -266,24 +226,47 @@ export class TestManager {
       this.a11yStatusStore.set(a11yStatuses);
     }
 
-    const screenshotStatuses = testCaseResultsToFlush
-      .flatMap(({ storyId, reports }) =>
+    this.store.setState((s) => {
+      let { success: ctSuccess, error: ctError } = s.currentRun.componentTestCount;
+      let { success: a11ySuccess, warning: a11yWarning, error: a11yError } = s.currentRun.a11yCount;
+      testCaseResultsToFlush.forEach(({ testResult, reports }) => {
+        if (testResult.state === 'passed') {
+          ctSuccess++;
+        } else if (testResult.state === 'failed') {
+          ctError++;
+        }
         reports
-          ?.filter((r) => r.type === 'screenshot')
-          .map((screenshotReport) => ({
-            storyId,
-            typeId: STATUS_TYPE_ID_SCREENSHOT,
-            value: testStateToStatusValueMap[screenshotReport.status],
-            title: 'Screenshot',
-            description: screenshotReport.result,
-            sidebarContextMenu: false,
-          }))
-      )
-      .filter((screenshotStatus) => screenshotStatus !== undefined);
+          ?.filter((r) => r.type === 'a11y')
+          .forEach((report) => {
+            if (report.status === 'passed') {
+              a11ySuccess++;
+            } else if (report.status === 'warning') {
+              a11yWarning++;
+            } else if (report.status === 'failed') {
+              a11yError++;
+            }
+          });
+      });
+      const finishedTestCount = ctSuccess + ctError;
 
-    if (screenshotStatuses.length > 0) {
-      this.screenshotStatusStore.set(screenshotStatuses);
-    }
+      return {
+        ...s,
+        currentRun: {
+          ...s.currentRun,
+          componentTestCount: { success: ctSuccess, error: ctError },
+          a11yCount: { success: a11ySuccess, warning: a11yWarning, error: a11yError },
+          componentTestStatuses: s.currentRun.componentTestStatuses.concat(componentTestStatuses),
+          a11yStatuses: s.currentRun.a11yStatuses.concat(a11yStatuses),
+          // in some cases successes and errors can exceed the anticipated totalTestCount
+          // e.g. when testing more tests than the stories we know about upfront
+          // in those cases, we set the totalTestCount to the sum of successes and errors
+          totalTestCount:
+            finishedTestCount > (s.currentRun.totalTestCount ?? 0)
+              ? finishedTestCount
+              : s.currentRun.totalTestCount,
+        },
+      };
+    });
   }, 500);
 
   onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {

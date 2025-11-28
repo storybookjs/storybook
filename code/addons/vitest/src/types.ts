@@ -1,5 +1,5 @@
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
-import type { PreviewAnnotation, StoryId } from 'storybook/internal/types';
+import type { PreviewAnnotation, Status, StoryId } from 'storybook/internal/types';
 import type { API_HashEntry } from 'storybook/internal/types';
 
 export interface VitestError extends Error {
@@ -47,6 +47,8 @@ export type StoreState = {
   currentRun: {
     triggeredBy: RunTrigger | undefined;
     config: StoreState['config'];
+    componentTestStatuses: Status[];
+    a11yStatuses: Status[];
     componentTestCount: {
       success: number;
       error: number;

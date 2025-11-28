@@ -5,8 +5,6 @@ import type { Server } from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
-import detectFreePort from 'detect-port';
-import killProcessOnPort from 'kill-port';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
@@ -14,6 +12,7 @@ import { parseConfigFile, runServer } from 'verdaccio';
 import { npmAuth } from './npm-auth';
 import { maxConcurrentTasks } from './utils/concurrency';
 import { PACKS_DIRECTORY, ROOT_DIRECTORY } from './utils/constants';
+import { killPort } from './utils/port';
 import { getCodeWorkspaces } from './utils/workspace';
 
 program
@@ -37,29 +36,11 @@ const pathExists = async (p: string) => {
   }
 };
 
-const isPortUsed = async (port: number) => (await detectFreePort(port)) !== port;
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const kill = async (port: number) => {
-  if (await isPortUsed(port)) {
-    await killProcessOnPort(port);
-
-    let attempts = 0;
-    while ((await isPortUsed(port)) && attempts < 10) {
-      await sleep(1000);
-      attempts++;
-    }
-    if (await isPortUsed(port)) {
-      throw new Error(`Failed to free port ${port} after ${attempts} attempts`);
-    }
-  }
-};
-
 type Servers = { close: () => Promise<void> };
 const startVerdaccio = async () => {
   // Kill Verdaccio related processes if they are already running
-  await kill(6001);
-  await kill(6002);
+  await killPort(6001);
+  await killPort(6002);
 
   const ready = {
     proxy: false,
@@ -256,7 +237,10 @@ const run = async () => {
 };
 
 run().catch(async (e) => {
-  await servers?.close();
-  await rm(join(root, '.npmrc'), { force: true });
-  throw e;
+  try {
+    await servers?.close();
+  } finally {
+    await rm(join(root, '.npmrc'), { force: true });
+    throw e;
+  }
 });

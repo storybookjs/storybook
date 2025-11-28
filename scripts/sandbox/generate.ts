@@ -295,6 +295,18 @@ const runGenerators = async (
               baseDir
             )} successfully in ${prettyTime(process.hrtime(time))}`
           );
+
+          const { execSync } = await import('node:child_process');
+          try {
+            const yarnDiskUsage = execSync('du -h ~/.cache | sort -h | tail -n 15', {
+              stdio: ['pipe', 'pipe', 'pipe'],
+              encoding: 'utf8',
+            });
+            console.log('Last 15 largest ~/.cache directories:');
+            console.log(yarnDiskUsage);
+          } catch (e) {
+            console.warn('Could not log du -h ~/.cache output:', e);
+          }
         } catch (error) {
           throw error;
         } finally {
@@ -407,10 +419,6 @@ export const generate = async ({
       ...configuration,
     }))
     .filter(({ dirName }) => {
-      if (!dirName.includes('react')) {
-        return false;
-      }
-
       let include = Array.isArray(templates) ? templates.includes(dirName) : true;
       if (Array.isArray(exclude) && include) {
         include = !exclude.includes(dirName);

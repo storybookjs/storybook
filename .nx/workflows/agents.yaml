@@ -72,7 +72,7 @@ linux-browsers-init-steps: &linux-browsers-init-steps
 common-env-vars: &common-env-vars
   STORYBOOK_DISABLE_TELEMETRY: true
   IN_STORYBOOK_SANDBOX: true
-  SANDBOX_ROOT: ../storybook-sandboxes
+  STORYBOOK_SANDBOX_ROOT: ../storybook-sandboxes
   CI: true
   NODE_OPTIONS: --max_old_space_size=6144
 

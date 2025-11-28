@@ -341,10 +341,10 @@ jobs:
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
-                    SANDBOX_ROOT=./sandbox yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
+                    STORYBOOK_SANDBOX_ROOT=./sandbox yarn workspace @storybook/scripts prepare-sandbox --template $TEMPLATE --no-link
                 name: Install sandbox dependencies
             - run:
-                command: SANDBOX_ROOT=./sandbox yarn task --task chromatic --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic) --no-link --start-from=never --junit
+                command: STORYBOOK_SANDBOX_ROOT=./sandbox yarn task --task chromatic --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic) --no-link --start-from=never --junit
                 name: Running Chromatic
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)

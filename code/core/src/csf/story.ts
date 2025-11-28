@@ -288,6 +288,20 @@ export type TestFunction<TRenderer extends Renderer = Renderer, TArgs = TRendere
   context: StoryContext<TRenderer, TArgs>
 ) => Promise<void> | void;
 
+export type EachTestParam = string | number | boolean | null;
+
+export type EachTestFunction<
+  Parameters extends EachTestParam[],
+  TRenderer extends Renderer = Renderer,
+  TArgs = TRenderer['args'],
+> = (context: StoryContext<TRenderer, TArgs>, ...parameters: Parameters) => Promise<void> | void;
+
+export type EachAnnotationsFunction<
+  Parameters extends EachTestParam[],
+  TRenderer extends Renderer = Renderer,
+  TArgs = TRenderer['args'],
+> = (...parameters: Parameters) => StoryAnnotations<TRenderer, TArgs>;
+
 // This is the type of story function passed to a decorator -- does not rely on being passed any context
 export type PartialStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   update?: StoryContextUpdate<Partial<TArgs>>

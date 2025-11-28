@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { format } from 'node:util';
 
 import {
   BabelFileClass,
@@ -86,6 +87,13 @@ function parseTestTags(optionsNode: t.Node | null | undefined, program: t.Progra
     node = findVarInitialization(node.name, program);
   }
 
+  if (t.isArrowFunctionExpression(node) || t.isFunctionExpression(node)) {
+    if (t.isBlock(node.body)) {
+      return parseTestTags(node.body.body.find((s) => t.isReturnStatement(s))?.argument, program);
+    }
+    return parseTestTags(node.body, program);
+  }
+
   if (t.isObjectExpression(node)) {
     const tagsProp = node.properties.find(
       (property) =>
@@ -102,6 +110,34 @@ function parseTestTags(optionsNode: t.Node | null | undefined, program: t.Progra
   }
 
   return [] as string[];
+}
+
+function parseParameters(parametersNode: t.Node): (string | boolean | number | null)[][] {
+  if (!t.isArrayExpression(parametersNode)) {
+    throw new Error('CSF: Expected test parameters array');
+  }
+
+  if (!parametersNode.elements.every((e) => t.isArrayExpression(e))) {
+    throw new Error('CSF: Expected test parameters array of arrays');
+  }
+
+  return parametersNode.elements.map((e) =>
+    e.elements.map((a) => {
+      if (!t.isLiteral(a)) {
+        throw new Error('CSF: Unsupported non-literal test parameter');
+      }
+      switch (a.type) {
+        case 'NullLiteral':
+          return null;
+        case 'TemplateLiteral':
+          throw new Error('CSF: Unsupported template literal test parameter');
+        case 'RegExpLiteral':
+          return a.pattern;
+        default:
+          return a.value;
+      }
+    })
+  );
 }
 
 const formatLocation = (node: t.Node, fileName?: string) => {
@@ -806,6 +842,58 @@ export class CsfFile {
 
             // TODO: fix this when stories fail
             self._stories[exportName].__stats.tests = true;
+          }
+
+          // B.each('foo %s %s', [['a', 'b'], ['c', 'd']], () => {})
+          // B.each('foo %s %s', [['a', 'b'], ['c', 'd']], {}, () => {})
+          // B.each('foo %s %s', [['a', 'b'], ['c', 'd']], () => ({}), () => {})
+          // B.matrix('foo %s %d', [['a', 'b'], [1, 2]], () => {})
+          // B.matrix('foo %s %d', [['a', 'b'], [1, 2]], {}, () => {})
+          // B.matrix('foo %s %d', [['a', 'b'], [1, 2]], () => ({}), () => {})
+          if (
+            t.isCallExpression(expression) &&
+            t.isMemberExpression(expression.callee) &&
+            expression.arguments.length >= 3 &&
+            t.isStringLiteral(expression.arguments[0]) &&
+            t.isArrayExpression(expression.arguments[1]) &&
+            t.isMemberExpression(expression.callee) &&
+            t.isIdentifier(expression.callee.object) &&
+            t.isIdentifier(expression.callee.property) &&
+            ['each', 'matrix'].includes(expression.callee.property.name)
+          ) {
+            const exportName = expression.callee.object.name;
+            const testName = expression.arguments[0].value;
+            const testFunction =
+              expression.arguments.length === 3 ? expression.arguments[2] : expression.arguments[3];
+            const testArguments =
+              expression.arguments.length === 3 ? null : expression.arguments[2];
+            const tags = parseTestTags(testArguments as t.Node | null, self._ast.program);
+
+            const parameters = parseParameters(expression.arguments[1]);
+
+            const combinate = (args: typeof parameters) =>
+              args.reduce<typeof args>(
+                (acc, param) => acc.flatMap((acc2) => param.map((p) => [...acc2, p])),
+                [[]]
+              );
+
+            (expression.callee.property.name === 'matrix'
+              ? combinate(parameters)
+              : parameters
+            ).forEach((args) => {
+              self._tests.push({
+                function: testFunction,
+                name: format(testName, ...args),
+                node: expression,
+                // can't set id because meta title isn't available yet
+                // so it's set later on
+                id: 'FIXME',
+                tags,
+                parent: { node: self._storyStatements[exportName] },
+              });
+              // TODO: fix this when stories fail
+              self._stories[exportName].__stats.tests = true;
+            });
           }
         },
       },

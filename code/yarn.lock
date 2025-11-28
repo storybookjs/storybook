@@ -16174,6 +16174,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fast-printf@npm:^1.6.10":
+  version: 1.6.10
+  resolution: "fast-printf@npm:1.6.10"
+  checksum: 10c0/630cccbef8349a6eeada9958c9391e9d14b5bd9527dd28d9e7e9f295b006c640ddca8fc2470cff55ea5c6c92ca530488bbadbf7c24f4852ad8c34d9155da9d75
+  languageName: node
+  linkType: hard
+
 "fast-sourcemap-concat@npm:^2.1.0":
   version: 2.1.1
   resolution: "fast-sourcemap-concat@npm:2.1.1"
@@ -25948,6 +25955,7 @@ __metadata:
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0"
     execa: "npm:^8.0.1"
     exsolve: "npm:^1.0.7"
+    fast-printf: "npm:^1.6.10"
     fetch-retry: "npm:^6.0.0"
     flush-promises: "npm:^1.0.2"
     fuse.js: "npm:^3.6.1"

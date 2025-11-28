@@ -31,7 +31,7 @@ parameters:
 jobs:
   generate-and-run-config:
     executor: 
-      name: continuation/default
+      name: node/default
       resource_class: medium+
     steps:
       - node/install:

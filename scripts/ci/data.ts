@@ -380,7 +380,7 @@ const build = defineJob('build', {
   },
   steps: [
     git.checkout(),
-    npm.install(WORKING_DIR),
+    npm.install('.'),
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
     git.check(),
     npm.check(),
@@ -388,18 +388,18 @@ const build = defineJob('build', {
       run: {
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
         name: 'Compile',
-        working_directory: `${WORKING_DIR}/code`,
+        working_directory: `code`,
       },
     },
     {
       run: {
         command: 'yarn local-registry --publish',
         name: 'Publish to Verdaccio',
-        working_directory: `${WORKING_DIR}/code`,
+        working_directory: `code`,
       },
     },
     'report-workflow-on-failure',
-    artifact.persist(`${WORKING_DIR}/code/bench/esbuild-metafiles`, 'bench'),
+    artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.persist([
       ...glob
         .sync(['*/src', '*/*/src'], {
@@ -489,11 +489,11 @@ const jobs = {
     },
     steps: [
       git.checkout(),
-      npm.install(WORKING_DIR),
+      npm.install('.'),
       {
         run: {
           name: 'Prettier',
-          working_directory: `${WORKING_DIR}/scripts`,
+          working_directory: `scripts`,
           command: 'yarn docs:prettier:check',
         },
       },

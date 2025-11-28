@@ -143,9 +143,8 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
-                  path: /tmp/storybook
             - node/install-packages:
-                  app-dir: storybook
+                  app-dir: .
                   pkg-manager: yarn
                   cache-only-lockfile: true
             - save_cache:
@@ -166,14 +165,14 @@ jobs:
             - run:
                   command: yarn task --task compile --start-from=auto --no-link --debug
                   name: Compile
-                  working_directory: storybook/code
+                  working_directory: code
             - run:
                   command: yarn local-registry --publish
                   name: Publish to Verdaccio
-                  working_directory: storybook/code
+                  working_directory: code
             - report-workflow-on-failure
             - store_artifacts:
-                  path: storybook/code/bench/esbuild-metafiles
+                  path: code/bench/esbuild-metafiles
                   destination: bench
             - persist_to_workspace:
                   paths:
@@ -269,7 +268,6 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
-                  path: /tmp/storybook
             - attach_workspace:
                   at: /tmp
             - restore_cache:
@@ -299,7 +297,6 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
-                  path: /tmp/storybook
             - attach_workspace:
                   at: /tmp
             - restore_cache:
@@ -324,14 +321,13 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
-                  path: /tmp/storybook
             - node/install-packages:
-                  app-dir: storybook
+                  app-dir: .
                   pkg-manager: yarn
                   cache-only-lockfile: true
             - run:
                   name: Prettier
-                  working_directory: storybook/scripts
+                  working_directory: scripts
                   command: yarn docs:prettier:check
     sandboxes:
         type: no-op
@@ -343,7 +339,6 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
-                  path: /tmp/storybook
             - attach_workspace:
                   at: /tmp
             - restore_cache:
@@ -392,7 +387,6 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
-                  path: /tmp/storybook
             - attach_workspace:
                   at: /tmp
             - restore_cache:
@@ -421,7 +415,6 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
-                  path: /tmp/storybook
             - attach_workspace:
                   at: /tmp
             - restore_cache:

@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/workspace-schema.json",
-  "nxCloudId": "606dc2e0c2e8d5671d813305",
+  "nxCloudId": "6929fbef73e98d8094d2a343",
   "defaultBase": "next",
   "parallel": 8,
   "pluginsConfig": {

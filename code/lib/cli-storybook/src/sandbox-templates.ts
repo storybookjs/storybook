@@ -629,9 +629,7 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      // Angular 21 has introduced a peer dependency requirement on standard-schema via @angular/forms`
-      // TODO: use @angular/forms@next as soon as @angular/cli@next points to the same version
-      extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@^21.0.0'],
+      extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
     },
     expected: {
       framework: '@storybook/angular',

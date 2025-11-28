@@ -85,7 +85,6 @@ vi.mock('storybook/internal/common', () => {
     getAbsolutePathWrapperName: MockWrapGetAbsolutePathUtils.getAbsolutePathWrapperName,
     wrapValueWithGetAbsolutePathWrapper:
       MockWrapGetAbsolutePathUtils.wrapValueWithGetAbsolutePathWrapper,
-    getCoercedStorybookVersion: vi.fn(() => '8.0.0'),
     versions: {
       storybook: '8.0.0',
       '@storybook/addon-docs': '8.0.0',

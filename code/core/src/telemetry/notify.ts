@@ -19,10 +19,7 @@ export const notify = async () => {
     if (!(await cache.get(TELEMETRY_KEY_NOTIFY_DATE, null))) {
       cache.set(TELEMETRY_KEY_NOTIFY_DATE, Date.now());
       logger.info(
-        dedent`
-        Attention: Storybook collects completely anonymous telemetry regarding usage. This information is used to shape Storybook's roadmap and prioritize features. You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-        https://storybook.js.org/telemetry
-        `
+        "Storybook collects completely anonymous usage telemetry. We use it to shape Storybook's roadmap and prioritize features. You can learn more, including how to opt out, at https://storybook.js.org/telemetry"
       );
     }
   }

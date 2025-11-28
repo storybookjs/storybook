@@ -241,7 +241,7 @@ export const computeStorybookMetadata = async ({
     portableStoriesFileCount,
     applicationFileCount,
     storybookVersion: version,
-    storybookVersionSpecifier: storybookInfo.version ?? '',
+    storybookVersionSpecifier: storybookInfo.versionSpecifier ?? '',
     language,
     storybookPackages,
     addons,

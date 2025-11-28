@@ -87,9 +87,16 @@ export class BUNProxy extends JsPackageManager {
     return `bunx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
   }
 
+  getPackageCommand(args: string[]): string {
+    return `bunx ${args.join(' ')}`;
+  }
+
   public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;

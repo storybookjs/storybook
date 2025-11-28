@@ -6,10 +6,12 @@ parameters:
   template:
     type: string
 
+working_directory: '%HOME%\storybook'
+
 steps:
   - checkout
   - attach_workspace:
-      at: /tmp
+      at: '%HOME%'
   - run:
       name: Setup Node & Yarn on Windows
       shell: bash.exe

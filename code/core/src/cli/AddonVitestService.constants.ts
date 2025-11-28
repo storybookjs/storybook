@@ -6,6 +6,7 @@ export const SUPPORTED_FRAMEWORKS: readonly SupportedFramework[] = [
   SupportedFramework.PREACT_VITE,
   SupportedFramework.REACT_NATIVE_WEB_VITE,
   SupportedFramework.REACT_VITE,
+  SupportedFramework.SOLID,
   SupportedFramework.SVELTE_VITE,
   SupportedFramework.SVELTEKIT,
   SupportedFramework.VUE3_VITE,

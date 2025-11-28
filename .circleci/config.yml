@@ -1210,7 +1210,7 @@ workflows:
           requires:
             - build
       - create-sandboxes:
-          parallelism: 38
+          parallelism: 39
           requires:
             - build
       - check-sandboxes:
@@ -1218,7 +1218,7 @@ workflows:
           requires:
             - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 35
+          parallelism: 36
           requires:
             - create-sandboxes
       - e2e-production:
@@ -1230,7 +1230,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 33
+          parallelism: 34
           requires:
             - create-sandboxes
       - vitest-integration:
@@ -1324,11 +1324,11 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 21
+          parallelism: 22
           requires:
             - build
       - chromatic-sandboxes:
-          parallelism: 18
+          parallelism: 19
           requires:
             - create-sandboxes
       - e2e-production:
@@ -1340,7 +1340,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 16
+          parallelism: 17
           requires:
             - create-sandboxes
       - vitest-integration:

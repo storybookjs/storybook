@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-webpack5",
-  "version": "10.1.0",
+  "version": "10.1.1",
   "description": "A Storybook builder to dev and build with Webpack",
   "keywords": [
     "storybook",

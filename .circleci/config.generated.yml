@@ -60,7 +60,7 @@ executors:
                     - xlarge
                 type: enum
         resource_class: <<parameters.class>>
-        working_directory: /tmp/storybook
+        working_directory: storybook
     sb_node_22_browsers:
         docker:
             - environment:
@@ -78,7 +78,7 @@ executors:
                     - xlarge
                 type: enum
         resource_class: <<parameters.class>>
-        working_directory: /tmp/storybook
+        working_directory: storybook
     sb_node_22_classic:
         docker:
             - environment:
@@ -96,7 +96,7 @@ executors:
                     - xlarge
                 type: enum
         resource_class: <<parameters.class>>
-        working_directory: /tmp/storybook
+        working_directory: storybook
     sb_playwright:
         docker:
             - environment:
@@ -114,7 +114,7 @@ executors:
                     - xlarge
                 type: enum
         resource_class: <<parameters.class>>
-        working_directory: /tmp/storybook
+        working_directory: storybook
 parameters:
     ghBaseBranch:
         default: next
@@ -144,7 +144,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - node/install-packages:
-                  app-dir: /tmp/storybook
+                  app-dir: storybook
                   pkg-manager: yarn
                   cache-only-lockfile: true
             - save_cache:
@@ -165,101 +165,101 @@ jobs:
             - run:
                   command: yarn task --task compile --start-from=auto --no-link --debug
                   name: Compile
-                  working_directory: /tmp/storybook/code
+                  working_directory: storybook/code
             - run:
                   command: yarn local-registry --publish
                   name: Publish to Verdaccio
-                  working_directory: /tmp/storybook/code
+                  working_directory: storybook/code
             - report-workflow-on-failure
             - store_artifacts:
-                  path: /tmp/storybook/code/bench/esbuild-metafiles
+                  path: storybook/code/bench/esbuild-metafiles
                   destination: bench
             - persist_to_workspace:
                   paths:
-                      - /tmp/storybook/code/core/dist
-                      - /tmp/storybook/code/core/node_modules
-                      - /tmp/storybook/code/addons/a11y/dist
-                      - /tmp/storybook/code/addons/a11y/node_modules
-                      - /tmp/storybook/code/addons/docs/dist
-                      - /tmp/storybook/code/addons/docs/node_modules
-                      - /tmp/storybook/code/addons/links/dist
-                      - /tmp/storybook/code/addons/links/node_modules
-                      - /tmp/storybook/code/addons/onboarding/dist
-                      - /tmp/storybook/code/addons/onboarding/node_modules
-                      - /tmp/storybook/code/addons/pseudo-states/dist
-                      - /tmp/storybook/code/addons/pseudo-states/node_modules
-                      - /tmp/storybook/code/addons/themes/dist
-                      - /tmp/storybook/code/addons/themes/node_modules
-                      - /tmp/storybook/code/addons/vitest/dist
-                      - /tmp/storybook/code/addons/vitest/node_modules
-                      - /tmp/storybook/code/builders/builder-vite/dist
-                      - /tmp/storybook/code/builders/builder-vite/node_modules
-                      - /tmp/storybook/code/builders/builder-webpack5/dist
-                      - /tmp/storybook/code/builders/builder-webpack5/node_modules
-                      - /tmp/storybook/code/frameworks/angular/dist
-                      - /tmp/storybook/code/frameworks/angular/node_modules
-                      - /tmp/storybook/code/frameworks/ember/dist
-                      - /tmp/storybook/code/frameworks/ember/node_modules
-                      - /tmp/storybook/code/frameworks/html-vite/dist
-                      - /tmp/storybook/code/frameworks/html-vite/node_modules
-                      - /tmp/storybook/code/frameworks/nextjs/dist
-                      - /tmp/storybook/code/frameworks/nextjs/node_modules
-                      - /tmp/storybook/code/frameworks/nextjs-vite/dist
-                      - /tmp/storybook/code/frameworks/nextjs-vite/node_modules
-                      - /tmp/storybook/code/frameworks/preact-vite/dist
-                      - /tmp/storybook/code/frameworks/preact-vite/node_modules
-                      - /tmp/storybook/code/frameworks/react-native-web-vite/dist
-                      - /tmp/storybook/code/frameworks/react-native-web-vite/node_modules
-                      - /tmp/storybook/code/frameworks/react-vite/dist
-                      - /tmp/storybook/code/frameworks/react-vite/node_modules
-                      - /tmp/storybook/code/frameworks/react-webpack5/dist
-                      - /tmp/storybook/code/frameworks/react-webpack5/node_modules
-                      - /tmp/storybook/code/frameworks/server-webpack5/dist
-                      - /tmp/storybook/code/frameworks/server-webpack5/node_modules
-                      - /tmp/storybook/code/frameworks/svelte-vite/dist
-                      - /tmp/storybook/code/frameworks/svelte-vite/node_modules
-                      - /tmp/storybook/code/frameworks/sveltekit/dist
-                      - /tmp/storybook/code/frameworks/sveltekit/node_modules
-                      - /tmp/storybook/code/frameworks/vue3-vite/dist
-                      - /tmp/storybook/code/frameworks/vue3-vite/node_modules
-                      - /tmp/storybook/code/frameworks/web-components-vite/dist
-                      - /tmp/storybook/code/frameworks/web-components-vite/node_modules
-                      - /tmp/storybook/code/lib/cli-storybook/dist
-                      - /tmp/storybook/code/lib/cli-storybook/node_modules
-                      - /tmp/storybook/code/lib/codemod/dist
-                      - /tmp/storybook/code/lib/codemod/node_modules
-                      - /tmp/storybook/code/lib/core-webpack/dist
-                      - /tmp/storybook/code/lib/core-webpack/node_modules
-                      - /tmp/storybook/code/lib/create-storybook/dist
-                      - /tmp/storybook/code/lib/create-storybook/node_modules
-                      - /tmp/storybook/code/lib/csf-plugin/dist
-                      - /tmp/storybook/code/lib/csf-plugin/node_modules
-                      - /tmp/storybook/code/lib/eslint-plugin/dist
-                      - /tmp/storybook/code/lib/eslint-plugin/node_modules
-                      - /tmp/storybook/code/lib/react-dom-shim/dist
-                      - /tmp/storybook/code/lib/react-dom-shim/node_modules
-                      - /tmp/storybook/code/presets/create-react-app/dist
-                      - /tmp/storybook/code/presets/create-react-app/node_modules
-                      - /tmp/storybook/code/presets/react-webpack/dist
-                      - /tmp/storybook/code/presets/react-webpack/node_modules
-                      - /tmp/storybook/code/presets/server-webpack/dist
-                      - /tmp/storybook/code/presets/server-webpack/node_modules
-                      - /tmp/storybook/code/renderers/html/dist
-                      - /tmp/storybook/code/renderers/html/node_modules
-                      - /tmp/storybook/code/renderers/preact/dist
-                      - /tmp/storybook/code/renderers/preact/node_modules
-                      - /tmp/storybook/code/renderers/react/dist
-                      - /tmp/storybook/code/renderers/react/node_modules
-                      - /tmp/storybook/code/renderers/server/dist
-                      - /tmp/storybook/code/renderers/server/node_modules
-                      - /tmp/storybook/code/renderers/svelte/dist
-                      - /tmp/storybook/code/renderers/svelte/node_modules
-                      - /tmp/storybook/code/renderers/vue3/dist
-                      - /tmp/storybook/code/renderers/vue3/node_modules
-                      - /tmp/storybook/code/renderers/web-components/dist
-                      - /tmp/storybook/code/renderers/web-components/node_modules
-                      - /tmp/storybook/.verdaccio-cache
-                  root: /tmp
+                      - storybook/code/core/dist
+                      - storybook/code/core/node_modules
+                      - storybook/code/addons/a11y/dist
+                      - storybook/code/addons/a11y/node_modules
+                      - storybook/code/addons/docs/dist
+                      - storybook/code/addons/docs/node_modules
+                      - storybook/code/addons/links/dist
+                      - storybook/code/addons/links/node_modules
+                      - storybook/code/addons/onboarding/dist
+                      - storybook/code/addons/onboarding/node_modules
+                      - storybook/code/addons/pseudo-states/dist
+                      - storybook/code/addons/pseudo-states/node_modules
+                      - storybook/code/addons/themes/dist
+                      - storybook/code/addons/themes/node_modules
+                      - storybook/code/addons/vitest/dist
+                      - storybook/code/addons/vitest/node_modules
+                      - storybook/code/builders/builder-vite/dist
+                      - storybook/code/builders/builder-vite/node_modules
+                      - storybook/code/builders/builder-webpack5/dist
+                      - storybook/code/builders/builder-webpack5/node_modules
+                      - storybook/code/frameworks/angular/dist
+                      - storybook/code/frameworks/angular/node_modules
+                      - storybook/code/frameworks/ember/dist
+                      - storybook/code/frameworks/ember/node_modules
+                      - storybook/code/frameworks/html-vite/dist
+                      - storybook/code/frameworks/html-vite/node_modules
+                      - storybook/code/frameworks/nextjs/dist
+                      - storybook/code/frameworks/nextjs/node_modules
+                      - storybook/code/frameworks/nextjs-vite/dist
+                      - storybook/code/frameworks/nextjs-vite/node_modules
+                      - storybook/code/frameworks/preact-vite/dist
+                      - storybook/code/frameworks/preact-vite/node_modules
+                      - storybook/code/frameworks/react-native-web-vite/dist
+                      - storybook/code/frameworks/react-native-web-vite/node_modules
+                      - storybook/code/frameworks/react-vite/dist
+                      - storybook/code/frameworks/react-vite/node_modules
+                      - storybook/code/frameworks/react-webpack5/dist
+                      - storybook/code/frameworks/react-webpack5/node_modules
+                      - storybook/code/frameworks/server-webpack5/dist
+                      - storybook/code/frameworks/server-webpack5/node_modules
+                      - storybook/code/frameworks/svelte-vite/dist
+                      - storybook/code/frameworks/svelte-vite/node_modules
+                      - storybook/code/frameworks/sveltekit/dist
+                      - storybook/code/frameworks/sveltekit/node_modules
+                      - storybook/code/frameworks/vue3-vite/dist
+                      - storybook/code/frameworks/vue3-vite/node_modules
+                      - storybook/code/frameworks/web-components-vite/dist
+                      - storybook/code/frameworks/web-components-vite/node_modules
+                      - storybook/code/lib/cli-storybook/dist
+                      - storybook/code/lib/cli-storybook/node_modules
+                      - storybook/code/lib/codemod/dist
+                      - storybook/code/lib/codemod/node_modules
+                      - storybook/code/lib/core-webpack/dist
+                      - storybook/code/lib/core-webpack/node_modules
+                      - storybook/code/lib/create-storybook/dist
+                      - storybook/code/lib/create-storybook/node_modules
+                      - storybook/code/lib/csf-plugin/dist
+                      - storybook/code/lib/csf-plugin/node_modules
+                      - storybook/code/lib/eslint-plugin/dist
+                      - storybook/code/lib/eslint-plugin/node_modules
+                      - storybook/code/lib/react-dom-shim/dist
+                      - storybook/code/lib/react-dom-shim/node_modules
+                      - storybook/code/presets/create-react-app/dist
+                      - storybook/code/presets/create-react-app/node_modules
+                      - storybook/code/presets/react-webpack/dist
+                      - storybook/code/presets/react-webpack/node_modules
+                      - storybook/code/presets/server-webpack/dist
+                      - storybook/code/presets/server-webpack/node_modules
+                      - storybook/code/renderers/html/dist
+                      - storybook/code/renderers/html/node_modules
+                      - storybook/code/renderers/preact/dist
+                      - storybook/code/renderers/preact/node_modules
+                      - storybook/code/renderers/react/dist
+                      - storybook/code/renderers/react/node_modules
+                      - storybook/code/renderers/server/dist
+                      - storybook/code/renderers/server/node_modules
+                      - storybook/code/renderers/svelte/dist
+                      - storybook/code/renderers/svelte/node_modules
+                      - storybook/code/renderers/vue3/dist
+                      - storybook/code/renderers/vue3/node_modules
+                      - storybook/code/renderers/web-components/dist
+                      - storybook/code/renderers/web-components/node_modules
+                      - storybook/.verdaccio-cache
+                  root: /
     check:
         description: check
         executor:
@@ -269,7 +269,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - attach_workspace:
-                  at: /tmp
+                  at: /
             - restore_cache:
                   keys: &a1
                       - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
@@ -278,11 +278,11 @@ jobs:
                       - darwin-node_modules
             - run:
                   name: TypeCheck code
-                  working_directory: /tmp/storybook/code
+                  working_directory: storybook/code
                   command: yarn task --task check --no-link
             - run:
                   name: TypeCheck scripts
-                  working_directory: /tmp/storybook/scripts
+                  working_directory: storybook/scripts
                   command: yarn check
             - run:
                   name: Ensure no changes pending
@@ -298,17 +298,17 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - attach_workspace:
-                  at: /tmp
+                  at: /
             - restore_cache:
                   keys: *a1
             - run:
                   name: Run tests
-                  working_directory: /tmp/storybook/code
+                  working_directory: storybook/code
                   command: |-
                       TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
             - store_test_results:
-                  path: /tmp/storybook/test-results
+                  path: storybook/test-results
             - run:
                   name: Ensure no changes pending
                   command: git diff --exit-code
@@ -322,12 +322,12 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - node/install-packages:
-                  app-dir: /tmp/storybook
+                  app-dir: storybook
                   pkg-manager: yarn
                   cache-only-lockfile: true
             - run:
                   name: Prettier
-                  working_directory: /tmp/storybook/scripts
+                  working_directory: storybook/scripts
                   command: yarn docs:prettier:check
     sandboxes:
         type: no-op
@@ -340,22 +340,22 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - attach_workspace:
-                  at: /tmp
+                  at: /
             - restore_cache:
                   keys: *a1
             - run:
                   name: Verdaccio
-                  working_directory: /tmp/storybook/code
+                  working_directory: storybook/code
                   background: true
                   command: yarn local-registry --open
             - run:
                   name: Start Event Collector
-                  working_directory: /tmp/storybook/scripts
+                  working_directory: storybook/scripts
                   background: true
                   command: yarn jiti ./event-log-collector.ts
             - run:
                   name: Wait on servers
-                  working_directory: /tmp/storybook/code
+                  working_directory: storybook/code
                   command: |-
                       yarn wait-on tcp:127.0.0.1:6001
                       yarn wait-on tcp:127.0.0.1:6002
@@ -373,12 +373,12 @@ jobs:
                       STORYBOOK_TELEMETRY_DEBUG: 1
                       STORYBOOK_TELEMETRY_URL: http://127.0.0.1:6007/event-log
             - store_artifacts:
-                  path: /tmp/storybook-sandboxes/react-vite-default-ts/debug-storybook.log
+                  path: //storybook-sandboxes/react-vite-default-ts/debug-storybook.log
                   destination: logs
             - persist_to_workspace:
                   paths:
-                      - /tmp/storybook-sandboxes/react-vite-default-ts
-                  root: /tmp
+                      - //storybook-sandboxes/react-vite-default-ts
+                  root: /
     react-vite-default-ts--build:
         description: react-vite/default-ts (build)
         executor:
@@ -388,7 +388,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - attach_workspace:
-                  at: /tmp
+                  at: /
             - restore_cache:
                   keys: *a1
             - run:
@@ -400,12 +400,12 @@ jobs:
                   command: yarn task serve --template react-vite/default-ts --no-link -s serve
             - run:
                   name: Wait on storybook
-                  working_directory: /tmp/storybook/code
+                  working_directory: storybook/code
                   command: yarn wait-on tcp:127.0.0.1:8001
             - run:
                   name: Running E2E Tests
                   command: |-
-                      TEST_FILES=$(circleci tests glob "/tmp/storybook/code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
+                      TEST_FILES=$(circleci tests glob "storybook/code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
     react-vite-default-ts--dev:
         description: react-vite/default-ts (dev)
@@ -416,7 +416,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - attach_workspace:
-                  at: /tmp
+                  at: /
             - restore_cache:
                   keys: *a1
             - run:

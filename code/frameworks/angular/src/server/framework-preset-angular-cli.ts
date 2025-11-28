@@ -53,17 +53,6 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
     })
   );
 
-  // Ensure consistent DefinePlugin value for process.env.NODE_ENV to avoid conflicts
-  const plugins = webpackConfig.plugins || [];
-  for (const plugin of plugins as any[]) {
-    if (plugin && plugin.constructor && plugin.constructor.name === 'DefinePlugin') {
-      const defs = (plugin as any).definitions as Record<string, any> | undefined;
-      if (defs && Object.prototype.hasOwnProperty.call(defs, 'process.env.NODE_ENV')) {
-        console.log('node_env', defs['process.env.NODE_ENV']);
-      }
-    }
-  }
-
   try {
     resolvePackageDir('@angular/animations');
   } catch (e) {

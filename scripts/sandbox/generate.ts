@@ -1,5 +1,6 @@
 import { cp, mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { readFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { join, relative } from 'node:path';
 
 import * as ghActions from '@actions/core';
@@ -303,13 +304,12 @@ const runGenerators = async (
           if (process.env.CLEANUP_SANDBOX_NODE_MODULES) {
             console.log(`🗑️ Removing ${join(beforeDir, 'node_modules')}`);
             await rm(join(beforeDir, 'node_modules'), { recursive: true, force: true });
-            await rm(join(beforeDir, '.yarn', 'cache'), { recursive: true, force: true });
             console.log(`🗑️ Removing ${join(baseDir, AFTER_DIR_NAME, 'node_modules')}`);
             await rm(join(baseDir, AFTER_DIR_NAME, 'node_modules'), {
               recursive: true,
               force: true,
             });
-            await rm(join(baseDir, AFTER_DIR_NAME, '.yarn', 'cache'), {
+            await rm(join(homedir(), '.yarn', 'berry'), {
               recursive: true,
               force: true,
             });

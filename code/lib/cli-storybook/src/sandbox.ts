@@ -54,6 +54,7 @@ export const sandbox = async ({
   const isOutdated = lt(currentVersion, isPrerelease ? nextVersion : latestVersion);
 
   const downloadType = !isOutdated && init ? 'after-storybook' : 'before-storybook';
+  console.log(downloadType);
   const branch = isPrerelease ? 'next' : 'main';
 
   const messages = {

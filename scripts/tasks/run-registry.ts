@@ -1,4 +1,5 @@
 import detectFreePort from 'detect-port';
+import waitOn from 'wait-on';
 
 import type { Task } from '../task';
 import { CODE_DIRECTORY } from '../utils/constants';
@@ -7,7 +8,7 @@ import { exec } from '../utils/exec';
 export async function runRegistry({ dryRun, debug }: { dryRun?: boolean; debug?: boolean }) {
   const controller = new AbortController();
 
-  exec(
+  void exec(
     'yarn local-registry --open',
     { cwd: CODE_DIRECTORY, env: { CI: 'true' } },
     { dryRun, debug, signal: controller.signal }
@@ -17,8 +18,12 @@ export async function runRegistry({ dryRun, debug }: { dryRun?: boolean; debug?:
       throw err;
     }
   });
-  await exec('yarn wait-on tcp:127.0.0.1:6001', { cwd: CODE_DIRECTORY }, { dryRun, debug });
-
+  await waitOn({
+    log: true,
+    resources: ['http://localhost:6001', 'http://localhost:6002'],
+    interval: 16,
+    timeout: 20000,
+  });
   return controller;
 }
 

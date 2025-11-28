@@ -256,8 +256,7 @@ const run = async () => {
 };
 
 run().catch(async (e) => {
-  logger.error(e);
   await servers?.close();
   await rm(join(root, '.npmrc'), { force: true });
-  process.exit(1);
+  throw e;
 });

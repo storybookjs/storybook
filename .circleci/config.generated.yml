@@ -138,8 +138,8 @@ jobs:
     build:
         description: build
         executor:
-            class: xlarge
             name: sb_node_22_classic
+            class: xlarge
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
@@ -320,8 +320,8 @@ jobs:
     unit-tests:
         description: unit-tests
         executor:
-            class: xlarge
             name: sb_node_22_classic
+            class: xlarge
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
@@ -333,7 +333,7 @@ jobs:
                   name: Run tests
                   working_directory: code
                   command: |-
-                      TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
+                      TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
             - store_test_results:
                   path: test-results
@@ -344,8 +344,8 @@ jobs:
             - cancel-workflow-on-failure
     pretty-docs:
         executor:
-            class: medium
             name: sb_node_22_classic
+            class: medium
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
@@ -461,108 +461,6 @@ jobs:
                   command: |-
                       TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
-    react-vite-default-js--create:
-        description: react-vite/default-js (create)
-        executor:
-            name: sb_node_22_browsers
-            class: large
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: .
-            - restore_cache:
-                  keys: *a1
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Start Event Collector
-                  working_directory: scripts
-                  background: true
-                  command: yarn jiti ./event-log-collector.ts
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-                      yarn wait-on tcp:127.0.0.1:6007
-            - run:
-                  name: Setup Corepack
-                  command: |-
-                      sudo corepack enable
-                      which yarn
-                      yarn --version
-            - run:
-                  name: Create Sandboxes
-                  command: yarn task sandbox --template react-vite/default-js --no-link -s sandbox --debug
-                  environment:
-                      STORYBOOK_TELEMETRY_DEBUG: 1
-                      STORYBOOK_TELEMETRY_URL: http://127.0.0.1:6007/event-log
-            - store_artifacts:
-                  path: sandbox/react-vite-default-js/debug-storybook.log
-                  destination: logs
-            - persist_to_workspace:
-                  paths:
-                      - sandbox/react-vite-default-js
-                  root: .
-    react-vite-default-js--build:
-        description: react-vite/default-js (build)
-        executor:
-            class: xlarge
-            name: sb_playwright
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: .
-            - restore_cache:
-                  keys: *a1
-            - run:
-                  name: Build storybook
-                  command: yarn task build --template react-vite/default-js --no-link -s build
-            - run:
-                  name: Serve storybook
-                  background: true
-                  command: yarn task serve --template react-vite/default-js --no-link -s serve
-            - run:
-                  name: Wait on storybook
-                  working_directory: code
-                  command: yarn wait-on tcp:127.0.0.1:8001
-            - run:
-                  name: Running E2E Tests
-                  command: |-
-                      TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
-                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-js --no-link -s never" --verbose --index=0 --total=1
-    react-vite-default-js--dev:
-        description: react-vite/default-js (dev)
-        executor:
-            class: xlarge
-            name: sb_playwright
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: .
-            - restore_cache:
-                  keys: *a1
-            - run:
-                  name: Run storybook
-                  working_directory: code
-                  background: true
-                  command: yarn task dev --template react-vite/default-js --no-link -s dev
-            - run:
-                  name: Wait on storybook
-                  working_directory: code
-                  command: yarn wait-on tcp:127.0.0.1:6006
-            - run:
-                  name: Running E2E Tests
-                  command: |-
-                      TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
-                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-js --no-link -s never" --verbose --index=0 --total=1
 workflows:
     docs:
         jobs:
@@ -586,15 +484,6 @@ workflows:
             - react-vite-default-ts--dev:
                   requires:
                       - react-vite-default-ts--create
-            - react-vite-default-js--create:
-                  requires:
-                      - sandboxes
-            - react-vite-default-js--build:
-                  requires:
-                      - react-vite-default-js--create
-            - react-vite-default-js--dev:
-                  requires:
-                      - react-vite-default-js--create
         when:
             equal:
                 - docs

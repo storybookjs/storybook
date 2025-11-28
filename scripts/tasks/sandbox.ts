@@ -21,16 +21,12 @@ const pathExists = async (path: string) => {
 
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
-  dependsOn: ({ template }, { link }) => {
-    if ('inDevelopment' in template && template.inDevelopment) {
-      return ['run-registry', 'generate'];
-    }
-
+  dependsOn: (_, { link }) => {
     if (link) {
-      return ['compile'];
+      return ['compile', 'generate'];
     }
 
-    return ['run-registry'];
+    return ['run-registry', 'generate'];
   },
   async ready({ sandboxDir }, { task: selectedTask }) {
     // If the selected task requires the sandbox to exist, we check it. Else we always assume it needs to be created

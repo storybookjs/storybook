@@ -34,17 +34,17 @@ jobs:
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1'
-      - node/install:
-          install-yarn: true
-      - node/install-packages:
-          app-dir: .
-          cache-only-lockfile: true
-          pkg-manager: yarn
+      - node/install
+      # - node/install:
+      #     install-yarn: true
+      # - node/install-packages:
+      #     cache-only-lockfile: true
+      #     pkg-manager: yarn
 
       - run:
           name: Generate config
           command: |
-            yarn dlx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
+            npx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
 
       # https://circleci.com/developer/orbs/orb/circleci/continuation
       - continuation/continue:

@@ -254,6 +254,7 @@ jobs:
                 name: Restore Yarn cache
             - run:
                 command: |
+                    yarn
                     yarn task --task check --start-from=auto --no-link --debug
                 name: Check
             - run:

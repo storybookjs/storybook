@@ -1,6 +1,7 @@
 import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
+import type { TemplateKey } from '../get-template';
 import { getPort } from '../sandbox/utils/getPort';
 import { type Task } from '../task';
 import { ROOT_DIRECTORY } from '../utils/constants';
@@ -8,18 +9,22 @@ import { exec } from '../utils/exec';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
-  : undefined;
+  : 8001;
+
+function getServePort(key: TemplateKey) {
+  return process.env.NX_CLI_SET === 'true' ? getPort({ selectedTask: 'serve', key }) : PORT;
+}
 
 export const serve: Task = {
   description: 'Serve the build storybook for a sandbox',
   service: true,
   dependsOn: ['build'],
   async ready({ key }) {
-    const port = PORT ?? getPort({ key, selectedTask: 'serve' });
+    const port = getServePort(key);
     return (await detectFreePort(port)) !== port;
   },
   async run({ builtSandboxDir, key }, { debug, dryRun }) {
-    const port = PORT ?? getPort({ key, selectedTask: 'serve' });
+    const port = getServePort(key);
 
     const controller = new AbortController();
     exec(

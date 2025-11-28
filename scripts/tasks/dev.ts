@@ -2,25 +2,30 @@ import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
 import { now, saveBench } from '../bench/utils';
+import type { TemplateKey } from '../get-template';
 import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
-  : undefined;
+  : 6006;
+
+function getDevPort(key: TemplateKey) {
+  return process.env.NX_CLI_SET === 'true' ? getPort({ selectedTask: 'dev', key }) : PORT;
+}
 
 export const dev: Task = {
   description: 'Run the sandbox in development mode',
   service: true,
   dependsOn: ['sandbox'],
   async ready({ key }) {
-    const port = PORT ?? getPort({ selectedTask: 'dev', key });
+    const port = getDevPort(key);
     return (await detectFreePort(port)) !== port;
   },
   async run({ sandboxDir, key }, { dryRun, debug }) {
     const controller = new AbortController();
-    const port = PORT ?? getPort({ selectedTask: 'dev', key });
+    const port = getDevPort(key);
     const devCommand = `yarn storybook --port ${port}`;
 
     const start = now();

@@ -110,7 +110,7 @@ const addStorybook = async ({
       await addResolutions(tmpDir);
     }
 
-    await sbInit(tmpDir, env, [...flags, `--package-manager=${PackageManagerName.YARN1}`], debug);
+    await sbInit(tmpDir, env, [...flags, `--package-manager=${PackageManagerName.YARN2}`], debug);
   } catch (e) {
     console.log('error', e);
     await rm(tmpDir, { recursive: true, force: true });
@@ -269,21 +269,21 @@ const runGenerators = async (
           // Make sure there are no git projects in the folder
           await rm(join(beforeDir, '.git'), { recursive: true, force: true });
 
-          try {
-            await addStorybook({ baseDir, localRegistry, flags, debug, env });
-          } catch (error) {
-            const message = `❌ Failed to initialize Storybook in template: ${name} (${dirName})`;
-            if (isCI) {
-              ghActions.error(dedent`${message}
-                ${(error as any).stack}`);
-            } else {
-              console.error(message);
-              console.error(error);
-            }
-            throw new StorybookInitError(message, {
-              cause: error,
-            });
-          }
+          // try {
+          //   await addStorybook({ baseDir, localRegistry, flags, debug, env });
+          // } catch (error) {
+          //   const message = `❌ Failed to initialize Storybook in template: ${name} (${dirName})`;
+          //   if (isCI) {
+          //     ghActions.error(dedent`${message}
+          //       ${(error as any).stack}`);
+          //   } else {
+          //     console.error(message);
+          //     console.error(error);
+          //   }
+          //   throw new StorybookInitError(message, {
+          //     cause: error,
+          //   });
+          // }
 
           await addDocumentation(baseDir, { name, dirName });
 

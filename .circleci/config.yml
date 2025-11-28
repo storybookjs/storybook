@@ -35,17 +35,17 @@ jobs:
       resource_class: medium
     steps:
       - node/install:
-          install-yarn: true
+          install-pnpm: true
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1'
       - node/install-packages:
           app-dir: .
           cache-only-lockfile: true
-          pkg-manager: yarn
+          pkg-manager: pnpm
       - run:
           name: Generate config
           command: |
-            yarn dlx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
+            pnpx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
 workflows:
   setup:
     jobs:

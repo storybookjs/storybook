@@ -18,7 +18,7 @@ jobs:
   nx:
     runs-on: ubuntu-latest
     env:
-      ALL_TASKS: check,knip,test,pretty-docs,lint,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct,cypress
+      ALL_TASKS: compile,check,knip,test,pretty-docs,lint,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct,cypress
     steps:
       - uses: actions/checkout@v4
         with:

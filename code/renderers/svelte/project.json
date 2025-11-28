@@ -5,16 +5,7 @@
     "compile": {},
     "check": {
       "executor": "nx:run-commands",
-      "options": {
-        "cwd": "{projectRoot}",
-        "command": "svelte-check"
-      },
-      "dependsOn": [
-        {
-          "projects": ["*"],
-          "target": "compile"
-        }
-      ]
+      "options": { "cwd": "{projectRoot}", "command": "svelte-check" }
     }
   },
   "tags": ["ci:normal"]

@@ -135,7 +135,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
   const stories = await presets.apply('stories', []);
 
-  const root = resolve(finalOptions.configDir, '..');
+  // We can probably add more config here. See code/builders/builder-vite/src/vite-config.ts
+  // This one is specifically needed for code/builders/builder-vite/src/preset.ts
+  const commonConfig = { root: resolve(finalOptions.configDir, '..') };
+
   const [
     { storiesGlobs },
     framework,
@@ -150,7 +153,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
     presets.apply('env', {}),
-    presets.apply<{ plugins?: Plugin[] }>('viteFinal', { root } as any),
+    presets.apply<{ plugins?: Plugin[]; root: string }>('viteFinal', commonConfig),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
     presets.apply('core'),

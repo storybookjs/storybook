@@ -5,16 +5,7 @@
     "compile": {},
     "check": {
       "executor": "nx:run-commands",
-      "options": {
-        "cwd": "{projectRoot}",
-        "command": "vue-tsc --noEmit"
-      },
-      "dependsOn": [
-        {
-          "projects": ["*"],
-          "target": "compile"
-        }
-      ]
+      "options": { "cwd": "{projectRoot}", "command": "vue-tsc --noEmit" }
     }
   },
   "tags": ["ci:normal"]

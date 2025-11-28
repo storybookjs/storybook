@@ -407,7 +407,7 @@ export const generate = async ({
       ...configuration,
     }))
     .filter(({ dirName }) => {
-      if (dirName.includes('solid')) {
+      if (!dirName.includes('angular')) {
         return false;
       }
 

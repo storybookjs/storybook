@@ -49,6 +49,9 @@ const kill = async (port: number) => {
       await sleep(1000);
       attempts++;
     }
+    if (await isPortUsed(port)) {
+      throw new Error(`Failed to free port ${port} after ${attempts} attempts`);
+    }
   }
 };
 

@@ -15,6 +15,7 @@ steps:
   - run:
       name: Check
       command: |
+        yarn
         yarn task --task check --start-from=auto --no-link --debug
   - run:
       name: Ensure no changes pending

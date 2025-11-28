@@ -11,7 +11,7 @@ parallelism: << parameters.parallelism >>
 steps:
   - checkout
   - attach_workspace:
-      at: .
+      at: /tmp
   - run:
       name: Install sandbox dependencies
       command: |
@@ -23,4 +23,4 @@ steps:
   - report-workflow-on-failure:
       template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
   - store_test_results:
-      path: test-results
+      path: storybook/test-results

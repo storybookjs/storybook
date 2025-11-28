@@ -12,7 +12,7 @@ steps:
   - git-shallow-clone/checkout_advanced:
       clone_options: '--depth 1 --verbose'
   - attach_workspace:
-      at: .
+      at: /tmp
   - run:
       name: Install sandbox dependencies
       command: |
@@ -29,7 +29,7 @@ steps:
   - report-workflow-on-failure:
       template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
   - store_test_results:
-      path: test-results
+      path: storybook/test-results
   - store_artifacts: # this is where playwright puts more complex stuff
-      path: code/playwright-results/
+      path: storybook/code/playwright-results/
       destination: playwright

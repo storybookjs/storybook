@@ -115,7 +115,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - when:
                 condition:
                     and:
@@ -161,7 +161,7 @@ jobs:
                         name: Uploading package benchmarks for branch
                         working_directory: scripts
             - store_artifacts:
-                path: bench/packages/results.json
+                path: storybook/bench/packages/results.json
             - report-workflow-on-failure
             - cancel-workflow-on-failure
     bench-sandboxes:
@@ -176,7 +176,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 background: true
                 command: |
@@ -221,7 +221,7 @@ jobs:
                 name: Publish to Verdaccio
             - report-workflow-on-failure
             - store_artifacts:
-                path: code/bench/esbuild-metafiles
+                path: storybook/code/bench/esbuild-metafiles
             - save_cache:
                 key: build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
                 name: Save Yarn cache
@@ -229,20 +229,20 @@ jobs:
                     - ~/.yarn/berry/cache
             - persist_to_workspace:
                 paths:
-                    - node_modules
-                    - code/node_modules
-                    - code/addons
-                    - scripts/node_modules
-                    - code/bench
-                    - code/examples
-                    - code/frameworks
-                    - code/lib
-                    - code/core
-                    - code/builders
-                    - code/renderers
-                    - code/presets
-                    - .verdaccio-cache
-                root: .
+                    - storybook/node_modules
+                    - storybook/code/node_modules
+                    - storybook/code/addons
+                    - storybook/scripts/node_modules
+                    - storybook/code/bench
+                    - storybook/code/examples
+                    - storybook/code/frameworks
+                    - storybook/code/lib
+                    - storybook/code/core
+                    - storybook/code/builders
+                    - storybook/code/renderers
+                    - storybook/code/presets
+                    - storybook/.verdaccio-cache
+                root: /tmp
     check:
         executor:
             class: large
@@ -284,7 +284,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 background: true
                 command: |
@@ -302,7 +302,7 @@ jobs:
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
     chromatic-internal-storybook:
         environment:
             NODE_OPTIONS: --max_old_space_size=4096
@@ -312,14 +312,14 @@ jobs:
         steps:
             - checkout
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: yarn storybook:ui:chromatic
                 name: Running Chromatic
                 working_directory: code
             - report-workflow-on-failure
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
     chromatic-sandboxes:
         executor:
             class: medium+
@@ -331,7 +331,7 @@ jobs:
         steps:
             - checkout
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 background: true
                 command: |
@@ -349,7 +349,7 @@ jobs:
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
     coverage:
         executor:
             class: small
@@ -358,7 +358,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - codecov/upload
             - report-workflow-on-failure
     create-sandboxes:
@@ -373,7 +373,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: |
                     # Enable corepack
@@ -400,10 +400,10 @@ jobs:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
             - persist_to_workspace:
                 paths:
-                    - sandbox/**
+                    - storybook-sandboxes/**
                 root: .
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
     e2e-dev:
         executor:
             class: medium+
@@ -416,7 +416,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 background: true
                 command: |
@@ -436,10 +436,10 @@ jobs:
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
             - store_artifacts:
                 destination: playwright
-                path: code/playwright-results/
+                path: storybook/code/playwright-results/
     e2e-production:
         executor:
             class: medium
@@ -452,7 +452,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 background: true
                 command: |
@@ -472,10 +472,10 @@ jobs:
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
             - store_artifacts:
                 destination: playwright
-                path: code/playwright-results/
+                path: storybook/code/playwright-results/
     e2e-ui:
         executor:
             class: medium
@@ -484,7 +484,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: yarn install --no-immutable
                 environment:
@@ -496,10 +496,10 @@ jobs:
                 name: Run E2E tests
                 working_directory: test-storybooks/portable-stories-kitchen-sink/react
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
             - store_artifacts:
                 destination: playwright
-                path: test-storybooks/portable-stories-kitchen-sink/react/test-results/
+                path: storybook/test-storybooks/portable-stories-kitchen-sink/react/test-results/
             - report-workflow-on-failure
     e2e-ui-vitest-3:
         executor:
@@ -509,7 +509,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: yarn install --no-immutable
                 environment:
@@ -521,10 +521,10 @@ jobs:
                 name: Run E2E tests
                 working_directory: test-storybooks/portable-stories-kitchen-sink/react-vitest-3
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
             - store_artifacts:
                 destination: playwright
-                path: test-storybooks/portable-stories-kitchen-sink/react-vitest-3/test-results/
+                path: storybook/test-storybooks/portable-stories-kitchen-sink/react-vitest-3/test-results/
             - report-workflow-on-failure
     knip:
         executor:
@@ -534,7 +534,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: |
                     cd code
@@ -550,7 +550,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: |
                     cd code
@@ -589,7 +589,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: |
                     cd scripts
@@ -606,7 +606,7 @@ jobs:
                     yarn test --coverage
                 name: Run tests
             - store_test_results:
-                path: scripts/junit.xml
+                path: storybook/scripts/junit.xml
             - report-workflow-on-failure
             - cancel-workflow-on-failure
     smoke-test-sandboxes:
@@ -621,14 +621,14 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: yarn task --task smoke-test --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task smoke-test) --no-link --start-from=never --junit
                 name: Smoke Testing Sandboxes
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task smoke-test)
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
     stories-tests:
         executor:
             class: xlarge
@@ -638,7 +638,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: |
                     cd code
@@ -646,7 +646,7 @@ jobs:
                     echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
                 name: Run tests
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
             - report-workflow-on-failure
             - cancel-workflow-on-failure
     test-init-empty:
@@ -662,7 +662,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - when:
                 condition:
                     equal:
@@ -800,7 +800,7 @@ jobs:
         steps:
             - checkout
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: |
                     choco install nodejs-lts --version=22.11.0 -y
@@ -957,7 +957,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 background: true
                 command: |
@@ -994,7 +994,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: yarn install --no-immutable
                 environment:
@@ -1030,14 +1030,14 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: yarn task --task test-runner-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev) --no-link --start-from=never --junit
                 name: Running Test Runner in Dev mode
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev)
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
     test-runner-production:
         executor:
             class: medium+
@@ -1050,7 +1050,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
@@ -1069,7 +1069,7 @@ jobs:
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
     test-yarn-pnp:
         executor:
             class: medium
@@ -1078,7 +1078,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: yarn install --no-immutable
                 environment:
@@ -1099,7 +1099,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: |
                     cd code
@@ -1107,7 +1107,7 @@ jobs:
                     echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
                 name: Run tests
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
             - report-workflow-on-failure
             - cancel-workflow-on-failure
     vitest-integration:
@@ -1122,7 +1122,7 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: --depth 1 --verbose
             - attach_workspace:
-                at: .
+                at: /tmp
             - run:
                 command: |
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
@@ -1141,7 +1141,7 @@ jobs:
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
             - store_test_results:
-                path: test-results
+                path: storybook/test-results
 orbs:
     browser-tools: circleci/browser-tools@1.4.1
     codecov: codecov/codecov@3.2.4

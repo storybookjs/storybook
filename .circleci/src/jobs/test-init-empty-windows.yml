@@ -9,7 +9,7 @@ parameters:
 steps:
   - checkout
   - attach_workspace:
-      at: .
+      at: /tmp
   - run:
       name: Setup Node & Yarn on Windows
       shell: bash.exe

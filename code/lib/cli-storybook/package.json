@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "10.2.0-alpha.0",
+  "version": "10.2.0-alpha.1",
   "description": "Storybook CLI: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

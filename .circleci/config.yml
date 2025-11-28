@@ -38,14 +38,14 @@ jobs:
           install-pnpm: true
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1'
-      - node/install-packages:
-          app-dir: .
-          cache-only-lockfile: true
-          pkg-manager: pnpm
       - run:
           name: Corepack
           command: |
             corepack prepare pnpm@latest --activate
+      - node/install-packages:
+          app-dir: .
+          cache-only-lockfile: true
+          pkg-manager: pnpm
       - run:
           name: Generate config
           command: |

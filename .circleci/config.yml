@@ -36,15 +36,16 @@ jobs:
     steps:
       - node/install:
           install-yarn: true
+      - git-shallow-clone/checkout_advanced:
+          clone_options: '--depth 1'
       - node/install-packages:
+          app-dir: .
           cache-only-lockfile: true
           pkg-manager: yarn
       - run:
           name: Generate config
           command: |
             yarn dlx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1'
 workflows:
   setup:
     jobs:

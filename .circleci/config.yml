@@ -37,8 +37,8 @@ jobs:
       - node/install:
           install-yarn: true
       - node/install-packages:
-          app-dir: scripts
-          cache-only-lockfile: false
+          app-dir: .
+          cache-only-lockfile: true
           pkg-manager: yarn
 
       - run:

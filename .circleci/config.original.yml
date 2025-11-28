@@ -1,5 +1,3 @@
-version: 2.1
-
 commands:
     cancel-workflow-on-failure:
         description: Cancels the entire workflow in case the previous step has failed
@@ -1149,3 +1147,295 @@ parameters:
             - skipped
             - docs
         type: enum
+version: 2.1
+workflows:
+    daily:
+        jobs:
+            - pretty-docs
+            - build
+            - lint:
+                requires:
+                    - build
+            - knip:
+                requires:
+                    - build
+            - bench-packages:
+                requires:
+                    - build
+            - check
+            - unit-tests:
+                requires:
+                    - build
+            - stories-tests:
+                requires:
+                    - build
+            - script-checks:
+                requires:
+                    - build
+            - chromatic-internal-storybook:
+                requires:
+                    - build
+            - create-sandboxes:
+                parallelism: 39
+                requires:
+                    - build
+            - check-sandboxes:
+                parallelism: 1
+                requires:
+                    - create-sandboxes
+            - chromatic-sandboxes:
+                parallelism: 36
+                requires:
+                    - create-sandboxes
+            - e2e-production:
+                parallelism: 7
+                requires:
+                    - create-sandboxes
+            - e2e-dev:
+                parallelism: 28
+                requires:
+                    - create-sandboxes
+            - test-runner-production:
+                parallelism: 34
+                requires:
+                    - create-sandboxes
+            - vitest-integration:
+                parallelism: 13
+                requires:
+                    - create-sandboxes
+            - test-portable-stories:
+                matrix:
+                    parameters:
+                        directory:
+                            - react
+                            - vue3
+                            - nextjs
+                            - svelte
+                requires:
+                    - build
+            - test-yarn-pnp:
+                requires:
+                    - build
+            - e2e-ui:
+                requires:
+                    - build
+            - e2e-ui-vitest-3:
+                requires:
+                    - build
+            - test-init-features:
+                requires:
+                    - build
+            - test-init-empty:
+                matrix:
+                    parameters:
+                        packageManager:
+                            - npm
+                        template:
+                            - react-vite-ts
+                            - nextjs-ts
+                            - vue-vite-ts
+                            - lit-vite-ts
+                requires:
+                    - build
+            - test-init-empty-windows:
+                matrix:
+                    parameters:
+                        packageManager:
+                            - npm
+                        template:
+                            - react-vite-ts
+                            - nextjs-ts
+                            - vue-vite-ts
+                            - lit-vite-ts
+                requires:
+                    - build
+        when:
+            equal:
+                - daily
+                - << pipeline.parameters.workflow >>
+    docs:
+        jobs:
+            - pretty-docs
+        when:
+            equal:
+                - docs
+                - << pipeline.parameters.workflow >>
+    merged:
+        jobs:
+            - pretty-docs
+            - build
+            - lint:
+                requires:
+                    - build
+            - knip:
+                requires:
+                    - build
+            - bench-packages:
+                requires:
+                    - build
+            - check
+            - unit-tests:
+                requires:
+                    - build
+            - stories-tests:
+                requires:
+                    - build
+            - script-checks:
+                requires:
+                    - build
+            - chromatic-internal-storybook:
+                requires:
+                    - build
+            - coverage:
+                requires:
+                    - unit-tests
+            - create-sandboxes:
+                parallelism: 22
+                requires:
+                    - build
+            - chromatic-sandboxes:
+                parallelism: 19
+                requires:
+                    - create-sandboxes
+            - e2e-production:
+                parallelism: 6
+                requires:
+                    - create-sandboxes
+            - e2e-dev:
+                parallelism: 14
+                requires:
+                    - create-sandboxes
+            - test-runner-production:
+                parallelism: 17
+                requires:
+                    - create-sandboxes
+            - vitest-integration:
+                parallelism: 7
+                requires:
+                    - create-sandboxes
+            - check-sandboxes:
+                parallelism: 1
+                requires:
+                    - create-sandboxes
+            - test-portable-stories:
+                matrix:
+                    parameters:
+                        directory:
+                            - react
+                            - vue3
+                            - nextjs
+                            - svelte
+                requires:
+                    - build
+            - test-yarn-pnp:
+                requires:
+                    - build
+            - e2e-ui:
+                requires:
+                    - build
+            - e2e-ui-vitest-3:
+                requires:
+                    - build
+            - test-init-features:
+                requires:
+                    - build
+            - test-init-empty-windows:
+                matrix:
+                    parameters:
+                        packageManager:
+                            - npm
+                        template:
+                            - react-vite-ts
+                            - nextjs-ts
+                            - vue-vite-ts
+                            - lit-vite-ts
+                requires:
+                    - build
+        when:
+            equal:
+                - merged
+                - << pipeline.parameters.workflow >>
+    normal:
+        jobs:
+            - pretty-docs
+            - build
+            - lint:
+                requires:
+                    - build
+            - knip:
+                requires:
+                    - build
+            - bench-packages:
+                requires:
+                    - build
+            - check
+            - unit-tests:
+                requires:
+                    - build
+            - stories-tests:
+                requires:
+                    - build
+            - script-checks:
+                requires:
+                    - build
+            - chromatic-internal-storybook:
+                requires:
+                    - build
+            - coverage:
+                requires:
+                    - unit-tests
+            - create-sandboxes:
+                parallelism: 14
+                requires:
+                    - build
+            - chromatic-sandboxes:
+                parallelism: 11
+                requires:
+                    - create-sandboxes
+            - e2e-production:
+                parallelism: 6
+                requires:
+                    - create-sandboxes
+            - e2e-dev:
+                parallelism: 8
+                requires:
+                    - create-sandboxes
+            - test-runner-production:
+                parallelism: 9
+                requires:
+                    - create-sandboxes
+            - vitest-integration:
+                parallelism: 5
+                requires:
+                    - create-sandboxes
+            - check-sandboxes:
+                parallelism: 1
+                requires:
+                    - create-sandboxes
+            - test-yarn-pnp:
+                requires:
+                    - build
+            - e2e-ui:
+                requires:
+                    - build
+            - e2e-ui-vitest-3:
+                requires:
+                    - build
+            - test-init-features:
+                requires:
+                    - build
+            - test-portable-stories:
+                matrix:
+                    parameters:
+                        directory:
+                            - react
+                            - vue3
+                            - nextjs
+                            - svelte
+                requires:
+                    - build
+        when:
+            equal:
+                - normal
+                - << pipeline.parameters.workflow >>
+

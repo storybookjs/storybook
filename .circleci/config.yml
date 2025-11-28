@@ -30,9 +30,7 @@ parameters:
 
 jobs:
   generate-and-run-config:
-    executor: 
-      name: node/default
-      resource_class: medium+
+    executor: continuation/default
     steps:
       - node/install:
           install-yarn: true
@@ -46,6 +44,8 @@ jobs:
           name: Generate config
           command: |
             yarn dlx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
+      - continuation/continue:
+          configuration_path: .circleci/config.generated.yml
 workflows:
   setup:
     jobs:

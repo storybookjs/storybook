@@ -305,16 +305,41 @@ jobs:
                       - darwin-node_modules/{{ checksum ".nvmrc" }}
                       - darwin-node_modules
             - run:
-                  command: yarn task --task check --no-link
                   name: TypeCheck code
                   working_directory: code
+                  command: yarn task --task check --no-link
             - run:
-                  command: yarn check
                   name: TypeCheck scripts
                   working_directory: scripts
+                  command: yarn check
             - run:
-                  command: git diff --exit-code
                   name: Ensure no changes pending
+                  command: git diff --exit-code
+            - report-workflow-on-failure
+            - cancel-workflow-on-failure
+    unit-tests:
+        description: unit-tests
+        executor:
+            class: xlarge
+            name: sb_node_22_classic
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: .
+            - restore_cache:
+                  keys: *a1
+            - run:
+                  name: Run tests
+                  working_directory: code
+                  command: |-
+                      TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
+                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
+            - store_test_results:
+                  path: test-results
+            - run:
+                  name: Ensure no changes pending
+                  command: git diff --exit-code
             - report-workflow-on-failure
             - cancel-workflow-on-failure
     pretty-docs:
@@ -329,22 +354,16 @@ jobs:
                   pkg-manager: yarn
                   cache-only-lockfile: true
             - run:
-                  command: yarn docs:prettier:check
                   name: Prettier
                   working_directory: scripts
+                  command: yarn docs:prettier:check
     sandboxes:
-        executor:
-            class: small
-            name: sb_node_22_classic
-        steps:
-            - run:
-                  command: echo "Grouping sandboxes in CI graph"
-                  name: Grouping sandboxes in CI graph
+        type: no-op
     react-vite-default-ts--create:
         description: react-vite/default-ts (create)
         executor:
-            class: large
             name: sb_node_22_browsers
+            class: large
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
@@ -445,8 +464,8 @@ jobs:
     react-vite-default-js--create:
         description: react-vite/default-js (create)
         executor:
-            class: large
             name: sb_node_22_browsers
+            class: large
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
@@ -550,6 +569,9 @@ workflows:
             - pretty-docs
             - build
             - check:
+                  requires:
+                      - build
+            - unit-tests:
                   requires:
                       - build
             - sandboxes:

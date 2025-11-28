@@ -4,6 +4,8 @@ import { join } from 'node:path';
 // eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';
 
+import { artifact, cache, git, npm, toId, workspace } from './utils';
+
 const PLATFORM = os.platform();
 const CACHE_KEYS = [
   `${PLATFORM}-node_modules`,
@@ -14,93 +16,15 @@ const CACHE_KEYS = [
 ].map((_, index, list) => {
   return list.slice(0, list.length - index).join('/');
 });
+const CACHE_PATHS = [
+  '.yarn/code-install-state.gz',
+  '.yarn/scripts-install-state.gz',
+  '.yarn/root-install-state.gz',
+  'code/node_modules',
+  'scripts/node_modules',
+];
 
 const dirname = import.meta.dirname;
-
-const workspace = {
-  attach: () => {
-    return {
-      attach_workspace: {
-        at: '.',
-      },
-    };
-  },
-  persist: (root: string, paths: string[]) => {
-    return {
-      persist_to_workspace: {
-        paths,
-        root,
-      },
-    };
-  },
-};
-
-const cache = {
-  attach: (keys: string[]) => {
-    return {
-      restore_cache: {
-        keys,
-      },
-    };
-  },
-  persist: (paths: string[], key: string) => {
-    return {
-      save_cache: {
-        paths,
-        key,
-      },
-    };
-  },
-};
-
-const artifact = {
-  persist: (path: string, destination: string) => {
-    return {
-      store_artifacts: {
-        path,
-        destination,
-      },
-    };
-  },
-};
-
-const git = {
-  checkout: (shallow: boolean = true) => {
-    return {
-      'git-shallow-clone/checkout_advanced': {
-        clone_options: shallow ? '--depth 1' : '',
-      },
-    };
-  },
-  check: () => {
-    return {
-      run: {
-        name: 'Ensure no changes pending',
-        command: 'git diff --exit-code',
-      },
-    };
-  },
-};
-
-const npm = {
-  install: (appDir: string, pkgManager: string = 'yarn') => {
-    return {
-      'node/install-packages': {
-        'app-dir': appDir,
-        'pkg-manager': pkgManager,
-        'cache-only-lockfile': true,
-      },
-    };
-  },
-  check: () => {
-    return {
-      run: {
-        name: 'Check for dedupe',
-        command: 'yarn dedupe --check',
-      },
-    };
-  },
-};
 
 const commands = {
   'cancel-workflow-on-failure': {
@@ -265,15 +189,6 @@ function defineJob<K extends string, I extends SomethingImplementation>(
   };
 }
 
-function toId(name: string) {
-  // replace all non-alphanumeric characters with a hyphen
-  // trim leading and trailing hyphens
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
 function defineSandboxFlow<K extends string>(name: K) {
   const id = toId(name);
   const names = {
@@ -291,8 +206,8 @@ function defineSandboxFlow<K extends string>(name: K) {
       names.create,
       {
         executor: {
-          class: 'large',
           name: 'sb_node_22_browsers',
+          class: 'large',
         },
         steps: [
           git.checkout(),
@@ -457,16 +372,7 @@ const build = defineJob('build', {
     git.checkout(),
     npm.install('scripts'),
     npm.install('code'),
-    cache.persist(
-      [
-        '.yarn/code-install-state.gz',
-        '.yarn/scripts-install-state.gz',
-        '.yarn/root-install-state.gz',
-        'code/node_modules',
-        'scripts/node_modules',
-      ],
-      CACHE_KEYS[0]
-    ),
+    cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
     git.check(),
     npm.check(),
     {
@@ -512,24 +418,47 @@ const check = defineJob('check', {
     cache.attach(CACHE_KEYS),
     {
       run: {
-        command: 'yarn task --task check --no-link',
         name: 'TypeCheck code',
         working_directory: 'code',
+        command: 'yarn task --task check --no-link',
       },
     },
     {
       run: {
-        command: 'yarn check',
         name: 'TypeCheck scripts',
         working_directory: 'scripts',
+        command: 'yarn check',
+      },
+    },
+    git.check(),
+    'report-workflow-on-failure',
+    'cancel-workflow-on-failure',
+  ],
+});
+
+const unitTests = defineJob('unit-tests', {
+  executor: {
+    class: 'xlarge',
+    name: 'sb_node_22_classic',
+  },
+  steps: [
+    git.checkout(),
+    workspace.attach(),
+    cache.attach(CACHE_KEYS),
+    {
+      run: {
+        name: 'Run tests',
+        working_directory: 'code',
+        command:
+          'TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")\necho "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose',
       },
     },
     {
-      run: {
-        command: 'git diff --exit-code',
-        name: 'Ensure no changes pending',
+      store_test_results: {
+        path: 'test-results',
       },
     },
+    git.check(),
     'report-workflow-on-failure',
     'cancel-workflow-on-failure',
   ],
@@ -542,6 +471,41 @@ const sandboxes = [
 ].map(defineSandboxFlow);
 
 const jobs = {
+  [build.id]: build.implementation,
+  [check.id]: check.implementation,
+  [unitTests.id]: unitTests.implementation,
+  'pretty-docs': {
+    executor: {
+      class: 'medium',
+      name: 'sb_node_22_classic',
+    },
+    steps: [
+      git.checkout(),
+      npm.install('scripts'),
+      {
+        run: {
+          name: 'Prettier',
+          working_directory: 'scripts',
+          command: 'yarn docs:prettier:check',
+        },
+      },
+    ],
+  },
+
+  sandboxes: {
+    type: 'no-op',
+  },
+  ...sandboxes.reduce(
+    (acc, sandbox) => {
+      for (const job of sandbox.jobs) {
+        acc[job.id] = job.implementation;
+      }
+
+      return acc;
+    },
+    {} as Record<string, SomethingImplementation>
+  ),
+
   // 'bench-packages': {
   //   executor: {
   //     class: 'small',
@@ -686,8 +650,7 @@ const jobs = {
   //     },
   //   ],
   // },
-  [build.id]: build.implementation,
-  [check.id]: check.implementation,
+
   // 'check-sandboxes': {
   //   executor: {
   //     class: 'medium',
@@ -1142,63 +1105,6 @@ const jobs = {
   //       run: {
   //         command: 'cd code\nyarn lint\n',
   //         name: 'Lint',
-  //       },
-  //     },
-  //     'report-workflow-on-failure',
-  //     'cancel-workflow-on-failure',
-  //   ],
-  // },
-  'pretty-docs': {
-    executor: {
-      class: 'medium',
-      name: 'sb_node_22_classic',
-    },
-    steps: [
-      git.checkout(),
-      npm.install('scripts'),
-      {
-        run: {
-          command: 'yarn docs:prettier:check',
-          name: 'Prettier',
-          working_directory: 'scripts',
-        },
-      },
-    ],
-  },
-  // 'script-checks': {
-  //   executor: 'sb_node_22_browsers',
-  //   steps: [
-  //     {
-  //       'git-shallow-clone/checkout_advanced': {
-  //         clone_options: '--depth 1 --verbose',
-  //       },
-  //     },
-  //     {
-  //       attach_workspace: {
-  //         at: '.',
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: 'cd scripts\nyarn get-template --check\n',
-  //         name: 'Check parallelism count',
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: 'cd scripts\nyarn check\n',
-  //         name: 'Type check',
-  //       },
-  //     },
-  //     {
-  //       run: {
-  //         command: 'cd scripts\nyarn test --coverage\n',
-  //         name: 'Run tests',
-  //       },
-  //     },
-  //     {
-  //       store_test_results: {
-  //         path: 'scripts/junit.xml',
   //       },
   //     },
   //     'report-workflow-on-failure',
@@ -1984,30 +1890,6 @@ const jobs = {
   //     },
   //   ],
   // },
-  sandboxes: {
-    executor: {
-      class: 'small',
-      name: 'sb_node_22_classic',
-    },
-    steps: [
-      {
-        run: {
-          command: 'echo "Grouping sandboxes in CI graph"',
-          name: 'Grouping sandboxes in CI graph',
-        },
-      },
-    ],
-  },
-  ...sandboxes.reduce(
-    (acc, sandbox) => {
-      for (const job of sandbox.jobs) {
-        acc[job.id] = job.implementation;
-      }
-
-      return acc;
-    },
-    {} as Record<string, SomethingImplementation>
-  ),
 };
 
 const orbs = {
@@ -2019,6 +1901,7 @@ const orbs = {
   nx: 'nrwl/nx@1.7.0',
   win: 'circleci/windows@5.1.1',
 };
+
 const parameters = {
   ghBaseBranch: {
     default: 'next',
@@ -2037,6 +1920,7 @@ const parameters = {
     type: 'enum',
   },
 };
+
 const workflows = {
   docs: {
     jobs: [
@@ -2044,6 +1928,11 @@ const workflows = {
       build.id,
       {
         [check.id]: {
+          requires: [build.id],
+        },
+      },
+      {
+        [unitTests.id]: {
           requires: [build.id],
         },
       },

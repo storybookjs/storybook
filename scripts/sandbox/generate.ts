@@ -64,13 +64,13 @@ const withLocalRegistry = async ({ action, cwd, env, debug }: LocalRegistryProps
     console.log(`📦 Configuring local registry: ${LOCAL_REGISTRY_URL}`);
     // NOTE: for some reason yarn prefers the npm registry in
     // local development, so always use npm
-    await runCommand(`npm config set registry ${LOCAL_REGISTRY_URL}`, { cwd, env }, debug);
+    await runCommand(`npm config set registry ${LOCAL_REGISTRY_URL} -g`, { cwd, env }, debug);
     await action();
   } catch (e) {
     error = e;
   } finally {
     console.log(`📦 Restoring registry: ${prevUrl}`);
-    await runCommand(`npm config set registry ${prevUrl}`, { cwd, env }, debug);
+    await runCommand(`npm config set registry ${prevUrl} -g`, { cwd, env }, debug);
 
     if (error) {
       throw error;

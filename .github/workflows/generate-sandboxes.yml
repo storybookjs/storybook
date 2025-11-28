@@ -32,6 +32,8 @@ jobs:
         run: |
           echo "## Disk usage:" && df -h
           echo "## Home directory usage:" && du -sh $HOME/* | sort -h
+          echo "## Cache directory usage:" && du -h ~/.cache | sort -h | tail -n 25
+          echo "## Yarn usage:" && du -h ~/.yarn | sort -h | tail -n 5
 
       - name: Remove unnecessary files to release disk space
         working-directory: ${{ github.workspace }}
@@ -56,6 +58,8 @@ jobs:
           echo "## Disk usage:" && df -h
           echo "## Home directory usage:" && du -sh $HOME/* | sort -h
           echo "## Temp directory usage:" && du -sh /tmp/* 2>/dev/null | sort -h
+          echo "## Cache directory usage:" && du -h ~/.cache | sort -h | tail -n 25
+          echo "## Yarn usage:" && du -h ~/.yarn | sort -h | tail -n 5
 
       - uses: actions/checkout@v4
         with:
@@ -67,6 +71,8 @@ jobs:
           echo "## Disk usage:" && df -h
           echo "## Home directory usage:" && du -sh $HOME/* | sort -h
           echo "## Temp directory usage:" && du -sh /tmp/* 2>/dev/null | sort -h
+          echo "## Cache directory usage:" && du -h ~/.cache | sort -h | tail -n 25
+          echo "## Yarn usage:" && du -h ~/.yarn | sort -h | tail -n 5
 
       - uses: actions/setup-node@v4
         with:
@@ -98,6 +104,8 @@ jobs:
           echo "## Disk usage:" && df -h
           echo "## Home directory usage:" && du -sh $HOME/* | sort -h
           echo "## Temp directory usage:" && du -sh /tmp/* 2>/dev/null | sort -h
+          echo "## Cache directory usage:" && du -h ~/.cache | sort -h | tail -n 25
+          echo "## Yarn usage:" && du -h ~/.yarn | sort -h | tail -n 5
 
       - name: Generate
         id: generate
@@ -109,9 +117,8 @@ jobs:
           echo "## Disk usage:" && df -h
           echo "## Home directory usage:" && du -sh $HOME/* | sort -h
           echo "## Temp directory usage:" && du -sh /tmp/* 2>/dev/null | sort -h
-
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+          echo "## Cache directory usage:" && du -h ~/.cache | sort -h | tail -n 25
+          echo "## Yarn usage:" && du -h ~/.yarn | sort -h | tail -n 5
 
       # - name: Publish
       #   # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
@@ -124,6 +131,8 @@ jobs:
           echo "## Disk usage:" && df -h
           echo "## Home directory usage:" && du -sh $HOME/* | sort -h
           echo "## Temp directory usage:" && du -sh /tmp/* 2>/dev/null | sort -h
+          echo "## Cache directory usage:" && du -h ~/.cache | sort -h | tail -n 25
+          echo "## Yarn usage:" && du -h ~/.yarn | sort -h | tail -n 5
 
       # - name: Report failure to Discord
       #   if: failure()

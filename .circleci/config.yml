@@ -325,9 +325,9 @@ jobs:
             - run:
                 command: |
                     corepack enable
-                    cp /tmp/storybook-sandboxes /tmp/storybook/sandbox -r --remove-destination
                     TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic)
-                    cd $(STORYBOOK_SANDBOX_ROOT=./sandbox yarn get-sandbox-dir --template $TEMPLATE) && yarn
+                    cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+                    cp /tmp/storybook-sandboxes /tmp/storybook/sandbox -r --remove-destination
                 name: Install sandbox dependencies
             - run:
                 command: STORYBOOK_SANDBOX_ROOT=./sandbox yarn task --task chromatic --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task chromatic) --no-link --start-from=never --junit

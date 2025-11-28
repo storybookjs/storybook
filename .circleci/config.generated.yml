@@ -60,7 +60,7 @@ executors:
                     - xlarge
                 type: enum
         resource_class: <<parameters.class>>
-        working_directory: storybook
+        working_directory: /storybook
     sb_node_22_browsers:
         docker:
             - environment:
@@ -78,7 +78,7 @@ executors:
                     - xlarge
                 type: enum
         resource_class: <<parameters.class>>
-        working_directory: storybook
+        working_directory: /storybook
     sb_node_22_classic:
         docker:
             - environment:
@@ -96,7 +96,7 @@ executors:
                     - xlarge
                 type: enum
         resource_class: <<parameters.class>>
-        working_directory: storybook
+        working_directory: /storybook
     sb_playwright:
         docker:
             - environment:
@@ -114,7 +114,7 @@ executors:
                     - xlarge
                 type: enum
         resource_class: <<parameters.class>>
-        working_directory: storybook
+        working_directory: /storybook
 parameters:
     ghBaseBranch:
         default: next
@@ -143,6 +143,7 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
+                  path: /storybook
             - node/install-packages:
                   app-dir: storybook
                   pkg-manager: yarn
@@ -268,6 +269,7 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
+                  path: /storybook
             - attach_workspace:
                   at: /
             - restore_cache:
@@ -297,6 +299,7 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
+                  path: /storybook
             - attach_workspace:
                   at: /
             - restore_cache:
@@ -321,6 +324,7 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
+                  path: /storybook
             - node/install-packages:
                   app-dir: storybook
                   pkg-manager: yarn
@@ -339,6 +343,7 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
+                  path: /storybook
             - attach_workspace:
                   at: /
             - restore_cache:
@@ -387,6 +392,7 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
+                  path: /storybook
             - attach_workspace:
                   at: /
             - restore_cache:
@@ -415,6 +421,7 @@ jobs:
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
+                  path: /storybook
             - attach_workspace:
                   at: /
             - restore_cache:

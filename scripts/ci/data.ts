@@ -99,7 +99,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: WORKING_DIR,
+    working_directory: `${ROOT_DIR}${WORKING_DIR}`,
   },
   sb_node_22_browsers: {
     docker: [
@@ -119,7 +119,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: WORKING_DIR,
+    working_directory: `${ROOT_DIR}${WORKING_DIR}`,
   },
   sb_node_22_classic: {
     docker: [
@@ -139,7 +139,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: WORKING_DIR,
+    working_directory: `${ROOT_DIR}${WORKING_DIR}`,
   },
   sb_playwright: {
     docker: [
@@ -159,7 +159,7 @@ const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: WORKING_DIR,
+    working_directory: `${ROOT_DIR}${WORKING_DIR}`,
   },
 };
 

@@ -54,6 +54,7 @@ export const git = {
     return {
       'git-shallow-clone/checkout_advanced': {
         clone_options: shallow ? '--depth 1' : '',
+        path: `${ROOT_DIR}${WORKING_DIR}`,
       },
     };
   },

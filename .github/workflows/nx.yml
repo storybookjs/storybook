@@ -16,6 +16,12 @@ env:
 
 jobs:
   nx:
+    if: >
+      (github.event_name == 'pull_request' &&
+        (contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
+         contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
+         contains(github.event.pull_request.labels.*.name, 'ci:daily'))
+      ) || (github.event_name == 'push' && github.ref == 'refs/heads/next')
     runs-on: ubuntu-latest
     env:
       ALL_TASKS: compile,check,knip,test,pretty-docs,lint,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct,cypress

@@ -50,10 +50,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "svelte-check",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19"

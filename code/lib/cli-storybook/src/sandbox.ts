@@ -15,6 +15,7 @@ import { sync as spawnSync } from 'cross-spawn';
 import { join } from 'pathe';
 import picocolors from 'picocolors';
 import { lt, prerelease } from 'semver';
+import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import type { Template, TemplateKey } from './sandbox-templates';
@@ -41,7 +42,6 @@ export const sandbox = async ({
   let selectedConfig: Template | undefined = TEMPLATES[filterValue as TemplateKey];
   let templateId: Choice | null = selectedConfig ? (filterValue as TemplateKey) : null;
 
-  console.log({ options, output: outputDirectory, filterValue, init, templateId, selectedConfig });
   const { packageManager: pkgMgr } = options;
 
   const packageManager = JsPackageManagerFactory.getPackageManager({
@@ -56,35 +56,31 @@ export const sandbox = async ({
   const downloadType = !isOutdated && init ? 'after-storybook' : 'before-storybook';
   const branch = isPrerelease ? 'next' : 'main';
 
-  // const messages = {
-  //   welcome: `Creating a Storybook ${picocolors.bold(currentVersion)} sandbox..`,
-  //   notLatest: picocolors.red(dedent`
-  //     This version is behind the latest release, which is: ${picocolors.bold(latestVersion)}!
-  //     You likely ran the init command through npx, which can use a locally cached version, to get the latest please run:
-  //     ${picocolors.bold('npx storybook@latest sandbox')}
+  const messages = {
+    welcome: `Creating a Storybook ${picocolors.bold(currentVersion)} sandbox..`,
+    notLatest: picocolors.red(dedent`
+      This version is behind the latest release, which is: ${picocolors.bold(latestVersion)}!
+      You likely ran the init command through npx, which can use a locally cached version, to get the latest please run:
+      ${picocolors.bold('npx storybook@latest sandbox')}
+      
+      You may want to CTRL+C to stop, and run with the latest version instead.
+    `),
+    longInitTime: picocolors.yellow(
+      'The creation of the sandbox will take longer, because we will need to run init.'
+    ),
+    prerelease: picocolors.yellow('This is a pre-release version.'),
+  };
 
-  //     You may want to CTRL+C to stop, and run with the latest version instead.
-  //   `),
-  //   longInitTime: picocolors.yellow(
-  //     'The creation of the sandbox will take longer, because we will need to run init.'
-  //   ),
-  //   prerelease: picocolors.yellow('This is a pre-release version.'),
-  // };
-
-  console.log({ isOutdated, isPrerelease });
-
-  // logger.logBox(
-  //   [messages.welcome]
-  //     .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
-  //     .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
-  //     .concat(isPrerelease ? [messages.prerelease] : [])
-  //     .join('\n'),
-  //   {
-  //     rounded: true,
-  //   }
-  // );
-
-  console.log({ selectedConfig });
+  logger.logBox(
+    [messages.welcome]
+      .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
+      .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
+      .concat(isPrerelease ? [messages.prerelease] : [])
+      .join('\n'),
+    {
+      rounded: true,
+    }
+  );
 
   if (!selectedConfig) {
     const filterRegex = new RegExp(`^${filterValue || ''}`, 'i');
@@ -165,11 +161,7 @@ export const sandbox = async ({
   }
 
   let selectedDirectory = outputDirectory;
-
   const outputDirectoryName = outputDirectory || templateId;
-
-  console.log({ selectedDirectory, outputDirectoryName });
-
   if (selectedDirectory && existsSync(`${selectedDirectory}`)) {
     logger.log(`⚠️  ${selectedDirectory} already exists! Overwriting...`);
     await rm(selectedDirectory, { recursive: true, force: true });
@@ -194,7 +186,7 @@ export const sandbox = async ({
     );
     selectedDirectory = directory;
   }
-  // invariant(selectedDirectory);
+  invariant(selectedDirectory);
 
   try {
     const templateDestination = isAbsolute(selectedDirectory)
@@ -253,23 +245,23 @@ export const sandbox = async ({
         `)
       : `Recreate your setup, then ${picocolors.yellow(`npx storybook@latest init`)}`;
 
-    // logger.logBox(
-    //   dedent`
-    //     🎉 Your Storybook reproduction project is ready to use! 🎉
+    logger.logBox(
+      dedent`
+        🎉 Your Storybook reproduction project is ready to use! 🎉
 
-    //     ${picocolors.yellow(`cd ${selectedDirectory}`)}
-    //     ${initMessage}
+        ${picocolors.yellow(`cd ${selectedDirectory}`)}
+        ${initMessage}
 
-    //     Once you've recreated the problem you're experiencing, please:
+        Once you've recreated the problem you're experiencing, please:
 
-    //     1. Document any additional steps in ${picocolors.cyan('README.md')}
-    //     2. Publish the repository to github
-    //     3. Link to the repro repository in your issue
+        1. Document any additional steps in ${picocolors.cyan('README.md')}
+        2. Publish the repository to github
+        3. Link to the repro repository in your issue
 
-    //     Having a clean repro helps us solve your issue faster! 🙏
-    //   `.trim(),
-    //   { rounded: true }
-    // );
+        Having a clean repro helps us solve your issue faster! 🙏
+      `.trim(),
+      { rounded: true }
+    );
   } catch (error) {
     logger.error('🚨 Failed to create sandbox');
     throw error;

@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
   # To test fixes on push rather than wait for the scheduling, do the following:
   # 1. Uncomment the lines below and add your branch.
-  # push:
-  #   branches:
-  #     - <your-branch-name>
+  push:
+    branches:
+      - yann/fix-sandbox-generation-2
   # 2. Change the "ref" value to <your-branch-name> in the actions/checkout step below.
   # 3. Comment out the whole "generate-main" job starting at line 77
   # 4. 👉 DON'T FORGET TO UNDO THE STEPS BEFORE YOU MERGE YOUR CHANGES!
@@ -27,9 +27,26 @@ jobs:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
+      - name: Remove unnecessary files to release disk space
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo rm -rf \
+            /opt/ghc \
+            /opt/google/chrome \
+            /opt/microsoft/msedge \
+            /opt/microsoft/powershell \
+            /usr/lib/mono \
+            /usr/local/julia* \
+            /usr/local/lib/android \
+            /usr/local/share/chromium \
+            /usr/local/share/powershell \
+            /usr/local/share/powershell \
+            /usr/share/dotnet \
+            /usr/share/swift
+
       - uses: actions/checkout@v4
         with:
-          ref: next
+          ref: yann/fix-sandbox-generation-2
 
       - uses: actions/setup-node@v4
         with:
@@ -80,9 +97,25 @@ jobs:
     if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
+      - name: Remove unnecessary files to release disk space
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo rm -rf \
+            /opt/ghc \
+            /opt/google/chrome \
+            /opt/microsoft/msedge \
+            /opt/microsoft/powershell \
+            /usr/lib/mono \
+            /usr/local/julia* \
+            /usr/local/lib/android \
+            /usr/local/share/chromium \
+            /usr/local/share/powershell \
+            /usr/local/share/powershell \
+            /usr/share/dotnet \
+            /usr/share/swift
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: yann/fix-sandbox-generation-2
 
       - uses: actions/setup-node@v4
         with:

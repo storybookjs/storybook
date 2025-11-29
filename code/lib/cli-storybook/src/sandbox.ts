@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { readdir, rm } from 'node:fs/promises';
+import { mkdir, readdir, rm } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
@@ -15,7 +15,6 @@ import { sync as spawnSync } from 'cross-spawn';
 import { join } from 'pathe';
 import picocolors from 'picocolors';
 import { lt, prerelease } from 'semver';
-import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import type { Template, TemplateKey } from './sandbox-templates';
@@ -208,8 +207,11 @@ export const sandbox = async ({
     try {
       // Download the sandbox based on subfolder "after-storybook" and selected branch
       const gitPath = `storybookjs/sandboxes/tree/${branch}/${templateId}/${downloadType}`;
-      console.log({ gitPath, templateDestination });
-      spawnSync('npx', ['gitpick@4.12.4', gitPath, templateDestination, '-o']);
+      // create `templateDestination` first
+      await mkdir(templateDestination, { recursive: true });
+      spawnSync('npx', ['gitpick@4.12.4', gitPath, templateDestination, '-o'], {
+        stdio: 'inherit',
+      });
       // throw an error if templateDestination is an empty directory
       if ((await readdir(templateDestination)).length === 0) {
         const selected = picocolors.yellow(templateId);

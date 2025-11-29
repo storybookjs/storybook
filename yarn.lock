@@ -8516,7 +8516,7 @@ __metadata:
     ejs: "npm:^3.1.10"
     ejs-lint: "npm:^2.0.1"
     empathic: "npm:^2.0.0"
-    es-toolkit: "npm:^1.36.0"
+    es-toolkit: "npm:^1.42.0"
     esbuild: "npm:^0.27.0"
     eslint: "npm:^8.57.1"
     eslint-config-airbnb-typescript: "npm:^18.0.0"
@@ -15991,7 +15991,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-toolkit@npm:^1.36.0, es-toolkit@npm:^1.42.0":
+"es-toolkit@npm:^1.42.0":
   version: 1.42.0
   resolution: "es-toolkit@npm:1.42.0"
   dependenciesMeta:

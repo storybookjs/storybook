@@ -25,8 +25,10 @@ import {
   valueToExternal,
 } from './helpers';
 
-export interface SelectProps
-  extends Omit<ButtonProps, 'onClick' | 'onChange' | 'onSelect' | 'variant'> {
+export interface SelectProps extends Omit<
+  ButtonProps,
+  'onClick' | 'onChange' | 'onSelect' | 'variant'
+> {
   size?: 'small' | 'medium';
   padding?: 'small' | 'medium' | 'none';
 

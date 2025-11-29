@@ -84,7 +84,6 @@
     "@storybook/addon-themes": "workspace:*",
     "@storybook/addon-vitest": "workspace:*",
     "@storybook/angular": "workspace:*",
-    "@storybook/bench": "next",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/codemod": "workspace:*",

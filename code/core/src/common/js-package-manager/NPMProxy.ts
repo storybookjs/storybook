@@ -140,7 +140,7 @@ export class NPMProxy extends JsPackageManager {
 
     try {
       const childProcess = await exec({ packageDepth: depth });
-      const commandResult = childProcess.stdout ?? '';
+      const commandResult = typeof childProcess.stdout === 'string' ? childProcess.stdout : '';
       const parsedOutput = JSON.parse(commandResult);
 
       return this.mapDependencies(parsedOutput, pattern);
@@ -149,7 +149,7 @@ export class NPMProxy extends JsPackageManager {
       // in case the user's project has peer dependency issues. So we try again with no depth
       try {
         const childProcess = await exec({ packageDepth: 0 });
-        const commandResult = childProcess.stdout ?? '';
+        const commandResult = typeof childProcess.stdout === 'string' ? childProcess.stdout : '';
         const parsedOutput = JSON.parse(commandResult);
 
         return this.mapDependencies(parsedOutput, pattern);
@@ -188,7 +188,7 @@ export class NPMProxy extends JsPackageManager {
       args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
     });
     const result = await process;
-    const url = (result.stdout ?? '').trim();
+    const url = (typeof result.stdout === 'string' ? result.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
@@ -218,7 +218,7 @@ export class NPMProxy extends JsPackageManager {
         args: ['info', packageName, ...args],
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 

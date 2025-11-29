@@ -139,7 +139,7 @@ export class Yarn2Proxy extends JsPackageManager {
         },
         cwd: this.instanceDir,
       });
-      const commandResult = childProcess.stdout ?? '';
+      const commandResult = typeof childProcess.stdout === 'string' ? childProcess.stdout : '';
 
       logger.debug(`Installation found for ${pattern.join(', ')}: ${commandResult}`);
 
@@ -251,7 +251,7 @@ export class Yarn2Proxy extends JsPackageManager {
       args: ['config', 'get', 'npmRegistryServer'],
     });
     const result = await process;
-    const url = (result.stdout ?? '').trim();
+    const url = (typeof result.stdout === 'string' ? result.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
@@ -267,7 +267,7 @@ export class Yarn2Proxy extends JsPackageManager {
         args: ['npm', 'info', packageName, ...args],
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       return parsedOutput[field];

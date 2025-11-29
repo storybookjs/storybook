@@ -100,7 +100,7 @@ export class Yarn1Proxy extends JsPackageManager {
       command: 'yarn',
       args: ['config', 'get', 'registry'],
     });
-    const url = (childProcess.stdout ?? '').trim();
+    const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
@@ -121,7 +121,7 @@ export class Yarn1Proxy extends JsPackageManager {
         cwd: this.instanceDir,
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       return this.mapDependencies(parsedOutput, pattern);
@@ -174,7 +174,7 @@ export class Yarn1Proxy extends JsPackageManager {
         args: ['info', packageName, ...args],
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       if (parsedOutput.type === 'inspect') {

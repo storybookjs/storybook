@@ -16,7 +16,7 @@ const COMMON_ENV_VARS = {
   NO_UPDATE_NOTIFIER: 'true',
 };
 
-export type ExecuteCommandOptions = Options & {
+export type ExecuteCommandOptions = Omit<Options, 'cancelSignal'> & {
   command: string;
   args?: string[];
   cwd?: string;

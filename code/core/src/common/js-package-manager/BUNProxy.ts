@@ -161,7 +161,7 @@ export class BUNProxy extends JsPackageManager {
     try {
       const process = await exec({ packageDepth: depth });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
       const parsedOutput = JSON.parse(commandResult);
 
       return this.mapDependencies(parsedOutput, pattern);
@@ -171,7 +171,7 @@ export class BUNProxy extends JsPackageManager {
       try {
         const process = await exec({ packageDepth: 0 });
         const result = await process;
-        const commandResult = result.stdout ?? '';
+        const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
         const parsedOutput = JSON.parse(commandResult);
 
         return this.mapDependencies(parsedOutput, pattern);
@@ -211,7 +211,7 @@ export class BUNProxy extends JsPackageManager {
       args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
     });
     const result = await process;
-    const url = (result.stdout ?? '').trim();
+    const url = (typeof result.stdout === 'string' ? result.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
@@ -242,7 +242,7 @@ export class BUNProxy extends JsPackageManager {
         args: ['info', packageName, ...args],
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 

@@ -42,7 +42,7 @@
   "dependencies": {
     "@types/cross-spawn": "^6.0.6",
     "cross-spawn": "^7.0.6",
-    "es-toolkit": "^1.36.0",
+    "es-toolkit": "^1.42.0",
     "jscodeshift": "^0.15.1",
     "prettier": "^3.7.1",
     "storybook": "workspace:*",

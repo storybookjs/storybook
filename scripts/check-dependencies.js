@@ -1,6 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
-
 /**
  * This file needs to be run before any other script to ensure dependencies are installed Therefore,
  * we cannot transform this file to Typescript, because it would require esbuild to be installed
@@ -18,6 +15,7 @@ const checkDependencies = async () => {
   const scriptsPath = join(dirname);
   const codePath = join(dirname, '..', 'code');
 
+  /** @type {import('child_process').ChildProcess[]} */
   const tasks = [];
 
   if (!existsSync(join(scriptsPath, 'node_modules'))) {

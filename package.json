@@ -37,10 +37,6 @@
     "vite-ecosystem-ci:build": "yarn task --task sandbox --template react-vite/default-ts --start-from=install --skip-cache",
     "vite-ecosystem-ci:test": "yarn task --task test-runner-dev --template react-vite/default-ts --start-from=dev && yarn task --task test-runner --template react-vite/default-ts --start-from=build && yarn task --task vitest-integration --template react-vite/default-ts --start-from vitest-integration"
   },
-  "packageManager": "yarn@4.10.3",
-  "engines": {
-    "node": ">=22.0.0"
-  },
   "resolutions": {
     "@babel/runtime": "latest",
     "@babel/traverse": "latest",
@@ -71,5 +67,6 @@
     "kill-port": "^2.0.1",
     "nx": "^22.1.3",
     "prettier": "^3.7.1"
-  }
+  },
+  "packageManager": "yarn@4.10.3"
 }

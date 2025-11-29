@@ -3,9 +3,6 @@
   "version": "7.0.0-alpha.16",
   "private": true,
   "type": "module",
-  "nx": {
-    "includedScripts": []
-  },
   "scripts": {
     "bench-packages": "jiti ./bench/bench-packages.ts",
     "build-package": "jiti ./build-package.ts",
@@ -23,6 +20,7 @@
     "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
     "lint:package": "sort-package-json",
     "local-registry": "jiti ./run-registry.ts",
+    "prepare-sandbox": "jiti ./prepare-sandbox.ts",
     "publish": "jiti ./sandbox/publish.ts",
     "release:cancel-preparation-runs": "jiti ./release/cancel-preparation-runs.ts",
     "release:generate-pr-description": "jiti ./release/generate-pr-description.ts",
@@ -40,7 +38,6 @@
     "release:write-changelog": "jiti ./release/write-changelog.ts",
     "strict-ts": "jiti ./strict-ts.ts",
     "task": "jiti ./task.ts",
-    "prepare-sandbox": "jiti ./prepare-sandbox.ts",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",
     "upgrade": "jiti ./task.ts",
@@ -190,5 +187,8 @@
     "verdaccio": "^5.33.0",
     "verdaccio-auth-memory": "^10.3.1"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "yarn@4.10.3",
+  "nx": {
+    "includedScripts": []
+  }
 }

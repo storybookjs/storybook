@@ -4,7 +4,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "nx-mcp"
+        "nx-mcp@latest"
       ]
     },
     "wallaby": {

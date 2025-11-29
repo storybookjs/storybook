@@ -320,7 +320,7 @@ export async function getOptionsOrPrompt<TOptions extends OptionSpecifier>(
   options: TOptions
 ): Promise<OptionValues<TOptions>> {
   const main = program.version('5.0.0');
-  main.arguments('<task>');
+  main.arguments('[task]');
   const cliValues = getOptions(main as any, options, process.argv);
 
   if (areOptionsSatisfied(options, cliValues)) {

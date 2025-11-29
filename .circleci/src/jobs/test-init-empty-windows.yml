@@ -6,10 +6,12 @@ parameters:
   template:
     type: string
 
+working_directory: 'C:\Users\circleci\storybook'
+
 steps:
   - checkout
   - attach_workspace:
-      at: .
+      at: 'C:\Users\circleci'
   - run:
       name: Setup Node & Yarn on Windows
       shell: bash.exe
@@ -19,14 +21,8 @@ steps:
         corepack enable
   # Make sure to install dependencies again because we are now running on Windows and the attached workspace had dependencies installed for Linux
   - run:
-      name: Install code dependencies
+      name: Install dependencies
       shell: bash.exe
-      working_directory: code
-      command: yarn install
-  - run:
-      name: Install script dependencies
-      shell: bash.exe
-      working_directory: scripts
       command: yarn install
   - when:
       condition:

@@ -14,6 +14,9 @@
     "storybook": "storybook dev -p 6006",
     "vitest": "echo 'Vitest is not supported in Next.js testing'"
   },
+  "nx": {
+    "includedScripts": []
+  },
   "resolutions": {
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
     "@storybook/addon-docs": "file:../../../code/addons/docs",

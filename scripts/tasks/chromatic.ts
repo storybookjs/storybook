@@ -17,7 +17,7 @@ export const chromatic: Task = {
           --debug \
           --exit-zero-on-changes \
           --storybook-build-dir=${builtSandboxDir} \
-          --junit-report=${junitFilename} \
+          ${junitFilename ? `--junit-report=${junitFilename}` : ''} \
           --projectToken=${token}`,
       { cwd: sandboxDir },
       { dryRun, debug }

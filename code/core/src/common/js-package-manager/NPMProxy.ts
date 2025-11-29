@@ -98,6 +98,10 @@ export class NPMProxy extends JsPackageManager {
     return this.installArgs;
   }
 
+  public getPackageCommand(args: string[]): string {
+    return `npx ${args.join(' ')}`;
+  }
+
   public runPackageCommand(
     options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
   ): ExecaChildProcess {

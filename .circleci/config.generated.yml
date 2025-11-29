@@ -278,11 +278,11 @@ jobs:
                       - darwin-node_modules
             - run:
                   name: TypeCheck code
-                  working_directory: storybook/code
+                  working_directory: code
                   command: yarn task --task check --no-link
             - run:
                   name: TypeCheck scripts
-                  working_directory: storybook/scripts
+                  working_directory: scripts
                   command: yarn check
             - run:
                   name: Ensure no changes pending
@@ -317,7 +317,7 @@ jobs:
     pretty-docs:
         executor:
             name: sb_node_22_classic
-            class: medium
+            class: medium+
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
@@ -345,17 +345,17 @@ jobs:
                   keys: *a1
             - run:
                   name: Verdaccio
-                  working_directory: storybook/code
+                  working_directory: code
                   background: true
                   command: yarn local-registry --open
             - run:
                   name: Start Event Collector
-                  working_directory: storybook/scripts
+                  working_directory: scripts
                   background: true
                   command: yarn jiti ./event-log-collector.ts
             - run:
                   name: Wait on servers
-                  working_directory: storybook/code
+                  working_directory: code
                   command: |-
                       yarn wait-on tcp:127.0.0.1:6001
                       yarn wait-on tcp:127.0.0.1:6002
@@ -400,7 +400,7 @@ jobs:
                   command: yarn task serve --template react-vite/default-ts --no-link -s serve
             - run:
                   name: Wait on storybook
-                  working_directory: storybook/code
+                  working_directory: code
                   command: yarn wait-on tcp:127.0.0.1:8001
             - run:
                   name: Running E2E Tests

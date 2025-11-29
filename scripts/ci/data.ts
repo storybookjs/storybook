@@ -226,7 +226,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           {
             run: {
               name: 'Verdaccio',
-              working_directory: `${WORKING_DIR}/code`,
+              working_directory: `code`,
               background: true,
               command: 'yarn local-registry --open',
             },
@@ -234,7 +234,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           {
             run: {
               name: 'Start Event Collector',
-              working_directory: `${WORKING_DIR}/scripts`,
+              working_directory: `scripts`,
               background: true,
               command: 'yarn jiti ./event-log-collector.ts',
             },
@@ -242,7 +242,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           {
             run: {
               name: 'Wait on servers',
-              working_directory: `${WORKING_DIR}/code`,
+              working_directory: `code`,
               command: [
                 'yarn wait-on tcp:127.0.0.1:6001', // verdaccio
                 'yarn wait-on tcp:127.0.0.1:6002', // reverse proxy
@@ -304,7 +304,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           {
             run: {
               name: 'Wait on storybook',
-              working_directory: `${WORKING_DIR}/code`,
+              working_directory: `code`,
               command: 'yarn wait-on tcp:127.0.0.1:8001',
             },
           },
@@ -427,14 +427,14 @@ const check = defineJob('check', {
     {
       run: {
         name: 'TypeCheck code',
-        working_directory: `${WORKING_DIR}/code`,
+        working_directory: `code`,
         command: 'yarn task --task check --no-link',
       },
     },
     {
       run: {
         name: 'TypeCheck scripts',
-        working_directory: `${WORKING_DIR}/scripts`,
+        working_directory: `scripts`,
         command: 'yarn check',
       },
     },
@@ -485,7 +485,7 @@ const jobs = {
   'pretty-docs': {
     executor: {
       name: 'sb_node_22_classic',
-      class: 'medium',
+      class: 'medium+',
     },
     steps: [
       git.checkout(),

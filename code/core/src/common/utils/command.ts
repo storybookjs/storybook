@@ -2,9 +2,9 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 // eslint-disable-next-line depend/ban-dependencies
 import {
-  type CommonOptions,
-  type ExecaChildProcess,
-  type NodeOptions,
+  type Options,
+  type ResultPromise,
+  type SyncOptions,
   execa,
   execaCommandSync,
   execaNode,
@@ -16,15 +16,22 @@ const COMMON_ENV_VARS = {
   NO_UPDATE_NOTIFIER: 'true',
 };
 
-export type ExecuteCommandOptions = CommonOptions<'utf8'> & {
+export type ExecuteCommandOptions = Options & {
   command: string;
   args?: string[];
   cwd?: string;
   ignoreError?: boolean;
-  env?: Record<string, any>;
+  env?: Record<string, string>;
+  signal?: AbortSignal; // Alias for cancelSignal (execa v9 uses cancelSignal)
 };
 
-function getExecaOptions({ stdio, cwd, env, ...execaOptions }: ExecuteCommandOptions) {
+function getExecaOptions({
+  stdio,
+  cwd,
+  env,
+  signal,
+  ...execaOptions
+}: ExecuteCommandOptions): Options {
   return {
     cwd,
     stdio: stdio ?? prompt.getPreferredStdio(),
@@ -34,11 +41,12 @@ function getExecaOptions({ stdio, cwd, env, ...execaOptions }: ExecuteCommandOpt
       ...COMMON_ENV_VARS,
       ...env,
     },
+    ...(signal && { cancelSignal: signal }), // Map signal to cancelSignal for execa v9
     ...execaOptions,
   };
 }
 
-export function executeCommand(options: ExecuteCommandOptions): ExecaChildProcess {
+export function executeCommand(options: ExecuteCommandOptions): ResultPromise {
   const { command, args = [], ignoreError = false } = options;
   logger.debug(`Executing command: ${command} ${args.join(' ')}`);
   const execaProcess = execa(resolveCommand(command), args, getExecaOptions(options));
@@ -57,9 +65,9 @@ export function executeCommandSync(options: ExecuteCommandOptions): string {
   try {
     const commandResult = execaCommandSync(
       [resolveCommand(command), ...args].join(' '),
-      getExecaOptions(options)
+      getExecaOptions(options) as SyncOptions
     );
-    return commandResult.stdout ?? '';
+    return typeof commandResult.stdout === 'string' ? commandResult.stdout : '';
   } catch (err) {
     if (!ignoreError) {
       throw err;
@@ -75,8 +83,8 @@ export function executeNodeCommand({
 }: {
   scriptPath: string;
   args?: string[];
-  options?: NodeOptions;
-}): ExecaChildProcess {
+  options?: Options;
+}): ResultPromise {
   return execaNode(scriptPath, args, {
     ...options,
   });

@@ -7,7 +7,7 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import type { ExecaChildProcess } from 'execa';
+import type { ResultPromise } from 'execa';
 
 import type { ExecuteCommandOptions } from '../utils/command';
 import { executeCommand } from '../utils/command';
@@ -58,7 +58,7 @@ export class Yarn1Proxy extends JsPackageManager {
   public runPackageCommand({
     args,
     ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ResultPromise {
     const [command, ...rest] = args;
     return executeCommand({
       command: `yarn`,

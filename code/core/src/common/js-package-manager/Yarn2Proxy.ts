@@ -9,7 +9,7 @@ import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import type { ExecaChildProcess } from 'execa';
+import type { ResultPromise } from 'execa';
 
 import { logger } from '../../node-logger';
 import type { ExecuteCommandOptions } from '../utils/command';
@@ -101,7 +101,7 @@ export class Yarn2Proxy extends JsPackageManager {
   public runPackageCommand({
     args,
     ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ResultPromise {
     return executeCommand({
       command: 'yarn',
       args: ['exec', ...args],

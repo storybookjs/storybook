@@ -119,7 +119,7 @@
     "@types/node": "^22.19.1",
     "@types/react-refresh": "^0",
     "next": "^15.2.3",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "webpack": "^5.65.0"
   },
   "peerDependencies": {

@@ -50,13 +50,13 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/vue3": "workspace:*",
     "magic-string": "^0.30.0",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "vue-component-meta": "^2.0.0",
     "vue-docgen-api": "^4.75.1"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "vite": "^7.0.4"
   },
   "peerDependencies": {

@@ -5,7 +5,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import { type ExecaChildProcess } from 'execa';
+import { type ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
@@ -269,7 +269,7 @@ export abstract class JsPackageManager {
           packageJsonInfo?: PackageJsonInfo;
         },
     dependencies: string[]
-  ): Promise<void | ExecaChildProcess> {
+  ): Promise<void | ResultPromise> {
     const {
       skipInstall,
       writeOutputToFile = true,
@@ -570,13 +570,13 @@ export abstract class JsPackageManager {
     const resolutions = this.getResolutions(packageJson, versions);
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
-  protected abstract runInstall(options?: { force?: boolean }): ExecaChildProcess;
+  protected abstract runInstall(options?: { force?: boolean }): ResultPromise;
 
   protected abstract runAddDeps(
     dependencies: string[],
     installAsDevDependencies: boolean,
     writeOutputToFile?: boolean
-  ): ExecaChildProcess;
+  ): ResultPromise;
 
   protected abstract getResolutions(
     packageJson: PackageJson,
@@ -602,10 +602,10 @@ export abstract class JsPackageManager {
     args: string[],
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
-  ): ExecaChildProcess;
+  ): ResultPromise;
   public abstract runPackageCommand(
     options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
-  ): ExecaChildProcess;
+  ): ResultPromise;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
   public abstract findInstallations(
     pattern?: string[],

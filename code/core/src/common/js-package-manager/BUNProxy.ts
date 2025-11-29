@@ -6,7 +6,7 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import type { ExecaChildProcess } from 'execa';
+import type { ResultPromise } from 'execa';
 import sort from 'semver/functions/sort.js';
 
 import type { ExecuteCommandOptions } from '../utils/command';
@@ -115,7 +115,7 @@ export class BUNProxy extends JsPackageManager {
 
   public runPackageCommand(
     options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
-  ): ExecaChildProcess {
+  ): ResultPromise {
     // The following command is unsafe to use with `bun run`
     // because it will always favour a equally script named in the package.json instead of the installed binary.
     // so running `bun storybook automigrate` will run the

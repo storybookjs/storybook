@@ -26,8 +26,6 @@ const CACHE_KEYS = [
   return list.slice(0, list.length - index).join('/');
 });
 const CACHE_PATHS = [
-  '.yarn/code-install-state.gz',
-  '.yarn/scripts-install-state.gz',
   '.yarn/root-install-state.gz',
   'node_modules',
   'code/node_modules',
@@ -60,12 +58,7 @@ const commands = {
       },
     },
     steps: [
-      {
-        run: {
-          command: 'git fetch --unshallow',
-          when: 'on_fail',
-        },
-      },
+      git.unshallow(),
       {
         'discord/status': {
           fail_only: true,

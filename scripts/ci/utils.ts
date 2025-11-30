@@ -65,6 +65,14 @@ export const git = {
       },
     };
   },
+  unshallow: () => {
+    return {
+      run: {
+        command: 'git fetch --unshallow',
+        when: 'on_fail',
+      },
+    };
+  },
 };
 
 export const npm = {

@@ -216,14 +216,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           git.checkout(),
           workspace.attach(),
           cache.attach(CACHE_KEYS),
-          {
-            run: {
-              name: 'Verdaccio',
-              working_directory: `code`,
-              background: true,
-              command: 'yarn local-registry --open',
-            },
-          },
+          verdaccio.start(),
           {
             run: {
               name: 'Start Event Collector',
@@ -232,17 +225,7 @@ function defineSandboxFlow<K extends string>(name: K) {
               command: 'yarn jiti ./event-log-collector.ts',
             },
           },
-          {
-            run: {
-              name: 'Wait on servers',
-              working_directory: `code`,
-              command: [
-                'yarn wait-on tcp:127.0.0.1:6001', // verdaccio
-                'yarn wait-on tcp:127.0.0.1:6002', // reverse proxy
-                'yarn wait-on tcp:127.0.0.1:6007', // event collector
-              ].join('\n'),
-            },
-          },
+          server.wait([...verdaccio.ports, '6007']),
           {
             run: {
               name: 'Setup Corepack',
@@ -294,13 +277,7 @@ function defineSandboxFlow<K extends string>(name: K) {
               command: `yarn task serve --template ${name} --no-link -s serve`,
             },
           },
-          {
-            run: {
-              name: 'Wait on storybook',
-              working_directory: `code`,
-              command: 'yarn wait-on tcp:127.0.0.1:8001',
-            },
-          },
+          server.wait(['8001']),
           {
             run: {
               name: 'Running E2E Tests',
@@ -333,13 +310,7 @@ function defineSandboxFlow<K extends string>(name: K) {
               command: `yarn task dev --template ${name} --no-link -s dev`,
             },
           },
-          {
-            run: {
-              name: 'Wait on storybook',
-              working_directory: 'code',
-              command: 'yarn wait-on tcp:127.0.0.1:6006',
-            },
-          },
+          server.wait(['6006']),
           {
             run: {
               name: 'Running E2E Tests',
@@ -574,4 +545,39 @@ export const data = {
 
   jobs,
   workflows,
+};
+
+const server = {
+  wait: (ports: string[]) => {
+    return {
+      run: {
+        name: 'Wait on servers',
+        working_directory: `code`,
+        command: ports.map((port) => `yarn wait-on tcp:127.0.0.1:${port}`).join('\n'),
+      },
+    };
+  },
+};
+
+const verdaccio = {
+  start: () => {
+    return {
+      run: {
+        name: 'Verdaccio',
+        working_directory: `code`,
+        background: true,
+        command: 'yarn local-registry --open',
+      },
+    };
+  },
+  publish: () => {
+    return {
+      run: {
+        name: 'Publish to Verdaccio',
+        working_directory: `code`,
+        command: 'yarn local-registry --publish',
+      },
+    };
+  },
+  ports: ['6001', '6002'],
 };

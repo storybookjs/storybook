@@ -12,7 +12,9 @@ import {
   cache,
   git,
   npm,
+  server,
   toId,
+  verdaccio,
   workspace,
 } from './utils';
 
@@ -545,39 +547,4 @@ export const data = {
 
   jobs,
   workflows,
-};
-
-const server = {
-  wait: (ports: string[]) => {
-    return {
-      run: {
-        name: 'Wait on servers',
-        working_directory: `code`,
-        command: ports.map((port) => `yarn wait-on tcp:127.0.0.1:${port}`).join('\n'),
-      },
-    };
-  },
-};
-
-const verdaccio = {
-  start: () => {
-    return {
-      run: {
-        name: 'Verdaccio',
-        working_directory: `code`,
-        background: true,
-        command: 'yarn local-registry --open',
-      },
-    };
-  },
-  publish: () => {
-    return {
-      run: {
-        name: 'Publish to Verdaccio',
-        working_directory: `code`,
-        command: 'yarn local-registry --publish',
-      },
-    };
-  },
-  ports: ['6001', '6002'],
 };

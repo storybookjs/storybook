@@ -319,8 +319,6 @@ const StyledButton = styled('button', {
       animation:
         animating && animation !== 'none' ? `${theme.animation[animation]} 1000ms ease-out` : '',
     },
-
-    // Button-styled links should not have underlines - they're visually buttons, not text links
     textDecoration: 'none',
   })
 );

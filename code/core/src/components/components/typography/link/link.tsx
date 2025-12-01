@@ -67,7 +67,7 @@ const A = styled.a<LinkStylesProps>(
   ({ theme }) => ({
     display: 'inline-block',
     transition: 'all 150ms ease-out',
-    // Add underlines to all links for WCAG 2.1 Level A compliance (SC 1.4.1)
+    // Ensure WCAG Level A compliance (SC 1.4.1), see https://www.w3.org/WAI/WCAG22/Techniques/failures/F73
     textDecoration: 'underline',
     textDecorationThickness: '0.5px',
     textUnderlineOffset: '0.11em',

@@ -68,8 +68,10 @@ export class FinalizationCommand {
     );
     this.printNextSteps(storybookCommand);
 
-    const logFile = await logTracker.writeToFile(this.logfile);
-    logger.warn(`Debug logs are written to: ${logFile}`);
+    try {
+      const logFile = await logTracker.writeToFile(this.logfile);
+      logger.warn(`Debug logs are written to: ${logFile}`);
+    } catch {}
   }
 
   /** Print success message with feature summary */

@@ -199,8 +199,10 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         // Write logs to file on failure when enabled
         try {
           if (logTracker.shouldWriteLogsToFile) {
-            const logFile = await logTracker.writeToFile(options.logfile as any);
-            logger.outro(`Debug logs are written to: ${logFile}`);
+            try {
+              const logFile = await logTracker.writeToFile(options.logfile as any);
+              logger.outro(`Debug logs are written to: ${logFile}`);
+            } catch {}
           }
         } catch {}
         observer.error(error);

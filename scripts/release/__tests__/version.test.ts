@@ -19,7 +19,7 @@ vi.mock('../../../code/core/src/common/src/versions', () => ({
 vi.mock('execa');
 
 vi.mock('../../utils/workspace', () => ({
-  getWorkspaces: vi.fn().mockResolvedValue([
+  getCodeWorkspaces: vi.fn().mockResolvedValue([
     {
       name: '@storybook/addon-a11y',
       location: 'addons/a11y',

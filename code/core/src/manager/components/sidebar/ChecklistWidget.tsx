@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import {
+  ActionList,
   Card,
   Collapsible,
-  Listbox,
+  PopoverProvider,
   ProgressSpinner,
-  WithTooltip,
 } from 'storybook/internal/components';
 
 import {
@@ -85,7 +85,7 @@ const HoverCard = styled(Card)({
   },
 });
 
-const CollapseToggle = styled(Listbox.Button)({
+const CollapseToggle = styled(ActionList.Button)({
   opacity: 0,
   transition: 'opacity var(--transition-duration, 0.2s)',
   '&:focus, &:hover': {
@@ -146,7 +146,7 @@ const title = (progress: number) => {
   }
 };
 
-const OpenGuideAction = ({
+const OpenGuideButton = ({
   children,
   afterClick,
 }: {
@@ -155,7 +155,7 @@ const OpenGuideAction = ({
 }) => {
   const api = useStorybookApi();
   return (
-    <Listbox.Action
+    <ActionList.Action
       ariaLabel="Open onboarding guide"
       onClick={(e) => {
         e.stopPropagation();
@@ -163,61 +163,82 @@ const OpenGuideAction = ({
         afterClick?.();
       }}
     >
-      <Listbox.Icon>
+      <ActionList.Icon>
         <ListUnorderedIcon />
-      </Listbox.Icon>
+      </ActionList.Icon>
       {children}
-    </Listbox.Action>
+    </ActionList.Action>
   );
 };
 
 export const ChecklistWidget = () => {
   const api = useStorybookApi();
-  const { loaded, allItems, nextItems, progress, accept, mute, items } = useChecklist();
-  const [renderItems, setItems] = useState<ChecklistItem[]>([]);
+  const { loaded, ready, allItems, nextItems, progress, accept, mute, items } = useChecklist();
+  const [renderItems, setRenderItems] = useState<ChecklistItem[]>(nextItems);
+  const [animated, setAnimated] = useState(false);
+
+  useEffect(() => {
+    if (ready) {
+      // Don't animate anything until the checklist items have settled down.
+      const timeout = setTimeout(setAnimated, 1000, true);
+      return () => clearTimeout(timeout);
+    }
+  }, [ready]);
+
+  useEffect(() => {
+    if (!animated) {
+      setRenderItems(nextItems);
+      return;
+    }
+
+    // Render outgoing items with updated state for 2 seconds before
+    // rendering new items, in order to allow exit transition.
+    setRenderItems((current) => {
+      let animateOut = false;
+      const prevItems = current.map((item) => {
+        const { status } = items[item.id];
+        const isAccepted = status === 'accepted';
+        const isDone = status === 'done';
+        const isSkipped = status === 'skipped';
+        animateOut = animateOut || isAccepted || isDone || isSkipped;
+        return { ...item, isCompleted: isAccepted || isDone, isAccepted, isDone, isSkipped };
+      });
+      return animateOut ? prevItems : nextItems;
+    });
+
+    const timeout = setTimeout(setRenderItems, 2000, nextItems);
+    return () => clearTimeout(timeout);
+  }, [animated, nextItems, items]);
 
   const hasItems = renderItems.length > 0;
   const transitionItems = useTransitionArray(allItems, renderItems, {
     keyFn: (item) => item.id,
-    timeout: 300,
+    timeout: animated ? 300 : 0,
   });
-
-  useEffect(() => {
-    // Render old items (with updated status) for 2 seconds before
-    // rendering new items, in order to allow exit transition.
-    setItems((current) =>
-      current.map((item) => ({
-        ...item,
-        isCompleted: items[item.id].status === 'accepted' || items[item.id].status === 'done',
-        isSkipped: items[item.id].status === 'skipped',
-      }))
-    );
-    const timeout = setTimeout(setItems, 2000, nextItems);
-    return () => clearTimeout(timeout);
-  }, [nextItems, items]);
 
   return (
     <CollapsibleWithMargin collapsed={!hasItems || !loaded}>
       <HoverCard id="storybook-checklist-widget" outlineAnimation="rainbow">
         <Collapsible
-          collapsed={!hasItems}
+          storageKey="checklist-widget"
+          initialCollapsed={!hasItems}
           disabled={!hasItems}
           summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
-            <Listbox onClick={toggleCollapsed}>
-              <Listbox.Item>
-                <Listbox.Item style={{ flexShrink: 1 }}>
+            <ActionList as="div" onClick={toggleCollapsed}>
+              <ActionList.Item as="div">
+                <ActionList.Item as="div" style={{ flexShrink: 1 }}>
                   {loaded && (
                     <Optional
                       content={
-                        <OpenGuideAction>
+                        <OpenGuideButton>
                           <strong>{title(progress)}</strong>
-                        </OpenGuideAction>
+                        </OpenGuideButton>
                       }
-                      fallback={<OpenGuideAction />}
+                      fallback={<OpenGuideButton />}
                     />
                   )}
-                </Listbox.Item>
-                <Listbox.Item>
+                </ActionList.Item>
+                <ActionList.Item as="div">
                   <CollapseToggle
                     {...toggleProps}
                     id="checklist-module-collapse-toggle"
@@ -232,18 +253,17 @@ export const ChecklistWidget = () => {
                     />
                   </CollapseToggle>
                   {loaded && (
-                    <WithTooltip
-                      as="div"
-                      closeOnOutsideClick
-                      tooltip={({ onHide }) => (
-                        <Listbox as="ul">
-                          <Listbox.Item as="li">
-                            <OpenGuideAction afterClick={onHide}>
-                              <Listbox.Text>Open full guide</Listbox.Text>
-                            </OpenGuideAction>
-                          </Listbox.Item>
-                          <Listbox.Item as="li">
-                            <Listbox.Action
+                    <PopoverProvider
+                      padding={0}
+                      popover={({ onHide }) => (
+                        <ActionList>
+                          <ActionList.Item>
+                            <OpenGuideButton afterClick={onHide}>
+                              <ActionList.Text>Open full guide</ActionList.Text>
+                            </OpenGuideButton>
+                          </ActionList.Item>
+                          <ActionList.Item>
+                            <ActionList.Action
                               ariaLabel={false}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -251,16 +271,16 @@ export const ChecklistWidget = () => {
                                 onHide();
                               }}
                             >
-                              <Listbox.Icon>
+                              <ActionList.Icon>
                                 <EyeCloseIcon />
-                              </Listbox.Icon>
-                              <Listbox.Text>Remove from sidebar</Listbox.Text>
-                            </Listbox.Action>
-                          </Listbox.Item>
-                        </Listbox>
+                              </ActionList.Icon>
+                              <ActionList.Text>Remove from sidebar</ActionList.Text>
+                            </ActionList.Action>
+                          </ActionList.Item>
+                        </ActionList>
                       )}
                     >
-                      <Listbox.Button
+                      <ActionList.Button
                         ariaLabel={`${progress}% completed`}
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -271,43 +291,38 @@ export const ChecklistWidget = () => {
                           width={1.5}
                         />
                         <TextFlip text={`${progress}%`} placeholder="00%" />
-                      </Listbox.Button>
-                    </WithTooltip>
+                      </ActionList.Button>
+                    </PopoverProvider>
                   )}
-                </Listbox.Item>
-              </Listbox.Item>
-            </Listbox>
+                </ActionList.Item>
+              </ActionList.Item>
+            </ActionList>
           )}
         >
-          <Listbox as="ul">
+          <ActionList>
             {transitionItems.map(
               ([item, { status, isMounted }]) =>
                 isMounted && (
-                  <Listbox.HoverItem
-                    as="li"
-                    key={item.id}
-                    targetId={item.id}
-                    transitionStatus={status}
-                  >
-                    <Listbox.Action
+                  <ActionList.HoverItem key={item.id} targetId={item.id} transitionStatus={status}>
+                    <ActionList.Action
                       ariaLabel={`Open onboarding guide for ${item.label}`}
                       onClick={() => api.navigate(`/settings/guide#${item.id}`)}
                     >
-                      <Listbox.Icon>
-                        {item.isCompleted ? (
+                      <ActionList.Icon>
+                        {item.isCompleted && animated ? (
                           <Particles anchor={Checked} key={item.id} />
                         ) : (
                           <StatusFailIcon />
                         )}
-                      </Listbox.Icon>
-                      <Listbox.Text>
+                      </ActionList.Icon>
+                      <ActionList.Text>
                         <ItemLabel isCompleted={item.isCompleted} isSkipped={item.isSkipped}>
                           {item.label}
                         </ItemLabel>
-                      </Listbox.Text>
-                    </Listbox.Action>
+                      </ActionList.Text>
+                    </ActionList.Action>
                     {item.action && (
-                      <Listbox.Button
+                      <ActionList.Button
                         data-target-id={item.id}
                         ariaLabel={false}
                         onClick={(e) => {
@@ -319,12 +334,12 @@ export const ChecklistWidget = () => {
                         }}
                       >
                         {item.action.label}
-                      </Listbox.Button>
+                      </ActionList.Button>
                     )}
-                  </Listbox.HoverItem>
+                  </ActionList.HoverItem>
                 )
             )}
-          </Listbox>
+          </ActionList>
         </Collapsible>
       </HoverCard>
     </CollapsibleWithMargin>

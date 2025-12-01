@@ -26,10 +26,10 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "description": "Primary UI component for user interaction",
           "error": undefined,
           "id": "example-button",
-          "import": "import { Button } from \"@design-system/components/Button\";",
+          "import": "import { Button } from "@design-system/components/override";",
           "jsDocTags": {
             "import": [
-              "import { Button } from '@design-system/components/Button';",
+              "import { Button } from '@design-system/components/override';",
             ],
           },
           "name": "Button",
@@ -38,7 +38,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
             "actualName": "Button",
             "definedInFile": "./src/stories/Button.tsx",
             "description": "Primary UI component for user interaction
-    @import import { Button } from '@design-system/components/Button';",
+    @import import { Button } from '@design-system/components/override';",
             "displayName": "Button",
             "exportName": "Button",
             "methods": [],
@@ -143,11 +143,8 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "description": "Description from meta and very long.",
           "error": undefined,
           "id": "example-header",
-          "import": "import { Header } from \"@design-system/components/Header\";",
+          "import": "import { Header } from "some-package";",
           "jsDocTags": {
-            "import": [
-              "import { Header } from '@design-system/components/Header';",
-            ],
             "summary": [
               "Component summary",
             ],
@@ -157,7 +154,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "reactDocgen": {
             "actualName": "",
             "definedInFile": "./src/stories/Header.tsx",
-            "description": "@import import { Header } from '@design-system/components/Header';",
+            "description": "",
             "exportName": "default",
             "methods": [],
             "props": {

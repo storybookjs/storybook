@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "10.1.0-beta.3",
+  "version": "10.2.0-alpha.1",
   "description": "A Storybook builder to dev and build with Vite",
   "keywords": [
     "storybook",
@@ -45,10 +45,6 @@
     "preset.js",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/csf-plugin": "workspace:*",
     "@vitest/mocker": "3.2.4",

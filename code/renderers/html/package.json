@@ -1,6 +1,6 @@
 {
   "name": "@storybook/html",
-  "version": "10.2.0-alpha.0",
+  "version": "10.2.0-alpha.1",
   "description": "Storybook HTML renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -42,10 +42,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "ts-dedent": "^2.0.0"

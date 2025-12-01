@@ -16,7 +16,7 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   const storybookDir = process.cwd();
   try {
     const packageJson = JSON.parse(await readFile('package.json', { encoding: 'utf8' }));
-    if (packageJson.name !== '@storybook/root') {
+    if (packageJson.name !== '@storybook/code') {
       throw new Error();
     }
   } catch {

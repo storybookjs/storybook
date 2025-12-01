@@ -281,7 +281,7 @@ const image = {
 };
 
 export const WithAnImage = {
-  render: () => html`<img src="${image.src}" alt="${image.alt}" /> `,
+  render: () => html`<img src=${image.src} alt=${image.alt} /> `,
 };
 ```
 
@@ -305,7 +305,7 @@ export default meta;
 type Story = StoryObj;
 
 export const WithAnImage: Story = {
-  render: () => html`<img src="${image.src}" alt="${image.alt}" />`,
+  render: () => html`<img src=${image.src} alt=${image.alt} />`,
 };
 ```
 

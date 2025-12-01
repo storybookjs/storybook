@@ -7,21 +7,16 @@ import { defineConfig } from 'vitest/config';
  * tests are running with the xlarge resource class, which has 8 vCPUs.
  *
  * @see https://jahed.dev/2022/11/20/fixing-node-js-multi-threading-on-circleci/
- * @see https://vitest.dev/config/#pooloptions-threads-maxthreads
+ * @see https://vitest.dev/config/maxworkers.html#maxworkers
  * @see https://circleci.com/docs/configuration-reference/#x86
- * @see .circleci/config.yml#L214
+ * @see .circleci/config.yml#L187
  */
 const threadCount = process.env.CI ? (process.platform === 'win32' ? 4 : 7) : undefined;
 
 export const vitestCommonConfig = defineConfig({
   test: {
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        minThreads: threadCount,
-        maxThreads: threadCount,
-      },
-    },
+    maxWorkers: threadCount,
     passWithNoTests: true,
     clearMocks: true,
     setupFiles: [resolve(__dirname, './vitest-setup.ts')],

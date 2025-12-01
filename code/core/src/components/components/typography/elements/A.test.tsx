@@ -57,7 +57,6 @@ describe('A', () => {
       expect(link).toBeTruthy();
 
       const styles = window.getComputedStyle(link!);
-      // Anchor links are position markers and should not have underline
       expect(styles.textDecoration).not.toContain('underline');
     });
 

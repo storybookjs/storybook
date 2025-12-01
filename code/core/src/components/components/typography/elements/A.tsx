@@ -24,7 +24,6 @@ export const A = styled(Link)(withReset, ({ theme }) => ({
     top: 0,
     left: 0,
     bottom: 0,
-    // Anchor links are position markers and should not have underlines
     textDecoration: 'none',
   },
 }));

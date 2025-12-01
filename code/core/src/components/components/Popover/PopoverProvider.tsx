@@ -87,11 +87,7 @@ export const PopoverProvider = ({
       {...props}
     >
       <Pressable>{children}</Pressable>
-      <PopoverUpstream
-        placement={placement}
-        offset={offset}
-        style={{ outlineColor: 'transparent' }}
-      >
+      <PopoverUpstream placement={placement} offset={offset} style={{ outline: 'none' }}>
         <Popover
           hasChrome={hasChrome}
           hideLabel={closeLabel}

@@ -8,7 +8,7 @@ export const A = styled(Link)(withReset, ({ theme }) => ({
   lineHeight: '24px',
 
   color: theme.color.secondary,
-  // Add underlines to all links for WCAG 2.1 Level A compliance (SC 1.4.1)
+  // Ensure WCAG Level A compliance (SC 1.4.1), see https://www.w3.org/WAI/WCAG22/Techniques/failures/F73
   textDecoration: 'underline',
   textDecorationThickness: '0.5px',
   textUnderlineOffset: '0.11em',

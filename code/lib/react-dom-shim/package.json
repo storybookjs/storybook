@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-dom-shim",
-  "version": "10.1.0",
+  "version": "10.2.0-alpha.1",
   "description": "",
   "keywords": [
     "storybook"
@@ -37,10 +37,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "devDependencies": {
     "typescript": "^5.8.3"
   },

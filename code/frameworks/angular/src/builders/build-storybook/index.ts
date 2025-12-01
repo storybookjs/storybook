@@ -158,7 +158,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
   await runInstance({ ...standaloneOptions, mode: 'static' });
   if (logTracker.shouldWriteLogsToFile) {
     const logFile = await logTracker.writeToFile(options.logfile as any);
-    logger.outro(`Debug logs are written to: ${logFile}`);
+    logger.info(`Debug logs are written to: ${logFile}`);
   }
   logger.outro('Storybook build completed successfully');
   return { success: true } as BuilderOutput;

@@ -28,7 +28,10 @@ const checkStorybookRunning = async (storybookUrl: string): Promise<boolean> => 
     });
     return response.ok;
   } catch {
-    logger.verbose('Failed to get response from port 6006');
+  } catch (error) {
+    logger.verbose(`Failed to get response from ${storybookUrl}: ${error instanceof Error ? error.message : String(error)}`);
+    return false;
+  }
     return false;
   }
 };

@@ -7,7 +7,6 @@ import { Feature } from 'storybook/internal/types';
 import type { DependencyCollector } from '../dependency-collector';
 
 type DependencyInstallationCommandParams = {
-  packageManager: JsPackageManager;
   skipInstall: boolean;
   selectedFeatures: Set<Feature>;
 };
@@ -23,16 +22,16 @@ type DependencyInstallationCommandParams = {
  */
 export class DependencyInstallationCommand {
   constructor(
-    private dependencyCollector: DependencyCollector,
-    private addonVitestService = new AddonVitestService()
+    private readonly dependencyCollector: DependencyCollector,
+    private readonly packageManager: JsPackageManager,
+    private readonly addonVitestService = new AddonVitestService(packageManager)
   ) {}
   /** Execute dependency installation */
   async execute({
-    packageManager,
     skipInstall = false,
     selectedFeatures,
   }: DependencyInstallationCommandParams): Promise<{ status: 'success' | 'failed' }> {
-    await this.collectAddonDependencies(packageManager, selectedFeatures);
+    await this.collectAddonDependencies(selectedFeatures);
 
     if (!this.dependencyCollector.hasPackages() && skipInstall) {
       return { status: 'success' };
@@ -48,7 +47,7 @@ export class DependencyInstallationCommand {
     if (dependencies.length > 0) {
       task.message('Adding dependencies:\n' + dependencies.map((dep) => `- ${dep}`).join('\n'));
 
-      await packageManager.addDependencies(
+      await this.packageManager.addDependencies(
         { type: 'dependencies', skipInstall: true },
         dependencies
       );
@@ -59,7 +58,7 @@ export class DependencyInstallationCommand {
         'Adding devDependencies:\n' + devDependencies.map((dep) => `- ${dep}`).join('\n')
       );
 
-      await packageManager.addDependencies(
+      await this.packageManager.addDependencies(
         { type: 'devDependencies', skipInstall: true },
         devDependencies
       );
@@ -69,7 +68,7 @@ export class DependencyInstallationCommand {
 
     if (!skipInstall && this.dependencyCollector.hasPackages()) {
       try {
-        await packageManager.installDependencies();
+        await this.packageManager.installDependencies();
       } catch (err) {
         ErrorCollector.addError(err);
         return { status: 'failed' };
@@ -80,13 +79,10 @@ export class DependencyInstallationCommand {
   }
 
   /** Collect addon dependencies without installing them */
-  private async collectAddonDependencies(
-    packageManager: JsPackageManager,
-    selectedFeatures: Set<Feature>
-  ): Promise<void> {
+  private async collectAddonDependencies(selectedFeatures: Set<Feature>): Promise<void> {
     try {
       if (selectedFeatures.has(Feature.TEST)) {
-        const vitestDeps = await this.addonVitestService.collectDependencies(packageManager);
+        const vitestDeps = await this.addonVitestService.collectDependencies();
         this.dependencyCollector.addDevDependencies(vitestDeps);
       }
     } catch (err) {
@@ -95,8 +91,11 @@ export class DependencyInstallationCommand {
   }
 }
 
-export const executeDependencyInstallation = (
-  params: DependencyInstallationCommandParams & { dependencyCollector: DependencyCollector }
-) => {
-  return new DependencyInstallationCommand(params.dependencyCollector).execute(params);
-};
+export const executeDependencyInstallation = ({
+  dependencyCollector,
+  packageManager,
+  ...props
+}: DependencyInstallationCommandParams & {
+  dependencyCollector: DependencyCollector;
+  packageManager: JsPackageManager;
+}) => new DependencyInstallationCommand(dependencyCollector, packageManager).execute(props);

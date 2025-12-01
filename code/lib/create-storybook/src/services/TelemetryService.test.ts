@@ -14,6 +14,7 @@ vi.mock('process-ancestry', { spy: true });
 describe('TelemetryService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(telemetry).mockResolvedValue(undefined);
   });
 
   describe('when telemetry is enabled', () => {

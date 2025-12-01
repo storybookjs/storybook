@@ -50,6 +50,11 @@ export class Yarn1Proxy extends JsPackageManager {
     return `yarn ${command}`;
   }
 
+  getPackageCommand(args: string[]): string {
+    const [command, ...rest] = args;
+    return `yarn exec ${command} -- ${rest.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     ...options
@@ -78,7 +83,10 @@ export class Yarn1Proxy extends JsPackageManager {
 
   public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;

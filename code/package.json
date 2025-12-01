@@ -1,6 +1,6 @@
 {
-  "name": "@storybook/root",
-  "version": "10.1.0-alpha.14",
+  "name": "@storybook/code",
+  "version": "10.2.0-alpha.1",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -11,17 +11,6 @@
   "funding": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
-  },
-  "workspaces": {
-    "packages": [
-      "./core",
-      "addons/*",
-      "frameworks/*",
-      "lib/*",
-      "builders/*",
-      "presets/*",
-      "renderers/*"
-    ]
   },
   "scripts": {
     "affected:test": "nx show projects --affected -t test | xargs -I # echo --project # | xargs yarn test:watch",
@@ -35,7 +24,7 @@
     "generate-sandboxes": "yarn --cwd ../scripts generate-sandboxes",
     "github-release": "github-release-from-changelog",
     "i": "yarn --cwd .. i",
-    "knip": "../scripts/node_modules/.bin/knip --config ../scripts/knip.config.ts",
+    "knip": "../node_modules/.bin/knip --config ../scripts/knip.config.ts",
     "lint": "yarn lint:js && yarn lint:other",
     "lint:ejs": "ejslint **/*.ejs",
     "lint:js": "yarn lint:js:cmd . --quiet",
@@ -47,12 +36,15 @@
     "publish-sandboxes": "yarn --cwd ../scripts publish",
     "storybook:ui": "NODE_OPTIONS=\"--max_old_space_size=4096 --trace-deprecation\" core/dist/bin/dispatcher.js dev --port 6006 --config-dir ./.storybook",
     "storybook:ui:build": "NODE_OPTIONS=\"--max_old_space_size=4096\" core/dist/bin/dispatcher.js build --config-dir ./.storybook --webpack-stats-json",
-    "storybook:ui:chromatic": "../scripts/node_modules/.bin/chromatic --build-script-name storybook:ui:build --storybook-base-dir ./ --exit-zero-on-changes --exit-once-uploaded",
+    "storybook:ui:chromatic": "../node_modules/.bin/chromatic --build-script-name storybook:ui:build --storybook-base-dir ./ --exit-zero-on-changes --exit-once-uploaded",
     "storybook:vitest": "yarn test:watch --project storybook-ui",
     "storybook:vitest:inspect": "INSPECT=true yarn test --project storybook-ui",
     "task": "yarn --cwd ../scripts task",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
+  },
+  "nx": {
+    "includedScripts": []
   },
   "husky": {
     "hooks": {
@@ -84,31 +76,8 @@
     "opera >= 117",
     "node >= 20"
   ],
-  "resolutions": {
-    "@babel/runtime": "latest",
-    "@babel/traverse": "latest",
-    "@babel/types": "^7.28.4",
-    "@playwright/test": "1.52.0",
-    "@testing-library/user-event@npm:^14.4.0": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
-    "@testing-library/user-event@npm:^14.6.1": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
-    "@types/babel__traverse@npm:*": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
-    "@types/babel__traverse@npm:^7.18.0": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
-    "@types/node": "^22.0.0",
-    "@types/react": "^18.0.0",
-    "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
-    "aria-query@5.3.0": "^5.3.0",
-    "esbuild": "^0.27.0",
-    "playwright": "1.52.0",
-    "playwright-core": "1.52.0",
-    "react": "^18.2.0",
-    "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19",
-    "typescript": "^5.8.3"
-  },
   "dependencies": {
     "@chromatic-com/storybook": "^4.1.2",
-    "@nx/vite": "22.0.3",
-    "@nx/workspace": "22.0.3",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-designs": "^11.0.1",
@@ -193,7 +162,6 @@
     "jiti": "^2.4.2",
     "lint-staged": "^13.2.2",
     "mock-require": "^3.0.3",
-    "nx": "22.0.3",
     "prettier": "^3.5.3",
     "prettier-plugin-brace-style": "^0.6.2",
     "prettier-plugin-css-order": "^2.1.2",
@@ -203,6 +171,7 @@
     "process": "^0.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-popper-tooltip": "^4.4.2",
     "rimraf": "^6.0.1",
     "slash": "^5.0.0",
     "sort-package-json": "^2.14.0",
@@ -215,9 +184,6 @@
     "vite-plugin-inspect": "^11.0.0",
     "vitest": "^3.2.4",
     "wait-on": "^8.0.3"
-  },
-  "devDependencies": {
-    "react-popper-tooltip": "^4.4.2"
   },
   "dependenciesMeta": {
     "ejs": {
@@ -243,14 +209,9 @@
       "built": false
     }
   },
-  "packageManager": "yarn@4.10.3",
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
-  },
-  "nx": {
-    "name": "root",
-    "includedScripts": []
   },
   "pr-log": {
     "skipLabels": [

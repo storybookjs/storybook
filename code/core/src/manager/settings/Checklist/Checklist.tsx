@@ -1,6 +1,6 @@
-import React, { createRef, useMemo } from 'react';
+import React, { useMemo } from 'react';
 
-import { Button, Collapsible, Listbox } from 'storybook/internal/components';
+import { ActionList, Button, Collapsible } from 'storybook/internal/components';
 
 import {
   CheckIcon,
@@ -15,7 +15,7 @@ import { styled } from 'storybook/theming';
 
 import { Focus } from '../../components/Focus/Focus';
 import type { ChecklistItem, useChecklist } from '../../components/sidebar/useChecklist';
-import { useLocationHash } from '../../components/useLocationHash';
+import { useLocationHash } from '../../hooks/useLocation';
 
 type ChecklistSection = {
   id: string;
@@ -34,7 +34,7 @@ const Sections = styled.ol(({ theme }) => ({
 
   '& > li': {
     background: theme.background.content,
-    border: `1px solid ${theme.color.border}`,
+    border: `1px solid ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
     borderRadius: 8,
   },
 }));
@@ -47,7 +47,7 @@ const Items = styled.ol(({ theme }) => ({
   padding: 0,
 
   '& > li:not(:last-child)': {
-    boxShadow: `inset 0 -1px 0 ${theme.color.border}`,
+    boxShadow: `inset 0 -1px 0 ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
   },
 
   '& > li:last-child': {
@@ -159,7 +159,7 @@ const ItemContent = styled.div(({ theme }) => ({
     listStyleType: 'disc',
 
     'li::marker': {
-      color: theme.color.medium,
+      color: theme.color.mediumdark,
     },
   },
 }));
@@ -170,9 +170,9 @@ const StatusIcon = styled.div(({ theme }) => ({
   minHeight: 16,
   minWidth: 16,
   margin: 0,
-  background: theme.background.app,
+  background: theme.base === 'dark' ? theme.color.darkest : theme.background.app,
   borderRadius: 9,
-  outline: `1px solid ${theme.color.border}`,
+  outline: `1px solid ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
   outlineOffset: -1,
 }));
 const Checked = styled(StatusPassIcon)<{ 'data-visible'?: boolean }>(
@@ -266,19 +266,10 @@ export const Checklist = ({
     [itemsById, sectionsById]
   );
 
-  const next = useMemo(
-    () =>
-      Object.values(sections).findIndex(({ items }) =>
-        items.some((item) => item.isOpen && item.isAvailable)
-      ),
-    [sections]
-  );
-
   return (
     <Sections>
-      {sections.map(({ id, title, items, progress }, index) => {
-        const hasTarget = items.some((item) => item.id === locationHash);
-        const collapsed = !hasTarget && (progress === 0 || progress === 100) && next !== index;
+      {sections.map(({ id, title, items, progress }) => {
+        const collapsed = progress === 100 && items.every((item) => item.id !== locationHash);
 
         return (
           <li key={id}>
@@ -322,12 +313,12 @@ export const Checklist = ({
                       ...item
                     }) => {
                       const isChecked = isAccepted || isDone;
-                      const isCollapsed = isChecked && item.id !== locationHash;
+                      const isCollapsed = item.id !== locationHash;
                       const isLocked = !!isLockedBy;
                       const itemContent = content?.({ api });
 
                       return (
-                        <Listbox.Item as="li" key={item.id}>
+                        <ActionList.Item key={item.id}>
                           <Focus.Target
                             targetHash={item.id}
                             highlightDuration={2000}
@@ -434,7 +425,7 @@ export const Checklist = ({
                               </Collapsible>
                             </Focus.Proxy>
                           </Focus.Target>
-                        </Listbox.Item>
+                        </ActionList.Item>
                       );
                     }
                   )}

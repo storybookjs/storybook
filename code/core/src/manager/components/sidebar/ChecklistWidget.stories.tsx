@@ -38,6 +38,7 @@ const meta = preview.meta({
         ...initialState.items,
         controls: { status: 'accepted' },
         renderComponent: { status: 'done' },
+        installVitest: { status: 'done' },
         moreComponents: { status: 'skipped' },
         moreStories: { status: 'skipped' },
       },
@@ -57,6 +58,7 @@ const play: PlayFunction = async ({ step }) => {
         ...initialState.items,
         controls: { status: 'accepted' },
         renderComponent: { status: 'done' },
+        installVitest: { status: 'done' },
         viewports: { status: 'done' },
         moreComponents: { status: 'skipped' },
         moreStories: { status: 'skipped' },
@@ -73,10 +75,11 @@ const play: PlayFunction = async ({ step }) => {
         ...initialState.items,
         controls: { status: 'accepted' },
         renderComponent: { status: 'done' },
+        installVitest: { status: 'done' },
         viewports: { status: 'done' },
         moreComponents: { status: 'skipped' },
         moreStories: { status: 'skipped' },
-        installVitest: { status: 'skipped' },
+        writeInteractions: { status: 'skipped' },
       },
     });
   });

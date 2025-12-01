@@ -101,6 +101,7 @@ const PlayFnNotice = styled.div(
     padding: '3px 8px',
     fontSize: '10px',
     fontWeight: 'bold',
+    zIndex: 99,
     '> *': {
       display: 'block',
     },

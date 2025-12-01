@@ -18,7 +18,7 @@ const runWebComponentsAnalyzer = async (inputPath: string): Promise<string> => {
   const { name: tmpDir, removeCallback } = tmp.dirSync();
   const customElementsFile = `${tmpDir}/custom-elements.json`;
   const process = await spawn(
-    join(__dirname, '../../../../node_modules/.bin/wca'),
+    join(__dirname, '../../../../../node_modules/.bin/wca'),
     ['analyze', inputPath, '--outFile', customElementsFile],
     {
       stdio: 'ignore',

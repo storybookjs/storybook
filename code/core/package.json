@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.1.0-beta.3",
+  "version": "10.2.0-alpha.1",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -193,13 +193,6 @@
     "README.md",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../scripts/check/check-package.ts",
-    "prep": "jiti ../../scripts/build/build-package.ts"
-  },
-  "resolutions": {
-    "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/../.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^2.0.0",
@@ -220,7 +213,7 @@
     "@babel/parser": "^7.26.9",
     "@babel/traverse": "^7.26.9",
     "@babel/types": "^7.26.8",
-    "@clack/prompts": "1.0.0-alpha.6",
+    "@clack/prompts": "1.0.0-alpha.7",
     "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
     "@emotion/cache": "^11.14.0",
@@ -340,6 +333,7 @@
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
     "watchpack": "^2.2.0",
+    "wrap-ansi": "^9.0.2",
     "zod": "^3.24.1"
   },
   "peerDependencies": {

@@ -2,6 +2,7 @@
 import type { FileSystemCache } from 'storybook/internal/common';
 import { type StoryIndexGenerator } from 'storybook/internal/core-server';
 import { type CsfFile } from 'storybook/internal/csf-tools';
+import type { LogLevel } from 'storybook/internal/node-logger';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { Server as NetServer } from 'net';
@@ -173,7 +174,8 @@ export interface CLIBaseOptions {
   disableTelemetry?: boolean;
   enableCrashReports?: boolean;
   configDir?: string;
-  loglevel?: string;
+  loglevel?: LogLevel;
+  logfile?: string | boolean;
   quiet?: boolean;
 }
 
@@ -684,7 +686,7 @@ export type CoreCommon_AddonInfo = { name: string; inEssentials: boolean };
 
 export interface CoreCommon_StorybookInfo {
   addons: string[];
-  version?: string;
+  versionSpecifier?: string;
   framework?: SupportedFramework;
   renderer?: SupportedRenderer;
   builder?: SupportedBuilder;

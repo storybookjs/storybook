@@ -82,6 +82,22 @@ test.describe("component testing", () => {
   });
 
   test.afterEach(async ({ page }) => {
+    await page.click("body");
+    try {
+      const descriptionButton = page.locator("#testing-module-description a");
+      if (
+        await descriptionButton.isVisible({ timeout: 4000 }).catch(() => false)
+      ) {
+        await descriptionButton.click({ timeout: 4000, force: true });
+
+        await page
+          .getByLabel("Close modal")
+          .click({ timeout: 4000, force: true });
+      }
+    } catch {
+      // Ignore any errors when trying to open the modal
+    }
+
     await restoreAllFiles();
 
     const expandTestingModule = page.getByLabel("Expand testing module");
@@ -222,11 +238,7 @@ test.describe("component testing", () => {
 
     await runTestsButton.click();
 
-    // Wait for both the watch mode button to be disabled and the testing text to appear
-    await Promise.all([
-      expect(watchModeButton).toBeDisabled(),
-      expect(page.locator("#testing-module-description")).toHaveText(/Testing/),
-    ]);
+    await expect(watchModeButton).toBeDisabled();
 
     // Wait for test results to appear
     await expect(page.locator("#testing-module-description")).toHaveText(

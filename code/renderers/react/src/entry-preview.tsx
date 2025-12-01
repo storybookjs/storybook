@@ -71,7 +71,6 @@ export const beforeAll = async () => {
             }, 0);
 
             if (jestFakeTimersAreEnabled()) {
-              // @ts-expect-error global jest
               jest.advanceTimersByTime(0);
             }
           });
@@ -98,7 +97,6 @@ export const beforeAll = async () => {
 
 /** The function is used to configure jest's fake timers in environments where React's act is enabled */
 function jestFakeTimersAreEnabled() {
-  // @ts-expect-error global jest
   if (typeof jest !== 'undefined' && jest !== null) {
     return (
       // legacy timers

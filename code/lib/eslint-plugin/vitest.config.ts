@@ -1,15 +1,14 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, mergeConfig } from 'vitest/config';
 
-export default defineConfig({
-  test: {
-    name: 'eslint-plugin-storybook',
-    include: ['**/*.test.ts'],
-    environment: 'node',
-    globals: true,
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'lcov'],
-      exclude: ['dist/**', 'tools/**'],
+import { vitestCommonConfig } from '../../vitest.shared';
+
+export default mergeConfig(
+  vitestCommonConfig,
+  defineConfig({
+    test: {
+      // This is needed because @typescript-eslint/rule-tester API requires it under the hood
+      globals: true,
     },
-  },
-});
+  })
+);
+

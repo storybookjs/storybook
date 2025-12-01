@@ -95,7 +95,6 @@ describe('DocsContent', () => {
       expect(anchor).toBeTruthy();
 
       const styles = window.getComputedStyle(anchor!);
-      // Anchor links should not have underline by default as per DocsPage.tsx styling
       expect(styles.textDecoration).not.toContain('underline');
     });
   });

@@ -232,8 +232,9 @@ export class WebView implements View<HTMLElement> {
   }
 
   /**
-   * Snapshot the current state of document.documentElement attributes. Called when preparing to
-   * render rendering a story so we can detect what decorators modify.
+   * Snapshot the current state of document.documentElement attributes. Called on WebView
+   * initialization to capture the clean baseline state for restoration when switching view modes
+   * (e.g., Canvas to Docs).
    */
   private snapshotDocumentElement() {
     // Safety check: Exit if not in a browser environment (SSR, Node.js tests, etc.)

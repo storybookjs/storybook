@@ -2580,6 +2580,9 @@ describe('PreviewWeb', () => {
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_CHANGED, 'component-one--docs');
       });
 
+      // This test validates the fix for issue #33112: decorators that mutate
+      // document.documentElement should not bleed into Docs view.
+      // prepareForDocs() triggers restoreDocumentElement() to clean up mutations.
       it('calls view.prepareForDocs', async () => {
         document.location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
@@ -2626,23 +2629,6 @@ describe('PreviewWeb', () => {
         await waitForRender();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_RENDERED, 'component-one--docs');
-      });
-
-      it('cleans up document.documentElement modifications when switching from story to docs (issue #33112)', async () => {
-        document.location.search = '?id=component-one--a';
-        const preview = await createAndRenderPreview();
-
-        mockChannel.emit.mockClear();
-        emitter.emit(SET_CURRENT_STORY, {
-          storyId: 'component-one--docs',
-          viewMode: 'docs',
-        });
-        await waitForSetCurrentStory();
-        await waitForRender();
-
-        // The core fix in WebView.prepareForDocs() restores documentElement attributes
-        // Since WebView is mocked, verify PreviewWeb calls prepareForDocs on transition
-        expect(preview.view.prepareForDocs).toHaveBeenCalled();
       });
     });
 

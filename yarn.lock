@@ -7972,6 +7972,7 @@ __metadata:
     "@vitest/browser": "npm:^3.2.4"
     "@vitest/coverage-istanbul": "npm:^3.2.4"
     "@vitest/coverage-v8": "npm:^3.2.4"
+    chromatic: "npm:^13.3.4"
     create-storybook: "workspace:*"
     cross-env: "npm:^7.0.3"
     es-toolkit: "npm:^1.42.0"

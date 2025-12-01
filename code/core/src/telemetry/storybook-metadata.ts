@@ -34,6 +34,9 @@ export const metaFrameworks = {
   '@nrwl/storybook': 'nx',
   '@vue/cli-service': 'vue-cli',
   '@sveltejs/kit': 'sveltekit',
+  '@tanstack/react-router': 'tanstack-react',
+  '@react-router/dev': 'react-router',
+  '@remix-run/dev': 'remix',
 } as Record<string, string>;
 
 export const sanitizeAddonName = (name: string) => {
@@ -140,7 +143,7 @@ export const computeStorybookMetadata = async ({
     metadata.typescriptOptions = mainConfig.typescript;
   }
 
-  const frameworkInfo = await getFrameworkInfo(mainConfig);
+  const frameworkInfo = await getFrameworkInfo(mainConfig, configDir);
 
   if (typeof mainConfig.refs === 'object') {
     metadata.refCount = Object.keys(mainConfig.refs).length;
@@ -238,7 +241,7 @@ export const computeStorybookMetadata = async ({
     portableStoriesFileCount,
     applicationFileCount,
     storybookVersion: version,
-    storybookVersionSpecifier: storybookInfo.version,
+    storybookVersionSpecifier: storybookInfo.versionSpecifier ?? '',
     language,
     storybookPackages,
     addons,

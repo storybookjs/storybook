@@ -67,12 +67,12 @@ export const Default: StoryFn<typeof Button> = (args) => ({
 // Other imports and story implementation
 
 export const Default = ({ primary, size, label }) =>
-  html`<custom-button ?primary="${primary}" size="${size}" label="${label}"></custom-button>`;
+  html`<custom-button ?primary=${primary} size=${size} label=${label}></custom-button>`;
 ```
 
 ```ts filename="CSF 2 - Button.stories.ts" renderer="web-components" language="ts"
 // Other imports and story implementation
 
 export const Default: Story = ({ primary, backgroundColor, size, label }) =>
-  html`<custom-button ?primary="${primary}" size="${size}" label="${label}"></custom-button>`;
+  html`<custom-button ?primary=${primary} size=${size} label=${label}></custom-button>`;
 ```

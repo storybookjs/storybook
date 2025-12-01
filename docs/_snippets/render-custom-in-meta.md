@@ -33,7 +33,7 @@ export const PrimaryInAlert: Story = {
 };
 ```
 
-```jsx filename="Button.stories.jsx" renderer="react" language="js"
+```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Alert } from './Alert';
 import { Button } from './Button';
 
@@ -61,7 +61,7 @@ export const PrimaryInAlert = {
 };
 ```
 
-```tsx filename="Button.stories.tsx" renderer="react" language="ts"
+```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -166,7 +166,7 @@ export default {
   render: (args) => html`
     <demo-alert>
       Alert text
-      <demo-button ?primary="${args.primary}" label="${args.label}"></demo-button>
+      <demo-button ?primary=${args.primary} label=${args.label}></demo-button>
     </demo-alert>
   `,
 };
@@ -194,7 +194,7 @@ const meta: Meta = {
   render: (args) => html`
     <demo-alert>
       Alert text
-      <demo-button ?primary="${args.primary}" label="${args.label}"></demo-button>
+      <demo-button ?primary=${args.primary} label=${args.label}></demo-button>
     </demo-alert>
   `,
 };
@@ -214,4 +214,65 @@ export const PrimaryInAlert: Story = {
     label: 'Button',
   },
 };
+```
+
+```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+});
+
+export const DefaultInAlert = meta.story({
+  args: {
+    label: 'Button',
+  },
+});
+
+export const PrimaryInAlert = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+});
+
+export const DefaultInAlert = meta.story({
+  args: {
+    label: 'Button',
+  },
+});
+
+export const PrimaryInAlert = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+});
 ```

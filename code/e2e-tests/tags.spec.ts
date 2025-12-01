@@ -82,6 +82,7 @@ test.describe('tags', () => {
 
       // When selecting type docs, there should be no stories in the sidebar
       await sbPage.toggleStoryTypeFilter('Documentation');
+      await sbPage.closeAnyPendingModal();
       await sbPage.expandAllSidebarNodes();
       await expect(
         page.locator('#storybook-explorer-menu .sidebar-item[data-nodetype="story"]')
@@ -91,6 +92,7 @@ test.describe('tags', () => {
 
       // When excluding type docs, there should be no stories in the sidebar
       await sbPage.toggleStoryTypeFilter('Documentation', true);
+      await sbPage.closeAnyPendingModal();
       await expect(
         page.locator('#storybook-explorer-menu .sidebar-item[data-nodetype="document"]')
       ).toHaveCount(0);
@@ -100,6 +102,7 @@ test.describe('tags', () => {
 
       // When selecting type play, there should be no docs in the sidebar
       await sbPage.toggleStoryTypeFilter('Play');
+      await sbPage.closeAnyPendingModal();
       await sbPage.expandAllSidebarNodes();
       await expect(
         page.locator('#storybook-explorer-menu .sidebar-item[data-nodetype="document"]')
@@ -109,6 +112,7 @@ test.describe('tags', () => {
 
       // When selecting type test, there should be tests visible in the sidebar
       await sbPage.toggleStoryTypeFilter('Testing');
+      await sbPage.closeAnyPendingModal();
       await sbPage.expandAllSidebarNodes();
       const testItems = page.locator(
         '#storybook-explorer-menu .sidebar-item[data-nodetype="test"]'
@@ -119,6 +123,7 @@ test.describe('tags', () => {
 
       // When excluding type test, there should be no tests visible in the sidebar
       await sbPage.toggleStoryTypeFilter('Testing', true);
+      await sbPage.closeAnyPendingModal();
       await expect(
         page.locator('#storybook-explorer-menu .sidebar-item[data-nodetype="test"]')
       ).toHaveCount(0);
@@ -136,13 +141,13 @@ test.describe('tags', () => {
         await expect(page.locator('#storybook-explorer-menu')).toBeVisible();
 
         // Open Tag filters tooltip
-        await page.locator('[title="Tag filters"]').click();
-        const tooltip = page.locator('[data-testid="tooltip"]');
-        await expect(tooltip).toBeVisible();
+        await page.locator('[aria-label="Tag filters"]').click();
+        const tagFilterPopover = page.getByRole('dialog', { name: 'Tag filters' });
+        await expect(tagFilterPopover).toBeVisible();
 
         // No checkbox selected by default and "Select all tags" is shown
-        await expect(tooltip.locator('#select-all')).toBeVisible();
-        await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+        await expect(tagFilterPopover.locator('#select-all')).toBeVisible();
+        await expect(tagFilterPopover.locator('input[type="checkbox"]:checked')).toHaveCount(0);
 
         // Select the dev-only tag
         await page.getByText('dev-only', { exact: true }).click();
@@ -152,11 +157,11 @@ test.describe('tags', () => {
         await expect(stories).toHaveCount(1);
 
         // Clear selection
-        await expect(tooltip.locator('#deselect-all')).toBeVisible();
-        await tooltip.locator('#deselect-all').click();
+        await expect(tagFilterPopover.locator('#deselect-all')).toBeVisible();
+        await tagFilterPopover.locator('#deselect-all').click();
 
         // Checkboxes are not selected anymore
-        await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+        await expect(tagFilterPopover.locator('input[type="checkbox"]:checked')).toHaveCount(0);
       });
     });
   });

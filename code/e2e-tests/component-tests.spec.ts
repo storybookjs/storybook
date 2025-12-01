@@ -31,7 +31,7 @@ test.describe('interactions', () => {
     const welcome = sbPage.previewRoot().locator('.welcome');
     await expect(welcome).toContainText('Welcome, Jane Doe!', { timeout: 50000 });
 
-    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
+    const interactionsTab = page.getByRole('tab', { name: 'Interactions' });
     await expect(interactionsTab).toContainText(/(\d)/);
     await expect(interactionsTab).toBeVisible();
 
@@ -64,12 +64,12 @@ test.describe('interactions', () => {
     const formInput = sbPage.previewRoot().locator('#interaction-test-form input');
     await expect(formInput).toHaveValue('final value', { timeout: 50000 });
 
-    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
+    const interactionsTab = page.getByRole('tab', { name: 'Interactions' });
     await expect(interactionsTab.getByText('3')).toBeVisible();
     await expect(interactionsTab).toBeVisible();
 
     const panel = sbPage.panelContent();
-    const runStatusBadge = panel.locator('[aria-label="Status of the test run"]');
+    const runStatusBadge = panel.locator('[aria-label^="Story status:"]');
     await expect(runStatusBadge).toContainText(/Pass/);
     await expect(panel).toContainText(/"initial value"/);
     await expect(panel).toContainText(/clear/);
@@ -110,7 +110,7 @@ test.describe('interactions', () => {
     await expect(interactionsTab.getByText('3')).toBeVisible();
 
     // Test remount state (from toolbar) - Interactions have rerun, count is correct and values are as expected
-    const remountComponentButton = page.locator('[title="Remount component"]');
+    const remountComponentButton = page.locator('[aria-label="Reload story"]');
     await remountComponentButton.click();
 
     await interactionsRow.first().isVisible();
@@ -139,7 +139,7 @@ test.describe('interactions', () => {
     await expect(button).toContainText('Button', { timeout: 50000 });
 
     const panel = sbPage.panelContent();
-    await expect(panel).toContainText(/Pass/);
+    await expect(panel).toContainText(/Fail/);
     await expect(panel).toContainText(/Found 1 unhandled error/);
     await expect(panel).toBeVisible();
   });
@@ -173,7 +173,7 @@ test.describe('test function', () => {
     const welcome = sbPage.previewRoot().locator('button');
     await expect(welcome).toContainText('Arg from story', { timeout: 50000 });
 
-    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
+    const interactionsTab = page.getByRole('tab', { name: 'Interactions' });
     await expect(interactionsTab).toContainText(/(\d)/);
     await expect(interactionsTab).toBeVisible();
 

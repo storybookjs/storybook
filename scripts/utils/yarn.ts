@@ -49,6 +49,7 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   await rm(join(cwd, '.yarnrc.yml'), { force: true }).catch(() => {});
 
+  // TODO: Remove in SB11
   const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
   const command = [
@@ -102,7 +103,11 @@ export const addWorkaroundResolutions = async ({
           react: packageJson.dependencies.react,
           'react-dom': packageJson.dependencies['react-dom'],
         }
-      : {};
+      : key === 'react-rsbuild/default-ts'
+        ? {
+            'react-docgen': '^8.0.2',
+          }
+        : {};
 
   packageJson.resolutions = {
     ...packageJson.resolutions,
@@ -110,7 +115,6 @@ export const addWorkaroundResolutions = async ({
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
-    typescript: '~5.7.3',
     rollup: '4.44.2',
   };
 
@@ -126,6 +130,7 @@ export const configureYarn2ForVerdaccio = async ({
   const command = [
     // We don't want to use the cache or we might get older copies of our built packages
     // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed
+    // TODO publish unique versions instead
     `yarn config set enableGlobalCache false`,
     `yarn config set enableMirror false`,
     // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)
@@ -143,7 +148,11 @@ export const configureYarn2ForVerdaccio = async ({
     // React prereleases will have INCOMPATIBLE_PEER_DEPENDENCY errors because of transitive dependencies not allowing v19 betas
     key.includes('nextjs') ||
     key.includes('react-vite/prerelease') ||
-    key.includes('react-webpack/prerelease')
+    key.includes('react-webpack/prerelease') ||
+    key.includes('react-rsbuild/default-ts') ||
+    key.includes('vue-rsbuild/default-ts') ||
+    key.includes('html-rsbuild/default-ts') ||
+    key.includes('web-components-rsbuild/default-ts')
   ) {
     // Don't error with INCOMPATIBLE_PEER_DEPENDENCY for SvelteKit sandboxes, it is expected to happen with @sveltejs/vite-plugin-svelte
     command.push(

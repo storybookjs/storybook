@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { dedent } from 'ts-dedent';
 
-const CORE_ROOT_DIR = join(import.meta.dirname, '..', '..', '..', 'code', 'core');
+import { CODE_DIRECTORY } from '../../utils/constants';
 
 /**
  * This is a unique hack (pre-existing the CPC project) because the only way to set a custom Theme
@@ -14,6 +14,7 @@ const CORE_ROOT_DIR = join(import.meta.dirname, '..', '..', '..', 'code', 'core'
  * development and production builds)
  */
 export async function modifyCoreThemeTypes(cwd: string) {
+  const CORE_ROOT_DIR = join(CODE_DIRECTORY, 'core');
   if (cwd !== CORE_ROOT_DIR) {
     return;
   }

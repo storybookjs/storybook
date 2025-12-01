@@ -114,7 +114,7 @@ export const OnDark: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js"
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -133,7 +133,7 @@ export const OnDark = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework (e.g., react-vite, vue3-vite, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -195,4 +195,47 @@ export const OnDark: Story = {
     backgrounds: { value: 'dark' },
   },
 };
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  globals: {
+    // 👇 Set background value for all component stories
+    backgrounds: { value: 'gray', grid: false },
+  },
+});
+
+export const OnDark = meta.story({
+  globals: {
+    // 👇 Override background value for this story
+    backgrounds: { value: 'dark' },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  globals: {
+    // 👇 Set background value for all component stories
+    backgrounds: { value: 'gray', grid: false },
+  },
+});
+
+export const OnDark = meta.story({
+  globals: {
+    // 👇 Override background value for this story
+    backgrounds: { value: 'dark' },
+  },
+});
 ```

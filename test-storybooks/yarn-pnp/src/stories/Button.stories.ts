@@ -1,31 +1,33 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { fn } from 'storybook/test';
 
-import { Button } from './Button';
+import Button from './Button.vue';
 
-// More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
+// More on how to set up stories at: https://storybook.js.org/docs/writing-stories
 const meta = {
   title: 'Example/Button',
   component: Button,
-  parameters: {
-    // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
-    layout: 'centered',
-  },
-  // This component will have an automatically generated Autodocs entry: https://storybook.js.org/docs/writing-docs/autodocs
+  // This component will have an automatically generated docsPage entry: https://storybook.js.org/docs/writing-docs/autodocs
   tags: ['autodocs'],
-  // More on argTypes: https://storybook.js.org/docs/api/argtypes
   argTypes: {
+    size: { control: 'select', options: ['small', 'medium', 'large'] },
     backgroundColor: { control: 'color' },
   },
-  // Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked: https://storybook.js.org/docs/essentials/actions#action-args
-  args: { onClick: fn() },
+  args: {
+    primary: false,
+    // Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked: https://storybook.js.org/docs/essentials/actions#story-args
+    onClick: fn(),
+  },
 } satisfies Meta<typeof Button>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-// More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
 export const Primary: Story = {
   args: {
     primary: true,
@@ -35,20 +37,21 @@ export const Primary: Story = {
 
 export const Secondary: Story = {
   args: {
+    primary: false,
     label: 'Button',
   },
 };
 
 export const Large: Story = {
   args: {
-    size: 'large',
     label: 'Button',
+    size: 'large',
   },
 };
 
 export const Small: Story = {
   args: {
-    size: 'small',
     label: 'Button',
+    size: 'small',
   },
 };

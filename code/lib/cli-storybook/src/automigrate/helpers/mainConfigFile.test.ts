@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  getBuilderPackageName,
-  getFrameworkPackageName,
-  getRendererName,
-  getRendererPackageNameFromFramework,
-} from './mainConfigFile';
+import { getBuilderPackageName, getFrameworkPackageName, getRendererName } from './mainConfigFile';
 
 describe('getBuilderPackageName', () => {
   it('should return null when mainConfig is undefined or null', () => {
@@ -187,32 +182,5 @@ describe('getRendererName', () => {
 
     const rendererName = getRendererName(mainConfig as any);
     expect(rendererName).toBeUndefined();
-  });
-});
-
-describe('getRendererPackageNameFromFramework', () => {
-  it('should return null when given no package name', () => {
-    // @ts-expect-error (Argument of type 'undefined' is not assignable)
-    const packageName = getRendererPackageNameFromFramework(undefined);
-    expect(packageName).toBeNull();
-  });
-
-  it('should return the frameworkPackageName if it exists in rendererPackages', () => {
-    const frameworkPackageName = '@storybook/angular';
-    const packageName = getRendererPackageNameFromFramework(frameworkPackageName);
-    expect(packageName).toBe(frameworkPackageName);
-  });
-
-  it('should return the corresponding key of rendererPackages if the value is the same as the frameworkPackageName', () => {
-    const frameworkPackageName = 'vue3';
-    const expectedPackageName = '@storybook/vue3';
-    const packageName = getRendererPackageNameFromFramework(frameworkPackageName);
-    expect(packageName).toBe(expectedPackageName);
-  });
-
-  it('should return null if a frameworkPackageName is known but not available in rendererPackages', () => {
-    const frameworkPackageName = '@storybook/unknown';
-    const packageName = getRendererPackageNameFromFramework(frameworkPackageName);
-    expect(packageName).toBeNull();
   });
 });

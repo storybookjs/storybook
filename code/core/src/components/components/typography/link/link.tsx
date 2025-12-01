@@ -176,7 +176,6 @@ const A = styled.a<LinkStylesProps>(
           background: 'none',
           padding: 0,
           fontSize: 'inherit',
-          // Button-styled links should not have underlines
           textDecoration: 'none',
         }
       : {}

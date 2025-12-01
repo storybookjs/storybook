@@ -41,7 +41,20 @@ import { StoryRender } from './render/StoryRender';
 const globalWindow = globalThis;
 
 function focusInInput(event: Event) {
-  const isEditableElement = (element: Element) => {
+  type EventWithComposedPath = Event & { composedPath: () => EventTarget[] };
+  const hasComposedPath = (value: Event): value is EventWithComposedPath =>
+    typeof (value as { composedPath?: unknown }).composedPath === 'function';
+
+  type ElementLike = Pick<Element, 'tagName' | 'getAttribute'>;
+  const isElementLike = (value: unknown): value is ElementLike => {
+    return (
+      value != null &&
+      typeof (value as { tagName?: unknown }).tagName === 'string' &&
+      typeof (value as { getAttribute?: unknown }).getAttribute === 'function'
+    );
+  };
+
+  const isEditableElement = (element: ElementLike) => {
     if (/input|textarea/i.test(element.tagName)) {
       return true;
     }
@@ -51,22 +64,15 @@ function focusInInput(event: Event) {
     }
 
     // Closed shadow roots can retarget events to the custom element host.
-    // Allow web components to opt in to "editable" semantics via ARIA roles.
+    // Allow web components to opt in to "editable" semantics via ARIA roles on the custom element host.
     const role = element.getAttribute('role')?.toLowerCase();
     return role === 'input' || role === 'searchbox' || role === 'textbox' || role === 'combobox';
   };
 
-  const composedPath = (event as any).composedPath?.();
-  const candidates: unknown[] =
-    Array.isArray(composedPath) && composedPath.length > 0 ? composedPath : [event.target];
+  const composedPath = hasComposedPath(event) ? event.composedPath() : [];
+  const candidates = composedPath.length > 0 ? composedPath : [event.target];
 
-  return candidates.some(
-    (candidate): candidate is Element =>
-      candidate != null &&
-      typeof (candidate as any).tagName === 'string' &&
-      typeof (candidate as any).getAttribute === 'function' &&
-      isEditableElement(candidate as Element)
-  );
+  return candidates.some((candidate) => isElementLike(candidate) && isEditableElement(candidate));
 }
 
 export const AUTODOCS_TAG = 'autodocs';

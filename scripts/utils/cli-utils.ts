@@ -2,51 +2,30 @@ import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
+import { ROOT_DIRECTORY } from './constants';
+
 const logger = console;
 
 export const checkDependencies = async () => {
-  const scriptsPath = join(__dirname, '..');
-  const codePath = join(__dirname, '..', '..', 'code');
-
-  const tasks: Array<any> = [];
-
-  if (!existsSync(join(scriptsPath, 'node_modules'))) {
-    tasks.push(
-      spawn('yarn', ['install'], {
-        cwd: scriptsPath,
-        shell: true,
-        stdio: ['inherit', 'inherit', 'inherit'],
-      })
-    );
-  }
-  if (!existsSync(join(codePath, 'node_modules'))) {
-    tasks.push(
-      spawn('yarn', ['install'], {
-        cwd: codePath,
-        shell: true,
-        stdio: ['inherit', 'inherit', 'inherit'],
-      })
-    );
-  }
-
-  if (tasks.length > 0) {
+  if (!existsSync(join(ROOT_DIRECTORY, 'node_modules'))) {
     logger.log('installing dependencies');
 
-    await Promise.all(
-      tasks.map(
-        (t) =>
-          new Promise<void>((res, rej) => {
-            t.on('exit', (code: number) => {
-              if (code !== 0) {
-                rej();
-              } else {
-                res();
-              }
-            });
-          })
-      )
-    ).catch(() => {
-      tasks.forEach((t) => t.kill());
+    const task = spawn('yarn', ['install'], {
+      cwd: ROOT_DIRECTORY,
+      shell: true,
+      stdio: ['inherit', 'inherit', 'inherit'],
+    });
+
+    await new Promise<void>((res, rej) => {
+      task.on('exit', (code: number) => {
+        if (code !== 0) {
+          rej();
+        } else {
+          res();
+        }
+      });
+    }).catch(() => {
+      task.kill();
       throw new Error('Failed to install dependencies');
     });
 

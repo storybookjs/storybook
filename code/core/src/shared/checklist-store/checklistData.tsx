@@ -195,7 +195,7 @@ export const checklistData = {
         },
         {
           id: 'renderComponent',
-          label: 'Render a component',
+          label: 'Render your first component',
           criteria: 'A story finished rendering successfully',
           subscribe: ({ api, done }) =>
             api.on(
@@ -281,7 +281,6 @@ export const Primary: Story = {
         },
         {
           id: 'moreComponents',
-          after: ['renderComponent'],
           label: 'Add 5 components',
           content: ({ api }) => (
             <>
@@ -323,7 +322,6 @@ export const Primary: Story = {
         },
         {
           id: 'moreStories',
-          after: ['renderComponent'],
           label: 'Add 20 stories',
           content: ({ api }) => (
             <>
@@ -380,7 +378,6 @@ export const Primary: Story = {
       items: [
         {
           id: 'controls',
-          after: ['renderComponent'],
           label: 'Change a story with Controls',
           available: () => !!globalThis?.FEATURES?.controls,
           criteria: 'Story args are updated',
@@ -423,7 +420,6 @@ export const Primary: Story = {
         },
         {
           id: 'viewports',
-          after: ['renderComponent'],
           label: 'Check responsiveness with Viewports',
           available: () => !!globalThis?.FEATURES?.viewport,
           criteria: 'Viewport global is updated',
@@ -468,7 +464,6 @@ export const Primary: Story = {
         },
         {
           id: 'organizeStories',
-          after: ['renderComponent'],
           label: 'Group your components',
           criteria: 'A root node exists in the index',
           subscribe: subscribeToIndex((entries) =>
@@ -672,7 +667,6 @@ export default {
         },
         {
           id: 'writeInteractions',
-          after: ['renderComponent'],
           label: 'Test functionality with interactions',
           available: () => !!globalThis?.FEATURES?.interactions,
           criteria: 'At least one story with a play or test function',

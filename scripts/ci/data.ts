@@ -166,12 +166,12 @@ const executors = {
     resource_class: '<<parameters.class>>',
     working_directory: `${ROOT_DIR}/${WORKING_DIR}`,
   },
-};
+} as const;
 
 type SomethingImplementation = {
   executor: {
-    class: string;
-    name: string;
+    class: 'small' | 'medium' | 'medium+' | 'large' | 'xlarge';
+    name: keyof typeof executors;
   };
   steps: unknown[];
   parameters?: Record<string, unknown>;
@@ -386,8 +386,8 @@ const uiTests = defineJob(
   'ui',
   {
     executor: {
-      class: 'xlarge',
-      name: 'sb_playwright',
+      name: 'sb_node_22_classic',
+      class: 'medium+',
     },
     steps: [
       git.checkout(),
@@ -422,8 +422,8 @@ const check = defineJob(
   'check',
   {
     executor: {
-      class: 'xlarge',
       name: 'sb_node_22_classic',
+      class: 'xlarge',
     },
     steps: [
       git.checkout(),
@@ -483,6 +483,32 @@ const unitTests = defineJob(
   [build.id]
 );
 
+const packageBenchmarks = defineJob(
+  'package-benchmarks',
+  {
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'xlarge',
+    },
+    steps: [
+      git.checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS),
+      verdaccio.start(),
+      server.wait([...verdaccio.ports]),
+      {
+        run: {
+          name: 'Benchmarking packages against base branch',
+          command:
+            'yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload',
+          working_directory: 'scripts',
+        },
+      },
+    ],
+  },
+  [build.id]
+);
+
 const sandboxes = [
   //
   'react-vite/default-ts',
@@ -494,6 +520,7 @@ const jobs = {
   [check.id]: check.implementation,
   [uiTests.id]: uiTests.implementation,
   [unitTests.id]: unitTests.implementation,
+  [packageBenchmarks.id]: packageBenchmarks.implementation,
   'pretty-docs': {
     executor: {
       name: 'sb_node_22_classic',
@@ -564,6 +591,11 @@ const workflows = {
       {
         [check.id]: {
           requires: check.requires,
+        },
+      },
+      {
+        [packageBenchmarks.id]: {
+          requires: packageBenchmarks.requires,
         },
       },
       {

@@ -287,6 +287,29 @@ jobs:
                   command: git diff --exit-code
             - report-workflow-on-failure
             - cancel-workflow-on-failure
+    ui:
+        description: ui
+        executor:
+            class: xlarge
+            name: sb_playwright
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys: *a1
+            - run:
+                  name: Build internal storybook
+                  command: yarn storybook:ui:build
+                  working_directory: code
+            - run:
+                  name: Run Chromatic
+                  command: yarn storybook:ui:chromatic
+                  working_directory: code
+            - report-workflow-on-failure
+            - store_test_results:
+                  path: storybook/test-results
     unit-tests:
         description: unit-tests
         executor:

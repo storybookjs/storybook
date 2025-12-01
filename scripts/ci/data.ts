@@ -491,6 +491,7 @@ const sandboxes = [
 const jobs = {
   [build.id]: build.implementation,
   [check.id]: check.implementation,
+  [uiTests.id]: uiTests.implementation,
   [unitTests.id]: unitTests.implementation,
   'pretty-docs': {
     executor: {

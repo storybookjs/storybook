@@ -377,6 +377,7 @@ const build = defineJob('build', {
           `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`,
         ]),
       `${WORKING_DIR}/.verdaccio-cache`,
+      `${WORKING_DIR}/code/bench`,
     ]),
   ],
 });

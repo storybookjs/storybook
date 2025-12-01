@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "10.0.0-beta.8",
+  "version": "10.2.0-alpha.1",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -56,10 +56,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
@@ -90,18 +86,17 @@
     "zone.js": "^0.15.0"
   },
   "peerDependencies": {
-    "@angular-devkit/architect": ">=0.1800.0 < 0.2100.0",
-    "@angular-devkit/build-angular": ">=18.0.0 < 21.0.0",
-    "@angular-devkit/core": ">=18.0.0 < 21.0.0",
-    "@angular/animations": ">=18.0.0 < 21.0.0",
-    "@angular/cli": ">=18.0.0 < 21.0.0",
-    "@angular/common": ">=18.0.0 < 21.0.0",
-    "@angular/compiler": ">=18.0.0 < 21.0.0",
-    "@angular/compiler-cli": ">=18.0.0 < 21.0.0",
-    "@angular/core": ">=18.0.0 < 21.0.0",
-    "@angular/forms": ">=18.0.0 < 21.0.0",
-    "@angular/platform-browser": ">=18.0.0 < 21.0.0",
-    "@angular/platform-browser-dynamic": ">=18.0.0 < 21.0.0",
+    "@angular-devkit/architect": ">=0.1800.0 < 0.2200.0",
+    "@angular-devkit/build-angular": ">=18.0.0 < 22.0.0",
+    "@angular-devkit/core": ">=18.0.0 < 22.0.0",
+    "@angular/animations": ">=18.0.0 < 22.0.0",
+    "@angular/cli": ">=18.0.0 < 22.0.0",
+    "@angular/common": ">=18.0.0 < 22.0.0",
+    "@angular/compiler": ">=18.0.0 < 22.0.0",
+    "@angular/compiler-cli": ">=18.0.0 < 22.0.0",
+    "@angular/core": ">=18.0.0 < 22.0.0",
+    "@angular/platform-browser": ">=18.0.0 < 22.0.0",
+    "@angular/platform-browser-dynamic": ">=18.0.0 < 22.0.0",
     "rxjs": "^6.5.3 || ^7.4.0",
     "storybook": "workspace:^",
     "typescript": "^4.9.0 || ^5.0.0",
@@ -122,5 +117,5 @@
     "access": "public"
   },
   "builders": "builders.json",
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

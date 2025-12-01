@@ -17,17 +17,20 @@ import type {
   Path,
   StoryIndex,
   StoryIndexEntry,
+  StoryIndexInput,
   StorybookConfigRaw,
   Tag,
 } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import picocolors from 'picocolors';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
+import { resolveImport, supportedExtensions } from '../../common';
 import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle';
 import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories';
 import { IndexingError, MultipleIndexingError } from './IndexingError';
@@ -377,21 +380,16 @@ export class StoryIndexGenerator {
     absolutePath: Path,
     matchPath: TsconfigPaths.MatchPath | undefined
   ) {
-    let rawPath = rawComponentPath;
-    if (matchPath) {
-      rawPath = matchPath(rawPath) ?? rawPath;
+    const matchedPath =
+      matchPath?.(rawComponentPath, undefined, undefined, supportedExtensions) ?? rawComponentPath;
+    let resolved;
+    try {
+      resolved = resolveImport(matchedPath, { basedir: dirname(absolutePath) });
+    } catch (_) {
+      return matchedPath;
     }
-
-    const absoluteComponentPath = resolve(dirname(absolutePath), rawPath);
-    const existing = ['', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts']
-      .map((ext) => `${absoluteComponentPath}${ext}`)
-      .find((candidate) => existsSync(candidate));
-    if (existing) {
-      const relativePath = relative(this.options.workingDir, existing);
-      return slash(normalizeStoryPath(relativePath));
-    }
-
-    return rawComponentPath;
+    const relativePath = relative(this.options.workingDir, resolved);
+    return slash(normalizeStoryPath(relativePath));
   }
 
   async extractStories(
@@ -414,7 +412,9 @@ export class StoryIndexGenerator {
 
     invariant(indexer, `No matching indexer found for ${absolutePath}`);
 
-    const indexInputs = await indexer.createIndex(absolutePath, { makeTitle: defaultMakeTitle });
+    const indexInputs = (await indexer.createIndex(absolutePath, {
+      makeTitle: defaultMakeTitle,
+    })) as StoryIndexInput[]; // we don't actually support DocsIndexInputs at runtime, although types say we do
     const tsconfigPath = find.up('tsconfig.json', {
       cwd: this.options.workingDir,
       last: getProjectRoot(),
@@ -439,10 +439,11 @@ export class StoryIndexGenerator {
 
         const id = input.__id ?? toId(input.metaId ?? title, storyNameFromExport(input.exportName));
         const tags = combineTags(...projectTags, ...(input.tags ?? []));
+        const subtype = input.subtype ?? 'story';
 
-        return {
+        const entry: StoryIndexEntryWithExtra & { tags: Tag[] } = {
           type: 'story',
-          subtype: input.type === 'story' ? input.subtype : 'story',
+          subtype,
           id,
           extra: {
             metaId: input.metaId,
@@ -453,11 +454,17 @@ export class StoryIndexGenerator {
           importPath,
           componentPath,
           tags,
-          ...(input.type === 'story' && input.subtype === 'test'
-            ? { parent: input.parent, parentName: input.parentName }
-            : {}),
-          ...(input.exportName ? { exportName: input.exportName } : {}),
         };
+
+        if (subtype === 'test') {
+          entry.parent = input.parent;
+          entry.parentName = input.parentName;
+        }
+        if (input.exportName) {
+          entry.exportName = input.exportName;
+        }
+
+        return entry;
       }
     );
 

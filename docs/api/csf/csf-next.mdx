@@ -224,6 +224,27 @@ export const PrimaryDisabled = Primary.extend({
 });
 ```
 
+#### `<Story>.test`
+
+(⚠️ **Experimental**)
+
+A more ergonomic way to define [tests for your stories](../../writing-tests/index.mdx). While this API is still experimental, it is [documented in the RFC to gather feedback](https://github.com/storybookjs/storybook/discussions/30119) and must be enabled via the [`experimentalTestSyntax` feature flag](../main-config/main-config-features.mdx#experimentaltestsyntax).
+
+```ts title="Button.stories.js|ts"
+// ...from above
+export const PrimaryDisabled = Primary.extend({ args: { disabled: true } });
+
+// 👇 .test method: Attach tests to a story
+//    The test function can run the same code as the play function
+PrimaryDisabled.test('should be disabled', async ({ canvas, userEvent, args }) => {
+  const button = await canvas.findByRole('button');
+  await userEvent.click(button);
+
+  await expect(button).toBeDisabled();
+  await expect(args.onClick).not.toHaveBeenCalled();
+});
+```
+
 ## Upgrade to CSF Next
 
 You can upgrade your stories to CSF Next either automatically (from CSF 3) or manually (from CSF 1, 2, or 3). CSF Next is designed to be usable incrementally; you do not have to upgrade all of your story files at once. However, you cannot mix story formats within the same file.
@@ -383,7 +404,7 @@ All of the story properties are now contained within a new property called `comp
 
 **4. Update your Vitest setup file**
 
-If you're using [Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon.mdx), you can remove your Vitest setup file (`.storybook/vitest.setup.ts`).
+If you're using [Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), you can remove your Vitest setup file (`.storybook/vitest.setup.ts`).
 
 If you are using [portable stories in Vitest](../portable-stories/portable-stories-vitest.mdx), you may use a Vitest setup file to configure your stories. This file must be updated to use the new CSF Next format.
 
@@ -410,7 +431,7 @@ import { setProjectAnnotations } from '@storybook/your-framework';
 
 **5. Reusing stories in test files**
 
-[Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon.mdx) allows you to test your components directly inside Storybook. All the stories are automatically turned into Vitest tests, making integration seamless in your testing suite.
+[Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) allows you to test your components directly inside Storybook. All the stories are automatically turned into Vitest tests, making integration seamless in your testing suite.
 
 If you cannot use Storybook Test, you can still reuse the stories in your test files using [portable stories](../portable-stories/portable-stories-vitest.mdx). In prior story formats, you had to compose the stories before rendering them in your test files. With CSF Next, you can now reuse the stories directly.
 

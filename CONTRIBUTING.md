@@ -1,4 +1,6 @@
 # Contributors Guide
+> Tip: If you want to make a fast contribution, check the “good first issue” label in the Issues tab for small frontend and docs tasks that are easy to fix directly on GitHub.
+
 
 We welcome contributions of any type and skill level. As an open-source project, we believe in the power of community and welcome any contributions that help us improve Storybook. Whether you are a developer, designer, writer, or someone who wants to help, we'd love to have you on board. If you are interested in contributing, please read the following guidelines.
 
@@ -91,8 +93,7 @@ Here's a highlight of notable directories and files:
 │   ├── vitest-setup.ts
 │   ├── vitest.config.ts
 │   ├── vitest.helpers.ts
-│   ├── vitest.workspace.ts
-│   └── yarn.lock
+│   └── vitest.workspace.ts
 ├── codecov.yml
 ├── dependabot.yml
 ├── docs                         # Documentation
@@ -115,7 +116,7 @@ Here's a highlight of notable directories and files:
 │   ├── writing-stories
 │   └── writing-tests
 ├── node_modules
-├── package.json                      # Root package.json for Storybook
+├── package.json                      # Root of the yarn monorepo
 ├── prettier.config.mjs
 ├── scripts                           # Build and Helper Scripts
 ├── test-storybooks
@@ -129,7 +130,9 @@ Here's a highlight of notable directories and files:
 
 ### Fork the repository 
 
-If you plan to contribute to Storybook's codebase, you should fork the repository to your GitHub account. This will allow you to make changes to the codebase and submit a pull request to the main repository when you're ready to contribute your changes. Once you've forked the repository, you should [disable Github Actions for your forked repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository) as most of them (e.g., pushing to sandbox) will fail without proper authorization. In your forked repository, go to Settings > Actions > General > set the Actions Permissions to **Disable actions**. Additionally, adding our codebase as upstream ensures you can rebase against the latest changes in the main repository. To do this, run the following commands:
+If you plan to contribute to Storybook's codebase, you should fork the repository to your GitHub account. This will allow you to make changes to the codebase and submit a pull request to the main repository when you're ready to contribute your changes.
+
+Additionally, adding our codebase as upstream ensures you can rebase against the latest changes in the main repository. To do this, run the following commands:
 
 ```shell
 git remote add upstream https://github.com/storybookjs/storybook.git
@@ -145,11 +148,11 @@ If you're interested in contributing to Storybook's codebase, you can run it loc
 # Navigate to the root directory of the Storybook repository 
 cd path/to/your/storybook/fork 
 
-# Install the required dependencies and start the development environment 
+# Install the required dependencies
+yarn
+# start the development environment 
 yarn start
 ```
-
-You don't need to install the dependencies manually to get the project running. The `yarn start` command will install the required dependencies for you.
 
 ### Making code changes 
 

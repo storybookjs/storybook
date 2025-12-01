@@ -1,6 +1,6 @@
 import type { JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS, type TaskLogInstance, logger, prompt } from 'storybook/internal/node-logger';
-import { sanitizeError } from 'storybook/internal/telemetry';
+import { ErrorCollector, sanitizeError } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { UpgradeOptions } from '../upgrade';
@@ -124,6 +124,7 @@ export async function collectAutomigrationsAcrossProjects(
           `Failed to check fix ${fix.id} for project ${shortenPath(project.configDir)}.`
         );
         logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
+        ErrorCollector.addError(error);
       }
     }
   }
@@ -243,6 +244,7 @@ export async function promptForAutomigrations(
     message: 'Select automigrations to run',
     options: choices,
     initialValues: choices.filter((c) => c.defaultSelected).map((c) => c.value),
+    required: false,
   });
 
   return automigrations.filter((am) => selectedIds.includes(am.fix.id));
@@ -387,6 +389,7 @@ export async function runAutomigrationsForProjects(
         fixFailures[fix.id] = sanitizeError(error as Error);
         taskLog.message(CLI_COLORS.error(`${logger.SYMBOLS.error} ${automigration.fix.id}`));
         logger.debug(errorMessage);
+        ErrorCollector.addError(error);
       }
     }
 

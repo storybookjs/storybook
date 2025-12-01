@@ -1,12 +1,17 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { FileSystemCache } from 'storybook/internal/common';
+import { type StoryIndexGenerator } from 'storybook/internal/core-server';
+import { type CsfFile } from 'storybook/internal/csf-tools';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
+import type { SupportedBuilder } from './builders';
+import type { SupportedFramework } from './frameworks';
 import type { Indexer, StoriesEntry } from './indexer';
+import type { SupportedRenderer } from './renderers';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
@@ -105,6 +110,9 @@ export interface Presets {
     config?: StorybookConfigRaw['staticDirs'],
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
+
+  /** The second and third parameter are not needed. And make type inference easier. */
+  apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
   apply<T>(extension: string, config?: T, args?: unknown): Promise<T>;
 }
 
@@ -152,6 +160,7 @@ export type PackageJson = PackageJsonFromTypeFest & Record<string | symbol, any>
 // TODO: This could be exported to the outside world and used in `options.ts` file of each `@storybook/APP`
 // like it's described in docs/api/new-frameworks.md
 export interface LoadOptions {
+  pnp?: boolean;
   packageJson?: PackageJson;
   outputDir?: string;
   configDir?: string;
@@ -224,7 +233,7 @@ export type Middleware<T extends IncomingMessage = IncomingMessage> = (
   next: (err?: string | Error) => Promise<void> | void
 ) => Promise<void> | void;
 
-interface ServerApp<T extends IncomingMessage = IncomingMessage> {
+export interface ServerApp<T extends IncomingMessage = IncomingMessage> {
   server: NetServer;
 
   use(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
@@ -339,10 +348,35 @@ export interface TagOptions {
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
-/**
- * The interface for Storybook configuration used internally in presets The difference is that these
- * values are the raw values, AKA, not wrapped with `PresetValue<>`
- */
+export interface ComponentManifest {
+  id: string;
+  path: string;
+  name: string;
+  description?: string;
+  import?: string;
+  summary?: string;
+  stories: {
+    name: string;
+    snippet?: string;
+    description?: string;
+    summary?: string;
+    error?: { name: string; message: string };
+  }[];
+  jsDocTags: Record<string, string[]>;
+  error?: { name: string; message: string };
+}
+
+export interface ComponentsManifest {
+  v: number;
+  components: Record<string, ComponentManifest>;
+}
+
+export type ComponentManifestGenerator = (
+  storyIndexGenerator: StoryIndexGenerator
+) => Promise<ComponentsManifest>;
+
+export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
+
 export interface StorybookConfigRaw {
   /**
    * Sets the addons you want to use with Storybook.
@@ -356,6 +390,8 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
+  experimental_componentManifestGenerator?: ComponentManifestGenerator;
+  experimental_enrichCsf?: CsfEnricher;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -453,6 +489,21 @@ export interface StorybookConfigRaw {
     developmentModeForBuild?: boolean;
     /** Only show input controls in Angular */
     angularFilterNonInputControls?: boolean;
+
+    experimentalComponentsManifest?: boolean;
+
+    /**
+     * Enables the new code example generation for React components. You can see those examples when
+     * clicking on the "Show code" button in the Storybook UI.
+     *
+     * We refactored the code examples by reading the actual source file. This should make the code
+     * examples a lot faster, more readable and more accurate. They are not dynamic though, it won't
+     * change if you change when using the control panel.
+     *
+     * @default false
+     * @experimental This feature is in early development and may change significantly in future releases.
+     */
+    experimentalCodeExamples?: boolean;
   };
 
   build?: TestBuildConfig;
@@ -478,6 +529,8 @@ export interface StorybookConfigRaw {
   previewAnnotations?: Entry[];
 
   experimental_indexers?: Indexer[];
+
+  experimental_devServer?: ServerApp;
 
   docs?: DocsOptions;
 
@@ -630,15 +683,16 @@ export type CoreCommon_AddonEntry = string | CoreCommon_OptionsEntry;
 export type CoreCommon_AddonInfo = { name: string; inEssentials: boolean };
 
 export interface CoreCommon_StorybookInfo {
-  version: string;
-  // FIXME: these are renderers for now,
-  // need to update with framework OR fix
-  // the calling code
-  framework: string;
-  frameworkPackage: string;
-  renderer: string;
-  rendererPackage: string;
+  addons: string[];
+  versionSpecifier?: string;
+  framework?: SupportedFramework;
+  renderer?: SupportedRenderer;
+  builder?: SupportedBuilder;
+  rendererPackage?: string;
+  frameworkPackage?: string;
+  builderPackage?: string;
   configDir?: string;
+  mainConfig: StorybookConfigRaw;
   mainConfigPath?: string;
   previewConfigPath?: string;
   managerConfigPath?: string;

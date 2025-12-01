@@ -58,6 +58,8 @@ enum events {
   // A global was just updated
   GLOBALS_UPDATED = 'globalsUpdated',
   REGISTER_SUBSCRIPTION = 'registerSubscription',
+  // Preview initialized for first-load-event
+  PREVIEW_INITIALIZED = 'previewInitialized',
   // Tell the manager that the user pressed a key in the preview
   PREVIEW_KEYDOWN = 'previewKeydown',
   // Tell the preview that the builder is in progress
@@ -114,6 +116,7 @@ export const {
   PLAY_FUNCTION_THREW_EXCEPTION,
   UNHANDLED_ERRORS_WHILE_PLAYING,
   PRELOAD_ENTRIES,
+  PREVIEW_INITIALIZED,
   PREVIEW_BUILDER_PROGRESS,
   PREVIEW_KEYDOWN,
   REGISTER_SUBSCRIPTION,

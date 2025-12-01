@@ -6,7 +6,6 @@ import type {
   TestProject,
   TestSpecification,
   Vitest,
-  WorkspaceProject,
 } from 'vitest/node';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
@@ -14,6 +13,7 @@ import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/ty
 
 import * as find from 'empathic/find';
 import path, { dirname, join, normalize } from 'pathe';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import { COVERAGE_DIRECTORY } from '../constants';
@@ -165,11 +165,15 @@ export class VitestManager {
   }
 
   private updateLastChanged(filepath: string) {
-    const projects = this.vitest!.getModuleProjects(filepath);
-    projects.forEach(({ server, browser }) => {
+    // @ts-expect-error `server` only exists in Vitest 3
+    this.vitest!.projects.forEach(({ browser, vite, server }) => {
       if (server) {
         const serverMods = server.moduleGraph.getModulesByFile(filepath);
-        serverMods?.forEach((mod) => server.moduleGraph.invalidateModule(mod));
+        serverMods?.forEach((mod: any) => server.moduleGraph.invalidateModule(mod));
+      }
+      if (vite) {
+        const serverMods = vite.moduleGraph.getModulesByFile(filepath);
+        serverMods?.forEach((mod) => vite.moduleGraph.invalidateModule(mod));
       }
       if (browser) {
         const browserMods = browser.vite.moduleGraph.getModulesByFile(filepath);
@@ -507,7 +511,7 @@ export class VitestManager {
     this.registerVitestConfigListener();
   }
 
-  isStorybookProject(project: TestProject | WorkspaceProject) {
+  isStorybookProject(project: TestProject) {
     return !!project.config.env?.__STORYBOOK_URL__;
   }
 }

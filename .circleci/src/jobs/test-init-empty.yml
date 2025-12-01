@@ -12,7 +12,7 @@ steps:
   - git-shallow-clone/checkout_advanced:
       clone_options: '--depth 1 --verbose'
   - attach_workspace:
-      at: .
+      at: /tmp
   - when:
       condition:
         equal: ['npm', << parameters.packageManager >>]
@@ -38,34 +38,6 @@ steps:
               npm set registry http://localhost:6001
               npx storybook init --yes --package-manager npm
               npm run storybook -- --smoke-test
-            environment:
-              IN_STORYBOOK_SANDBOX: true
-              STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
-              STORYBOOK_DISABLE_TELEMETRY: true
-  - when:
-      condition:
-        equal: ['yarn1', << parameters.packageManager >>]
-      steps:
-        - run:
-            name: Verdaccio
-            background: true
-            command: |
-              cd code
-              yarn local-registry --open
-        - run:
-            name: Wait on Verdaccio
-            command: |
-              cd code
-              yarn wait-on tcp:127.0.0.1:6001
-              yarn wait-on tcp:127.0.0.1:6002
-        - run:
-            name: Storybook init from empty directory (Yarn 1)
-            command: |
-              cd ..
-              mkdir empty-<< parameters.template >>
-              cd empty-<< parameters.template >>
-              npx storybook init --yes --package-manager yarn1
-              yarn storybook --smoke-test
             environment:
               IN_STORYBOOK_SANDBOX: true
               STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>

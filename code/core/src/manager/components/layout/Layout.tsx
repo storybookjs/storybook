@@ -238,16 +238,16 @@ const LayoutContainer = styled.div<LayoutState & { showPanel: boolean }>(
 );
 
 const SidebarContainer = styled.div(({ theme }) => ({
-  backgroundColor: theme.background.app,
+  backgroundColor: theme.appBg,
   gridArea: 'sidebar',
   position: 'relative',
-  borderRight: `1px solid ${theme.color.border}`,
+  borderRight: `1px solid ${theme.appBorderColor}`,
 }));
 
 const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
   flex: 1,
   position: 'relative',
-  backgroundColor: theme.background.content,
+  backgroundColor: theme.appContentBg,
   display: shown ? 'grid' : 'none', // This is needed to make the content container fill the available space
   overflow: 'auto',
 
@@ -258,11 +258,13 @@ const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
 }));
 
 const PagesContainer = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
   gridRowStart: 'sidebar-start',
   gridRowEnd: '-1',
   gridColumnStart: 'sidebar-end',
   gridColumnEnd: '-1',
-  backgroundColor: theme.background.content,
+  backgroundColor: theme.appContentBg,
   zIndex: 1,
 }));
 
@@ -270,9 +272,9 @@ const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(
   ({ theme, position }) => ({
     gridArea: 'panel',
     position: 'relative',
-    backgroundColor: theme.background.content,
-    borderTop: position === 'bottom' ? `1px solid ${theme.color.border}` : undefined,
-    borderLeft: position === 'right' ? `1px solid ${theme.color.border}` : undefined,
+    backgroundColor: theme.appContentBg,
+    borderTop: position === 'bottom' ? `1px solid ${theme.appBorderColor}` : undefined,
+    borderLeft: position === 'right' ? `1px solid ${theme.appBorderColor}` : undefined,
   })
 );
 

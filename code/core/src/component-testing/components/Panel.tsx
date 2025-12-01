@@ -68,6 +68,8 @@ const playStatusMap: Record<
   aborted: 'aborted',
 };
 
+const terminalStatuses: PlayStatus[] = ['completed', 'errored', 'aborted'];
+
 const storyStatusMap: Record<CallStates, StatusValue> = {
   [CallStates.DONE]: 'status-value:success',
   [CallStates.ERROR]: 'status-value:error',
@@ -237,7 +239,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       if (global.IntersectionObserver) {
         observer = new global.IntersectionObserver(
           ([end]: any) => setScrollTarget(end.isIntersecting ? undefined : end.target),
-          { root: global.document.querySelector('#panel-tab-content') }
+          { root: global.document.querySelector('#storybook-panel-root [role="tabpanel"]') }
         );
 
         if (endRef.current) {
@@ -293,7 +295,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           } else {
             set((state) => {
               const status =
-                event.newPhase in playStatusMap
+                event.newPhase in playStatusMap && !terminalStatuses.includes(state.status)
                   ? playStatusMap[event.newPhase as keyof typeof playStatusMap]
                   : state.status;
               return getPanelState(

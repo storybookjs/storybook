@@ -14,10 +14,12 @@
     "storybook": "storybook dev -p 6006",
     "vitest": "echo 'Vitest is not supported in Next.js testing'"
   },
+  "nx": {
+    "includedScripts": []
+  },
   "resolutions": {
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
     "@storybook/addon-docs": "file:../../../code/addons/docs",
-    "@storybook/addon-jest": "file:../../../code/addons/jest",
     "@storybook/addon-links": "file:../../../code/addons/links",
     "@storybook/addon-themes": "file:../../../code/addons/themes",
     "@storybook/angular": "file:../../../code/frameworks/angular",

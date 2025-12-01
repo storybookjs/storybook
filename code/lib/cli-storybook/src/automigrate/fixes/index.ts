@@ -3,6 +3,7 @@ import type { CommandFix, Fix } from '../types';
 import { addonA11yAddonTest } from './addon-a11y-addon-test';
 import { addonA11yParameters } from './addon-a11y-parameters';
 import { addonExperimentalTest } from './addon-experimental-test';
+import { addonGlobalsApi } from './addon-globals-api';
 import { addonMdxGfmRemove } from './addon-mdx-gfm-remove';
 import { addonStorysourceCodePanel } from './addon-storysource-code-panel';
 import { consolidatedImports } from './consolidated-imports';
@@ -10,6 +11,7 @@ import { eslintPlugin } from './eslint-plugin';
 import { fixFauxEsmRequire } from './fix-faux-esm-require';
 import { initialGlobals } from './initial-globals';
 import { migrateAddonConsole } from './migrate-addon-console';
+import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite';
 import { removeAddonInteractions } from './remove-addon-interactions';
 import { removeDocsAutodocs } from './remove-docs-autodocs';
 import { removeEssentials } from './remove-essentials';
@@ -26,11 +28,13 @@ export const allFixes: Fix[] = [
   addonStorysourceCodePanel,
   upgradeStorybookRelatedDependencies,
   initialGlobals,
+  addonGlobalsApi,
   addonA11yAddonTest,
   consolidatedImports,
   addonExperimentalTest,
   rnstorybookConfig,
   migrateAddonConsole,
+  nextjsToNextjsVite,
   removeAddonInteractions,
   rendererToFramework,
   removeEssentials,

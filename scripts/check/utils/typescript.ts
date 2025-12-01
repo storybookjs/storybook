@@ -26,7 +26,7 @@ export function getTSProgramAndHost(fileNames: string[], options: typescript.Com
   const host = typescript.createCompilerHost(program.getCompilerOptions());
   return { program, host };
 }
-export function getTSFilesAndConfig(tsconfigPath: string) {
+export function getTSFilesAndConfig(tsconfigPath: string, cwd: string = process.cwd()) {
   const content = typescript.readJsonConfigFile(tsconfigPath, typescript.sys.readFile);
   return typescript.parseJsonSourceFileConfigFileContent(
     content,
@@ -36,10 +36,10 @@ export function getTSFilesAndConfig(tsconfigPath: string) {
       fileExists: typescript.sys.fileExists,
       readFile: typescript.sys.readFile,
     },
-    process.cwd(),
+    cwd,
     {
       noEmit: true,
-      outDir: join(process.cwd(), 'types'),
+      outDir: join(cwd, 'types'),
       target: typescript.ScriptTarget.ES2022,
       declaration: false,
     }

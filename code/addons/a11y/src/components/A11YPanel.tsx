@@ -181,7 +181,7 @@ export const A11YPanel: React.FC = () => {
                   accessibility tests manually.
                 </p>
               </div>
-              <Button size="medium" onClick={handleManual}>
+              <Button ariaLabel={false} size="medium" onClick={handleManual}>
                 Run accessibility scan
               </Button>
               <p>
@@ -208,7 +208,7 @@ export const A11YPanel: React.FC = () => {
                       : JSON.stringify(error, null, 2)}
                 </p>
               </div>
-              <Button size="medium" onClick={handleManual}>
+              <Button ariaLabel={false} size="medium" onClick={handleManual}>
                 Rerun accessibility scan
               </Button>
             </>
@@ -222,7 +222,7 @@ export const A11YPanel: React.FC = () => {
                   test manually.
                 </p>
               </div>
-              <Button size="medium" onClick={handleManual}>
+              <Button ariaLabel={false} size="medium" onClick={handleManual}>
                 Run accessibility scan
               </Button>
             </>

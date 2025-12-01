@@ -41,8 +41,32 @@ import { StoryRender } from './render/StoryRender';
 const globalWindow = globalThis;
 
 function focusInInput(event: Event) {
-  const target = ((event.composedPath && event.composedPath()[0]) || event.target) as Element;
-  return /input|textarea/i.test(target.tagName) || target.getAttribute('contenteditable') !== null;
+  const isEditableElement = (element: Element) => {
+    if (/input|textarea/i.test(element.tagName)) {
+      return true;
+    }
+
+    if (element.getAttribute('contenteditable') !== null) {
+      return true;
+    }
+
+    // Closed shadow roots can retarget events to the custom element host.
+    // Allow web components to opt in to "editable" semantics via ARIA roles.
+    const role = element.getAttribute('role')?.toLowerCase();
+    return role === 'input' || role === 'searchbox' || role === 'textbox' || role === 'combobox';
+  };
+
+  const composedPath = (event as any).composedPath?.();
+  const candidates: unknown[] =
+    Array.isArray(composedPath) && composedPath.length > 0 ? composedPath : [event.target];
+
+  return candidates.some(
+    (candidate): candidate is Element =>
+      candidate != null &&
+      typeof (candidate as any).tagName === 'string' &&
+      typeof (candidate as any).getAttribute === 'function' &&
+      isEditableElement(candidate as Element)
+  );
 }
 
 export const AUTODOCS_TAG = 'autodocs';

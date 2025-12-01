@@ -116,6 +116,7 @@ const hasFrameworkTemplates = (framework?: string) => {
     SupportedFramework.REACT_VITE,
     SupportedFramework.REACT_WEBPACK5,
     SupportedFramework.SERVER_WEBPACK5,
+    SupportedFramework.SOLID,
     SupportedFramework.SVELTE_VITE,
     SupportedFramework.SVELTEKIT,
     SupportedFramework.VUE3_VITE,

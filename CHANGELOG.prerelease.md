@@ -1,3 +1,7 @@
+## 10.2.0-alpha.1
+
+- Core: Improve globbing using dynamic CWD (REVERT) - [#33201](https://github.com/storybookjs/storybook/pull/33201), thanks @ndelangen!
+
 ## 10.2.0-alpha.0
 
 

@@ -33,9 +33,16 @@ describe(`Errors Helpers`, () => {
 
       const sanitizedError = sanitizeError(e);
 
+      const cwd = process.cwd().replace(/\\/g, `\\\\`)
+
+      console.log({
+        cwd,
+        sanitized: sanitizedError.message,
+        errorMessage,
+      })
       expect(sanitizedError.message).toEqual(expect.stringContaining(errorMessage));
       expect(sanitizedError.message).toEqual(
-        expect.not.stringContaining(process.cwd().replace(/\\/g, `\\\\`))
+        expect.not.stringContaining(cwd)
       );
     });
 

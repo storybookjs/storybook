@@ -93,7 +93,7 @@
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
     "typescript": "^5.8.3",
-    "vitest": "^4.0.1"
+    "vitest": "^4.0.14"
   },
   "peerDependencies": {
     "@vitest/browser": "^3.0.0 || ^4.0.0",

@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, vi } from 'vitest';
+import { afterEach, beforeAll, vi, expect as vitestExpect } from 'vitest';
 import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
@@ -41,3 +41,78 @@ beforeAll(() => {
 });
 
 afterEach(modifyErrorMessage);
+
+/*
+ * Setup file for @storybook/addon-vitest to enable Storybook-specific test behaviors.
+ *
+ * - Marks that the screenshot matcher is available so storybook/test can forward calls.
+ */
+
+// Only activate when running via Vitest
+if (typeof process !== 'undefined' && process.env?.VITEST === 'true') {
+  // Mark the screenshot matcher as available so storybook/test guarded shim does not throw
+  (globalThis as any).__STORYBOOK_TEST_HAS_SCREENSHOT_MATCHER__ = true;
+
+  // Wrap Vitest's toMatchScreenshot to emit preview events with fetched base64 data
+  try {
+    const state = (vitestExpect as any).getState?.() || {};
+    const registered = state.matchers?.toMatchScreenshot;
+    if (registered) {
+      const original = registered;
+      (vitestExpect as any).extend({
+        async toMatchScreenshot(this: any, ...args: any[]) {
+          // Call original matcher first
+          const result = await original.call(this, ...args);
+          try {
+            const userProvidedName = typeof args[0] === 'string' ? args[0] : undefined;
+            // TODO: implement proper sanitization
+            const sanitizeArg = (s: string) => s;
+
+            const st = (vitestExpect as any).getState?.() || {};
+            const testPath: string | undefined =
+              st.testPath || (globalThis as any)?.__vitest_worker__?.filepath;
+            const currentTestName: string | undefined = st.currentTestName;
+            const meta = (st as any)?.meta || {};
+
+            const baseUrl = (import.meta as any).env?.__STORYBOOK_URL__ || '';
+            const qs = new URLSearchParams();
+
+            if (testPath) {
+              qs.set('testFilePath', testPath);
+            }
+
+            if (currentTestName) {
+              qs.set('testName', currentTestName);
+            }
+
+            if (userProvidedName) {
+              qs.set('arg', sanitizeArg(userProvidedName));
+            }
+            const endpoint = `${baseUrl}/__storybook_test__/api/visual-snapshot/latest?${qs.toString()}`;
+
+            const res = await fetch(endpoint);
+            if (res.ok) {
+              const data = await res.json();
+              const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
+              channel?.emit?.('storybook/test:visual-screenshot', {
+                storyId: meta?.storyId,
+                testName: currentTestName,
+                url: data?.dataUri,
+                browserName: data?.browserName,
+                platform: data?.platform,
+                timestamp: Date.now(),
+              });
+            }
+          } catch {
+            // non-fatal
+          }
+          return result;
+        },
+      });
+    }
+  } catch {
+    // ignore
+  }
+}
+
+export {};

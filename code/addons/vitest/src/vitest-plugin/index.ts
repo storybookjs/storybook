@@ -259,6 +259,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __STORYBOOK_URL__: finalOptions.storybookUrl,
 
             VITEST_STORYBOOK: isVitestStorybook ? 'true' : 'false',
+            // Signal browser mode activation to storybook/test guarded matcher
+            __STORYBOOK_TEST_BROWSER__: 'true',
             __VITEST_INCLUDE_TAGS__: finalOptions.tags.include.join(','),
             __VITEST_EXCLUDE_TAGS__: finalOptions.tags.exclude.join(','),
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),

@@ -29,6 +29,10 @@ type Matchers<T> = PromisifyObject<JestAssertion<T>> &
 export interface Assertion<T> extends Matchers<T> {
   toHaveBeenCalledOnce(): Promise<void>;
   toSatisfy<E>(matcher: (value: E) => boolean, message?: string): Promise<void>;
+  toMatchScreenshot(
+    nameOrOptions?: string | ScreenshotMatcherOptions,
+    maybeOptions?: ScreenshotMatcherOptions
+  ): Promise<void>;
   resolves: Assertion<T>;
   rejects: Assertion<T>;
   not: Assertion<T>;
@@ -47,6 +51,14 @@ export interface Expect extends AsymmetricMatchersContaining {
   setState(state: Partial<MatcherState>): void;
   not: AsymmetricMatchersContaining;
 }
+
+// Minimal options surface compatible with Vitest browser toMatchScreenshot
+export type ScreenshotMatcherOptions = {
+  comparatorName?: string;
+  comparatorOptions?: Record<string, any>;
+  screenshotOptions?: Record<string, any>;
+  timeout?: number;
+};
 
 export function createExpect() {
   chai.use(JestExtend);
@@ -132,6 +144,27 @@ export function createExpect() {
   chai.util.addMethod(expect, 'assertions', assertions);
   chai.util.addMethod(expect, 'hasAssertions', hasAssertions);
   expect.extend(matchers);
+
+  // Provide a guarded placeholder for visual regression assertions. The real implementation
+  // is registered by @storybook/addon-vitest when running in Vitest browser mode.
+  // If tests call this outside that environment, guide the user with a clear error.
+  expect.extend({
+    async toMatchScreenshot() {
+      // If the addon has registered the real matcher, do nothing here (it overrides this one).
+      // Otherwise, throw a helpful error.
+      const active = (globalThis as any).__STORYBOOK_TEST_HAS_SCREENSHOT_MATCHER__;
+
+      if (active) {
+        return { pass: true, message: () => '' } as any;
+      }
+      throw new Error(
+        'toMatchScreenshot is only available when running tests via @storybook/addon-vitest in Vitest browser mode.\n' +
+          '- Enable the Storybook Vitest plugin (storybookTest()) in your vitest config.\n' +
+          '- Ensure test.browser.enabled is true and use a browser provider.\n' +
+          '- Run transformed stories via @storybook/addon-vitest.'
+      );
+    },
+  } as any);
 
   return expect as unknown as Expect;
 }

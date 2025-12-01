@@ -1,5 +1,8 @@
-import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
+import { resolve as pathResolve, relative } from 'node:path';
+
+import type { ToMatchScreenshotOptions } from 'vitest/node';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
@@ -23,6 +26,7 @@ import type {
 import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
+import type { Plugin, ResolvedConfig } from 'vite';
 
 import {
   ADDON_ID,
@@ -246,4 +250,134 @@ export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = [], op
     },
     ...values,
   ];
+};
+
+export const viteFinal: PresetPropertyFn<'viteFinal'> = async (config = {}, options) => {
+  if (options.configType === 'PRODUCTION') {
+    return config;
+  }
+
+  let resolvedConfig: ResolvedConfig;
+  let projectRoot: string;
+
+  const plugin: Plugin = {
+    name: 'storybook-addon-vitest-visual-snapshot',
+    async configResolved(viteConfig) {
+      projectRoot = viteConfig.root || pathResolve(options.configDir, '..');
+      resolvedConfig = viteConfig;
+    },
+    configureServer(server) {
+      server.middlewares.use('/__storybook_test__/api/visual-snapshot/latest', async (req, res) => {
+        try {
+          const toMatchScreenshotOptions = resolvedConfig?.test?.browser?.expect
+            ?.toMatchScreenshot as ToMatchScreenshotOptions | undefined;
+
+          const screenshotDirCfg =
+            resolvedConfig?.test?.browser?.screenshotDirectory || '__screenshots__';
+
+          const resolveScreenshotPathFn = toMatchScreenshotOptions?.resolveScreenshotPath;
+
+          const attachmentsDir = resolvedConfig?.test?.attachmentsDir || '.vitest-attachments';
+
+          // Parse query params to compute request-specific location
+          const url = new URL(req.url!, 'http://localhost');
+          const testFilePath = url.searchParams.get('testFilePath')!;
+          const testName = url.searchParams.get('testName')!;
+          // Expect wrapper is responsible for arg sanitization/evaluation
+          const arg = url.searchParams.get('arg')!;
+          // Prefer Vitest browser instance name when available
+          const browserName = resolvedConfig?.test?.browser?.instances?.[0]?.browser || 'chromium';
+          // Determine screenshot extension with fallbacks
+          const extParam = url.searchParams.get('ext') || '';
+          const normalizeExt = (s: string) => (s.startsWith('.') ? s : `.${s}`);
+          const imgRe = /\.(png|jpg|jpeg|webp|gif)$/i;
+          let ext = extParam ? normalizeExt(extParam) : '';
+          if (!ext && arg && imgRe.test(arg)) {
+            ext = normalizeExt(arg.split('.').pop() as string);
+          }
+          if (!ext && testFilePath && imgRe.test(testFilePath)) {
+            ext = normalizeExt(testFilePath.split('.').pop() as string);
+          }
+
+          if (!ext) {
+            ext = '.png';
+          }
+          const absTestFile = pathResolve(projectRoot, testFilePath);
+          const testFileDirectory = relative(projectRoot, pathResolve(absTestFile, '..'));
+          const testFileName = absTestFile.split('/').pop() as string;
+
+          // Compute a candidate path using resolveScreenshotPath if available
+          let resolvedPath: string | undefined;
+          if (typeof resolveScreenshotPathFn === 'function') {
+            try {
+              const probe = resolveScreenshotPathFn({
+                arg,
+                browserName,
+                platform: process.platform,
+                ext,
+                root: projectRoot,
+                testFileDirectory,
+                testFileName,
+                screenshotDirectory: screenshotDirCfg,
+                attachmentsDir,
+                testName,
+              });
+              if (typeof probe === 'string') {
+                resolvedPath = probe;
+              } else {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: 'no screenshots found' }));
+                return;
+              }
+            } catch {
+              // ignore and fall back
+            }
+          } else {
+            const baseDir = pathResolve(
+              projectRoot,
+              testFileDirectory,
+              screenshotDirCfg,
+              testFileName
+            );
+            const candidate = pathResolve(
+              baseDir,
+              `${arg}-${browserName}-${process.platform}${ext}`
+            );
+            resolvedPath = candidate;
+          }
+
+          try {
+            const buf = await readFile(resolvedPath as string);
+            const base64 = buf.toString('base64');
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(
+              JSON.stringify({
+                path: resolvedPath,
+                browserName,
+                platform: process.platform,
+                dataUri: `data:image/png;base64,${base64}`,
+              })
+            );
+            return;
+          } catch {
+            res.statusCode = 404;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'no screenshots found' }));
+            return;
+          }
+        } catch (e: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: e?.message || 'internal error' }));
+        }
+      });
+    },
+  };
+
+  return {
+    ...config,
+    plugins: [(config as any).plugins ?? [], plugin],
+  };
 };

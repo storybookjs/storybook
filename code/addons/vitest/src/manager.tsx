@@ -13,6 +13,7 @@ import { addons } from 'storybook/manager-api';
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { SidebarContextMenu } from './components/SidebarContextMenu';
 import { TestProviderRender } from './components/TestProviderRender';
+import { registerVisualSnapshotPanel } from './components/VisualSnapshotPanel';
 import {
   A11Y_PANEL_ID,
   ADDON_ID,
@@ -24,6 +25,7 @@ import { useTestProvider } from './use-test-provider-state';
 
 addons.register(ADDON_ID, (api) => {
   if (globalThis.STORYBOOK_BUILDER === SupportedBuilder.VITE) {
+    registerVisualSnapshotPanel();
     const openPanel = (panelId: string) => {
       api.setSelectedPanel(panelId);
       api.togglePanel(true);

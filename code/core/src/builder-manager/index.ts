@@ -4,8 +4,6 @@ import { stringifyProcessEnvs } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
-// TODO: Remove in SB11
-import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
 import { resolveModulePath } from 'exsolve';
 import { join, parse } from 'pathe';
 import sirv from 'sirv';
@@ -104,7 +102,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     tsconfig: tsconfigPath,
 
     legalComments: 'external',
-    plugins: [globalExternals(globalsModuleInfoMap), pnpPlugin()],
+    plugins: [globalExternals(globalsModuleInfoMap)],
 
     banner: {
       js: 'try{',

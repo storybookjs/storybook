@@ -1,7 +1,6 @@
 import type { ProjectType } from 'storybook/internal/cli';
 import { globalSettings } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
-import { isCI } from 'storybook/internal/common';
+import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 import { Feature } from 'storybook/internal/types';
@@ -44,26 +43,20 @@ export interface UserPreferencesOptions {
  * - Track telemetry events
  */
 export class UserPreferencesCommand {
-  private telemetryService: TelemetryService;
-
   constructor(
-    private commandOptions: CommandOptions,
-    private featureService = new FeatureCompatibilityService()
-  ) {
-    this.telemetryService = new TelemetryService(commandOptions.disableTelemetry);
-  }
+    private readonly commandOptions: CommandOptions,
+    packageManager: JsPackageManager,
+    private readonly featureService = new FeatureCompatibilityService(packageManager),
+    private readonly telemetryService = new TelemetryService(commandOptions.disableTelemetry)
+  ) {}
 
   /** Execute user preferences gathering */
-  async execute(
-    packageManager: JsPackageManager,
-    options: UserPreferencesOptions
-  ): Promise<UserPreferencesResult> {
+  async execute(options: UserPreferencesOptions): Promise<UserPreferencesResult> {
     // Display version information
     const isInteractive = process.stdout.isTTY && !isCI();
     const skipPrompt = !isInteractive || !!this.commandOptions.yes;
 
     const isTestFeatureAvailable = await this.isTestFeatureAvailable(
-      packageManager,
       options.framework,
       options.builder
     );
@@ -162,8 +155,8 @@ export class UserPreferencesCommand {
     let installType: InstallType = 'recommended';
 
     const recommendedLabel = isTestFeatureAvailable
-      ? `Recommended: Includes component development, docs and testing features.`
-      : `Recommended: Includes component development and docs`;
+      ? `Recommended: Component development, docs, and testing features.`
+      : `Recommended: Component development and docs`;
 
     if (!skipPrompt) {
       installType = await prompt.select({
@@ -212,12 +205,10 @@ export class UserPreferencesCommand {
 
   /** Validate test feature compatibility and prompt user if issues found */
   private async isTestFeatureAvailable(
-    packageManager: JsPackageManager,
     framework: SupportedFramework | null,
     builder: SupportedBuilder
   ): Promise<boolean> {
     const result = await this.featureService.validateTestFeatureCompatibility(
-      packageManager,
       framework,
       builder,
       process.cwd()
@@ -227,9 +218,10 @@ export class UserPreferencesCommand {
   }
 }
 
-export const executeUserPreferences = (
-  packageManager: JsPackageManager,
-  { options, ...restOptions }: UserPreferencesOptions & { options: CommandOptions }
-) => {
-  return new UserPreferencesCommand(options).execute(packageManager, restOptions);
+export const executeUserPreferences = ({
+  options,
+  packageManager,
+  ...restOptions
+}: UserPreferencesOptions & { options: CommandOptions; packageManager: JsPackageManager }) => {
+  return new UserPreferencesCommand(options, packageManager).execute(restOptions);
 };

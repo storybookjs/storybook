@@ -93,61 +93,63 @@ const enhanceContext: LoaderFunction = async (context) => {
     context.canvas = within(context.canvasElement);
   }
 
-  // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
-  // which will throw an error in react native for example.
-  const clipboard = globalThis.window?.navigator?.clipboard;
-  if (clipboard) {
-    context.userEvent = instrument(
-      { userEvent: uninstrumentedUserEvent.setup() },
-      {
-        intercept: true,
-        getKeys: (obj) => Object.keys(obj).filter((key) => key !== 'eventWrapper'),
-      }
-    ).userEvent;
+  try {
+    // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
+    // which will throw an error in react native for example.
+    const clipboard = globalThis.window?.navigator?.clipboard;
+    if (clipboard) {
+      context.userEvent = instrument(
+        { userEvent: uninstrumentedUserEvent.setup() },
+        {
+          intercept: true,
+          getKeys: (obj) => Object.keys(obj).filter((key) => key !== 'eventWrapper'),
+        }
+      ).userEvent;
 
-    // Restore original clipboard, which was replaced with a stub by userEvent.setup()
-    Object.defineProperty(globalThis.window.navigator, 'clipboard', {
-      get: () => clipboard,
-      configurable: true,
-    });
-
-    if (!patchedFocus) {
-      // Must save a real, original `focus` method outside of the patch beforehand
-      const originalFocus = HTMLElement.prototype.focus;
-      let currentFocus = HTMLElement.prototype.focus;
-
-      // Use a Set to track elements that are currently undergoing a focus operation
-      const focusingElements = new Set<HTMLElement>();
-
-      Object.defineProperties(HTMLElement.prototype, {
-        focus: {
-          configurable: true,
-          set: (newFocus: () => void) => {
-            currentFocus = newFocus;
-          },
-          get() {
-            // 'this' here refers to the DOM element being operated on
-            if (focusingElements.has(this)) {
-              // Recursive call detected; to break the loop, return the original focus method.
-              return originalFocus;
-            }
-
-            // Add protection marker
-            focusingElements.add(this);
-
-            // Use setTimeout(..., 0) to defer the "remove marker" operation to the next event loop.
-            // This ensures the marker persists for the entire synchronous call chain (including all recursive calls).
-            setTimeout(() => focusingElements.delete(this), 0);
-
-            // Return the focus method that should currently be used
-            return currentFocus;
-          },
-        },
+      // Restore original clipboard, which was replaced with a stub by userEvent.setup()
+      Object.defineProperty(globalThis.window.navigator, 'clipboard', {
+        get: () => clipboard,
+        configurable: true,
       });
 
-      patchedFocus = true;
+      if (!patchedFocus) {
+        // Must save a real, original `focus` method outside of the patch beforehand
+        const originalFocus = HTMLElement.prototype.focus;
+        let currentFocus = HTMLElement.prototype.focus;
+
+        // Use a Set to track elements that are currently undergoing a focus operation
+        const focusingElements = new Set<HTMLElement>();
+
+        Object.defineProperties(HTMLElement.prototype, {
+          focus: {
+            configurable: true,
+            set: (newFocus: () => void) => {
+              currentFocus = newFocus;
+            },
+            get() {
+              // 'this' here refers to the DOM element being operated on
+              if (focusingElements.has(this)) {
+                // Recursive call detected; to break the loop, return the original focus method.
+                return originalFocus;
+              }
+
+              // Add protection marker
+              focusingElements.add(this);
+
+              // Use setTimeout(..., 0) to defer the "remove marker" operation to the next event loop.
+              // This ensures the marker persists for the entire synchronous call chain (including all recursive calls).
+              setTimeout(() => focusingElements.delete(this), 0);
+
+              // Return the focus method that should currently be used
+              return currentFocus;
+            },
+          },
+        });
+
+        patchedFocus = true;
+      }
     }
-  }
+  } catch {}
 };
 
 interface TestParameters {

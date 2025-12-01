@@ -13,6 +13,7 @@ import { styled } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../keybinding';
 import { AboutPage } from './AboutPage';
+import { GuidePage } from './GuidePage';
 import { ShortcutsPage } from './ShortcutsPage';
 import { WhatsNewPage } from './whats_new_page';
 
@@ -63,13 +64,13 @@ const Pages: FC<{
       },
     ];
 
-    if (enableWhatsNew) {
+    if (global.CONFIG_TYPE === 'DEVELOPMENT') {
       tabsToInclude.push({
-        id: 'whats-new',
-        title: "What's new?",
+        id: 'guide',
+        title: 'Guide',
         children: (
-          <RouteWrapper path="whats-new">
-            <WhatsNewPage key="whats-new" />
+          <RouteWrapper path="guide">
+            <GuidePage key="guide" />
           </RouteWrapper>
         ),
       });
@@ -84,6 +85,18 @@ const Pages: FC<{
         </RouteWrapper>
       ),
     });
+
+    if (enableWhatsNew) {
+      tabsToInclude.push({
+        id: 'whats-new',
+        title: "What's new?",
+        children: (
+          <RouteWrapper path="whats-new">
+            <WhatsNewPage key="whats-new" />
+          </RouteWrapper>
+        ),
+      });
+    }
 
     return tabsToInclude;
   }, [enableWhatsNew]);

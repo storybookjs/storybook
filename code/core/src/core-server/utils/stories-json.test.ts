@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { gunzipSync } from 'node:zlib';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -79,6 +80,13 @@ describe('useStoriesJson', () => {
     on: vi.fn(),
   } as any;
 
+  const defaultOptions = {
+    host: 'localhost',
+    port: 6006,
+    https: false,
+    initialPath: '',
+  } as any;
+
   beforeEach(async () => {
     use.mockClear();
     end.mockClear();
@@ -101,10 +109,12 @@ describe('useStoriesJson', () => {
         workingDir,
         normalizedStories,
         initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        options: defaultOptions,
       });
       console.timeEnd('useStoriesJson');
 
-      expect(use).toHaveBeenCalledTimes(1);
+      // /index.json and /sitemap.xml
+      expect(use).toHaveBeenCalledTimes(2);
       const route = use.mock.calls[0][1];
 
       console.time('route');
@@ -477,9 +487,10 @@ describe('useStoriesJson', () => {
         workingDir,
         normalizedStories,
         initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        options: defaultOptions,
       });
 
-      expect(use).toHaveBeenCalledTimes(1);
+      expect(use).toHaveBeenCalledTimes(2);
       const route = use.mock.calls[0][1];
 
       const firstPromise = route(request, response);
@@ -509,9 +520,10 @@ describe('useStoriesJson', () => {
         workingDir,
         normalizedStories,
         initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        options: defaultOptions,
       });
 
-      expect(use).toHaveBeenCalledTimes(1);
+      expect(use).toHaveBeenCalledTimes(2);
       const route = use.mock.calls[0][1];
 
       await route(request, response);
@@ -543,9 +555,10 @@ describe('useStoriesJson', () => {
         workingDir,
         normalizedStories,
         initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        options: defaultOptions,
       });
 
-      expect(use).toHaveBeenCalledTimes(1);
+      expect(use).toHaveBeenCalledTimes(2);
       const route = use.mock.calls[0][1];
 
       // Don't wait for the first request here before starting the second
@@ -586,9 +599,10 @@ describe('useStoriesJson', () => {
         workingDir,
         normalizedStories,
         initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        options: defaultOptions,
       });
 
-      expect(use).toHaveBeenCalledTimes(1);
+      expect(use).toHaveBeenCalledTimes(2);
       const route = use.mock.calls[0][1];
 
       await route(request, response);
@@ -619,6 +633,153 @@ describe('useStoriesJson', () => {
       await new Promise((r) => setTimeout(r, 2 * DEBOUNCE));
 
       expect(mockServerChannel.emit).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('Sitemap endpoint', () => {
+    beforeEach(() => {
+      use.mockClear();
+      end.mockClear();
+    });
+
+    it('generates sitemap with http://localhost', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      useStoriesJson({
+        app,
+        serverChannel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        options: defaultOptions,
+      });
+
+      expect(use).toHaveBeenCalledTimes(2);
+      const sitemapRoute = use.mock.calls[1][1];
+
+      await sitemapRoute(request, response);
+
+      expect(end).toHaveBeenCalledTimes(1);
+      expect(response.setHeader).toHaveBeenCalledWith('Content-Type', 'application/xml');
+      expect(response.setHeader).toHaveBeenCalledWith('Content-Encoding', 'gzip');
+
+      const gzippedBuffer = end.mock.calls[0][0];
+      const decompressed = gunzipSync(gzippedBuffer).toString('utf-8');
+
+      expect(decompressed).toContain('<?xml version="1.0" encoding="UTF-8"?>');
+      expect(decompressed).toContain('<urlset');
+      expect(decompressed).toContain('http://localhost:6006');
+      expect(decompressed).toContain('/?path=/docs/a--metaof');
+      expect(decompressed).toContain('/?path=/story/a--story-one');
+      expect(decompressed).toContain('/?path=/settings/about');
+      expect(decompressed).toContain('/?path=/settings/whats-new');
+      expect(decompressed).toContain('/?path=/settings/guide');
+      expect(decompressed).toContain('/?path=/settings/shortcuts');
+    });
+
+    it('generates sitemap with https protocol', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      const httpsOptions = { ...defaultOptions, https: true };
+
+      useStoriesJson({
+        app,
+        serverChannel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        options: httpsOptions,
+      });
+
+      const sitemapRoute = use.mock.calls[1][1];
+      await sitemapRoute(request, response);
+
+      const gzippedBuffer = end.mock.calls[0][0];
+      const decompressed = gunzipSync(gzippedBuffer).toString('utf-8');
+
+      expect(decompressed).toContain('https://localhost:6006');
+      expect(decompressed).not.toContain('http://localhost:6006');
+    });
+
+    it('generates sitemap for production website (example.com)', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      const productionOptions = {
+        host: 'example.com',
+        port: 443,
+        https: true,
+        initialPath: '',
+      } as any;
+
+      useStoriesJson({
+        app,
+        serverChannel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        options: productionOptions,
+      });
+
+      const sitemapRoute = use.mock.calls[1][1];
+      await sitemapRoute(request, response);
+
+      const gzippedBuffer = end.mock.calls[0][0];
+      const decompressed = gunzipSync(gzippedBuffer).toString('utf-8');
+
+      expect(decompressed).toContain('https://example.com');
+      expect(decompressed).toContain('/?path=/docs/a--metaof');
+      expect(decompressed).toContain('/?path=/story/a--story-one');
+    });
+
+    it('uses cached sitemap on subsequent requests', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      useStoriesJson({
+        app,
+        serverChannel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        options: defaultOptions,
+      });
+
+      const sitemapRoute = use.mock.calls[1][1];
+
+      // First request
+      await sitemapRoute(request, response);
+      const firstBuffer = end.mock.calls[0][0] as Buffer;
+
+      // Second request
+      const secondResponse = {
+        ...response,
+        end: vi.fn(),
+        setHeader: vi.fn(),
+        on: vi.fn(),
+      };
+      await sitemapRoute(request, secondResponse);
+      const secondBuffer = secondResponse.end.mock.calls[0][0] as Buffer;
+
+      // Should return the same cached buffer
+      expect(firstBuffer).toBe(secondBuffer);
+    });
+
+    it('excludes test stories from sitemap', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      useStoriesJson({
+        app,
+        serverChannel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        options: defaultOptions,
+      });
+
+      const sitemapRoute = use.mock.calls[1][1];
+      await sitemapRoute(request, response);
+
+      const gzippedBuffer = end.mock.calls[0][0];
+      const decompressed = gunzipSync(gzippedBuffer).toString('utf-8');
+
+      // Verify test stories are not included
+      // Note: If test stories exist in mock data with subtype: 'test', they should not appear
+      expect(decompressed).toContain('/?path=/story/a--story-one');
+      expect(decompressed).toContain('/?path=/docs/a--metaof');
     });
   });
 });

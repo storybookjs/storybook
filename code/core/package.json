@@ -318,6 +318,7 @@
     "resolve": "^1.22.11",
     "resolve.exports": "^2.0.3",
     "sirv": "^2.0.4",
+    "sitemap": "^9.0.0",
     "slash": "^5.0.0",
     "source-map": "^0.7.4",
     "store2": "^2.14.2",

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { isManifestAvailable } from './is-manifest-available.ts';
+import { getManifestStatus } from './is-manifest-available.ts';
 import type { Options } from 'storybook/internal/types';
 
 function createMockOptions({
@@ -28,44 +28,43 @@ function createMockOptions({
 	} as unknown as Options;
 }
 
-describe('isManifestAvailable', () => {
+describe('getManifestStatus', () => {
 	it.each([
 		{
 			description: 'both feature flag and generator are present',
 			options: { featureFlag: true, hasGenerator: true },
-			expected: true,
+			expected: { available: true, hasGenerator: true, hasFeatureFlag: true },
 		},
 		{
-			description: 'feature flag is disabled',
-			options: { featureFlag: false, hasGenerator: true },
-			expected: false,
-		},
-		{
-			description: 'generator is not configured',
+			description: 'missing generator (unsupported framework)',
 			options: { featureFlag: true, hasGenerator: false },
-			expected: false,
+			expected: { available: false, hasGenerator: false, hasFeatureFlag: true },
+		},
+		{
+			description: 'missing feature flag',
+			options: { featureFlag: false, hasGenerator: true },
+			expected: { available: false, hasGenerator: true, hasFeatureFlag: false },
 		},
 		{
 			description: 'both are missing',
 			options: { featureFlag: false, hasGenerator: false },
-			expected: false,
+			expected: {
+				available: false,
+				hasGenerator: false,
+				hasFeatureFlag: false,
+			},
 		},
 		{
 			description: 'features object is missing the flag',
 			options: { hasGenerator: true, hasFeaturesObject: false },
-			expected: false,
+			expected: { available: false, hasGenerator: true, hasFeatureFlag: false },
 		},
 	])(
-		'should return $expected when $description',
+		'should return correct status when $description',
 		async ({ options, expected }) => {
 			const mockOptions = createMockOptions(options);
-			const result = await isManifestAvailable(mockOptions);
-
-			if (expected) {
-				expect(result).toBeTruthy();
-			} else {
-				expect(result).toBeFalsy();
-			}
+			const result = await getManifestStatus(mockOptions);
+			expect(result).toEqual(expected);
 		},
 	);
 });

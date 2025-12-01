@@ -59,6 +59,87 @@
 				color: #1ea7fd;
 			}
 
+			.container {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+
+			.toolsets {
+				margin: 1.5rem 0;
+				text-align: left;
+				max-width: 500px;
+			}
+
+			.toolsets h3 {
+				font-size: 1rem;
+				margin-bottom: 0.75rem;
+				text-align: center;
+			}
+
+			.toolset {
+				margin-bottom: 1rem;
+				padding: 0.75rem 1rem;
+				border-radius: 6px;
+				background: #f8f9fa;
+				border: 1px solid #e9ecef;
+			}
+
+			.toolset-header {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				font-weight: 600;
+				margin-bottom: 0.5rem;
+			}
+
+			.toolset-status {
+				display: inline-block;
+				padding: 0.15em 0.5em;
+				border-radius: 3px;
+				font-size: 0.75rem;
+				font-weight: 500;
+				text-transform: uppercase;
+			}
+
+			.toolset-status.enabled {
+				background: #d4edda;
+				color: #155724;
+			}
+
+			.toolset-status.disabled {
+				background: #f8d7da;
+				color: #721c24;
+			}
+
+			.toolset-tools {
+				font-size: 0.875rem;
+				color: #6c757d;
+				padding-left: 1.5rem;
+				margin: 0;
+			}
+
+			.toolset-tools li {
+				margin-bottom: 0.25rem;
+			}
+
+			.toolset-tools code {
+				font-size: 0.8rem;
+			}
+
+			.toolset-notice {
+				font-size: 0.8rem;
+				color: #856404;
+				background: #fff3cd;
+				padding: 0.5rem;
+				border-radius: 4px;
+				margin-top: 0.5rem;
+			}
+
+			.toolset-notice a {
+				color: #533f03;
+			}
+
 			@media (prefers-color-scheme: dark) {
 				body {
 					background-color: rgb(34, 36, 37);
@@ -68,11 +149,39 @@
 				code {
 					background: rgba(255, 255, 255, 0.1);
 				}
+
+				.toolset {
+					background: rgba(255, 255, 255, 0.05);
+					border-color: rgba(255, 255, 255, 0.1);
+				}
+
+				.toolset-tools {
+					color: #adb5bd;
+				}
+
+				.toolset-status.enabled {
+					background: rgba(40, 167, 69, 0.2);
+					color: #75d67e;
+				}
+
+				.toolset-status.disabled {
+					background: rgba(220, 53, 69, 0.2);
+					color: #f5a6ad;
+				}
+
+				.toolset-notice {
+					background: rgba(255, 193, 7, 0.15);
+					color: #ffc107;
+				}
+
+				.toolset-notice a {
+					color: #ffe066;
+				}
 			}
 		</style>
 	</head>
 	<body>
-		<div>
+		<div class="container">
 			<p>
 				Storybook MCP server successfully running via
 				<code>@storybook/addon-mcp</code>.
@@ -85,6 +194,34 @@
 					>the addon's README</a
 				>.
 			</p>
+
+			<div class="toolsets">
+				<h3>Available Toolsets</h3>
+
+				<div class="toolset">
+					<div class="toolset-header">
+						<span>dev</span>
+						<span class="toolset-status {{DEV_STATUS}}">{{DEV_STATUS}}</span>
+					</div>
+					<ul class="toolset-tools">
+						<li><code>get-story-urls</code></li>
+						<li><code>get-ui-building-instructions</code></li>
+					</ul>
+				</div>
+
+				<div class="toolset">
+					<div class="toolset-header">
+						<span>docs</span>
+						<span class="toolset-status {{DOCS_STATUS}}">{{DOCS_STATUS}}</span>
+					</div>
+					<ul class="toolset-tools">
+						<li><code>list-all-components</code></li>
+						<li><code>get-component-documentation</code></li>
+					</ul>
+					{{DOCS_NOTICE}}
+				</div>
+			</div>
+
 			<p id="redirect-message">
 				Automatically redirecting to
 				<a href="/manifests/components.html">component manifest</a>

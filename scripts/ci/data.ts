@@ -381,62 +381,106 @@ const build = defineJob('build', {
   ],
 });
 
-const check = defineJob('check', {
-  executor: {
-    class: 'xlarge',
-    name: 'sb_node_22_classic',
+const uiTests = defineJob(
+  'ui',
+  {
+    executor: {
+      class: 'xlarge',
+      name: 'sb_playwright',
+    },
+    steps: [
+      git.checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS),
+      {
+        run: {
+          name: 'Build internal storybook',
+          command: 'yarn storybook:ui:build',
+          working_directory: 'code',
+        },
+      },
+      {
+        run: {
+          name: 'Run Chromatic',
+          command: 'yarn storybook:ui:chromatic',
+          working_directory: 'code',
+        },
+      },
+      'report-workflow-on-failure',
+      {
+        store_test_results: {
+          path: `${WORKING_DIR}/test-results`,
+        },
+      },
+    ],
   },
-  steps: [
-    git.checkout(),
-    workspace.attach(),
-    cache.attach(CACHE_KEYS),
-    {
-      run: {
-        name: 'TypeCheck code',
-        working_directory: `code`,
-        command: 'yarn task --task check --no-link',
-      },
-    },
-    {
-      run: {
-        name: 'TypeCheck scripts',
-        working_directory: `scripts`,
-        command: 'yarn check',
-      },
-    },
-    git.check(),
-    'report-workflow-on-failure',
-    'cancel-workflow-on-failure',
-  ],
-});
+  [build.id]
+);
 
-const unitTests = defineJob('unit-tests', {
-  executor: {
-    name: 'sb_node_22_classic',
-    class: 'xlarge',
+const check = defineJob(
+  'check',
+  {
+    executor: {
+      class: 'xlarge',
+      name: 'sb_node_22_classic',
+    },
+    steps: [
+      git.checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS),
+      {
+        run: {
+          name: 'TypeCheck code',
+          working_directory: `code`,
+          command: 'yarn task --task check --no-link',
+        },
+      },
+      {
+        run: {
+          name: 'TypeCheck scripts',
+          working_directory: `scripts`,
+          command: 'yarn check',
+        },
+      },
+      git.check(),
+      'report-workflow-on-failure',
+      'cancel-workflow-on-failure',
+    ],
   },
-  steps: [
-    git.checkout(),
-    workspace.attach(),
-    cache.attach(CACHE_KEYS),
-    {
-      run: {
-        name: 'Run tests',
-        working_directory: `${WORKING_DIR}/code`,
-        command:
-          'TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")\necho "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose',
-      },
+  [build.id]
+);
+
+const unitTests = defineJob(
+  'unit-tests',
+  {
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'xlarge',
     },
-    {
-      store_test_results: {
-        path: `${WORKING_DIR}/test-results`,
+    steps: [
+      git.checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS),
+      {
+        run: {
+          name: 'Run tests',
+          working_directory: `code`,
+          command:
+            'TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")\necho "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose',
+        },
       },
-    },
-    git.check(),
-    'report-workflow-on-failure',
-    'cancel-workflow-on-failure',
-  ],
-});
+      {
+        store_test_results: {
+          path: `${WORKING_DIR}/test-results`,
+        },
+      },
+      git.check(),
+      'report-workflow-on-failure',
+      'cancel-workflow-on-failure',
+    ],
+  },
+  [build.id]
+);
 
 const sandboxes = [
   //
@@ -517,17 +561,22 @@ const workflows = {
       build.id,
       {
         [check.id]: {
-          requires: [build.id],
+          requires: check.requires,
         },
       },
       {
         [unitTests.id]: {
-          requires: [build.id],
+          requires: unitTests.requires,
         },
       },
       {
         sandboxes: {
           requires: [build.id],
+        },
+      },
+      {
+        [uiTests.id]: {
+          requires: uiTests.requires,
         },
       },
       ...sandboxes.flatMap((sandbox) => sandbox.workflow),

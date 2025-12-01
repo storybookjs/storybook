@@ -149,8 +149,6 @@ jobs:
                   cache-only-lockfile: true
             - save_cache:
                   paths:
-                      - .yarn/code-install-state.gz
-                      - .yarn/scripts-install-state.gz
                       - .yarn/root-install-state.gz
                       - node_modules
                       - code/node_modules
@@ -303,7 +301,7 @@ jobs:
                   keys: *a1
             - run:
                   name: Run tests
-                  working_directory: storybook/code
+                  working_directory: code
                   command: |-
                       TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
@@ -399,7 +397,7 @@ jobs:
                   background: true
                   command: yarn task serve --template react-vite/default-ts --no-link -s serve
             - run:
-                  name: Wait on storybook
+                  name: Wait on servers
                   working_directory: code
                   command: yarn wait-on tcp:127.0.0.1:8001
             - run:
@@ -425,7 +423,7 @@ jobs:
                   background: true
                   command: yarn task dev --template react-vite/default-ts --no-link -s dev
             - run:
-                  name: Wait on storybook
+                  name: Wait on servers
                   working_directory: code
                   command: yarn wait-on tcp:127.0.0.1:6006
             - run:
@@ -445,6 +443,9 @@ workflows:
                   requires:
                       - build
             - sandboxes:
+                  requires:
+                      - build
+            - ui:
                   requires:
                       - build
             - react-vite-default-ts--create:

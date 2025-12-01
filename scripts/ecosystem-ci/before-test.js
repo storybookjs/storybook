@@ -19,15 +19,21 @@ const sandbox = process.argv[2] ?? 'react-vite/default-ts';
 const rootPackageJsonPath = resolve(__dirname, '../../package.json');
 const sandboxPackageJsonPath = resolve(
   __dirname,
-  `../../sandbox/${sandbox.replace('/', '-')}/package.json`
+  `../../../storybook-sandboxes/${sandbox.replace('/', '-')}/package.json`
 );
 
 const rootPackageJson = JSON.parse(await readFile(rootPackageJsonPath, 'utf-8'));
 const sandboxPackageJson = JSON.parse(await readFile(sandboxPackageJsonPath, 'utf-8'));
 
+const resolutions = rootPackageJson.resolutions
+  ? Object.fromEntries(
+      Object.entries(rootPackageJson.resolutions).filter(([_, v]) => !v.includes('patch:'))
+    )
+  : {};
+
 sandboxPackageJson.resolutions = {
   ...(sandboxPackageJson.resolutions ?? {}),
-  ...rootPackageJson.resolutions,
+  ...resolutions,
 };
 
 await writeFile(sandboxPackageJsonPath, JSON.stringify(sandboxPackageJson, null, 2));

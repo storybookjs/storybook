@@ -28,7 +28,7 @@ addToGlobalContext('cliVersion', version);
 
 const handleCommandFailure = async (logFilePath: string | boolean): Promise<never> => {
   const logFile = await logTracker.writeToFile(logFilePath);
-  logger.log(`Storybook debug logs can be found at: ${logFile}`);
+  logger.log(`Debug logs are written to: ${logFile}`);
   logger.outro('Storybook exited with an error');
   process.exit(1);
 };
@@ -64,10 +64,10 @@ const command = (name: string) =>
         logger.error('Error loading global settings:\n' + String(e));
       }
     })
-    .hook('postAction', async ({ getOptionValue }) => {
+    .hook('postAction', async (command) => {
       if (logTracker.shouldWriteLogsToFile) {
-        const logFile = await logTracker.writeToFile(getOptionValue('logfile'));
-        logger.outro(`Storybook debug logs can be found at: ${logFile}`);
+        const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
+        logger.outro(`Debug logs are written to: ${logFile}`);
       }
     });
 

@@ -1,5 +1,4 @@
-import { logger } from '../../client-logger';
-import { shouldLog } from '../logger';
+import { error, log, shouldLog } from '../logger';
 import { wrapTextForClack, wrapTextForClackHint } from '../wrap-utils';
 import { getPromptProvider } from './prompt-config';
 import type {
@@ -129,6 +128,20 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
           spinnerInstance.stop(message);
         }
       },
+      cancel: (message?: string) => {
+        activeSpinner = null;
+        restoreConsoleLog();
+        if (shouldLog('info')) {
+          spinnerInstance.cancel(message);
+        }
+      },
+      error: (message?: string) => {
+        activeSpinner = null;
+        restoreConsoleLog();
+        if (shouldLog('error')) {
+          spinnerInstance.error(message);
+        }
+      },
       message: (text: string) => {
         if (shouldLog('info')) {
           spinnerInstance.message(text);
@@ -138,7 +151,7 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
 
     return wrappedSpinner;
   } else {
-    const maybeLog = shouldLog('info') ? logger.log : (_: string) => {};
+    const maybeLog = shouldLog('info') ? log : (_: string) => {};
 
     return {
       start: (message) => {
@@ -149,6 +162,18 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
       stop: (message) => {
         if (message) {
           maybeLog(message);
+        }
+      },
+      cancel: (message) => {
+        if (message) {
+          maybeLog(message);
+        }
+      },
+      error: (message) => {
+        if (message) {
+          if (shouldLog('error')) {
+            error(message);
+          }
         }
       },
       message: (message) => {
@@ -199,7 +224,7 @@ export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
 
     return wrappedTaskLog;
   } else {
-    const maybeLog = shouldLog('info') ? logger.log : (_: string) => {};
+    const maybeLog = shouldLog('info') ? log : (_: string) => {};
 
     return {
       message: (message: string) => {

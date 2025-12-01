@@ -684,7 +684,7 @@ export type CoreCommon_AddonInfo = { name: string; inEssentials: boolean };
 
 export interface CoreCommon_StorybookInfo {
   addons: string[];
-  version?: string;
+  versionSpecifier?: string;
   framework?: SupportedFramework;
   renderer?: SupportedRenderer;
   builder?: SupportedBuilder;

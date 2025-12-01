@@ -20,7 +20,10 @@ export interface FeatureCompatibilityResult {
 
 /** Service for validating feature compatibility with project configurations */
 export class FeatureCompatibilityService {
-  constructor(private readonly addonVitestService = new AddonVitestService()) {}
+  constructor(
+    readonly packageManager: JsPackageManager,
+    private readonly addonVitestService = new AddonVitestService(packageManager)
+  ) {}
 
   /** Check if a project type supports onboarding */
 
@@ -40,13 +43,11 @@ export class FeatureCompatibilityService {
    * @returns Compatibility result with reasons if incompatible
    */
   async validateTestFeatureCompatibility(
-    packageManager: JsPackageManager,
     framework: SupportedFramework | null | undefined,
     builder: SupportedBuilder,
     directory: string
   ): Promise<FeatureCompatibilityResult> {
     const compatibilityResult = await this.addonVitestService.validateCompatibility({
-      packageManager,
       framework,
       builder,
       projectRoot: directory,

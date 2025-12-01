@@ -101,11 +101,14 @@ export abstract class JsPackageManager {
     this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
 
-  /** Runs arbitrary package scripts. */
+  /** Runs arbitrary package scripts (as a string for display). */
   abstract getRunCommand(command: string): string;
 
+  /** Returns the command to run the binary of a local package */
+  abstract getPackageCommand(args: string[]): string;
+
   /** Get the package.json file for a given module. */
-  abstract getModulePackageJSON(packageName: string): Promise<PackageJson | null>;
+  abstract getModulePackageJSON(packageName: string, cwd?: string): Promise<PackageJson | null>;
 
   isStorybookInMonorepo() {
     const turboJsonPath = find.up(`turbo.json`, { last: getProjectRoot() });

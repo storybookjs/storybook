@@ -20,7 +20,7 @@ describe(`Errors Helpers`, () => {
     });
 
     it(`Sanitizes current path from error stacktraces`, () => {
-      const errorMessage = `this is a test`;
+      const errorMessage = `Test error message`;
       const mockCwd = `/Users/testuser/project`;
       const mockCwdSpy = vi
         .spyOn(process, `cwd`)
@@ -29,7 +29,7 @@ describe(`Errors Helpers`, () => {
       const e = {
         message: errorMessage,
         stack: `
-          Error: this is a test
+          Error: Test error message
             at Object.<anonymous> (${mockCwd}/src/index.js:1:32)
             at Object.<anonymous> (${mockCwd}/node_modules/some-lib/index.js:1:69)
             at Module._compile (internal/modules/cjs/loader.js:736:30)
@@ -41,7 +41,7 @@ describe(`Errors Helpers`, () => {
       expect(e.message).toEqual(errorMessage);
       expect(e.stack).toEqual(expect.stringContaining(mockCwd));
 
-      const sanitizedError = sanitizeError(e as Error);
+      const sanitizedError = sanitizeError(e as Error, '/');
 
       expect(sanitizedError.message).toEqual(errorMessage);
       expect(sanitizedError.stack).toEqual(expect.not.stringContaining(mockCwd));

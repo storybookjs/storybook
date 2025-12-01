@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "10.1.0-alpha.13",
+  "version": "10.2.0-alpha.1",
   "description": "Storybook for Next.js: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -75,10 +75,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@babel/core": "^7.24.4",
     "@babel/plugin-syntax-bigint": "^7.8.3",

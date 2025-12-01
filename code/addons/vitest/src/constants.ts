@@ -10,7 +10,7 @@ export {
 
 export const ADDON_ID = 'storybook/test';
 export const TEST_PROVIDER_ID = `${ADDON_ID}/test-provider`;
-export const STORYBOOK_ADDON_TEST_CHANNEL = 'STORYBOOK_ADDON_TEST_CHANNEL';
+export const STORYBOOK_ADDON_TEST_CHANNEL = `${ADDON_ID}/channel`;
 
 export const TUTORIAL_VIDEO_LINK = 'https://youtu.be/Waht9qq7AoA';
 export const DOCUMENTATION_LINK = 'writing-tests/integrations/vitest-addon';

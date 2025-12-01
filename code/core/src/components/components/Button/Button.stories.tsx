@@ -294,6 +294,14 @@ export const Disabled = meta.story({
   },
 });
 
+export const ReadOnly = meta.story({
+  args: {
+    ariaLabel: false,
+    readOnly: true,
+    children: 'ReadOnly Button',
+  },
+});
+
 export const WithHref = meta.story({
   render: () => (
     <Row>

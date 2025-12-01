@@ -2,21 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { TelemetryService } from '../services/TelemetryService';
+import { VersionService } from '../services/VersionService';
 
 import { AddonConfigurationCommand } from './AddonConfigurationCommand';
 
+vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
-
-vi.mock('storybook/internal/cli', async (actualImport) => ({
-  ...(await actualImport()),
-  AddonVitestService: vi.fn().mockImplementation(() => ({
-    installPlaywright: vi.fn().mockResolvedValue({ errors: [] }),
-  })),
-}));
-
-vi.mock('../../../cli-storybook/src/postinstallAddon', () => ({
-  postinstallAddon: vi.fn(),
-}));
+vi.mock('../../../cli-storybook/src/postinstallAddon', { spy: true });
+vi.mock('../services/TelemetryService', { spy: true });
+vi.mock('../services/VersionService', { spy: true });
 
 describe('AddonConfigurationCommand', () => {
   let command: AddonConfigurationCommand;
@@ -41,16 +36,37 @@ describe('AddonConfigurationCommand', () => {
 
     // Mock the AddonVitestService
     const { AddonVitestService } = await import('storybook/internal/cli');
-    mockAddonVitestService = vi.mocked(AddonVitestService as any);
+    mockAddonVitestService = vi.mocked(AddonVitestService);
     const mockInstance = {
       installPlaywright: vi.fn().mockResolvedValue({ errors: [] }),
     };
     mockAddonVitestService.mockImplementation(() => mockInstance as any);
 
-    command = new AddonConfigurationCommand(mockPackageManager, {
-      yes: true,
-      disableTelemetry: true,
-    } as any);
+    vi.mocked(VersionService).mockImplementation(() => ({}));
+
+    vi.mocked(TelemetryService).mockImplementation((disableTelemetry: boolean = false) => {
+      return {
+        disableTelemetry,
+        versionService: new VersionService(),
+      };
+    });
+
+    const mockAddonVitestServiceInstance = {
+      installPlaywright: vi.fn().mockResolvedValue({ errors: [] }),
+    };
+    const mockTelemetryServiceInstance = {
+      trackPlaywrightPromptDecision: vi.fn(),
+    };
+
+    command = new AddonConfigurationCommand(
+      mockPackageManager,
+      {
+        yes: true,
+        disableTelemetry: true,
+      } as any,
+      mockAddonVitestServiceInstance as any,
+      mockTelemetryServiceInstance as any
+    );
 
     mockTask = {
       success: vi.fn(),
@@ -59,7 +75,7 @@ describe('AddonConfigurationCommand', () => {
       group: vi.fn(),
     };
 
-    vi.mocked(prompt.taskLog).mockReturnValue(mockTask);
+    vi.mocked(prompt.taskLog).mockReturnValue(mockTask as any);
     vi.mocked(logger.log).mockImplementation(() => {});
 
     vi.clearAllMocks();

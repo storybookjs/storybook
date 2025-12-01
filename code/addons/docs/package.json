@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "10.1.0-alpha.12",
+  "version": "10.2.0-alpha.1",
   "description": "Storybook Docs: Document UI components automatically with stories and MDX",
   "keywords": [
     "docs",
@@ -78,10 +78,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@mdx-js/react": "^3.0.0",
     "@storybook/csf-plugin": "workspace:*",

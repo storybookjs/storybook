@@ -1,0 +1,30 @@
+{
+  "name": "code",
+  "tags": ["ci:normal"],
+  "targets": {
+    "lint": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn lint" },
+      "cache": true,
+      "inputs": ["default"],
+      "configurations": { "production": {} }
+    },
+    "test": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn test" },
+      "cache": true,
+      "inputs": ["default"],
+      "configurations": { "production": {} }
+    },
+    "knip": {
+      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn knip --no-exit-code" },
+      "cache": true,
+      "inputs": ["default"],
+      "configurations": { "production": {} }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { type JsPackageManager } from 'storybook/internal/common';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { AutomigrateError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -45,7 +46,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     mainConfig,
     mainConfigPath,
     previewConfigPath,
-    storybookVersion,
+    versionInstalled,
     configDir,
     packageManager,
     storiesPaths,
@@ -54,7 +55,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     packageManagerName: options.packageManager,
   });
 
-  if (!storybookVersion) {
+  if (!versionInstalled) {
     throw new Error('Could not determine Storybook version');
   }
 
@@ -65,8 +66,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   const outcome = await automigrate({
     ...options,
     packageManager,
-    storybookVersion,
-    beforeVersion: storybookVersion,
+    storybookVersion: versionInstalled,
     mainConfigPath,
     mainConfig,
     previewConfigPath,
@@ -81,7 +81,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     (r) => r === FixStatus.SUCCEEDED || r === FixStatus.MANUAL_SUCCEEDED
   );
 
-  if (hasAppliedFixes) {
+  if (hasAppliedFixes && !options.skipInstall) {
     packageManager.installDependencies();
   }
 
@@ -90,7 +90,14 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   }
 
   if (hasFailures(outcome?.fixResults)) {
-    throw new Error('Some migrations failed');
+    const failedMigrations = Object.entries(outcome?.fixResults ?? {})
+      .filter(([, status]) => status === FixStatus.FAILED || status === FixStatus.CHECK_FAILED)
+      .map(([id, status]) => {
+        const statusLabel = status === FixStatus.CHECK_FAILED ? 'check failed' : 'failed';
+        return `${picocolors.cyan(id)} (${statusLabel})`;
+      });
+
+    throw new AutomigrateError({ errors: failedMigrations });
   }
 };
 
@@ -106,7 +113,6 @@ export const automigrate = async ({
   mainConfigPath,
   previewConfigPath,
   storybookVersion,
-  beforeVersion,
   renderer: rendererPackage,
   skipInstall,
   hideMigrationSummary = false,
@@ -125,7 +131,7 @@ export const automigrate = async ({
   // if an on-command migration is triggered, run it and bail
   const commandFix = commandFixes.find((f) => f.id === fixId);
   if (commandFix) {
-    logger.log(`🔎 Running migration ${picocolors.magenta(fixId)}..`);
+    logger.step(`Running migration ${picocolors.magenta(fixId)}..`);
 
     await commandFix.run({
       mainConfigPath,
@@ -164,7 +170,7 @@ export const automigrate = async ({
     return null;
   }
 
-  logger.log('🔎 checking possible migrations..');
+  logger.step('Checking possible migrations..');
 
   const { fixResults, fixSummary, preCheckFailure } = await runFixes({
     fixes,
@@ -176,7 +182,6 @@ export const automigrate = async ({
     mainConfig,
     mainConfigPath,
     storybookVersion,
-    beforeVersion,
     isUpgrade: !!isUpgrade,
     dryRun,
     yes,
@@ -189,12 +194,10 @@ export const automigrate = async ({
   }
 
   if (!hideMigrationSummary) {
-    logger.log('');
     logMigrationSummary({
       fixResults,
       fixSummary,
     });
-    logger.log('');
   }
 
   return { fixResults, preCheckFailure };
@@ -213,7 +216,6 @@ type RunFixesOptions = {
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
   storybookVersion: string;
-  beforeVersion: string;
   isUpgrade?: boolean;
 };
 
@@ -303,7 +305,6 @@ export async function runFixes({
           fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
           fixSummary.manual.push(f.id);
 
-          logger.log('');
           const shouldContinue = await prompt.confirm(
             {
               message:
@@ -324,17 +325,19 @@ export async function runFixes({
             break;
           }
         } else if (promptType === 'auto') {
-          const shouldRun = await prompt.confirm(
-            {
-              message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
-              initialValue: f.defaultSelected ?? true,
-            },
-            {
-              onCancel: () => {
-                throw new Error();
-              },
-            }
-          );
+          const shouldRun = yes
+            ? true
+            : await prompt.confirm(
+                {
+                  message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
+                  initialValue: f.defaultSelected ?? true,
+                },
+                {
+                  onCancel: () => {
+                    throw new Error();
+                  },
+                }
+              );
           runAnswer = { fix: shouldRun };
         } else if (promptType === 'notification') {
           const shouldContinue = await prompt.confirm(

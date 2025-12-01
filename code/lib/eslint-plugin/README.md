@@ -62,13 +62,12 @@ This allows for this plugin to also lint your configuration files inside the .st
 If you are using [flat config style](https://eslint.org/docs/latest/use/configure/configuration-files-new), add this to your configuration file:
 
 ```js
-export default [
+import { defineConfig, globalIgnores } from 'eslint/config';
+
+export default defineConfig([
+  globalIgnores(['!.storybook'], , "Include Storybook Directory"),
   // ...
-  {
-    // Inside your .eslintignore file
-    ignores: ['!.storybook'],
-  },
-];
+]);
 ```
 
 ## ESLint compatibility

@@ -7981,6 +7981,7 @@ __metadata:
     happy-dom: "npm:^17.6.3"
     http-server: "npm:^14.1.1"
     husky: "npm:^4.3.7"
+    knip: "npm:^5.70.2"
     lint-staged: "npm:^16.2.7"
     mock-require: "npm:^3.0.3"
     process: "npm:^0.11.10"

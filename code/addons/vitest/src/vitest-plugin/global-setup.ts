@@ -27,11 +27,8 @@ const checkStorybookRunning = async (storybookUrl: string): Promise<boolean> => 
       signal: AbortSignal.timeout(5000)
     });
     return response.ok;
-  } catch {
   } catch (error) {
     logger.verbose(`Failed to get response from ${storybookUrl}: ${error instanceof Error ? error.message : String(error)}`);
-    return false;
-  }
     return false;
   }
 };

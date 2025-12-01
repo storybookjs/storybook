@@ -136,7 +136,9 @@ export const babel = async (_: unknown, options: Options) => {
 export const title = (previous: string, options: Options) =>
   previous || options.packageJson?.name || false;
 
-export const logLevel = (previous: any, options: Options) => previous || options.loglevel || 'info';
+export const logLevel = (previous: any, options: Options) =>
+  previous || options.logLevel || 'info';
+
 
 export const previewHead = async (base: any, { configDir, presets }: Options) => {
   const interpolations = await presets.apply<Record<string, string>>('env');

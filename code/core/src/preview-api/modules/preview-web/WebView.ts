@@ -57,7 +57,7 @@ export class WebView implements View<HTMLElement> {
    * original state when switching to Docs view. This ensures decorators can freely mutate the
    * document for Canvas rendering without affecting Docs pages.
    *
-   * Tracked attributes: dir, lang, class, data-theme, style
+   * Tracked attributes: dir, lang, class, data-theme, data-mode, style
    */
   private documentElementSnapshot: Map<string, string | null> = new Map();
 
@@ -247,7 +247,8 @@ export class WebView implements View<HTMLElement> {
     const documentElement = document.documentElement;
     if (documentElement) {
       // Capture commonly modified attributes that decorators might change
-      const attributesToTrack = ['dir', 'lang', 'class', 'data-theme', 'style'];
+      // Added 'data-mode' per review to ensure theme mode signals are also isolated.
+      const attributesToTrack = ['dir', 'lang', 'class', 'data-theme', 'data-mode', 'style'];
       attributesToTrack.forEach((attr) => {
         this.documentElementSnapshot.set(attr, documentElement.getAttribute(attr));
       });

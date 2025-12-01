@@ -284,7 +284,7 @@ function defineSandboxFlow<K extends string>(name: K) {
             run: {
               name: 'Running E2E Tests',
               command: [
-                `TEST_FILES=$(circleci tests glob "${WORKING_DIR}/code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
+                `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
                 `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
               ].join('\n'),
             },

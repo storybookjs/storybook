@@ -117,7 +117,7 @@ export const DocsContent = styled.div(({ theme }) => {
       // Ensure WCAG Level A compliance (SC 1.4.1), see https://www.w3.org/WAI/WCAG22/Techniques/failures/F73
       textDecoration: 'underline',
       textDecorationThickness: '0.5px',
-      textUnderlineOffset: '0.11em',
+    textUnderlineOffset: '0.2em',
       '&.absent': {
         color: '#cc0000',
       },

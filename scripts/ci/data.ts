@@ -178,7 +178,6 @@ type SomethingImplementation = {
     | {
         name: 'win/default';
         size: 'small' | 'medium' | 'medium+' | 'large' | 'xlarge';
-        working_directory: string;
       };
   steps: unknown[];
   parameters?: Record<string, unknown>;
@@ -393,7 +392,6 @@ const buildWindows = defineJob('build-windows', {
   executor: {
     name: 'win/default',
     size: 'xlarge',
-    working_directory: `${ROOT_DIR}/${WORKING_DIR}`,
   },
   steps: [
     git.checkout(),

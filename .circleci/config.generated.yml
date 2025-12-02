@@ -264,7 +264,6 @@ jobs:
         executor:
             name: win/default
             size: xlarge
-            working_directory: /tmp/storybook
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1

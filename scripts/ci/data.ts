@@ -397,13 +397,13 @@ const buildWindows = defineJob('build-windows', {
       run: {
         name: 'Checkout (shallow)',
         shell: 'bash.exe',
-        command: `
-          git init .
-          REPO_URL="\${CIRCLE_REPOSITORY_URL/git@github.com:/https://github.com/}"
-          git remote add origin "$REPO_URL"
-          git fetch --depth=1 origin "$CIRCLE_SHA1"
-          git checkout "$CIRCLE_SHA1"
-        `,
+        command: [
+          `git init .`,
+          `REPO_URL="\${CIRCLE_REPOSITORY_URL/git@github.com:/https://github.com/}"`,
+          `git remote add origin "$REPO_URL"`,
+          `git fetch --depth=1 origin "$CIRCLE_SHA1"`,
+          `git checkout "$CIRCLE_SHA1"`,
+        ].join('\n'),
       },
     },
     {

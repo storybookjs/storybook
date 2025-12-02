@@ -408,35 +408,19 @@ const buildWindows = defineJob('build-windows', {
     },
     {
       run: {
-        name: 'Install Node.js and Yarn',
+        name: 'Setup Node & Yarn on Windows',
+        shell: 'bash.exe',
         command: `
-          @"
-          # read .nvmrc
-          $nodeVersion = Get-Content '.nvmrc' | Select-Object -First 1
-          Write-Host 'Using Node version from .nvmrc:' $nodeVersion
-
-          # install + use that version
-          nvm install $nodeVersion
-          nvm use $nodeVersion
-
-          # enable yarn (via Corepack)
+          choco install nodejs-lts --version=22.11.0 -y
           corepack enable
-
-          # refresh PATH so this SAME session sees yarn.cmd
-          $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH','Machine') + ';' +
-                      [System.Environment]::GetEnvironmentVariable('PATH','User')
-
-          # verify
-          Write-Host 'Node:' (node -v)
-          Write-Host 'Yarn:' (yarn -v)
-          "@,
         `,
       },
     },
     {
       run: {
         name: 'Install dependencies',
-        command: 'yarn install --frozen-lockfile',
+        shell: 'bash.exe',
+        command: 'yarn install',
       },
     },
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
@@ -447,6 +431,7 @@ const buildWindows = defineJob('build-windows', {
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
         name: 'Compile',
         working_directory: `code`,
+        shell: 'bash.exe',
       },
     },
     {
@@ -454,6 +439,7 @@ const buildWindows = defineJob('build-windows', {
         command: 'yarn local-registry --publish',
         name: 'Publish to Verdaccio',
         working_directory: `code`,
+        shell: 'bash.exe',
       },
     },
     // 'report-workflow-on-failure',

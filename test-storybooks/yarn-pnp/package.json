@@ -4,12 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -b && vite build",
-    "build-storybook": "storybook build",
     "dev": "vite",
-    "lint": "eslint .",
+    "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
-    "storybook": "storybook dev -p 6006"
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "nx": {
+    "includedScripts": []
   },
   "resolutions": {
     "@playwright/test": "1.52.0",
@@ -50,32 +52,28 @@
     "storybook": "file:../../code/core"
   },
   "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "vue": "^3.5.22"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.1.2",
-    "@eslint/js": "^9.29.0",
-    "@playwright/test": "1.52.0",
-    "@storybook/addon-a11y": "9.1.0-alpha.6",
-    "@storybook/addon-docs": "9.1.0-alpha.6",
-    "@storybook/addon-vitest": "9.1.0-alpha.6",
-    "@storybook/react-vite": "9.1.0-alpha.6",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.5.2",
-    "@vitest/browser": "^3.2.4",
-    "@vitest/coverage-v8": "^3.2.4",
+    "@storybook/addon-a11y": "^10.1.0-alpha.6",
+    "@storybook/addon-docs": "^10.1.0-alpha.6",
+    "@storybook/addon-onboarding": "^10.1.0-alpha.6",
+    "@storybook/addon-vitest": "^10.1.0-alpha.6",
+    "@storybook/vue3-vite": "^10.1.0-alpha.6",
+    "@types/node": "^24.6.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vitest/browser-playwright": "^4.0.7",
+    "@vitest/coverage-v8": "^4.0.7",
+    "@vue/tsconfig": "^0.8.1",
     "eslint": "^9.29.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
     "eslint-plugin-storybook": "9.1.0-alpha.6",
-    "globals": "^16.2.0",
-    "playwright": "1.52.0",
-    "storybook": "file:../../code/core",
-    "typescript": "~5.8.3",
+    "playwright": "^1.56.1",
+    "storybook": "^10.1.0-alpha.6",
+    "typescript": "~5.9.3",
     "typescript-eslint": "^8.34.1",
-    "vite": "^7.0.0",
-    "vitest": "^3.2.4"
+    "vite": "^7.1.7",
+    "vitest": "^4.0.7",
+    "vue-tsc": "^3.1.0"
   }
 }

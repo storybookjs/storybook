@@ -1,47 +1,70 @@
 ---
-title: Storybook for React & Webpack
+title: Storybook for React with Webpack
 hideRendererSelector: true
 sidebar:
-  order: 5
-  title: React & Webpack
+  order: 6
+  title: React (Webpack)
 ---
 
 Storybook for React & Webpack is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [React](https://react.dev/) applications built with [Webpack](https://webpack.js.org/).
 
-## Requirements
+<Callout variant="info">
 
-* React ≥ 16.8
-* Webpack ≥ 5.0
+**We recommend using [`@storybook/react-vite`](./react-vite.mdx)** for most React projects. The Vite-based framework is faster, more modern, and offers better support for testing features.
 
-## Getting started
+Use this Webpack-based framework (`@storybook/react-webpack5`) only if you need specific Webpack features not available in Vite.
+</Callout>
 
-### In a project without Storybook
+## Install
 
-Follow the prompts after running this command in your React project's root directory:
+To install Storybook in an existing React project, run this command in your project's root directory:
 
-{/* prettier-ignore-start */}
+<CodeSnippets path="create-command.md" variant="new-users" />
 
-<CodeSnippets path="create-command.md" />
+You can then get started [writing stories](/docs/get-started/whats-a-story/), [running tests](/docs/writing-tests/) and [documenting your components](/docs/writing-docs/). For more control over the installation process, refer to the [installation guide](/docs/install/).
 
-{/* prettier-ignore-end */}
+### Requirements
 
-[More on getting started with Storybook.](../install.mdx)
+<GetStartedVersions versions={[{
+  name: 'React',
+  range: '≥ 16.8',
+  icon: '/images/logos/renderers/logo-react.svg'
+}, {
+  name: 'Webpack',
+  range: '5',
+  icon: '/images/logos/builders/webpack.svg'
+}]} />
 
-### In a project with Storybook
 
-This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+## Run Storybook
 
-{/* prettier-ignore-start */}
+To run Storybook for a particular project, run the following:
 
-<CodeSnippets path="storybook-upgrade.md" />
+<CodeSnippets path="storybook-run-dev.md" />
 
-{/* prettier-ignore-end */}
+To build Storybook, run:
 
-#### Automatic migration
+<CodeSnippets path="build-storybook-production-mode.md" />
 
-When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/react-webpack5`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
+You will find the output in the configured `outputDir` (default is `storybook-static`).
 
-#### Manual migration
+
+## Configure
+
+### Create React App (CRA)
+
+Support for [Create React App](https://create-react-app.dev/) is handled by [`@storybook/preset-create-react-app`](https://github.com/storybookjs/presets/tree/master/packages/preset-create-react-app).
+
+This preset enables support for all CRA features, including Sass/SCSS and TypeScript.
+
+### Manually initialized apps
+
+If you're working on an app that was initialized manually (i.e., without the use of CRA), ensure that your app has [react-dom](https://www.npmjs.com/package/react-dom) included as a dependency. Failing to do so can lead to unforeseen issues with Storybook and your project.
+
+
+## FAQ
+
+### How do I manually install the React Webpack framework?
 
 First, install the framework:
 
@@ -81,21 +104,9 @@ Finally, update your `.storybook/main.js|ts` to change the framework property:
 
 {/* prettier-ignore-end */}
 
-## Run the Setup Wizard
+### How do I migrate to the React Vite framework?
 
-If all goes well, you should see a setup wizard that will help you get started with Storybook introducing you to the main concepts and features, including how the UI is organized, how to write your first story, and how to test your components' response to various inputs utilizing [controls](../../essentials/controls.mdx).
-
-![Storybook onboarding](../../_assets/get-started/example-onboarding-wizard.png)
-
-If you skipped the wizard, you can always run it again by adding the `?path=/onboarding` query parameter to the URL of your Storybook instance, provided that the example stories are still available.
-
-## Create React App (CRA)
-
-Support for [Create React App](https://create-react-app.dev/) is handled by [`@storybook/preset-create-react-app`](https://github.com/storybookjs/presets/tree/master/packages/preset-create-react-app).
-
-This preset enables support for all CRA features, including Sass/SCSS and TypeScript.
-
-If you're working on an app that was initialized manually (i.e., without the use of CRA), ensure that your app has [react-dom](https://www.npmjs.com/package/react-dom) included as a dependency. Failing to do so can lead to unforeseen issues with Storybook and your project.
+Please refer to the [migration instructions for `@storybook/react-vite`](./react-vite.mdx#how-do-i-migrate-from-the-react-webpack-framework).
 
 ## API
 

@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.1.0-alpha.5",
+  "version": "10.2.0-alpha.1",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -118,6 +118,14 @@
       "default": "./dist/manager/globals.js"
     },
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
+    "./internal/manager/manager-stores": {
+      "types": "./dist/manager/manager-stores.d.ts",
+      "default": "./dist/manager/manager-stores.js"
+    },
+    "./internal/mocking-utils": {
+      "types": "./dist/mocking-utils/index.d.ts",
+      "default": "./dist/mocking-utils/index.js"
+    },
     "./internal/node-logger": {
       "types": "./dist/node-logger/index.d.ts",
       "default": "./dist/node-logger/index.js"
@@ -175,9 +183,7 @@
     "./viewport": {
       "types": "./dist/viewport/index.d.ts",
       "default": "./dist/viewport/index.js"
-    },
-    "./webpack/loaders/storybook-mock-transform-loader": "./dist/core-server/presets/webpack/loaders/storybook-mock-transform-loader.js",
-    "./webpack/loaders/webpack-automock-loader": "./dist/core-server/presets/webpack/loaders/webpack-automock-loader.js"
+    }
   },
   "bin": "./dist/bin/dispatcher.js",
   "files": [
@@ -187,24 +193,17 @@
     "README.md",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../scripts/check/check-package.ts",
-    "prep": "jiti ../../scripts/build/build-package.ts"
-  },
-  "resolutions": {
-    "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/../.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.6.0",
+    "@storybook/icons": "^2.0.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "3.2.4",
-    "@vitest/mocker": "3.2.4",
     "@vitest/spy": "3.2.4",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
     "recast": "^0.23.5",
     "semver": "^7.6.2",
+    "use-sync-external-store": "^1.5.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
@@ -214,7 +213,7 @@
     "@babel/parser": "^7.26.9",
     "@babel/traverse": "^7.26.9",
     "@babel/types": "^7.26.8",
-    "@clack/prompts": "^1.0.0-alpha.0",
+    "@clack/prompts": "1.0.0-alpha.7",
     "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
     "@emotion/cache": "^11.14.0",
@@ -225,9 +224,16 @@
     "@happy-dom/global-registrator": "^18.0.1",
     "@ngard/tiny-isequal": "^1.1.0",
     "@polka/compression": "^1.0.0-next.28",
-    "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
+    "@react-aria/interactions": "^3.25.5",
+    "@react-aria/overlays": "^3.29.1",
+    "@react-aria/tabs": "^3.10.7",
+    "@react-aria/toolbar": "3.0.0-beta.20",
+    "@react-aria/utils": "^3.30.1",
+    "@react-stately/overlays": "^3.6.19",
+    "@react-stately/tabs": "^3.8.5",
+    "@react-types/shared": "^3.32.0",
     "@rolldown/pluginutils": "1.0.0-beta.18",
     "@storybook/docs-mdx": "4.0.0-next.1",
     "@tanstack/react-virtual": "^3.3.0",
@@ -245,20 +251,16 @@
     "@types/pretty-hrtime": "^1.0.0",
     "@types/prompts": "^2.0.9",
     "@types/react-syntax-highlighter": "11.0.5",
-    "@types/react-transition-group": "^4",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8",
     "@vitest/utils": "^3.2.4",
-    "@yarnpkg/esbuild-plugin-pnp": "^3.0.0-rc.10",
     "@yarnpkg/fslib": "2.10.3",
     "@yarnpkg/libzip": "2.3.0",
     "ansi-to-html": "^0.7.2",
-    "boxen": "^8.0.1",
     "browser-dtector": "^3.4.0",
     "bundle-require": "^5.1.0",
     "camelcase": "^8.0.0",
     "chai": "^5.1.1",
-    "cli-table3": "^0.6.1",
     "commander": "^14.0.1",
     "comment-parser": "^1.4.1",
     "copy-to-clipboard": "^3.3.1",
@@ -272,7 +274,7 @@
     "ejs": "^3.1.10",
     "empathic": "^2.0.0",
     "es-toolkit": "^1.36.0",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
     "execa": "^8.0.1",
     "exsolve": "^1.0.7",
     "fetch-retry": "^6.0.0",
@@ -302,17 +304,16 @@
     "polka": "^1.0.0-next.28",
     "prettier": "^3.5.3",
     "pretty-hrtime": "^1.0.3",
-    "prompts": "^2.4.0",
     "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
+    "react-aria-components": "patch:react-aria-components@npm%3A1.12.2#~/.yarn/patches/react-aria-components-npm-1.12.2-6c5dcdafab.patch",
     "react-dom": "^18.2.0",
     "react-helmet-async": "^1.3.0",
     "react-inspector": "^6.0.0",
-    "react-popper-tooltip": "^4.4.2",
     "react-router-dom": "6.15.0",
     "react-syntax-highlighter": "^15.4.5",
     "react-textarea-autosize": "^8.3.0",
-    "react-transition-group": "^4.4.5",
+    "react-transition-state": "^2.3.1",
     "require-from-string": "^2.0.2",
     "resolve": "^1.22.11",
     "resolve.exports": "^2.0.3",
@@ -332,6 +333,7 @@
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
     "watchpack": "^2.2.0",
+    "wrap-ansi": "^9.0.2",
     "zod": "^3.24.1"
   },
   "peerDependencies": {
@@ -345,5 +347,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

@@ -84,7 +84,7 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
 >;
 
-interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
+export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
 /** @ts-expect-error hard */
   extends Meta<T, MetaInput> {
   // Required args don't need to be provided when the user uses an empty render

@@ -5,6 +5,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { promises as fs } from 'fs';
 import picocolors from 'picocolors';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 export const maxConcurrentTasks = Math.max(1, os.cpus().length - 1);

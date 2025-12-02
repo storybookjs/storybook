@@ -76,9 +76,9 @@ const violations = [
 
 describe('afterEach', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.mocked(getIsVitestRunning).mockReturnValue(false);
     vi.mocked(getIsVitestStandaloneRun).mockReturnValue(true);
-    vi.clearAllMocks();
   });
 
   const createContext = (overrides: Partial<StoryContext> = {}): StoryContext =>

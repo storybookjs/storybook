@@ -32,6 +32,9 @@ const ignoreList = [
   (error: any) =>
     error.message.includes('<Focusable> child must forward its ref to a DOM element.'),
   (error: any) => error.message.includes('Please ensure the tabIndex prop is passed through.'),
+  // Vitest only warns about this if the import comes from a file outside of node_modules. This only occurs locally for us and is safe to ignore. It will stop once we start importing from vitest/browser instead (not a Vitest 3 compatible change).
+  (error: any) =>
+    error.message.includes('tries to load a deprecated "@vitest/browser/context" module.'),
 ];
 
 const throwMessage = (type: any, message: any) => {

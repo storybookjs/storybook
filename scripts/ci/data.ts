@@ -406,7 +406,13 @@ const buildWindows = defineJob('build-windows', {
         `,
       },
     },
-    npm.install('.'),
+    {
+      run: {
+        name: 'Install dependencies',
+        command: 'yarn install --frozen-lockfile',
+        working_directory: 'code',
+      },
+    },
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
     git.check(),
     npm.check(),

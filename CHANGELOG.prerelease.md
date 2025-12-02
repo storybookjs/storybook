@@ -1,3 +1,14 @@
+## 10.2.0-alpha.2
+
+- CLI: Remove any return type of getAbsolutePath - [#32977](https://github.com/storybookjs/storybook/pull/32977), thanks @nzws!
+- Checklist: Fix how state changes are reported and drop some completion restrictions - [#33217](https://github.com/storybookjs/storybook/pull/33217), thanks @ghengeveld!
+- Core: Avoid late layout shift and improve ChecklistWidget perceived performance - [#33184](https://github.com/storybookjs/storybook/pull/33184), thanks @ghengeveld!
+- Core: Minor UI fixes - [#33218](https://github.com/storybookjs/storybook/pull/33218), thanks @ghengeveld!
+- Preview: Prevent error in RN due to `navigator?.clipboard` - [#33219](https://github.com/storybookjs/storybook/pull/33219), thanks @ndelangen!
+- Solid: Add Solid to the list of supported frameworks for addon-vitest - [#33084](https://github.com/storybookjs/storybook/pull/33084), thanks @valentinpalkovic!
+- Telemetry: Add playwright-prompt - [#33229](https://github.com/storybookjs/storybook/pull/33229), thanks @valentinpalkovic!
+- UI: Fix excessive height in TabbedArgsTable - [#33205](https://github.com/storybookjs/storybook/pull/33205), thanks @Sidnioulz!
+
 ## 10.2.0-alpha.1
 
 - Core: Improve globbing using dynamic CWD (REVERT) - [#33201](https://github.com/storybookjs/storybook/pull/33201), thanks @ndelangen!

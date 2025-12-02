@@ -12,7 +12,7 @@ steps:
   - git-shallow-clone/checkout_advanced:
       clone_options: '--depth 1 --verbose'
   - attach_workspace:
-      at: .
+      at: /tmp
   - run:
       name: Setup Corepack
       command: |
@@ -31,15 +31,15 @@ steps:
         if [[ $TEMPLATE != bench/* ]]; then
           yarn --cwd scripts jiti ./event-log-checker.ts build $TEMPLATE
         fi
-        cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && rm -rf node_modules
+        cd $(yarn get-sandbox-dir --template $TEMPLATE) && rm -rf node_modules
       environment:
         STORYBOOK_TELEMETRY_DEBUG: 1
         STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
   - report-workflow-on-failure:
       template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
   - persist_to_workspace:
-      root: .
+      root: /tmp
       paths:
-        - sandbox/**
+          storybook-sandboxes/**
   - store_test_results:
-      path: test-results
+      path: storybook/test-results

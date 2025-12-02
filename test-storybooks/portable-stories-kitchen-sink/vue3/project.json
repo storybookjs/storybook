@@ -1,0 +1,11 @@
+{
+  "name": "portable-stories-kitchen-sink/vue3",
+  "projectType": "application",
+  "targets": {
+    "jest": {},
+    "vitest": {},
+    "playwright-ct": {},
+    "cypress": {}
+  },
+  "tags": ["ci:normal"]
+}

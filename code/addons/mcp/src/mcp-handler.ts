@@ -64,7 +64,7 @@ const initializeMCPServer = async (options: Options) => {
 	transport = new HttpTransport(server, { path: null });
 
 	origin = `http://localhost:${options.port}`;
-	logger.debug('MCP server origin:', origin);
+	logger.debug(`MCP server origin: ${origin}`);
 	return server;
 };
 

@@ -82,8 +82,7 @@ describe('collectTelemetry', () => {
 		).resolves.not.toThrow();
 
 		expect(logger.debug).toHaveBeenCalledWith(
-			'Error collecting telemetry:',
-			error,
+			`Error collecting telemetry: ${error}`,
 		);
 	});
 

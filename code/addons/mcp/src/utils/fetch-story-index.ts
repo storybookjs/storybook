@@ -11,7 +11,7 @@ import { logger } from 'storybook/internal/node-logger';
 export async function fetchStoryIndex(origin: string): Promise<StoryIndex> {
 	const indexUrl = `${origin}/index.json`;
 
-	logger.debug('Fetching story index from:', indexUrl);
+	logger.debug(`Fetching story index from: ${indexUrl}`);
 
 	const response = await fetch(indexUrl);
 
@@ -23,7 +23,9 @@ export async function fetchStoryIndex(origin: string): Promise<StoryIndex> {
 
 	const index = (await response.json()) as StoryIndex;
 
-	logger.debug('Story index entries found:', Object.keys(index.entries).length);
+	logger.debug(
+		`Story index entries found: ${Object.keys(index.entries).length}`,
+	);
 
 	return index;
 }

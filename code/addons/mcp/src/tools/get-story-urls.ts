@@ -66,7 +66,7 @@ export async function addGetStoryUrlsTool(
 					)?.id;
 
 					if (foundStoryId) {
-						logger.debug('Found story ID:', foundStoryId);
+						logger.debug(`Found story ID: ${foundStoryId}`);
 						result.push(`${origin}/?path=/story/${foundStoryId}`);
 						foundStoryCount++;
 					} else {

@@ -47,6 +47,7 @@ const stringifyArgs = (args: Record<string, any>) =>
     return value;
   });
 
+// TODO: Remove this comment. This will be modified throughout the project.
 export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFileModalProps) => {
   const [isLoading, setLoading] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');

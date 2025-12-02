@@ -12,11 +12,11 @@ steps:
   - git-shallow-clone/checkout_advanced:
       clone_options: '--depth 1 --verbose'
   - attach_workspace:
-      at: .
+      at: /tmp
   - run:
       name: Smoke Testing Sandboxes
       command: yarn task --task smoke-test --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task smoke-test) --no-link --start-from=never --junit
   - report-workflow-on-failure:
       template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task smoke-test)
   - store_test_results:
-      path: test-results
+      path: storybook/test-results

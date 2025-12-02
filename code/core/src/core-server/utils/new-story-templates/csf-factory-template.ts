@@ -9,6 +9,8 @@ interface CsfFactoryTemplateData {
   componentIsDefaultExport: boolean;
   /** The exported name of the default story */
   exportedStoryName: string;
+  /** The import path for the preview config (if not provided, uses '#.storybook/preview') */
+  previewImportPath?: string;
 }
 
 export async function getCsfFactoryTemplateForNewStoryFile(data: CsfFactoryTemplateData) {
@@ -18,7 +20,9 @@ export async function getCsfFactoryTemplateForNewStoryFile(data: CsfFactoryTempl
   const importStatement = data.componentIsDefaultExport
     ? `import ${importName} from './${data.basenameWithoutExtension}';`
     : `import { ${importName} } from './${data.basenameWithoutExtension}';`;
-  const previewImport = `import preview from '#.storybook/preview';`;
+  const previewImport = data.previewImportPath
+    ? `import preview from '${data.previewImportPath}';`
+    : `import preview from '#.storybook/preview';`;
   return dedent`
   ${previewImport}
   

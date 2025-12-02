@@ -37,7 +37,6 @@ const map = new Map<
   {
     vueApp: ReturnType<typeof createApp>;
     reactiveArgs: Args;
-    storyFn: () => StoryFnVueReturnType;
   }
 >();
 
@@ -49,13 +48,13 @@ export async function renderToCanvas(
 
   // if the story is already rendered and we are not forcing a remount, we just update the reactive args
   if (existingApp && !forceRemount) {
-    // Update the story function reference
-    existingApp.storyFn = storyFn;
+    // normally storyFn should be call once only in setup function,but because the nature of react and how storybook rendering the decorators
+    // we need to call here to run the decorators again
+    // i may wrap each decorator in memoized function to avoid calling it if the args are not changed
+    const element = storyFn(); // call the story function to get the root element with all the decorators
+    const args = getArgs(element, storyContext); // get args in case they are altered by decorators otherwise use the args from the context
 
-    // Update reactive args with the new storyContext.args
-    // This will trigger Vue's reactivity and re-render the component
-    updateArgs(existingApp.reactiveArgs, storyContext.args);
-
+    updateArgs(existingApp.reactiveArgs, args);
     return () => {
       teardown(existingApp.vueApp, canvasElement);
     };
@@ -66,40 +65,20 @@ export async function renderToCanvas(
   }
 
   // create vue app for the story
+
+  // create vue app for the story
   const vueApp = createApp({
     setup() {
-      // Make storyContext.args reactive BEFORE calling storyFn
-      // This ensures the story function gets reactive args from the start
-      const reactiveArgs = reactive(storyContext.args);
-      storyContext.args = reactiveArgs;
-
-      // Store the storyFn in a reactive ref so it can be updated
-      let currentStoryFn = storyFn;
-
+      storyContext.args = reactive(storyContext.args);
+      const rootElement = storyFn(); // call the story function to get the root element with all the decorators
+      const args = getArgs(rootElement, storyContext); // get args in case they are altered by decorators otherwise use the args from the context
       const appState = {
         vueApp,
-        reactiveArgs,
-        get storyFn() {
-          return currentStoryFn;
-        },
-        set storyFn(fn: () => StoryFnVueReturnType) {
-          currentStoryFn = fn;
-        },
+        reactiveArgs: reactive(args),
       };
       map.set(canvasElement, appState);
 
       return () => {
-        // Call the story function each time to get fresh element with current args
-        const rootElement = appState.storyFn();
-
-        // Get args after calling storyFn in case decorators modified them
-        const finalArgs = getArgs(rootElement, storyContext);
-
-        // Update reactive args if they differ from what decorators provided
-        if (finalArgs !== storyContext.args) {
-          updateArgs(reactiveArgs, finalArgs);
-        }
-
         // not passing args here as props
         // treat the rootElement as a component without props
         return h(rootElement);

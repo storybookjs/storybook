@@ -391,9 +391,6 @@ const buildWindows = defineJob('build-windows', {
   executor: {
     name: 'win/default',
     size: 'xlarge',
-    environment: {
-      NODE_OPTIONS: '--max_old_space_size=6144',
-    },
   },
   steps: [
     {

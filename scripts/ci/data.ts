@@ -3,7 +3,6 @@ import { join } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';
-import { normalize } from 'pathe';
 
 import {
   ROOT_DIR,
@@ -392,9 +391,23 @@ const buildWindows = defineJob('build-windows', {
   executor: {
     name: 'win/default',
     size: 'xlarge',
+    environment: {
+      NODE_OPTIONS: '--max_old_space_size=6144',
+    },
   },
   steps: [
-    git.checkout(),
+    {
+      run: {
+        name: 'Checkout (shallow)',
+        shell: 'bash.exe',
+        command: `
+      git init .
+      git remote add origin "$CIRCLE_REPOSITORY_URL"
+      git fetch --depth=1 origin "$CIRCLE_SHA1"
+      git checkout "$CIRCLE_SHA1"
+    `,
+      },
+    },
     npm.install('.'),
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
     git.check(),

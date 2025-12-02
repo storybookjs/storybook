@@ -264,9 +264,23 @@ jobs:
         executor:
             name: win/default
             size: xlarge
+            environment:
+                NODE_OPTIONS: --max_old_space_size=6144
         steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
+            - run:
+                  name: Checkout (shallow)
+                  shell: bash.exe
+                  command: "
+
+                      \      git init .
+
+                      \      git remote add origin \"$CIRCLE_REPOSITORY_URL\"
+
+                      \      git fetch --depth=1 origin \"$CIRCLE_SHA1\"
+
+                      \      git checkout \"$CIRCLE_SHA1\"
+
+                      \    "
             - node/install-packages:
                   app-dir: .
                   pkg-manager: yarn

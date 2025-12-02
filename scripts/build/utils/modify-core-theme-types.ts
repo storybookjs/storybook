@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 
+import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { CODE_DIRECTORY } from '../../utils/constants';

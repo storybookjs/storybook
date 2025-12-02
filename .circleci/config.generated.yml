@@ -282,9 +282,49 @@ jobs:
 
                       \        "
             - run:
+                  name: Install Node.js and Yarn
+                  command: "
+
+                      \          @\"
+
+                      \          # read .nvmrc
+
+                      \          $nodeVersion = Get-Content '.nvmrc' | Select-Object -First 1
+
+                      \          Write-Host 'Using Node version from .nvmrc:' $nodeVersion
+
+
+                      \          # install + use that version
+
+                      \          nvm install $nodeVersion
+
+                      \          nvm use $nodeVersion
+
+
+                      \          # enable yarn (via Corepack)
+
+                      \          corepack enable
+
+
+                      \          # refresh PATH so this SAME session sees yarn.cmd
+
+                      \          $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH','Machine') + ';' +
+
+                      \                      [System.Environment]::GetEnvironmentVariable('PATH','User')
+
+
+                      \          # verify
+
+                      \          Write-Host 'Node:' (node -v)
+
+                      \          Write-Host 'Yarn:' (yarn -v)
+
+                      \          \"@,
+
+                      \        "
+            - run:
                   name: Install dependencies
                   command: yarn install --frozen-lockfile
-                  working_directory: code
             - save_cache:
                   paths: *a1
                   key: darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}

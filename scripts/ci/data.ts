@@ -408,9 +408,35 @@ const buildWindows = defineJob('build-windows', {
     },
     {
       run: {
+        name: 'Install Node.js and Yarn',
+        command: `
+          @"
+          # read .nvmrc
+          $nodeVersion = Get-Content '.nvmrc' | Select-Object -First 1
+          Write-Host 'Using Node version from .nvmrc:' $nodeVersion
+
+          # install + use that version
+          nvm install $nodeVersion
+          nvm use $nodeVersion
+
+          # enable yarn (via Corepack)
+          corepack enable
+
+          # refresh PATH so this SAME session sees yarn.cmd
+          $env:PATH = [System.Environment]::GetEnvironmentVariable('PATH','Machine') + ';' +
+                      [System.Environment]::GetEnvironmentVariable('PATH','User')
+
+          # verify
+          Write-Host 'Node:' (node -v)
+          Write-Host 'Yarn:' (yarn -v)
+          "@,
+        `,
+      },
+    },
+    {
+      run: {
         name: 'Install dependencies',
         command: 'yarn install --frozen-lockfile',
-        working_directory: 'code',
       },
     },
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),

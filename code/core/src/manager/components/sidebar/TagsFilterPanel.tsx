@@ -105,7 +105,7 @@ export const TagsFilterPanel = ({
       id: `filter-${type}-${id}`,
       content: (
         <ActionList.HoverItem targetId={`filter-${type}-${id}`}>
-          <ActionList.Action as="label" tabIndex={-1} tooltip={toggleTooltip}>
+          <ActionList.Action as="label" ariaLabel={false} tabIndex={-1} tooltip={toggleTooltip}>
             <ActionList.Icon>
               {isExcluded ? <DeleteIcon /> : isIncluded ? null : icon}
               <Form.Checkbox
@@ -201,6 +201,7 @@ export const TagsFilterPanel = ({
         <ActionList as="div">
           <ActionList.Item as="div">
             <ActionList.Link
+              ariaLabel={false}
               href={api.getDocsUrl({ subpath: 'writing-stories/tags#custom-tags' })}
               target="_blank"
             >

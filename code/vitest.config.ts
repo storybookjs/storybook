@@ -20,7 +20,7 @@ export default defineConfig({
     pool: 'threads',
     maxWorkers: threadCount,
     projects: [
-      'vitest.config.storybook.mts',
+      'vitest.config.storybook.ts',
       'addons/*/vitest.config.ts',
       'frameworks/*/vitest.config.ts',
       'lib/*/vitest.config.ts',

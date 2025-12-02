@@ -6,8 +6,7 @@ export default mergeConfig(
   vitestCommonConfig,
   defineConfig({
     test: {
-      // This is needed because @typescript-eslint/rule-tester API requires it under the hood
-      globals: true,
+      setupFiles: ['./vitest-setup.ts'],
     },
   })
 );

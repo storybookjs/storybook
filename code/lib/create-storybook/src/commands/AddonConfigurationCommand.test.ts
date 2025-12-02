@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import { type JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+
 import { TelemetryService } from '../services/TelemetryService';
 import { VersionService } from '../services/VersionService';
-
 import { AddonConfigurationCommand } from './AddonConfigurationCommand';
 
 vi.mock('storybook/internal/cli', { spy: true });

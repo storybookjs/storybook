@@ -32,7 +32,7 @@ vi.mock('@storybook/global', () => {
   ];
   // global.location value after all edgecaseLocations are returned
   const lastLocation = { origin: 'https://storybook.js.org', pathname: '/storybook/' };
-  let locationMock = vi.fn();
+  const locationMock = vi.fn();
   edgecaseLocations.forEach((location) => locationMock.mockReturnValueOnce(location));
   locationMock.mockReturnValue(lastLocation);
 

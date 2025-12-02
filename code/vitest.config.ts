@@ -1,6 +1,5 @@
 import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 
-
 /**
  * CircleCI reports the wrong number of threads to Node.js, so we need to set it manually. Unit
  * tests are running with the xlarge resource class, which has 8 vCPUs.
@@ -20,7 +19,6 @@ export default defineConfig({
 
     pool: 'threads',
     maxWorkers: threadCount,
-    
     projects: [
       'vitest.config.storybook.mts',
       'addons/*/vitest.config.ts',

@@ -22,9 +22,7 @@ describe(`Errors Helpers`, () => {
     it(`Sanitizes current path from error stacktraces`, () => {
       const errorMessage = `Test error message`;
       const mockCwd = `/Users/testuser/project`;
-      const mockCwdSpy = vi
-        .spyOn(process, `cwd`)
-        .mockImplementation(() => mockCwd);
+      const mockCwdSpy = vi.spyOn(process, `cwd`).mockImplementation(() => mockCwd);
 
       const e = {
         message: errorMessage,

@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';
+import { normalize } from 'pathe';
 
 import {
   ROOT_DIR,
@@ -169,10 +170,16 @@ const executors = {
 } as const;
 
 type SomethingImplementation = {
-  executor: {
-    class: 'small' | 'medium' | 'medium+' | 'large' | 'xlarge';
-    name: keyof typeof executors;
-  };
+  executor:
+    | {
+        name: keyof typeof executors;
+        class: 'small' | 'medium' | 'medium+' | 'large' | 'xlarge';
+      }
+    | {
+        name: 'win/default';
+        size: 'small' | 'medium' | 'medium+' | 'large' | 'xlarge';
+        working_directory: string;
+      };
   steps: unknown[];
   parameters?: Record<string, unknown>;
   parallelism?: number;
@@ -339,7 +346,7 @@ function defineSandboxFlow<K extends string>(name: K) {
   };
 }
 
-const build = defineJob('build', {
+const buildLinux = defineJob('build-linux', {
   executor: {
     name: 'sb_node_22_classic',
     class: 'xlarge',
@@ -382,6 +389,50 @@ const build = defineJob('build', {
   ],
 });
 
+const buildWindows = defineJob('build-windows', {
+  executor: {
+    name: 'win/default',
+    size: 'xlarge',
+    working_directory: `${ROOT_DIR}/${WORKING_DIR}`,
+  },
+  steps: [
+    git.checkout(),
+    npm.install('.'),
+    cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
+    git.check(),
+    npm.check(),
+    {
+      run: {
+        command: 'yarn task --task compile --start-from=auto --no-link --debug',
+        name: 'Compile',
+        working_directory: `code`,
+      },
+    },
+    {
+      run: {
+        command: 'yarn local-registry --publish',
+        name: 'Publish to Verdaccio',
+        working_directory: `code`,
+      },
+    },
+    // 'report-workflow-on-failure',
+    // artifact.persist(normalize(`code/bench/esbuild-metafiles`), 'bench'),
+    // workspace.persist([
+    //   ...glob
+    //     .sync(['*/src', '*/*/src'], {
+    //       cwd: join(dirname, '../../code'),
+    //       onlyDirectories: true,
+    //     })
+    //     .flatMap((p) => [
+    //       normalize(`${WORKING_DIR}/code/${p.replace('src', 'dist')}`),
+    //       normalize(`${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`),
+    //     ]),
+    //   normalize(`${WORKING_DIR}/.verdaccio-cache`),
+    //   normalize(`${WORKING_DIR}/code/bench`),
+    // ]),
+  ],
+});
+
 const uiTests = defineJob(
   'ui',
   {
@@ -415,7 +466,7 @@ const uiTests = defineJob(
       },
     ],
   },
-  [build.id]
+  [buildLinux.id]
 );
 
 const check = defineJob(
@@ -448,7 +499,7 @@ const check = defineJob(
       'cancel-workflow-on-failure',
     ],
   },
-  [build.id]
+  [buildLinux.id]
 );
 
 const unitTests = defineJob(
@@ -480,7 +531,7 @@ const unitTests = defineJob(
       'cancel-workflow-on-failure',
     ],
   },
-  [build.id]
+  [buildLinux.id]
 );
 
 const packageBenchmarks = defineJob(
@@ -506,7 +557,7 @@ const packageBenchmarks = defineJob(
       },
     ],
   },
-  [build.id]
+  [buildLinux.id]
 );
 
 const sandboxes = [
@@ -516,7 +567,8 @@ const sandboxes = [
 ].map(defineSandboxFlow);
 
 const jobs = {
-  [build.id]: build.implementation,
+  [buildLinux.id]: buildLinux.implementation,
+  [buildWindows.id]: buildWindows.implementation,
   [check.id]: check.implementation,
   [uiTests.id]: uiTests.implementation,
   [unitTests.id]: unitTests.implementation,
@@ -587,7 +639,8 @@ const workflows = {
   docs: {
     jobs: [
       'pretty-docs',
-      build.id,
+      buildLinux.id,
+      buildWindows.id,
       {
         [check.id]: {
           requires: check.requires,
@@ -605,7 +658,7 @@ const workflows = {
       },
       {
         sandboxes: {
-          requires: [build.id],
+          requires: [buildLinux.id],
         },
       },
       {
@@ -619,6 +672,14 @@ const workflows = {
       equal: ['docs', '<< pipeline.parameters.workflow >>'],
     },
   },
+  // windows: {
+  //   jobs: [
+  //     'pretty-docs',
+  //     build.id,
+  //     {
+  //       [check.id]: {
+  //         requires: check.requires,
+  //       },
 };
 
 export const data = {

@@ -135,8 +135,8 @@ parameters:
             - docs
         type: enum
 jobs:
-    build:
-        description: build
+    build-linux:
+        description: build-linux
         executor:
             name: sb_node_22_classic
             class: xlarge
@@ -148,7 +148,7 @@ jobs:
                   pkg-manager: yarn
                   cache-only-lockfile: true
             - save_cache:
-                  paths:
+                  paths: &a1
                       - .yarn/root-install-state.gz
                       - node_modules
                       - code/node_modules
@@ -259,6 +259,36 @@ jobs:
                       - storybook/.verdaccio-cache
                       - storybook/code/bench
                   root: /tmp
+    build-windows:
+        description: build-windows
+        executor:
+            name: win/default
+            size: xlarge
+            working_directory: /tmp/storybook
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - node/install-packages:
+                  app-dir: .
+                  pkg-manager: yarn
+                  cache-only-lockfile: true
+            - save_cache:
+                  paths: *a1
+                  key: darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+            - run:
+                  name: Ensure no changes pending
+                  command: git diff --exit-code
+            - run:
+                  name: Check for dedupe
+                  command: yarn dedupe --check
+            - run:
+                  command: yarn task --task compile --start-from=auto --no-link --debug
+                  name: Compile
+                  working_directory: code
+            - run:
+                  command: yarn local-registry --publish
+                  name: Publish to Verdaccio
+                  working_directory: code
     check:
         description: check
         executor:
@@ -270,7 +300,7 @@ jobs:
             - attach_workspace:
                   at: /tmp
             - restore_cache:
-                  keys: &a1
+                  keys: &a2
                       - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
                       - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
                       - darwin-node_modules/{{ checksum ".nvmrc" }}
@@ -299,7 +329,7 @@ jobs:
             - attach_workspace:
                   at: /tmp
             - restore_cache:
-                  keys: *a1
+                  keys: *a2
             - run:
                   name: Build internal storybook
                   command: yarn storybook:ui:build
@@ -322,7 +352,7 @@ jobs:
             - attach_workspace:
                   at: /tmp
             - restore_cache:
-                  keys: *a1
+                  keys: *a2
             - run:
                   name: Run tests
                   working_directory: code
@@ -347,7 +377,7 @@ jobs:
             - attach_workspace:
                   at: /tmp
             - restore_cache:
-                  keys: *a1
+                  keys: *a2
             - run:
                   name: Verdaccio
                   working_directory: code
@@ -391,7 +421,7 @@ jobs:
             - attach_workspace:
                   at: /tmp
             - restore_cache:
-                  keys: *a1
+                  keys: *a2
             - run:
                   name: Verdaccio
                   working_directory: code
@@ -439,7 +469,7 @@ jobs:
             - attach_workspace:
                   at: /tmp
             - restore_cache:
-                  keys: *a1
+                  keys: *a2
             - run:
                   name: Build storybook
                   command: yarn task build --template react-vite/default-ts --no-link -s build
@@ -467,7 +497,7 @@ jobs:
             - attach_workspace:
                   at: /tmp
             - restore_cache:
-                  keys: *a1
+                  keys: *a2
             - run:
                   name: Run storybook
                   working_directory: code
@@ -486,22 +516,23 @@ workflows:
     docs:
         jobs:
             - pretty-docs
-            - build
+            - build-linux
+            - build-windows
             - check:
                   requires:
-                      - build
+                      - build-linux
             - package-benchmarks:
                   requires:
-                      - build
+                      - build-linux
             - unit-tests:
                   requires:
-                      - build
+                      - build-linux
             - sandboxes:
                   requires:
-                      - build
+                      - build-linux
             - ui:
                   requires:
-                      - build
+                      - build-linux
             - react-vite-default-ts--create:
                   requires:
                       - sandboxes

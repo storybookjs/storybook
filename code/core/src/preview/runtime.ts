@@ -1,4 +1,4 @@
-import { MANAGER_FOCUS_TRAP_CHANGE, TELEMETRY_ERROR } from 'storybook/internal/core-events';
+import { MANAGER_INERT_ATTRIBUTE_CHANGED, TELEMETRY_ERROR } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 
@@ -31,10 +31,17 @@ export function setup() {
     channel.emit(TELEMETRY_ERROR, prepareForTelemetry(error));
   };
 
+  /**
+   * Ensure we synchronise the preview runtime's inert state with the manager's. The inert attribute
+   * used to be propagated into iframes, but this has changed, breaking focus trap implementations
+   * that rely on inert on the document root. We synchronise inert to ensure end user components
+   * don't programmatically focus when a focus trap is active in the manager UI. Otherwise, the UI
+   * could reach a deadlock state and be unusable.
+   */
   document.addEventListener('DOMContentLoaded', () => {
     const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
-    channel.on(MANAGER_FOCUS_TRAP_CHANGE, (isActive: boolean) => {
-      if (isActive) {
+    channel.on(MANAGER_INERT_ATTRIBUTE_CHANGED, (isInert: boolean) => {
+      if (isInert) {
         document.body.setAttribute('inert', 'true');
       } else {
         document.body.removeAttribute('inert');

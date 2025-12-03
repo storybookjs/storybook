@@ -394,8 +394,8 @@ const windows_build = defineJob('build-windows', {
     shell: 'bash.exe',
   },
   steps: [
-    node.installOnWindows(),
     git.checkout({ forceHttps: true }),
+    node.installOnWindows(),
     npm.install('.'),
     // Note: Windows cache warnings about "unknown file mode" for symlinks are harmless.
     // Tar will skip symlinks it can't archive, but they'll be recreated on cache restore
@@ -547,8 +547,8 @@ const windows_unitTests = defineJob(
       shell: 'bash.exe',
     },
     steps: [
-      node.installOnWindows(),
       git.checkout({ forceHttps: true }),
+      node.installOnWindows(),
       workspace.attach('C:\\Users\\circleci'),
       cache.attach(CACHE_KEYS('windows')),
       {

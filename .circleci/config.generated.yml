@@ -266,6 +266,8 @@ jobs:
             size: xlarge
             shell: bash.exe
         steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
             - run:
                   name: Install Node + Yarn
                   shell: powershell.exe
@@ -275,8 +277,6 @@ jobs:
                       nvm use $nodeVersion
                       corepack enable
                       corepack prepare yarn@stable --activate
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
             - node/install-packages:
                   app-dir: .
                   pkg-manager: yarn
@@ -468,9 +468,11 @@ jobs:
         description: unit-tests-windows
         executor:
             name: win/default
-            size: medium+
+            size: medium
             shell: bash.exe
         steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
             - run:
                   name: Install Node + Yarn
                   shell: powershell.exe
@@ -480,8 +482,6 @@ jobs:
                       nvm use $nodeVersion
                       corepack enable
                       corepack prepare yarn@stable --activate
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
             - attach_workspace:
                   at: C:\Users\circleci
             - restore_cache:

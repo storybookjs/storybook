@@ -393,36 +393,8 @@ const buildWindows = defineJob('build-windows', {
     size: 'xlarge',
   },
   steps: [
-    {
-      run: {
-        name: 'Checkout (shallow)',
-        shell: 'bash.exe',
-        command: [
-          `git init .`,
-          `REPO_URL="\${CIRCLE_REPOSITORY_URL/git@github.com:/https://github.com/}"`,
-          `git remote add origin "$REPO_URL"`,
-          `git fetch --depth=1 origin "$CIRCLE_SHA1"`,
-          `git checkout "$CIRCLE_SHA1"`,
-        ].join('\n'),
-      },
-    },
-    {
-      run: {
-        name: 'Setup Node & Yarn on Windows',
-        shell: 'bash.exe',
-        command: `
-          choco install nodejs-lts --version=22.11.0 -y
-          corepack enable
-        `,
-      },
-    },
-    {
-      run: {
-        name: 'Install dependencies',
-        shell: 'bash.exe',
-        command: 'yarn install',
-      },
-    },
+    git.checkout(),
+    npm.install('.'),
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
     git.check(),
     npm.check(),
@@ -431,7 +403,6 @@ const buildWindows = defineJob('build-windows', {
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
         name: 'Compile',
         working_directory: `code`,
-        shell: 'bash.exe',
       },
     },
     {
@@ -439,9 +410,65 @@ const buildWindows = defineJob('build-windows', {
         command: 'yarn local-registry --publish',
         name: 'Publish to Verdaccio',
         working_directory: `code`,
-        shell: 'bash.exe',
       },
     },
+    {
+      run: {
+        command: 'yarn test',
+        name: 'Run unit tests',
+        working_directory: `code`,
+      },
+    },
+
+    // {
+    //   run: {
+    //     name: 'Checkout (shallow)',
+    //     shell: 'bash.exe',
+    //     command: [
+    //       `git init .`,
+    //       `REPO_URL="\${CIRCLE_REPOSITORY_URL/git@github.com:/https://github.com/}"`,
+    //       `git remote add origin "$REPO_URL"`,
+    //       `git fetch --depth=1 origin "$CIRCLE_SHA1"`,
+    //       `git checkout "$CIRCLE_SHA1"`,
+    //     ].join('\n'),
+    //   },
+    // },
+    // {
+    //   run: {
+    //     name: 'Setup Node & Yarn on Windows',
+    //     shell: 'bash.exe',
+    //     command: `
+    //       choco install nodejs-lts --version=22.11.0 -y
+    //       corepack enable
+    //     `,
+    //   },
+    // },
+    // {
+    //   run: {
+    //     name: 'Install dependencies',
+    //     shell: 'bash.exe',
+    //     command: 'yarn install',
+    //   },
+    // },
+    // cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
+    // git.check(),
+    // npm.check(),
+    // {
+    //   run: {
+    //     command: 'yarn task --task compile --start-from=auto --no-link --debug',
+    //     name: 'Compile',
+    //     working_directory: `code`,
+    //     shell: 'bash.exe',
+    //   },
+    // },
+    // {
+    //   run: {
+    //     command: 'yarn local-registry --publish',
+    //     name: 'Publish to Verdaccio',
+    //     working_directory: `code`,
+    //     shell: 'bash.exe',
+    //   },
+    // },
     // 'report-workflow-on-failure',
     // artifact.persist(normalize(`code/bench/esbuild-metafiles`), 'bench'),
     // workspace.persist([

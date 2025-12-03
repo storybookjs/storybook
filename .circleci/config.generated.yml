@@ -444,6 +444,31 @@ jobs:
             - restore_cache:
                   keys: *a2
             - run:
+                  name: Run tests
+                  working_directory: code
+                  command: |-
+                      TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
+                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
+            - store_test_results:
+                  path: storybook/test-results
+            - run:
+                  name: Ensure no changes pending
+                  command: git diff --exit-code
+            - report-workflow-on-failure
+            - cancel-workflow-on-failure
+    unit-tests-windows:
+        description: unit-tests-windows
+        executor:
+            name: sb_node_22_classic
+            class: xlarge
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys: *a2
+            - run:
                   command: yarn test
                   name: Run unit tests
                   working_directory: code
@@ -513,7 +538,7 @@ workflows:
             - unit-tests-linux:
                   requires:
                       - build-linux
-            - unit-tests-linux:
+            - unit-tests-windows:
                   requires:
                       - build-windows
             - sandboxes:

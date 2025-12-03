@@ -530,7 +530,7 @@ const unitTestsLinux = defineJob(
   [buildLinux.id]
 );
 const unitTestsWindows = defineJob(
-  'unit-tests-linux',
+  'unit-tests-windows',
   {
     executor: {
       name: 'sb_node_22_classic',

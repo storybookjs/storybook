@@ -345,7 +345,7 @@ function defineSandboxFlow<K extends string>(name: K) {
   };
 }
 
-const buildLinux = defineJob('build-linux', {
+const linux_build = defineJob('build-linux', {
   executor: {
     name: 'sb_node_22_classic',
     class: 'xlarge',
@@ -388,7 +388,7 @@ const buildLinux = defineJob('build-linux', {
   ],
 });
 
-const buildWindows = defineJob('build-windows', {
+const windows_build = defineJob('build-windows', {
   executor: {
     name: 'win/default',
     size: 'xlarge',
@@ -465,7 +465,7 @@ const uiTests = defineJob(
       },
     ],
   },
-  [buildLinux.id]
+  [linux_build.id]
 );
 
 const check = defineJob(
@@ -498,10 +498,10 @@ const check = defineJob(
       'cancel-workflow-on-failure',
     ],
   },
-  [buildLinux.id]
+  [linux_build.id]
 );
 
-const unitTestsLinux = defineJob(
+const linux_unitTests = defineJob(
   'unit-tests-linux',
   {
     executor: {
@@ -530,18 +530,18 @@ const unitTestsLinux = defineJob(
       'cancel-workflow-on-failure',
     ],
   },
-  [buildLinux.id]
+  [linux_build.id]
 );
-const unitTestsWindows = defineJob(
+const windows_unitTests = defineJob(
   'unit-tests-windows',
   {
     executor: {
       name: 'sb_node_22_classic',
-      class: 'xlarge',
+      class: 'medium+',
     },
     steps: [
       git.checkout(),
-      workspace.attach('C:\\Users\\circleci\\workspace'),
+      workspace.attach('C:\\Users\\circleci'),
       cache.attach(CACHE_KEYS),
       {
         run: {
@@ -560,7 +560,7 @@ const unitTestsWindows = defineJob(
       'cancel-workflow-on-failure',
     ],
   },
-  [buildWindows.id]
+  [windows_build.id]
 );
 
 const packageBenchmarks = defineJob(
@@ -586,7 +586,7 @@ const packageBenchmarks = defineJob(
       },
     ],
   },
-  [buildLinux.id]
+  [linux_build.id]
 );
 
 const sandboxes = [
@@ -596,12 +596,12 @@ const sandboxes = [
 ].map(defineSandboxFlow);
 
 const jobs = {
-  [buildLinux.id]: buildLinux.implementation,
-  [buildWindows.id]: buildWindows.implementation,
+  [linux_build.id]: linux_build.implementation,
+  [windows_build.id]: windows_build.implementation,
   [check.id]: check.implementation,
   [uiTests.id]: uiTests.implementation,
-  [unitTestsLinux.id]: unitTestsLinux.implementation,
-  [unitTestsWindows.id]: unitTestsWindows.implementation,
+  [linux_unitTests.id]: linux_unitTests.implementation,
+  [windows_unitTests.id]: windows_unitTests.implementation,
   [packageBenchmarks.id]: packageBenchmarks.implementation,
   'pretty-docs': {
     executor: {
@@ -669,8 +669,8 @@ const workflows = {
   docs: {
     jobs: [
       'pretty-docs',
-      buildLinux.id,
-      buildWindows.id,
+      linux_build.id,
+      windows_build.id,
       {
         [check.id]: {
           requires: check.requires,
@@ -682,18 +682,18 @@ const workflows = {
         },
       },
       {
-        [unitTestsLinux.id]: {
-          requires: unitTestsLinux.requires,
+        [linux_unitTests.id]: {
+          requires: linux_unitTests.requires,
         },
       },
       {
-        [unitTestsWindows.id]: {
-          requires: unitTestsWindows.requires,
+        [windows_unitTests.id]: {
+          requires: windows_unitTests.requires,
         },
       },
       {
         sandboxes: {
-          requires: [buildLinux.id],
+          requires: [linux_build.id],
         },
       },
       {

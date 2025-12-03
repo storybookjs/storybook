@@ -460,12 +460,12 @@ jobs:
         description: unit-tests-windows
         executor:
             name: sb_node_22_classic
-            class: xlarge
+            class: medium+
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - attach_workspace:
-                  at: C:\Users\circleci\workspace
+                  at: C:\Users\circleci
             - restore_cache:
                   keys: *a2
             - run:

@@ -8,10 +8,9 @@ const DynamicComponentNoSSR = dynamic(() => import("./DynamicImport"), {
 });
 
 // Test case that matches the user's issue pattern: using .then((mod) => mod.Component) with ssr: false
-const DynamicNamedComponentNoSSR = dynamic(
-  () => import("./NamedExport").then((mod) => mod.NamedComponent),
-  { ssr: false },
-);
+const namedExportLoader = () =>
+  import("./NamedExport").then((mod) => mod.NamedComponent);
+const DynamicNamedComponentNoSSR = dynamic(namedExportLoader, { ssr: false });
 
 // Test without ssr: false to check if issue is SSR-specific
 const DynamicNamedComponent = dynamic(() =>

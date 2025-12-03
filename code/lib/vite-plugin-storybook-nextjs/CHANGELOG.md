@@ -1,3 +1,15 @@
+# v3.1.4 (Wed Dec 03 2025)
+
+#### 🐛 Bug Fix
+
+- Fix next/dynamic mock to properly handle ssr: false option [#77](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/77) ([@Copilot](https://github.com/Copilot))
+
+#### Authors: 1
+
+- [@Copilot](https://github.com/Copilot)
+
+---
+
 # v3.1.3 (Wed Dec 03 2025)
 
 #### 🐛 Bug Fix

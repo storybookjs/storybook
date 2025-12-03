@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "10.1.0-beta.5",
+  "version": "10.2.0-alpha.3",
   "description": "Storybook installer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -37,10 +37,6 @@
     "README.md",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "semver": "^7.6.2",
     "storybook": "workspace:*"

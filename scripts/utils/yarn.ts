@@ -72,8 +72,8 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
     {
       dryRun,
       debug,
-      startMessage: `🧶 Installing Yarn 2`,
-      errorMessage: `🚨 Installing Yarn 2 failed`,
+      startMessage: `🧶 Installing Yarn`,
+      errorMessage: `🚨 Installing Yarn failed`,
     }
   );
 };
@@ -130,6 +130,7 @@ export const configureYarn2ForVerdaccio = async ({
   const command = [
     // We don't want to use the cache or we might get older copies of our built packages
     // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed
+    // TODO publish unique versions instead
     `yarn config set enableGlobalCache false`,
     `yarn config set enableMirror false`,
     // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)

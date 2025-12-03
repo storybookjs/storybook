@@ -694,8 +694,13 @@ describe('Instrumenter', () => {
     });
 
     it('steps through each interceptable function on "next"', async () => {
-      const fn = vi.fn();
-      const { fn: instrumentedFn } = instrument({ fn }, { intercept: true });
+      const fn = vi.fn(async () => {});
+      const { fn: instrumentedFn } = instrument(
+        {
+          fn: async () => fn(),
+        },
+        { intercept: true }
+      );
 
       const mockedInstrumentedFn = vi.fn(instrumentedFn);
       const play = async () => {

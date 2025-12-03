@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
-import { vitePluginNextSwc } from "./plugin";
 
 vi.mock("next/dist/build/load-jsconfig.js", () => ({
   default: vi.fn(),
@@ -44,7 +43,7 @@ const nextConfig: NextConfigComplete = {
 } as any;
 
 describe("vitePluginNextSwc env detection", () => {
-  beforeEach(async () => {
+  const setupMocks = async () => {
     const loadJsConfigModule = await import("next/dist/build/load-jsconfig.js");
     vi.mocked(loadJsConfigModule.default).mockResolvedValue(
       // biome-ignore lint/suspicious/noExplicitAny: Next's load-jsconfig return type is not stable/public
@@ -76,11 +75,15 @@ describe("vitePluginNextSwc env detection", () => {
       // biome-ignore lint/suspicious/noExplicitAny: Next's SWC options are not exported as a stable TS type
       {} as any,
     );
-  });
+  };
 
   it("treats Storybook-like Vite config (no `test` field) as browser, not server", async () => {
     // In Storybook, VITEST is not set; in our unit test runner it is, so we explicitly simulate Storybook.
-    delete process.env.VITEST;
+    process.env.VITEST = "false";
+    vi.resetModules();
+    await setupMocks();
+
+    const { vitePluginNextSwc } = await import("./plugin");
 
     const nextConfigResolver = createPromiseWithResolvers<NextConfigComplete>();
     nextConfigResolver.resolve(nextConfig);
@@ -104,6 +107,10 @@ describe("vitePluginNextSwc env detection", () => {
 
   it("treats Vitest node environment as server", async () => {
     process.env.VITEST = "true";
+    vi.resetModules();
+    await setupMocks();
+
+    const { vitePluginNextSwc } = await import("./plugin");
 
     const nextConfigResolver = createPromiseWithResolvers<NextConfigComplete>();
     nextConfigResolver.resolve(nextConfig);

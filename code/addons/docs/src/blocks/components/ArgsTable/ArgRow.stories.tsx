@@ -309,7 +309,7 @@ export const Func = {
   },
 };
 
-export const FuncWithLongDetail = {
+export const LongFunc = {
   args: {
     row: {
       ...Func.args.row,

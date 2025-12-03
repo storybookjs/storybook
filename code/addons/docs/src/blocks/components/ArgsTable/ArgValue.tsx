@@ -37,6 +37,27 @@ const Summary = styled.div<{ isExpanded?: boolean }>(({ isExpanded }) => ({
   minWidth: 100,
 }));
 
+const DetailsContainer = styled.details({
+  display: 'flex',
+  flexDirection: 'column',
+  summary: {
+    order: 2,
+  },
+  'summary::-webkit-details-marker': {
+    display: 'none',
+  },
+  'summary::marker': {
+    content: 'none',
+  },
+});
+
+const AlignedDetails = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+  flexWrap: 'wrap',
+  alignItems: 'flex-start',
+});
+
 const Text = styled.span<{ simple?: boolean }>(codeCommon, ({ theme, simple = false }) => ({
   flex: '0 0 auto',
   fontFamily: theme.typography.fonts.mono,
@@ -57,7 +78,7 @@ const Text = styled.span<{ simple?: boolean }>(codeCommon, ({ theme, simple = fa
   }),
 }));
 
-const ExpandButton = styled.button(({ theme }) => ({
+const ExpandButton = styled.summary(({ theme }) => ({
   fontFamily: theme.typography.fonts.mono,
   color: theme.color.secondary,
   marginBottom: '4px',
@@ -123,13 +144,16 @@ const getSummaryItems = (summary: string) => {
   return uniq(summaryItems);
 };
 
-const renderSummaryItems = (summaryItems: string[], isExpanded = true) => {
-  let items = summaryItems;
-  if (!isExpanded) {
-    items = summaryItems.slice(0, ITEMS_BEFORE_EXPANSION);
-  }
+const renderSummaryItems = (summaryItems: string[]) => {
+  return summaryItems
+    .slice(0, ITEMS_BEFORE_EXPANSION)
+    .map((item) => <ArgText key={item} text={item === '' ? '""' : item} />);
+};
 
-  return items.map((item) => <ArgText key={item} text={item === '' ? '""' : item} />);
+const renderExpandedItems = (summaryItems: string[]) => {
+  return summaryItems
+    .slice(ITEMS_BEFORE_EXPANSION)
+    .map((item) => <ArgText key={item} text={item === '' ? '""' : item} />);
 };
 
 const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
@@ -160,10 +184,13 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
 
     return hasManyItems ? (
       <Summary isExpanded={isExpanded}>
-        {renderSummaryItems(summaryItems, isExpanded)}
-        <ExpandButton onClick={() => setIsExpanded(!isExpanded)}>
-          {isExpanded ? 'Show less...' : `Show ${itemsCount - ITEMS_BEFORE_EXPANSION} more...`}
-        </ExpandButton>
+        {renderSummaryItems(summaryItems)}
+        <DetailsContainer>
+          <AlignedDetails>{renderExpandedItems(summaryItems)}</AlignedDetails>
+          <ExpandButton onClick={() => setIsExpanded(!isExpanded)}>
+            {isExpanded ? 'Show less...' : `Show ${itemsCount - ITEMS_BEFORE_EXPANSION} more...`}
+          </ExpandButton>
+        </DetailsContainer>
       </Summary>
     ) : (
       <Summary>{renderSummaryItems(summaryItems)}</Summary>

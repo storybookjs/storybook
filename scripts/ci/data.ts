@@ -395,7 +395,20 @@ const buildWindows = defineJob('build-windows', {
     shell: 'bash.exe',
   },
   steps: [
-    node.install(),
+    {
+      run: {
+        name: 'Install Node + Yarn',
+        shell: 'powershell.exe',
+        command: [
+          '$nodeVersion = Get-Content .nvmrc | Select-Object -First 1',
+          'nvm install $nodeVersion',
+          'nvm use $nodeVersion',
+          'corepack enable',
+          'corepack prepare yarn@stable --activate',
+        ].join('\n'),
+      },
+    },
+    // node.install(),
     git.checkout({ forceHttps: true }),
     npm.install('.'),
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),

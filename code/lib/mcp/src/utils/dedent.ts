@@ -1,4 +1,14 @@
-// copied from https://github.com/tamino-martinius/node-ts-dedent/blob/18c4736c79806d7fe78bdaaaf5ae307b79f9574a/src/index.ts
+/**
+ * Copied from https://github.com/tamino-martinius/node-ts-dedent/blob/18c4736c79806d7fe78bdaaaf5ae307b79f9574a/src/index.ts
+ *
+ * Rationale for vendoring instead of using the ts-dedent package:
+ * 1. The package has a broken ESM distribution - the IDE auto-imports as
+ *    `import dedent from 'ts-dedent'` but that breaks at runtime, requiring
+ *    manual changes to named imports. See:
+ *    - https://github.com/tamino-martinius/node-ts-dedent/issues/42
+ *    - https://github.com/tamino-martinius/node-ts-dedent/pull/41
+ * 2. Keeps bundle size smaller for such a simple utility (avoid "is-even" syndrome)
+ */
 
 export function dedent(
 	templ: TemplateStringsArray | string,

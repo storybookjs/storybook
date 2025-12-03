@@ -391,6 +391,7 @@ const buildWindows = defineJob('build-windows', {
   executor: {
     name: 'win/default',
     size: 'xlarge',
+    shell: 'bash.exe',
   },
   steps: [
     git.checkout(),

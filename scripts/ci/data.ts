@@ -413,19 +413,22 @@ const buildWindows = defineJob('build-windows', {
         working_directory: `code`,
       },
     },
-    workspace.persist([
-      ...glob
-        .sync(['*/src', '*/*/src'], {
-          cwd: join(dirname, '../../code'),
-          onlyDirectories: true,
-        })
-        .flatMap((p) => [
-          `${WORKING_DIR}/code/${p.replace('src', 'dist')}`,
-          `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`,
-        ]),
-      `${WORKING_DIR}/.verdaccio-cache`,
-      `${WORKING_DIR}/code/bench`,
-    ]),
+    workspace.persist(
+      [
+        ...glob
+          .sync(['*/src', '*/*/src'], {
+            cwd: join(dirname, '../../code'),
+            onlyDirectories: true,
+          })
+          .flatMap((p) => [
+            `project/code/${p.replace('src', 'dist')}`,
+            `project/code/${p.replace('src', 'node_modules')}`,
+          ]),
+        `project/.verdaccio-cache`,
+        `project/code/bench`,
+      ],
+      'C:\\Users\\circleci'
+    ),
   ],
 });
 
@@ -538,7 +541,7 @@ const unitTestsWindows = defineJob(
     },
     steps: [
       git.checkout(),
-      workspace.attach(),
+      workspace.attach('C:\\Users\\circleci\\workspace'),
       cache.attach(CACHE_KEYS),
       {
         run: {

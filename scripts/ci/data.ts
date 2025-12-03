@@ -427,13 +427,13 @@ const windows_build = defineJob('build-windows', {
             onlyDirectories: true,
           })
           .flatMap((p) => [
-            `project/code/${p.replace('src', 'dist')}`,
-            `project/code/${p.replace('src', 'node_modules')}`,
+            `code/${p.replace('src', 'dist')}`,
+            `code/${p.replace('src', 'node_modules')}`,
           ]),
-        `project/.verdaccio-cache`,
-        `project/code/bench`,
+        `.verdaccio-cache`,
+        `code/bench`,
       ],
-      'C:\\Users\\circleci'
+      'C:\\Users\\circleci\\project'
     ),
   ],
 });
@@ -549,7 +549,7 @@ const windows_unitTests = defineJob(
     steps: [
       git.checkout({ forceHttps: true }),
       node.installOnWindows(),
-      workspace.attach('C:\\Users\\circleci'),
+      workspace.attach('C:\\Users\\circleci\\project'),
       cache.attach(CACHE_KEYS('windows')),
       {
         run: {

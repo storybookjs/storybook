@@ -358,7 +358,7 @@ describe('addonA11yAddonTest', () => {
         '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockImplementation((p) => {
-        if (p.toString().includes('vitest.setup')) {
+        if (p.toString().includes('vitest.setup') || p.toString().includes('preview.js')) {
           return true;
         } else {
           return false;
@@ -381,8 +381,8 @@ describe('addonA11yAddonTest', () => {
       } as any);
       expect(result).toEqual({
         setupFile: path.join(configDir, 'vitest.setup.js'),
-        previewFile: null,
-        transformedPreviewCode: null,
+        previewFile: path.join(configDir, 'preview.js'),
+        transformedPreviewCode: expect.any(String),
         transformedSetupCode: null,
         skipPreviewTransformation: false,
         skipVitestSetupTransformation: true,

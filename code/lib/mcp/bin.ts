@@ -57,7 +57,6 @@ const args = parseArgs({
 const format = args.values.format as OutputFormat;
 
 transport.listen({
-	source: args.values.manifestPath,
 	format,
 	manifestProvider: async () => {
 		const { manifestPath } = args.values;

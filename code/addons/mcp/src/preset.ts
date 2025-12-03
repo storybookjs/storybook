@@ -8,7 +8,7 @@ import htmlTemplate from './template.html';
 export const experimental_devServer: PresetProperty<
 	'experimental_devServer'
 > = async (app, options) => {
-	// There is error handling here. The can make the whole storybook app crash with.
+	// There is no error handling here. This can make the whole storybook app crash with:
 	// ValiError: Invalid type: Expected boolean but received "false"
 	const addonOptions = v.parse(AddonOptions, {
 		toolsets: 'toolsets' in options ? options.toolsets : {},

@@ -24,7 +24,7 @@ export type AddonOptionsOutput = v.InferOutput<typeof AddonOptions>;
  * Contains Storybook-specific configuration and runtime information.
  * Extends StorybookContext to be compatible with @storybook/mcp tools.
  */
-export interface AddonContext extends StorybookContext {
+export type AddonContext = StorybookContext & {
 	/**
 	 * The Storybook options object containing configuration,
 	 * port, presets, and other runtime information.
@@ -43,7 +43,7 @@ export interface AddonContext extends StorybookContext {
 	disableTelemetry: boolean;
 
 	toolsets?: NonNullable<AddonOptionsOutput>['toolsets'];
-}
+};
 
 /**
  * Schema for a single story input when requesting story URLs.

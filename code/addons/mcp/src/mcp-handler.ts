@@ -148,7 +148,7 @@ export async function incomingMessageToWebRequest(
 	return new Request(url, {
 		method: req.method,
 		headers: req.headers as HeadersInit,
-		// oxlint-disable-next-line no-invalid-fetch-options -- We now req.method is always 'POST', linter doesn't
+		// oxlint-disable-next-line no-invalid-fetch-options -- We know req.method is always 'POST', linter doesn't
 		body: bodyBuffer.length > 0 ? new Uint8Array(bodyBuffer) : undefined,
 	});
 }

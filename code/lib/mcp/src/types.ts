@@ -10,7 +10,7 @@ export type OutputFormat = 'xml' | 'markdown';
  * Custom context passed to MCP server and tools.
  * Contains the request object and optional manifest provider.
  */
-export interface StorybookContext extends Record<string, unknown> {
+export type StorybookContext = {
 	/**
 	 * The incoming HTTP request being processed.
 	 */
@@ -50,7 +50,7 @@ export interface StorybookContext extends Record<string, unknown> {
 		input: { componentId: string };
 		foundComponent?: ComponentManifest;
 	}) => void | Promise<void>;
-}
+};
 
 const JSDocTag = v.record(v.string(), v.array(v.string()));
 

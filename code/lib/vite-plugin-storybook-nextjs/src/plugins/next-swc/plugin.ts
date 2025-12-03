@@ -4,8 +4,8 @@ import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import { resolve } from "pathe";
 import { type Plugin, createFilter } from "vite";
 
-import * as NextUtils from "../../utils/nextjs";
 import { isVitestEnv } from "../../utils";
+import * as NextUtils from "../../utils/nextjs";
 import { getVitestSWCTransformConfig } from "../../utils/swc/transform";
 import { isDefined } from "../../utils/typescript";
 

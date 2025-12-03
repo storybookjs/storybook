@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type loadJsConfig from "next/dist/build/load-jsconfig.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 
 vi.mock("next/dist/build/load-jsconfig.js", () => ({
@@ -20,7 +21,7 @@ vi.mock("../../utils/swc/transform", () => ({
   getVitestSWCTransformConfig: vi.fn(),
 }));
 
-const createPromiseWithResolvers = <T,>() => {
+const createPromiseWithResolvers = <T>() => {
   let resolve!: (value: T | PromiseLike<T>) => void;
   let reject!: (reason?: unknown) => void;
   const promise = new Promise<T>((res, rej) => {
@@ -45,14 +46,11 @@ const nextConfig: NextConfigComplete = {
 describe("vitePluginNextSwc env detection", () => {
   const setupMocks = async () => {
     const loadJsConfigModule = await import("next/dist/build/load-jsconfig.js");
-    vi.mocked(loadJsConfigModule.default).mockResolvedValue(
-      // biome-ignore lint/suspicious/noExplicitAny: Next's load-jsconfig return type is not stable/public
-      {
-        useTypeScript: true,
-        jsConfig: { compilerOptions: {} },
-        resolvedBaseUrl: undefined,
-      } as any,
-    );
+    vi.mocked(loadJsConfigModule.default).mockResolvedValue({
+      useTypeScript: true,
+      jsConfig: { compilerOptions: {} },
+      resolvedBaseUrl: undefined,
+    } as unknown as Awaited<ReturnType<typeof loadJsConfig>>);
 
     const NextUtils = await import("../../utils/nextjs");
     vi.mocked(NextUtils.findNextDirectories).mockReturnValue({
@@ -72,8 +70,7 @@ describe("vitePluginNextSwc env detection", () => {
 
     const swcTransform = await import("../../utils/swc/transform");
     vi.mocked(swcTransform.getVitestSWCTransformConfig).mockReturnValue(
-      // biome-ignore lint/suspicious/noExplicitAny: Next's SWC options are not exported as a stable TS type
-      {} as any,
+      {} as ReturnType<typeof swcTransform.getVitestSWCTransformConfig>,
     );
   };
 
@@ -93,14 +90,17 @@ describe("vitePluginNextSwc env detection", () => {
     await plugin.config?.({}, { mode: "development" } as never);
 
     await plugin.transform?.call(
-      { getCombinedSourcemap: () => ({ version: 3, mappings: "" } as any) } as any,
+      { getCombinedSourcemap: () => null } as unknown as ThisParameterType<
+        NonNullable<typeof plugin.transform>
+      >,
       "export const x = typeof window;",
       "/src/example.ts",
     );
 
     const swcTransform = await import("../../utils/swc/transform");
-    const lastCallArg =
-      vi.mocked(swcTransform.getVitestSWCTransformConfig).mock.calls.at(-1)?.[0];
+    const lastCallArg = vi
+      .mocked(swcTransform.getVitestSWCTransformConfig)
+      .mock.calls.at(-1)?.[0];
 
     expect(lastCallArg?.isServerEnvironment).toBe(false);
   });
@@ -117,23 +117,23 @@ describe("vitePluginNextSwc env detection", () => {
 
     const plugin = vitePluginNextSwc("/root", nextConfigResolver);
 
-    await plugin.config?.(
-      { test: { environment: "node" } },
-      { mode: "development" } as never,
-    );
+    await plugin.config?.({ test: { environment: "node" } }, {
+      mode: "development",
+    } as never);
 
     await plugin.transform?.call(
-      { getCombinedSourcemap: () => ({ version: 3, mappings: "" } as any) } as any,
+      { getCombinedSourcemap: () => null } as unknown as ThisParameterType<
+        NonNullable<typeof plugin.transform>
+      >,
       "export const x = typeof window;",
       "/src/example.ts",
     );
 
     const swcTransform = await import("../../utils/swc/transform");
-    const lastCallArg =
-      vi.mocked(swcTransform.getVitestSWCTransformConfig).mock.calls.at(-1)?.[0];
+    const lastCallArg = vi
+      .mocked(swcTransform.getVitestSWCTransformConfig)
+      .mock.calls.at(-1)?.[0];
 
     expect(lastCallArg?.isServerEnvironment).toBe(true);
   });
 });
-
-

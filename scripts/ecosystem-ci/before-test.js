@@ -19,7 +19,7 @@ const sandbox = process.argv[2] ?? 'react-vite/default-ts';
 const rootPackageJsonPath = resolve(__dirname, '../../package.json');
 const sandboxPackageJsonPath = resolve(
   __dirname,
-  `../../../storybook-sandboxes/${sandbox.replace('/', '-')}/package.json`
+  `../../storybook-sandboxes/${sandbox.replace('/', '-')}/package.json`
 );
 
 const rootPackageJson = JSON.parse(await readFile(rootPackageJsonPath, 'utf-8'));

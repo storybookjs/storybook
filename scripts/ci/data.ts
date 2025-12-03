@@ -394,7 +394,7 @@ const buildWindows = defineJob('build-windows', {
     shell: 'bash.exe',
   },
   steps: [
-    git.checkout(),
+    git.checkout({ forceHttps: true }),
     npm.install('.'),
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
     git.check(),

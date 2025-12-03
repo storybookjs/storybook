@@ -264,30 +264,14 @@ jobs:
         executor:
             name: win/default
             size: xlarge
+            shell: bash.exe
         steps:
-            - run:
-                  name: Checkout (shallow)
-                  shell: bash.exe
-                  command: |-
-                      git init .
-                      REPO_URL="${CIRCLE_REPOSITORY_URL/git@github.com:/https://github.com/}"
-                      git remote add origin "$REPO_URL"
-                      git fetch --depth=1 origin "$CIRCLE_SHA1"
-                      git checkout "$CIRCLE_SHA1"
-            - run:
-                  name: Setup Node & Yarn on Windows
-                  shell: bash.exe
-                  command: "
-
-                      \          choco install nodejs-lts --version=22.11.0 -y
-
-                      \          corepack enable
-
-                      \        "
-            - run:
-                  name: Install dependencies
-                  shell: bash.exe
-                  command: yarn install
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
+            - node/install-packages:
+                  app-dir: .
+                  pkg-manager: yarn
+                  cache-only-lockfile: true
             - save_cache:
                   paths: *a1
                   key: darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
@@ -301,12 +285,14 @@ jobs:
                   command: yarn task --task compile --start-from=auto --no-link --debug
                   name: Compile
                   working_directory: code
-                  shell: bash.exe
             - run:
                   command: yarn local-registry --publish
                   name: Publish to Verdaccio
                   working_directory: code
-                  shell: bash.exe
+            - run:
+                  command: yarn test
+                  name: Run unit tests
+                  working_directory: code
     check:
         description: check
         executor:

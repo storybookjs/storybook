@@ -50,10 +50,19 @@ export const artifact = {
 };
 
 export const git = {
-  checkout: (shallow: boolean = true) => {
+  checkout: ({ forceHttps = false, shallow = true } = {}) => {
+    const configs = forceHttps
+      ? [
+          '--config url."https://github.com/".insteadOf=ssh://git@github.com/',
+          '--config url."https://github.com/".insteadOf=git@github.com:',
+        ].join(' ')
+      : '';
+
+    const depth = shallow ? '--depth 1' : '';
+
     return {
       'git-shallow-clone/checkout_advanced': {
-        clone_options: shallow ? '--depth 1' : '',
+        clone_options: `${depth} ${configs}`.trim(),
       },
     };
   },

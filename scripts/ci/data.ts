@@ -11,6 +11,7 @@ import {
   artifact,
   cache,
   git,
+  node,
   npm,
   server,
   toId,
@@ -350,6 +351,7 @@ const buildLinux = defineJob('build-linux', {
     class: 'xlarge',
   },
   steps: [
+    node.install(),
     git.checkout(),
     npm.install('.'),
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),

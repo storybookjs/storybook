@@ -84,6 +84,14 @@ export const git = {
   },
 };
 
+export const node = {
+  install: () => {
+    return {
+      'node/install': { 'install-yarn': true },
+    };
+  },
+};
+
 export const npm = {
   install: (appDir: string, pkgManager: string = 'yarn') => {
     return {

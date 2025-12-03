@@ -1,12 +1,11 @@
 import type { FC } from 'react';
 import React, { useState } from 'react';
 
-import { SyntaxHighlighter, TooltipProvider, codeCommon } from 'storybook/internal/components';
+import { PopoverProvider, SyntaxHighlighter, codeCommon } from 'storybook/internal/components';
 
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
 import { uniq } from 'es-toolkit/array';
-import memoize from 'memoizerific';
 import { styled } from 'storybook/theming';
 
 import type { PropSummaryValue } from './types';
@@ -96,11 +95,10 @@ const Expandable = styled.div(codeCommon, ({ theme }) => ({
   alignItems: 'center',
 }));
 
-const Detail = styled.div<{ width: string }>(({ theme, width }) => ({
-  width,
+const Detail = styled.div(({ theme }) => ({
   minWidth: 200,
   maxWidth: 800,
-  padding: 15,
+  paddingRight: 16,
   // Don't remove the mono fontFamily here even if it seems useless, this is used by the browser to calculate the length of a "ch" unit.
   fontFamily: theme.typography.fonts.mono,
   fontSize: theme.typography.size.s1,
@@ -127,12 +125,6 @@ const EmptyArg = () => {
 const ArgText: FC<ArgTextProps> = ({ text, simple }) => {
   return <Text simple={simple}>{text}</Text>;
 };
-
-const calculateDetailWidth = memoize(1000)((detail: string): string => {
-  const lines = detail.split(/\r?\n/);
-
-  return `${Math.max(...lines.map((x) => x.length))}ch`;
-});
 
 const getSummaryItems = (summary: string) => {
   if (!summary) {
@@ -198,14 +190,15 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
   }
 
   return (
-    <TooltipProvider
+    <PopoverProvider
       placement="bottom"
       visible={isOpen}
       onVisibleChange={(isVisible) => {
         setIsOpen(isVisible);
       }}
-      tooltip={
-        <Detail width={calculateDetailWidth(detail)}>
+      hasCloseButton
+      popover={
+        <Detail>
           <SyntaxHighlighter language="jsx" format={false}>
             {detail}
           </SyntaxHighlighter>
@@ -216,7 +209,7 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
         <span>{summaryAsString}</span>
         {isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
       </Expandable>
-    </TooltipProvider>
+    </PopoverProvider>
   );
 };
 

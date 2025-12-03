@@ -309,6 +309,45 @@ export const Func = {
   },
 };
 
+export const FuncWithLongDetail = {
+  args: {
+    row: {
+      ...Func.args.row,
+      table: {
+        ...Func.args.row.table,
+        defaultValue: {
+          summary: 'func',
+          detail: `(a, b) => {
+  // Calculate various metrics between a and b
+  const lengthA = a.length;
+  const lengthB = b.length;
+  
+  // Determine the longer string
+  const maxLength = Math.max(lengthA, lengthB);
+  const minLength = Math.min(lengthA, lengthB);
+  
+  // Calculate similarity score
+  let matchCount = 0;
+  for (let i = 0; i < minLength; i++) {
+    if (a[i] === b[i]) {
+      matchCount++;
+    }
+  }
+  
+  // Compute weighted average
+  const similarity = (matchCount / maxLength) * 100;
+  
+  // Generate result string
+  const result = \`Similarity: \${similarity.toFixed(2)}%, Length diff: \${Math.abs(lengthA - lengthB)}\`;
+  
+  return result;
+}`,
+        },
+      },
+    },
+  },
+};
+
 const enumeration =
   '"search" | "arrow-to-bottom" | "arrow-to-right" | "bell" | "check" | "check-circle"';
 export const Enum = {

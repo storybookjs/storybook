@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ToolbarArgType } from '../../../toolbar';
 import { GlobalsStore } from './GlobalsStore';
 
 vi.mock('storybook/internal/client-logger', () => ({
@@ -33,8 +34,8 @@ describe('GlobalsStore', () => {
         arg2: 2,
       },
       globalTypes: {
-        arg2: { defaultValue: 'arg2' },
-        arg3: { defaultValue: { complex: { object: ['type'] } } },
+        arg2: { defaultValue: 'arg2' } as ToolbarArgType,
+        arg3: { defaultValue: { complex: { object: ['type'] } } } as ToolbarArgType,
       },
     });
 
@@ -48,7 +49,10 @@ describe('GlobalsStore', () => {
 
   describe('update', () => {
     it('changes the global args', () => {
-      const store = new GlobalsStore({ globals: { foo: 'old' }, globalTypes: { baz: {} } });
+      const store = new GlobalsStore({
+        globals: { foo: 'old' },
+        globalTypes: { baz: {} as ToolbarArgType },
+      });
 
       store.update({ foo: 'bar' });
       expect(store.get()).toEqual({ foo: 'bar' });
@@ -60,7 +64,7 @@ describe('GlobalsStore', () => {
     it('does not merge objects', () => {
       const store = new GlobalsStore({
         globals: { obj: { foo: 'old' } },
-        globalTypes: { baz: {} },
+        globalTypes: { baz: {} as ToolbarArgType },
       });
 
       store.update({ obj: { foo: 'bar' } });
@@ -78,7 +82,7 @@ describe('GlobalsStore', () => {
           arg1: 'arg1',
         },
         globalTypes: {
-          arg2: { defaultValue: 'arg2' },
+          arg2: { defaultValue: 'arg2' } as ToolbarArgType,
         },
       });
 
@@ -104,8 +108,8 @@ describe('GlobalsStore', () => {
           arg2: 2,
         },
         globalTypes: {
-          arg2: { defaultValue: 'arg2' },
-          arg3: { defaultValue: { complex: { object: ['type'] } } },
+          arg2: { defaultValue: 'arg2' } as ToolbarArgType,
+          arg3: { defaultValue: { complex: { object: ['type'] } } } as ToolbarArgType,
         },
       });
 
@@ -126,7 +130,7 @@ describe('GlobalsStore', () => {
             arg3: 'arg3',
           },
           globalTypes: {
-            arg2: { defaultValue: 'arg2' },
+            arg2: { defaultValue: 'arg2' } as ToolbarArgType,
           },
         });
 
@@ -144,7 +148,7 @@ describe('GlobalsStore', () => {
             arg1: 'arg1',
           },
           globalTypes: {
-            arg2: { defaultValue: 'arg2' },
+            arg2: { defaultValue: 'arg2' } as ToolbarArgType,
           },
         });
         // However undeclared values aren't persisted
@@ -162,7 +166,7 @@ describe('GlobalsStore', () => {
             arg4: 'arg4',
           },
           globalTypes: {
-            arg2: { defaultValue: 'arg2' },
+            arg2: { defaultValue: 'arg2' } as ToolbarArgType,
           },
         });
 
@@ -186,7 +190,7 @@ describe('GlobalsStore', () => {
             arg4: 'edited-arg4',
           },
           globalTypes: {
-            arg5: { defaultValue: 'edited-arg5' },
+            arg5: { defaultValue: 'edited-arg5' } as ToolbarArgType,
           },
         });
         // However undeclared values aren't persisted

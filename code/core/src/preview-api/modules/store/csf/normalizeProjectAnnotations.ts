@@ -3,6 +3,7 @@ import type {
   NormalizedProjectAnnotations,
   ProjectAnnotations,
   Renderer,
+  StrictGlobalTypes,
 } from 'storybook/internal/types';
 
 import { inferArgTypes } from '../inferArgTypes';
@@ -27,7 +28,7 @@ export function normalizeProjectAnnotations<TRenderer extends Renderer>({
 }: ProjectAnnotations<TRenderer>): NormalizedProjectAnnotations<TRenderer> {
   return {
     ...(argTypes && { argTypes: normalizeInputTypes(argTypes as ArgTypes) }),
-    ...(globalTypes && { globalTypes: normalizeInputTypes(globalTypes) }),
+    ...(globalTypes && { globalTypes: normalizeInputTypes(globalTypes) as StrictGlobalTypes }),
     decorators: normalizeArrays(decorators),
     loaders: normalizeArrays(loaders),
     beforeEach: normalizeArrays(beforeEach),

@@ -1,5 +1,6 @@
 import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 
+import type { ToolbarArgType } from '../toolbar';
 import type { SBScalarType, SBType } from './SBType';
 import type { CoreTypes } from './core-annotations';
 
@@ -144,6 +145,8 @@ export interface InputType {
   [key: string]: any;
 }
 
+export type { ToolbarArgType };
+
 export interface StrictInputType extends InputType {
   name: string;
   type?: SBType;
@@ -165,10 +168,10 @@ export interface Globals {
   [name: string]: any;
 }
 export interface GlobalTypes {
-  [name: string]: InputType;
+  [name: string]: ToolbarArgType;
 }
 export interface StrictGlobalTypes {
-  [name: string]: StrictInputType;
+  [name: string]: StrictInputType & ToolbarArgType;
 }
 
 export interface AddonTypes {

@@ -8,6 +8,7 @@ import type {
   StoryAnnotationsOrFn as Story,
 } from 'storybook/internal/types';
 
+import type { ToolbarArgType } from '../../../../toolbar';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile';
 import { composeStories, composeStory, setProjectAnnotations } from './portable-stories';
@@ -102,7 +103,7 @@ describe('composeStory', () => {
     const projectAnnotations = {
       parameters: { injected: true },
       globalTypes: {
-        locale: { defaultValue: 'en' },
+        locale: { defaultValue: 'en' } as ToolbarArgType,
       },
       decorators: [decoratorFromProjectAnnotations],
       tags: ['projectTag'],
@@ -235,7 +236,7 @@ describe('composeStory', () => {
         theme: {
           name: 'Theme',
           defaultValue: 'light',
-        },
+        } as ToolbarArgType,
       },
     };
 

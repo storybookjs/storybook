@@ -3,6 +3,8 @@
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import type { ToolbarArgType } from 'storybook/internal/csf';
+
 // import '@testing-library/svelte/vitest';
 import { expectTypeOf } from 'expect-type';
 
@@ -70,7 +72,7 @@ describe('projectAnnotations', () => {
       {
         parameters: { injected: true },
         globalTypes: {
-          locale: { defaultValue: 'en' },
+          locale: { defaultValue: 'en' } as ToolbarArgType,
         },
       },
     ]);

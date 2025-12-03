@@ -1,3 +1,15 @@
+# v3.1.3 (Wed Dec 03 2025)
+
+#### 🐛 Bug Fix
+
+- Add cacheLife and cacheTag mocks to next/cache [#76](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/76) ([@Copilot](https://github.com/Copilot))
+
+#### Authors: 1
+
+- [@Copilot](https://github.com/Copilot)
+
+---
+
 # v3.1.2 (Wed Nov 26 2025)
 
 #### 🐛 Bug Fix

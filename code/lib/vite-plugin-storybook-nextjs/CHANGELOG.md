@@ -1,3 +1,15 @@
+# v3.1.5 (Wed Dec 03 2025)
+
+#### 🐛 Bug Fix
+
+- Fix SVG imports failing under square-bracket directories [#78](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/78) ([@Copilot](https://github.com/Copilot))
+
+#### Authors: 1
+
+- [@Copilot](https://github.com/Copilot)
+
+---
+
 # v3.1.4 (Wed Dec 03 2025)
 
 #### 🐛 Bug Fix

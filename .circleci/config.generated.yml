@@ -141,8 +141,6 @@ jobs:
             name: sb_node_22_classic
             class: xlarge
         steps:
-            - node/install:
-                  install-yarn: true
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
             - node/install-packages:
@@ -268,6 +266,8 @@ jobs:
             size: xlarge
             shell: bash.exe
         steps:
+            - node/install:
+                  install-yarn: true
             - git-shallow-clone/checkout_advanced:
                   clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
             - node/install-packages:

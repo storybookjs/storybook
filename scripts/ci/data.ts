@@ -351,7 +351,6 @@ const buildLinux = defineJob('build-linux', {
     class: 'xlarge',
   },
   steps: [
-    node.install(),
     git.checkout(),
     npm.install('.'),
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
@@ -396,6 +395,7 @@ const buildWindows = defineJob('build-windows', {
     shell: 'bash.exe',
   },
   steps: [
+    node.install(),
     git.checkout({ forceHttps: true }),
     npm.install('.'),
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),

@@ -11,10 +11,10 @@ import picocolors from 'picocolors';
 import prompts from 'prompts';
 import windowSize from 'window-size';
 
-import { getWorkspaces } from './utils/workspace';
+import { getCodeWorkspaces } from './utils/workspace';
 
 async function run() {
-  const packages = await getWorkspaces();
+  const packages = await getCodeWorkspaces();
   const packageTasks = packages
     .map((pkg) => {
       return {

@@ -1,4 +1,3 @@
-import os from 'node:os';
 import { join } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
@@ -21,7 +20,7 @@ import {
 
 const CACHE_KEYS = (platform = 'linux') =>
   [
-    `${platform}-node_modules`,
+    `v1-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',
@@ -398,7 +397,14 @@ const windows_build = defineJob('build-windows', {
     node.installOnWindows(),
     git.checkout({ forceHttps: true }),
     npm.install('.'),
-    cache.persist(CACHE_PATHS, CACHE_KEYS('windows')[0]),
+    // Note: Windows cache warnings about "unknown file mode" for symlinks are harmless.
+    // Tar will skip symlinks it can't archive, but they'll be recreated on cache restore
+    // when yarn install runs. The cache will still work correctly for regular files.
+    cache.persist(
+      // CACHE_PATHS.map((path) => 'C:\\Users\\circleci\\project\\' + path),
+      CACHE_PATHS,
+      CACHE_KEYS('windows')[0]
+    ),
     {
       run: {
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
@@ -536,11 +542,13 @@ const windows_unitTests = defineJob(
   'unit-tests-windows',
   {
     executor: {
-      name: 'sb_node_22_classic',
-      class: 'medium+',
+      name: 'win/default',
+      size: 'medium+',
+      shell: 'bash.exe',
     },
     steps: [
-      git.checkout(),
+      node.installOnWindows(),
+      git.checkout({ forceHttps: true }),
       workspace.attach('C:\\Users\\circleci'),
       cache.attach(CACHE_KEYS('windows')),
       {

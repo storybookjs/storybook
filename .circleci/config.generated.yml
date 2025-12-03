@@ -153,7 +153,7 @@ jobs:
                       - node_modules
                       - code/node_modules
                       - scripts/node_modules
-                  key: linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                  key: v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
             - run:
                   name: Ensure no changes pending
                   command: git diff --exit-code
@@ -283,7 +283,7 @@ jobs:
                   cache-only-lockfile: true
             - save_cache:
                   paths: *a1
-                  key: windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                  key: v1-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
             - run:
                   command: yarn task --task compile --start-from=auto --no-link --debug
                   name: Compile
@@ -391,10 +391,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - linux-node_modules/{{ checksum ".nvmrc" }}
-                      - linux-node_modules
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v1-linux-node_modules
             - run:
                   name: TypeCheck code
                   working_directory: code
@@ -420,10 +420,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - linux-node_modules/{{ checksum ".nvmrc" }}
-                      - linux-node_modules
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v1-linux-node_modules
             - run:
                   name: Build internal storybook
                   command: yarn storybook:ui:build
@@ -447,10 +447,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - linux-node_modules/{{ checksum ".nvmrc" }}
-                      - linux-node_modules
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v1-linux-node_modules
             - run:
                   name: Run tests
                   working_directory: code
@@ -467,19 +467,29 @@ jobs:
     unit-tests-windows:
         description: unit-tests-windows
         executor:
-            name: sb_node_22_classic
-            class: medium+
+            name: win/default
+            size: medium+
+            shell: bash.exe
         steps:
+            - run:
+                  name: Install Node + Yarn
+                  shell: powershell.exe
+                  command: |-
+                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
+                      nvm install $nodeVersion
+                      nvm use $nodeVersion
+                      corepack enable
+                      corepack prepare yarn@stable --activate
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
             - attach_workspace:
                   at: C:\Users\circleci
             - restore_cache:
                   keys:
-                      - windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - windows-node_modules/{{ checksum ".nvmrc" }}
-                      - windows-node_modules
+                      - v1-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v1-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v1-windows-node_modules/{{ checksum ".nvmrc" }}
+                      - v1-windows-node_modules
             - run:
                   command: yarn test
                   name: Run unit tests
@@ -503,10 +513,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - linux-node_modules/{{ checksum ".nvmrc" }}
-                      - linux-node_modules
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v1-linux-node_modules
             - run:
                   name: Verdaccio
                   working_directory: code

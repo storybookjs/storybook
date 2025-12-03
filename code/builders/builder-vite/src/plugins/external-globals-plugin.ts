@@ -80,17 +80,21 @@ export async function externalGlobalsPlugin(externals: Record<string, string>): 
         // Only process files that potentially import our external packages
         code: Object.keys(externals),
       },
-      async handler(code: string, id: string) {
-        const globalsList = Object.keys(externals);
+      async handler(code: string, id: string, meta?: any) {
+       const globalsList = Object.keys(externals);
 
         // Double-check in handler for compatibility with older Vite versions
         if (globalsList.every((glob) => !code.includes(glob))) {
           return undefined;
         }
 
-        const [imports] = parse(code);
-        const src = new MagicString(code);
-        imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
+       const [imports] = parse(code);
+        
+        // Use native MagicString if available (Rolldown optimization)
+        const magicString = meta?.magicString;
+        const src = magicString || new MagicString(code);
+        
+       imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
           const packageName = path;
           if (packageName && globalsList.includes(packageName)) {
             const importStatement = src.slice(startPosition, endPosition);
@@ -99,10 +103,10 @@ export async function externalGlobalsPlugin(externals: Record<string, string>): 
           }
         });
 
-        return {
-          code: src.toString(),
-          map: null,
-        };
+       return {
+          code: magicString ? src : src.toString(),
+          map: magicString ? undefined : null,
+       };
       },
     },
   } satisfies Plugin;

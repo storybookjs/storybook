@@ -153,7 +153,7 @@ jobs:
                       - node_modules
                       - code/node_modules
                       - scripts/node_modules
-                  key: darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                  key: linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
             - run:
                   name: Ensure no changes pending
                   command: git diff --exit-code
@@ -283,7 +283,7 @@ jobs:
                   cache-only-lockfile: true
             - save_cache:
                   paths: *a1
-                  key: darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                  key: windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
             - run:
                   command: yarn task --task compile --start-from=auto --no-link --debug
                   name: Compile
@@ -390,11 +390,11 @@ jobs:
             - attach_workspace:
                   at: /tmp
             - restore_cache:
-                  keys: &a2
-                      - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - darwin-node_modules/{{ checksum ".nvmrc" }}
-                      - darwin-node_modules
+                  keys:
+                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - linux-node_modules/{{ checksum ".nvmrc" }}
+                      - linux-node_modules
             - run:
                   name: TypeCheck code
                   working_directory: code
@@ -419,7 +419,11 @@ jobs:
             - attach_workspace:
                   at: /tmp
             - restore_cache:
-                  keys: *a2
+                  keys:
+                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - linux-node_modules/{{ checksum ".nvmrc" }}
+                      - linux-node_modules
             - run:
                   name: Build internal storybook
                   command: yarn storybook:ui:build
@@ -430,7 +434,7 @@ jobs:
                   working_directory: code
             - report-workflow-on-failure
             - store_test_results:
-                  path: storybook/test-results
+                  path: test-results
     unit-tests-linux:
         description: unit-tests-linux
         executor:
@@ -442,7 +446,11 @@ jobs:
             - attach_workspace:
                   at: /tmp
             - restore_cache:
-                  keys: *a2
+                  keys:
+                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - linux-node_modules/{{ checksum ".nvmrc" }}
+                      - linux-node_modules
             - run:
                   name: Run tests
                   working_directory: code
@@ -467,13 +475,17 @@ jobs:
             - attach_workspace:
                   at: C:\Users\circleci
             - restore_cache:
-                  keys: *a2
+                  keys:
+                      - windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - windows-node_modules/{{ checksum ".nvmrc" }}
+                      - windows-node_modules
             - run:
                   command: yarn test
                   name: Run unit tests
                   working_directory: code
             - store_test_results:
-                  path: storybook/test-results
+                  path: test-results
             - run:
                   name: Ensure no changes pending
                   command: git diff --exit-code
@@ -490,7 +502,11 @@ jobs:
             - attach_workspace:
                   at: /tmp
             - restore_cache:
-                  keys: *a2
+                  keys:
+                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - linux-node_modules/{{ checksum ".nvmrc" }}
+                      - linux-node_modules
             - run:
                   name: Verdaccio
                   working_directory: code

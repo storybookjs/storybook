@@ -19,15 +19,15 @@ import {
   workspace,
 } from './utils';
 
-const PLATFORM = os.platform();
-const CACHE_KEYS = [
-  `${PLATFORM}-node_modules`,
-  '{{ checksum ".nvmrc" }}',
-  '{{ checksum ".yarnrc.yml" }}',
-  '{{ checksum "yarn.lock" }}',
-].map((_, index, list) => {
-  return list.slice(0, list.length - index).join('/');
-});
+const CACHE_KEYS = (platform = 'linux') =>
+  [
+    `${platform}-node_modules`,
+    '{{ checksum ".nvmrc" }}',
+    '{{ checksum ".yarnrc.yml" }}',
+    '{{ checksum "yarn.lock" }}',
+  ].map((_, index, list) => {
+    return list.slice(0, list.length - index).join('/');
+  });
 const CACHE_PATHS = [
   '.yarn/root-install-state.gz',
   'node_modules',
@@ -223,7 +223,7 @@ function defineSandboxFlow<K extends string>(name: K) {
         steps: [
           git.checkout(),
           workspace.attach(),
-          cache.attach(CACHE_KEYS),
+          cache.attach(CACHE_KEYS()),
           verdaccio.start(),
           {
             run: {
@@ -271,7 +271,7 @@ function defineSandboxFlow<K extends string>(name: K) {
         steps: [
           git.checkout(),
           workspace.attach(),
-          cache.attach(CACHE_KEYS),
+          cache.attach(CACHE_KEYS()),
           {
             run: {
               name: 'Build storybook',
@@ -309,7 +309,7 @@ function defineSandboxFlow<K extends string>(name: K) {
         steps: [
           git.checkout(),
           workspace.attach(),
-          cache.attach(CACHE_KEYS),
+          cache.attach(CACHE_KEYS()),
           {
             run: {
               name: 'Run storybook',
@@ -353,7 +353,7 @@ const linux_build = defineJob('build-linux', {
   steps: [
     git.checkout(),
     npm.install('.'),
-    cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
+    cache.persist(CACHE_PATHS, CACHE_KEYS()[0]),
     git.check(),
     npm.check(),
     {
@@ -398,7 +398,7 @@ const windows_build = defineJob('build-windows', {
     node.installOnWindows(),
     git.checkout({ forceHttps: true }),
     npm.install('.'),
-    cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
+    cache.persist(CACHE_PATHS, CACHE_KEYS('windows')[0]),
     {
       run: {
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
@@ -442,7 +442,7 @@ const uiTests = defineJob(
     steps: [
       git.checkout(),
       workspace.attach(),
-      cache.attach(CACHE_KEYS),
+      cache.attach(CACHE_KEYS()),
       {
         run: {
           name: 'Build internal storybook',
@@ -460,7 +460,7 @@ const uiTests = defineJob(
       'report-workflow-on-failure',
       {
         store_test_results: {
-          path: `${WORKING_DIR}/test-results`,
+          path: `test-results`,
         },
       },
     ],
@@ -478,7 +478,7 @@ const check = defineJob(
     steps: [
       git.checkout(),
       workspace.attach(),
-      cache.attach(CACHE_KEYS),
+      cache.attach(CACHE_KEYS()),
       {
         run: {
           name: 'TypeCheck code',
@@ -511,7 +511,7 @@ const linux_unitTests = defineJob(
     steps: [
       git.checkout(),
       workspace.attach(),
-      cache.attach(CACHE_KEYS),
+      cache.attach(CACHE_KEYS()),
       {
         run: {
           name: 'Run tests',
@@ -542,7 +542,7 @@ const windows_unitTests = defineJob(
     steps: [
       git.checkout(),
       workspace.attach('C:\\Users\\circleci'),
-      cache.attach(CACHE_KEYS),
+      cache.attach(CACHE_KEYS('windows')),
       {
         run: {
           command: 'yarn test',
@@ -552,7 +552,7 @@ const windows_unitTests = defineJob(
       },
       {
         store_test_results: {
-          path: `${WORKING_DIR}/test-results`,
+          path: `test-results`,
         },
       },
       git.check(),
@@ -573,7 +573,7 @@ const packageBenchmarks = defineJob(
     steps: [
       git.checkout(),
       workspace.attach(),
-      cache.attach(CACHE_KEYS),
+      cache.attach(CACHE_KEYS()),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {

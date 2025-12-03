@@ -76,10 +76,6 @@ export default function dynamic<P = Record<string, unknown>>(
   options?: DynamicOptions<P>,
 ): React.ComponentType<P> {
   const loadableFn = Loadable as LoadableFn<P>;
-  if (options?.ssr === false) {
-    // biome-ignore lint/performance/noDelete: <explanation>
-    delete options.ssr;
-  }
 
   let loadableOptions: LoadableOptions<P> = {
     // A loading component is not required, so we default it
@@ -134,6 +130,18 @@ export default function dynamic<P = Record<string, unknown>>(
     };
     // biome-ignore lint/performance/noDelete: <explanation>
     delete loadableOptions.loadableGenerated;
+  }
+
+  // support for disabling server side rendering, eg: dynamic(() => import('../hello-world'), {ssr: false}).
+  // In browser environments (Storybook/Vitest), we simply remove webpack and modules options
+  // and proceed with the loadable component since we're always on the client-side.
+  if (typeof loadableOptions.ssr === "boolean" && !loadableOptions.ssr) {
+    // biome-ignore lint/performance/noDelete: <explanation>
+    delete loadableOptions.ssr;
+    // biome-ignore lint/performance/noDelete: <explanation>
+    delete loadableOptions.webpack;
+    // biome-ignore lint/performance/noDelete: <explanation>
+    delete loadableOptions.modules;
   }
 
   return loadableFn({ ...loadableOptions, loader: loader as Loader<P> });

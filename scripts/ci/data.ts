@@ -543,7 +543,7 @@ const windows_unitTests = defineJob(
   {
     executor: {
       name: 'win/default',
-      size: 'medium+',
+      size: 'medium',
       shell: 'bash.exe',
     },
     steps: [

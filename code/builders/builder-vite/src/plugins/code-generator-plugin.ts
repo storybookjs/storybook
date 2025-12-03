@@ -17,6 +17,16 @@ export function codeGeneratorPlugin(options: Options): Plugin {
   let iframeId: string;
   let projectRoot: string;
 
+  // Pre-define virtual module IDs for filtering
+  const virtualModuleIds = [
+    SB_VIRTUAL_FILES.VIRTUAL_APP_FILE,
+    SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE,
+    SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE,
+    SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE,
+  ];
+
+  const resolvedVirtualIds = virtualModuleIds.map((id) => getResolvedVirtualModuleId(id));
+
   // noinspection JSUnusedGlobalSymbols
   return {
     name: 'storybook:code-generator-plugin',
@@ -71,47 +81,68 @@ export function codeGeneratorPlugin(options: Options): Plugin {
     configResolved(config) {
       projectRoot = config.root;
       iframeId = `${config.root}/iframe.html`;
+      // Add iframe ID to the list of handled IDs after config is resolved
+      resolvedVirtualIds.push(iframeId);
     },
-    resolveId(source) {
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_APP_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE);
-      }
-      if (source === iframePath) {
-        return iframeId;
-      }
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
-      }
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE);
-      }
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE);
-      }
+    resolveId: {
+      // Filter to only handle known virtual modules and iframe path
+      filter: {
+        // Create a regex that matches any of the virtual module IDs or iframe path
+        id: new RegExp(
+          `^(${[...virtualModuleIds, iframePath].map((id) => id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`
+        ),
+      },
+      handler(source) {
+        // Fallback checks for compatibility with older Vite versions
+        if (source === SB_VIRTUAL_FILES.VIRTUAL_APP_FILE) {
+          return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE);
+        }
+        if (source === iframePath) {
+          return iframeId;
+        }
+        if (source === SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE) {
+          return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
+        }
+        if (source === SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE) {
+          return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE);
+        }
+        if (source === SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE) {
+          return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE);
+        }
 
-      return undefined;
+        return undefined;
+      },
     },
-    async load(id, config) {
-      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)) {
-        return generateImportFnScriptCode(options);
-      }
+    load: {
+      // Filter to only handle resolved virtual module IDs
+      filter: {
+        id: new RegExp(
+          `^(${resolvedVirtualIds.map((id) => id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`
+        ),
+      },
+      async handler(id, config) {
+        // Fallback checks for compatibility
+        if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)) {
+          return generateImportFnScriptCode(options);
+        }
 
-      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE)) {
-        return generateAddonSetupCode();
-      }
+        if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE)) {
+          return generateAddonSetupCode();
+        }
 
-      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE)) {
-        return generateModernIframeScriptCode(options, projectRoot);
-      }
+        if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE)) {
+          return generateModernIframeScriptCode(options, projectRoot);
+        }
 
-      if (id === iframeId) {
-        return readFileSync(
-          fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html')),
-          'utf-8'
-        );
-      }
+        if (id === iframeId) {
+          return readFileSync(
+            fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html')),
+            'utf-8'
+          );
+        }
 
-      return undefined;
+        return undefined;
+      },
     },
     async transformIndexHtml(html, ctx) {
       if (ctx.path !== '/iframe.html') {

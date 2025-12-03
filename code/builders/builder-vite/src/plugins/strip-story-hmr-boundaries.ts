@@ -7,24 +7,32 @@ import type { Plugin } from 'vite';
  * (https://github.com/vitejs/vite/issues/9869).
  */
 export async function stripStoryHMRBoundary(): Promise<Plugin> {
-  const { createFilter } = await import('vite');
+  const storyFilePattern = /\.stories\.(tsx?|jsx?|svelte|vue)$/;
 
-  const filter = createFilter(/\.stories\.(tsx?|jsx?|svelte|vue)$/);
   return {
     name: 'storybook:strip-hmr-boundary-plugin',
-    enforce: 'post',
-    async transform(src, id) {
-      if (!filter(id)) {
-        return undefined;
-      }
+    enforce: 'post' as const,
+    transform: {
+      // Use filter to pre-filter story files on the Rust side
+      filter: {
+        id: storyFilePattern,
+        // Only process files that contain HMR accept calls
+        code: /import\.meta\.hot\.accept/,
+      },
+      async handler(src: string, id: string) {
+        // Fallback check for compatibility with older Vite versions
+        if (!storyFilePattern.test(id)) {
+          return undefined;
+        }
 
-      const s = new MagicString(src);
-      s.replace(/import\.meta\.hot\.accept\w*/, '(function hmrBoundaryNoop(){})');
+        const s = new MagicString(src);
+        s.replace(/import\.meta\.hot\.accept\w*/, '(function hmrBoundaryNoop(){})');
 
-      return {
-        code: s.toString(),
-        map: s.generateMap({ hires: true, source: id }),
-      };
+        return {
+          code: s.toString(),
+          map: s.generateMap({ hires: true, source: id }),
+        };
+      },
     },
   };
 }

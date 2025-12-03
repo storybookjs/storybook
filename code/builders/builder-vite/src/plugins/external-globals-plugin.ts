@@ -75,28 +75,35 @@ export async function externalGlobalsPlugin(externals: Record<string, string>): 
       };
     },
     // Replace imports with variables destructured from global scope
-    async transform(code: string, id: string) {
-      const globalsList = Object.keys(externals);
+    transform: {
+      filter: {
+        // Only process files that potentially import our external packages
+        code: Object.keys(externals),
+      },
+      async handler(code: string, id: string) {
+        const globalsList = Object.keys(externals);
 
-      if (globalsList.every((glob) => !code.includes(glob))) {
-        return undefined;
-      }
-
-      const [imports] = parse(code);
-      const src = new MagicString(code);
-      imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
-        const packageName = path;
-        if (packageName && globalsList.includes(packageName)) {
-          const importStatement = src.slice(startPosition, endPosition);
-          const transformedImport = rewriteImport(importStatement, externals, packageName);
-          src.update(startPosition, endPosition, transformedImport);
+        // Double-check in handler for compatibility with older Vite versions
+        if (globalsList.every((glob) => !code.includes(glob))) {
+          return undefined;
         }
-      });
 
-      return {
-        code: src.toString(),
-        map: null,
-      };
+        const [imports] = parse(code);
+        const src = new MagicString(code);
+        imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
+          const packageName = path;
+          if (packageName && globalsList.includes(packageName)) {
+            const importStatement = src.slice(startPosition, endPosition);
+            const transformedImport = rewriteImport(importStatement, externals, packageName);
+            src.update(startPosition, endPosition, transformedImport);
+          }
+        });
+
+        return {
+          code: src.toString(),
+          map: null,
+        };
+      },
     },
   } satisfies Plugin;
 }

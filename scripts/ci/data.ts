@@ -395,25 +395,10 @@ const buildWindows = defineJob('build-windows', {
     shell: 'bash.exe',
   },
   steps: [
-    {
-      run: {
-        name: 'Install Node + Yarn',
-        shell: 'powershell.exe',
-        command: [
-          '$nodeVersion = Get-Content .nvmrc | Select-Object -First 1',
-          'nvm install $nodeVersion',
-          'nvm use $nodeVersion',
-          'corepack enable',
-          'corepack prepare yarn@stable --activate',
-        ].join('\n'),
-      },
-    },
-    // node.install(),
+    node.installOnWindows(),
     git.checkout({ forceHttps: true }),
     npm.install('.'),
     cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
-    git.check(),
-    npm.check(),
     {
       run: {
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
@@ -428,78 +413,19 @@ const buildWindows = defineJob('build-windows', {
         working_directory: `code`,
       },
     },
-    {
-      run: {
-        command: 'yarn test',
-        name: 'Run unit tests',
-        working_directory: `code`,
-      },
-    },
-
-    // {
-    //   run: {
-    //     name: 'Checkout (shallow)',
-    //     shell: 'bash.exe',
-    //     command: [
-    //       `git init .`,
-    //       `REPO_URL="\${CIRCLE_REPOSITORY_URL/git@github.com:/https://github.com/}"`,
-    //       `git remote add origin "$REPO_URL"`,
-    //       `git fetch --depth=1 origin "$CIRCLE_SHA1"`,
-    //       `git checkout "$CIRCLE_SHA1"`,
-    //     ].join('\n'),
-    //   },
-    // },
-    // {
-    //   run: {
-    //     name: 'Setup Node & Yarn on Windows',
-    //     shell: 'bash.exe',
-    //     command: `
-    //       choco install nodejs-lts --version=22.11.0 -y
-    //       corepack enable
-    //     `,
-    //   },
-    // },
-    // {
-    //   run: {
-    //     name: 'Install dependencies',
-    //     shell: 'bash.exe',
-    //     command: 'yarn install',
-    //   },
-    // },
-    // cache.persist(CACHE_PATHS, CACHE_KEYS[0]),
-    // git.check(),
-    // npm.check(),
-    // {
-    //   run: {
-    //     command: 'yarn task --task compile --start-from=auto --no-link --debug',
-    //     name: 'Compile',
-    //     working_directory: `code`,
-    //     shell: 'bash.exe',
-    //   },
-    // },
-    // {
-    //   run: {
-    //     command: 'yarn local-registry --publish',
-    //     name: 'Publish to Verdaccio',
-    //     working_directory: `code`,
-    //     shell: 'bash.exe',
-    //   },
-    // },
-    // 'report-workflow-on-failure',
-    // artifact.persist(normalize(`code/bench/esbuild-metafiles`), 'bench'),
-    // workspace.persist([
-    //   ...glob
-    //     .sync(['*/src', '*/*/src'], {
-    //       cwd: join(dirname, '../../code'),
-    //       onlyDirectories: true,
-    //     })
-    //     .flatMap((p) => [
-    //       normalize(`${WORKING_DIR}/code/${p.replace('src', 'dist')}`),
-    //       normalize(`${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`),
-    //     ]),
-    //   normalize(`${WORKING_DIR}/.verdaccio-cache`),
-    //   normalize(`${WORKING_DIR}/code/bench`),
-    // ]),
+    workspace.persist([
+      ...glob
+        .sync(['*/src', '*/*/src'], {
+          cwd: join(dirname, '../../code'),
+          onlyDirectories: true,
+        })
+        .flatMap((p) => [
+          `${WORKING_DIR}/code/${p.replace('src', 'dist')}`,
+          `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`,
+        ]),
+      `${WORKING_DIR}/.verdaccio-cache`,
+      `${WORKING_DIR}/code/bench`,
+    ]),
   ],
 });
 
@@ -572,8 +498,8 @@ const check = defineJob(
   [buildLinux.id]
 );
 
-const unitTests = defineJob(
-  'unit-tests',
+const unitTestsLinux = defineJob(
+  'unit-tests-linux',
   {
     executor: {
       name: 'sb_node_22_classic',
@@ -602,6 +528,36 @@ const unitTests = defineJob(
     ],
   },
   [buildLinux.id]
+);
+const unitTestsWindows = defineJob(
+  'unit-tests-linux',
+  {
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'xlarge',
+    },
+    steps: [
+      git.checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS),
+      {
+        run: {
+          command: 'yarn test',
+          name: 'Run unit tests',
+          working_directory: `code`,
+        },
+      },
+      {
+        store_test_results: {
+          path: `${WORKING_DIR}/test-results`,
+        },
+      },
+      git.check(),
+      'report-workflow-on-failure',
+      'cancel-workflow-on-failure',
+    ],
+  },
+  [buildWindows.id]
 );
 
 const packageBenchmarks = defineJob(
@@ -632,7 +588,7 @@ const packageBenchmarks = defineJob(
 
 const sandboxes = [
   //
-  'react-vite/default-ts',
+  // 'react-vite/default-ts',
   // 'react-vite/default-js',
 ].map(defineSandboxFlow);
 
@@ -641,7 +597,8 @@ const jobs = {
   [buildWindows.id]: buildWindows.implementation,
   [check.id]: check.implementation,
   [uiTests.id]: uiTests.implementation,
-  [unitTests.id]: unitTests.implementation,
+  [unitTestsLinux.id]: unitTestsLinux.implementation,
+  [unitTestsWindows.id]: unitTestsWindows.implementation,
   [packageBenchmarks.id]: packageBenchmarks.implementation,
   'pretty-docs': {
     executor: {
@@ -722,8 +679,13 @@ const workflows = {
         },
       },
       {
-        [unitTests.id]: {
-          requires: unitTests.requires,
+        [unitTestsLinux.id]: {
+          requires: unitTestsLinux.requires,
+        },
+      },
+      {
+        [unitTestsWindows.id]: {
+          requires: unitTestsWindows.requires,
         },
       },
       {

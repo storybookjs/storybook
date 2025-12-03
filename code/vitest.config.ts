@@ -10,6 +10,25 @@ import { coverageConfigDefaults, defineConfig } from 'vitest/config';
  * @see .circleci/config.yml#L187
  */
 const threadCount = process.env.CI ? (process.platform === 'win32' ? 4 : 7) : undefined;
+const shouldRunStorybookTests = !(process.env.CI && process.platform === 'win32');
+
+const projects = [
+  'addons/*/vitest.config.ts',
+  'frameworks/*/vitest.config.ts',
+  'lib/*/vitest.config.ts',
+  'core/vitest.config.ts',
+  'builders/*/vitest.config.ts',
+  'presets/*/vitest.config.ts',
+  'renderers/*/vitest.config.ts',
+];
+
+/**
+ * On CI, we run ouw own unit tests, but for performance reasons, we don't install playwright, thus
+ * these tests, that need browser-mode cannot be run/added
+ */
+if (shouldRunStorybookTests) {
+  projects.push('vitest.config.storybook.ts');
+}
 
 export default defineConfig({
   test: {
@@ -19,16 +38,7 @@ export default defineConfig({
 
     pool: 'threads',
     maxWorkers: threadCount,
-    projects: [
-      'vitest.config.storybook.ts',
-      'addons/*/vitest.config.ts',
-      'frameworks/*/vitest.config.ts',
-      'lib/*/vitest.config.ts',
-      'core/vitest.config.ts',
-      'builders/*/vitest.config.ts',
-      'presets/*/vitest.config.ts',
-      'renderers/*/vitest.config.ts',
-    ],
+    projects,
 
     coverage: {
       provider: 'istanbul',

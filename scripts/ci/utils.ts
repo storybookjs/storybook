@@ -3,18 +3,18 @@ export const WORKING_DIR = `storybook`;
 export const SANDBOX_DIR = `storybook-sandboxes`;
 
 export const workspace = {
-  attach: () => {
+  attach: (at = ROOT_DIR) => {
     return {
       attach_workspace: {
-        at: ROOT_DIR,
+        at,
       },
     };
   },
-  persist: (paths: string[]) => {
+  persist: (paths: string[], root = ROOT_DIR) => {
     return {
       persist_to_workspace: {
         paths,
-        root: ROOT_DIR,
+        root,
       },
     };
   },
@@ -85,9 +85,19 @@ export const git = {
 };
 
 export const node = {
-  install: () => {
+  installOnWindows: () => {
     return {
-      'node/install': { 'install-yarn': true },
+      run: {
+        name: 'Install Node + Yarn',
+        shell: 'powershell.exe',
+        command: [
+          '$nodeVersion = Get-Content .nvmrc | Select-Object -First 1',
+          'nvm install $nodeVersion',
+          'nvm use $nodeVersion',
+          'corepack enable',
+          'corepack prepare yarn@stable --activate',
+        ].join('\n'),
+      },
     };
   },
 };

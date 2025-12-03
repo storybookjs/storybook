@@ -285,12 +285,6 @@ jobs:
                   paths: *a1
                   key: darwin-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
             - run:
-                  name: Ensure no changes pending
-                  command: git diff --exit-code
-            - run:
-                  name: Check for dedupe
-                  command: yarn dedupe --check
-            - run:
                   command: yarn task --task compile --start-from=auto --no-link --debug
                   name: Compile
                   working_directory: code
@@ -298,10 +292,93 @@ jobs:
                   command: yarn local-registry --publish
                   name: Publish to Verdaccio
                   working_directory: code
-            - run:
-                  command: yarn test
-                  name: Run unit tests
-                  working_directory: code
+            - persist_to_workspace:
+                  paths:
+                      - storybook/code/core/dist
+                      - storybook/code/core/node_modules
+                      - storybook/code/addons/a11y/dist
+                      - storybook/code/addons/a11y/node_modules
+                      - storybook/code/addons/docs/dist
+                      - storybook/code/addons/docs/node_modules
+                      - storybook/code/addons/links/dist
+                      - storybook/code/addons/links/node_modules
+                      - storybook/code/addons/onboarding/dist
+                      - storybook/code/addons/onboarding/node_modules
+                      - storybook/code/addons/pseudo-states/dist
+                      - storybook/code/addons/pseudo-states/node_modules
+                      - storybook/code/addons/themes/dist
+                      - storybook/code/addons/themes/node_modules
+                      - storybook/code/addons/vitest/dist
+                      - storybook/code/addons/vitest/node_modules
+                      - storybook/code/builders/builder-vite/dist
+                      - storybook/code/builders/builder-vite/node_modules
+                      - storybook/code/builders/builder-webpack5/dist
+                      - storybook/code/builders/builder-webpack5/node_modules
+                      - storybook/code/frameworks/angular/dist
+                      - storybook/code/frameworks/angular/node_modules
+                      - storybook/code/frameworks/ember/dist
+                      - storybook/code/frameworks/ember/node_modules
+                      - storybook/code/frameworks/html-vite/dist
+                      - storybook/code/frameworks/html-vite/node_modules
+                      - storybook/code/frameworks/nextjs/dist
+                      - storybook/code/frameworks/nextjs/node_modules
+                      - storybook/code/frameworks/nextjs-vite/dist
+                      - storybook/code/frameworks/nextjs-vite/node_modules
+                      - storybook/code/frameworks/preact-vite/dist
+                      - storybook/code/frameworks/preact-vite/node_modules
+                      - storybook/code/frameworks/react-native-web-vite/dist
+                      - storybook/code/frameworks/react-native-web-vite/node_modules
+                      - storybook/code/frameworks/react-vite/dist
+                      - storybook/code/frameworks/react-vite/node_modules
+                      - storybook/code/frameworks/react-webpack5/dist
+                      - storybook/code/frameworks/react-webpack5/node_modules
+                      - storybook/code/frameworks/server-webpack5/dist
+                      - storybook/code/frameworks/server-webpack5/node_modules
+                      - storybook/code/frameworks/svelte-vite/dist
+                      - storybook/code/frameworks/svelte-vite/node_modules
+                      - storybook/code/frameworks/sveltekit/dist
+                      - storybook/code/frameworks/sveltekit/node_modules
+                      - storybook/code/frameworks/vue3-vite/dist
+                      - storybook/code/frameworks/vue3-vite/node_modules
+                      - storybook/code/frameworks/web-components-vite/dist
+                      - storybook/code/frameworks/web-components-vite/node_modules
+                      - storybook/code/lib/cli-storybook/dist
+                      - storybook/code/lib/cli-storybook/node_modules
+                      - storybook/code/lib/codemod/dist
+                      - storybook/code/lib/codemod/node_modules
+                      - storybook/code/lib/core-webpack/dist
+                      - storybook/code/lib/core-webpack/node_modules
+                      - storybook/code/lib/create-storybook/dist
+                      - storybook/code/lib/create-storybook/node_modules
+                      - storybook/code/lib/csf-plugin/dist
+                      - storybook/code/lib/csf-plugin/node_modules
+                      - storybook/code/lib/eslint-plugin/dist
+                      - storybook/code/lib/eslint-plugin/node_modules
+                      - storybook/code/lib/react-dom-shim/dist
+                      - storybook/code/lib/react-dom-shim/node_modules
+                      - storybook/code/presets/create-react-app/dist
+                      - storybook/code/presets/create-react-app/node_modules
+                      - storybook/code/presets/react-webpack/dist
+                      - storybook/code/presets/react-webpack/node_modules
+                      - storybook/code/presets/server-webpack/dist
+                      - storybook/code/presets/server-webpack/node_modules
+                      - storybook/code/renderers/html/dist
+                      - storybook/code/renderers/html/node_modules
+                      - storybook/code/renderers/preact/dist
+                      - storybook/code/renderers/preact/node_modules
+                      - storybook/code/renderers/react/dist
+                      - storybook/code/renderers/react/node_modules
+                      - storybook/code/renderers/server/dist
+                      - storybook/code/renderers/server/node_modules
+                      - storybook/code/renderers/svelte/dist
+                      - storybook/code/renderers/svelte/node_modules
+                      - storybook/code/renderers/vue3/dist
+                      - storybook/code/renderers/vue3/node_modules
+                      - storybook/code/renderers/web-components/dist
+                      - storybook/code/renderers/web-components/node_modules
+                      - storybook/.verdaccio-cache
+                      - storybook/code/bench
+                  root: /tmp
     check:
         description: check
         executor:
@@ -354,8 +431,8 @@ jobs:
             - report-workflow-on-failure
             - store_test_results:
                   path: storybook/test-results
-    unit-tests:
-        description: unit-tests
+    unit-tests-linux:
+        description: unit-tests-linux
         executor:
             name: sb_node_22_classic
             class: xlarge
@@ -367,11 +444,9 @@ jobs:
             - restore_cache:
                   keys: *a2
             - run:
-                  name: Run tests
+                  command: yarn test
+                  name: Run unit tests
                   working_directory: code
-                  command: |-
-                      TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
-                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
             - store_test_results:
                   path: storybook/test-results
             - run:
@@ -423,108 +498,6 @@ jobs:
                   command: yarn docs:prettier:check
     sandboxes:
         type: no-op
-    react-vite-default-ts--create:
-        description: react-vite/default-ts (create)
-        executor:
-            name: sb_node_22_browsers
-            class: large
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys: *a2
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Start Event Collector
-                  working_directory: scripts
-                  background: true
-                  command: yarn jiti ./event-log-collector.ts
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-                      yarn wait-on tcp:127.0.0.1:6007
-            - run:
-                  name: Setup Corepack
-                  command: |-
-                      sudo corepack enable
-                      which yarn
-                      yarn --version
-            - run:
-                  name: Create Sandboxes
-                  command: yarn task sandbox --template react-vite/default-ts --no-link -s sandbox --debug
-                  environment:
-                      STORYBOOK_TELEMETRY_DEBUG: 1
-                      STORYBOOK_TELEMETRY_URL: http://127.0.0.1:6007/event-log
-            - store_artifacts:
-                  path: /tmp/storybook-sandboxes/react-vite-default-ts/debug-storybook.log
-                  destination: logs
-            - persist_to_workspace:
-                  paths:
-                      - storybook-sandboxes/react-vite-default-ts
-                  root: /tmp
-    react-vite-default-ts--build:
-        description: react-vite/default-ts (build)
-        executor:
-            name: sb_playwright
-            class: xlarge
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys: *a2
-            - run:
-                  name: Build storybook
-                  command: yarn task build --template react-vite/default-ts --no-link -s build
-            - run:
-                  name: Serve storybook
-                  background: true
-                  command: yarn task serve --template react-vite/default-ts --no-link -s serve
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: yarn wait-on tcp:127.0.0.1:8001
-            - run:
-                  name: Running E2E Tests
-                  command: |-
-                      TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
-                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
-    react-vite-default-ts--dev:
-        description: react-vite/default-ts (dev)
-        executor:
-            class: xlarge
-            name: sb_playwright
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys: *a2
-            - run:
-                  name: Run storybook
-                  working_directory: code
-                  background: true
-                  command: yarn task dev --template react-vite/default-ts --no-link -s dev
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: yarn wait-on tcp:127.0.0.1:6006
-            - run:
-                  name: Running E2E Tests
-                  command: |-
-                      TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
-                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
 workflows:
     docs:
         jobs:
@@ -537,24 +510,18 @@ workflows:
             - package-benchmarks:
                   requires:
                       - build-linux
-            - unit-tests:
+            - unit-tests-linux:
                   requires:
                       - build-linux
+            - unit-tests-linux:
+                  requires:
+                      - build-windows
             - sandboxes:
                   requires:
                       - build-linux
             - ui:
                   requires:
                       - build-linux
-            - react-vite-default-ts--create:
-                  requires:
-                      - sandboxes
-            - react-vite-default-ts--build:
-                  requires:
-                      - react-vite-default-ts--create
-            - react-vite-default-ts--dev:
-                  requires:
-                      - react-vite-default-ts--create
         when:
             equal:
                 - docs

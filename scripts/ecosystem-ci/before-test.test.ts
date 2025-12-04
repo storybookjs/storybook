@@ -15,9 +15,9 @@ script to copy the resolutions into the sandbox package.json files.
 
 describe('ecosystem-ci before-test', () => {
   it('EXISTING_RESOLUTIONS should match all keys in package.json resolutions', () => {
-    const actualKeys = Object.keys(rootPkgJson.resolutions).sort();
-    const declaredKeys = [...EXISTING_RESOLUTIONS].sort();
+    const actualKeys = new Set(Object.keys(rootPkgJson.resolutions));
+    const difference = actualKeys.symmetricDifference(EXISTING_RESOLUTIONS);
 
-    expect(declaredKeys).toEqual(actualKeys);
+    expect(difference.size).toBe(0);
   });
 });

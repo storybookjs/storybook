@@ -1,12 +1,12 @@
 /**
- * List of resolutions from the root package.json that should NOT be copied to sandbox package.json.
+ * Set of resolutions from the root package.json that should NOT be copied to sandbox package.json.
  * These are the "existing" resolutions that Storybook maintains, as opposed to resolutions that
  * might be injected by ecosystem-ci repos.
  *
- * This array must stay in sync with the resolutions in the root package.json. Run the test in
+ * This set must stay in sync with the resolutions in the root package.json. Run the test in
  * before-test.test.ts to verify they match.
  */
-export const EXISTING_RESOLUTIONS = [
+export const EXISTING_RESOLUTIONS = new Set([
   '@babel/runtime',
   '@babel/traverse',
   '@babel/types',
@@ -26,4 +26,4 @@ export const EXISTING_RESOLUTIONS = [
   'serialize-javascript',
   'type-fest',
   'typescript',
-];
+]);

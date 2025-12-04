@@ -29,10 +29,10 @@ const { default: sandboxPkgJson } = await import(sandboxPackageJsonPath, {
 });
 
 // copy resolutions from root package.json to sandbox package.json, excluding the known resolutions we have internally in our repo
-// ecosystem-ci will add resolutions to th the root package.json, and we want to propagate ONLY those to the sandbox package.json
+// ecosystem-ci will add resolutions to the root package.json, and we want to propagate ONLY those to the sandbox package.json
 const resolutionsToCopy = rootPkgJson.resolutions
   ? Object.fromEntries(
-      Object.entries(rootPkgJson.resolutions).filter(([pkg]) => !EXISTING_RESOLUTIONS.includes(pkg))
+      Object.entries(rootPkgJson.resolutions).filter(([pkg]) => !EXISTING_RESOLUTIONS.has(pkg))
     )
   : {};
 

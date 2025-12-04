@@ -70,7 +70,7 @@ jobs:
       - name: Wait for registry
         run: yarn wait-on tcp:127.0.0.1:6001
 
-      - name: Wait for registry
+      - name: Wait for Verdaccio
         run: yarn wait-on tcp:127.0.0.1:6002
 
       - name: Generate

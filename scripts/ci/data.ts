@@ -599,8 +599,8 @@ const packageBenchmarks = defineJob(
 
 const sandboxes = [
   //
-  // 'react-vite/default-ts',
-  // 'react-vite/default-js',
+  'react-vite/default-ts',
+  'react-vite/default-js',
 ].map(defineSandboxFlow);
 
 const jobs = {
@@ -674,7 +674,7 @@ const parameters = {
 };
 
 const workflows = {
-  docs: {
+  generated: {
     jobs: [
       'pretty-docs',
       linux_build.id,
@@ -715,14 +715,6 @@ const workflows = {
       equal: ['docs', '<< pipeline.parameters.workflow >>'],
     },
   },
-  // windows: {
-  //   jobs: [
-  //     'pretty-docs',
-  //     build.id,
-  //     {
-  //       [check.id]: {
-  //         requires: check.requires,
-  //       },
 };
 
 export const data = {

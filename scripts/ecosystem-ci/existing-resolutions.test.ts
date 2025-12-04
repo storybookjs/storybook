@@ -13,7 +13,7 @@ are reflected in the EXISTING_RESOLUTIONS set, which is used by the ecosystem-ci
 script to copy the resolutions into the sandbox package.json files.
 */
 
-describe('ecosystem-ci before-test', () => {
+describe('ecosystem-ci', () => {
   it('EXISTING_RESOLUTIONS should match all keys in package.json resolutions', () => {
     const actualKeys = new Set(Object.keys(rootPkgJson.resolutions));
     const difference = actualKeys.symmetricDifference(EXISTING_RESOLUTIONS);

@@ -39,6 +39,23 @@ export interface MultiSelectPromptOptions<T> extends BasePromptOptions {
   required?: boolean;
 }
 
+export interface FileSystemTreeSelectPromptOptions extends BasePromptOptions {
+  /** The root directory to start browsing from */
+  root?: string;
+  /** Whether to include files in the selection (default: true) */
+  includeFiles?: boolean;
+  /** Whether to include hidden files and directories (default: false) */
+  includeHidden?: boolean;
+  /** Maximum depth to traverse (default: Infinity) */
+  maxDepth?: number;
+  /** Optional filter function to exclude certain paths */
+  filter?: (path: string) => boolean;
+  /** Glob pattern(s) to filter files (based on picomatch) */
+  glob?: string | string[];
+  /** Whether to allow multiple selections (default: false) */
+  multiple?: boolean;
+}
+
 export interface PromptOptions {
   onCancel?: () => void;
 }
@@ -86,6 +103,11 @@ export abstract class PromptProvider {
     options: MultiSelectPromptOptions<T>,
     promptOptions?: PromptOptions
   ): Promise<T[]>;
+
+  abstract fileSystemTreeSelect(
+    options: FileSystemTreeSelectPromptOptions,
+    promptOptions?: PromptOptions
+  ): Promise<string | string[]>;
 
   abstract spinner(options: SpinnerOptions): SpinnerInstance;
 

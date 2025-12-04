@@ -6,7 +6,11 @@ import * as newLogger from './logger/logger';
 
 export { prompt } from './prompts';
 export { logTracker } from './logger/log-tracker';
-export type { SpinnerInstance, TaskLogInstance } from './prompts/prompt-provider-base';
+export type {
+  SpinnerInstance,
+  TaskLogInstance,
+  FileSystemTreeSelectPromptOptions,
+} from './prompts/prompt-provider-base';
 export { protectUrls, createHyperlink } from './wrap-utils';
 export { CLI_COLORS } from './logger/colors';
 export { ConsoleLogger, StyledConsoleLogger } from './logger/console';

@@ -2140,7 +2140,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@clack/core@npm:1.0.0-alpha.7":
+"@clack/core@npm:1.0.0-alpha.7, @clack/core@npm:^1.0.0-alpha.1":
   version: 1.0.0-alpha.7
   resolution: "@clack/core@npm:1.0.0-alpha.7"
   dependencies:
@@ -13872,6 +13872,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"clack-tree-select@npm:^1.0.4":
+  version: 1.0.4
+  resolution: "clack-tree-select@npm:1.0.4"
+  dependencies:
+    "@clack/core": "npm:^1.0.0-alpha.1"
+    is-unicode-supported: "npm:^1.3.0"
+    picocolors: "npm:^1.0.0"
+    sisteransi: "npm:^1.0.5"
+  peerDependencies:
+    "@clack/prompts": ">=0.8.0"
+  checksum: 10c0/92015e17b95d26bb2412cb3a566325a5972ffc5bfd9ecd351b24d554769fd6165c53e4b8d88f12160f777f1fb5c71fc26f6b964138e0a27e4bab4770595370c8
+  languageName: node
+  linkType: hard
+
 "clean-css@npm:^5.2.2":
   version: 5.3.3
   resolution: "clean-css@npm:5.3.3"
@@ -20673,6 +20687,13 @@ __metadata:
   version: 0.1.0
   resolution: "is-unicode-supported@npm:0.1.0"
   checksum: 10c0/00cbe3455c3756be68d2542c416cab888aebd5012781d6819749fefb15162ff23e38501fe681b3d751c73e8ff561ac09a5293eba6f58fdf0178462ce6dcb3453
+  languageName: node
+  linkType: hard
+
+"is-unicode-supported@npm:^1.3.0":
+  version: 1.3.0
+  resolution: "is-unicode-supported@npm:1.3.0"
+  checksum: 10c0/b8674ea95d869f6faabddc6a484767207058b91aea0250803cbf1221345cb0c56f466d4ecea375dc77f6633d248d33c47bd296fb8f4cdba0b4edba8917e83d8a
   languageName: node
   linkType: hard
 
@@ -29230,6 +29251,7 @@ __metadata:
     bundle-require: "npm:^5.1.0"
     camelcase: "npm:^8.0.0"
     chai: "npm:^5.1.1"
+    clack-tree-select: "npm:^1.0.4"
     commander: "npm:^14.0.1"
     comment-parser: "npm:^1.4.1"
     copy-to-clipboard: "npm:^3.3.1"

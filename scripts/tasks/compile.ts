@@ -37,11 +37,11 @@ export const compile: Task = {
       return false;
     }
   },
-  async run({ codeDir }, { link, dryRun, debug, prod, skipCache }) {
+  async run({ codeDir }, { link, dryRun, debug, prod }) {
     const command = link && !prod ? linkCommand : noLinkCommand;
     await rm(join(codeDir, 'bench/esbuild-metafiles'), { recursive: true, force: true });
     return exec(
-      `${command} ${skipCache ? '--skip-nx-cache' : ''}`,
+      `${command} --skip-nx-cache`,
       { cwd: ROOT_DIRECTORY },
       {
         startMessage: '🥾 Bootstrapping',

@@ -75,10 +75,11 @@ const startVerdaccio = async () => {
        */
       const proxy = http.createServer((req, res) => {
         // if request contains "storybook" redirect to verdaccio
+        const normalized = decodeURIComponent(req.url);
+
         if (
           req.url === '/' ||
-          packages.some((it) => decodeURIComponent(req.url)?.startsWith('/' + it.name)) ||
-          req.method === 'PUT'
+          packages.some(({ name }) => normalized === `/${name}` || normalized.includes(`/${name}/`))
         ) {
           res.writeHead(302, { Location: `http://localhost:${VERDACCIO_PORT}` + req.url });
           res.end();

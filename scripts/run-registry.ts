@@ -163,7 +163,7 @@ const publishPackage = async (ws: Package, workspaces: Package[]) => {
   resolveWorkspaceDeps(pkg, workspaces);
 
   await writeFile(join(tmpDir, 'package.json'), JSON.stringify(pkg, null, 2));
-  await writeFile(join(tmpDir, '.npmrc'), `//localhost:6002/:_authToken=fake`);
+  await writeFile(join(tmpDir, '.npmrc'), `//localhost:${VERDACCIO_PORT}/:_authToken=fake`);
 
   try {
     await x(
@@ -211,6 +211,21 @@ const resolveWorkspaceDeps = (pkg: PackageJson, packages: Package[]) => {
   }
 };
 
+const getPackages = async () =>
+  Promise.all(
+    (await getCodeWorkspaces(false)).map(async (ws) => {
+      const path = join(CODE_DIRECTORY, ws.location);
+      const pkg = JSON.parse(await readFile(join(path, 'package.json'), 'utf8'));
+      const version = pkg.version;
+      return {
+        ...ws,
+        path,
+        version,
+        publishVersion: opts.local ? `${version}-${PUBLISH_TAG}.${RUN_ID}` : version,
+      };
+    })
+  );
+
 let servers: Servers | undefined;
 
 const run = async () => {
@@ -232,7 +247,7 @@ const run = async () => {
 
   const [_servers, packages, version] = await Promise.all([
     startVerdaccio(),
-    getCodeWorkspaces(false),
+    getPackages(),
     currentVersion(),
   ]);
   servers = _servers;
@@ -244,21 +259,7 @@ const run = async () => {
   );
 
   if (opts.publish) {
-    const packages = await Promise.all(
-      (await getCodeWorkspaces(false)).map(async (ws) => {
-        const path = join(CODE_DIRECTORY, ws.location);
-        const pkg = JSON.parse(await readFile(join(path, 'package.json'), 'utf8'));
-        const version = pkg.version;
-        return {
-          ...ws,
-          path,
-          version,
-          publishVersion: opts.local ? `${version}-${PUBLISH_TAG}.${RUN_ID}` : version,
-        };
-      })
-    );
     const limit = pLimit(maxConcurrentTasks);
-
     await Promise.all(packages.map((p) => limit(() => publishPackage(p, packages))));
   }
 

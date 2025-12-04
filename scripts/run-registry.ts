@@ -28,7 +28,7 @@ program
   .option(
     '--local',
     'publish unique local version such as 10.2.0-alpha.1-local.1764865413053',
-    false
+    true
   );
 
 program.parse(process.argv);

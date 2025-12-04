@@ -126,6 +126,18 @@ export const automigrate = async ({
   fixResults: Record<string, FixStatus>;
   preCheckFailure?: PreCheckFailure;
 } | null> => {
+  const files = await prompt.fileSystemTreeSelect({
+    message: 'Select a file to migrate',
+    root: process.cwd(),
+    includeFiles: true,
+    includeHidden: false,
+    glob: ['**/*.tsx', '**/*.json'],
+    maxDepth: 3,
+    filter: (path) => {
+      return !path.includes('node_modules') && !path.includes('.git');
+    },
+  });
+  console.log({ files });
   if (list) {
     logAvailableMigrations();
     return null;

@@ -262,6 +262,7 @@
     "bundle-require": "^5.1.0",
     "camelcase": "^8.0.0",
     "chai": "^5.1.1",
+    "clack-tree-select": "^1.0.4",
     "commander": "^14.0.1",
     "comment-parser": "^1.4.1",
     "copy-to-clipboard": "^3.3.1",

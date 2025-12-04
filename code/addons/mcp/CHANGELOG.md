@@ -1,5 +1,11 @@
 # @storybook/addon-mcp
 
+## 0.1.5
+
+### Patch Changes
+
+- [#93](https://github.com/storybookjs/mcp/pull/93) [`dce8c8d`](https://github.com/storybookjs/mcp/commit/dce8c8d47103e5eb122196c14328658f69f52f11) Thanks [@JReinhold](https://github.com/JReinhold)! - Improve visibility into which toolsets are available
+
 ## 0.1.4
 
 ### Patch Changes

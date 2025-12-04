@@ -20,23 +20,32 @@ describe(`Errors Helpers`, () => {
     });
 
     it(`Sanitizes current path from error stacktraces`, () => {
-      const errorMessage = `this is a test`;
-      let e: any;
-      try {
-        throw new Error(errorMessage);
-      } catch (error) {
-        e = error;
-      }
+      const errorMessage = `Test error message`;
+      const mockCwd = `/Users/testuser/project`;
+      const mockCwdSpy = vi.spyOn(process, `cwd`).mockImplementation(() => mockCwd);
+
+      const e = {
+        message: errorMessage,
+        stack: `
+          Error: Test error message
+            at Object.<anonymous> (${mockCwd}/src/index.js:1:32)
+            at Object.<anonymous> (${mockCwd}/node_modules/some-lib/index.js:1:69)
+            at Module._compile (internal/modules/cjs/loader.js:736:30)
+        `,
+        name: 'Error',
+      };
+
       expect(e).toBeDefined();
       expect(e.message).toEqual(errorMessage);
-      expect(e.stack).toEqual(expect.stringContaining(process.cwd()));
+      expect(e.stack).toEqual(expect.stringContaining(mockCwd));
 
-      const sanitizedError = sanitizeError(e);
+      const sanitizedError = sanitizeError(e as Error, '/');
 
-      expect(sanitizedError.message).toEqual(expect.stringContaining(errorMessage));
-      expect(sanitizedError.message).toEqual(
-        expect.not.stringContaining(process.cwd().replace(/\\/g, `\\\\`))
-      );
+      expect(sanitizedError.message).toEqual(errorMessage);
+      expect(sanitizedError.stack).toEqual(expect.not.stringContaining(mockCwd));
+      expect(sanitizedError.stack).toEqual(expect.stringContaining('$SNIP'));
+
+      mockCwdSpy.mockRestore();
     });
 
     it(`Sanitizes a section of the current path from error stacktrace`, () => {

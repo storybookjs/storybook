@@ -175,16 +175,12 @@
     "type-fest": "~2.19",
     "typescript": "^5.9.3",
     "uuid": "^9.0.1",
+    "verdaccio": "^6.2.3",
     "vitest": "^3.2.4",
     "wait-on": "^8.0.3",
     "window-size": "^1.1.1",
     "yaml": "^2.7.0",
     "zod": "^3.23.8"
-  },
-  "optionalDependencies": {
-    "@verdaccio/types": "^10.8.0",
-    "verdaccio": "^5.31.1",
-    "verdaccio-auth-memory": "^10.2.2"
   },
   "packageManager": "yarn@4.10.3"
 }

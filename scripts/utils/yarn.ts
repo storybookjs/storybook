@@ -2,7 +2,6 @@ import { access, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
-import storybookVersions from '../../code/core/src/common/versions';
 import type { TemplateKey } from '../get-template';
 import { exec } from './exec';
 import touch from './touch';
@@ -35,8 +34,6 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   const content = await readFile(packageJsonPath, 'utf-8');
   const packageJson = JSON.parse(content);
   packageJson.resolutions = {
-    ...packageJson.resolutions,
-    ...storybookVersions,
     // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
     playwright: '1.52.0',
     'playwright-core': '1.52.0',
@@ -130,8 +127,7 @@ export const configureYarn2ForVerdaccio = async ({
   const command = [
     // We don't want to use the cache or we might get older copies of our built packages
     // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed
-    // TODO publish unique versions instead
-    `yarn config set enableGlobalCache false`,
+    `yarn config set enableGlobalCache true`,
     `yarn config set enableMirror false`,
     // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)
     `yarn config set npmRegistryServer "http://localhost:6001/"`,

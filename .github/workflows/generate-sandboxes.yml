@@ -2,7 +2,7 @@ name: Generate and publish sandboxes
 
 on:
   schedule:
-    - cron: "2 2 */1 * *"
+    - cron: '2 2 */1 * *'
   workflow_dispatch:
   # To test fixes on push rather than wait for the scheduling, do the following:
   # 1. Uncomment the lines below and add your branch.
@@ -14,8 +14,8 @@ on:
   # 4. 👉 DON'T FORGET TO UNDO THE STEPS BEFORE YOU MERGE YOUR CHANGES!
 
 env:
-  YARN_ENABLE_IMMUTABLE_INSTALLS: "false"
-  CLEANUP_SANDBOX_NODE_MODULES: "true"
+  YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
+  CLEANUP_SANDBOX_NODE_MODULES: 'true'
 
 defaults:
   run:
@@ -33,7 +33,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
 
       - name: Setup git user
         run: |
@@ -48,13 +48,13 @@ jobs:
         run: yarn task --task compile --start-from=auto --no-link
 
       - name: Publish to local registry
-        run: yarn local-registry --publish
-
-      - name: Run local registry
-        run: yarn local-registry --open &
+        run: yarn local-registry --publish --open --no-local &
 
       - name: Wait for registry
         run: yarn wait-on tcp:127.0.0.1:6001
+
+      - name: Wait for registry
+        run: yarn wait-on tcp:127.0.0.1:6002
 
       - name: Generate
         id: generate
@@ -86,7 +86,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
 
       - name: Setup git user
         run: |

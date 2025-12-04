@@ -24,7 +24,12 @@ const VERDACCIO_PORT = 6002;
 
 program
   .option('-O, --open', 'keep process open')
-  .option('-P, --publish', 'should publish packages');
+  .option('-P, --publish', 'should publish packages')
+  .option(
+    '--local',
+    'publish unique local version such as 10.2.0-alpha.1-local.1764865413053',
+    false
+  );
 
 program.parse(process.argv);
 
@@ -244,7 +249,12 @@ const run = async () => {
         const path = join(CODE_DIRECTORY, ws.location);
         const pkg = JSON.parse(await readFile(join(path, 'package.json'), 'utf8'));
         const version = pkg.version;
-        return { ...ws, path, version, publishVersion: `${version}-${PUBLISH_TAG}.${RUN_ID}` };
+        return {
+          ...ws,
+          path,
+          version,
+          publishVersion: opts.local ? `${version}-${PUBLISH_TAG}.${RUN_ID}` : version,
+        };
       })
     );
     const limit = pLimit(maxConcurrentTasks);

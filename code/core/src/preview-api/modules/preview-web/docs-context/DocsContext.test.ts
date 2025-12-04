@@ -109,7 +109,7 @@ describe('referenceMeta', () => {
 
     // Passing a component directly should throw
     expect(() => context.referenceMeta(component, true)).toThrow(
-      '<Meta of={} /> must reference a CSF file module export or meta export'
+      '<Meta of={} /> must reference a CSF file module export or meta export. Did you mistakenly reference your component instead of your CSF file?'
     );
   });
 });

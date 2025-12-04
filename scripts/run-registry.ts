@@ -1,19 +1,26 @@
-import { exec } from 'node:child_process';
-import { access, mkdir, readFile, rm } from 'node:fs/promises';
-import http from 'node:http';
+import { access, cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import type { Server } from 'node:http';
-import { join, resolve as resolvePath } from 'node:path';
+import http from 'node:http';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { program } from 'commander';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
+import { x } from 'tinyexec';
+import type { PackageJson } from 'type-fest';
 import { parseConfigFile, runServer } from 'verdaccio';
 
-import { npmAuth } from './npm-auth';
 import { maxConcurrentTasks } from './utils/concurrency';
-import { PACKS_DIRECTORY, ROOT_DIRECTORY } from './utils/constants';
+import { CODE_DIRECTORY, ROOT_DIRECTORY } from './utils/constants';
 import { killPort } from './utils/port';
 import { getCodeWorkspaces } from './utils/workspace';
+
+const PUBLISH_TAG = 'local';
+const RUN_ID = Date.now();
+
+const REGISTRY_PORT = 6001;
+const VERDACCIO_PORT = 6002;
 
 program
   .option('-O, --open', 'keep process open')
@@ -22,8 +29,6 @@ program
 program.parse(process.argv);
 
 const logger = console;
-
-const root = resolvePath(__dirname, '..');
 
 const opts = program.opts();
 
@@ -39,9 +44,10 @@ const pathExists = async (p: string) => {
 type Servers = { close: () => Promise<void> };
 const startVerdaccio = async () => {
   // Kill Verdaccio related processes if they are already running
-  await killPort(6001);
-  await killPort(6002);
+  await killPort(REGISTRY_PORT);
+  await killPort(VERDACCIO_PORT);
 
+  const packages = await getCodeWorkspaces(false);
   const ready = {
     proxy: false,
     verdaccio: false,
@@ -64,8 +70,12 @@ const startVerdaccio = async () => {
        */
       const proxy = http.createServer((req, res) => {
         // if request contains "storybook" redirect to verdaccio
-        if (req.url?.includes('storybook') || req.url?.includes('/sb') || req.method === 'PUT') {
-          res.writeHead(302, { Location: 'http://localhost:6002' + req.url });
+        if (
+          req.url === '/' ||
+          packages.some((it) => decodeURIComponent(req.url)?.startsWith('/' + it.name)) ||
+          req.method === 'PUT'
+        ) {
+          res.writeHead(302, { Location: `http://localhost:${VERDACCIO_PORT}` + req.url });
           res.end();
         } else {
           // forward to npm registry
@@ -78,7 +88,7 @@ const startVerdaccio = async () => {
 
       const servers = {
         close: async () => {
-          console.log('🛬 Closing servers running on port 6001 and 6002');
+          console.log(`🛬 Closing servers running on port ${REGISTRY_PORT} and ${VERDACCIO_PORT}`);
           await Promise.all([
             new Promise<void>((resolve) => {
               verdaccioApp?.close(() => resolve());
@@ -90,7 +100,7 @@ const startVerdaccio = async () => {
         },
       };
 
-      proxy.listen(6001, () => {
+      proxy.listen(REGISTRY_PORT, () => {
         ready.proxy = true;
         if (ready.verdaccio) {
           resolve(servers);
@@ -102,11 +112,10 @@ const startVerdaccio = async () => {
         self_path: cache,
       };
 
-      // @ts-expect-error (verdaccio's interface is wrong)
       runServer(config).then((app: Server) => {
         verdaccioApp = app;
 
-        app.listen(6002, () => {
+        app.listen(VERDACCIO_PORT, () => {
           ready.verdaccio = true;
           if (ready.proxy) {
             resolve(servers);
@@ -130,53 +139,71 @@ const currentVersion = async () => {
   return version;
 };
 
-const publish = async (packages: { name: string; location: string }[], url: string) => {
-  logger.log(`Publishing packages with a concurrency of ${maxConcurrentTasks}`);
+interface Package {
+  name: string;
+  location: string;
+  path: string;
+  version: string;
+  publishVersion: string;
+}
 
-  const limit = pLimit(maxConcurrentTasks);
-  let i = 0;
+const publishPackage = async (ws: Package, workspaces: Package[]) => {
+  const info = workspaces.find((it) => it.name === ws.name);
+  const tmpDir = await mkdtemp(join(tmpdir(), ws.name.replace('/', '-') + '-'));
 
-  /**
-   * We need to "pack" our packages before publishing to npm because our package.json files contain
-   * yarn specific version "ranges". such as "workspace:*"
-   *
-   * We can't publish to npm if the package.json contains these ranges. So with `yarn pack` we
-   * create a tarball that we can publish.
-   *
-   * However this bug exists in NPM: https://github.com/npm/cli/issues/4533! Which causes the NPM
-   * CLI to disregard the tarball CLI argument and instead re-create a tarball. But NPM doesn't
-   * replace the yarn version ranges.
-   *
-   * So we create the tarball ourselves and move it to another location on the FS. Then we
-   * change-directory to that directory and publish the tarball from there.
-   */
-  await mkdir(PACKS_DIRECTORY, { recursive: true }).catch(() => {});
+  await cp(ws.path, tmpDir, { recursive: true, force: true });
 
-  return Promise.all(
-    packages.map(({ name, location }) =>
-      limit(
-        () =>
-          new Promise((resolve, reject) => {
-            const loggedLocation = location.replace(resolvePath(join(__dirname, '..')), '.');
-            const resolvedLocation = resolvePath('../code', location);
+  const pkg = JSON.parse(await readFile(join(tmpDir, 'package.json'), 'utf8'));
+  pkg.version = info.publishVersion;
+  resolveWorkspaceDeps(pkg, workspaces);
 
-            logger.log(`🛫 publishing ${name} (${loggedLocation})`);
+  await writeFile(join(tmpDir, 'package.json'), JSON.stringify(pkg, null, 2));
+  await writeFile(join(tmpDir, '.npmrc'), `//localhost:6002/:_authToken=fake`);
 
-            const tarballFilename = `${name.replace('@', '').replace('/', '-')}.tgz`;
-            const command = `cd "${resolvedLocation}" && yarn pack --out="${PACKS_DIRECTORY}/${tarballFilename}" && cd "${PACKS_DIRECTORY}" && npm publish "./${tarballFilename}" --registry ${url} --force --tag="xyz" --ignore-scripts`;
-            exec(command, (e) => {
-              if (e) {
-                reject(e);
-              } else {
-                i += 1;
-                logger.log(`${i}/${packages.length} 🛬 successful publish of ${name}!`);
-                resolve(undefined);
-              }
-            });
-          })
-      )
-    )
-  );
+  try {
+    await x(
+      'npm',
+      [
+        'publish',
+        '--registry',
+        `http://localhost:${VERDACCIO_PORT}`,
+        '--tag',
+        PUBLISH_TAG,
+        '--ignore-scripts',
+      ],
+      { nodeOptions: { cwd: tmpDir, stdio: 'inherit' }, throwOnError: true }
+    );
+  } finally {
+    await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+  }
+};
+
+// Resolve workspace dependencies to the published version
+const resolveWorkspaceDeps = (pkg: PackageJson, packages: Package[]) => {
+  for (const field of [
+    'dependencies',
+    'devDependencies',
+    'peerDependencies',
+    'optionalDependencies',
+  ] as const) {
+    const deps = pkg[field];
+    if (!deps) {
+      continue;
+    }
+
+    for (const [depName, raw] of Object.entries(deps)) {
+      if (typeof raw !== 'string' || !raw.startsWith('workspace:')) {
+        continue;
+      }
+      const info = packages.find((it) => it.name === depName);
+      if (!info) {
+        continue;
+      }
+      const spec = raw.slice('workspace:'.length);
+      const version = info.publishVersion;
+      deps[depName] = spec === '^' || spec === '~' ? `${spec}${version}` : version;
+    }
+  }
 };
 
 let servers: Servers | undefined;
@@ -207,27 +234,22 @@ const run = async () => {
 
   logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
 
-  logger.log(`👤 add temp user to verdaccio`);
-  // Use npmAuth helper to authenticate to the local Verdaccio registry
-  // This will create a .npmrc file in the root directory
-  await npmAuth({
-    username: 'foo',
-    password: 's3cret',
-    email: 'test@test.com',
-    registry: 'http://localhost:6002',
-    outputDir: root,
-  });
-
   logger.log(
     `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
   );
 
   if (opts.publish) {
-    try {
-      await publish(packages, 'http://localhost:6002');
-    } finally {
-      await rm(join(root, '.npmrc'), { force: true });
-    }
+    const packages = await Promise.all(
+      (await getCodeWorkspaces(false)).map(async (ws) => {
+        const path = join(CODE_DIRECTORY, ws.location);
+        const pkg = JSON.parse(await readFile(join(path, 'package.json'), 'utf8'));
+        const version = pkg.version;
+        return { ...ws, path, version, publishVersion: `${version}-${PUBLISH_TAG}.${RUN_ID}` };
+      })
+    );
+    const limit = pLimit(maxConcurrentTasks);
+
+    await Promise.all(packages.map((p) => limit(() => publishPackage(p, packages))));
   }
 
   if (!opts.open) {
@@ -240,7 +262,6 @@ run().catch(async (e) => {
   try {
     await servers?.close();
   } finally {
-    await rm(join(root, '.npmrc'), { force: true });
     throw e;
   }
 });

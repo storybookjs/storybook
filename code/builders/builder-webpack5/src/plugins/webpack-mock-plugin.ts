@@ -8,6 +8,7 @@ import {
   resolveExternalModule,
   resolveWithExtensions,
 } from 'storybook/internal/mocking-utils';
+import { logger } from 'storybook/internal/node-logger';
 
 import { findMockRedirect } from '@vitest/mocker/redirect';
 import type { Compiler } from 'webpack';
@@ -49,6 +50,8 @@ const PLUGIN_NAME = 'storybook-mock-plugin';
 export class WebpackMockPlugin {
   private readonly options: WebpackMockPluginOptions;
   private mockMap: Map<string, ResolvedMock> = new Map();
+  private candidateSpecifiers: Set<string> = new Set();
+  private lastPreviewMtime: number | undefined;
 
   constructor(options: WebpackMockPluginOptions) {
     if (!options.previewConfigPath) {
@@ -63,20 +66,26 @@ export class WebpackMockPlugin {
    * @param {Compiler} compiler The Webpack compiler instance.
    */
   public apply(compiler: Compiler): void {
-    const logger = compiler.getInfrastructureLogger(PLUGIN_NAME);
-
     // This function will be called to update the mock map before each compilation.
     const updateMocks = () => {
+      const mTimePreviewConfig = this.getPreviewConfigMtime(compiler);
+      if (
+        this.lastPreviewMtime &&
+        mTimePreviewConfig &&
+        mTimePreviewConfig <= this.lastPreviewMtime
+      ) {
+        return; // unchanged
+      }
+      const resolved = this.extractAndResolveMocks(compiler);
       this.mockMap = new Map(
-        this.extractAndResolveMocks(compiler).flatMap((mock) => [
-          // first one, full path
+        resolved.flatMap((mock) => [
           [mock.absolutePath, mock],
-          // second one, without the extension
           [mock.absolutePath.replace(/\.[^.]+$/, ''), mock],
         ])
       );
-      // divide by 2 because we add both the full path and the path without the extension
-      logger.info(`Mock map updated with ${this.mockMap.size / 2} mocks.`);
+      this.candidateSpecifiers = new Set(resolved.map((m) => m.path));
+      this.lastPreviewMtime = mTimePreviewConfig;
+      logger.info(`Mock map updated with ${resolved.length} mocks.`);
     };
 
     compiler.hooks.beforeRun.tap(PLUGIN_NAME, updateMocks); // for build
@@ -85,10 +94,19 @@ export class WebpackMockPlugin {
     // Apply the replacement plugin. Its callback will now use the dynamically updated mockMap.
     new compiler.webpack.NormalModuleReplacementPlugin(/.*/, (resource) => {
       try {
+        if (this.mockMap.size === 0) {
+          return;
+        }
         const path = resource.request;
         const importer = resource.context;
 
         const isExternal = getIsExternal(path, importer);
+        // Early filter only for external specifiers. Relative/local specifiers need resolution
+
+        // Early filter only for external specifiers. Relative/local specifiers need resolution
+        if (isExternal && !this.candidateSpecifiers.has(path)) {
+          return;
+        }
         const absolutePath = isExternal
           ? resolveExternalModule(path, importer)
           : resolveWithExtensions(path, importer);
@@ -113,6 +131,16 @@ export class WebpackMockPlugin {
         }
       }
     });
+  }
+
+  private getPreviewConfigMtime(compiler: Compiler): number | undefined {
+    try {
+      const fs = compiler.inputFileSystem as any;
+      const stat = fs.statSync?.(this.options.previewConfigPath);
+      return stat?.mtime?.getTime?.();
+    } catch {
+      return undefined;
+    }
   }
 
   /**

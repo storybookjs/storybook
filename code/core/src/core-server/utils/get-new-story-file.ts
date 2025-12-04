@@ -36,6 +36,10 @@ export async function getNewStoryFile(
   const basenameWithoutExtension = base.replace(extension, '');
   const dir = dirname(componentFilePath);
 
+  // Ensure dir is relative to project root
+  const projectRoot = getProjectRoot();
+  const relativeDir = dir.startsWith(projectRoot) ? relative(projectRoot, dir) : dir;
+
   const { storyFileName, isTypescript, storyFileExtension } = getStoryMetadata(componentFilePath);
   const storyFileNameWithExtension = `${storyFileName}.${storyFileExtension}`;
   const alternativeStoryFileNameWithExtension = `${basenameWithoutExtension}.${componentExportName}.stories.${storyFileExtension}`;
@@ -63,7 +67,7 @@ export async function getNewStoryFile(
     if (previewConfigPath) {
       const hasImportsMap = await checkForImportsMap(options.configDir);
       if (!hasImportsMap) {
-        const storyFilePath = join(getProjectRoot(), dir);
+        const storyFilePath = join(projectRoot, relativeDir);
         const relPath = relative(storyFilePath, previewConfigPath);
         const pathWithoutExt = relPath.replace(/\.(ts|js|mts|cts|tsx|jsx)$/, '');
         previewImportPath = pathWithoutExt.startsWith('.') ? pathWithoutExt : `./${pathWithoutExt}`;
@@ -96,9 +100,9 @@ export async function getNewStoryFile(
   }
 
   const storyFilePath =
-    doesStoryFileExist(join(getProjectRoot(), dir), storyFileName) && componentExportCount > 1
-      ? join(getProjectRoot(), dir, alternativeStoryFileNameWithExtension)
-      : join(getProjectRoot(), dir, storyFileNameWithExtension);
+    doesStoryFileExist(join(projectRoot, relativeDir), storyFileName) && componentExportCount > 1
+      ? join(projectRoot, relativeDir, alternativeStoryFileNameWithExtension)
+      : join(projectRoot, relativeDir, storyFileNameWithExtension);
 
   return { storyFilePath, exportedStoryName, storyFileContent, dirname };
 }

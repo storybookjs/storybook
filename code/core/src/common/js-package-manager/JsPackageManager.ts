@@ -3,6 +3,7 @@ import { dirname, isAbsolute, join, normalize, resolve } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import detectIndent from 'detect-indent';
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import { type ExecaChildProcess } from 'execa';
@@ -181,6 +182,7 @@ export abstract class JsPackageManager {
     // Read from disk if not in cache
     const jsonContent = readFileSync(absolutePath, 'utf8');
     const packageJSON = JSON.parse(jsonContent);
+    packageJSON[Symbol.for('indent')] = detectIndent(jsonContent).indent ?? 2;
 
     const result: PackageJsonWithDepsAndDevDeps = {
       ...packageJSON,
@@ -195,6 +197,15 @@ export abstract class JsPackageManager {
     return result;
   }
 
+  #getIndent(filePath: string): string | number {
+    try {
+      const packageJson = JsPackageManager.getPackageJson(filePath);
+      return packageJson[Symbol.for('indent')];
+    } catch (e) {
+      return 2;
+    }
+  }
+
   writePackageJson(packageJson: PackageJson, directory = this.cwd) {
     const packageJsonToWrite = { ...packageJson };
     const dependencyTypes = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
@@ -205,9 +216,10 @@ export abstract class JsPackageManager {
         delete packageJsonToWrite[type];
       }
     });
-
+    const filePath = join(directory, 'package.json');
+    const indent = this.#getIndent(filePath);
     const packageJsonPath = normalize(resolve(directory, 'package.json'));
-    const content = `${JSON.stringify(packageJsonToWrite, null, 2)}\n`;
+    const content = `${JSON.stringify(packageJsonToWrite, null, indent)}\n`;
     writeFileSync(packageJsonPath, content, 'utf8');
 
     // Update cache with the written content

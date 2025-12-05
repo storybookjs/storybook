@@ -119,7 +119,7 @@ jobs:
                 state: 'failure',
                 target_url: url ?? undefined,
                 context: `nx run ${task}`,
-                description: 'Your tests failed on NX Cloud',
+                description: 'Your test failed on NX Cloud',
               });
             }
             

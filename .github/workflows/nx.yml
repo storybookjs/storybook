@@ -33,11 +33,18 @@ jobs:
           fetch-depth: 0
       - run: npx nx@latest start-ci-run --distribute-on="./.nx/workflows/distribution-config.yaml" --stop-agents-after="$ALL_TASKS"
       - name: Create Nx Cloud Status (pending)
-        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = context.payload.pull_request.number;
+            const pr = context.payload.pull_request;
+            const isPr = !!pr;
+
+            const sha = isPr ? pr.head.sha : context.sha;
+            const branchParam = isPr
+              ? pr.number
+              : (context.ref.startsWith('refs/heads/')
+                  ? context.ref.slice('refs/heads/'.length)
+                  : context.ref);
 
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
@@ -60,20 +67,20 @@ jobs:
         id: tag
         name: 'Set tag to ci:normal'
         run: echo "tag=tag:ci:normal" >> $GITHUB_OUTPUT
-      - if: github.event_name == 'pull_request' &&
-          contains(github.event.pull_request.labels.*.name, 'ci:merged')
-        id: tag
-        name: 'Set tag to ci:merged'
-        run: echo "tag=tag:ci:normal,tag:ci:merged" >> $GITHUB_OUTPUT
-      - if: github.event_name == 'pull_request' &&
-          contains(github.event.pull_request.labels.*.name, 'ci:daily')
-        id: tag
-        name: 'Set tag to ci:daily'
-        run: echo "tag=tag:ci:normal,tag:ci:merged,tag:ci:daily" >> $GITHUB_OUTPUT
-      - if: github.event_name == 'push' && github.ref == 'refs/heads/next'
-        id: tag
-        name: 'Set tag to ci:merged'
-        run: echo "tag=tag:ci:normal,tag:ci:merged" >> $GITHUB_OUTPUT
+#      - if: github.event_name == 'pull_request' &&
+#          contains(github.event.pull_request.labels.*.name, 'ci:merged')
+#        id: tag
+#        name: 'Set tag to ci:merged'
+#        run: echo "tag=tag:ci:normal,tag:ci:merged" >> $GITHUB_OUTPUT
+#      - if: github.event_name == 'pull_request' &&
+#          contains(github.event.pull_request.labels.*.name, 'ci:daily')
+#        id: tag
+#        name: 'Set tag to ci:daily'
+#        run: echo "tag=tag:ci:normal,tag:ci:merged,tag:ci:daily" >> $GITHUB_OUTPUT
+#      - if: github.event_name == 'push' && github.ref == 'refs/heads/next'
+#        id: tag
+#        name: 'Set tag to ci:merged'
+#        run: echo "tag=tag:ci:normal,tag:ci:merged" >> $GITHUB_OUTPUT
       - id: nx
         name: 'Run nx'
         run: |

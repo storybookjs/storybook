@@ -1,6 +1,6 @@
 {
   "name": "scripts",
-  "tags": ["ci:normal"],
+  "tags": ["ci:normal", "ci:merged", "ci:daily"],
   "includedScripts": [],
   "targets": {
     "pretty-docs": {

@@ -8,5 +8,5 @@
       "options": { "cwd": "{projectRoot}", "command": "svelte-check" }
     }
   },
-  "tags": ["ci:normal"]
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
 }

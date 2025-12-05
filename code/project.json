@@ -1,6 +1,6 @@
 {
   "name": "code",
-  "tags": ["ci:normal"],
+  "tags": ["ci:normal", "ci:merged", "ci:daily"],
   "targets": {
     "lint": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],

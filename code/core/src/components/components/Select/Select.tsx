@@ -146,7 +146,7 @@ const MinimalistPopover: FC<{
     if (popoverRef.current) {
       return ariaHideOutside([popoverRef.current], { shouldUseInert: true });
     }
-  }, [popoverRef]);
+  }, []);
 
   const { overlayProps: positionProps } = useOverlayPosition({
     targetRef: triggerRef,

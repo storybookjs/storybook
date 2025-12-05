@@ -60,7 +60,14 @@ jobs:
         # --- PRs ---
       - if: github.event_name == 'pull_request' &&
           contains(github.event.pull_request.labels.*.name, 'ci:normal')
-        run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal"
+        run: |
+          set -o pipefail
+          
+          {
+            echo 'nx_output<<EOF'
+            yarn nx run-many -t build -c production -p="tag:ci:normal,tag:ci:merged"
+            echo 'EOF'
+          } | tee -a "$GITHUB_OUTPUT"
       - if: github.event_name == 'pull_request' &&
           contains(github.event.pull_request.labels.*.name, 'ci:merged')
         run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged"
@@ -72,6 +79,75 @@ jobs:
       - if: github.event_name == 'push' &&
           github.ref == 'refs/heads/next'
         run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged"
+
+      - name: Create per-task Nx statuses
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const raw = ${{ toJson(steps.nx-run.outputs.nx_output) }};
+            if (!raw) {
+              core.info('No nx_output found, skipping per-task statuses.');
+              return;
+            }
+
+            const lines = raw.split('\n');
+            const failures = [];
+
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i];
+
+              if (!line.includes('✖')) continue;
+
+              // Example:
+              // │   ✖      vue3-vite/default-ts:test-runner:production   58s   Cache Miss     │
+              const taskMatch = line.match(/✖\s+([^│]+?)\s{2,}/);
+              const task = taskMatch ? taskMatch[1].trim() : 'Unknown Nx task';
+
+              // Look ahead for "> Task logs: https://cloud.nx.app/logs/..."
+              let url = null;
+              for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+                const logLine = lines[j];
+                const urlMatch = logLine.match(/Task logs:\s*(https:\/\/cloud\.nx\.app\/logs\/\S+)/);
+                if (urlMatch) {
+                  url = urlMatch[1];
+                  break;
+                }
+              }
+
+              failures.push({ task, url });
+            }
+
+            if (!failures.length) {
+              core.info('No failing Nx tasks detected in output.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha =
+              context.payload.pull_request?.head?.sha ||
+              context.sha;
+
+            core.info(`Creating statuses for ${failures.length} failing Nx tasks...`);
+
+            for (const { task, url } of failures) {
+              const contextName = `Nx: ${task}`;
+              const description = `Nx task failed: ${task}`;
+
+              core.info(`Status for "${task}" -> ${url || 'no URL'}`);
+
+              await github.rest.repos.createCommitStatus({
+                owner,
+                repo,
+                sha,
+                state: 'failure',
+                target_url: url || undefined,
+                context: contextName,
+                description,
+              });
+            }
 
       # --- Final status update (success / failure / error) ---
       - name: Finalize Nx Cloud Status

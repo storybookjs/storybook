@@ -60,24 +60,32 @@ jobs:
         # --- PRs ---
       - if: github.event_name == 'pull_request' &&
           contains(github.event.pull_request.labels.*.name, 'ci:normal')
-        id: nx
+        id: tag
+        name: "Set tag to ci:normal"
+        run: echo "tag=tag:ci:normal" >> $GITHUB_OUTPUT
+      - if: github.event_name == 'pull_request' &&
+          contains(github.event.pull_request.labels.*.name, 'ci:merged')
+        id: tag
+        name: "Set tag to ci:merged"
+        run: echo "tag=tag:ci:normal,tag:ci:merged" >> $GITHUB_OUTPUT
+      - if: github.event_name == 'pull_request' &&
+          contains(github.event.pull_request.labels.*.name, 'ci:daily')
+        id: tag
+        name: "Set tag to ci:daily"
+        run: echo "tag=tag:ci:normal,tag:ci:merged,tag:ci:daily" >> $GITHUB_OUTPUT
+      # --- Pushes ---
+      - if: github.event_name == 'push' && github.ref == 'refs/heads/next'
+        id: tag
+        name: "Set tag to ci:merged"
+        run: echo "tag=tag:ci:normal,tag:ci:merged" >> $GITHUB_OUTPUT
+      - id: nx
+        name: "Run nx"
         run: |
           echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
-          yarn nx run-many -t compile -c production 2>&1 | tee -a "$GITHUB_OUTPUT"
+          yarn nx run-many -t $ALL_TASKS -c production -p="${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
           status=${PIPESTATUS[0]}
           echo 'EOF' >> "$GITHUB_OUTPUT"
           exit $status
-      - if: github.event_name == 'pull_request' &&
-          contains(github.event.pull_request.labels.*.name, 'ci:merged')
-        run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged"
-      - if: github.event_name == 'pull_request' &&
-          contains(github.event.pull_request.labels.*.name, 'ci:daily')
-        run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged,tag:ci:daily"
-
-      # --- Pushes ---
-      - if: github.event_name == 'push' &&
-          github.ref == 'refs/heads/next'
-        run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged"
 
       - name: Create per-task Nx statuses
         if: github.event_name == 'pull_request' && always()

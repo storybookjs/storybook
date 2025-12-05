@@ -64,6 +64,8 @@ export const generateStories = async ({
           '**/build/**',
           '**/storybook-static/**',
           '**/*.stories.*',
+          '**/*.test.*',
+          '**/*.spec.*',
         ],
       });
 

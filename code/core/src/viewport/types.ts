@@ -1,7 +1,7 @@
 export interface Viewport {
   name: string;
   styles: ViewportStyles;
-  type?: 'desktop' | 'mobile' | 'tablet' | 'other';
+  type?: 'desktop' | 'mobile' | 'tablet' | 'watch' | 'other';
 }
 
 export interface ViewportStyles {

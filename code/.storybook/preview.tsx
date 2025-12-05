@@ -354,7 +354,10 @@ const parameters = {
         }
       },
     },
-    toc: {},
+    toc: {
+      // Uncomment this to test disabling toc in unattached MDX files
+      // disableUnattachedMdx: true,
+    },
   },
   controls: {
     presetColors: [

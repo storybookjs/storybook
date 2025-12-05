@@ -3,8 +3,8 @@ import { ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
 import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
 
-// The amount of VCPUs for the check task on CI is 8 (xlarge resource)
-const amountOfVCPUs = 8;
+// The amount of VCPUs for the check task on CI is 4 (large resource)
+const amountOfVCPUs = 4;
 
 const parallel = `--parallel=${process.env.CI ? amountOfVCPUs - 1 : maxConcurrentTasks}`;
 
@@ -16,9 +16,10 @@ export const check: Task = {
   async ready() {
     return false;
   },
-  async run(_, { dryRun, debug, link }) {
+  async run(_, { dryRun, debug, link, skipCache }) {
+    const command = link ? linkCommand : nolinkCommand;
     return exec(
-      link ? linkCommand : nolinkCommand,
+      `${command} ${skipCache || process.env.CI ? '--skip-nx-cache' : ''}`,
       { cwd: ROOT_DIRECTORY },
       {
         startMessage: '🥾 Checking for TS errors',

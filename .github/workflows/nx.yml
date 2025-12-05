@@ -6,10 +6,13 @@ on:
       - next
   pull_request:
     types: [opened, synchronize, labeled, reopened]
+  schedule:
+    - cron: '0 23 * * *'
 
 permissions:
   actions: read
   contents: read
+  statuses: write
 
 env:
   NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
@@ -21,7 +24,9 @@ jobs:
         (contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
          contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
          contains(github.event.pull_request.labels.*.name, 'ci:daily'))
-      ) || (github.event_name == 'push' && github.ref == 'refs/heads/next')
+      ) || (github.event_name == 'push' && github.ref == 'refs/heads/next') ||
+      (github.event_name == 'schedule')
+
     runs-on: ubuntu-latest
     env:
       ALL_TASKS: compile,check,knip,test,pretty-docs,lint,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct,cypress
@@ -30,26 +35,115 @@ jobs:
         with:
           filter: tree:0
           fetch-depth: 0
+      - name: Set Nx tag(s)
+        id: tag
+        run: |
+          tags="normal"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci:merged') }}" == "true" ]]; then
+              tags="merged"
+            fi
+            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci:daily') }}" == "true" ]]; then
+              tags="daily"
+            fi
+          fi
+
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/next" ]]; then
+            tags="merged"
+          fi
+
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            tags="daily"
+          fi
+
+          echo "tag=$tags" >> "$GITHUB_OUTPUT"
       - run: npx nx@latest start-ci-run --distribute-on="./.nx/workflows/distribution-config.yaml" --stop-agents-after="$ALL_TASKS"
+      - name: Create Nx Cloud Status (pending)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = ${{ toJson(steps.tag.outputs.tag) }} || 'normal';
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.pull_request?.head?.sha ?? context.sha,
+              state: 'pending',
+              target_url: `https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=${
+                context.payload.pull_request?.number ?? 'next'
+              }`,
+              description: 'NX Cloud is running your tests',
+              context: `nx: ${tag}`,
+            });
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'yarn'
       - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@v4
+      - id: nx
+        name: 'Run nx'
+        run: |
+          echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
+          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
+          status=${PIPESTATUS[0]}
+          echo 'EOF' >> "$GITHUB_OUTPUT"
+          exit $status
 
-      # --- PRs ---
-      - if: github.event_name == 'pull_request' &&
-          contains(github.event.pull_request.labels.*.name, 'ci:normal')
-        run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal"
-      - if: github.event_name == 'pull_request' &&
-          contains(github.event.pull_request.labels.*.name, 'ci:merged')
-        run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged"
-      - if: github.event_name == 'pull_request' &&
-          contains(github.event.pull_request.labels.*.name, 'ci:daily')
-        run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged,tag:ci:daily"
+      - name: Create per-task Nx statuses
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const raw = ${{ toJson(steps.nx.outputs.nx_output) }} || '';
+            const tag = ${{ toJson(steps.tag.outputs.tag) }} || '';
+            const lines = raw.split('\n');
+            const failures = [];
+            
+            for (const [i, line] of lines.entries()) {
+              if (!line.includes('✖')) continue;
+            
+              const task =
+                line.match(/✖\s+([^│]+?)\s{2,}/)?.[1].trim() ||
+                'Unknown Nx task';
+            
+              const url = lines
+                .slice(i + 1, i + 6)
+                .find(l => l.includes('Task logs:'))
+                ?.match(/Task logs:\s*(https:\/\/cloud\.nx\.app\/logs\/\S+)/)?.[1];
+            
+              failures.push({ task, url });
+            }
+            
+            const sha = context.payload.pull_request?.head?.sha ?? context.sha;
+            
+            // Per-task statuses (max 5)
+            for (const { task, url } of failures.slice(0, 5)) {
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha,
+                state: 'failure',
+                target_url: url ?? undefined,
+                context: `nx run ${task}`,
+                description: 'Your test failed on NX Cloud',
+              });
+            }
+            
+            const runMatches = raw.match(/https:\/\/cloud\.nx\.app\/runs\/\S+/g);
+            const nxCloudUrl = runMatches ? runMatches[runMatches.length - 1] : undefined;
 
-      # --- Pushes ---
-      - if: github.event_name == 'push' &&
-          github.ref == 'refs/heads/next'
-        run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged"
+            const failedCount = failures.length;
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha,
+              state: failedCount ? 'failure' : 'success',
+              target_url: nxCloudUrl,
+              description: failedCount
+                ? `Nx Cloud run failed (${failedCount} tasks failed)`
+                : 'Nx Cloud run finished successfully',
+              context: `nx: ${tag}`,
+            });

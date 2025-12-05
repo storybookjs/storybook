@@ -72,8 +72,8 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
     {
       dryRun,
       debug,
-      startMessage: `🧶 Installing Yarn 2`,
-      errorMessage: `🚨 Installing Yarn 2 failed`,
+      startMessage: `🧶 Installing Yarn`,
+      errorMessage: `🚨 Installing Yarn failed`,
     }
   );
 };

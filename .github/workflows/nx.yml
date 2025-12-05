@@ -38,7 +38,27 @@ jobs:
       - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@v4
 
-      # --- PRs ---
+      # --- Create pending status at start for PRs ---
+      - name: Create Nx Cloud Status (pending)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const nxCloudUrl = `https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=${prNumber}`;
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.pull_request.head.sha,
+              state: 'pending',
+              avatar_url: 'https://avatars.githubusercontent.com/in/80458',
+              target_url: nxCloudUrl,
+              description: 'View Nx Cloud dashboard for this PR',
+              context: 'Nx Cloud'
+            });
+
+        # --- PRs ---
       - if: github.event_name == 'pull_request' &&
           contains(github.event.pull_request.labels.*.name, 'ci:normal')
         run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal"
@@ -53,3 +73,35 @@ jobs:
       - if: github.event_name == 'push' &&
           github.ref == 'refs/heads/next'
         run: yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:normal,tag:ci:merged"
+
+      # --- Final status update (success / failure / error) ---
+      - name: Finalize Nx Cloud Status
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const nxCloudUrl = `https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=${prNumber}`;
+
+            const jobStatus = '${{ job.status }}'; // 'success', 'failure', 'cancelled', 'skipped'
+            /** Map job.status -> GitHub Statuses API state */
+            const stateMap = {
+              success: 'success',
+              failure: 'failure',
+              cancelled: 'error',
+              skipped: 'error'
+            };
+            const state = stateMap[jobStatus] ?? 'error';
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.pull_request.head.sha,
+              state,
+              avatar_url: 'https://avatars.githubusercontent.com/in/80458',
+              target_url: nxCloudUrl,
+              description: state === 'success'
+                ? 'Nx Cloud run finished successfully'
+                : `Nx Cloud run ended with status: ${jobStatus}`,
+              context: 'Nx Cloud'
+            });

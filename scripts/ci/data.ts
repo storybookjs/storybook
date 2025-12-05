@@ -400,20 +400,12 @@ const windows_build = defineJob('build-windows', {
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
     npm.install('.'),
-    {
-      run: {
-        name: 'Convert symlinks to real directories',
-        command: './scripts/ci/no-junctions.sh',
-      },
-    },
-    // Note: Windows cache warnings about "unknown file mode" for symlinks are harmless.
-    // Tar will skip symlinks it can't archive, but they'll be recreated on cache restore
-    // when yarn install runs. The cache will still work correctly for regular files.
-    cache.persist(
-      // CACHE_PATHS.map((path) => 'C:\\Users\\circleci\\project\\' + path),
-      CACHE_PATHS,
-      CACHE_KEYS('windows')[0]
-    ),
+    // {
+    //   run: {
+    //     name: 'Convert symlinks to real directories',
+    //     command: './scripts/ci/no-junctions.sh',
+    //   },
+    // },
     {
       run: {
         name: 'Compile',
@@ -421,6 +413,11 @@ const windows_build = defineJob('build-windows', {
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
       },
     },
+    cache.persist(
+      // CACHE_PATHS.map((path) => 'C:\\Users\\circleci\\project\\' + path),
+      CACHE_PATHS,
+      CACHE_KEYS('windows')[0]
+    ),
     {
       run: {
         name: 'Publish to Verdaccio',

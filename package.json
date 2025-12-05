@@ -26,16 +26,16 @@
     "nx": "nx",
     "pretty-docs": "cd scripts; yarn install >/dev/null; yarn docs:prettier:write",
     "start": "yarn task --task dev --template react-vite/default-ts --start-from=install",
-    "svelte-ecosystem-ci:before-test": "STORYBOOK_SANDBOX_ROOT=./storybook-sandboxes node ./scripts/ecosystem-ci/before-test.js svelte-kit/skeleton-ts && cd ./storybook-sandboxes/svelte-kit-skeleton-ts && STORYBOOK_SANDBOX_ROOT=./storybook-sandboxes yarn install",
-    "svelte-ecosystem-ci:build": "yarn task --task install && yarn --cwd code build svelte && STORYBOOK_SANDBOX_ROOT=./storybook-sandboxes yarn task --task sandbox --template svelte-kit/skeleton-ts --start-from=compile --no-link --skip-cache",
-    "svelte-ecosystem-ci:test": "STORYBOOK_SANDBOX_ROOT=./storybook-sandboxes yarn task --task test-runner --template svelte-kit/skeleton-ts --start-from=build --no-link --skip-cache && STORYBOOK_SANDBOX_ROOT=./storybook-sandboxes yarn task --task vitest-integration --template svelte-kit/skeleton-ts --start-from=vitest-integration --no-link --skip-cache",
+    "svelte-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh svelte-kit/skeleton-ts",
+    "svelte-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh svelte-kit/skeleton-ts svelte",
+    "svelte-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh svelte-kit/skeleton-ts",
     "task": "yarn --cwd=./scripts task",
     "test": "cd code; yarn test",
     "test:watch": "cd code; yarn test:watch",
     "upload-bench": "cd scripts; yarn upload-bench",
-    "vite-ecosystem-ci:before-test": "STORYBOOK_SANDBOX_ROOT=./storybook-sandboxes node ./scripts/ecosystem-ci/before-test.js react-vite/default-ts && cd ./storybook-sandboxes/react-vite-default-ts && yarn install",
-    "vite-ecosystem-ci:build": "STORYBOOK_SANDBOX_ROOT=./storybook-sandboxes yarn task --task sandbox --template react-vite/default-ts --start-from=install --skip-cache",
-    "vite-ecosystem-ci:test": "STORYBOOK_SANDBOX_ROOT=./storybook-sandboxes yarn task --task test-runner-dev --template react-vite/default-ts --start-from=dev && yarn task --task test-runner --template react-vite/default-ts --start-from=build && yarn task --task vitest-integration --template react-vite/default-ts --start-from=vitest-integration"
+    "vite-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh react-vite/default-ts",
+    "vite-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh react-vite/default-ts",
+    "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts"
   },
   "resolutions": {
     "@babel/runtime": "latest",

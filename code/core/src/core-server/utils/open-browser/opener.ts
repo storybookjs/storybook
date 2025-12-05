@@ -32,10 +32,15 @@ function getBrowserEnv() {
   if (!value) {
     // Default.
     action = Actions.BROWSER;
-  } else if (value.toLowerCase().endsWith('.js')) {
-    action = Actions.SCRIPT;
   } else if (value.toLowerCase() === 'none') {
     action = Actions.NONE;
+  } else if (
+    value.toLowerCase().endsWith('.js') ||
+    value.toLowerCase().endsWith('.mjs') ||
+    value.toLowerCase().endsWith('.cjs') ||
+    value.toLowerCase().endsWith('.sh')
+  ) {
+    action = Actions.SCRIPT;
   } else {
     action = Actions.BROWSER;
   }

@@ -32,10 +32,6 @@ jobs:
           filter: tree:0
           fetch-depth: 0
       - run: npx nx@latest start-ci-run --distribute-on="./.nx/workflows/distribution-config.yaml" --stop-agents-after="$ALL_TASKS"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'yarn'
       - name: Create Nx Cloud Status (pending)
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -52,7 +48,10 @@ jobs:
               description: 'NX is running your tests',
               context: 'Nx Cloud'
             });
-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
       - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@v4
         # --- PRs ---

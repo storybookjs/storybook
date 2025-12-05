@@ -497,6 +497,10 @@ jobs:
                       - v4-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
                       - v4-windows-node_modules/{{ checksum ".nvmrc" }}
                       - v4-windows-node_modules
+            - node/install-packages:
+                  app-dir: .
+                  pkg-manager: yarn
+                  cache-only-lockfile: true
             - run:
                   command: yarn test
                   name: Run unit tests

@@ -558,6 +558,14 @@ const windows_unitTests = defineJob(
       node.installOnWindows(),
       workspace.attach('C:\\Users\\circleci\\project'),
       cache.attach(CACHE_KEYS('windows')),
+      /**
+       * I really wish this wasn't needed, but it is. I tried a lot of things to get it to not be
+       * needed, but ultimately, something kept failing. At this point I gave up:
+       * https://app.circleci.com/pipelines/github/storybookjs/storybook/110923/workflows/50076187-a5a7-4955-bff4-30bf9aec465c/jobs/976355
+       *
+       * So if you see a way to debug/solve those failing tests, please do so.
+       */
+      npm.install('.'),
       {
         run: {
           command: 'yarn test',

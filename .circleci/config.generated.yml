@@ -156,7 +156,7 @@ jobs:
                       - node_modules
                       - code/node_modules
                       - scripts/node_modules
-                  key: v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                  key: v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
             - run:
                   name: Ensure no changes pending
                   command: git diff --exit-code
@@ -286,7 +286,7 @@ jobs:
                   cache-only-lockfile: true
             - save_cache:
                   paths: *a1
-                  key: v1-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                  key: v2-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
             - run:
                   command: yarn task --task compile --start-from=auto --no-link --debug
                   name: Compile
@@ -394,10 +394,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v1-linux-node_modules
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v2-linux-node_modules
             - run:
                   name: TypeCheck code
                   working_directory: code
@@ -423,10 +423,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v1-linux-node_modules
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v2-linux-node_modules
             - run:
                   name: Build internal storybook
                   command: yarn storybook:ui:build
@@ -450,10 +450,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v1-linux-node_modules
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v2-linux-node_modules
             - run:
                   name: Run tests
                   working_directory: code
@@ -489,10 +489,10 @@ jobs:
                   at: C:\Users\circleci\project
             - restore_cache:
                   keys:
-                      - v1-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v1-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v1-windows-node_modules/{{ checksum ".nvmrc" }}
-                      - v1-windows-node_modules
+                      - v2-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v2-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v2-windows-node_modules/{{ checksum ".nvmrc" }}
+                      - v2-windows-node_modules
             - run:
                   command: yarn test
                   name: Run unit tests
@@ -516,10 +516,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v1-linux-node_modules
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v2-linux-node_modules
             - run:
                   name: Verdaccio
                   working_directory: code
@@ -564,10 +564,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v1-linux-node_modules
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v2-linux-node_modules
             - run:
                   name: Verdaccio
                   working_directory: code
@@ -616,10 +616,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v1-linux-node_modules
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v2-linux-node_modules
             - run:
                   name: Build storybook
                   command: yarn task build --template react-vite/default-ts --no-link -s build
@@ -648,10 +648,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v1-linux-node_modules
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v2-linux-node_modules
             - run:
                   name: Run storybook
                   working_directory: code
@@ -678,10 +678,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v1-linux-node_modules
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v2-linux-node_modules
             - run:
                   name: Verdaccio
                   working_directory: code
@@ -730,10 +730,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v1-linux-node_modules
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v2-linux-node_modules
             - run:
                   name: Build storybook
                   command: yarn task build --template react-vite/default-js --no-link -s build
@@ -762,10 +762,10 @@ jobs:
                   at: /tmp
             - restore_cache:
                   keys:
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v1-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v1-linux-node_modules
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v2-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v2-linux-node_modules
             - run:
                   name: Run storybook
                   working_directory: code

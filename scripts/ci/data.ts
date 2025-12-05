@@ -20,7 +20,7 @@ import {
 
 const CACHE_KEYS = (platform = 'linux') =>
   [
-    `v1-${platform}-node_modules`,
+    `v2-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

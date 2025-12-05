@@ -36,24 +36,16 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const pr = context.payload.pull_request;
-            const isPr = !!pr;
-
-            const sha = isPr ? pr.head.sha : context.sha;
-            const branchParam = isPr
-              ? pr.number
-              : (context.ref.startsWith('refs/heads/')
-                  ? context.ref.slice('refs/heads/'.length)
-                  : context.ref);
-
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: context.payload.pull_request.head.sha,
+              sha: context.payload.pull_request?.head?.sha ?? context.sha,
               state: 'pending',
-              target_url: `https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=${branchParam}`,
+              target_url: `https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=${
+                context.payload.pull_request?.number ?? 'next'
+              }`,
               description: 'NX is running your tests',
-              context: 'Nx Cloud'
+              context: 'Nx Cloud',
             });
       - uses: actions/setup-node@v4
         with:
@@ -96,108 +88,51 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const raw = ${{ toJson(steps.nx.outputs.nx_output) }};
-            if (!raw) {
-              core.info('No nx_output found, skipping per-task statuses.');
-              return;
-            }
-
+            const raw = ${{ toJson(steps.nx.outputs.nx_output) }} || '';
             const lines = raw.split('\n');
             const failures = [];
-
-            for (let i = 0; i < lines.length; i++) {
-              const line = lines[i];
-
+            
+            for (const [i, line] of lines.entries()) {
               if (!line.includes('✖')) continue;
-
-              // Example:
-              // │   ✖      vue3-vite/default-ts:test-runner:production   58s   Cache Miss     │
-              const taskMatch = line.match(/✖\s+([^│]+?)\s{2,}/);
-              const task = taskMatch ? taskMatch[1].trim() : 'Unknown Nx task';
-
-              // Look ahead for "> Task logs: https://cloud.nx.app/logs/..."
-              let url = null;
-              for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
-                const logLine = lines[j];
-                const urlMatch = logLine.match(/Task logs:\s*(https:\/\/cloud\.nx\.app\/logs\/\S+)/);
-                if (urlMatch) {
-                  url = urlMatch[1];
-                  break;
-                }
-              }
-
+            
+              const task =
+                line.match(/✖\s+([^│]+?)\s{2,}/)?.[1].trim() ||
+                'Unknown Nx task';
+            
+              const url = lines
+                .slice(i + 1, i + 6)
+                .find(l => l.includes('Task logs:'))
+                ?.match(/Task logs:\s*(https:\/\/cloud\.nx\.app\/logs\/\S+)/)?.[1];
+            
               failures.push({ task, url });
             }
-
-            if (!failures.length) {
-              core.info('No failing Nx tasks detected in output.');
-              return;
-            }
-
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const sha =
-              context.payload.pull_request?.head?.sha ||
-              context.sha;
-
-            core.info(`Creating statuses for ${failures.length} failing Nx tasks...`);
-
+            
+            const sha = context.payload.pull_request?.head?.sha ?? context.sha;
+            
+            // Per-task statuses (max 5)
             for (const { task, url } of failures.slice(0, 5)) {
-              const contextName = `nx run ${task}`;
-              const description = ` Your tests failed on NX Cloud`;
-
-              core.info(`Status for "${task}" -> ${url || 'no URL'}`);
-
               await github.rest.repos.createCommitStatus({
-                owner,
-                repo,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
                 sha,
                 state: 'failure',
-                target_url: url || undefined,
-                context: contextName,
-                description,
+                target_url: url ?? undefined,
+                context: `nx run ${task}`,
+                description: 'Your tests failed on NX Cloud',
               });
             }
-
-      - name: Finalize Nx Cloud Status
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const raw = ${{ toJson(steps.nx.outputs.nx_output) }} || '';
-
-            // Try to find a direct run URL in the Nx output
-            let runUrl = null;
+            
             const runMatches = raw.match(/https:\/\/cloud\.nx\.app\/runs\/\S+/g);
-            if (runMatches && runMatches.length > 0) {
-              // Use the last run URL in the output
-              runUrl = runMatches[runMatches.length - 1];
-            }
-
-            const prNumber = context.payload.pull_request.number;
-            const overviewUrl =
-              prNumber ? `https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=${prNumber}` : '';
-
-            const nxCloudUrl = runUrl || overviewUrl;
-
-            const jobStatus = '${{ job.status }}'; // 'success', 'failure', 'cancelled', 'skipped'
-            /** Map job.status -> GitHub Statuses API state */
-            const stateMap = {
-              success: 'success',
-              failure: 'failure',
-              cancelled: 'error',
-              skipped: 'error'
-            };
-            const state = stateMap[jobStatus] ?? 'error';
-
+            const nxCloudUrl = runMatches ? runMatches[runMatches.length - 1] : undefined;
+            
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: context.payload.pull_request.head.sha,
-              state,
+              sha,
+              state: failedCount ? 'failure' : 'success',
               target_url: nxCloudUrl,
-              description: state === 'success'
-                ? 'Nx Cloud run finished successfully'
-                : `Nx Cloud run ended with status: ${jobStatus}`,
-              context: 'Nx Cloud'
+              description: failedCount
+                ? `Nx Cloud run failed (${failedCount} tasks failed)`
+                : 'Nx Cloud run finished successfully',
+              context: 'Nx Cloud',
             });

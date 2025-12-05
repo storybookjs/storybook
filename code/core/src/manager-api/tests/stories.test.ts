@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import type { Mocked } from 'vitest';
 import { describe, expect, it, vi } from 'vitest';
 

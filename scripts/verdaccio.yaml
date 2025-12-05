@@ -3,7 +3,7 @@ storage: .verdaccio-cache
 max_body_size: 60mb
 
 # no auth needed, this is just for e2e testing
-auth: {}
+auth:
 
 packages:
   '@*/*':

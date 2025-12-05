@@ -1,6 +1,7 @@
 import { access, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import storybookVersions from '../../code/core/src/common/versions';
 // TODO -- should we generate this file a second time outside of CLI?
 import type { TemplateKey } from '../get-template';
 import { exec } from './exec';
@@ -35,6 +36,7 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   const packageJson = JSON.parse(content);
   packageJson.resolutions = {
     ...packageJson.resolutions,
+    ...Object.fromEntries(Object.keys(storybookVersions).map((key) => [key, 'local'])),
     // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
     playwright: '1.52.0',
     'playwright-core': '1.52.0',

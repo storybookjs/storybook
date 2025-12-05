@@ -47,12 +47,11 @@ const pathExists = async (p: string) => {
 };
 
 type Servers = { close: () => Promise<void> };
-const startVerdaccio = async () => {
+const startVerdaccio = async (packages: Package[]) => {
   // Kill Verdaccio related processes if they are already running
   await killPort(REGISTRY_PORT);
   await killPort(VERDACCIO_PORT);
 
-  const packages = await getCodeWorkspaces(false);
   const ready = {
     proxy: false,
     verdaccio: false,
@@ -74,7 +73,6 @@ const startVerdaccio = async () => {
        * If you want to access the verdaccio UI, you can do so by visiting http://localhost:6002
        */
       const proxy = http.createServer((req, res) => {
-        // if request contains "storybook" redirect to verdaccio
         const normalized = decodeURIComponent(req.url);
 
         if (
@@ -246,11 +244,8 @@ const run = async () => {
 
   logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
 
-  const [_servers, packages, version] = await Promise.all([
-    startVerdaccio(),
-    getPackages(),
-    currentVersion(),
-  ]);
+  const packages = await getPackages();
+  const [_servers, version] = await Promise.all([startVerdaccio(packages), currentVersion()]);
   servers = _servers;
 
   logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);

@@ -53,26 +53,24 @@ jobs:
           cache: 'yarn'
       - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@v4
-        # --- PRs ---
-      - if: github.event_name == 'pull_request' &&
-          contains(github.event.pull_request.labels.*.name, 'ci:normal')
+      - name: Set Nx tag(s)
         id: tag
-        name: 'Set tag to ci:normal'
-        run: echo "tag=tag:ci:normal" >> $GITHUB_OUTPUT
-#      - if: github.event_name == 'pull_request' &&
-#          contains(github.event.pull_request.labels.*.name, 'ci:merged')
-#        id: tag
-#        name: 'Set tag to ci:merged'
-#        run: echo "tag=tag:ci:normal,tag:ci:merged" >> $GITHUB_OUTPUT
-#      - if: github.event_name == 'pull_request' &&
-#          contains(github.event.pull_request.labels.*.name, 'ci:daily')
-#        id: tag
-#        name: 'Set tag to ci:daily'
-#        run: echo "tag=tag:ci:normal,tag:ci:merged,tag:ci:daily" >> $GITHUB_OUTPUT
-#      - if: github.event_name == 'push' && github.ref == 'refs/heads/next'
-#        id: tag
-#        name: 'Set tag to ci:merged'
-#        run: echo "tag=tag:ci:normal,tag:ci:merged" >> $GITHUB_OUTPUT
+        run: |
+          tags="tag:ci:normal"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci:merged') }}" == "true" ]]; then
+              tags="$tags,tag:ci:merged"
+            fi
+            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci:daily') }}" == "true" ]]; then
+              tags="$tags,tag:ci:daily"
+            fi
+          fi
+
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/next" ]]; then
+            tags="tag:ci:normal,tag:ci:merged"
+          fi
+
+          echo "tag=$tags" >> "$GITHUB_OUTPUT"
       - id: nx
         name: 'Run nx'
         run: |
@@ -124,7 +122,9 @@ jobs:
             
             const runMatches = raw.match(/https:\/\/cloud\.nx\.app\/runs\/\S+/g);
             const nxCloudUrl = runMatches ? runMatches[runMatches.length - 1] : undefined;
-            
+
+            const failedCount = failures.length;
+
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,

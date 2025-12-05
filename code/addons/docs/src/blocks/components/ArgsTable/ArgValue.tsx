@@ -86,7 +86,7 @@ const ExpandButton = styled.summary(({ theme }) => ({
   border: 'none',
 }));
 
-const Expandable = styled.div(codeCommon, ({ theme }) => ({
+const Expandable = styled.button(codeCommon, ({ theme }) => ({
   fontFamily: theme.typography.fonts.mono,
   color: theme.color.secondary,
   fontSize: theme.typography.size.s1, // overrides codeCommon
@@ -94,6 +94,15 @@ const Expandable = styled.div(codeCommon, ({ theme }) => ({
   whiteSpace: 'nowrap',
   display: 'flex',
   alignItems: 'center',
+  cursor: 'pointer',
+  '&:hover': {
+    border:
+      theme.base === 'light' ? '1px solid hsl(0 0 0 / 0.15)' : '1px solid hsl(0 0 100 / 0.15)',
+  },
+  '&:focus-visible': {
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: '2px',
+  },
 }));
 
 const Detail = styled.div(({ theme }) => ({

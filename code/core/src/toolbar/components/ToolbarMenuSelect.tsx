@@ -101,6 +101,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
         onReset={() => updateGlobals({ [id]: '_reset' })}
         onSelect={(selected) => updateGlobals({ [id]: selected })}
         icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
+        showSelectedLabel={false}
       >
         {title}
       </Select>

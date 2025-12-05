@@ -58,24 +58,24 @@ jobs:
       - if: github.event_name == 'pull_request' &&
           contains(github.event.pull_request.labels.*.name, 'ci:normal')
         id: tag
-        name: "Set tag to ci:normal"
+        name: 'Set tag to ci:normal'
         run: echo "tag=tag:ci:normal" >> $GITHUB_OUTPUT
       - if: github.event_name == 'pull_request' &&
           contains(github.event.pull_request.labels.*.name, 'ci:merged')
         id: tag
-        name: "Set tag to ci:merged"
+        name: 'Set tag to ci:merged'
         run: echo "tag=tag:ci:normal,tag:ci:merged" >> $GITHUB_OUTPUT
       - if: github.event_name == 'pull_request' &&
           contains(github.event.pull_request.labels.*.name, 'ci:daily')
         id: tag
-        name: "Set tag to ci:daily"
+        name: 'Set tag to ci:daily'
         run: echo "tag=tag:ci:normal,tag:ci:merged,tag:ci:daily" >> $GITHUB_OUTPUT
       - if: github.event_name == 'push' && github.ref == 'refs/heads/next'
         id: tag
-        name: "Set tag to ci:merged"
+        name: 'Set tag to ci:merged'
         run: echo "tag=tag:ci:normal,tag:ci:merged" >> $GITHUB_OUTPUT
       - id: nx
-        name: "Run nx"
+        name: 'Run nx'
         run: |
           echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
           yarn nx run-many -t $ALL_TASKS -c production -p="${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
@@ -169,7 +169,7 @@ jobs:
 
             const prNumber = context.payload.pull_request.number;
             const overviewUrl =
-              `https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=${prNumber}`;
+              prNumber ? `https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=${prNumber}` : '';
 
             const nxCloudUrl = runUrl || overviewUrl;
 

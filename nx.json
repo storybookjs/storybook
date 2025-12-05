@@ -43,7 +43,7 @@
     "publish": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "command": "yarn workspace @storybook/scripts local-registry --publish",
-      "cache": true,
+      "cache": false,
       "inputs": ["all-production"],
       "outputs": ["{workspaceRoot}/.verdaccio-cache"],
       "configurations": { "production": {} }

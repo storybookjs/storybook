@@ -216,6 +216,7 @@ export class NPMProxy extends JsPackageManager {
       const process = executeCommand({
         command: 'npm',
         args: ['info', packageName, ...args],
+        cwd: this.cwd,
       });
       const result = await process;
       const commandResult = result.stdout ?? '';

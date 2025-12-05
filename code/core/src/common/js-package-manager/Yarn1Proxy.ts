@@ -172,6 +172,7 @@ export class Yarn1Proxy extends JsPackageManager {
       const process = executeCommand({
         command: 'yarn',
         args: ['info', packageName, ...args],
+        cwd: this.cwd,
       });
       const result = await process;
       const commandResult = result.stdout ?? '';

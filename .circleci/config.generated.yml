@@ -1,0 +1,590 @@
+version: 2.1
+orbs:
+    browser-tools: circleci/browser-tools@2.3.2
+    codecov: codecov/codecov@5.4.3
+    discord: antonioned/discord@0.1.0
+    git-shallow-clone: guitarrapc/git-shallow-clone@2.8.0
+    node: circleci/node@7.2.1
+    nx: nrwl/nx@1.7.0
+    win: circleci/windows@5.1.1
+commands:
+    cancel-workflow-on-failure:
+        description: Cancels the entire workflow in case the previous step has failed
+        steps:
+            - run:
+                  command: |
+                      echo "Canceling workflow as previous step resulted in failure."
+                      echo "To execute all checks locally, please run yarn ci-tests"
+                      curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"
+                  name: Cancel current workflow
+                  when: on_fail
+    report-workflow-on-failure:
+        description: Reports failures to discord
+        parameters:
+            template:
+                default: none
+                description: |
+                    Which template to report in discord. Applicable for parallel sandbox jobs
+                type: string
+        steps:
+            - run:
+                  command: git fetch --unshallow
+                  when: on_fail
+            - discord/status:
+                  fail_only: true
+                  failure_message: $(yarn get-report-message << pipeline.parameters.workflow >> << parameters.template >>)
+                  only_for_branches: main,next,next-release,latest-release
+    start-event-collector:
+        description: Starts the event collector
+        steps:
+            - run:
+                  background: true
+                  command: yarn jiti ./event-log-collector.ts
+                  name: Start Event Collector
+                  working_directory: scripts
+executors:
+    sb_node_18_browsers:
+        docker:
+            - environment:
+                  NODE_OPTIONS: --max_old_space_size=6144
+              image: cimg/node:18.20.3-browsers
+        parameters:
+            class:
+                default: small
+                description: The Resource class
+                enum:
+                    - small
+                    - medium
+                    - medium+
+                    - large
+                    - xlarge
+                type: enum
+        resource_class: <<parameters.class>>
+        working_directory: /tmp/storybook
+    sb_node_22_browsers:
+        docker:
+            - environment:
+                  NODE_OPTIONS: --max_old_space_size=6144
+              image: cimg/node:22.15.0-browsers
+        parameters:
+            class:
+                default: small
+                description: The Resource class
+                enum:
+                    - small
+                    - medium
+                    - medium+
+                    - large
+                    - xlarge
+                type: enum
+        resource_class: <<parameters.class>>
+        working_directory: /tmp/storybook
+    sb_node_22_classic:
+        docker:
+            - environment:
+                  NODE_OPTIONS: --max_old_space_size=6144
+              image: cimg/node:22.15.0
+        parameters:
+            class:
+                default: small
+                description: The Resource class
+                enum:
+                    - small
+                    - medium
+                    - medium+
+                    - large
+                    - xlarge
+                type: enum
+        resource_class: <<parameters.class>>
+        working_directory: /tmp/storybook
+    sb_playwright:
+        docker:
+            - environment:
+                  NODE_OPTIONS: --max_old_space_size=6144
+              image: mcr.microsoft.com/playwright:v1.52.0-noble
+        parameters:
+            class:
+                default: small
+                description: The Resource class
+                enum:
+                    - small
+                    - medium
+                    - medium+
+                    - large
+                    - xlarge
+                type: enum
+        resource_class: <<parameters.class>>
+        working_directory: /tmp/storybook
+parameters:
+    ghBaseBranch:
+        default: next
+        description: The name of the base branch (the target of the PR)
+        type: string
+    ghPrNumber:
+        default: ""
+        description: The PR number
+        type: string
+    workflow:
+        default: skipped
+        description: Which workflow to run
+        enum:
+            - normal
+            - merged
+            - daily
+            - skipped
+            - docs
+        type: enum
+jobs:
+    build-linux:
+        description: build-linux
+        executor:
+            name: sb_node_22_classic
+            class: xlarge
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - node/install-packages:
+                  app-dir: .
+                  pkg-manager: yarn
+                  cache-only-lockfile: true
+            - save_cache:
+                  paths: &a1
+                      - .yarn/cache
+                      - .yarn/unplugged
+                      - .yarn/build-state.yml
+                      - .yarn/root-install-state.gz
+                      - node_modules
+                      - code/node_modules
+                      - scripts/node_modules
+                  key: v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+            - run:
+                  name: Ensure no changes pending
+                  command: git diff --exit-code
+            - run:
+                  name: Check for dedupe
+                  command: yarn dedupe --check
+            - run:
+                  command: yarn task --task compile --start-from=auto --no-link --debug
+                  name: Compile
+                  working_directory: code
+            - run:
+                  command: yarn local-registry --publish
+                  name: Publish to Verdaccio
+                  working_directory: code
+            - report-workflow-on-failure
+            - store_artifacts:
+                  path: code/bench/esbuild-metafiles
+                  destination: bench
+            - persist_to_workspace:
+                  paths:
+                      - storybook/code/core/dist
+                      - storybook/code/core/node_modules
+                      - storybook/code/addons/a11y/dist
+                      - storybook/code/addons/a11y/node_modules
+                      - storybook/code/addons/docs/dist
+                      - storybook/code/addons/docs/node_modules
+                      - storybook/code/addons/links/dist
+                      - storybook/code/addons/links/node_modules
+                      - storybook/code/addons/onboarding/dist
+                      - storybook/code/addons/onboarding/node_modules
+                      - storybook/code/addons/pseudo-states/dist
+                      - storybook/code/addons/pseudo-states/node_modules
+                      - storybook/code/addons/themes/dist
+                      - storybook/code/addons/themes/node_modules
+                      - storybook/code/addons/vitest/dist
+                      - storybook/code/addons/vitest/node_modules
+                      - storybook/code/builders/builder-vite/dist
+                      - storybook/code/builders/builder-vite/node_modules
+                      - storybook/code/builders/builder-webpack5/dist
+                      - storybook/code/builders/builder-webpack5/node_modules
+                      - storybook/code/frameworks/angular/dist
+                      - storybook/code/frameworks/angular/node_modules
+                      - storybook/code/frameworks/ember/dist
+                      - storybook/code/frameworks/ember/node_modules
+                      - storybook/code/frameworks/html-vite/dist
+                      - storybook/code/frameworks/html-vite/node_modules
+                      - storybook/code/frameworks/nextjs/dist
+                      - storybook/code/frameworks/nextjs/node_modules
+                      - storybook/code/frameworks/nextjs-vite/dist
+                      - storybook/code/frameworks/nextjs-vite/node_modules
+                      - storybook/code/frameworks/preact-vite/dist
+                      - storybook/code/frameworks/preact-vite/node_modules
+                      - storybook/code/frameworks/react-native-web-vite/dist
+                      - storybook/code/frameworks/react-native-web-vite/node_modules
+                      - storybook/code/frameworks/react-vite/dist
+                      - storybook/code/frameworks/react-vite/node_modules
+                      - storybook/code/frameworks/react-webpack5/dist
+                      - storybook/code/frameworks/react-webpack5/node_modules
+                      - storybook/code/frameworks/server-webpack5/dist
+                      - storybook/code/frameworks/server-webpack5/node_modules
+                      - storybook/code/frameworks/svelte-vite/dist
+                      - storybook/code/frameworks/svelte-vite/node_modules
+                      - storybook/code/frameworks/sveltekit/dist
+                      - storybook/code/frameworks/sveltekit/node_modules
+                      - storybook/code/frameworks/vue3-vite/dist
+                      - storybook/code/frameworks/vue3-vite/node_modules
+                      - storybook/code/frameworks/web-components-vite/dist
+                      - storybook/code/frameworks/web-components-vite/node_modules
+                      - storybook/code/lib/cli-storybook/dist
+                      - storybook/code/lib/cli-storybook/node_modules
+                      - storybook/code/lib/codemod/dist
+                      - storybook/code/lib/codemod/node_modules
+                      - storybook/code/lib/core-webpack/dist
+                      - storybook/code/lib/core-webpack/node_modules
+                      - storybook/code/lib/create-storybook/dist
+                      - storybook/code/lib/create-storybook/node_modules
+                      - storybook/code/lib/csf-plugin/dist
+                      - storybook/code/lib/csf-plugin/node_modules
+                      - storybook/code/lib/eslint-plugin/dist
+                      - storybook/code/lib/eslint-plugin/node_modules
+                      - storybook/code/lib/react-dom-shim/dist
+                      - storybook/code/lib/react-dom-shim/node_modules
+                      - storybook/code/presets/create-react-app/dist
+                      - storybook/code/presets/create-react-app/node_modules
+                      - storybook/code/presets/react-webpack/dist
+                      - storybook/code/presets/react-webpack/node_modules
+                      - storybook/code/presets/server-webpack/dist
+                      - storybook/code/presets/server-webpack/node_modules
+                      - storybook/code/renderers/html/dist
+                      - storybook/code/renderers/html/node_modules
+                      - storybook/code/renderers/preact/dist
+                      - storybook/code/renderers/preact/node_modules
+                      - storybook/code/renderers/react/dist
+                      - storybook/code/renderers/react/node_modules
+                      - storybook/code/renderers/server/dist
+                      - storybook/code/renderers/server/node_modules
+                      - storybook/code/renderers/svelte/dist
+                      - storybook/code/renderers/svelte/node_modules
+                      - storybook/code/renderers/vue3/dist
+                      - storybook/code/renderers/vue3/node_modules
+                      - storybook/code/renderers/web-components/dist
+                      - storybook/code/renderers/web-components/node_modules
+                      - storybook/.verdaccio-cache
+                      - storybook/code/bench
+                  root: /tmp
+    build-windows:
+        description: build-windows
+        executor:
+            name: win/default
+            size: xlarge
+            shell: bash.exe
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
+            - run:
+                  name: Install Node + Yarn
+                  shell: powershell.exe
+                  command: |-
+                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
+                      nvm install $nodeVersion
+                      nvm use $nodeVersion
+                      corepack enable
+                      corepack prepare yarn@stable --activate
+            - node/install-packages:
+                  app-dir: .
+                  pkg-manager: yarn
+                  cache-only-lockfile: true
+            - run:
+                  name: Compile
+                  working_directory: code
+                  command: yarn task --task compile --start-from=auto --no-link --debug
+            - run:
+                  name: Convert symlinks to real directories
+                  command: yarn windows:unlink
+                  working_directory: scripts
+            - save_cache:
+                  paths: *a1
+                  key: v4-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+            - run:
+                  name: Publish to Verdaccio
+                  working_directory: code
+                  command: yarn local-registry --publish
+            - persist_to_workspace:
+                  paths:
+                      - code/core/dist
+                      - code/core/node_modules
+                      - code/addons/a11y/dist
+                      - code/addons/a11y/node_modules
+                      - code/addons/docs/dist
+                      - code/addons/docs/node_modules
+                      - code/addons/links/dist
+                      - code/addons/links/node_modules
+                      - code/addons/onboarding/dist
+                      - code/addons/onboarding/node_modules
+                      - code/addons/pseudo-states/dist
+                      - code/addons/pseudo-states/node_modules
+                      - code/addons/themes/dist
+                      - code/addons/themes/node_modules
+                      - code/addons/vitest/dist
+                      - code/addons/vitest/node_modules
+                      - code/builders/builder-vite/dist
+                      - code/builders/builder-vite/node_modules
+                      - code/builders/builder-webpack5/dist
+                      - code/builders/builder-webpack5/node_modules
+                      - code/frameworks/angular/dist
+                      - code/frameworks/angular/node_modules
+                      - code/frameworks/ember/dist
+                      - code/frameworks/ember/node_modules
+                      - code/frameworks/html-vite/dist
+                      - code/frameworks/html-vite/node_modules
+                      - code/frameworks/nextjs/dist
+                      - code/frameworks/nextjs/node_modules
+                      - code/frameworks/nextjs-vite/dist
+                      - code/frameworks/nextjs-vite/node_modules
+                      - code/frameworks/preact-vite/dist
+                      - code/frameworks/preact-vite/node_modules
+                      - code/frameworks/react-native-web-vite/dist
+                      - code/frameworks/react-native-web-vite/node_modules
+                      - code/frameworks/react-vite/dist
+                      - code/frameworks/react-vite/node_modules
+                      - code/frameworks/react-webpack5/dist
+                      - code/frameworks/react-webpack5/node_modules
+                      - code/frameworks/server-webpack5/dist
+                      - code/frameworks/server-webpack5/node_modules
+                      - code/frameworks/svelte-vite/dist
+                      - code/frameworks/svelte-vite/node_modules
+                      - code/frameworks/sveltekit/dist
+                      - code/frameworks/sveltekit/node_modules
+                      - code/frameworks/vue3-vite/dist
+                      - code/frameworks/vue3-vite/node_modules
+                      - code/frameworks/web-components-vite/dist
+                      - code/frameworks/web-components-vite/node_modules
+                      - code/lib/cli-storybook/dist
+                      - code/lib/cli-storybook/node_modules
+                      - code/lib/codemod/dist
+                      - code/lib/codemod/node_modules
+                      - code/lib/core-webpack/dist
+                      - code/lib/core-webpack/node_modules
+                      - code/lib/create-storybook/dist
+                      - code/lib/create-storybook/node_modules
+                      - code/lib/csf-plugin/dist
+                      - code/lib/csf-plugin/node_modules
+                      - code/lib/eslint-plugin/dist
+                      - code/lib/eslint-plugin/node_modules
+                      - code/lib/react-dom-shim/dist
+                      - code/lib/react-dom-shim/node_modules
+                      - code/presets/create-react-app/dist
+                      - code/presets/create-react-app/node_modules
+                      - code/presets/react-webpack/dist
+                      - code/presets/react-webpack/node_modules
+                      - code/presets/server-webpack/dist
+                      - code/presets/server-webpack/node_modules
+                      - code/renderers/html/dist
+                      - code/renderers/html/node_modules
+                      - code/renderers/preact/dist
+                      - code/renderers/preact/node_modules
+                      - code/renderers/react/dist
+                      - code/renderers/react/node_modules
+                      - code/renderers/server/dist
+                      - code/renderers/server/node_modules
+                      - code/renderers/svelte/dist
+                      - code/renderers/svelte/node_modules
+                      - code/renderers/vue3/dist
+                      - code/renderers/vue3/node_modules
+                      - code/renderers/web-components/dist
+                      - code/renderers/web-components/node_modules
+                      - .verdaccio-cache
+                      - code/bench
+                  root: C:\Users\circleci\project
+    check:
+        description: check
+        executor:
+            name: sb_node_22_classic
+            class: xlarge
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v4-linux-node_modules
+            - run:
+                  name: TypeCheck code
+                  working_directory: code
+                  command: yarn task --task check --no-link
+            - run:
+                  name: TypeCheck scripts
+                  working_directory: scripts
+                  command: yarn check
+            - run:
+                  name: Ensure no changes pending
+                  command: git diff --exit-code
+            - report-workflow-on-failure
+            - cancel-workflow-on-failure
+    ui:
+        description: ui
+        executor:
+            name: sb_node_22_classic
+            class: medium+
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v4-linux-node_modules
+            - run:
+                  name: Build internal storybook
+                  command: yarn storybook:ui:build
+                  working_directory: code
+            - run:
+                  name: Run Chromatic
+                  command: yarn storybook:ui:chromatic
+                  working_directory: code
+            - report-workflow-on-failure
+            - store_test_results:
+                  path: test-results
+    unit-tests-linux:
+        description: unit-tests-linux
+        executor:
+            name: sb_node_22_classic
+            class: xlarge
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v4-linux-node_modules
+            - run:
+                  name: Run tests
+                  working_directory: code
+                  command: |-
+                      TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
+                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
+            - store_test_results:
+                  path: storybook/test-results
+            - run:
+                  name: Ensure no changes pending
+                  command: git diff --exit-code
+            - report-workflow-on-failure
+            - cancel-workflow-on-failure
+    unit-tests-windows:
+        description: unit-tests-windows
+        executor:
+            name: win/default
+            size: medium
+            shell: bash.exe
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
+            - run:
+                  name: Install Node + Yarn
+                  shell: powershell.exe
+                  command: |-
+                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
+                      nvm install $nodeVersion
+                      nvm use $nodeVersion
+                      corepack enable
+                      corepack prepare yarn@stable --activate
+            - attach_workspace:
+                  at: C:\Users\circleci\project
+            - restore_cache:
+                  keys:
+                      - v4-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v4-windows-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v4-windows-node_modules/{{ checksum ".nvmrc" }}
+                      - v4-windows-node_modules
+            - node/install-packages:
+                  app-dir: .
+                  pkg-manager: yarn
+                  cache-only-lockfile: true
+            - run:
+                  command: yarn test
+                  name: Run unit tests
+                  working_directory: code
+            - store_test_results:
+                  path: test-results
+            - run:
+                  name: Ensure no changes pending
+                  command: git diff --exit-code
+            - report-workflow-on-failure
+            - cancel-workflow-on-failure
+    package-benchmarks:
+        description: package-benchmarks
+        executor:
+            name: sb_node_22_classic
+            class: xlarge
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v4-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Benchmarking packages against base branch
+                  command: yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
+                  working_directory: scripts
+    pretty-docs:
+        executor:
+            name: sb_node_22_classic
+            class: medium+
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - node/install-packages:
+                  app-dir: .
+                  pkg-manager: yarn
+                  cache-only-lockfile: true
+            - run:
+                  name: Prettier
+                  working_directory: scripts
+                  command: yarn docs:prettier:check
+    sandboxes:
+        type: no-op
+workflows:
+    generated:
+        jobs:
+            - pretty-docs
+            - build-linux
+            - build-windows
+            - check:
+                  requires:
+                      - build-linux
+            - package-benchmarks:
+                  requires:
+                      - build-linux
+            - unit-tests-linux:
+                  requires:
+                      - build-linux
+            - unit-tests-windows:
+                  requires:
+                      - build-windows
+            - sandboxes:
+                  requires:
+                      - build-linux
+            - ui:
+                  requires:
+                      - build-linux
+        when:
+            equal:
+                - docs
+                - << pipeline.parameters.workflow >>

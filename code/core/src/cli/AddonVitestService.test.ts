@@ -8,7 +8,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import type { ExecaChildProcess } from 'execa';
+import type { ResultPromise } from 'execa';
 
 import { SupportedBuilder, SupportedFramework } from '../types';
 import { AddonVitestService } from './AddonVitestService';
@@ -394,7 +394,7 @@ describe('AddonVitestService', () => {
     });
 
     it('should execute playwright install command', async () => {
-      type ChildProcessFactory = (signal?: AbortSignal) => ExecaChildProcess;
+      type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
       let commandFactory: ChildProcessFactory | ChildProcessFactory[];
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(

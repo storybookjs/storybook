@@ -16,8 +16,10 @@ interface InternalLayoutState {
   isDragging: boolean;
 }
 
-interface ManagerLayoutState
-  extends Pick<API_Layout, 'navSize' | 'bottomPanelHeight' | 'rightPanelWidth' | 'panelPosition'> {
+interface ManagerLayoutState extends Pick<
+  API_Layout,
+  'navSize' | 'bottomPanelHeight' | 'rightPanelWidth' | 'panelPosition'
+> {
   viewMode: API_ViewMode;
 }
 

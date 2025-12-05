@@ -1,5 +1,5 @@
 // eslint-disable-next-line depend/ban-dependencies
-import { type ExecaChildProcess, type Options, execa } from 'execa';
+import { type ResultPromise, type Options, execa } from 'execa';
 import picocolors from 'picocolors';
 
 const logger = console;
@@ -33,9 +33,9 @@ export const exec = async (
     stdout: debug ? 'inherit' : 'pipe',
     stderr: debug ? 'inherit' : 'pipe',
     stdin: 'inherit',
-    signal,
+    ...(signal && { cancelSignal: signal }),
   };
-  let currentChild: ExecaChildProcess<string>;
+  let currentChild: ResultPromise;
 
   try {
     if (typeof command === 'string') {

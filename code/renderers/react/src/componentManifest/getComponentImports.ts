@@ -146,8 +146,8 @@ export const getComponents = ({
     } // missing binding -> keep (will become null import) // missing binding -> keep (will become null import)
     const isImportBinding = Boolean(
       binding.path.isImportSpecifier?.() ||
-        binding.path.isImportDefaultSpecifier?.() ||
-        binding.path.isImportNamespaceSpecifier?.()
+      binding.path.isImportDefaultSpecifier?.() ||
+      binding.path.isImportNamespaceSpecifier?.()
     );
     return !isImportBinding;
   };

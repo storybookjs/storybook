@@ -1,11 +1,11 @@
 // eslint-disable-next-line depend/ban-dependencies
-import type { ExecaChildProcess } from 'execa';
+import type { ResultPromise } from 'execa';
 
 import { CLI_COLORS, log } from './logger';
 import { logTracker } from './logger/log-tracker';
 import { spinner } from './prompts/prompt-functions';
 
-type ChildProcessFactory = (signal?: AbortSignal) => ExecaChildProcess;
+type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
 
 interface SetupAbortControllerResult {
   abortController: AbortController;

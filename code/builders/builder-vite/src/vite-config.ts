@@ -96,9 +96,9 @@ export async function pluginConfig(options: Options) {
 
   const plugins = [
     codeGeneratorPlugin(options),
-    await csfPlugin(options),
-    await injectExportOrderPlugin(),
-    await stripStoryHMRBoundary(),
+    // await csfPlugin(options),
+    // await injectExportOrderPlugin(),
+    // await stripStoryHMRBoundary(),
     {
       name: 'storybook:allow-storybook-dir',
       enforce: 'post',
@@ -113,7 +113,7 @@ export async function pluginConfig(options: Options) {
       },
     },
     await externalGlobalsPlugin(externals),
-    pluginWebpackStats({ workingDir: process.cwd() }),
+    // pluginWebpackStats({ workingDir: process.cwd() }),
   ] as PluginOption[];
 
   return plugins;

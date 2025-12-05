@@ -83,12 +83,14 @@ const ActionListHoverItem = styled(ActionListItem)<{ targetId: string }>(({ targ
   },
 }));
 
-const StyledButton = styled(Button)({
+const StyledButton = styled(Button)(({ size }) => ({
+  gap: size === 'small' ? 6 : 8,
+
   '&:focus-visible': {
     // Prevent focus outline from being cut off by overflow: hidden
     outlineOffset: -2,
   },
-});
+}));
 
 const StyledToggleButton = styled(ToggleButton)({
   '&:focus-visible': {

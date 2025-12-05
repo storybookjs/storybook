@@ -77,8 +77,8 @@ export interface SelectProps
   onDeselect?: (option: Value) => void;
   onChange?: (selected: Value[]) => void;
   /**
-   * Show the selected option's title in place of the children when an option is selected.
-   * Defaults to true.
+   * Whether to show the selected option's title in place of the children when an option is
+   * selected. Defaults to true.
    */
   showSelectedLabel?: boolean;
 }

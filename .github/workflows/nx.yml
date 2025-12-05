@@ -6,6 +6,8 @@ on:
       - next
   pull_request:
     types: [opened, synchronize, labeled, reopened]
+  schedule:
+    - cron: '0 23 * * *'
 
 permissions:
   actions: read
@@ -22,7 +24,9 @@ jobs:
         (contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
          contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
          contains(github.event.pull_request.labels.*.name, 'ci:daily'))
-      ) || (github.event_name == 'push' && github.ref == 'refs/heads/next')
+      ) || (github.event_name == 'push' && github.ref == 'refs/heads/next') ||
+      (github.event_name == 'schedule')
+
     runs-on: ubuntu-latest
     env:
       ALL_TASKS: compile,check,knip,test,pretty-docs,lint,sandbox,build,e2e-tests,e2e-tests-dev,test-runner,vitest-integration,check-sandbox,e2e-ui,jest,vitest,playwright-ct,cypress
@@ -46,6 +50,10 @@ jobs:
 
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/next" ]]; then
             tags="merged"
+          fi
+
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            tags="daily"
           fi
 
           echo "tag=$tags" >> "$GITHUB_OUTPUT"

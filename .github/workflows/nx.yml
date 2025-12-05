@@ -85,7 +85,7 @@ jobs:
         name: 'Run nx'
         run: |
           echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
-          yarn nx run-many -t $ALL_TASKS -c production -p="tag:ci:${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
+          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${{ steps.tag.outputs.tag }}" | tee -a "$GITHUB_OUTPUT"
           status=${PIPESTATUS[0]}
           echo 'EOF' >> "$GITHUB_OUTPUT"
           exit $status

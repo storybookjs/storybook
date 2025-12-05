@@ -5,5 +5,5 @@
     "compile": {},
     "check": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": ["library"]
 }

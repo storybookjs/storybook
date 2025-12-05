@@ -11,7 +11,12 @@ import type {
 import { throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
 
-import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
+import {
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  STATUS_TYPE_ID_SCREENSHOT,
+  storeOptions,
+} from '../constants';
 import type { RunTrigger, StoreEvent, StoreState, TriggerRunEvent, VitestError } from '../types';
 import { errorToErrorLike } from '../utils';
 import { VitestManager } from './vitest-manager';
@@ -21,6 +26,7 @@ export type TestManagerOptions = {
   store: experimental_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
+  screenshotStatusStore: StatusStoreByTypeId;
   testProviderStore: TestProviderStoreById;
   onError?: (message: string, error: Error) => void;
   onReady?: () => void;
@@ -43,6 +49,8 @@ export class TestManager {
 
   private a11yStatusStore: TestManagerOptions['a11yStatusStore'];
 
+  private screenshotStatusStore: TestManagerOptions['screenshotStatusStore'];
+
   private testProviderStore: TestManagerOptions['testProviderStore'];
 
   private onReady?: TestManagerOptions['onReady'];
@@ -59,6 +67,7 @@ export class TestManager {
     this.store = options.store;
     this.componentTestStatusStore = options.componentTestStatusStore;
     this.a11yStatusStore = options.a11yStatusStore;
+    this.screenshotStatusStore = options.screenshotStatusStore;
     this.testProviderStore = options.testProviderStore;
     this.onReady = options.onReady;
     this.storybookOptions = options.storybookOptions;
@@ -187,46 +196,6 @@ export class TestManager {
     const testCaseResultsToFlush = this.batchedTestCaseResults;
     this.batchedTestCaseResults = [];
 
-    this.store.setState((s) => {
-      let { success: ctSuccess, error: ctError } = s.currentRun.componentTestCount;
-      let { success: a11ySuccess, warning: a11yWarning, error: a11yError } = s.currentRun.a11yCount;
-      testCaseResultsToFlush.forEach(({ testResult, reports }) => {
-        if (testResult.state === 'passed') {
-          ctSuccess++;
-        } else if (testResult.state === 'failed') {
-          ctError++;
-        }
-        reports
-          ?.filter((r) => r.type === 'a11y')
-          .forEach((report) => {
-            if (report.status === 'passed') {
-              a11ySuccess++;
-            } else if (report.status === 'warning') {
-              a11yWarning++;
-            } else if (report.status === 'failed') {
-              a11yError++;
-            }
-          });
-      });
-      const finishedTestCount = ctSuccess + ctError;
-
-      return {
-        ...s,
-        currentRun: {
-          ...s.currentRun,
-          componentTestCount: { success: ctSuccess, error: ctError },
-          a11yCount: { success: a11ySuccess, warning: a11yWarning, error: a11yError },
-          // in some cases successes and errors can exceed the anticipated totalTestCount
-          // e.g. when testing more tests than the stories we know about upfront
-          // in those cases, we set the totalTestCount to the sum of successes and errors
-          totalTestCount:
-            finishedTestCount > (s.currentRun.totalTestCount ?? 0)
-              ? finishedTestCount
-              : s.currentRun.totalTestCount,
-        },
-      };
-    });
-
     const componentTestStatuses = testCaseResultsToFlush.map(({ storyId, testResult }) => ({
       storyId,
       typeId: STATUS_TYPE_ID_COMPONENT_TEST,
@@ -256,6 +225,48 @@ export class TestManager {
     if (a11yStatuses.length > 0) {
       this.a11yStatusStore.set(a11yStatuses);
     }
+
+    this.store.setState((s) => {
+      let { success: ctSuccess, error: ctError } = s.currentRun.componentTestCount;
+      let { success: a11ySuccess, warning: a11yWarning, error: a11yError } = s.currentRun.a11yCount;
+      testCaseResultsToFlush.forEach(({ testResult, reports }) => {
+        if (testResult.state === 'passed') {
+          ctSuccess++;
+        } else if (testResult.state === 'failed') {
+          ctError++;
+        }
+        reports
+          ?.filter((r) => r.type === 'a11y')
+          .forEach((report) => {
+            if (report.status === 'passed') {
+              a11ySuccess++;
+            } else if (report.status === 'warning') {
+              a11yWarning++;
+            } else if (report.status === 'failed') {
+              a11yError++;
+            }
+          });
+      });
+      const finishedTestCount = ctSuccess + ctError;
+
+      return {
+        ...s,
+        currentRun: {
+          ...s.currentRun,
+          componentTestCount: { success: ctSuccess, error: ctError },
+          a11yCount: { success: a11ySuccess, warning: a11yWarning, error: a11yError },
+          componentTestStatuses: s.currentRun.componentTestStatuses.concat(componentTestStatuses),
+          a11yStatuses: s.currentRun.a11yStatuses.concat(a11yStatuses),
+          // in some cases successes and errors can exceed the anticipated totalTestCount
+          // e.g. when testing more tests than the stories we know about upfront
+          // in those cases, we set the totalTestCount to the sum of successes and errors
+          totalTestCount:
+            finishedTestCount > (s.currentRun.totalTestCount ?? 0)
+              ? finishedTestCount
+              : s.currentRun.totalTestCount,
+        },
+      };
+    });
   }, 500);
 
   onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {

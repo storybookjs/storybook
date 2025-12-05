@@ -36,9 +36,6 @@ jobs:
         with:
           node-version: 22
           cache: 'yarn'
-      - run: yarn install --immutable
-      - uses: nrwl/nx-set-shas@v4
-
       # --- Create pending status at start for PRs ---
       - name: Create Nx Cloud Status (pending)
         if: github.event_name == 'pull_request'
@@ -53,12 +50,13 @@ jobs:
               repo: context.repo.repo,
               sha: context.payload.pull_request.head.sha,
               state: 'pending',
-              avatar_url: 'https://avatars.githubusercontent.com/in/80458',
               target_url: nxCloudUrl,
-              description: 'View Nx Cloud dashboard for this PR',
+              description: 'NX is running your tests',
               context: 'Nx Cloud'
             });
 
+      - run: yarn install --immutable
+      - uses: nrwl/nx-set-shas@v4
         # --- PRs ---
       - if: github.event_name == 'pull_request' &&
           contains(github.event.pull_request.labels.*.name, 'ci:normal')

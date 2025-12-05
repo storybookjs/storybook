@@ -11,6 +11,7 @@ import type { GlobalsUpdatedPayload, SetGlobalsPayload } from 'storybook/interna
 
 import { EventEmitter } from 'events';
 
+import type { ToolbarArgType } from '../../toolbar';
 import { getEventMetadata as _getEventData } from '../lib/events';
 import type { ModuleArgs } from '../lib/types';
 import type { SubAPI } from '../modules/globals';
@@ -61,7 +62,7 @@ describe('globals API', () => {
 
     channel.emit(SET_GLOBALS, {
       globals: { a: 'b' },
-      globalTypes: { a: { type: { name: 'string' } } },
+      globalTypes: { a: { type: { name: 'string' } } as ToolbarArgType },
     } satisfies SetGlobalsPayload);
     expect(store.getState()).toEqual({
       userGlobals: { a: 'b' },
@@ -88,7 +89,7 @@ describe('globals API', () => {
 
     channel.emit(SET_GLOBALS, {
       globals: { a: 'b' },
-      globalTypes: { a: { type: { name: 'string' } } },
+      globalTypes: { a: { type: { name: 'string' } } as ToolbarArgType },
     } satisfies SetGlobalsPayload);
     expect(store.getState()).toEqual({
       userGlobals: { a: 'b' },
@@ -138,7 +139,7 @@ describe('globals API', () => {
     getEventMetadata.mockReturnValueOnce({ sourceType: 'external', ref: { id: 'ref' } } as any);
     channel.emit(SET_GLOBALS, {
       globals: { a: 'b' },
-      globalTypes: { a: { type: { name: 'string' } } },
+      globalTypes: { a: { type: { name: 'string' } } as ToolbarArgType },
     } satisfies SetGlobalsPayload);
     expect(store.getState()).toEqual({
       userGlobals: {},

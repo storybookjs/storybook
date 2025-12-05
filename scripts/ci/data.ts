@@ -602,8 +602,8 @@ const packageBenchmarks = defineJob(
 
 const sandboxes = [
   //
-  'react-vite/default-ts',
-  'react-vite/default-js',
+  // 'react-vite/default-ts',
+  // 'react-vite/default-js',
 ].map(defineSandboxFlow);
 
 const jobs = {

@@ -20,6 +20,7 @@ export interface ProjectAutomigrationData {
   storybookVersion: string;
   beforeVersion: string;
   storiesPaths: string[];
+  hasCsfFactoryPreview: boolean;
 }
 
 export interface AutomigrationCheckResultReport {
@@ -109,6 +110,7 @@ export async function collectAutomigrationsAcrossProjects(
           previewConfigPath: project.previewConfigPath,
           mainConfigPath: project.mainConfigPath,
           storiesPaths: project.storiesPaths,
+          hasCsfFactoryPreview: project.hasCsfFactoryPreview,
         };
         const result = await fix.check(checkOptions);
 
@@ -430,6 +432,7 @@ export async function runAutomigrations(
     storybookVersion: project.currentCLIVersion,
     beforeVersion: project.beforeVersion,
     storiesPaths: project.storiesPaths,
+    hasCsfFactoryPreview: project.hasCsfFactoryPreview,
   }));
 
   const detectingAutomigrationTask = prompt.taskLog({

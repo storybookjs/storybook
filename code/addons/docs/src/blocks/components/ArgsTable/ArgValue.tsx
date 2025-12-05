@@ -80,6 +80,7 @@ const Text = styled.span<{ simple?: boolean }>(codeCommon, ({ theme, simple = fa
 const ExpandButton = styled.summary(({ theme }) => ({
   fontFamily: theme.typography.fonts.mono,
   color: theme.color.secondary,
+  cursor: 'pointer',
   marginBottom: '4px',
   background: 'none',
   border: 'none',
@@ -177,9 +178,9 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
     return hasManyItems ? (
       <Summary isExpanded={isExpanded}>
         {renderSummaryItems(summaryItems)}
-        <DetailsContainer>
+        <DetailsContainer open={isExpanded} onToggle={(e) => setIsExpanded(e.currentTarget.open)}>
           <AlignedDetails>{renderExpandedItems(summaryItems)}</AlignedDetails>
-          <ExpandButton onClick={() => setIsExpanded(!isExpanded)}>
+          <ExpandButton role="button">
             {isExpanded ? 'Show less...' : `Show ${itemsCount - ITEMS_BEFORE_EXPANSION} more...`}
           </ExpandButton>
         </DetailsContainer>

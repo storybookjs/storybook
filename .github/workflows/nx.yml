@@ -136,9 +136,9 @@ jobs:
 
             core.info(`Creating statuses for ${failures.length} failing Nx tasks...`);
 
-            for (const { task, url } of failures) {
-              const contextName = `Nx: ${task}`;
-              const description = `Nx task failed: ${task}`;
+            for (const { task, url } of failures.slice(0, 5)) {
+              const contextName = `nx run ${task}`;
+              const description = ` Your tests failed on NX Cloud`;
 
               core.info(`Status for "${task}" -> ${url || 'no URL'}`);
 
@@ -158,8 +158,21 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const raw = ${{ toJson(steps.nx.outputs.nx_output) }} || '';
+
+            // Try to find a direct run URL in the Nx output
+            let runUrl = null;
+            const runMatches = raw.match(/https:\/\/cloud\.nx\.app\/runs\/\S+/g);
+            if (runMatches && runMatches.length > 0) {
+              // Use the last run URL in the output
+              runUrl = runMatches[runMatches.length - 1];
+            }
+
             const prNumber = context.payload.pull_request.number;
-            const nxCloudUrl = `https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=${prNumber}`;
+            const overviewUrl =
+              `https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=${prNumber}`;
+
+            const nxCloudUrl = runUrl || overviewUrl;
 
             const jobStatus = '${{ job.status }}'; // 'success', 'failure', 'cancelled', 'skipped'
             /** Map job.status -> GitHub Statuses API state */

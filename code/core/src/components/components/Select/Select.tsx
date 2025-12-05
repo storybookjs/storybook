@@ -76,6 +76,11 @@ export interface SelectProps
   onSelect?: (option: Value) => void;
   onDeselect?: (option: Value) => void;
   onChange?: (selected: Value[]) => void;
+  /**
+   * Show the selected option's title in place of the children when an option is selected.
+   * Defaults to true.
+   */
+  showSelectedLabel?: boolean;
 }
 
 function valueToId(parentId: string, { value }: InternalOption | ResetOption): string {
@@ -200,6 +205,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       onChange,
       tooltip,
       ariaLabel,
+      showSelectedLabel = true,
       ...props
     },
     ref
@@ -501,7 +507,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           {!multiSelect && (
             <>
               {icon}
-              {selectedOptions[0]?.title ?? children}
+              {(showSelectedLabel && selectedOptions[0]?.title) || children}
             </>
           )}
 

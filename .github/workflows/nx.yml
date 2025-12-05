@@ -97,7 +97,6 @@ jobs:
               repo: context.repo.repo,
               sha: context.payload.pull_request.head.sha,
               state,
-              avatar_url: 'https://avatars.githubusercontent.com/in/80458',
               target_url: nxCloudUrl,
               description: state === 'success'
                 ? 'Nx Cloud run finished successfully'

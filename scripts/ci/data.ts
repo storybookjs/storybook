@@ -400,17 +400,18 @@ const windows_build = defineJob('build-windows', {
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
     npm.install('.'),
-    // {
-    //   run: {
-    //     name: 'Convert symlinks to real directories',
-    //     command: './scripts/ci/no-junctions.sh',
-    //   },
-    // },
     {
       run: {
         name: 'Compile',
         working_directory: `code`,
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
+      },
+    },
+    {
+      run: {
+        name: 'Convert symlinks to real directories',
+        command: 'yarn windows:unlink',
+        working_directory: `scripts`,
       },
     },
     cache.persist(

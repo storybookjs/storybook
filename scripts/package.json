@@ -22,6 +22,7 @@
     "local-registry": "jiti ./run-registry.ts",
     "prepare-sandbox": "jiti ./prepare-sandbox.ts",
     "publish": "jiti ./sandbox/publish.ts",
+    "windows:unlink": "jiti ./ci/unlink-windows.ts",
     "release:cancel-preparation-runs": "jiti ./release/cancel-preparation-runs.ts",
     "release:generate-pr-description": "jiti ./release/generate-pr-description.ts",
     "release:get-changelog-from-file": "jiti ./release/get-changelog-from-file.ts",

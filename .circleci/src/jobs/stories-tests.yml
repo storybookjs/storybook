@@ -6,7 +6,7 @@ steps:
   - git-shallow-clone/checkout_advanced:
       clone_options: --depth 1 --verbose
   - attach_workspace:
-      at: .
+      at: /tmp
   - run:
       command: |
         cd code
@@ -14,6 +14,6 @@ steps:
         echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
       name: Run tests
   - store_test_results:
-      path: test-results
+      path: storybook/test-results
   - report-workflow-on-failure
   - cancel-workflow-on-failure

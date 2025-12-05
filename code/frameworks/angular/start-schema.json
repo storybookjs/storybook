@@ -148,7 +148,11 @@
     "loglevel": {
       "type": "string",
       "description": "Controls level of logging during build. Can be one of: [silly, verbose, info (default), warn, error, silent].",
-      "pattern": "(silly|verbose|info|warn|silent)"
+      "pattern": "(trace|debug|info|warn|error|silent)"
+    },
+    "logfile": {
+      "type": "string",
+      "description": "If provided, the log output will be written to the specified file path."
     },
     "sourceMap": {
       "type": ["boolean", "object"],

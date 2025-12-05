@@ -9,8 +9,6 @@ import {
 import type { EventType } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
 
-import { dedent } from 'ts-dedent';
-
 import { StorybookError } from '../storybook-error';
 
 type TelemetryOptions = {

@@ -46,6 +46,8 @@ export async function getFontFaceDeclarations(
       return `@font-face {
           font-family: ${id};
           src: url(.${localFontPath});
+          ${weight ? `font-weight: ${weight};` : ''}
+          ${style ? `font-style: ${style};` : ''}
           ${fontDeclarations}
       }`;
     }

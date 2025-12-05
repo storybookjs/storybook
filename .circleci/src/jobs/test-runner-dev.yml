@@ -12,11 +12,11 @@ steps:
   - git-shallow-clone/checkout_advanced:
       clone_options: '--depth 1 --verbose'
   - attach_workspace:
-      at: .
+      at: /tmp
   - run:
       name: Running Test Runner in Dev mode
       command: yarn task --task test-runner-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev) --no-link --start-from=never --junit
   - report-workflow-on-failure:
       template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev)
   - store_test_results:
-      path: test-results
+      path: storybook/test-results

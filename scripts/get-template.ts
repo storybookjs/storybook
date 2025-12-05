@@ -1,4 +1,4 @@
-import { access, readFile, readdir, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 
 import { program } from 'commander';
 import picocolors from 'picocolors';
@@ -12,29 +12,11 @@ import {
   allTemplates,
   templatesByCadence,
 } from '../code/lib/cli-storybook/src/sandbox-templates';
-import { SANDBOX_DIRECTORY } from './utils/constants';
 import { esMain } from './utils/esmain';
-
-const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 
 type Template = Pick<TTemplate, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
 export type TemplateKey = keyof typeof allTemplates;
 export type Templates = Record<TemplateKey, Template>;
-
-async function getDirectories(source: string) {
-  return (await readdir(source, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
-}
-
-async function pathExists(path: string) {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 function isTaskSkipped(template: Template, script: string): boolean {
   return (
@@ -49,26 +31,11 @@ export async function getTemplate(
   scriptName: string,
   { index, total }: { index: number; total: number }
 ) {
-  let potentialTemplateKeys: TemplateKey[] = [];
-  if (await pathExists(sandboxDir)) {
-    const sandboxes = await getDirectories(sandboxDir);
-    potentialTemplateKeys = sandboxes
-      .map((dirName) => {
-        return Object.keys(allTemplates).find(
-          (templateKey) => templateKey.replace('/', '-') === dirName
-        );
-      })
-      .filter(Boolean) as TemplateKey[];
-  }
+  const cadenceTemplates = Object.entries(allTemplates).filter(([key]) =>
+    templatesByCadence[cadence].includes(key as TemplateKey)
+  );
 
-  if (potentialTemplateKeys.length === 0) {
-    const cadenceTemplates = Object.entries(allTemplates).filter(([key]) =>
-      templatesByCadence[cadence].includes(key as TemplateKey)
-    );
-    potentialTemplateKeys = cadenceTemplates.map(([k]) => k) as TemplateKey[];
-  }
-
-  potentialTemplateKeys = potentialTemplateKeys.filter((t) => {
+  const potentialTemplateKeys = (cadenceTemplates.map(([k]) => k) as TemplateKey[]).filter((t) => {
     const currentTemplate = allTemplates[t] as Template;
     return isTaskSkipped(currentTemplate, scriptName);
   });
@@ -332,9 +299,9 @@ async function run({ cadence, task, check, fix }: RunOptions) {
   }
 
   const { CIRCLE_NODE_INDEX = 0, CIRCLE_NODE_TOTAL = 1 } = process.env;
-
   console.log(
     await getTemplate(cadence as Cadence, task, {
+      // Convert to integer
       index: +CIRCLE_NODE_INDEX,
       total: +CIRCLE_NODE_TOTAL,
     })

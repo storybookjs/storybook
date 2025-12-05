@@ -581,7 +581,7 @@ describe('prepareStory', () => {
           moduleExport,
         },
         { id, title },
-        { render: vi.fn<any>() }
+        { render: vi.fn() as any }
       );
 
       const context = prepareContext({ args: { one: 1 }, globals: {}, ...story });
@@ -601,7 +601,7 @@ describe('prepareStory', () => {
           moduleExport,
         },
         { id, title },
-        { render: vi.fn<any>() }
+        { render: vi.fn() as any }
       );
 
       const context = prepareContext({

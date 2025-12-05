@@ -4,7 +4,7 @@ import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/commo
 import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, logTracker } from 'storybook/internal/node-logger';
 
 import type {
   BuilderContext,
@@ -65,6 +65,7 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'open'
     | 'docs'
     | 'debugWebpack'
+    | 'logfile'
     | 'webpackStatsJson'
     | 'statsJson'
     | 'loglevel'
@@ -80,6 +81,14 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
   return new Observable<BuilderOutput>((observer) => {
     (async () => {
       try {
+        // Apply logger configuration from builder options
+        if (options.loglevel) {
+          logger.setLogLevel(options.loglevel);
+        }
+        if (options.logfile) {
+          logTracker.enableLogWriting();
+        }
+
         logger.intro('Starting Storybook');
 
         const { tsConfig } = await setup(options, context);
@@ -187,6 +196,15 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         // so the dev server continues running. Architect will keep subscribing
         // until the Observable completes, which allows watch mode to work.
       } catch (error) {
+        // Write logs to file on failure when enabled
+        try {
+          if (logTracker.shouldWriteLogsToFile) {
+            try {
+              const logFile = await logTracker.writeToFile(options.logfile as any);
+              logger.outro(`Debug logs are written to: ${logFile}`);
+            } catch {}
+          }
+        } catch {}
         observer.error(error);
       }
     })();

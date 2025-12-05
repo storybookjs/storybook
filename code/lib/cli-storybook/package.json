@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "10.2.0-alpha.0",
+  "version": "10.2.0-alpha.3",
   "description": "Storybook CLI: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -36,10 +36,6 @@
     "README.md",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/codemod": "workspace:*",
     "@types/semver": "^7.3.4",

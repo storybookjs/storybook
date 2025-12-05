@@ -114,11 +114,15 @@ export class AddonVitestService {
    * @param options - Installation options
    * @returns Array of error messages if installation fails
    */
-  async installPlaywright(options: { yes?: boolean } = {}): Promise<{ errors: string[] }> {
+  async installPlaywright(
+    options: { yes?: boolean } = {}
+  ): Promise<{ errors: string[]; result: 'installed' | 'skipped' | 'aborted' | 'failed' }> {
     const errors: string[] = [];
 
     const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
     const playwrightCommandString = this.packageManager.getPackageCommand(playwrightCommand);
+
+    let result: 'installed' | 'skipped' | 'aborted' | 'failed';
 
     try {
       const shouldBeInstalled = options.yes
@@ -135,7 +139,7 @@ export class AddonVitestService {
           })();
 
       if (shouldBeInstalled) {
-        await prompt.executeTaskWithSpinner(
+        const processAborted = await prompt.executeTaskWithSpinner(
           (signal) =>
             this.packageManager.runPackageCommand({
               args: playwrightCommand,
@@ -150,10 +154,17 @@ export class AddonVitestService {
             abortable: true,
           }
         );
+        if (processAborted) {
+          result = 'aborted';
+        } else {
+          result = 'installed';
+        }
       } else {
         logger.warn('Playwright installation skipped');
+        result = 'skipped';
       }
     } catch (e) {
+      result = 'failed';
       ErrorCollector.addError(e);
       if (e instanceof Error) {
         errors.push(e.stack ?? e.message);
@@ -162,7 +173,7 @@ export class AddonVitestService {
       }
     }
 
-    return { errors };
+    return { errors, result };
   }
 
   /**

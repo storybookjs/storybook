@@ -13,6 +13,9 @@
     "storybook": "STORYBOOK_TELEMETRY_URL=\"http://localhost:6007/event-log\" storybook dev -p 6006",
     "vitest": "vitest"
   },
+  "nx": {
+    "includedScripts": []
+  },
   "resolutions": {
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "portal:../../../code/addons/a11y",

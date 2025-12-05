@@ -1,5 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-import { createVitest as actualCreateVitest } from 'vitest/node';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import { experimental_MockUniversalStore } from 'storybook/internal/core-server';
@@ -43,14 +42,21 @@ const vitest = vi.hoisted(() => ({
   },
 }));
 
+const mockCreateVitest = vi.fn();
+
 vi.mock('vitest/node', async (importOriginal) => ({
   ...(await importOriginal()),
-  createVitest: vi.fn(() => Promise.resolve(vitest)),
+  createVitest: mockCreateVitest,
 }));
 
-const createVitest = vi.mocked(actualCreateVitest);
+// Use the mock function directly
+const createVitest = mockCreateVitest;
 
 const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
+
+beforeEach(() => {
+  createVitest.mockResolvedValue(vitest);
+});
 const mockChannel = new Channel({ transport });
 const mockStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(
   {

@@ -14,6 +14,9 @@
     "storybook": "STORYBOOK_TELEMETRY_URL=\"http://localhost:6007/event-log\" storybook dev -p 6006",
     "vitest": "echo 'Vitest tests are implemented in the renderer directory instead!'"
   },
+  "nx": {
+    "includedScripts": []
+  },
   "resolutions": {
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",

@@ -11,6 +11,8 @@ export { protectUrls, createHyperlink } from './wrap-utils';
 export { CLI_COLORS } from './logger/colors';
 export { ConsoleLogger, StyledConsoleLogger } from './logger/console';
 
+export type { LogLevel } from './logger/logger';
+
 // The default is stderr, which can cause some tools (like rush.js) to think
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621
 npmLog.stream = process.stdout;

@@ -93,8 +93,7 @@ Here's a highlight of notable directories and files:
 │   ├── vitest-setup.ts
 │   ├── vitest.config.ts
 │   ├── vitest.helpers.ts
-│   ├── vitest.workspace.ts
-│   └── yarn.lock
+│   └── vitest.workspace.ts
 ├── codecov.yml
 ├── dependabot.yml
 ├── docs                         # Documentation
@@ -117,7 +116,7 @@ Here's a highlight of notable directories and files:
 │   ├── writing-stories
 │   └── writing-tests
 ├── node_modules
-├── package.json                      # Root package.json for Storybook
+├── package.json                      # Root of the yarn monorepo
 ├── prettier.config.mjs
 ├── scripts                           # Build and Helper Scripts
 ├── test-storybooks
@@ -149,11 +148,11 @@ If you're interested in contributing to Storybook's codebase, you can run it loc
 # Navigate to the root directory of the Storybook repository 
 cd path/to/your/storybook/fork 
 
-# Install the required dependencies and start the development environment 
+# Install the required dependencies
+yarn
+# start the development environment 
 yarn start
 ```
-
-You don't need to install the dependencies manually to get the project running. The `yarn start` command will install the required dependencies for you.
 
 ### Making code changes 
 

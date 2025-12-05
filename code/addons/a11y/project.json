@@ -1,8 +1,9 @@
 {
   "name": "addon-a11y",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {
-    "build": {}
-  }
+    "compile": {},
+    "check": {}
+  },
+  "tags": ["ci:normal"]
 }

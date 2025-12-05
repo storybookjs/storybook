@@ -28,6 +28,9 @@ const CACHE_KEYS = (platform = 'linux') =>
     return list.slice(0, list.length - index).join('/');
   });
 const CACHE_PATHS = [
+  '.yarn/cache',
+  '.yarn/unplugged',
+  '.yarn/build-state.yml',
   '.yarn/root-install-state.gz',
   'node_modules',
   'code/node_modules',

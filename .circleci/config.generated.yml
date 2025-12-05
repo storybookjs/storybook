@@ -149,6 +149,9 @@ jobs:
                   cache-only-lockfile: true
             - save_cache:
                   paths: &a1
+                      - .yarn/cache
+                      - .yarn/unplugged
+                      - .yarn/build-state.yml
                       - .yarn/root-install-state.gz
                       - node_modules
                       - code/node_modules

@@ -16,9 +16,10 @@ export const check: Task = {
   async ready() {
     return false;
   },
-  async run(_, { dryRun, debug, link }) {
+  async run(_, { dryRun, debug, link, skipCache }) {
+    const command = link ? linkCommand : nolinkCommand;
     return exec(
-      link ? linkCommand : nolinkCommand,
+      `${command} ${skipCache || process.env.CI ? '--skip-nx-cache' : ''}`,
       { cwd: ROOT_DIRECTORY },
       {
         startMessage: '🥾 Checking for TS errors',

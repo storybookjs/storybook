@@ -254,11 +254,6 @@ jobs:
                 name: Restore Yarn cache
             - run:
                 command: |
-                    yarn
-                    yarn task --task compile --start-from=auto --no-link --debug
-                name: Compile
-            - run:
-                command: |
                     yarn task --task check --start-from=auto --no-link --debug
                 name: Check
             - run:

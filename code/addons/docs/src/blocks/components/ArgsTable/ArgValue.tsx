@@ -81,7 +81,9 @@ const ExpandButton = styled.summary(({ theme }) => ({
   fontFamily: theme.typography.fonts.mono,
   color: theme.color.secondary,
   cursor: 'pointer',
-  marginBottom: '4px',
+  lineHeight: 'normal',
+  margin: '0 0 4px',
+  padding: '1px 6px',
   background: 'none',
   border: 'none',
 }));

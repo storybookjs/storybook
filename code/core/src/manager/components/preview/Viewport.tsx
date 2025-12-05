@@ -30,7 +30,6 @@ const ViewportWrapper = styled.div<{
 
 const ViewportControls = styled.div({
   display: 'flex',
-  justifyContent: 'space-between',
   margin: '0 0 6px 6px',
   gap: 6,
 });

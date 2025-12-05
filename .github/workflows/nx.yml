@@ -73,7 +73,7 @@ jobs:
                 context.payload.pull_request?.number ?? 'next'
               }`,
               description: 'NX Cloud is running your tests',
-              context: tag,
+              context: `nx: ${tag}`,
             });
       - uses: actions/setup-node@v4
         with:
@@ -145,5 +145,5 @@ jobs:
               description: failedCount
                 ? `Nx Cloud run failed (${failedCount} tasks failed)`
                 : 'Nx Cloud run finished successfully',
-              context: tag,
+              context: `nx: ${tag}`,
             });

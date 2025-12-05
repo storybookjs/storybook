@@ -663,6 +663,5 @@ export default {
     'SupportedFramework',
     'SupportedLanguage',
     'SupportedRenderer',
-    'a',
   ],
 } as const;

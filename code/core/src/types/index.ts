@@ -20,5 +20,3 @@ export * from './modules/webpack';
 export * from './modules/builders';
 export * from './modules/features';
 export * from './modules/languages';
-
-export const a: string = 1;

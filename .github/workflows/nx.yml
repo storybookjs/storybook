@@ -60,6 +60,7 @@ jobs:
         # --- PRs ---
       - if: github.event_name == 'pull_request' &&
           contains(github.event.pull_request.labels.*.name, 'ci:normal')
+        id: nx
         run: |
           set -o pipefail
           
@@ -86,7 +87,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const raw = ${{ toJson(steps.nx-run.outputs.nx_output) }};
+            const raw = ${{ toJson(steps.nx.outputs.nx_output) }};
             if (!raw) {
               core.info('No nx_output found, skipping per-task statuses.');
               return;

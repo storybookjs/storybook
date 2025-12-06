@@ -34,6 +34,10 @@ export const get = async (eventType: EventType): Promise<CacheEntry | undefined>
 };
 
 export const getLastEvents = async (): Promise<Record<EventType, CacheEntry>> => {
+  // Wait for any pending set operations to complete before reading
+  // This prevents race conditions where getLastEvents() reads stale data
+  // while a set() operation is still in progress
+  await operation;
   return (await cache.get('lastEvents')) || {};
 };
 

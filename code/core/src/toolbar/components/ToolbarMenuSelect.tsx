@@ -10,7 +10,7 @@ import { Icons } from '../../components/components/icon/icon';
 import type { WithKeyboardCycleProps } from '../hoc/withKeyboardCycle';
 import { withKeyboardCycle } from '../hoc/withKeyboardCycle';
 import type { ToolbarItem, ToolbarMenuProps } from '../types';
-import { getSelectedIcon, getSelectedTitle } from '../utils/get-selected';
+import { getSelectedIcon } from '../utils/get-selected';
 
 // We can't remove the Icons component just yet because there's no way for now to import icons
 // in the preview directly. Before having a better solution, we are going to keep the Icons component
@@ -40,14 +40,10 @@ export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
     const currentValue = globals[id];
     const isOverridden = id in storyGlobals;
     let icon = _icon;
-    let title = _title;
+    const title = _title;
 
     if (!preventDynamicIcon) {
       icon = getSelectedIcon({ currentValue, items }) || icon;
-    }
-
-    if (dynamicTitle) {
-      title = getSelectedTitle({ currentValue, items }) || title;
     }
 
     if (!title && !icon) {
@@ -101,7 +97,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
         onReset={() => updateGlobals({ [id]: '_reset' })}
         onSelect={(selected) => updateGlobals({ [id]: selected })}
         icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
-        showSelectedLabel={false}
+        showSelectedLabel={dynamicTitle}
       >
         {title}
       </Select>

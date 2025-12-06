@@ -39,6 +39,7 @@ export async function getStoryIndexGenerator(
     serverChannel,
     workingDir,
     configDir,
+    options,
   });
 
   return initializedStoryIndexGenerator;

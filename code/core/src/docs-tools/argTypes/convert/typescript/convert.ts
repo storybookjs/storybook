@@ -43,12 +43,14 @@ export const convert = (type: TSType): SBType | void => {
       return { ...base, ...convertSig(type) };
     case 'union':
       let result;
-      if (type.elements?.every((element) => element.name === 'literal')) {
+      // Filter out undefined from optional props when checking for enum
+      const nonUndefinedElements = type.elements?.filter((element) => element.name !== 'undefined');
+      if (nonUndefinedElements?.length > 0 && nonUndefinedElements.every((element) => element.name === 'literal')) {
         result = {
           ...base,
           name: 'enum',
           // @ts-expect-error fix types
-          value: type.elements?.map((v) => parseLiteral(v.value)),
+          value: nonUndefinedElements.map((v) => parseLiteral(v.value)),
         };
       } else {
         result = { ...base, name, value: type.elements?.map(convert) };

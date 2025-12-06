@@ -1,6 +1,7 @@
 import { type API } from 'storybook/manager-api';
 
 import { ADDON_ID } from './constants';
+import type { useViewport } from './useViewport';
 
 const getCurrentViewportIndex = (viewportsKeys: string[], current: string): number =>
   viewportsKeys.indexOf(current);
@@ -19,20 +20,15 @@ const getPreviousViewport = (viewportsKeys: string[], current: string): string =
     : viewportsKeys[currentViewportIndex - 1];
 };
 
-export const registerShortcuts = async (
-  api: API,
-  viewport: any,
-  updateGlobals: any,
-  viewportsKeys: string[]
-) => {
+export const registerShortcuts = async (api: API, viewport: ReturnType<typeof useViewport>) => {
+  const viewportKeys = Object.keys(viewport.options);
+
   await api.setAddonShortcut(ADDON_ID, {
     label: 'Previous viewport',
     defaultShortcut: ['alt', 'shift', 'V'],
     actionName: 'previous',
     action: () => {
-      updateGlobals({
-        viewport: getPreviousViewport(viewportsKeys, viewport),
-      });
+      viewport.update({ value: getPreviousViewport(viewportKeys, viewport.key) });
     },
   });
 
@@ -41,9 +37,7 @@ export const registerShortcuts = async (
     defaultShortcut: ['alt', 'V'],
     actionName: 'next',
     action: () => {
-      updateGlobals({
-        viewport: getNextViewport(viewportsKeys, viewport),
-      });
+      viewport.update({ value: getNextViewport(viewportKeys, viewport.key) });
     },
   });
 
@@ -52,9 +46,7 @@ export const registerShortcuts = async (
     defaultShortcut: ['alt', 'control', 'V'],
     actionName: 'reset',
     action: () => {
-      updateGlobals({
-        viewport: { value: undefined, isRotated: false },
-      });
+      viewport.update({ value: undefined, isRotated: false });
     },
   });
 };

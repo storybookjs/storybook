@@ -73,6 +73,8 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
         return dedent`@font-face {
 					font-family: ${id};
 					src: url(${localFontSrc.fontReferenceId ? getPlaceholderFontUrl(localFontSrc.fontReferenceId) : `/@fs/${localFontSrc.fontPath}`});
+          ${weight ? `font-weight: ${weight};` : ""}
+          ${style ? `font-style: ${style};` : ""}
 					${fontDeclarations}
 				}`;
       }

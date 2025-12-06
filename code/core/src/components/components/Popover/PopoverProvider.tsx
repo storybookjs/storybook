@@ -77,7 +77,7 @@ export const PopoverProvider = ({
     },
     [onVisibleChange]
   );
-  const onHide = useCallback(() => setIsOpen(false), []);
+  const onHide = useCallback(() => onOpenChange(false), [onOpenChange]);
 
   return (
     <DialogTrigger

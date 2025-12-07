@@ -12,8 +12,12 @@ import {
 } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import {
+  AddonVitestPostinstallConfigUpdateError,
   AddonVitestPostinstallError,
+  AddonVitestPostinstallExistingSetupFileError,
+  AddonVitestPostinstallFailedAddonA11yError,
   AddonVitestPostinstallPrerequisiteCheckError,
+  AddonVitestPostinstallWorkspaceUpdateError,
 } from 'storybook/internal/server-errors';
 import { SupportedFramework } from 'storybook/internal/types';
 
@@ -22,6 +26,7 @@ import { dirname, relative, resolve } from 'pathe';
 import { satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
+import type { StorybookError } from '../../../core/src/storybook-error';
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 import { DOCUMENTATION_LINK } from './constants';
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
@@ -32,7 +37,7 @@ const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'
 const addonA11yName = '@storybook/addon-a11y';
 
 export default async function postInstall(options: PostinstallOptions) {
-  const errors: string[] = [];
+  const errors: StorybookError[] = [];
   const { logger, prompt } = options;
 
   const packageManager = JsPackageManagerFactory.getPackageManager({
@@ -138,10 +143,9 @@ export default async function postInstall(options: PostinstallOptions) {
   // Install Playwright browser binaries using AddonVitestService
   if (!options.skipDependencyManagement) {
     if (!options.skipInstall) {
-      const { errors: playwrightErrors } = await addonVitestService.installPlaywright({
+      await addonVitestService.installPlaywright({
         yes: options.yes,
       });
-      errors.push(...playwrightErrors);
     } else {
       logger.warn(dedent`
         Playwright browser binaries installation skipped. Please run the following command manually later:
@@ -164,7 +168,7 @@ export default async function postInstall(options: PostinstallOptions) {
   `;
     logger.line();
     logger.error(`${errorMessage}\n`);
-    errors.push('Found existing Vitest setup file');
+    errors.push(new AddonVitestPostinstallExistingSetupFileError({ filePath: vitestSetupFile }));
   } else {
     logger.step(`Creating a Vitest setup file for Storybook:`);
     logger.log(`${vitestSetupFile}\n`);
@@ -255,7 +259,9 @@ export default async function postInstall(options: PostinstallOptions) {
           https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
         `
       );
-      errors.push('Unable to update existing Vitest workspace file');
+      errors.push(
+        new AddonVitestPostinstallWorkspaceUpdateError({ filePath: vitestWorkspaceFile })
+      );
     }
   }
   // If there's an existing Vite/Vitest config with workspaces, we update it to include the Storybook Addon Vitest plugin.
@@ -300,7 +306,7 @@ export default async function postInstall(options: PostinstallOptions) {
         Please refer to the documentation to complete the setup manually:
         https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup
       `);
-      errors.push('Unable to update existing Vitest config file');
+      errors.push(new AddonVitestPostinstallConfigUpdateError({ filePath: rootConfig }));
     }
   }
   // If there's no existing Vitest/Vite config, we create a new Vitest config file.
@@ -361,10 +367,7 @@ export default async function postInstall(options: PostinstallOptions) {
         Please refer to the documentation to complete the setup manually:
         https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration
       `);
-      errors.push(
-        "The @storybook/addon-a11y couldn't be set up for the Vitest addon" +
-          (e instanceof Error ? e.stack : String(e))
-      );
+      errors.push(new AddonVitestPostinstallFailedAddonA11yError({ error: e }));
     }
   }
 

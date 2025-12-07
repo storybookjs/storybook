@@ -334,6 +334,9 @@ export interface TestBuildFlags {
 }
 
 export interface TestBuildConfig {
+  /** URL of the deployed website (needed for sitemap computation). */
+  siteUrl?: string;
+
   test?: TestBuildFlags;
 }
 

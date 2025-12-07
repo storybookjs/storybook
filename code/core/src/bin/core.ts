@@ -153,6 +153,10 @@ command('build')
   .option('--docs', 'Build a documentation-only site using addon-docs')
   .option('--test', 'Build stories optimized for testing purposes.')
   .option('--preview-only', 'Use the preview without the manager UI')
+  .option(
+    '--site-url <string>',
+    'The URL where the built site will be deployed, for sitemap generation'
+  )
   .action(async (options) => {
     const { env } = process;
     env.NODE_ENV = env.NODE_ENV || 'production';
@@ -169,6 +173,7 @@ command('build')
       staticDir: 'SBCONFIG_STATIC_DIR',
       outputDir: 'SBCONFIG_OUTPUT_DIR',
       configDir: 'SBCONFIG_CONFIG_DIR',
+      siteUrl: 'SBCONFIG_SITE_URL',
     });
 
     await build({

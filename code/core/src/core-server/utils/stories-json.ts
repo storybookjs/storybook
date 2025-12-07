@@ -9,8 +9,9 @@ import type { NormalizedStoriesSpecifier, StoryIndex } from 'storybook/internal/
 import { debounce } from 'es-toolkit/function';
 import type { Polka } from 'polka';
 import { SitemapStream, streamToPromise } from 'sitemap';
-import invariant from 'tiny-invariant';
 
+import { logger } from '../../node-logger';
+import type { BuildStaticStandaloneOptions } from '../build-static';
 import type { StoryIndexGenerator } from './StoryIndexGenerator';
 import type { ServerChannel } from './get-server-channel';
 import { getServerAddresses } from './server-address';
@@ -18,6 +19,45 @@ import { watchStorySpecifiers } from './watch-story-specifiers';
 import { watchConfig } from './watchConfig';
 
 export const DEBOUNCE = 100;
+let cachedSitemap: Buffer | undefined;
+
+async function generateSitemap(
+  initializedStoryIndexGenerator: Promise<StoryIndexGenerator>,
+  networkAddress: string,
+  isProduction: boolean
+): Promise<Buffer | undefined> {
+  const generator = await initializedStoryIndexGenerator;
+  const index = await generator.getIndex();
+
+  const smStream = new SitemapStream({ hostname: networkAddress });
+  // const smStream = new SitemapStream();
+  const pipeline = isProduction ? smStream : smStream.pipe(createGzip());
+
+  const now = new Date();
+
+  // static settings pages; those with backlinks to storybook.js.org are the most important.
+  smStream.write({ url: './?path=/settings/about', lastmod: now, priority: 1 });
+  smStream.write({ url: './?path=/settings/whats-new', lastmod: now, priority: 1 });
+  smStream.write({ url: './?path=/settings/guide', lastmod: now, priority: 0.3 });
+  smStream.write({ url: './?path=/settings/shortcuts', lastmod: now, priority: 0.3 });
+  smStream.write({ url: './index.json', lastmod: now, priority: 0.3 });
+  smStream.write({ url: './project.json', lastmod: now, priority: 0.3 });
+
+  // entries from story index; we prefer indexing docs over stories
+  const entries = Object.values(index.entries || {});
+  for (const entry of entries) {
+    if (entry.type === 'docs') {
+      smStream.write({ url: `./?path=/docs/${entry.id}`, lastmod: now, priority: 0.9 });
+    } else if (entry.type === 'story' && entry.subtype !== 'test') {
+      smStream.write({ url: `./?path=/story/${entry.id}`, lastmod: now, priority: 0.5 });
+    }
+  }
+
+  smStream.end();
+
+  // await and cache the gzipped buffer
+  return streamToPromise(pipeline);
+}
 
 export async function extractStoriesJson(
   outputFile: string,
@@ -29,6 +69,35 @@ export async function extractStoriesJson(
   await writeFile(outputFile, JSON.stringify(transform ? transform(storyIndex) : storyIndex));
 }
 
+export async function extractSitemap(
+  outputFile: string,
+  initializedStoryIndexGenerator: Promise<StoryIndexGenerator>,
+  options: BuildStaticStandaloneOptions
+) {
+  const { siteUrl } = options;
+
+  if (options.ignorePreview) {
+    logger.info(`Not building preview`);
+  } else {
+  }
+
+  // Can't generate a sitemap for the static build without knowing the host.
+  if (!siteUrl) {
+    logger.info(`Not building sitemap (\`siteUrl\` option not set).`);
+    return;
+  }
+
+  logger.info('Building sitemap..');
+  const sitemapBuffer = await generateSitemap(
+    initializedStoryIndexGenerator,
+    siteUrl.endsWith('/') ? siteUrl : `${siteUrl}/`,
+    true
+  );
+  if (sitemapBuffer) {
+    await writeFile(outputFile, sitemapBuffer.toString('utf-8'));
+  }
+}
+
 export function useStoriesJson({
   app,
   initializedStoryIndexGenerator,
@@ -36,7 +105,6 @@ export function useStoriesJson({
   configDir,
   serverChannel,
   normalizedStories,
-  options,
 }: {
   app: Polka;
   initializedStoryIndexGenerator: Promise<StoryIndexGenerator>;
@@ -46,8 +114,6 @@ export function useStoriesJson({
   normalizedStories: NormalizedStoriesSpecifier[];
   options: Options;
 }) {
-  let cachedSitemap: Buffer | undefined;
-
   const maybeInvalidate = debounce(() => serverChannel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
     edges: ['leading', 'trailing'],
   });
@@ -79,7 +145,13 @@ export function useStoriesJson({
       res.end(err instanceof Error ? err.toString() : String(err));
     }
   });
+}
 
+export function useSitemap(
+  app: Polka,
+  initializedStoryIndexGenerator: Promise<StoryIndexGenerator>,
+  options: Options
+) {
   app.use('/sitemap.xml', async (req, res) => {
     try {
       res.setHeader('Content-Type', 'application/xml');
@@ -91,40 +163,18 @@ export function useStoriesJson({
         return;
       }
 
-      const generator = await initializedStoryIndexGenerator;
-      const index = await generator.getIndex();
+      const { port = 80, host } = options;
 
-      const { port, host, initialPath } = options;
-      invariant(port, 'expected options to have a port');
       const proto = options.https ? 'https' : 'http';
-      const { networkAddress } = getServerAddresses(port, host, proto, initialPath);
+      const { networkAddress } = getServerAddresses(port, host, proto);
 
-      const smStream = new SitemapStream({ hostname: networkAddress });
-      const pipeline = smStream.pipe(createGzip());
-
-      const now = new Date();
-
-      // static settings pages; those with backlinks to storybook.js.org are the most important.
-      smStream.write({ url: '/?path=/settings/about', lastmod: now, priority: 1 });
-      smStream.write({ url: '/?path=/settings/whats-new', lastmod: now, priority: 1 });
-      smStream.write({ url: '/?path=/settings/guide', lastmod: now, priority: 0.3 });
-      smStream.write({ url: '/?path=/settings/shortcuts', lastmod: now, priority: 0.3 });
-
-      // entries from story index; we prefer indexing docs over stories
-      const entries = Object.values(index.entries || {});
-      for (const entry of entries) {
-        if (entry.type === 'docs') {
-          smStream.write({ url: `/?path=/docs/${entry.id}`, lastmod: now, priority: 0.9 });
-        } else if (entry.type === 'story' && entry.subtype !== 'test') {
-          smStream.write({ url: `/?path=/story/${entry.id}`, lastmod: now, priority: 0.5 });
-        }
-      }
-
-      smStream.end();
-
-      // await and cache the gzipped buffer
-      cachedSitemap = await streamToPromise(pipeline);
-      res.end(cachedSitemap);
+      const sitemapBuffer = await generateSitemap(
+        initializedStoryIndexGenerator,
+        networkAddress,
+        false
+      );
+      cachedSitemap = sitemapBuffer;
+      res.end(sitemapBuffer);
     } catch (err) {
       res.statusCode = 500;
       res.end(err instanceof Error ? err.toString() : String(err));

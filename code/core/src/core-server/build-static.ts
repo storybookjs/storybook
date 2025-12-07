@@ -25,12 +25,15 @@ import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files'
 import { getBuilders } from './utils/get-builders';
 import { extractStorybookMetadata } from './utils/metadata';
 import { outputStats } from './utils/output-stats';
-import { extractStoriesJson } from './utils/stories-json';
+import { extractSitemap, extractStoriesJson } from './utils/stories-json';
 import { summarizeIndex } from './utils/summarizeIndex';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &
-  BuilderOptions & { outputDir: string };
+  BuilderOptions & {
+    outputDir: string;
+    siteUrl?: string;
+  };
 
 export async function buildStaticStandalone(options: BuildStaticStandaloneOptions) {
   options.configType = 'PRODUCTION';
@@ -160,6 +163,14 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       extractStoriesJson(
         join(options.outputDir, 'index.json'),
         initializedStoryIndexGenerator as Promise<StoryIndexGenerator>
+      )
+    );
+
+    effects.push(
+      extractSitemap(
+        join(options.outputDir, 'sitemap.xml'),
+        initializedStoryIndexGenerator as Promise<StoryIndexGenerator>,
+        options
       )
     );
 

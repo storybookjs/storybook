@@ -12,6 +12,8 @@ const managerContext: any = {
     getGlobals: fn(() => ({})),
     getStoryGlobals: fn(() => ({})),
     getUserGlobals: fn(() => ({})),
+    updateGlobals: fn(),
+    setAddonShortcut: fn(),
     on: fn(),
     off: fn(),
     emit: fn(),

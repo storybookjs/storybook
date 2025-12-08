@@ -1,59 +1,223 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { useGlobals, useParameter } from 'storybook/manager-api';
+import type { Globals } from 'storybook/internal/csf';
 
-import { PARAM_KEY } from './constants';
+import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api';
+
+import { ADDON_ID, PARAM_KEY } from './constants';
 import { MINIMAL_VIEWPORTS } from './defaults';
-import { responsiveViewport } from './responsiveViewport';
-import type { GlobalStateUpdate, ViewportMap, ViewportParameters } from './types';
+import type {
+  GlobalState,
+  GlobalStateUpdate,
+  ViewportMap,
+  ViewportParameters,
+  ViewportType,
+} from './types';
+
+// Custom viewport format, e.g. '100pct-200px' (width-height)
+const URL_VALUE_PATTERN = /^([0-9]+)([a-z]{0,4})-([0-9]+)([a-z]{0,4})$/;
+
+const cycle = (
+  viewports: ViewportMap,
+  current: string | undefined,
+  direction: 1 | -1 = 1
+): string => {
+  const keys = Object.keys(viewports);
+  const currentIndex = current ? keys.indexOf(current) : -1;
+  const nextIndex = currentIndex + direction;
+  return nextIndex < 0
+    ? keys[keys.length - 1]
+    : nextIndex >= keys.length
+      ? keys[0]
+      : keys[nextIndex];
+};
+
+const normalizeValue = (value: string | GlobalState): Required<GlobalState> =>
+  typeof value === 'string'
+    ? { value, isRotated: false }
+    : { value: value?.value, isRotated: value?.isRotated ?? false };
+
+const parseGlobals = (
+  globals: Globals,
+  storyGlobals: Globals,
+  userGlobals: Globals,
+  options: ViewportMap,
+  lastSelectedOption: string | undefined,
+  disable: boolean
+): {
+  name: string;
+  type: ViewportType;
+  width: string;
+  height: string;
+  value: string;
+  option: string | undefined;
+  isCustom: boolean;
+  isDefault: boolean;
+  isLocked: boolean;
+  isRotated: boolean;
+} => {
+  // Ensure URL-defined viewports (user globals) override story globals.
+  // Spreading is not sufficient here, because undefined would still override defined values.
+  const global = normalizeValue(globals?.[PARAM_KEY]);
+  const userGlobal = normalizeValue(userGlobals?.[PARAM_KEY]);
+  const storyGlobal = normalizeValue(storyGlobals?.[PARAM_KEY]);
+  const value = userGlobal?.value ?? storyGlobal?.value ?? global?.value;
+  const isRotated = userGlobal?.isRotated ?? storyGlobal?.isRotated ?? global?.isRotated ?? false;
+
+  const keys = Object.keys(options);
+  const isLocked = disable || PARAM_KEY in storyGlobals || !keys.length;
+  const [, vx, ux, vy, uy] = value?.match(URL_VALUE_PATTERN) || [];
+
+  if (value && vx && vy) {
+    const width = `${vx}${ux === 'pct' ? '%' : ux || 'px'}`;
+    const height = `${vy}${uy === 'pct' ? '%' : uy || 'px'}`;
+    const selection = lastSelectedOption ? options[lastSelectedOption] : undefined;
+    return {
+      name: selection?.name ?? 'Custom',
+      type: selection?.type ?? 'other',
+      width: isRotated ? height : width,
+      height: isRotated ? width : height,
+      value,
+      option: undefined,
+      isCustom: true,
+      isDefault: false,
+      isLocked,
+      isRotated,
+    };
+  }
+
+  if (value && keys.length) {
+    const { name, styles, type = 'other' } = options[value] ?? options[keys[0]];
+    return {
+      name,
+      type,
+      width: isRotated ? styles.height : styles.width,
+      height: isRotated ? styles.width : styles.height,
+      value,
+      option: value,
+      isCustom: false,
+      isDefault: false,
+      isLocked,
+      isRotated,
+    };
+  }
+
+  return {
+    name: 'Responsive',
+    type: 'desktop',
+    width: '100%',
+    height: '100%',
+    value: '100pct-100pct',
+    option: undefined,
+    isCustom: false,
+    isDefault: true,
+    isLocked,
+    isRotated: false,
+  };
+};
 
 export const useViewport = () => {
-  const config = useParameter<ViewportParameters['viewport']>(PARAM_KEY);
-  const { options = MINIMAL_VIEWPORTS, disable = false } = config || {};
+  const api = useStorybookApi();
+  const lastSelectedOption = useRef<string | undefined>();
 
-  const [globals, updateGlobals, storyGlobals] = useGlobals();
-  const data = globals?.[PARAM_KEY] || {};
+  const parameter = useParameter<ViewportParameters['viewport']>(PARAM_KEY);
+  const [globals, updateGlobals, storyGlobals, userGlobals] = useGlobals();
 
-  const key = typeof data === 'string' ? data : data.value;
-  const isDefault = !key || !(key in options);
-  const isRotated = typeof data === 'string' ? false : !!data.isRotated;
-  const isLocked = disable || PARAM_KEY in storyGlobals || !Object.keys(options).length;
-
-  const { name, styles, type } = (options as ViewportMap)[key] || responsiveViewport;
-
-  const [width, setWidth] = useState((isRotated ? styles.height : styles.width) || '100%');
-  const [height, setHeight] = useState((isRotated ? styles.width : styles.height) || '100%');
+  const { options = MINIMAL_VIEWPORTS, disable = false } = parameter || {};
+  const { name, type, width, height, value, option, isCustom, isDefault, isLocked, isRotated } =
+    parseGlobals(globals, storyGlobals, userGlobals, options, lastSelectedOption.current, disable);
 
   const update = useCallback(
-    (input: GlobalStateUpdate | undefined) => updateGlobals({ [PARAM_KEY]: input }),
+    (input: GlobalStateUpdate) => updateGlobals({ [PARAM_KEY]: input }),
     [updateGlobals]
   );
 
+  const resize = useCallback(
+    (width: string, height: string) => {
+      const w = width.replace(/px$/, '').replace(/%$/, 'pct');
+      const h = height.replace(/px$/, '').replace(/%$/, 'pct');
+      const value = isRotated ? `${h}-${w}` : `${w}-${h}`;
+      if (value.match(URL_VALUE_PATTERN)) {
+        update({ value, isRotated });
+      }
+    },
+    [update, isRotated]
+  );
+
   useEffect(() => {
-    setWidth((isRotated ? styles.height : styles.width) || '100%');
-    setHeight((isRotated ? styles.width : styles.height) || '100%');
-  }, [key, isRotated, styles.height, styles.width]);
+    // Reset the viewport to the story global value if the story defines one, regardless of URL state
+    if (PARAM_KEY in storyGlobals) {
+      update(normalizeValue(storyGlobals?.[PARAM_KEY]));
+      lastSelectedOption.current = undefined;
+    }
+  }, [storyGlobals, update]);
+
+  useEffect(() => {
+    // Reset the viewport to the story global value if the URL state defines an invalid option
+    if (option) {
+      if (Object.hasOwn(options, option)) {
+        lastSelectedOption.current = option;
+      } else {
+        lastSelectedOption.current = undefined;
+        update(normalizeValue(storyGlobals?.[PARAM_KEY]));
+      }
+    }
+  }, [storyGlobals, options, option, update]);
+
+  useEffect(() => {
+    api.setAddonShortcut(ADDON_ID, {
+      label: 'Next viewport',
+      defaultShortcut: ['alt', 'V'],
+      actionName: 'next',
+      action: () => update({ value: cycle(options, lastSelectedOption.current), isRotated }),
+    });
+    api.setAddonShortcut(ADDON_ID, {
+      label: 'Previous viewport',
+      defaultShortcut: ['alt', 'shift', 'V'],
+      actionName: 'previous',
+      action: () => update({ value: cycle(options, lastSelectedOption.current, -1), isRotated }),
+    });
+    api.setAddonShortcut(ADDON_ID, {
+      label: 'Reset viewport',
+      defaultShortcut: ['alt', 'control', 'V'],
+      actionName: 'reset',
+      action: () => update({ value: undefined, isRotated: false }),
+    });
+  }, [api, update, options, isRotated]);
 
   return useMemo(
     () => ({
-      key,
       name,
       type,
       width,
       height,
+      value,
+      option,
+      isCustom,
+      isDefault,
+      isLocked,
+      isRotated,
+      options,
+      lastSelectedOption: lastSelectedOption.current,
+      resize,
+      reset: () => update({ value: undefined, isRotated: false }),
+      rotate: () => update({ value, isRotated: !isRotated }),
+      select: (value: string) => update({ value, isRotated }),
+    }),
+    [
+      name,
+      type,
+      width,
+      height,
+      value,
+      option,
+      isCustom,
       isDefault,
       isRotated,
       isLocked,
       options,
+      resize,
       update,
-      reset: () => update({ value: undefined, isRotated: false }),
-      select: (value: string) => update({ value, isRotated: false }),
-      rotate: () => update({ value: key, isRotated: !isRotated }),
-      resize: (width: string, height: string) => {
-        setWidth(isNaN(Number(width)) ? width : width + 'px');
-        setHeight(isNaN(Number(height)) ? height : height + 'px');
-      },
-    }),
-    [key, name, type, width, height, isDefault, isRotated, isLocked, options, update]
+    ]
   );
 };

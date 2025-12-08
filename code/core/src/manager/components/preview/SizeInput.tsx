@@ -59,7 +59,7 @@ export const SizeInput = ({
       }
       e.preventDefault();
       const num = parseInt(value, 10);
-      const unit = value.match(/[0-9. ]+(.*)$/)?.[1] || 'px';
+      const unit = value.match(/[0-9]+(%|[a-z]{0,4})?$/)?.[1] || 'px';
       const update = e.key === 'ArrowUp' ? num + 1 : num - 1;
       if (!Number.isNaN(num) && update >= 0) {
         setValue(`${update}${unit}`);

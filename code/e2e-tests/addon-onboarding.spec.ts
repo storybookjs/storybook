@@ -1,4 +1,8 @@
+import { rm } from 'node:fs/promises';
+import { homedir } from 'node:os';
+
 import { expect, test } from '@playwright/test';
+import { join } from 'pathe';
 import process from 'process';
 
 import { SbPage, hasOnboardingFeature } from './util';
@@ -14,6 +18,11 @@ test.describe('addon-onboarding', () => {
     `Skipping ${templateName}, which does not have addon-onboarding set up.`
   );
   test('the onboarding flow', async ({ page }) => {
+    // eslint-disable-next-line playwright/no-conditional-in-test
+    if (process.env.CI) {
+      await rm(join(homedir(), '.storybook', 'settings.json'), { force: true });
+    }
+
     await page.goto(`${storybookUrl}/?path=/onboarding`);
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();

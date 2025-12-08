@@ -163,7 +163,8 @@ export class StoryIndexGenerator {
 
     // Calculate a new CWD for each glob to handle paths that go above the workingDir.
     const globCwd = slash(resolve(workingDir, specifier.directory));
-    const globPattern = specifier.files;
+    // Prepend ./ to patterns starting with ! to ensure they are treated as extglobs
+    const globPattern = specifier.files.startsWith('!') ? `./${specifier.files}` : specifier.files;
 
     // Dynamically import globby because it is a pure ESM module
     // eslint-disable-next-line depend/ban-dependencies

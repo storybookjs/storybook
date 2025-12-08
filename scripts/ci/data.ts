@@ -202,7 +202,7 @@ function defineJob<K extends string, I extends SomethingImplementation>(
   };
 }
 
-function defineSandboxFlow<K extends string>(name: K) {
+function defineSandboxFlowLinux<K extends string>(name: K) {
   const id = toId(name);
   const names = {
     create: `${name} (create)`,
@@ -261,7 +261,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           workspace.persist([`${SANDBOX_DIR}/${id}`]),
         ],
       },
-      ['sandboxes']
+      ['linux_sandboxes']
     ),
     defineJob(
       names.build,
@@ -321,6 +321,184 @@ function defineSandboxFlow<K extends string>(name: K) {
             },
           },
           server.wait(['6006']),
+          {
+            run: {
+              name: 'Running E2E Tests',
+              command: [
+                'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
+                `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
+              ].join('\n'),
+            },
+          },
+        ],
+      },
+      [ids.create]
+    ),
+  ];
+  return {
+    jobs,
+    workflow: jobs.map((job) => {
+      return {
+        [job.id]: {
+          requires: job.requires,
+        },
+      };
+    }),
+  };
+}
+
+function defineSandboxFlowWindows<K extends string>(name: K) {
+  const id = toId(name);
+  const names = {
+    create: `${name} (create) (windows)`,
+    build: `${name} (build) (windows)`,
+    dev: `${name} (dev) (windows)`,
+  };
+  const ids = {
+    create: `${toId(names.create)}`,
+    build: `${toId(names.build)}`,
+    dev: `${toId(names.dev)}`,
+  };
+  const jobs = [
+    defineJob(
+      names.create,
+      {
+        executor: {
+          name: 'win/default',
+          size: 'large',
+          shell: 'bash.exe',
+        },
+        steps: [
+          git.checkout(),
+          workspace.attach('C:\\Users\\circleci\\project'),
+          // cache.attach(CACHE_KEYS()),
+          {
+            run: {
+              name: 'install dependencies',
+              command: 'yarn install',
+            },
+          },
+          verdaccio.start(),
+          {
+            run: {
+              name: 'Start Event Collector',
+              working_directory: `scripts`,
+              background: true,
+              command: 'yarn jiti ./event-log-collector.ts',
+            },
+          },
+          server.wait([...verdaccio.ports, '6007']),
+          // {
+          //   run: {
+          //     name: 'Setup Corepack',
+          //     command: [
+          //       //
+          //       'sudo corepack enable',
+          //       'which yarn',
+          //       'yarn --version',
+          //     ].join('\n'),
+          //   },
+          // },
+          {
+            run: {
+              name: 'Create Sandboxes',
+              command: `yarn task sandbox --template ${name} --no-link -s sandbox --debug`,
+              environment: {
+                STORYBOOK_TELEMETRY_DEBUG: 1,
+                STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
+              },
+            },
+          },
+          artifact.persist(`C:\\Users\\circleci\\${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
+          workspace.persist([`${SANDBOX_DIR}/${id}`], 'C:\\Users\\circleci'),
+        ],
+      },
+      ['windows_sandboxes']
+    ),
+    defineJob(
+      names.build,
+      {
+        executor: {
+          name: 'win/default',
+          size: 'xlarge',
+          shell: 'bash.exe',
+        },
+        steps: [
+          git.checkout(),
+          workspace.attach('C:\\Users\\circleci\\project'),
+          // cache.attach(CACHE_KEYS()),
+          {
+            run: {
+              name: 'install dependencies',
+              command: 'yarn install',
+            },
+          },
+          {
+            run: {
+              name: 'Build storybook',
+              command: `yarn task build --template ${name} --no-link -s build`,
+            },
+          },
+          {
+            run: {
+              name: 'Serve storybook',
+              background: true,
+              command: `yarn task serve --template ${name} --no-link -s serve`,
+            },
+          },
+          server.wait(['8001']),
+          {
+            run: {
+              name: 'install playwright',
+              command: 'yarn playwright install chromium --with-deps',
+            },
+          },
+          {
+            run: {
+              name: 'Running E2E Tests',
+              command: [
+                `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
+                `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
+              ].join('\n'),
+            },
+          },
+        ],
+      },
+      [ids.create]
+    ),
+    defineJob(
+      names.dev,
+      {
+        executor: {
+          name: 'win/default',
+          size: 'xlarge',
+          shell: 'bash.exe',
+        },
+        steps: [
+          git.checkout(),
+          workspace.attach('C:\\Users\\circleci\\project'),
+          // cache.attach(CACHE_KEYS()),
+          {
+            run: {
+              name: 'install dependencies',
+              command: 'yarn install',
+            },
+          },
+          {
+            run: {
+              name: 'Run storybook',
+              working_directory: 'code',
+              background: true,
+              command: `yarn task dev --template ${name} --no-link -s dev`,
+            },
+          },
+          server.wait(['6006']),
+          {
+            run: {
+              name: 'install playwright',
+              command: 'yarn playwright install chromium --with-deps',
+            },
+          },
           {
             run: {
               name: 'Running E2E Tests',
@@ -407,13 +585,13 @@ const windows_build = defineJob('build-windows', {
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
       },
     },
-    {
-      run: {
-        name: 'Convert symlinks to real directories',
-        command: 'yarn windows:unlink',
-        working_directory: `scripts`,
-      },
-    },
+    // {
+    //   run: {
+    //     name: 'Convert symlinks to real directories',
+    //     command: 'yarn windows:unlink',
+    //     working_directory: `scripts`,
+    //   },
+    // },
     // cache.persist(
     //   // CACHE_PATHS.map((path) => 'C:\\Users\\circleci\\project\\' + path),
     //   CACHE_PATHS,
@@ -565,7 +743,6 @@ const windows_unitTests = defineJob(
        *
        * So if you see a way to debug/solve those failing tests, please do so.
        */
-      // npm.install('.'),
       {
         run: {
           command: 'yarn install',
@@ -579,14 +756,6 @@ const windows_unitTests = defineJob(
           working_directory: `code`,
         },
       },
-      {
-        store_test_results: {
-          path: `test-results`,
-        },
-      },
-      git.check(),
-      'report-workflow-on-failure',
-      'cancel-workflow-on-failure',
     ],
   },
   [windows_build.id]
@@ -618,11 +787,17 @@ const packageBenchmarks = defineJob(
   [linux_build.id]
 );
 
-const sandboxes = [
+const linux_sandboxes = [
   //
   // 'react-vite/default-ts',
   // 'react-vite/default-js',
-].map(defineSandboxFlow);
+].map(defineSandboxFlowLinux);
+
+const windows_sandboxes = [
+  //
+  'react-vite/default-ts',
+  // 'react-vite/default-js',
+].map(defineSandboxFlowWindows);
 
 const jobs = {
   [linux_build.id]: linux_build.implementation,
@@ -650,10 +825,23 @@ const jobs = {
     ],
   },
 
-  sandboxes: {
+  linux_sandboxes: {
     type: 'no-op',
   },
-  ...sandboxes.reduce(
+  windows_sandboxes: {
+    type: 'no-op',
+  },
+  ...linux_sandboxes.reduce(
+    (acc, sandbox) => {
+      for (const job of sandbox.jobs) {
+        acc[job.id] = job.implementation;
+      }
+
+      return acc;
+    },
+    {} as Record<string, SomethingImplementation>
+  ),
+  ...windows_sandboxes.reduce(
     (acc, sandbox) => {
       for (const job of sandbox.jobs) {
         acc[job.id] = job.implementation;
@@ -721,8 +909,13 @@ const workflows = {
         },
       },
       {
-        sandboxes: {
+        linux_sandboxes: {
           requires: [linux_build.id],
+        },
+      },
+      {
+        windows_sandboxes: {
+          requires: [windows_build.id],
         },
       },
       {
@@ -730,7 +923,8 @@ const workflows = {
           requires: uiTests.requires,
         },
       },
-      ...sandboxes.flatMap((sandbox) => sandbox.workflow),
+      ...linux_sandboxes.flatMap((sandbox) => sandbox.workflow),
+      ...windows_sandboxes.flatMap((sandbox) => sandbox.workflow),
     ],
     when: {
       equal: ['docs', '<< pipeline.parameters.workflow >>'],

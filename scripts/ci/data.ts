@@ -414,11 +414,11 @@ const windows_build = defineJob('build-windows', {
         working_directory: `scripts`,
       },
     },
-    cache.persist(
-      // CACHE_PATHS.map((path) => 'C:\\Users\\circleci\\project\\' + path),
-      CACHE_PATHS,
-      CACHE_KEYS('windows')[0]
-    ),
+    // cache.persist(
+    //   // CACHE_PATHS.map((path) => 'C:\\Users\\circleci\\project\\' + path),
+    //   CACHE_PATHS,
+    //   CACHE_KEYS('windows')[0]
+    // ),
     {
       run: {
         name: 'Publish to Verdaccio',
@@ -557,7 +557,7 @@ const windows_unitTests = defineJob(
       git.checkout({ forceHttps: true }),
       node.installOnWindows(),
       workspace.attach('C:\\Users\\circleci\\project'),
-      cache.attach(CACHE_KEYS('windows')),
+      // cache.attach(CACHE_KEYS('windows')),
       /**
        * I really wish this wasn't needed, but it is. I tried a lot of things to get it to not be
        * needed, but ultimately, something kept failing. At this point I gave up:
@@ -565,7 +565,13 @@ const windows_unitTests = defineJob(
        *
        * So if you see a way to debug/solve those failing tests, please do so.
        */
-      npm.install('.'),
+      // npm.install('.'),
+      {
+        run: {
+          command: 'yarn install',
+          name: 'Install dependencies',
+        },
+      },
       {
         run: {
           command: 'yarn test',

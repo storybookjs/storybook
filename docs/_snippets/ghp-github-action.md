@@ -1,54 +1,44 @@
 ```yml filename=".github/workflows/deploy-github-pages.yml" renderer="common" language="js"
-# Workflow name
 name: Build and Publish Storybook to GitHub Pages
-
 on:
-  # Event for the workflow to run on
   push:
     branches:
-      - 'your-branch-name' # Replace with the branch you want to deploy from
-
+      - "your-branch-name" # Use specific branch name
 permissions:
   contents: read
   pages: write
   id-token: write
-
-# List of jobs
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      # Configuration constants
-      NODE_VERSION: '20'
-      INSTALL_COMMAND: 'npm install' # Your install command here
-      BUILD_COMMAND: 'npm run build-storybook' # Your command to build storybook
-      BUILD_PATH: './storybook-static' # The path to your static storybook build
-
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      # Checkout
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      # Set up Node
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-      # Build Storybook
-      - name: 'Build Storybook'
-        shell: bash
-        run: |
-          echo "::group::Build"
-          ${{ env.INSTALL_COMMAND }}
-          ${{ env.BUILD_COMMAND }}
-          echo "::endgroup::"
+          node-version: "20"
+          cache: "npm" # Adjust caching strategy and configuration if using other package managers
+      - name: Install dependencies
+        run: npm ci # Replace with appropriate command if using other package managers
+      - name: Build Storybook
+        run: npm run build-storybook
       # Upload pages artifact
-      - name: 'Upload Pages artifact'
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ${{ env.BUILD_PATH }}
+          path: "storybook-static"
       # Deploy to Github Pages
       - id: deploy
-        name: 'Deploy to GitHub Pages'
+        name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
         with:
           token: ${{ github.token }}

@@ -8,7 +8,7 @@ import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/p
 
 import { setViewport } from './viewports';
 
-declare module '@vitest/browser/context' {
+declare module 'vitest/browser' {
   interface BrowserCommands {
     getInitialGlobals: () => Promise<Record<string, any>>;
   }

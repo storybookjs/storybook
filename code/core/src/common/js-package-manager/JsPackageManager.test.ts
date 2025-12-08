@@ -17,7 +17,6 @@ describe('JsPackageManager', () => {
   beforeEach(() => {
     // @ts-expect-error Ignore abstract class error
     jsPackageManager = new JsPackageManager();
-    // @ts-expect-error latestVersion is a method that exists on the instance
     mockLatestVersion = vi.spyOn(jsPackageManager, 'latestVersion');
 
     vi.clearAllMocks();

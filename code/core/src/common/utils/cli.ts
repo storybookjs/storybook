@@ -66,12 +66,18 @@ export function parseList(str: string): string[] {
     .filter((item) => item.length > 0);
 }
 
-export function getEnvConfig(program: Record<string, any>, configEnv: Record<string, any>): void {
+export function getEnvConfig(
+  program: Record<string, unknown>,
+  configEnv: Record<string, string | string[]>
+): void {
   Object.keys(configEnv).forEach((fieldName) => {
-    const envVarName = configEnv[fieldName];
-    const envVarValue = process.env[envVarName];
+    const envVarNames = Array.isArray(configEnv[fieldName])
+      ? configEnv[fieldName]
+      : [configEnv[fieldName]];
+
+    const envVarValue = envVarNames.find((envVarName) => process.env[envVarName]);
     if (envVarValue) {
-      program[fieldName] = envVarValue;
+      program[fieldName] = process.env[envVarValue];
     }
   });
 }

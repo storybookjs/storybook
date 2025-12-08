@@ -173,7 +173,19 @@ command('build')
       staticDir: 'SBCONFIG_STATIC_DIR',
       outputDir: 'SBCONFIG_OUTPUT_DIR',
       configDir: 'SBCONFIG_CONFIG_DIR',
-      siteUrl: 'SBCONFIG_SITE_URL',
+      siteUrl: [
+        // Our own environment variable naming convention
+        'SBCONFIG_SITE_URL',
+        // Netlify: https://docs.netlify.com/build/configure-builds/environment-variables/
+        'URL',
+        // Vercel: https://vercel.com/docs/environment-variables/system-environment-variables
+        'VERCEL_PROJECT_PRODUCTION_URL',
+        // Cloudflare Pages: https://developers.cloudflare.com/pages/configuration/build-configuration/
+        'CF_PAGES_URL',
+        // Render: https://render.com/docs/environment-variables
+        'RENDER_EXTERNAL_URL',
+        // GH Pages, AWS Amplify, Azure Static Web Apps, Heroku do not expose an env var.
+      ],
     });
 
     await build({

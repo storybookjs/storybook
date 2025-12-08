@@ -76,23 +76,32 @@ export async function extractSitemap(
 ) {
   const { siteUrl } = options;
 
-  if (options.ignorePreview) {
-    logger.info(`Not building preview`);
-  } else {
-  }
-
   // Can't generate a sitemap for the static build without knowing the host.
   if (!siteUrl) {
     logger.info(`Not building sitemap (\`siteUrl\` option not set).`);
     return;
   }
 
+  let normalizedUrl = siteUrl;
+  if (!siteUrl.endsWith('/')) {
+    normalizedUrl += '/';
+  }
+  if (!siteUrl.startsWith('http://') && !siteUrl.startsWith('https://')) {
+    let protocol = 'http';
+    if (
+      options.https ||
+      // Vercel always deploys to HTTPS but forgets to pass the protocol in its
+      // environment variable. If the siteUrl was populated from Vercel env, we
+      // must assume HTTPS.
+      (options.https === undefined && process.env.VERCEL_PROJECT_PRODUCTION_URL)
+    ) {
+      protocol = 'https';
+    }
+    normalizedUrl = `${protocol}://${normalizedUrl}`;
+  }
+
   logger.info('Building sitemap..');
-  const sitemapBuffer = await generateSitemap(
-    initializedStoryIndexGenerator,
-    siteUrl.endsWith('/') ? siteUrl : `${siteUrl}/`,
-    true
-  );
+  const sitemapBuffer = await generateSitemap(initializedStoryIndexGenerator, normalizedUrl, true);
   if (sitemapBuffer) {
     await writeFile(outputFile, sitemapBuffer.toString('utf-8'));
   }

@@ -255,10 +255,6 @@ jobs:
             - run:
                 command: |
                     yarn
-                    yarn task --task compile --start-from=auto --no-link --debug
-                name: Compile
-            - run:
-                command: |
                     yarn task --task check --start-from=auto --no-link --debug
                 name: Check
             - run:
@@ -1438,4 +1434,3 @@ workflows:
             equal:
                 - normal
                 - << pipeline.parameters.workflow >>
-

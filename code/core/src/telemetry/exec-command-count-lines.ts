@@ -1,7 +1,7 @@
 import { createInterface } from 'node:readline';
 
 // eslint-disable-next-line depend/ban-dependencies
-import { execaCommand } from 'execa';
+import { execa } from 'execa';
 
 /**
  * Execute a command in the local terminal and count the lines in the result
@@ -12,9 +12,10 @@ import { execaCommand } from 'execa';
  */
 export async function execCommandCountLines(
   command: string,
-  options?: Parameters<typeof execaCommand>[1]
+  args: string[],
+  options?: Parameters<typeof execa>[1]
 ) {
-  const process = execaCommand(command, { shell: true, buffer: false, ...options });
+  const process = execa(command, args, { buffer: false, ...options });
   if (!process.stdout) {
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error('Unexpected missing stdout');

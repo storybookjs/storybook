@@ -44,10 +44,6 @@ vi.mock('../../add', () => ({
   add: vi.fn(),
 }));
 
-vi.mock('prompts', () => ({
-  default: vi.fn().mockResolvedValue({ glob: '**/*.{mjs,cjs,js,jsx,ts,tsx,mdx}' }),
-}));
-
 vi.mock('globby', () => ({
   globby: vi.fn().mockResolvedValue(['/fake/project/root/src/stories/Button.stories.tsx']),
 }));

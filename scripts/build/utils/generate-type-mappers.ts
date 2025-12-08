@@ -36,7 +36,7 @@ export async function generateTypesMapperFiles(cwd: string, data: BuildEntries) 
 
   await Promise.all(
     all.map(async (filePath) => {
-      const location = filePath.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
+      const location = join(cwd, filePath.replace('src', 'dist').replace(/\.tsx?/, '.d.ts'));
       if (!existsSync(location)) {
         const directory = dirname(location);
         await mkdir(directory, { recursive: true });

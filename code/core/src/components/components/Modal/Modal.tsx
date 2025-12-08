@@ -84,7 +84,9 @@ function BaseModal({
   variant = 'dialog',
   ...props
 }: ModalProps) {
+  let deprecated = undefined;
   if (ariaLabel === undefined || ariaLabel === '') {
+    deprecated = 'ariaLabel';
     deprecate('The `ariaLabel` prop on `Modal` will become mandatory in Storybook 11.');
     // TODO in Storybook 11
     // throw new Error(
@@ -93,12 +95,14 @@ function BaseModal({
   }
 
   if (onEscapeKeyDown !== undefined) {
+    deprecated = 'onEscapeKeyDown';
     deprecate(
       'The `onEscapeKeyDown` prop is deprecated and will be removed in Storybook 11. Use `dismissOnEscape` instead.'
     );
   }
 
   if (onInteractOutside !== undefined) {
+    deprecated = 'onInteractOutside';
     deprecate(
       'The `onInteractOutside` prop is deprecated and will be removed in Storybook 11. Use `dismissOnInteractOutside` instead.'
     );
@@ -203,6 +207,7 @@ function BaseModal({
           <ModalContext.Provider value={{ close }}>
             {/* We need to set the FocusScope ourselves somehow, Overlay won't set it. */}
             <Components.Container
+              data-deprecated={deprecated}
               $variant={variant}
               $status={status}
               $transitionDuration={transitionDuration}

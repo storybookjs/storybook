@@ -1,6 +1,6 @@
 {
   "name": "@storybook/csf-plugin",
-  "version": "10.1.0-alpha.11",
+  "version": "10.2.0-alpha.3",
   "description": "Enrich CSF files via static analysis",
   "keywords": [
     "storybook"
@@ -36,10 +36,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "unplugin": "^2.3.5"
   },

@@ -12,10 +12,11 @@ import type webpack from 'webpack';
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
 import type { PresetOptions } from './preset-options';
 import { getProjectRoot, resolvePackageDir } from 'storybook/internal/common';
+import { relative } from 'pathe';
 
 export async function webpackFinal(baseConfig: webpack.Configuration, options: PresetOptions) {
   if (!resolvePackageDir('@angular-devkit/build-angular')) {
-    logger.info('=> Using base config because "@angular-devkit/build-angular" is not installed');
+    logger.info('Using base config because "@angular-devkit/build-angular" is not installed');
     return baseConfig;
   }
 
@@ -122,7 +123,7 @@ export async function getBuilderOptions(options: PresetOptions, builderContext: 
     const browserTarget = targetFromTargetString(options.angularBrowserTarget);
 
     logger.info(
-      `=> Using angular browser target options from "${browserTarget.project}:${
+      `Using angular browser target options from "${browserTarget.project}:${
         browserTarget.target
       }${browserTarget.configuration ? `:${browserTarget.configuration}` : ''}"`
     );
@@ -148,7 +149,9 @@ export async function getBuilderOptions(options: PresetOptions, builderContext: 
     options.tsConfig ??
     find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
     browserTargetOptions.tsConfig;
-  logger.info(`=> Using angular project with "tsConfig:${builderOptions.tsConfig}"`);
+  logger.info(
+    `Using angular project with "tsConfig:${relative(getProjectRoot(), builderOptions.tsConfig as string)}"`
+  );
 
   builderOptions.experimentalZoneless = options.angularBuilderOptions?.experimentalZoneless;
 

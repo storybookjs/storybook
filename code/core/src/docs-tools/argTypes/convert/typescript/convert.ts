@@ -5,8 +5,11 @@ import { parseLiteral } from '../utils';
 import type { TSSigType, TSType } from './types';
 
 // Type guards for narrowing TSType discriminant unions
-const isLiteral = (type: TSType): boolean => type.name === 'literal';
-const isUndefined = (type: TSType): boolean => type.name === 'undefined';
+type TSLiteralType = Extract<TSType, { name: 'literal' }>;
+type TSUndefinedType = Extract<TSType, { name: 'undefined' }>;
+
+const isLiteral = (type: TSType): type is TSLiteralType => type.name === 'literal';
+const isUndefined = (type: TSType): type is TSUndefinedType => type.name === 'undefined';
 
 const convertSig = (type: TSSigType) => {
   switch (type.type) {
@@ -50,14 +53,12 @@ export const convert = (type: TSType): SBType | void => {
       const allLiterals = nonUndefinedElements.length > 0 && nonUndefinedElements.every(isLiteral);
 
       if (allLiterals) {
+        // TypeScript can't infer from .every(), so we filter again with the type guard
+        const literalElements = nonUndefinedElements.filter(isLiteral);
         return {
           ...base,
           name: 'enum',
-          value: nonUndefinedElements.map((element) => {
-            // We know element is a literal type because of the allLiterals check
-            const literalElement = element as Extract<typeof element, { name: 'literal' }>;
-            return parseLiteral(literalElement.value);
-          }),
+          value: literalElements.map((element) => parseLiteral(element.value)),
         };
       }
       return { ...base, name, value: type.elements.map(convert) };

@@ -33,7 +33,12 @@ type TSObjectSigType = TSBaseType & {
 };
 
 type TSScalarType = TSBaseType & {
-  name: 'any' | 'boolean' | 'number' | 'void' | 'string' | 'symbol' | 'literal' | 'undefined';
+  name: 'any' | 'boolean' | 'number' | 'void' | 'string' | 'symbol' | 'undefined';
+};
+
+type TSLiteralType = TSBaseType & {
+  name: 'literal';
+  value: string;
 };
 
 type TSArrayType = TSBaseType & {
@@ -43,4 +48,4 @@ type TSArrayType = TSBaseType & {
 
 export type TSSigType = TSObjectSigType | TSFuncSigType;
 
-export type TSType = TSScalarType | TSCombinationType | TSSigType | TSArrayType;
+export type TSType = TSScalarType | TSLiteralType | TSCombinationType | TSSigType | TSArrayType;

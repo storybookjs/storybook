@@ -522,30 +522,11 @@ jobs:
                   name: Benchmarking packages against base branch
                   command: yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
                   working_directory: scripts
-    pretty-docs:
-        executor:
-            name: sb_node_22_classic
-            class: medium+
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - node/install-packages:
-                  app-dir: .
-                  pkg-manager: yarn
-                  cache-only-lockfile: true
-            - run:
-                  name: Prettier
-                  working_directory: scripts
-                  command: yarn docs:prettier:check
-    linux_sandboxes:
-        type: no-op
-    windows_sandboxes:
-        type: no-op
-    react-vite-default-ts--create---windows:
-        description: react-vite/default-ts (create) (windows)
+    windows-sandbox-build:
+        description: windows-sandbox-build
         executor:
             name: win/default
-            size: large
+            size: xlarge
             shell: bash.exe
         steps:
             - git-shallow-clone/checkout_advanced:
@@ -562,8 +543,41 @@ jobs:
             - attach_workspace:
                   at: C:\Users\circleci\project
             - run:
-                  name: install dependencies
+                  name: Install dependencies
                   command: yarn install
+    pretty-docs:
+        executor:
+            name: sb_node_22_classic
+            class: medium+
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - node/install-packages:
+                  app-dir: .
+                  pkg-manager: yarn
+                  cache-only-lockfile: true
+            - run:
+                  name: Prettier
+                  working_directory: scripts
+                  command: yarn docs:prettier:check
+    sandboxes:
+        type: no-op
+    react-vite-default-ts--create:
+        description: react-vite/default-ts (create)
+        executor:
+            name: sb_node_22_browsers
+            class: large
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v4-linux-node_modules
             - run:
                   name: Verdaccio
                   working_directory: code
@@ -582,41 +596,40 @@ jobs:
                       yarn wait-on tcp:127.0.0.1:6002
                       yarn wait-on tcp:127.0.0.1:6007
             - run:
+                  name: Setup Corepack
+                  command: |-
+                      sudo corepack enable
+                      which yarn
+                      yarn --version
+            - run:
                   name: Create Sandboxes
                   command: yarn task sandbox --template react-vite/default-ts --no-link -s sandbox --debug
                   environment:
                       STORYBOOK_TELEMETRY_DEBUG: 1
                       STORYBOOK_TELEMETRY_URL: http://127.0.0.1:6007/event-log
             - store_artifacts:
-                  path: C:\Users\circleci\storybook-sandboxes/react-vite-default-ts/debug-storybook.log
+                  path: /tmp/storybook-sandboxes/react-vite-default-ts/debug-storybook.log
                   destination: logs
             - persist_to_workspace:
                   paths:
                       - storybook-sandboxes/react-vite-default-ts
-                  root: C:\Users\circleci
-    react-vite-default-ts--build---windows:
-        description: react-vite/default-ts (build) (windows)
+                  root: /tmp
+    react-vite-default-ts--build:
+        description: react-vite/default-ts (build)
         executor:
-            name: win/default
-            size: xlarge
-            shell: bash.exe
+            name: sb_playwright
+            class: xlarge
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
-            - run:
-                  name: Install Node + Yarn
-                  shell: powershell.exe
-                  command: |-
-                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
-                      nvm install $nodeVersion
-                      nvm use $nodeVersion
-                      corepack enable
-                      corepack prepare yarn@stable --activate
+                  clone_options: --depth 1
             - attach_workspace:
-                  at: C:\Users\circleci\project
-            - run:
-                  name: install dependencies
-                  command: yarn install
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v4-linux-node_modules
             - run:
                   name: Build storybook
                   command: yarn task build --template react-vite/default-ts --no-link -s build
@@ -629,36 +642,26 @@ jobs:
                   working_directory: code
                   command: yarn wait-on tcp:127.0.0.1:8001
             - run:
-                  name: install playwright
-                  command: yarn playwright install chromium --with-deps
-            - run:
                   name: Running E2E Tests
                   command: |-
                       TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
-    react-vite-default-ts--dev---windows:
-        description: react-vite/default-ts (dev) (windows)
+    react-vite-default-ts--dev:
+        description: react-vite/default-ts (dev)
         executor:
-            name: win/default
-            size: xlarge
-            shell: bash.exe
+            class: xlarge
+            name: sb_playwright
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
-            - run:
-                  name: Install Node + Yarn
-                  shell: powershell.exe
-                  command: |-
-                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
-                      nvm install $nodeVersion
-                      nvm use $nodeVersion
-                      corepack enable
-                      corepack prepare yarn@stable --activate
+                  clone_options: --depth 1
             - attach_workspace:
-                  at: C:\Users\circleci\project
-            - run:
-                  name: install dependencies
-                  command: yarn install
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v4-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v4-linux-node_modules
             - run:
                   name: Run storybook
                   working_directory: code
@@ -668,9 +671,6 @@ jobs:
                   name: Wait on servers
                   working_directory: code
                   command: yarn wait-on tcp:127.0.0.1:6006
-            - run:
-                  name: install playwright
-                  command: yarn playwright install chromium --with-deps
             - run:
                   name: Running E2E Tests
                   command: |-
@@ -703,15 +703,21 @@ workflows:
             - ui:
                   requires:
                       - build-linux
-            - react-vite-default-ts--create---windows:
+            - react-vite-default-ts--create:
                   requires:
-                      - windows_sandboxes
-            - react-vite-default-ts--build---windows:
+                      - linux_sandboxes
+            - react-vite-default-ts--build:
                   requires:
-                      - react-vite-default-ts--create---windows
-            - react-vite-default-ts--dev---windows:
+                      - react-vite-default-ts--create
+            - react-vite-default-ts--dev:
                   requires:
-                      - react-vite-default-ts--create---windows
+                      - react-vite-default-ts--create
+            - windows-sandbox-dev:
+                  requires:
+                      - react-vite-default-ts--create
+            - windows-sandbox-build:
+                  requires:
+                      - react-vite-default-ts--create
         when:
             equal:
                 - docs

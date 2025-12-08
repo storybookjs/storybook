@@ -202,7 +202,7 @@ function defineJob<K extends string, I extends SomethingImplementation>(
   };
 }
 
-function defineSandboxFlowLinux<K extends string>(name: K) {
+function defineSandboxFlow<K extends string>(name: K) {
   const id = toId(name);
   const names = {
     create: `${name} (create)`,
@@ -321,187 +321,6 @@ function defineSandboxFlowLinux<K extends string>(name: K) {
             },
           },
           server.wait(['6006']),
-          {
-            run: {
-              name: 'Running E2E Tests',
-              command: [
-                'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
-                `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
-              ].join('\n'),
-            },
-          },
-        ],
-      },
-      [ids.create]
-    ),
-  ];
-  return {
-    jobs,
-    workflow: jobs.map((job) => {
-      return {
-        [job.id]: {
-          requires: job.requires,
-        },
-      };
-    }),
-  };
-}
-
-function defineSandboxFlowWindows<K extends string>(name: K) {
-  const id = toId(name);
-  const names = {
-    create: `${name} (create) (windows)`,
-    build: `${name} (build) (windows)`,
-    dev: `${name} (dev) (windows)`,
-  };
-  const ids = {
-    create: `${toId(names.create)}`,
-    build: `${toId(names.build)}`,
-    dev: `${toId(names.dev)}`,
-  };
-  const jobs = [
-    defineJob(
-      names.create,
-      {
-        executor: {
-          name: 'win/default',
-          size: 'large',
-          shell: 'bash.exe',
-        },
-        steps: [
-          git.checkout({ forceHttps: true }),
-          node.installOnWindows(),
-          workspace.attach('C:\\Users\\circleci\\project'),
-          // cache.attach(CACHE_KEYS()),
-          {
-            run: {
-              name: 'install dependencies',
-              command: 'yarn install',
-            },
-          },
-          verdaccio.start(),
-          {
-            run: {
-              name: 'Start Event Collector',
-              working_directory: `scripts`,
-              background: true,
-              command: 'yarn jiti ./event-log-collector.ts',
-            },
-          },
-          server.wait([...verdaccio.ports, '6007']),
-          // {
-          //   run: {
-          //     name: 'Setup Corepack',
-          //     command: [
-          //       //
-          //       'sudo corepack enable',
-          //       'which yarn',
-          //       'yarn --version',
-          //     ].join('\n'),
-          //   },
-          // },
-          {
-            run: {
-              name: 'Create Sandboxes',
-              command: `yarn task sandbox --template ${name} --no-link -s sandbox --debug`,
-              environment: {
-                STORYBOOK_TELEMETRY_DEBUG: 1,
-                STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
-              },
-            },
-          },
-          artifact.persist(`C:\\Users\\circleci\\${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
-          workspace.persist([`${SANDBOX_DIR}/${id}`], 'C:\\Users\\circleci'),
-        ],
-      },
-      ['windows_sandboxes']
-    ),
-    defineJob(
-      names.build,
-      {
-        executor: {
-          name: 'win/default',
-          size: 'xlarge',
-          shell: 'bash.exe',
-        },
-        steps: [
-          git.checkout({ forceHttps: true }),
-          node.installOnWindows(),
-          workspace.attach('C:\\Users\\circleci\\project'),
-          // cache.attach(CACHE_KEYS()),
-          {
-            run: {
-              name: 'install dependencies',
-              command: 'yarn install',
-            },
-          },
-          {
-            run: {
-              name: 'Build storybook',
-              command: `yarn task build --template ${name} --no-link -s build`,
-            },
-          },
-          {
-            run: {
-              name: 'Serve storybook',
-              background: true,
-              command: `yarn task serve --template ${name} --no-link -s serve`,
-            },
-          },
-          server.wait(['8001']),
-          {
-            run: {
-              name: 'install playwright',
-              command: 'yarn playwright install chromium --with-deps',
-            },
-          },
-          {
-            run: {
-              name: 'Running E2E Tests',
-              command: [
-                `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
-                `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
-              ].join('\n'),
-            },
-          },
-        ],
-      },
-      [ids.create]
-    ),
-    defineJob(
-      names.dev,
-      {
-        executor: {
-          name: 'win/default',
-          size: 'xlarge',
-          shell: 'bash.exe',
-        },
-        steps: [
-          git.checkout({ forceHttps: true }),
-          node.installOnWindows(),
-          workspace.attach('C:\\Users\\circleci\\project'),
-          // cache.attach(CACHE_KEYS()),
-          {
-            run: {
-              name: 'install dependencies',
-              command: 'yarn install',
-            },
-          },
-          {
-            run: {
-              name: 'Run storybook',
-              working_directory: 'code',
-              background: true,
-              command: `yarn task dev --template ${name} --no-link -s dev`,
-            },
-          },
-          server.wait(['6006']),
-          {
-            run: {
-              name: 'install playwright',
-              command: 'yarn playwright install chromium --with-deps',
-            },
-          },
           {
             run: {
               name: 'Running E2E Tests',
@@ -790,17 +609,57 @@ const packageBenchmarks = defineJob(
   [linux_build.id]
 );
 
-const linux_sandboxes = [
-  //
-  // 'react-vite/default-ts',
-  // 'react-vite/default-js',
-].map(defineSandboxFlowLinux);
-
-const windows_sandboxes = [
+const sandboxes = [
   //
   'react-vite/default-ts',
   // 'react-vite/default-js',
-].map(defineSandboxFlowWindows);
+].map(defineSandboxFlow);
+
+const windows_sandbox_build = defineJob(
+  'windows-sandbox-build',
+  {
+    executor: {
+      name: 'win/default',
+      size: 'xlarge',
+      shell: 'bash.exe',
+    },
+    steps: [
+      git.checkout({ forceHttps: true }),
+      node.installOnWindows(),
+      workspace.attach('C:\\Users\\circleci\\project'),
+      {
+        run: {
+          name: 'Install dependencies',
+          command: 'yarn install',
+        },
+      },
+    ],
+  },
+  [sandboxes[0].jobs[0].id]
+);
+
+const windows_sandbox_dev = defineJob(
+  'windows-sandbox-dev',
+  {
+    executor: {
+      name: 'win/default',
+      size: 'xlarge',
+      shell: 'bash.exe',
+    },
+    steps: [
+      git.checkout({ forceHttps: true }),
+      node.installOnWindows(),
+      workspace.attach('C:\\Users\\circleci\\project'),
+      {
+        run: {
+          name: 'Install dependencies',
+          command: 'yarn install',
+        },
+      },
+    ],
+  },
+  [sandboxes[0].jobs[0].id]
+);
 
 const jobs = {
   [linux_build.id]: linux_build.implementation,
@@ -810,6 +669,7 @@ const jobs = {
   [linux_unitTests.id]: linux_unitTests.implementation,
   [windows_unitTests.id]: windows_unitTests.implementation,
   [packageBenchmarks.id]: packageBenchmarks.implementation,
+  [windows_sandbox_build.id]: windows_sandbox_build.implementation,
   'pretty-docs': {
     executor: {
       name: 'sb_node_22_classic',
@@ -828,23 +688,10 @@ const jobs = {
     ],
   },
 
-  linux_sandboxes: {
+  sandboxes: {
     type: 'no-op',
   },
-  windows_sandboxes: {
-    type: 'no-op',
-  },
-  ...linux_sandboxes.reduce(
-    (acc, sandbox) => {
-      for (const job of sandbox.jobs) {
-        acc[job.id] = job.implementation;
-      }
-
-      return acc;
-    },
-    {} as Record<string, SomethingImplementation>
-  ),
-  ...windows_sandboxes.reduce(
+  ...sandboxes.reduce(
     (acc, sandbox) => {
       for (const job of sandbox.jobs) {
         acc[job.id] = job.implementation;
@@ -926,8 +773,17 @@ const workflows = {
           requires: uiTests.requires,
         },
       },
-      ...linux_sandboxes.flatMap((sandbox) => sandbox.workflow),
-      ...windows_sandboxes.flatMap((sandbox) => sandbox.workflow),
+      ...sandboxes.flatMap((sandbox) => sandbox.workflow),
+      {
+        [windows_sandbox_dev.id]: {
+          requires: windows_sandbox_dev.requires,
+        },
+      },
+      {
+        [windows_sandbox_build.id]: {
+          requires: windows_sandbox_build.requires,
+        },
+      },
     ],
     when: {
       equal: ['docs', '<< pipeline.parameters.workflow >>'],

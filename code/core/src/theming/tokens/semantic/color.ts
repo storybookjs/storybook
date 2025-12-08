@@ -40,6 +40,8 @@ interface Theme {
 }
 
 export const theme: Theme = {
+  // Maybe themes should be 'default' and 'dark'?
+
   light: {
     fgColor: {
       default: color.neutral.l20,

@@ -8,6 +8,7 @@ import { darken, lighten, rgba, transparentize } from 'polished';
 import { type API_KeyCollection, shortcutToAriaKeyshortcuts } from 'storybook/manager-api';
 import { isPropValid, styled } from 'storybook/theming';
 
+import { color as primitiveColor } from '../../../theming/tokens/primitive/color';
 import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper';
 import { useAriaDescription } from './helpers/useAriaDescription';
 
@@ -216,14 +217,13 @@ const StyledButton = styled('button', {
         : theme.tokens.light.fgColor.default,
     '--Button-fgColor-ghost':
       theme.base === 'dark' ? theme.tokens.dark.fgColor.mute : theme.tokens.light.fgColor.mute,
-    '--Button-fgColor-accent': '#ffffff', // need to be able to handle this
+    '--Button-fgColor-accent': primitiveColor.neutral.white, // not sure if this is right. probably need to export with theming package
     '--Button-bgColor-default':
       theme.base === 'dark'
         ? theme.tokens.dark.bgColor.default
         : theme.tokens.light.bgColor.default,
     '--Button-bgColor-ghost': 'transparent',
-    '--Button-bgColor-accent':
-      theme.base === 'dark' ? theme.tokens.dark.bgColor.accent : theme.tokens.light.bgColor.accent,
+    '--Button-bgColor-accent': primitiveColor.blue.l44,
     '--Button-fontSize-medium': `${theme.typography.size.s1}px`,
 
     border: 0,

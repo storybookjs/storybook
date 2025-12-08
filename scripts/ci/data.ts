@@ -759,18 +759,13 @@ const workflows = {
         },
       },
       {
-        linux_sandboxes: {
-          requires: [linux_build.id],
-        },
-      },
-      {
-        windows_sandboxes: {
-          requires: [windows_build.id],
-        },
-      },
-      {
         [uiTests.id]: {
           requires: uiTests.requires,
+        },
+      },
+      {
+        sandboxes: {
+          requires: [linux_build.id],
         },
       },
       ...sandboxes.flatMap((sandbox) => sandbox.workflow),

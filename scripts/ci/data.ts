@@ -369,7 +369,7 @@ function defineSandboxFlowWindows<K extends string>(name: K) {
           shell: 'bash.exe',
         },
         steps: [
-          git.checkout(),
+          git.checkout({ forceHttps: true }),
           workspace.attach('C:\\Users\\circleci\\project'),
           // cache.attach(CACHE_KEYS()),
           {
@@ -424,7 +424,7 @@ function defineSandboxFlowWindows<K extends string>(name: K) {
           shell: 'bash.exe',
         },
         steps: [
-          git.checkout(),
+          git.checkout({ forceHttps: true }),
           workspace.attach('C:\\Users\\circleci\\project'),
           // cache.attach(CACHE_KEYS()),
           {
@@ -475,7 +475,7 @@ function defineSandboxFlowWindows<K extends string>(name: K) {
           shell: 'bash.exe',
         },
         steps: [
-          git.checkout(),
+          git.checkout({ forceHttps: true }),
           workspace.attach('C:\\Users\\circleci\\project'),
           // cache.attach(CACHE_KEYS()),
           {

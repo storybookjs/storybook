@@ -549,7 +549,7 @@ jobs:
             shell: bash.exe
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
             - attach_workspace:
                   at: C:\Users\circleci\project
             - run:
@@ -593,7 +593,7 @@ jobs:
             shell: bash.exe
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
             - attach_workspace:
                   at: C:\Users\circleci\project
             - run:
@@ -626,7 +626,7 @@ jobs:
             shell: bash.exe
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
             - attach_workspace:
                   at: C:\Users\circleci\project
             - run:

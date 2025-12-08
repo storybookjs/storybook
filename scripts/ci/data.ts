@@ -701,6 +701,8 @@ const jobs = {
     },
     {} as Record<string, SomethingImplementation>
   ),
+  [windows_sandbox_dev.id]: windows_sandbox_dev.implementation,
+  [windows_sandbox_build.id]: windows_sandbox_build.implementation,
 };
 
 const orbs = {

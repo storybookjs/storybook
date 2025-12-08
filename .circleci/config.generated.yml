@@ -676,6 +676,29 @@ jobs:
                   command: |-
                       TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
+    windows-sandbox-dev:
+        description: windows-sandbox-dev
+        executor:
+            name: win/default
+            size: xlarge
+            shell: bash.exe
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
+            - run:
+                  name: Install Node + Yarn
+                  shell: powershell.exe
+                  command: |-
+                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
+                      nvm install $nodeVersion
+                      nvm use $nodeVersion
+                      corepack enable
+                      corepack prepare yarn@stable --activate
+            - attach_workspace:
+                  at: C:\Users\circleci\project
+            - run:
+                  name: Install dependencies
+                  command: yarn install
 workflows:
     generated:
         jobs:
@@ -694,13 +717,10 @@ workflows:
             - unit-tests-windows:
                   requires:
                       - build-windows
-            - linux_sandboxes:
+            - ui:
                   requires:
                       - build-linux
-            - windows_sandboxes:
-                  requires:
-                      - build-windows
-            - ui:
+            - sandboxes:
                   requires:
                       - build-linux
             - react-vite-default-ts--create:

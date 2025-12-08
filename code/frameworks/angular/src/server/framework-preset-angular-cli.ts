@@ -133,10 +133,10 @@ export async function getBuilderOptions(options: PresetOptions, builderContext: 
   if (
     Object.keys(options.frameworkOptions?.angularBuilderOptions || {}).length > 0
   ) {
-    options.angularBuilderOptions = {
-      ...options.frameworkOptions.angularBuilderOptions,
-      ...options.angularBuilderOptions, // allow override by CLI if present
-    };
+    options.angularBuilderOptions = deepMerge(
+      options.frameworkOptions.angularBuilderOptions,
+      (options.angularBuilderOptions || {}), // allow override by CLI if present
+    );
   }
 
   // `options.angularBuilderOptions` implicitly adds all options a target can have

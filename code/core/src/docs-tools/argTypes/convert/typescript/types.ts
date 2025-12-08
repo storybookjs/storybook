@@ -9,7 +9,7 @@ type TSArgType = TSType;
 
 type TSCombinationType = TSBaseType & {
   name: 'union' | 'intersection';
-  elements?: TSType[];
+  elements: TSType[];
 };
 
 type TSFuncSigType = TSBaseType & {
@@ -33,7 +33,7 @@ type TSObjectSigType = TSBaseType & {
 };
 
 type TSScalarType = TSBaseType & {
-  name: 'any' | 'boolean' | 'number' | 'void' | 'string' | 'symbol' | 'literal';
+  name: 'any' | 'boolean' | 'number' | 'void' | 'string' | 'symbol' | 'literal' | 'undefined';
 };
 
 type TSArrayType = TSBaseType & {

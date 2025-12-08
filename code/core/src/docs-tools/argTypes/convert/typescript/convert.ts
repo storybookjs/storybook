@@ -4,6 +4,10 @@ import type { SBType } from 'storybook/internal/types';
 import { parseLiteral } from '../utils';
 import type { TSSigType, TSType } from './types';
 
+// Type guards for narrowing TSType discriminant unions
+const isLiteral = (type: TSType): boolean => type.name === 'literal';
+const isUndefined = (type: TSType): boolean => type.name === 'undefined';
+
 const convertSig = (type: TSSigType) => {
   switch (type.type) {
     case 'function':
@@ -41,23 +45,25 @@ export const convert = (type: TSType): SBType | void => {
     }
     case 'signature':
       return { ...base, ...convertSig(type) };
-    case 'union':
-      let result;
-      // Filter out undefined from optional props when checking for enum
-      const nonUndefinedElements = type.elements?.filter((element) => element.name !== 'undefined');
-      if (nonUndefinedElements?.length > 0 && nonUndefinedElements.every((element) => element.name === 'literal')) {
-        result = {
+    case 'union': {
+      const nonUndefinedElements = type.elements.filter((element) => !isUndefined(element));
+      const allLiterals = nonUndefinedElements.length > 0 && nonUndefinedElements.every(isLiteral);
+
+      if (allLiterals) {
+        return {
           ...base,
           name: 'enum',
-          // @ts-expect-error fix types
-          value: nonUndefinedElements.map((v) => parseLiteral(v.value)),
+          value: nonUndefinedElements.map((element) => {
+            // We know element is a literal type because of the allLiterals check
+            const literalElement = element as Extract<typeof element, { name: 'literal' }>;
+            return parseLiteral(literalElement.value);
+          }),
         };
-      } else {
-        result = { ...base, name, value: type.elements?.map(convert) };
       }
-      return result;
+      return { ...base, name, value: type.elements.map(convert) };
+    }
     case 'intersection':
-      return { ...base, name, value: type.elements?.map(convert) };
+      return { ...base, name, value: type.elements.map(convert) };
     default:
       return { ...base, name: 'other', value: name };
   }

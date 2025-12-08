@@ -370,6 +370,7 @@ function defineSandboxFlowWindows<K extends string>(name: K) {
         },
         steps: [
           git.checkout({ forceHttps: true }),
+          node.installOnWindows(),
           workspace.attach('C:\\Users\\circleci\\project'),
           // cache.attach(CACHE_KEYS()),
           {
@@ -425,6 +426,7 @@ function defineSandboxFlowWindows<K extends string>(name: K) {
         },
         steps: [
           git.checkout({ forceHttps: true }),
+          node.installOnWindows(),
           workspace.attach('C:\\Users\\circleci\\project'),
           // cache.attach(CACHE_KEYS()),
           {
@@ -476,6 +478,7 @@ function defineSandboxFlowWindows<K extends string>(name: K) {
         },
         steps: [
           git.checkout({ forceHttps: true }),
+          node.installOnWindows(),
           workspace.attach('C:\\Users\\circleci\\project'),
           // cache.attach(CACHE_KEYS()),
           {

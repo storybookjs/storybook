@@ -4,7 +4,7 @@ import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } 
 import { RefreshIcon } from '@storybook/icons';
 
 import { useInteractOutside } from '@react-aria/interactions';
-import { Overlay, useOverlay, useOverlayPosition } from '@react-aria/overlays';
+import { Overlay, ariaHideOutside, useOverlay, useOverlayPosition } from '@react-aria/overlays';
 import { useObjectRef } from '@react-aria/utils';
 import { useOverlayTriggerState } from '@react-stately/overlays';
 import { darken, transparentize } from 'polished';
@@ -141,6 +141,12 @@ const MinimalistPopover: FC<{
     ref: popoverRef,
     onInteractOutside: handleClose,
   });
+
+  useEffect(() => {
+    if (popoverRef.current) {
+      return ariaHideOutside([popoverRef.current], { shouldUseInert: true });
+    }
+  }, []);
 
   const { overlayProps: positionProps } = useOverlayPosition({
     targetRef: triggerRef,

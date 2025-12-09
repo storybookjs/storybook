@@ -96,6 +96,7 @@ async function generateFrameworksFile(prettierConfig: prettier.Options | null): 
     'solid',
     'vue3-rsbuild',
     'web-components-rsbuild',
+    'stencil',
   ];
   const destination = join(CORE_ROOT_DIR, 'src', 'types', 'modules', 'frameworks.ts');
   const frameworksDirectory = join(CODE_DIR, 'frameworks');

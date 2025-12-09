@@ -325,8 +325,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           return;
         }
 
-        const currentIndex = options.findIndex(
-          (option) => externalToValue(option.value) === activeOption.value
+        const currentIndex = options.findIndex((option) =>
+          activeOption.type === 'reset'
+            ? 'type' in option && option.type === 'reset'
+            : externalToValue(option.value) === activeOption.value
         );
         const nextIndex = currentIndex + step;
 
@@ -349,8 +351,11 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           setActiveOption(options[Math.max(0, options.length - step)]);
           return;
         }
-        const currentIndex = options.findIndex(
-          (option) => externalToValue(option.value) === activeOption.value
+
+        const currentIndex = options.findIndex((option) =>
+          activeOption.type === 'reset'
+            ? 'type' in option && option.type === 'reset'
+            : externalToValue(option.value) === activeOption.value
         );
         const nextIndex = currentIndex - step;
 

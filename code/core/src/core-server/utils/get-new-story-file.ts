@@ -26,7 +26,8 @@ export async function getNewStoryFile(
     componentIsDefaultExport,
     componentExportCount,
   }: CreateNewStoryRequestPayload,
-  options: Options
+  options: Options,
+  args?: Record<string, any>
 ) {
   const frameworkPackageName = await getFrameworkName(options);
   const sanitizedFrameworkPackageName = extractFrameworkPackageName(frameworkPackageName);
@@ -80,6 +81,7 @@ export async function getNewStoryFile(
       componentIsDefaultExport,
       exportedStoryName,
       previewImportPath,
+      args,
     });
   } else {
     storyFileContent =
@@ -90,12 +92,14 @@ export async function getNewStoryFile(
             componentIsDefaultExport,
             frameworkPackage: sanitizedFrameworkPackageName,
             exportedStoryName,
+            args,
           })
         : await getJavaScriptTemplateForNewStoryFile({
             basenameWithoutExtension,
             componentExportName,
             componentIsDefaultExport,
             exportedStoryName,
+            args,
           });
   }
 

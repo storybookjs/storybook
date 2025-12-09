@@ -64,14 +64,16 @@ export interface GenerateStoryOptions {
 export async function generateStoryFile(
   payload: CreateNewStoryRequestPayload,
   options: Options,
-  generateOptions: GenerateStoryOptions = {}
+  generateOptions: GenerateStoryOptions = {},
+  args?: Record<string, any>
 ): Promise<GenerateStoryResult> {
   const { checkFileExists = true } = generateOptions;
 
   try {
     const { storyFilePath, exportedStoryName, storyFileContent } = await getNewStoryFile(
       payload,
-      options
+      options,
+      args
     );
 
     const relativeStoryFilePath = relative(process.cwd(), storyFilePath);

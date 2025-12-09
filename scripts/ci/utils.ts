@@ -8,6 +8,9 @@ export const workspace = {
       attach_workspace: {
         at,
       },
+      environment: {
+        TAR_OPTIONS: '--no-same-owner',
+      },
     };
   },
   persist: (paths: string[], root = ROOT_DIR) => {

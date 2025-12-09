@@ -616,7 +616,7 @@ const sandboxes = [
 ].map(defineSandboxFlow);
 
 const windows_sandbox_build = defineJob(
-  'windows-sandbox-build',
+  `${sandboxes[0].jobs[1].id}-windows`,
   {
     executor: {
       name: 'win/default',
@@ -639,7 +639,7 @@ const windows_sandbox_build = defineJob(
 );
 
 const windows_sandbox_dev = defineJob(
-  'windows-sandbox-dev',
+  `${sandboxes[0].jobs[2].id}-windows`,
   {
     executor: {
       name: 'win/default',

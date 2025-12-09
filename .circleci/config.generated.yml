@@ -522,8 +522,8 @@ jobs:
                   name: Benchmarking packages against base branch
                   command: yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
                   working_directory: scripts
-    windows-sandbox-build:
-        description: windows-sandbox-build
+    react-vite-default-ts--build-windows:
+        description: react-vite-default-ts--build-windows
         executor:
             name: win/default
             size: xlarge
@@ -676,8 +676,8 @@ jobs:
                   command: |-
                       TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
-    windows-sandbox-dev:
-        description: windows-sandbox-dev
+    react-vite-default-ts--dev-windows:
+        description: react-vite-default-ts--dev-windows
         executor:
             name: win/default
             size: xlarge
@@ -732,10 +732,10 @@ workflows:
             - react-vite-default-ts--dev:
                   requires:
                       - react-vite-default-ts--create
-            - windows-sandbox-dev:
+            - react-vite-default-ts--dev-windows:
                   requires:
                       - react-vite-default-ts--create
-            - windows-sandbox-build:
+            - react-vite-default-ts--build-windows:
                   requires:
                       - react-vite-default-ts--create
         when:

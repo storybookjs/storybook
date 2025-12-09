@@ -1,5 +1,5 @@
-import type { ComponentProps } from 'react';
-import React, { useEffect, useRef } from 'react';
+import type { ChangeEvent, ComponentProps } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Form } from 'storybook/internal/components';
 
@@ -51,6 +51,17 @@ export const SizeInput = ({
   setValue: (value: string) => void;
 } & Omit<ComponentProps<typeof Form.Input>, 'value'>) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [inputValue, setInputValue] = useState(value.replace(/px$/, ''));
+
+  useEffect(() => setInputValue(value.replace(/px$/, '')), [value]);
+
+  const onChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setInputValue(e.target.value);
+      setValue(Number.isNaN(Number(e.target.value)) ? e.target.value : `${e.target.value}px`);
+    },
+    [setValue]
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -58,29 +69,26 @@ export const SizeInput = ({
         return;
       }
       e.preventDefault();
-      const num = parseInt(value, 10);
-      const unit = value.match(/[0-9]+(%|[a-z]{0,4})?$/)?.[1] || 'px';
+      const num = parseInt(inputValue, 10);
       const update = e.key === 'ArrowUp' ? num + 1 : num - 1;
       if (!Number.isNaN(num) && update >= 0) {
+        const unit = inputValue.match(/[0-9]{1,4}(%|[a-z]{0,4})?$/)?.[1] || 'px';
+        setInputValue(`${update}${unit === 'px' ? '' : unit}`);
         setValue(`${update}${unit}`);
       }
     };
+
     const input = inputRef.current;
     if (input) {
       input.addEventListener('keydown', handleKeyDown);
       return () => input.removeEventListener('keydown', handleKeyDown);
     }
-  }, [value, setValue]);
+  }, [inputValue, setValue]);
 
   return (
     <Wrapper prefix={prefix}>
       {label && <span className="sb-sr-only">{label}</span>}
-      <Form.Input
-        {...props}
-        ref={inputRef}
-        value={value.replace(/px$/, '')}
-        onChange={(e) => setValue((e.target as HTMLInputElement).value)}
-      />
+      <Form.Input {...props} ref={inputRef} value={inputValue} onChange={onChange} />
     </Wrapper>
   );
 };

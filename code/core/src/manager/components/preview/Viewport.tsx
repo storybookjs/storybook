@@ -6,17 +6,21 @@ import { TransferIcon, UndoIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
-import { useViewport } from '../../../viewport/useViewport';
+import {
+  VIEWPORT_MIN_HEIGHT,
+  VIEWPORT_MIN_WIDTH,
+  useViewport,
+} from '../../../viewport/useViewport';
 import { iconsMap } from '../../../viewport/viewportIcons';
 import { IFrame } from './Iframe';
 import { SizeInput } from './SizeInput';
 
-type DragSide = 'both' | 'bottom' | 'right';
+type DragSide = 'none' | 'both' | 'bottom' | 'right';
 
 const ViewportWrapper = styled.div<{
   active: boolean;
   isDefault: boolean;
-}>(({ active, isDefault }) => ({
+}>(({ active, isDefault, theme }) => ({
   gridArea: '1 / 1',
   alignSelf: 'start',
   justifySelf: 'start',
@@ -28,6 +32,19 @@ const ViewportWrapper = styled.div<{
   paddingTop: isDefault ? 0 : 6,
   paddingBottom: isDefault ? 0 : 40,
   paddingInline: isDefault ? 0 : 40,
+
+  '&:has([data-size-input="width"]:focus-visible)': {
+    '[data-dragging]': {
+      borderRightColor: theme.color.secondary,
+      boxShadow: `4px 0 5px -2px ${theme.background.hoverable}`,
+    },
+  },
+  '&:has([data-size-input="height"]:focus-visible)': {
+    '[data-dragging]': {
+      borderBottomColor: theme.color.secondary,
+      boxShadow: `0 4px 5px -2px ${theme.background.hoverable}`,
+    },
+  },
 }));
 
 const ViewportControls = styled.div({
@@ -51,9 +68,12 @@ const Dimensions = styled.div(({ theme }) => ({
 
 const FrameWrapper = styled.div<{
   isDefault: boolean;
-  'data-dragging': DragSide | undefined;
+  'data-dragging': DragSide;
 }>(({ isDefault, 'data-dragging': dragging, theme }) => ({
   position: 'relative',
+  minWidth: VIEWPORT_MIN_WIDTH,
+  minHeight: VIEWPORT_MIN_HEIGHT,
+  boxSizing: 'content-box', // we're sizing the contents, not the box itself
   border: `1px solid ${theme.button.border}`,
   borderWidth: isDefault ? 0 : 1,
   borderRadius: isDefault ? 0 : 4,
@@ -95,7 +115,7 @@ const FrameWrapper = styled.div<{
   },
   iframe: {
     borderRadius: 'inherit',
-    pointerEvents: dragging ? 'none' : 'auto',
+    pointerEvents: dragging === 'none' ? 'auto' : 'none',
   },
 }));
 
@@ -156,20 +176,20 @@ export const Viewport = ({
     select,
   } = useViewport();
 
-  const [dragging, setDragging] = useState<DragSide | undefined>(undefined);
+  const [dragging, setDragging] = useState<DragSide>('none');
   const targetRef = useRef<HTMLDivElement>(null);
   const dragRefX = useRef<HTMLDivElement>(null);
   const dragRefY = useRef<HTMLDivElement>(null);
   const dragRefXY = useRef<HTMLDivElement>(null);
-  const dragSide = useRef<DragSide>('both');
+  const dragSide = useRef<DragSide>('none');
   const dragStart = useRef<[number, number] | undefined>();
 
   useEffect(() => {
     const onDrag = (e: MouseEvent) => {
-      if (dragSide.current === 'right' || dragSide.current === 'both') {
+      if (dragSide.current === 'both' || dragSide.current === 'right') {
         targetRef.current!.style.width = `${dragStart.current![0] + e.clientX}px`;
       }
-      if (dragSide.current === 'bottom' || dragSide.current === 'both') {
+      if (dragSide.current === 'both' || dragSide.current === 'bottom') {
         targetRef.current!.style.height = `${dragStart.current![1] + e.clientY}px`;
       }
     };
@@ -177,8 +197,8 @@ export const Viewport = ({
     const onEnd = () => {
       window.removeEventListener('mouseup', onEnd);
       window.removeEventListener('mousemove', onDrag);
-      setDragging(undefined);
-      resize(targetRef.current!.style.width, targetRef.current!.style.height);
+      setDragging('none');
+      resize(`${targetRef.current!.clientWidth}px`, `${targetRef.current!.clientHeight}px`);
       dragStart.current = undefined;
     };
 
@@ -188,8 +208,8 @@ export const Viewport = ({
       window.addEventListener('mousemove', onDrag);
       dragSide.current = (e.currentTarget as HTMLElement).dataset.side as DragSide;
       dragStart.current = [
-        (targetRef.current?.offsetWidth ?? 0) - e.clientX,
-        (targetRef.current?.offsetHeight ?? 0) - e.clientY,
+        (targetRef.current?.clientWidth ?? 0) - e.clientX,
+        (targetRef.current?.clientHeight ?? 0) - e.clientY,
       ];
       setDragging(dragSide.current);
     };
@@ -237,6 +257,7 @@ export const Viewport = ({
 
           <ViewportDimensions>
             <SizeInput
+              data-size-input="width"
               label="Viewport width:"
               prefix="W"
               value={width}
@@ -252,6 +273,7 @@ export const Viewport = ({
               <TransferIcon />
             </ActionList.Button>
             <SizeInput
+              data-size-input="height"
               label="Viewport height:"
               prefix="H"
               value={height}

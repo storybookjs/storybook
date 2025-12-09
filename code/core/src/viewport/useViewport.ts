@@ -15,7 +15,10 @@ import type {
 } from './types';
 
 // Custom viewport format, e.g. '100pct-200px' (width-height)
-const URL_VALUE_PATTERN = /^([0-9]+)([a-z]{0,4})-([0-9]+)([a-z]{0,4})$/;
+const URL_VALUE_PATTERN = /^([0-9]{1,4})([a-z]{0,4})-([0-9]{1,4})([a-z]{0,4})$/;
+
+export const VIEWPORT_MIN_WIDTH = 40;
+export const VIEWPORT_MIN_HEIGHT = 40;
 
 const cycle = (
   viewports: ViewportMap,
@@ -66,18 +69,24 @@ const parseGlobals = (
 
   const keys = Object.keys(options);
   const isLocked = disable || PARAM_KEY in storyGlobals || !keys.length;
-  const [, vx, ux, vy, uy] = value?.match(URL_VALUE_PATTERN) || [];
+  const [match, vx, ux, vy, uy] = value?.match(URL_VALUE_PATTERN) || [];
 
-  if (value && vx && vy) {
-    const width = `${vx}${ux === 'pct' ? '%' : ux || 'px'}`;
-    const height = `${vy}${uy === 'pct' ? '%' : uy || 'px'}`;
+  if (match) {
+    // Clamp pixel values to at least MIN_WIDTH / MIN_HEIGHT
+    const x = ux && ux !== 'px' ? vx : Math.max(Number(vx), VIEWPORT_MIN_WIDTH);
+    const y = uy && uy !== 'px' ? vy : Math.max(Number(vy), VIEWPORT_MIN_HEIGHT);
+
+    // Ensure we have a valid CSS value, including unit
+    const width = `${x}${ux === 'pct' ? '%' : ux || 'px'}`;
+    const height = `${y}${uy === 'pct' ? '%' : uy || 'px'}`;
+
     const selection = lastSelectedOption ? options[lastSelectedOption] : undefined;
     return {
       name: selection?.name ?? 'Custom',
       type: selection?.type ?? 'other',
       width: isRotated ? height : width,
       height: isRotated ? width : height,
-      value,
+      value: match,
       option: undefined,
       isCustom: true,
       isDefault: false,
@@ -137,8 +146,11 @@ export const useViewport = () => {
       const w = width.replace(/px$/, '').replace(/%$/, 'pct');
       const h = height.replace(/px$/, '').replace(/%$/, 'pct');
       const value = isRotated ? `${h}-${w}` : `${w}-${h}`;
-      if (value.match(URL_VALUE_PATTERN)) {
-        update({ value, isRotated });
+      const [match, vx, ux, vy, uy] = value.match(URL_VALUE_PATTERN) || [];
+
+      // Don't update to pixel values less than 40
+      if (match && (ux || Number(vx) >= 40) && (uy || Number(vy) >= 40)) {
+        update({ value: match, isRotated });
       }
     },
     [update, isRotated]

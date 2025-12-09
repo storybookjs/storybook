@@ -31,14 +31,23 @@ export const convertToFilePath = (url: string): string => {
   return normalizedPath.replace(/%20/g, ' ');
 };
 
-export const testStory = (
-  exportName: string,
-  story: ComposedStoryFn | Story<Renderer>,
-  meta: ComponentAnnotations | Meta<Renderer>,
-  skipTags: string[],
-  storyId: string,
-  testName?: string
-) => {
+export const testStory = ({
+  exportName,
+  story,
+  meta,
+  skipTags,
+  storyId,
+  componentPath,
+  testName,
+}: {
+  exportName: string;
+  story: ComposedStoryFn | Story<Renderer>;
+  meta: ComponentAnnotations | Meta<Renderer>;
+  skipTags: string[];
+  storyId: string;
+  componentPath?: string;
+  testName?: string;
+}) => {
   return async (context: TestContext & { story: ComposedStoryFn }) => {
     const annotations = getCsfFactoryAnnotations(story, meta);
 
@@ -64,12 +73,13 @@ export const testStory = (
     context.story = composedStory;
 
     const _task = context.task as RunnerTask & {
-      meta: TaskMeta & { storyId: string; reports: Report[] };
+      meta: TaskMeta & { storyId: string; reports: Report[]; componentPath?: string };
     };
 
     // The id will always be present, calculated by CsfFile
     // and is needed so that we can add the test to the story in Storybook's UI for the status
     _task.meta.storyId = storyId;
+    _task.meta.componentPath = componentPath;
 
     await setViewport(composedStory.parameters, composedStory.globals);
 

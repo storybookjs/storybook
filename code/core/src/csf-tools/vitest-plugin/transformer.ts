@@ -152,6 +152,9 @@ export async function vitestTransform({
   const vitestExpectId = parsed._file.path.scope.generateUidIdentifier('expect');
   const testStoryId = parsed._file.path.scope.generateUidIdentifier('testStory');
   const skipTagsId = t.identifier(JSON.stringify(tagsFilter.skip));
+  const componentPathLiteral = parsed._rawComponentPath
+    ? t.stringLiteral(parsed._rawComponentPath)
+    : null;
 
   /**
    * In Storybook users might be importing stories from other story files. As a side effect, tests
@@ -227,17 +230,23 @@ export async function vitestTransform({
     overrideSourcemap?: boolean;
     storyId: string;
   }): t.ExpressionStatement => {
+    const objectProperties: t.ObjectProperty[] = [
+      t.objectProperty(t.identifier('exportName'), t.stringLiteral(exportName)),
+      t.objectProperty(t.identifier('story'), t.identifier(localName)),
+      t.objectProperty(t.identifier('meta'), t.identifier(metaExportName)),
+      t.objectProperty(t.identifier('skipTags'), skipTagsId),
+      t.objectProperty(t.identifier('storyId'), t.stringLiteral(storyId)),
+    ];
+
+    if (componentPathLiteral) {
+      objectProperties.push(t.objectProperty(t.identifier('componentPath'), componentPathLiteral));
+    }
+
     // Create the _test expression directly using the exportName identifier
     const testStoryCall = t.expressionStatement(
       t.callExpression(vitestTestId, [
         t.stringLiteral(testTitle),
-        t.callExpression(testStoryId, [
-          t.stringLiteral(exportName),
-          t.identifier(localName),
-          t.identifier(metaExportName),
-          skipTagsId,
-          t.stringLiteral(storyId),
-        ]),
+        t.callExpression(testStoryId, [t.objectExpression(objectProperties)]),
       ])
     );
 
@@ -271,17 +280,30 @@ export async function vitestTransform({
             storyId: parentStoryId,
           }),
           ...tests.map(({ name: testName, node: testNode, id: storyId }) => {
+            const objectProperties: t.ObjectProperty[] = [
+              t.objectProperty(t.identifier('exportName'), t.stringLiteral(exportName)),
+              t.objectProperty(t.identifier('story'), t.identifier(localName)),
+              t.objectProperty(t.identifier('meta'), t.identifier(metaExportName)),
+              t.objectProperty(t.identifier('skipTags'), t.arrayExpression([])),
+              t.objectProperty(t.identifier('storyId'), t.stringLiteral(storyId)),
+            ];
+
+            if (componentPathLiteral) {
+              objectProperties.push(
+                t.objectProperty(t.identifier('componentPath'), componentPathLiteral)
+              );
+            }
+
+            if (testName) {
+              objectProperties.push(
+                t.objectProperty(t.identifier('testName'), t.stringLiteral(testName))
+              );
+            }
+
             const testStatement = t.expressionStatement(
               t.callExpression(vitestTestId, [
                 t.stringLiteral(testName),
-                t.callExpression(testStoryId, [
-                  t.stringLiteral(exportName),
-                  t.identifier(localName),
-                  t.identifier(metaExportName),
-                  t.arrayExpression([]),
-                  t.stringLiteral(storyId),
-                  t.stringLiteral(testName),
-                ]),
+                t.callExpression(testStoryId, [t.objectExpression(objectProperties)]),
               ])
             );
             testStatement.loc = testNode.loc;

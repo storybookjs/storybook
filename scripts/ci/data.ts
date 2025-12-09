@@ -638,22 +638,37 @@ const windows_sandbox_build = defineJob(
       {
         run: {
           name: 'Run Install',
-          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite\\default-ts`,
+          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite-default-ts`,
           command: 'yarn install',
         },
       },
       {
         run: {
           name: 'Install playwright',
-          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite\\default-ts`,
           command: 'yarn playwright install chromium --with-deps',
         },
       },
       {
         run: {
           name: 'Build storybook',
-          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite\\default-ts`,
-          command: 'yarn build-storybook',
+          command: `yarn task build --template react-vite/default-ts --no-link -s build`,
+        },
+      },
+      {
+        run: {
+          name: 'Serve storybook',
+          background: true,
+          command: `yarn task serve --template react-vite/default-ts --no-link -s serve`,
+        },
+      },
+      server.wait(['8001']),
+      {
+        run: {
+          name: 'Running E2E Tests',
+          command: [
+            `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
+            `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1`,
+          ].join('\n'),
         },
       },
     ],
@@ -710,7 +725,6 @@ const jobs = {
       },
     ],
   },
-
   sandboxes: {
     type: 'no-op',
   },

@@ -93,7 +93,11 @@ export const addWorkaroundResolutions = async ({
   const content = await readFile(packageJsonPath, 'utf-8');
   const packageJson = JSON.parse(content);
 
-  const additionalReact19Resolutions = ['nextjs/default-ts', 'nextjs/prerelease'].includes(key)
+  const additionalReact19Resolutions = [
+    'nextjs/default-ts',
+    'nextjs/prerelease',
+    'react-native-web-vite/expo-ts',
+  ].includes(key)
     ? {
         react: '^19.0.0',
         'react-dom': '^19.0.0',

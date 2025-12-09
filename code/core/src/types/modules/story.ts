@@ -22,7 +22,6 @@ import type {
   StoryIdentifier,
   StoryName,
   StrictArgTypes,
-  StrictGlobalTypes,
 } from './csf';
 
 // Store Types
@@ -57,7 +56,6 @@ export type NormalizedProjectAnnotations<TRenderer extends Renderer = Renderer> 
   'decorators' | 'loaders' | 'runStep' | 'beforeAll'
 > & {
   argTypes?: StrictArgTypes;
-  globalTypes?: StrictGlobalTypes;
   decorators?: DecoratorFunction<TRenderer>[];
   loaders?: LoaderFunction<TRenderer>[];
   runStep: StepRunner<TRenderer>;

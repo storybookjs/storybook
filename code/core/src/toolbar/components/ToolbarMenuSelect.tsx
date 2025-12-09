@@ -7,8 +7,6 @@ import { useGlobals } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { Icons } from '../../components/components/icon/icon';
-import type { WithKeyboardCycleProps } from '../hoc/withKeyboardCycle';
-import { withKeyboardCycle } from '../hoc/withKeyboardCycle';
 import type { ToolbarItem, ToolbarMenuProps } from '../types';
 import { getSelectedIcon, getSelectedTitle } from '../utils/get-selected';
 
@@ -26,84 +24,80 @@ const ToolbarMenuItemMiddle = styled('div')({
   flex: 1,
 });
 
-type ToolbarMenuSelectProps = ToolbarMenuProps & WithKeyboardCycleProps;
+export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
+  id,
+  name,
+  description,
+  toolbar: { icon: _icon, items, title: _title, preventDynamicIcon, dynamicTitle },
+}) => {
+  const [globals, updateGlobals, storyGlobals] = useGlobals();
 
-export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
-  ({
-    id,
-    name,
-    description,
-    toolbar: { icon: _icon, items, title: _title, preventDynamicIcon, dynamicTitle },
-  }) => {
-    const [globals, updateGlobals, storyGlobals] = useGlobals();
+  const currentValue = globals[id];
+  const isOverridden = id in storyGlobals;
+  let icon = _icon;
+  let title = _title;
 
-    const currentValue = globals[id];
-    const isOverridden = id in storyGlobals;
-    let icon = _icon;
-    let title = _title;
-
-    if (!preventDynamicIcon) {
-      icon = getSelectedIcon({ currentValue, items }) || icon;
-    }
-
-    if (dynamicTitle) {
-      title = getSelectedTitle({ currentValue, items }) || title;
-    }
-
-    if (!title && !icon) {
-      console.warn(`Toolbar '${name}' has no title or icon`);
-    }
-
-    const resetItem = items.find((item) => item.type === 'reset');
-    const resetLabel = resetItem?.title;
-    const options = items
-      .filter((item): item is ToolbarItem => item.type === 'item')
-      .map((item) => {
-        const itemTitle = item.title ?? item.value ?? 'Untitled';
-        const iconComponent =
-          !item.hideIcon && item.icon ? (
-            <Icons icon={item.icon} __suppressDeprecationWarning={true} />
-          ) : undefined;
-
-        if (item.right) {
-          return {
-            title: itemTitle,
-            value: item.value,
-            children: (
-              <ToolbarMenuItemContainer>
-                {iconComponent}
-                <ToolbarMenuItemMiddle>{item.title ?? item.value}</ToolbarMenuItemMiddle>
-                {item.right}
-              </ToolbarMenuItemContainer>
-            ),
-          };
-        } else {
-          return {
-            title: itemTitle,
-            value: item.value,
-            icon: iconComponent,
-          };
-        }
-      });
-
-    // FIXME: for SB 10 we would want description to become an aria-description, and to add an
-    // ariaLabel prop to tools with an automigration switching current description to ariaLabel
-    const ariaLabel = description || title || name || id;
-
-    return (
-      <Select
-        defaultOptions={[currentValue]}
-        options={options}
-        disabled={isOverridden}
-        ariaLabel={ariaLabel}
-        tooltip={ariaLabel}
-        resetLabel={resetLabel}
-        onReset={() => updateGlobals({ [id]: '_reset' })}
-        onSelect={(selected) => updateGlobals({ [id]: selected })}
-        icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
-      >
-        {title}
-      </Select>
-    );
+  if (!preventDynamicIcon) {
+    icon = getSelectedIcon({ currentValue, items }) || icon;
   }
-);
+
+  if (dynamicTitle) {
+    title = getSelectedTitle({ currentValue, items }) || title;
+  }
+
+  if (!title && !icon) {
+    console.warn(`Toolbar '${name}' has no title or icon`);
+  }
+
+  const resetItem = items.find((item) => item.type === 'reset');
+  const resetLabel = resetItem?.title;
+  const options = items
+    .filter((item): item is ToolbarItem => item.type === 'item')
+    .map((item) => {
+      const itemTitle = item.title ?? item.value ?? 'Untitled';
+      const iconComponent =
+        !item.hideIcon && item.icon ? (
+          <Icons icon={item.icon} __suppressDeprecationWarning={true} />
+        ) : undefined;
+
+      if (item.right) {
+        return {
+          title: itemTitle,
+          value: item.value,
+          children: (
+            <ToolbarMenuItemContainer>
+              {iconComponent}
+              <ToolbarMenuItemMiddle>{item.title ?? item.value}</ToolbarMenuItemMiddle>
+              {item.right}
+            </ToolbarMenuItemContainer>
+          ),
+        };
+      } else {
+        return {
+          title: itemTitle,
+          value: item.value,
+          icon: iconComponent,
+        };
+      }
+    });
+
+  // FIXME: for SB 10 we would want description to become an aria-description, and to add an
+  // ariaLabel prop to tools with an automigration switching current description to ariaLabel
+  const ariaLabel = description || title || name || id;
+
+  return (
+    <Select
+      defaultOptions={[currentValue]}
+      options={options}
+      disabled={isOverridden}
+      ariaLabel={ariaLabel}
+      tooltip={ariaLabel}
+      resetLabel={resetLabel}
+      onReset={() => updateGlobals({ [id]: '_reset' })}
+      onSelect={(selected) => updateGlobals({ [id]: selected })}
+      icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
+    >
+      {title}
+    </Select>
+  );
+};

@@ -37,6 +37,7 @@ import type {
   API_TestEntry,
   ArgTypes,
   Args,
+  GlobalTypes,
   Globals,
   Parameters,
   StoryId,
@@ -486,7 +487,7 @@ export function useGlobals(): [
   return [api.getGlobals(), api.updateGlobals, api.getStoryGlobals(), api.getUserGlobals()];
 }
 
-export function useGlobalTypes(): ArgTypes {
+export function useGlobalTypes(): GlobalTypes {
   return useStorybookApi().getGlobalTypes();
 }
 

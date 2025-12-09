@@ -32,6 +32,7 @@ import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
 import type { StandaloneOptions } from '../utils/standalone-options';
 import { VERSION } from '@angular/core';
+import { joinPathFragments } from '../utils/paths';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -93,8 +94,9 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
 
         const { tsConfig } = await setup(options, context);
 
+        const pathToConfigDir = joinPathFragments(context.workspaceRoot, options.configDir);
         const docTSConfig = find.up('tsconfig.doc.json', {
-          cwd: options.configDir,
+          cwd: pathToConfigDir,
           last: getProjectRoot(),
         });
 
@@ -225,10 +227,11 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
     );
   }
 
+  const pathToConfigDir = joinPathFragments(context.workspaceRoot, options.configDir);
   return {
     tsConfig:
       options.tsConfig ??
-      find.up('tsconfig.json', { cwd: options.configDir }) ??
+      find.up('tsconfig.json', { cwd: pathToConfigDir }) ??
       browserOptions.tsConfig,
   };
 }

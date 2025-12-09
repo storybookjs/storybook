@@ -5,6 +5,8 @@ import { logger } from 'storybook/internal/node-logger';
 
 import type { Fix } from '../types';
 
+export const VITE_DEFAULT_VERSION = '^7.0.0';
+
 interface NextjsToNextjsViteOptions {
   hasNextjsPackage: boolean;
   packageJsonFiles: string[];
@@ -102,7 +104,7 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
       await packageManager.removeDependencies(['@storybook/nextjs']);
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `@storybook/nextjs-vite@${storybookVersion}`,
-        ...(viteVersion ? [] : ['vite@^7.0.0']), // Add vite if it's not installed yet
+        ...(viteVersion ? [] : [`vite@${VITE_DEFAULT_VERSION}`]), // Add vite if it's not installed yet
       ]);
     }
 

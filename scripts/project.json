@@ -1,6 +1,6 @@
 {
   "name": "scripts",
-  "tags": ["ci:normal"],
+  "tags": ["library"],
   "includedScripts": [],
   "targets": {
     "pretty-docs": {

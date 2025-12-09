@@ -41,7 +41,6 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     playwright: '1.52.0',
     'playwright-core': '1.52.0',
     '@playwright/test': '1.52.0',
-    rollup: '4.44.2',
   };
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
@@ -119,7 +118,6 @@ export const addWorkaroundResolutions = async ({
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
-    rollup: '4.44.2',
   };
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));

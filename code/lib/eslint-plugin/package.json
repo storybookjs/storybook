@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-storybook",
-  "version": "10.0.0-beta.9",
+  "version": "10.2.0-alpha.4",
   "description": "Storybook ESLint Plugin: Best practice rules for writing stories",
   "keywords": [
     "eslint",
@@ -38,7 +38,6 @@
     "README.md"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
     "generate-rule": "jiti ./scripts/generate-rule",
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
@@ -68,5 +67,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

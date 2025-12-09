@@ -6,9 +6,13 @@ import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
+// eslint-disable-next-line depend/ban-dependencies
+import type { ExecaChildProcess } from 'execa';
 
+import type { ExecuteCommandOptions } from '../utils/command';
+import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 
@@ -34,7 +38,7 @@ export type PnpmListOutput = PnpmListItem[];
 const PNPM_ERROR_REGEX = /(ELIFECYCLE|ERR_PNPM_[A-Z_]+)\s+(.*)/i;
 
 export class PNPMProxy extends JsPackageManager {
-  readonly type = 'pnpm';
+  readonly type = PackageManagerName.PNPM;
 
   installArgs: string[] | undefined;
 
@@ -49,12 +53,9 @@ export class PNPMProxy extends JsPackageManager {
     return `pnpm run ${command}`;
   }
 
-  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
-    return `pnpm dlx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
-  }
-
   async getPnpmVersion(): Promise<string> {
-    const result = await this.executeCommand({
+    const result = await executeCommand({
+      cwd: this.cwd,
       command: 'pnpm',
       args: ['--version'],
     });
@@ -72,31 +73,18 @@ export class PNPMProxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  public runPackageCommandSync(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ): string {
-    return this.executeCommandSync({
-      command: 'pnpm',
-      args: ['exec', command, ...args],
-      cwd,
-      stdio,
-    });
+  getPackageCommand(args: string[]): string {
+    return `pnpm exec ${args.join(' ')}`;
   }
 
-  public runPackageCommand(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ) {
-    return this.executeCommand({
+  public runPackageCommand({
+    args,
+    ...options
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+    return executeCommand({
       command: 'pnpm',
-      args: ['exec', command, ...args],
-      cwd,
-      stdio,
+      args: ['exec', ...args],
+      ...options,
     });
   }
 
@@ -106,16 +94,16 @@ export class PNPMProxy extends JsPackageManager {
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
   ) {
-    return this.executeCommand({
+    return executeCommand({
       command: 'pnpm',
       args: [command, ...args],
-      cwd,
+      cwd: cwd ?? this.cwd,
       stdio,
     });
   }
 
   public async getRegistryURL() {
-    const childProcess = await this.executeCommand({
+    const childProcess = await executeCommand({
       command: 'pnpm',
       args: ['config', 'get', 'registry'],
     });
@@ -125,7 +113,7 @@ export class PNPMProxy extends JsPackageManager {
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     try {
-      const childProcess = await this.executeCommand({
+      const childProcess = await executeCommand({
         command: 'pnpm',
         args: ['list', pattern.map((p) => `"${p}"`).join(' '), '--json', `--depth=${depth}`],
         env: {
@@ -142,6 +130,7 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
+  // TODO: Remove pnp compatibility code in SB11
   public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
       cwd: this.primaryPackageJson.operationDir,
@@ -173,7 +162,10 @@ export class PNPMProxy extends JsPackageManager {
     }
 
     const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;
@@ -192,7 +184,7 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
-    return this.executeCommand({
+    return executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       stdio: prompt.getPreferredStdio(),
@@ -209,7 +201,7 @@ export class PNPMProxy extends JsPackageManager {
 
     const commandArgs = ['add', ...args, ...this.getInstallArgs()];
 
-    return this.executeCommand({
+    return executeCommand({
       command: 'pnpm',
       args: commandArgs,
       stdio: prompt.getPreferredStdio(),
@@ -224,7 +216,7 @@ export class PNPMProxy extends JsPackageManager {
     const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
 
     try {
-      const process = this.executeCommand({
+      const process = executeCommand({
         command: 'pnpm',
         args: ['info', packageName, ...args],
       });

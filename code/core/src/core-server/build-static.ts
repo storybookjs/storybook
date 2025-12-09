@@ -1,6 +1,5 @@
-import { cp, mkdir } from 'node:fs/promises';
+import { cp, mkdir, writeFile } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
 
 import {
   loadAllPresets,
@@ -14,9 +13,11 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
+import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../shared/utils/module';
+import { renderManifestComponentsPage } from './manifest';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
@@ -40,9 +41,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   options.outputDir = resolve(options.outputDir);
   options.configDir = resolve(options.configDir);
 
-  logger.info(
-    `=> Cleaning outputDir: ${picocolors.cyan(relative(process.cwd(), options.outputDir))}`
-  );
+  logger.step(`Cleaning outputDir: ${picocolors.cyan(relative(process.cwd(), options.outputDir))}`);
   if (options.outputDir === '/') {
     throw new Error("Won't remove directory '/'. Check your outputDir!");
   }
@@ -68,7 +67,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     'storybook/internal/core-server/presets/common-override-preset'
   );
 
-  logger.info('=> Loading presets');
+  logger.step('Loading presets');
   let presets = await loadAllPresets({
     corePresets: [commonPreset, ...corePresets],
     overridePresets: [commonOverridePreset],
@@ -146,6 +145,32 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
         initializedStoryIndexGenerator as Promise<StoryIndexGenerator>
       )
     );
+
+    if (features?.experimentalComponentsManifest) {
+      const componentManifestGenerator = await presets.apply(
+        'experimental_componentManifestGenerator'
+      );
+      const indexGenerator = await initializedStoryIndexGenerator;
+      if (componentManifestGenerator && indexGenerator) {
+        try {
+          const manifests = await componentManifestGenerator(
+            indexGenerator as unknown as import('storybook/internal/core-server').StoryIndexGenerator
+          );
+          await mkdir(join(options.outputDir, 'manifests'), { recursive: true });
+          await writeFile(
+            join(options.outputDir, 'manifests', 'components.json'),
+            JSON.stringify(manifests)
+          );
+          await writeFile(
+            join(options.outputDir, 'manifests', 'components.html'),
+            renderManifestComponentsPage(manifests)
+          );
+        } catch (e) {
+          logger.error('Failed to generate manifests/components.json');
+          logger.error(e instanceof Error ? e : String(e));
+        }
+      }
+    }
   }
 
   if (!core?.disableProjectJson) {
@@ -159,9 +184,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   if (options.ignorePreview) {
-    logger.info(`=> Not building preview`);
+    logger.info(`Not building preview`);
   } else {
-    logger.info('=> Building preview..');
+    logger.info('Building preview..');
   }
 
   const startTime = process.hrtime();
@@ -175,7 +200,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
               options: fullOptions,
             })
             .then(async (previewStats) => {
-              logger.trace({ message: '=> Preview built', time: process.hrtime(startTime) });
+              logger.trace({ message: 'Preview built', time: process.hrtime(startTime) });
 
               const statsOption = options.webpackStatsJson || options.statsJson;
               if (statsOption) {
@@ -184,7 +209,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
               }
             })
             .catch((error) => {
-              logger.error('=> Failed to build the preview');
+              logger.error('Failed to build the preview');
               process.exitCode = 1;
               throw error;
             }),
@@ -192,25 +217,27 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     ...effects,
   ]);
 
-  // Now the code has successfully built, we can count this as a 'dev' event.
-  // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible
+  // Now the code has successfully built, we can count this as a 'build' event.
+  // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible.
   if (!core?.disableTelemetry && !options.test) {
-    effects.push(
-      initializedStoryIndexGenerator.then(async (generator) => {
-        const storyIndex = await generator?.getIndex();
-        const payload = {
-          precedingUpgrade: await getPrecedingUpgrade(),
-        };
-        if (storyIndex) {
-          Object.assign(payload, {
-            storyIndex: summarizeIndex(storyIndex),
-          });
-        }
+    try {
+      const generator = await initializedStoryIndexGenerator;
+      const storyIndex = await generator?.getIndex();
+      const payload: any = {
+        precedingUpgrade: await getPrecedingUpgrade(),
+      };
+      if (storyIndex) {
+        Object.assign(payload, {
+          storyIndex: summarizeIndex(storyIndex),
+        });
+      }
 
-        await telemetry('build', payload, { configDir: options.configDir });
-      })
-    );
+      await telemetry('build', payload, { configDir: options.configDir });
+    } catch (e) {
+      // Telemetry failures should not fail the build process
+      logger.debug?.(`Build telemetry failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 
-  logger.info(`=> Output directory: ${options.outputDir}`);
+  logger.step(`Output directory: ${options.outputDir}`);
 }

@@ -24,11 +24,13 @@ import type {
 
 import * as find from 'empathic/find';
 import picocolors from 'picocolors';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
+import { resolveImport, supportedExtensions } from '../../common';
 import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle';
 import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories';
 import { IndexingError, MultipleIndexingError } from './IndexingError';
@@ -161,16 +163,20 @@ export class StoryIndexGenerator {
 
     const pathToSubIndex = {} as SpecifierStoriesCache;
 
-    const fullGlob = slash(join(specifier.directory, specifier.files));
+    // Calculate a new CWD for each glob to handle paths that go above the workingDir.
+    const globCwd = slash(resolve(workingDir, specifier.directory));
+    // Prepend ./ to patterns starting with ! to ensure they are treated as extglobs
+    const globPattern = specifier.files.startsWith('!') ? `./${specifier.files}` : specifier.files;
 
     // Dynamically import globby because it is a pure ESM module
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
-    const files = await globby(fullGlob, {
+    // Execute globby within the new CWD to ensure `ignore` patterns work correctly.
+    const files = await globby(globPattern, {
       absolute: true,
-      cwd: workingDir,
-      ...commonGlobOptions(fullGlob),
+      cwd: globCwd,
+      ...commonGlobOptions(globPattern),
     });
 
     if (files.length === 0 && !ignoreWarnings) {
@@ -380,21 +386,16 @@ export class StoryIndexGenerator {
     absolutePath: Path,
     matchPath: TsconfigPaths.MatchPath | undefined
   ) {
-    let rawPath = rawComponentPath;
-    if (matchPath) {
-      rawPath = matchPath(rawPath) ?? rawPath;
+    const matchedPath =
+      matchPath?.(rawComponentPath, undefined, undefined, supportedExtensions) ?? rawComponentPath;
+    let resolved;
+    try {
+      resolved = resolveImport(matchedPath, { basedir: dirname(absolutePath) });
+    } catch (_) {
+      return matchedPath;
     }
-
-    const absoluteComponentPath = resolve(dirname(absolutePath), rawPath);
-    const existing = ['', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts']
-      .map((ext) => `${absoluteComponentPath}${ext}`)
-      .find((candidate) => existsSync(candidate));
-    if (existing) {
-      const relativePath = relative(this.options.workingDir, existing);
-      return slash(normalizeStoryPath(relativePath));
-    }
-
-    return rawComponentPath;
+    const relativePath = relative(this.options.workingDir, resolved);
+    return slash(normalizeStoryPath(relativePath));
   }
 
   async extractStories(

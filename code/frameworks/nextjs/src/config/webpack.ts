@@ -1,13 +1,11 @@
 import { fileURLToPath } from 'node:url';
 
 import type { NextConfig } from 'next';
-import semver from 'semver';
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { addScopedAlias, getNextjsVersion, resolveNextConfig } from '../utils';
+import { addScopedAlias, isNextVersionGte, resolveNextConfig } from '../utils';
 
-const nextjsVersion = getNextjsVersion();
-const isNext16orNewer = semver.gte(nextjsVersion, '16.0.0');
+const isNext16orNewer = isNextVersionGte('16.0.0');
 
 const tryResolve = (path: string) => {
   try {

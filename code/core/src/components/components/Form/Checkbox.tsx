@@ -2,29 +2,31 @@ import React from 'react';
 
 import { color, styled } from 'storybook/theming';
 
-const Input = styled.input({
+const Input = styled.input(({ theme }) => ({
   appearance: 'none',
-  display: 'grid',
-  placeContent: 'center',
-  width: 14,
-  height: 14,
-  flexShrink: 0,
-  margin: 0,
-  border: `1px solid ${color.border}`,
+  backgroundColor: theme.input.background,
+  border: `1px solid ${theme.base === 'dark' ? 'hsl(0 0 100 / 0.4)' : 'hsl(0 0 0 / 0.44)'}`,
   borderRadius: 2,
-  backgroundColor: 'white',
+  display: 'grid',
+  flexShrink: 0,
+  height: 14,
+  margin: 0,
+  placeContent: 'center',
   transition: 'background-color 0.1s',
+  width: 14,
 
   '&:enabled': {
     cursor: 'pointer',
   },
   '&:disabled': {
-    backgroundColor: color.medium,
+    backgroundColor: 'transparent',
+    borderColor: theme.input.border,
   },
   '&:disabled:checked, &:disabled:indeterminate': {
-    backgroundColor: color.mediumdark,
+    backgroundColor: theme.base === 'dark' ? color.dark : theme.color.mediumdark,
   },
   '&:checked, &:indeterminate': {
+    border: 'none',
     backgroundColor: color.secondary,
   },
   '&:checked::before': {
@@ -40,10 +42,10 @@ const Input = styled.input({
     background: 'white',
   },
   '&:enabled:focus-visible': {
-    outline: `1px solid ${color.secondary}`,
-    outlineOffset: 1,
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: 2,
   },
-});
+}));
 
 export const Checkbox = (props: React.InputHTMLAttributes<HTMLInputElement>) => {
   return <Input {...props} type="checkbox" />;

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Badge, IconButton, WithTooltip } from 'storybook/internal/components';
+import { Badge, Button, PopoverProvider } from 'storybook/internal/components';
 import type {
   API_PreparedIndexEntry,
   StoryIndex,
@@ -27,6 +27,16 @@ const BUILT_IN_TAGS = new Set([
   'test-fn',
 ]);
 
+const StyledButton = styled(Button)<{ isHighlighted: boolean }>(({ isHighlighted, theme }) => ({
+  '&:focus-visible': {
+    outlineOffset: 4,
+  },
+  ...(isHighlighted && {
+    background: theme.background.hoverable,
+    color: theme.color.secondary,
+  }),
+}));
+
 // Immutable set operations
 const add = (set: Set<string>, id: string) => {
   const copy = new Set(set);
@@ -40,10 +50,6 @@ const remove = (set: Set<string>, id: string) => {
 };
 const equal = (left: Set<string>, right: Set<string>) =>
   left.size === right.size && new Set([...left, ...right]).size === left.size;
-
-const Wrapper = styled.div({
-  position: 'relative',
-});
 
 const TagSelected = styled(Badge)(({ theme }) => ({
   position: 'absolute',
@@ -59,18 +65,17 @@ const TagSelected = styled(Badge)(({ theme }) => ({
   lineHeight: 'px',
   boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
   fontSize: theme.typography.size.s1 - 1,
-  background: theme.color.secondary,
-  color: theme.color.lightest,
+  background: theme.barSelectedColor,
+  color: theme.color.inverseText,
 }));
 
 export interface TagsFilterProps {
   api: API;
   indexJson: StoryIndex;
-  isDevelopment: boolean;
   tagPresets: TagsOptions;
 }
 
-export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFilterProps) => {
+export const TagsFilter = ({ api, indexJson, tagPresets }: TagsFilterProps) => {
   const filtersById = useMemo<{ [id: string]: Filter }>(() => {
     const userTagsCounts = Object.values(indexJson.entries).reduce<{ [key: Tag]: number }>(
       (acc, entry) => {
@@ -217,19 +222,13 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
     [expanded, setExpanded]
   );
 
-  // Hide the entire UI if there are no tags and it's a built Storybook
-  if (Object.keys(filtersById).length === 0 && !isDevelopment) {
-    return null;
-  }
-
   return (
-    <WithTooltip
+    <PopoverProvider
       placement="bottom"
-      trigger="click"
       onVisibleChange={setExpanded}
-      // render the tooltip in the mobile menu (so that the stacking context is correct) and fallback to document.body on desktop
-      portalContainer="#storybook-mobile-menu"
-      tooltip={() => (
+      offset={8}
+      padding={0}
+      popover={() => (
         <TagsFilterPanel
           api={api}
           filtersById={filtersById}
@@ -238,21 +237,26 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
           toggleFilter={toggleFilter}
           setAllFilters={setAllFilters}
           resetFilters={resetFilters}
-          isDevelopment={isDevelopment}
           isDefaultSelection={
             equal(includedFilters, defaultIncluded) && equal(excludedFilters, defaultExcluded)
           }
           hasDefaultSelection={defaultIncluded.size > 0 || defaultExcluded.size > 0}
         />
       )}
-      closeOnOutsideClick
     >
-      <Wrapper>
-        <IconButton key="tags" title="Tag filters" active={tagsActive} onClick={handleToggleExpand}>
-          <FilterIcon />
-        </IconButton>
+      <StyledButton
+        key="tags"
+        ariaLabel="Tag filters"
+        ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
+        aria-haspopup="dialog"
+        variant="ghost"
+        padding="small"
+        isHighlighted={tagsActive}
+        onClick={handleToggleExpand}
+      >
+        <FilterIcon />
         {includedFilters.size + excludedFilters.size > 0 && <TagSelected />}
-      </Wrapper>
-    </WithTooltip>
+      </StyledButton>
+    </PopoverProvider>
   );
 };

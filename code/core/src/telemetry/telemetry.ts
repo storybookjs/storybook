@@ -109,17 +109,13 @@ export async function sendTelemetry(
   try {
     request = prepareRequest(data, context, options);
     tasks.push(request);
-    if (options.immediate) {
-      await Promise.all(tasks);
-    } else {
-      await request;
-    }
 
     const sessionId = await getSessionId();
     const eventId = nanoid();
     const body = { ...rest, eventType, eventId, sessionId, metadata, payload, context };
 
-    await saveToCache(eventType, body);
+    const waitFor = options.immediate ? tasks : [request];
+    await Promise.all([...waitFor, saveToCache(eventType, body)]);
   } catch (err) {
     //
   } finally {

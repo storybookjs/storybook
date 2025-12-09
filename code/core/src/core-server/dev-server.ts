@@ -1,20 +1,23 @@
 import { logConfig, normalizeStories } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
-import type { Options } from 'storybook/internal/types';
+import type { ComponentsManifest, Options } from 'storybook/internal/types';
+import { type ComponentManifestGenerator } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';
 import invariant from 'tiny-invariant';
 
 import { telemetry } from '../telemetry';
-import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import { renderManifestComponentsPage } from './manifest';
+import { type StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { doTelemetry } from './utils/doTelemetry';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
 import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
 import { registerIndexJsonRoute } from './utils/index-json';
+import { useStorybookMetadata } from './utils/metadata';
 import { getMiddleware } from './utils/middleware';
 import { openInBrowser } from './utils/open-browser/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
@@ -66,6 +69,9 @@ export async function storybookDevServer(options: Options) {
 
   (await getMiddleware(options.configDir))(app);
 
+  // Apply experimental_devServer preset to allow addons/frameworks to extend the dev server with middlewares, etc.
+  await options.presets.apply('experimental_devServer', app);
+
   const { port, host, initialPath } = options;
   invariant(port, 'expected options to have a port');
   const proto = options.https ? 'https' : 'http';
@@ -91,6 +97,12 @@ export async function storybookDevServer(options: Options) {
     logConfig('Preview webpack config', await previewBuilder.getConfig(options));
   }
 
+  // Boot up the `/project.json` route handler early to avoid Vite Dev Server
+  // serving a NX monorepo `project.json` file instead.
+  if (!core?.disableProjectJson) {
+    useStorybookMetadata(app, options.configDir);
+  }
+
   const managerResult = options.previewOnly
     ? undefined
     : await managerBuilder.start({
@@ -105,9 +117,7 @@ export async function storybookDevServer(options: Options) {
     await Promise.resolve();
 
   if (!options.ignorePreview) {
-    if (!options.quiet) {
-      logger.info('=> Starting preview..');
-    }
+    logger.debug('Starting preview..');
     previewResult = await previewBuilder
       .start({
         startTime: process.hrtime(),
@@ -117,7 +127,7 @@ export async function storybookDevServer(options: Options) {
         channel: serverChannel,
       })
       .catch(async (e: any) => {
-        logger.error('=> Failed to build the preview');
+        logger.error('Failed to build the preview');
         process.exitCode = 1;
 
         await managerBuilder?.bail().catch();
@@ -151,6 +161,62 @@ export async function storybookDevServer(options: Options) {
     throw indexError;
   }
 
+  const features = await options.presets.apply('features');
+  if (features?.experimentalComponentsManifest) {
+    app.use('/manifests/components.json', async (req, res) => {
+      try {
+        const componentManifestGenerator = await options.presets.apply(
+          'experimental_componentManifestGenerator'
+        );
+        const indexGenerator = await storyIndexGeneratorPromise;
+        if (componentManifestGenerator && indexGenerator) {
+          const manifest = await componentManifestGenerator(
+            indexGenerator as unknown as import('storybook/internal/core-server').StoryIndexGenerator
+          );
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(manifest));
+          return;
+        }
+        res.statusCode = 400;
+        res.end('No component manifest generator configured.');
+        return;
+      } catch (e) {
+        logger.error(e instanceof Error ? e : String(e));
+        res.statusCode = 500;
+        res.end(e instanceof Error ? e.toString() : String(e));
+        return;
+      }
+    });
+
+    app.get('/manifests/components.html', async (req, res) => {
+      try {
+        const componentManifestGenerator = await options.presets.apply(
+          'experimental_componentManifestGenerator'
+        );
+        const indexGenerator = await storyIndexGeneratorPromise;
+
+        if (!componentManifestGenerator || !indexGenerator) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.end(`<pre>No component manifest generator configured.</pre>`);
+          return;
+        }
+
+        const manifest = (await componentManifestGenerator(
+          indexGenerator as unknown as import('storybook/internal/core-server').StoryIndexGenerator
+        )) as ComponentsManifest;
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.end(renderManifestComponentsPage(manifest));
+      } catch (e) {
+        // logger?.error?.(e instanceof Error ? e : String(e));
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        invariant(e instanceof Error);
+        res.end(`<pre>${e.stack}</pre>`);
+      }
+    });
+  }
   // Now the preview has successfully started, we can count this as a 'dev' event.
   doTelemetry(app, core, storyIndexGeneratorPromise, options);
 

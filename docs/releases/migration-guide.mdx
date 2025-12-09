@@ -29,7 +29,7 @@ This guide is meant to help you **upgrade from Storybook 9.x to 10** successfull
 
 The rest of this guide will help you upgrade successfully, either automatically or manually. But first, there are some [breaking changes][full-migration-notes] in Storybook 10. Here are the most impactful changes you should know about before you go further:
 
-* [Main configuration (`.storybook/main.js|ts`) must be valid ESM](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#the-storybookmain-file-must-be-valid-esm)
+* [Main configuration (`.storybook/main.js|ts`) and other presets must be valid ESM](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#the-storybookmain-file-and-other-presets-must-be-valid-esm)
 * Ecosystem updates
   * [Node 20.19+ or 22.12+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs-2019-or-2212-required)
 
@@ -67,7 +67,7 @@ To add Storybook to a project that isn’t currently using Storybook:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="create-command.md" />
+<CodeSnippets path="create-command.md" copyEvent="CreateCommandCopy" />
 
 {/* prettier-ignore-end */}
 
@@ -97,4 +97,4 @@ In addition to the automigrations and manual migrations above, there are also op
 
 ### `test-runner` to `addon-vitest`
 
-`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/integrations/vitest-addon.mdx#automatic-setup).
+`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/integrations/vitest-addon/index.mdx#automatic-setup).

@@ -193,11 +193,11 @@ export const doctor = async ({
 
   let packageManager!: JsPackageManager;
   let configDir!: string;
-  let storybookVersion!: string;
+  let versionInstalled: string | undefined;
   let mainConfig!: StorybookConfigRaw;
 
   try {
-    ({ packageManager, configDir, storybookVersion, mainConfig } = await getStorybookData({
+    ({ packageManager, configDir, versionInstalled, mainConfig } = await getStorybookData({
       configDir: userSpecifiedConfigDir,
       packageManagerName,
     }));
@@ -227,7 +227,7 @@ export const doctor = async ({
     {
       configDir,
       packageManager,
-      storybookVersion,
+      storybookVersion: versionInstalled,
       mainConfig,
     },
   ]);
@@ -248,7 +248,7 @@ export async function getDoctorDiagnostics({
 }: {
   configDir: string;
   packageManager: JsPackageManager;
-  storybookVersion: string;
+  storybookVersion?: string;
   mainConfig: StorybookConfigRaw;
 }): Promise<DoctorCheckResult[]> {
   const results: DoctorCheckResult[] = [];

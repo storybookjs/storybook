@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { type Color, styled, typography } from 'storybook/theming';
+import { TooltipNote, WithTooltip } from 'storybook/internal/components';
 
-import { TooltipNote, WithTooltip } from '../../components';
+import { type Color, styled, typography } from 'storybook/theming';
 
 export type PlayStatus = 'rendering' | 'playing' | 'completed' | 'errored' | 'aborted';
 
@@ -62,7 +62,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       trigger="hover"
       tooltip={<TooltipNote note={badgeNote} />}
     >
-      <StyledBadge aria-label="Story status" status={status}>
+      <StyledBadge aria-label={`Story status: ${badgeText}`} status={status}>
         {badgeText}
       </StyledBadge>
     </WithTooltip>

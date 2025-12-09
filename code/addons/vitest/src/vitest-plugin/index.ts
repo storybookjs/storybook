@@ -24,7 +24,7 @@ import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
-import { dirname, join, normalize, relative, resolve, sep } from 'pathe';
+import { join, normalize, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
@@ -135,6 +135,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
   const stories = await presets.apply('stories', []);
 
+  // We can probably add more config here. See code/builders/builder-vite/src/vite-config.ts
+  // This one is specifically needed for code/builders/builder-vite/src/preset.ts
+  const commonConfig = { root: resolve(finalOptions.configDir, '..') };
+
   const [
     { storiesGlobs },
     framework,
@@ -149,7 +153,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
     presets.apply('env', {}),
-    presets.apply<{ plugins?: Plugin[] }>('viteFinal', {}),
+    presets.apply<{ plugins?: Plugin[]; root: string }>('viteFinal', commonConfig),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
     presets.apply('core'),
@@ -267,6 +271,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           ],
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything
+          // TODO: Remove the check once we don't support Vitest 3 anymore
           ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
             ? {
                 server: {

@@ -10,6 +10,7 @@ export interface CheckOptions {
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];
+  hasCsfFactoryPreview: boolean;
 }
 
 export interface RunOptions<ResultType> {
@@ -77,13 +78,12 @@ export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageMana
   mainConfigPath: string;
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
-  /** The version of Storybook before the migration. */
-  beforeVersion: string;
   storybookVersion: string;
   /** Whether the migration is part of an upgrade. */
   isUpgrade: boolean;
   isLatest: boolean;
   storiesPaths: string[];
+  hasCsfFactoryPreview: boolean;
 }
 export interface AutofixOptionsFromCLI {
   fixId?: FixId;

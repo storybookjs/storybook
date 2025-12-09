@@ -8,7 +8,7 @@ Storybook is a large monorepo built with TypeScript, React, and various other fr
 
 ## System Requirements
 
-- **Node.js**: 22.16.0 (see `.nvmrc`)
+- **Node.js**: 22.21.1 (see `.nvmrc`)
 - **Package Manager**: Yarn 4.9.1
 - **Operating System**: Linux/macOS (CI environment)
 
@@ -17,7 +17,7 @@ Storybook is a large monorepo built with TypeScript, React, and various other fr
 ```
 storybook/
 ├── .github/           # GitHub configurations and workflows
-├── code/              # Main monorepo codebase
+├── code/              # Main codebase
 │   ├── .storybook/    # Configuration for internal UI Storybook
 │   ├── core/          # Core Storybook package
 │   ├── lib/           # Core supporting libraries
@@ -30,7 +30,7 @@ storybook/
 ├── sandbox/           # Generated sandbox environments (created by yarn task --task sandbox)
 ├── scripts/           # Build and development scripts
 ├── docs/              # Documentation
-└── test-storybooks/   # Test configurations
+└── test-storybooks/   # Test repos
 ```
 
 ## Essential Commands and Build Times
@@ -38,7 +38,7 @@ storybook/
 ### Installation & Setup
 ```bash
 # Install all dependencies (run from repository root)
-yarn i
+yarn
 # Time: ~2.5 minutes
 # Timeout: Use 300+ seconds for bash commands
 ```
@@ -148,7 +148,7 @@ The repository includes 20 task scripts in `scripts/tasks/`:
 ## Recommended Development Workflow
 
 ### For Code Changes
-1. Install dependencies: `yarn i` (if needed)
+1. Install dependencies: `yarn` (if needed)
 2. Compile packages: `yarn task --task compile`
 3. Make your changes
 4. Compile packages with `cd code && yarn task --task compile`
@@ -285,7 +285,7 @@ cd code && yarn storybook:vitest
 ## Troubleshooting
 
 ### Common Issues
-1. **Build Failures**: Often resolved by running `yarn i` followed by `yarn task --task compile`
+1. **Build Failures**: Often resolved by running `yarn` followed by `yarn task --task compile`
 2. **Port Conflicts**: Storybook UI uses port 6006 by default
 3. **Memory Issues**: Large compilation tasks may require increased Node.js memory limits
 4. **Environment-Specific Issues**: Sandbox generation may occasionally fail due to dependency conflicts - use Storybook UI for testing as fallback
@@ -309,6 +309,47 @@ cd code && yarn storybook:vitest
 - ESLint and Prettier configurations are enforced
 - TypeScript strict mode is enabled
 - Follow existing patterns in the codebase
+
+### Code Quality Checks
+After making file changes, always run both formatting and linting checks:
+1. **Prettier**: Format code with `yarn prettier --write <file>`
+2. **ESLint**: Check for linting issues with `yarn lint:js:cmd <file>`
+   - The full eslint command is: `cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives`
+   - Use the `lint:js:cmd` script for convenience
+   - Fix any errors or warnings before committing
+
+### Testing Guidelines
+When writing unit tests:
+1. **Export functions for testing**: If functions need to be tested, export them from the module
+2. **Write meaningful tests**: Tests should actually import and call the functions being tested, not just verify syntax patterns
+3. **Use coverage reports**: Run tests with coverage to identify untested code
+   - Run coverage: `yarn vitest run --coverage <test-file>`
+   - Aim for high coverage of business logic (75%+ for statements/lines)
+   - Use coverage reports to identify missing test cases
+   - Focus on covering:
+     - All branches and conditions
+     - Edge cases and error paths
+     - Different input variations
+4. **Mock external dependencies**: Use `vi.mock()` to mock file system, loggers, and other external dependencies
+5. **Run tests before committing**: Ensure all tests pass with `yarn test` or `yarn vitest run`
+
+### Logging
+When adding logging to code, always use the appropriate logger:
+- **Server-side code** (Node.js): Use `logger` from `storybook/internal/node-logger`
+  ```typescript
+  import { logger } from 'storybook/internal/node-logger';
+  logger.info('Server message');
+  logger.warn('Warning message');
+  logger.error('Error message');
+  ```
+- **Client-side code** (browser): Use `logger` from `storybook/internal/client-logger`
+  ```typescript
+  import { logger } from 'storybook/internal/client-logger';
+  logger.info('Client message');
+  logger.warn('Warning message');
+  logger.error('Error message');
+  ```
+- **DO NOT** use `console.log`, `console.warn`, or `console.error` directly unless in isolated files where importing loggers would significantly increase bundle size
 
 ### Git Workflow
 - Work on feature branches

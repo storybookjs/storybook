@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type ProjectAutomigrationData,
   collectAutomigrationsAcrossProjects,
+  promptForAutomigrations,
 } from './multi-project';
 import type { Fix } from './types';
 
@@ -29,6 +30,11 @@ const taskLogMock = {
   message: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
+  group: vi.fn().mockReturnValue({
+    message: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+  }),
 };
 
 describe('multi-project automigrations', () => {
@@ -58,6 +64,7 @@ describe('multi-project automigrations', () => {
     storybookVersion: '8.0.0',
     beforeVersion: '7.0.0',
     storiesPaths: [],
+    hasCsfFactoryPreview: false,
   });
 
   describe('collectAutomigrationsAcrossProjects', () => {
@@ -118,6 +125,133 @@ describe('multi-project automigrations', () => {
       expect(results).toHaveLength(2);
       expect(results[0].fix.id).toBe('fix1');
       expect(results[0].reports.every((report) => report.status === 'check_failed')).toBe(true);
+    });
+  });
+
+  describe('promptForAutomigrations', () => {
+    it('should call multiselect with required: false', async () => {
+      const { prompt } = await import('storybook/internal/node-logger');
+      const multiselectMock = vi.mocked(prompt.multiselect);
+      multiselectMock.mockResolvedValue(['fix1']);
+
+      const fix1 = createMockFix('fix1', { needsFix: true });
+      const project1 = createMockProject('/project1/.storybook');
+
+      const automigrations = [
+        {
+          fix: fix1,
+          reports: [
+            {
+              result: { needsFix: true },
+              status: 'check_succeeded' as const,
+              project: project1,
+            },
+          ],
+        },
+      ];
+
+      await promptForAutomigrations(automigrations, { dryRun: false, yes: false });
+
+      expect(multiselectMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Select automigrations to run',
+          required: false,
+        })
+      );
+    });
+
+    it('should return empty array when user selects nothing', async () => {
+      const { prompt } = await import('storybook/internal/node-logger');
+      const multiselectMock = vi.mocked(prompt.multiselect);
+      multiselectMock.mockResolvedValue([]);
+
+      const fix1 = createMockFix('fix1', { needsFix: true });
+      const project1 = createMockProject('/project1/.storybook');
+
+      const automigrations = [
+        {
+          fix: fix1,
+          reports: [
+            {
+              result: { needsFix: true },
+              status: 'check_succeeded' as const,
+              project: project1,
+            },
+          ],
+        },
+      ];
+
+      const result = await promptForAutomigrations(automigrations, {
+        dryRun: false,
+        yes: false,
+      });
+
+      expect(result).toEqual([]);
+    });
+
+    it('should return all automigrations when yes option is true', async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const logSpy = vi.spyOn(logger, 'log');
+
+      const fix1 = createMockFix('fix1', { needsFix: true });
+      const fix2 = createMockFix('fix2', { needsFix: true });
+      const project1 = createMockProject('/project1/.storybook');
+
+      const automigrations = [
+        {
+          fix: fix1,
+          reports: [
+            {
+              result: { needsFix: true },
+              status: 'check_succeeded' as const,
+              project: project1,
+            },
+          ],
+        },
+        {
+          fix: fix2,
+          reports: [
+            {
+              result: { needsFix: true },
+              status: 'check_succeeded' as const,
+              project: project1,
+            },
+          ],
+        },
+      ];
+
+      const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
+
+      expect(result).toEqual(automigrations);
+      expect(logSpy).toHaveBeenCalledWith('Running all detected automigrations:');
+    });
+
+    it('should return empty array when dryRun is true', async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const logSpy = vi.spyOn(logger, 'log');
+
+      const fix1 = createMockFix('fix1', { needsFix: true });
+      const project1 = createMockProject('/project1/.storybook');
+
+      const automigrations = [
+        {
+          fix: fix1,
+          reports: [
+            {
+              result: { needsFix: true },
+              status: 'check_succeeded' as const,
+              project: project1,
+            },
+          ],
+        },
+      ];
+
+      const result = await promptForAutomigrations(automigrations, { dryRun: true, yes: false });
+
+      expect(result).toEqual([]);
+      expect(logSpy).toHaveBeenCalledWith(
+        'Detected automigrations (dry run - no changes will be made):'
+      );
     });
   });
 });

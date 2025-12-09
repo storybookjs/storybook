@@ -21,6 +21,9 @@ jobs:
   - unit-tests:
       requires:
         - build
+  - stories-tests:
+      requires:
+        - build
   - script-checks:
       requires:
         - build
@@ -31,27 +34,31 @@ jobs:
       requires:
         - unit-tests
   - create-sandboxes:
-      parallelism: 13
+      parallelism: 14
       requires:
         - build
   - chromatic-sandboxes:
-      parallelism: 10
+      parallelism: 11
       requires:
         - create-sandboxes
   - e2e-production:
-      parallelism: 8
+      parallelism: 6
       requires:
         - create-sandboxes
   - e2e-dev:
-      parallelism: 1
+      parallelism: 8
       requires:
         - create-sandboxes
   - test-runner-production:
-      parallelism: 8
+      parallelism: 9
       requires:
         - create-sandboxes
   - vitest-integration:
       parallelism: 5
+      requires:
+        - create-sandboxes
+  - check-sandboxes:
+      parallelism: 1
       requires:
         - create-sandboxes
   # TODO: don't forget to reenable this
@@ -59,7 +66,13 @@ jobs:
   #          parallelism: 5
   #          requires:
   #            - create-sandboxes
+  - test-yarn-pnp:
+      requires:
+        - build
   - e2e-ui:
+      requires:
+        - build
+  - e2e-ui-vitest-3:
       requires:
         - build
   - test-init-features:

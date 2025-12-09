@@ -4,7 +4,7 @@ import { basename } from 'node:path';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
-import { debounce } from 'es-toolkit/compat';
+import { debounce } from 'es-toolkit/function';
 import type { Polka } from 'polka';
 
 import type { StoryIndexGenerator } from './StoryIndexGenerator';
@@ -39,7 +39,7 @@ export function registerIndexJsonRoute({
   normalizedStories: NormalizedStoriesSpecifier[];
 }) {
   const maybeInvalidate = debounce(() => serverChannel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
-    leading: true,
+    edges: ['leading', 'trailing'],
   });
   watchStorySpecifiers(normalizedStories, { workingDir }, async (specifier, path, removed) => {
     (await storyIndexGeneratorPromise).invalidate(specifier, path, removed);

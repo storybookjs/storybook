@@ -6,11 +6,8 @@ import path from 'path';
 
 import type { FileInfo } from '../../automigrate/codemod';
 import { cleanupTypeImports } from './csf-factories-utils';
+import { removeUnusedTypes } from './remove-unused-types';
 
-// Name of properties that should not be renamed to `Story.input.xyz`
-const reuseDisallowList = ['play', 'run', 'extends', 'story'];
-
-// Name of types that should be removed from the import list
 const typesDisallowList = [
   'Story',
   'StoryFn',
@@ -20,6 +17,9 @@ const typesDisallowList = [
   'ComponentStory',
   'ComponentMeta',
 ];
+
+// Name of properties that should not be renamed to `Story.input.xyz`
+const reuseDisallowList = ['play', 'run', 'extends', 'story'];
 
 type Options = { previewConfigPath: string; useSubPathImports: boolean };
 
@@ -239,12 +239,16 @@ export async function storyToCsfFactory(
     },
   });
 
+  // If no stories were transformed, bail early to avoid having a mixed CSF syntax and therefore a broken indexer.
+  if (transformedStoryExports.size === 0) {
+    logger.warn(
+      `Skipping codemod for ${info.path}: no stories were transformed. Either there are no stories, file has been already transformed or some stories are written in an unsupported format.`
+    );
+    return info.source;
+  }
+
   // If some stories were detected but not all could be transformed, we skip the codemod to avoid mixed csf syntax and therefore a broken indexer.
-  if (
-    detectedStoryNames.length > 0 &&
-    transformedStoryExports.size > 0 &&
-    transformedStoryExports.size !== detectedStoryNames.length
-  ) {
+  if (detectedStoryNames.length > 0 && transformedStoryExports.size !== detectedStoryNames.length) {
     logger.warn(
       `Skipping codemod for ${info.path}:\nSome of the detected stories [${detectedStoryNames
         .map((name) => `"${name}"`)
@@ -323,27 +327,7 @@ export async function storyToCsfFactory(
     programNode.body.unshift(configImport);
   }
 
-  // Remove unused type aliases e.g. `type Story = StoryObj<typeof meta>;`
-  programNode.body.forEach((node, index) => {
-    if (t.isTSTypeAliasDeclaration(node)) {
-      const isUsed = programNode.body.some((otherNode) => {
-        if (t.isVariableDeclaration(otherNode)) {
-          return otherNode.declarations.some(
-            (declaration) =>
-              t.isIdentifier(declaration.init) && declaration.init.name === node.id.name
-          );
-        }
-        return false;
-      });
-
-      if (!isUsed) {
-        programNode.body.splice(index, 1);
-      }
-    }
-  });
-
-  // Remove type imports – now inferred – from @storybook/* packages
-  programNode.body = cleanupTypeImports(programNode, typesDisallowList);
+  removeUnusedTypes(programNode, csf._ast);
 
   return printCsf(csf).code;
 }

@@ -1,6 +1,6 @@
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
-import { type Meta, type Story, getStoryChildren, isStory, toTestId } from 'storybook/internal/csf';
+import { type Meta, type Story, getStoryChildren, isStory } from 'storybook/internal/csf';
 import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';
@@ -8,7 +8,7 @@ import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/p
 
 import { setViewport } from './viewports';
 
-declare module '@vitest/browser/context' {
+declare module 'vitest/browser' {
   interface BrowserCommands {
     getInitialGlobals: () => Promise<Record<string, any>>;
   }

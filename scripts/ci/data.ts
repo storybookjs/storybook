@@ -720,7 +720,7 @@ const windows_sandbox_dev = defineJob(
         run: {
           name: 'Running E2E Tests',
           working_directory: 'code',
-          command: 'yarn task e2e-tests --template react-vite/default-ts --no-link -s never',
+          command: 'yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never',
         },
       },
     ],

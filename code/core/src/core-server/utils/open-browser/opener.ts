@@ -37,8 +37,7 @@ function getBrowserEnv() {
   } else if (
     value.toLowerCase().endsWith('.js') ||
     value.toLowerCase().endsWith('.mjs') ||
-    value.toLowerCase().endsWith('.cjs') ||
-    value.toLowerCase().endsWith('.sh')
+    value.toLowerCase().endsWith('.cjs')
   ) {
     action = Actions.SCRIPT;
   } else {

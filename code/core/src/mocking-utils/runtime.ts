@@ -10,7 +10,7 @@ const runtimeTemplatePath = join(
   'mocker-runtime.template.js'
 );
 
-export function getMockerRuntime() {
+export function getMockerRuntime(absWorkingDir = process.cwd()) {
   // Use esbuild to bundle the runtime script and its dependencies (`@vitest/mocker`, etc.)
   // into a single, self-contained string of code.
   const bundleResult = buildSync({
@@ -20,6 +20,7 @@ export function getMockerRuntime() {
     format: 'esm',
     target: 'es2020',
     external: ['msw/browser', 'msw/core/http'],
+    absWorkingDir, // Tell esbuild where to resolve modules from
   });
 
   const runtimeScriptContent = bundleResult.outputFiles[0].text;

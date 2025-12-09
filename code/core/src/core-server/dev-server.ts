@@ -17,6 +17,7 @@ import { getCachingMiddleware } from './utils/get-caching-middleware';
 import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
 import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
+import { useStorybookMetadata } from './utils/metadata';
 import { getMiddleware } from './utils/middleware';
 import { openInBrowser } from './utils/open-browser/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
@@ -78,6 +79,12 @@ export async function storybookDevServer(options: Options) {
 
   if (options.debugWebpack) {
     logConfig('Preview webpack config', await previewBuilder.getConfig(options));
+  }
+
+  // Boot up the `/project.json` route handler early to avoid Vite Dev Server
+  // serving a NX monorepo `project.json` file instead.
+  if (!core?.disableProjectJson) {
+    useStorybookMetadata(app, options.configDir);
   }
 
   const managerResult = options.previewOnly

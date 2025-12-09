@@ -171,7 +171,7 @@ const executors = {
   },
 } as const;
 
-type SomethingImplementation = {
+type JobImplementation = {
   executor:
     | {
         name: keyof typeof executors;
@@ -186,7 +186,7 @@ type SomethingImplementation = {
   parallelism?: number;
 };
 
-function defineJob<K extends string, I extends SomethingImplementation>(
+function defineJob<K extends string, I extends JobImplementation>(
   name: K,
   implementation: I,
   requires = [] as string[]
@@ -736,7 +736,7 @@ const jobs = {
 
       return acc;
     },
-    {} as Record<string, SomethingImplementation>
+    {} as Record<string, JobImplementation>
   ),
   [windows_sandbox_dev.id]: windows_sandbox_dev.implementation,
   [windows_sandbox_build.id]: windows_sandbox_build.implementation,

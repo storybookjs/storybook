@@ -57,6 +57,14 @@ async function ensureSymlink(src: string, dest: string): Promise<void> {
 
 // Windows-compatible symlink function that falls back to copying
 async function ensureSymlinkOrCopy(source: string, target: string): Promise<void> {
+  if (process.env.CI) {
+    /**
+     * On CI, we don't need to symlink, we can just copy the files because there's no benefit in
+     * having a symlink on CI, but it does cause issues if we persist the workspace to windows.
+     */
+    await cp(source, target, { recursive: true, force: true });
+    return;
+  }
   try {
     await ensureSymlink(source, target);
   } catch (error: any) {

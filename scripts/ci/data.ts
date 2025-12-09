@@ -665,10 +665,8 @@ const windows_sandbox_build = defineJob(
       {
         run: {
           name: 'Running E2E Tests',
-          command: [
-            `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
-            `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1`,
-          ].join('\n'),
+          working_directory: 'code',
+          command: 'yarn task e2e-tests --template react-vite/default-ts --no-link -s never',
         },
       },
     ],
@@ -687,11 +685,42 @@ const windows_sandbox_dev = defineJob(
     steps: [
       git.checkout({ forceHttps: true }),
       node.installOnWindows(),
-      workspace.attach('C:\\Users\\circleci\\project'),
+      workspace.attach('C:\\Users\\circleci'),
       {
         run: {
           name: 'Install dependencies',
           command: 'yarn install',
+        },
+      },
+      verdaccio.start(),
+      server.wait([...verdaccio.ports]),
+      {
+        run: {
+          name: 'Run Install',
+          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite-default-ts`,
+          command: 'yarn install',
+        },
+      },
+      {
+        run: {
+          name: 'Install playwright',
+          command: 'yarn playwright install chromium --with-deps',
+        },
+      },
+      {
+        run: {
+          name: 'Run storybook',
+          background: true,
+          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite-default-ts`,
+          command: 'yarn install',
+        },
+      },
+      server.wait(['8001']),
+      {
+        run: {
+          name: 'Running E2E Tests',
+          working_directory: 'code',
+          command: 'yarn task e2e-tests --template react-vite/default-ts --no-link -s never',
         },
       },
     ],

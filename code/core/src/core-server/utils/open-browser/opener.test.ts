@@ -74,15 +74,33 @@ describe('openBrowser BROWSER script handling', () => {
   });
 
   it('falls back to opening the browser when BROWSER points to a shell script', () => {
-    process.env.BROWSER = '/tmp/browser.sh';
+    process.env.BROWSER = '/tmp/customBrowser.sh';
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    delete process.env.WSL_DISTRO_NAME;
+    delete process.env.WSL_INTEROP;
 
     openBrowser('http://localhost:6006/');
 
     expect(vi.mocked(spawn)).not.toHaveBeenCalled();
     expect(vi.mocked(open)).toHaveBeenCalledWith('http://localhost:6006/', {
-      app: '/tmp/browser.sh',
+      app: '/tmp/customBrowser.sh',
       wait: false,
       url: true,
     });
+  });
+
+  it('executes a shell script on WSL', () => {
+    process.env.BROWSER = '/tmp/findAHandler.sh';
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    process.env.WSL_DISTRO_NAME = 'Ubuntu';
+
+    openBrowser('http://localhost:6006/');
+
+    expect(vi.mocked(spawn)).toHaveBeenCalledWith(
+      '/bin/sh',
+      ['/tmp/browser.sh', 'http://localhost:6006/'],
+      { stdio: 'inherit' }
+    );
+    expect(vi.mocked(open)).not.toHaveBeenCalled();
   });
 });

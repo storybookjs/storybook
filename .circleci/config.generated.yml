@@ -725,7 +725,7 @@ workflows:
                       - build-linux
             - react-vite-default-ts--create:
                   requires:
-                      - linux_sandboxes
+                      - sandboxes
             - react-vite-default-ts--build:
                   requires:
                       - react-vite-default-ts--create

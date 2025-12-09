@@ -261,7 +261,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           workspace.persist([`${SANDBOX_DIR}/${id}`]),
         ],
       },
-      ['linux_sandboxes']
+      ['sandboxes']
     ),
     defineJob(
       names.build,

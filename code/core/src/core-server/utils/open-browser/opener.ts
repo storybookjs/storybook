@@ -12,6 +12,7 @@ import open, { type App } from 'open';
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../../../common';
+import { StorybookError } from '../../../storybook-error';
 
 // https://github.com/sindresorhus/open#app
 const OSX_CHROME = 'google chrome';
@@ -20,7 +21,27 @@ const Actions = Object.freeze({
   NONE: 0,
   BROWSER: 1,
   SCRIPT: 2,
+  SHELL_SCRIPT: 3,
 });
+
+const isWindows = process.platform === 'win32';
+
+function isWsl() {
+  if (!isWindows) {
+    return false;
+  }
+
+  if (process.env.WSL_DISTRO_NAME || process.env.WSL_INTEROP) {
+    return true;
+  }
+
+  try {
+    const version = require('fs').readFileSync('/proc/version', 'utf8').toLowerCase();
+    return version.includes('microsoft');
+  } catch {
+    return false;
+  }
+}
 
 function getBrowserEnv() {
   // Attempt to honor this environment variable.
@@ -40,17 +61,26 @@ function getBrowserEnv() {
     value.toLowerCase().endsWith('.cjs')
   ) {
     action = Actions.SCRIPT;
+  } else if (value.toLowerCase().endsWith('.sh')) {
+    action = Actions.SHELL_SCRIPT;
   } else {
     action = Actions.BROWSER;
   }
   return { action, value, args };
 }
 
-function executeNodeScript(scriptPath: string, url: string) {
-  const extraArgs = process.argv.slice(2);
-  const child = spawn(process.execPath, [scriptPath, ...extraArgs, url], {
-    stdio: 'inherit',
-  });
+class BrowserEnvError extends StorybookError {
+  constructor(message: string) {
+    super({
+      category: 'CORE_SERVER',
+      code: 1,
+      message,
+      name: 'BrowserEnvError',
+    });
+  }
+}
+
+function attachCloseHandler(child: ReturnType<typeof spawn>, scriptPath: string) {
   child.on('close', (code) => {
     if (code !== 0) {
       console.log();
@@ -60,6 +90,23 @@ function executeNodeScript(scriptPath: string, url: string) {
       return;
     }
   });
+}
+
+function executeNodeScript(scriptPath: string, url: string) {
+  const extraArgs = process.argv.slice(2);
+  const child = spawn(process.execPath, [scriptPath, ...extraArgs, url], {
+    stdio: 'inherit',
+  });
+  attachCloseHandler(child, scriptPath);
+  return true;
+}
+
+function executeShellScript(scriptPath: string, url: string) {
+  const extraArgs = process.argv.slice(2);
+  const child = spawn('/bin/sh', [scriptPath, ...extraArgs, url], {
+    stdio: 'inherit',
+  });
+  attachCloseHandler(child, scriptPath);
   return true;
 }
 
@@ -115,7 +162,7 @@ function startBrowserProcess(
         });
 
         return true;
-      } catch (err) {
+      } catch {
         // Ignore errors.
       }
     }
@@ -142,7 +189,7 @@ function startBrowserProcess(
     const options = { app: browser, wait: false, url: true };
     open(url, options).catch(() => {}); // Prevent `unhandledRejection` error.
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
@@ -153,6 +200,9 @@ function startBrowserProcess(
  */
 export function openBrowser(url: string) {
   const { action, value, args } = getBrowserEnv();
+  const canRunShell = !isWindows || isWsl();
+  const browserTarget = value as unknown as App | readonly App[] | undefined;
+
   switch (action) {
     case Actions.NONE: {
       // Special case: BROWSER="none" will prevent opening completely.
@@ -160,15 +210,24 @@ export function openBrowser(url: string) {
     }
     case Actions.SCRIPT: {
       if (!value) {
-        throw new Error('BROWSER environment variable is not set.');
+        throw new BrowserEnvError('BROWSER environment variable is not set.');
       }
       return executeNodeScript(value, url);
     }
+    case Actions.SHELL_SCRIPT: {
+      if (!value) {
+        throw new BrowserEnvError('BROWSER environment variable is not set.');
+      }
+      if (canRunShell) {
+        return executeShellScript(value, url);
+      }
+      return startBrowserProcess(browserTarget, url, args);
+    }
     case Actions.BROWSER: {
-      return startBrowserProcess(value as App | readonly App[] | undefined, url, args);
+      return startBrowserProcess(browserTarget, url, args);
     }
     default: {
-      throw new Error('Not implemented.');
+      throw new BrowserEnvError('Not implemented.');
     }
   }
 }

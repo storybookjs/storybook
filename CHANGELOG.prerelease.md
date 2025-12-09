@@ -1,3 +1,35 @@
+## 10.2.0-alpha.4
+
+- Addon-Vitest: Isolate error reasons during postinstall - [#33295](https://github.com/storybookjs/storybook/pull/33295), thanks @valentinpalkovic!
+- CLI: Fix react native template not copying in init - [#33308](https://github.com/storybookjs/storybook/pull/33308), thanks @dannyhw!
+- Core: Retry `writeFile` cache when EBUSY error occurs - [#32981](https://github.com/storybookjs/storybook/pull/32981), thanks @reduckted!
+- Docs: Support Rolldown bundler module namespace objects - [#33280](https://github.com/storybookjs/storybook/pull/33280), thanks @akornmeier!
+- SvelteKit: Align JS template with TS template - [#31451](https://github.com/storybookjs/storybook/pull/31451), thanks @brettearle!
+
+## 10.2.0-alpha.3
+
+- Addon Docs: Skip `!autodocs` stories when computing primary story - [#32712](https://github.com/storybookjs/storybook/pull/32712), thanks @ia319!
+- Angular: Honor --loglevel and --logfile in dev/build - [#33212](https://github.com/storybookjs/storybook/pull/33212), thanks @valentinpalkovic!
+- CSF: Export type to prevent `type cannot be named`-errors - [#33216](https://github.com/storybookjs/storybook/pull/33216), thanks @unional!
+- Chore: Upgrade Chromatic CLI - [#33176](https://github.com/storybookjs/storybook/pull/33176), thanks @ghengeveld!
+- Core: Enhance getPrettier function to provide prettier interface - [#33260](https://github.com/storybookjs/storybook/pull/33260), thanks @valentinpalkovic!
+- Core: Fix cwd handling for negated globs - [#33241](https://github.com/storybookjs/storybook/pull/33241), thanks @ia319!
+- NextJS: Alias image to use fileURLToPath for better resolution - [#33256](https://github.com/storybookjs/storybook/pull/33256), thanks @ndelangen!
+- Nextj.js: Support top-level weight/style in next/font/local with string src - [#32998](https://github.com/storybookjs/storybook/pull/32998), thanks @Chiman2937!
+- Telemetry: Cache Storybook metadata by main config content hash - [#33247](https://github.com/storybookjs/storybook/pull/33247), thanks @valentinpalkovic!
+- TypeScript: Fix summary undefined type issue - [#32585](https://github.com/storybookjs/storybook/pull/32585), thanks @afsalshamsudeen!
+
+## 10.2.0-alpha.2
+
+- CLI: Remove any return type of getAbsolutePath - [#32977](https://github.com/storybookjs/storybook/pull/32977), thanks @nzws!
+- Checklist: Fix how state changes are reported and drop some completion restrictions - [#33217](https://github.com/storybookjs/storybook/pull/33217), thanks @ghengeveld!
+- Core: Avoid late layout shift and improve ChecklistWidget perceived performance - [#33184](https://github.com/storybookjs/storybook/pull/33184), thanks @ghengeveld!
+- Core: Minor UI fixes - [#33218](https://github.com/storybookjs/storybook/pull/33218), thanks @ghengeveld!
+- Preview: Prevent error in RN due to `navigator?.clipboard` - [#33219](https://github.com/storybookjs/storybook/pull/33219), thanks @ndelangen!
+- Solid: Add Solid to the list of supported frameworks for addon-vitest - [#33084](https://github.com/storybookjs/storybook/pull/33084), thanks @valentinpalkovic!
+- Telemetry: Add playwright-prompt - [#33229](https://github.com/storybookjs/storybook/pull/33229), thanks @valentinpalkovic!
+- UI: Fix excessive height in TabbedArgsTable - [#33205](https://github.com/storybookjs/storybook/pull/33205), thanks @Sidnioulz!
+
 ## 10.2.0-alpha.1
 
 - Core: Improve globbing using dynamic CWD (REVERT) - [#33201](https://github.com/storybookjs/storybook/pull/33201), thanks @ndelangen!

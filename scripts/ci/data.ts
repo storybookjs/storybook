@@ -20,7 +20,7 @@ import {
 
 const CACHE_KEYS = (platform = 'linux') =>
   [
-    `v4-${platform}-node_modules`,
+    `v5-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',
@@ -635,27 +635,27 @@ const windows_sandbox_build = defineJob(
       },
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
-      // {
-      //   run: {
-      //     name: 'Run Install',
-      //     working_directory: `C:\\Users\\circleci\\sandboxes\\react-vite\\default-ts`,
-      //     command: 'yarn install',
-      //   },
-      // },
-      // {
-      //   run: {
-      //     name: 'Install playwright',
-      //     working_directory: `C:\\Users\\circleci\\sandboxes\\react-vite\\default-ts`,
-      //     command: 'yarn playwright install chromium --with-deps',
-      //   },
-      // },
-      // {
-      //   run: {
-      //     name: 'Build storybook',
-      //     working_directory: `C:\\Users\\circleci\\sandboxes\\react-vite\\default-ts`,
-      //     command: 'yarn build-storybook',
-      //   },
-      // },
+      {
+        run: {
+          name: 'Run Install',
+          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite\\default-ts`,
+          command: 'yarn install',
+        },
+      },
+      {
+        run: {
+          name: 'Install playwright',
+          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite\\default-ts`,
+          command: 'yarn playwright install chromium --with-deps',
+        },
+      },
+      {
+        run: {
+          name: 'Build storybook',
+          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite\\default-ts`,
+          command: 'yarn build-storybook',
+        },
+      },
     ],
   },
   [sandboxes[0].jobs[0].id]

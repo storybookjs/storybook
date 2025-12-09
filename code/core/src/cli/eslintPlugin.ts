@@ -176,27 +176,29 @@ export const configureFlatConfig = async (code: string) => {
     },
 
     Program(path) {
-      // Check if file uses CommonJS by looking for require calls or module.exports
-      path.node.body.forEach((node) => {
-        if (
-          t.isVariableDeclaration(node) &&
-          node.declarations.some(
-            (decl) =>
-              t.isCallExpression(decl.init) && t.isIdentifier(decl.init.callee, { name: 'require' })
-          )
-        ) {
-          isCommonJS = true;
-        }
-        if (
+      // Check if file uses CommonJS by looking for module.exports or if all imports use require()
+      const hasModuleExports = path.node.body.some(
+        (node) =>
           t.isExpressionStatement(node) &&
           t.isAssignmentExpression(node.expression) &&
           t.isMemberExpression(node.expression.left) &&
           t.isIdentifier(node.expression.left.object, { name: 'module' }) &&
           t.isIdentifier(node.expression.left.property, { name: 'exports' })
-        ) {
-          isCommonJS = true;
-        }
-      });
+      );
+
+      const hasRequire = path.node.body.some(
+        (node) =>
+          t.isVariableDeclaration(node) &&
+          node.declarations.some(
+            (decl) =>
+              t.isCallExpression(decl.init) && t.isIdentifier(decl.init.callee, { name: 'require' })
+          )
+      );
+
+      const hasImport = path.node.body.some((node) => t.isImportDeclaration(node));
+
+      // Consider it CommonJS if it has module.exports OR has require() but no ES6 imports
+      isCommonJS = hasModuleExports || (hasRequire && !hasImport);
 
       const alreadyImported = path.node.body.some(
         (node) =>

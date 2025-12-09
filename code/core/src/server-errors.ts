@@ -5,6 +5,8 @@ import type { Status } from './shared/status-store';
 import type { StatusTypeId } from './shared/status-store';
 import { StorybookError } from './storybook-error';
 
+export { StorybookError } from './storybook-error';
+
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
  * path of which the error is thrown. For instance: If it's from `@storybook/node-logger`, then

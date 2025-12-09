@@ -11,6 +11,7 @@ import {
   getStorybookInfo,
 } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
+import type { StorybookError } from 'storybook/internal/server-errors';
 import {
   AddonVitestPostinstallConfigUpdateError,
   AddonVitestPostinstallError,
@@ -26,7 +27,6 @@ import { dirname, relative, resolve } from 'pathe';
 import { satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import type { StorybookError } from '../../../core/src/storybook-error';
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 import { DOCUMENTATION_LINK } from './constants';
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
@@ -37,7 +37,7 @@ const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'
 const addonA11yName = '@storybook/addon-a11y';
 
 export default async function postInstall(options: PostinstallOptions) {
-  const errors: StorybookError[] = [];
+  const errors: InstanceType<typeof StorybookError>[] = [];
   const { logger, prompt } = options;
 
   const packageManager = JsPackageManagerFactory.getPackageManager({

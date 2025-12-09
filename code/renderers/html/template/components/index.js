@@ -5,5 +5,5 @@ import { Form } from './Form';
 import { Html } from './Html';
 import { Pre } from './Pre';
 
-globalThis.Components = { Button, Pre, Form, Html };
+globalThis.__TEMPLATE_COMPONENTS__ = { Button, Pre, Form, Html };
 globalThis.storybookRenderer = 'html';

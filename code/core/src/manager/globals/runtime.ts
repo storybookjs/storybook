@@ -36,13 +36,8 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/internal/channels': CHANNELS,
   'storybook/internal/client-logger': CLIENT_LOGGER,
   'storybook/internal/components': COMPONENTS,
-  'storybook/internal/core-errors': EVENTS,
   'storybook/internal/core-events': EVENTS,
   'storybook/internal/manager-errors': EVENTS_MANAGER_ERRORS,
   'storybook/internal/router': ROUTER,
   'storybook/internal/types': TYPES,
-
-  'storybook/internal/manager-api': MANAGER_API,
-  'storybook/internal/theming': THEMING,
-  'storybook/internal/theming/create': THEMINGCREATE,
 };

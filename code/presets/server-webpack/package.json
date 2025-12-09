@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-server-webpack",
-  "version": "9.0.0-beta.11",
+  "version": "10.2.0-alpha.3",
   "description": "Storybook for Server: View HTML snippets from a server in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -19,29 +19,15 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./preset": {
-      "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./dist/loader": {
-      "types": "./dist/loader.d.ts",
-      "import": "./dist/loader.mjs",
-      "require": "./dist/loader.js"
-    },
+    "./loader": "./dist/loader.js",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "README.md",
@@ -49,36 +35,22 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
-  },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
-    "safe-identifier": "^0.4.1",
+    "safe-identifier": "^0.4.2",
     "ts-dedent": "^2.0.0",
-    "yaml-loader": "^0.8.0"
+    "yaml-loader": "^0.8.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.8.3",
-    "yaml": "^2.3.1"
+    "yaml": "^2.8.0"
   },
   "peerDependencies": {
     "storybook": "workspace:^"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/loader.ts"
-    ],
-    "platform": "node"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

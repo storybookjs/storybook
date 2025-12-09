@@ -2,26 +2,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { JsPackageManager } from './JsPackageManager';
 
+const mockVersions = vi.hoisted(() => ({
+  '@storybook/react': '8.3.0',
+}));
+
 vi.mock('../versions', () => ({
-  default: {
-    '@storybook/react': '8.3.0',
-  },
+  default: mockVersions,
 }));
 
 describe('JsPackageManager', () => {
   let jsPackageManager: JsPackageManager;
-  let mockLatestVersion: ReturnType<typeof vi.fn>;
-  let mockStorybookPackagesVersions: Record<string, string>;
+  let mockLatestVersion: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    mockLatestVersion = vi.fn();
-    mockStorybookPackagesVersions = {
-      '@storybook/react': '8.3.0',
-    };
-
     // @ts-expect-error Ignore abstract class error
     jsPackageManager = new JsPackageManager();
-    jsPackageManager.latestVersion = mockLatestVersion;
+    mockLatestVersion = vi.spyOn(jsPackageManager, 'latestVersion');
 
     vi.clearAllMocks();
   });

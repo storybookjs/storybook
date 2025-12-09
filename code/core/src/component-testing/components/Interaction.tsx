@@ -1,8 +1,8 @@
 import * as React from 'react';
 
-import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 
-import { BookmarkHollowIcon, ListUnorderedIcon, LockIcon } from '@storybook/icons';
+import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
@@ -99,13 +99,9 @@ const RowActions = styled.div({
   padding: 6,
 });
 
-export const StyledIconButton = styled(IconButton as any)(({ theme }) => ({
+const StyledButton = styled(Button)(({ theme }) => ({
   color: theme.textMutedColor,
   margin: '0 3px',
-}));
-
-const Note = styled(TooltipNote)(({ theme }) => ({
-  fontFamily: theme.typography.fonts.base,
 }));
 
 const RowMessage = styled('div')(({ theme }) => ({
@@ -116,24 +112,6 @@ const RowMessage = styled('div')(({ theme }) => ({
     margin: 0,
     padding: 0,
   },
-}));
-
-const RenderIcon = styled(BookmarkHollowIcon)(({ theme }) => ({
-  color: theme.color.seafoam,
-}));
-
-const RenderLabel = styled('span')(({ theme }) => ({
-  color: theme.color.defaultText,
-  fontFamily: theme.typography.fonts.base,
-  fontSize: theme.typography.size.s2 - 1,
-}));
-
-const RenderLockIcon = styled(LockIcon)(({ theme }) => ({
-  display: 'block',
-  width: 12,
-  height: 12,
-  margin: 6,
-  color: theme.color.mediumdark,
 }));
 
 const ErrorName = styled.span(({ theme }) => ({
@@ -151,7 +129,7 @@ const ErrorExplainer = styled.p(({ theme }) => ({
   textWrap: 'balance',
 }));
 
-export const Exception = ({ exception }: { exception: Call['exception'] }) => {
+const Exception = ({ exception }: { exception: Call['exception'] }) => {
   const filter = useAnsiToHtmlFilter();
   if (!exception) {
     return null;
@@ -223,37 +201,7 @@ export const Interaction = ({
   }
 
   if (call.id === INTERNAL_RENDER_CALL_ID) {
-    return (
-      <RowContainer call={call} pausedAt={undefined}>
-        <RowHeader isInteractive>
-          <RowLabel aria-label="Render step" call={call} disabled>
-            {call.status === CallStates.ERROR ? (
-              <StatusIcon status={CallStates.ERROR} />
-            ) : call.status === CallStates.ACTIVE ? (
-              <StatusIcon status={CallStates.ACTIVE} />
-            ) : (
-              <RenderIcon />
-            )}
-            <MethodCallWrapper style={{ marginLeft: 6, marginBottom: 1 }}>
-              <RenderLabel>Render story</RenderLabel>
-            </MethodCallWrapper>
-          </RowLabel>
-          <RowActions>
-            <WithTooltip
-              trigger="hover"
-              hasChrome={false}
-              tooltip={<Note note="Render is the first step of all interactions" />}
-            >
-              <RenderLockIcon />
-            </WithTooltip>
-          </RowActions>
-        </RowHeader>
-
-        {call.status === CallStates.ERROR && call.exception?.callId === call.id && (
-          <Exception exception={call.exception} />
-        )}
-      </RowContainer>
-    );
+    return null;
   }
 
   return (
@@ -274,14 +222,15 @@ export const Interaction = ({
         </RowLabel>
         <RowActions>
           {(childCallIds?.length ?? 0) > 0 && (
-            <WithTooltip
-              hasChrome={false}
-              tooltip={<Note note={`${isCollapsed ? 'Show' : 'Hide'} interactions`} />}
+            <StyledButton
+              padding="small"
+              variant="ghost"
+              onClick={toggleCollapsed}
+              ariaLabel={`${isCollapsed ? 'Show' : 'Hide'} steps`}
             >
-              <StyledIconButton onClick={toggleCollapsed}>
-                <ListUnorderedIcon />
-              </StyledIconButton>
-            </WithTooltip>
+              {/* FIXME: accordion pattern */}
+              {isCollapsed ? <ChevronDownIcon /> : <ChevronUpIcon />}
+            </StyledButton>
           )}
         </RowActions>
       </RowHeader>

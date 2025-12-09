@@ -81,7 +81,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -97,8 +97,9 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
@@ -117,7 +118,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="Button.stories.js|jsx" renderer="solid" language="js"
 import { Button } from './Button';
 
 export default {
@@ -133,7 +134,7 @@ export default {
 ```
 
 ```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta } from 'storybook-solidjs';
+import type { Meta } from 'storybook-solidjs-vite';
 
 import { Button } from './Button';
 
@@ -251,4 +252,41 @@ export default meta;
 type Story = StoryObj;
 
 export const Example: Story = {};
+```
+
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
 ```

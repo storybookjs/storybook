@@ -9,7 +9,7 @@ import {
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
 
-import type { ClickEventDetails } from 'storybook/highlight';
+import type { ClickEventDetails, HighlightMenuItem } from 'storybook/highlight';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
 import {
   experimental_getStatusStore,
@@ -27,7 +27,7 @@ import { convert, themes } from 'storybook/theming';
 import { getFriendlySummaryForAxeResult, getTitleForAxeResult } from '../axeRuleMappingHelper';
 import { ADDON_ID, EVENTS, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from '../constants';
 import type { A11yParameters } from '../params';
-import type { A11YReport, EnhancedResult, EnhancedResults } from '../types';
+import type { A11YReport, EnhancedResult, EnhancedResults, Status } from '../types';
 import { RuleType } from '../types';
 import type { TestDiscrepancy } from './TestDiscrepancyMessage';
 
@@ -86,8 +86,6 @@ export const A11yContext = createContext<A11yContextStore>({
   handleSelectionChange: () => {},
 });
 
-type Status = 'initial' | 'manual' | 'running' | 'error' | 'component-test-error' | 'ran' | 'ready';
-
 export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const parameters = useParameter<A11yParameters>('a11y', {});
 
@@ -106,16 +104,22 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     return value;
   }, [api]);
 
-  const [results, setResults] = useAddonState<EnhancedResults | undefined>(ADDON_ID);
-  const [tab, setTab] = useState(() => {
-    const [type] = a11ySelection?.split('.') ?? [];
-    return type && Object.values(RuleType).includes(type as RuleType)
-      ? (type as RuleType)
-      : RuleType.VIOLATION;
+  const [state, setState] = useAddonState<{
+    ui: { highlighted: boolean; tab: RuleType };
+    results: EnhancedResults | undefined;
+    error: unknown;
+    status: Status;
+  }>(ADDON_ID, {
+    ui: {
+      highlighted: false,
+      tab: RuleType.VIOLATION,
+    },
+    results: undefined,
+    error: undefined,
+    status: getInitialStatus(manual),
   });
-  const [error, setError] = useState<unknown>(undefined);
-  const [status, setStatus] = useState<Status>(getInitialStatus(manual));
-  const [highlighted, setHighlighted] = useState(!!a11ySelection);
+
+  const { ui, results, error, status } = state;
 
   const { storyId } = useStorybookState();
   const currentStoryA11yStatusValue = experimental_useStatusStore(
@@ -128,17 +132,16 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         const current = statuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
         const previous = previousStatuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
         if (current?.value === 'status-value:error' && previous?.value !== 'status-value:error') {
-          setStatus('component-test-error');
+          setState((prev) => ({ ...prev, status: 'component-test-error' }));
         }
       }
     );
     return unsubscribe;
-  }, [storyId]);
+  }, [setState, storyId]);
 
-  const handleToggleHighlight = useCallback(
-    () => setHighlighted((prevHighlighted) => !prevHighlighted),
-    []
-  );
+  const handleToggleHighlight = useCallback(() => {
+    setState((prev) => ({ ...prev, ui: { ...prev.ui, highlighted: !prev.ui.highlighted } }));
+  }, [setState]);
 
   const [selectedItems, setSelectedItems] = useState<Map<string, string>>(() => {
     const initialValue = new Map();
@@ -153,9 +156,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
   // All items are expanded if something is selected from each result for the current tab
   const allExpanded = useMemo(() => {
-    const currentResults = results?.[tab];
-    return currentResults?.every((result) => selectedItems.has(`${tab}.${result.id}`)) ?? false;
-  }, [results, selectedItems, tab]);
+    const currentResults = results?.[ui.tab];
+    return currentResults?.every((result) => selectedItems.has(`${ui.tab}.${result.id}`)) ?? false;
+  }, [results, selectedItems, ui.tab]);
 
   const toggleOpen = useCallback(
     (event: React.SyntheticEvent<Element>, type: RuleType, item: EnhancedResult) => {
@@ -174,57 +177,66 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     setSelectedItems(
       (prev) =>
         new Map(
-          results?.[tab]?.map((result) => {
-            const key = `${tab}.${result.id}`;
+          results?.[ui.tab]?.map((result) => {
+            const key = `${ui.tab}.${result.id}`;
             return [key, prev.get(key) ?? `${key}.1`];
           }) ?? []
         )
     );
-  }, [results, tab]);
+  }, [results, ui.tab]);
 
   const handleSelectionChange = useCallback((key: string) => {
     const [type, id] = key.split('.');
     setSelectedItems((prev) => new Map(prev.set(`${type}.${id}`, key)));
   }, []);
 
-  const handleError = useCallback((err: unknown) => {
-    setStatus('error');
-    setError(err);
-  }, []);
+  const handleError = useCallback(
+    (err: unknown) => {
+      setState((prev) => ({ ...prev, status: 'error', error: err }));
+    },
+    [setState]
+  );
 
   const handleResult = useCallback(
     (axeResults: EnhancedResults, id: string) => {
       if (storyId === id) {
-        setStatus('ran');
-        setResults(axeResults);
+        setState((prev) => ({ ...prev, status: 'ran', results: axeResults }));
 
         setTimeout(() => {
-          if (status === 'ran') {
-            setStatus('ready');
-          }
-          if (selectedItems.size === 1) {
-            const [key] = selectedItems.values();
-            document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
+          setState((prev) => {
+            if (prev.status === 'ran') {
+              return { ...prev, status: 'ready' };
+            }
+            return prev;
+          });
+          setSelectedItems((prev) => {
+            if (prev.size === 1) {
+              const [key] = prev.values();
+              document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return prev;
+          });
         }, 900);
       }
     },
-    [setResults, status, storyId, selectedItems]
+    [storyId, setState, setSelectedItems]
   );
 
   const handleSelect = useCallback(
     (itemId: string, details: ClickEventDetails) => {
       const [type, id] = itemId.split('.');
-      const index =
-        results?.[type as RuleType]
-          ?.find((r) => r.id === id)
-          ?.nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;
-      if (index !== -1) {
-        const key = `${type}.${id}.${index + 1}`;
-        setSelectedItems(new Map([[`${type}.${id}`, key]]));
-        setTimeout(() => {
-          document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 100);
+      const { helpUrl, nodes } = results?.[type as RuleType]?.find((r) => r.id === id) || {};
+      const openedWindow = helpUrl && window.open(helpUrl, '_blank', 'noopener,noreferrer');
+      if (nodes && !openedWindow) {
+        const index =
+          nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;
+        if (index !== -1) {
+          const key = `${type}.${id}.${index + 1}`;
+          setSelectedItems(new Map([[`${type}.${id}`, key]]));
+          setTimeout(() => {
+            document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+        }
       }
     },
     [results]
@@ -248,14 +260,16 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const handleReset = useCallback(
     ({ newPhase }: { newPhase: string }) => {
       if (newPhase === 'loading') {
-        setResults(undefined);
-        setStatus(manual ? 'manual' : 'initial');
-      }
-      if (newPhase === 'afterEach' && !manual) {
-        setStatus('running');
+        setState((prev) => ({
+          ...prev,
+          results: undefined,
+          status: manual ? 'manual' : 'initial',
+        }));
+      } else if (newPhase === 'afterEach' && !manual) {
+        setState((prev) => ({ ...prev, status: 'running' }));
       }
     },
-    [manual, setResults]
+    [manual, setState]
   );
 
   const emit = useChannel(
@@ -267,7 +281,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       [STORY_RENDER_PHASE_CHANGED]: handleReset,
       [STORY_FINISHED]: handleReport,
       [STORY_HOT_UPDATED]: () => {
-        setStatus('running');
+        setState((prev) => ({ ...prev, status: 'running' }));
         emit(EVENTS.MANUAL, storyId, parameters);
       },
     },
@@ -275,9 +289,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   );
 
   const handleManual = useCallback(() => {
-    setStatus('running');
+    setState((prev) => ({ ...prev, status: 'running' }));
     emit(EVENTS.MANUAL, storyId, parameters);
-  }, [emit, parameters, storyId]);
+  }, [emit, parameters, setState, storyId]);
 
   const handleCopyLink = useCallback(async (linkPath: string) => {
     const { createCopyToClipboardFunction } = await import('storybook/internal/components');
@@ -290,80 +304,129 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   );
 
   useEffect(() => {
-    setStatus(getInitialStatus(manual));
-  }, [getInitialStatus, manual]);
+    setState((prev) => ({ ...prev, status: getInitialStatus(manual) }));
+  }, [getInitialStatus, manual, setState]);
+
+  const isInitial = status === 'initial';
+
+  // If a deep link is provided, prefer it once on mount and persist UI state accordingly
+  useEffect(() => {
+    if (!a11ySelection) {
+      return;
+    }
+    setState((prev) => {
+      const update = { ...prev.ui, highlighted: true };
+
+      const [type] = a11ySelection.split('.') ?? [];
+      if (type && Object.values(RuleType).includes(type as RuleType)) {
+        update.tab = type as RuleType;
+      }
+      return { ...prev, ui: update };
+    });
+
+    // We intentionally do not include setState in deps to avoid loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [a11ySelection]);
 
   useEffect(() => {
     emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/selected`);
     emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/others`);
 
-    if (!highlighted) {
+    if (!ui.highlighted || isInitial) {
       return;
     }
 
     const selected = Array.from(selectedItems.values()).flatMap((key) => {
       const [type, id, number] = key.split('.');
-      if (type !== tab) {
+      if (type !== ui.tab) {
         return [];
       }
       const result = results?.[type as RuleType]?.find((r) => r.id === id);
       const target = result?.nodes[Number(number) - 1]?.target;
       return target ? [String(target)] : [];
     });
-    emit(HIGHLIGHT, {
-      id: `${ADDON_ID}/selected`,
-      priority: 1,
-      selectors: selected,
-      styles: {
-        outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
-        backgroundColor: 'transparent',
-      },
-      hoverStyles: {
-        outlineWidth: '2px',
-      },
-      focusStyles: {
-        backgroundColor: 'transparent',
-      },
-      menu: results?.[tab as RuleType].map((result) => ({
-        id: `${tab}.${result.id}`,
-        title: getTitleForAxeResult(result),
-        description: getFriendlySummaryForAxeResult(result),
-        clickEvent: EVENTS.SELECT,
-        selectors: result.nodes
-          .flatMap((n) => n.target)
-          .map(String)
-          .filter((e) => selected.includes(e)),
-      })),
-    });
+    if (selected.length) {
+      emit(HIGHLIGHT, {
+        id: `${ADDON_ID}/selected`,
+        priority: 1,
+        selectors: selected,
+        styles: {
+          outline: `1px solid color-mix(in srgb, ${colorsByType[ui.tab]}, transparent 30%)`,
+          backgroundColor: 'transparent',
+        },
+        hoverStyles: {
+          outlineWidth: '2px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        menu: results?.[ui.tab as RuleType].map<HighlightMenuItem[]>((result) => {
+          const selectors = result.nodes
+            .flatMap((n) => n.target)
+            .map(String)
+            .filter((e) => selected.includes(e));
+          return [
+            {
+              id: `${ui.tab}.${result.id}:info`,
+              title: getTitleForAxeResult(result),
+              description: getFriendlySummaryForAxeResult(result),
+              selectors,
+            },
+            {
+              id: `${ui.tab}.${result.id}`,
+              iconLeft: 'info',
+              iconRight: 'shareAlt',
+              title: 'Learn how to resolve this violation',
+              clickEvent: EVENTS.SELECT,
+              selectors,
+            },
+          ];
+        }),
+      });
+    }
 
-    const others = results?.[tab as RuleType]
+    const others = results?.[ui.tab as RuleType]
       .flatMap((r) => r.nodes.flatMap((n) => n.target).map(String))
       .filter((e) => ![...unhighlightedSelectors, ...selected].includes(e));
-    emit(HIGHLIGHT, {
-      id: `${ADDON_ID}/others`,
-      selectors: others,
-      styles: {
-        outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
-        backgroundColor: `color-mix(in srgb, ${colorsByType[tab]}, transparent 60%)`,
-      },
-      hoverStyles: {
-        outlineWidth: '2px',
-      },
-      focusStyles: {
-        backgroundColor: 'transparent',
-      },
-      menu: results?.[tab as RuleType].map((result) => ({
-        id: `${tab}.${result.id}`,
-        title: getTitleForAxeResult(result),
-        description: getFriendlySummaryForAxeResult(result),
-        clickEvent: EVENTS.SELECT,
-        selectors: result.nodes
-          .flatMap((n) => n.target)
-          .map(String)
-          .filter((e) => !selected.includes(e)),
-      })),
-    });
-  }, [emit, highlighted, results, tab, selectedItems]);
+    if (others?.length) {
+      emit(HIGHLIGHT, {
+        id: `${ADDON_ID}/others`,
+        selectors: others,
+        styles: {
+          outline: `1px solid color-mix(in srgb, ${colorsByType[ui.tab]}, transparent 30%)`,
+          backgroundColor: `color-mix(in srgb, ${colorsByType[ui.tab]}, transparent 60%)`,
+        },
+        hoverStyles: {
+          outlineWidth: '2px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        menu: results?.[ui.tab as RuleType].map<HighlightMenuItem[]>((result) => {
+          const selectors = result.nodes
+            .flatMap((n) => n.target)
+            .map(String)
+            .filter((e) => !selected.includes(e));
+          return [
+            {
+              id: `${ui.tab}.${result.id}:info`,
+              title: getTitleForAxeResult(result),
+              description: getFriendlySummaryForAxeResult(result),
+              selectors,
+            },
+            {
+              id: `${ui.tab}.${result.id}`,
+              iconLeft: 'info',
+              iconRight: 'shareAlt',
+              title: 'Learn how to resolve this violation',
+              clickEvent: EVENTS.SELECT,
+              selectors,
+            },
+          ];
+        }),
+      });
+    }
+  }, [isInitial, emit, ui.highlighted, results, ui.tab, selectedItems]);
 
   const discrepancy: TestDiscrepancy = useMemo(() => {
     if (!currentStoryA11yStatusValue) {
@@ -390,14 +453,20 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       value={{
         parameters,
         results,
-        highlighted,
+        highlighted: ui.highlighted,
         toggleHighlight: handleToggleHighlight,
-        tab,
-        setTab,
+        tab: ui.tab,
+        setTab: useCallback(
+          (type: RuleType) => setState((prev) => ({ ...prev, ui: { ...prev.ui, tab: type } })),
+          [setState]
+        ),
         handleCopyLink,
-        status,
-        setStatus,
-        error,
+        status: status,
+        setStatus: useCallback(
+          (status: Status) => setState((prev) => ({ ...prev, status })),
+          [setState]
+        ),
+        error: error,
         handleManual,
         discrepancy,
         selectedItems,

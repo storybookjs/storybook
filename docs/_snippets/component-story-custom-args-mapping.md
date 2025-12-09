@@ -90,7 +90,7 @@ export default {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js"
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
@@ -183,8 +183,8 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
 import { Button } from './Button';
@@ -270,4 +270,65 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
+
+const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    arrow: {
+      options: Object.keys(arrows), // An array of serializable values
+      mapping: arrows, // Maps serializable option values to complex arg values
+      control: {
+        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+        labels: {
+          // 'labels' maps option values to string labels
+          ArrowUp: 'Up',
+          ArrowDown: 'Down',
+          ArrowLeft: 'Left',
+          ArrowRight: 'Right',
+        },
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Button } from './Button';
+
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
+
+const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    arrow: {
+      options: Object.keys(arrows), // An array of serializable values
+      mapping: arrows, // Maps serializable option values to complex arg values
+      control: {
+        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+        labels: {
+          // 'labels' maps option values to string labels
+          ArrowUp: 'Up',
+          ArrowDown: 'Down',
+          ArrowLeft: 'Left',
+          ArrowRight: 'Right',
+        },
+      },
+    },
+  },
+});
 ```

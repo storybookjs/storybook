@@ -190,7 +190,7 @@ export const generateReleaseDescription = ({
   
   ${changelogText}`
       // don't mention contributors in the release PR, to avoid spamming them
-      .replaceAll('[@', '[@ ')
+      .replaceAll('@', '')
       .replaceAll('"', '\\"')
       .replaceAll('`', '\\`')
       .replaceAll("'", "\\'")

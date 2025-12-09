@@ -1,7 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+
+import type { PackageJson } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
-import { cyan, yellow } from 'picocolors';
 import { gt } from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -25,10 +29,30 @@ async function getLatestVersions(
   return Promise.all(
     packages.map(async ([packageName]) => ({
       packageName,
-      beforeVersion: await packageManager.getInstalledVersion(packageName).catch(() => null),
-      afterVersion: await packageManager.latestVersion(packageName).catch(() => null),
+      beforeVersion: await packageManager.getInstalledVersion(packageName),
+      afterVersion: await packageManager.latestVersion(packageName),
     }))
   );
+}
+
+/** Filter out dependencies that are not valid e.g. yarn patches, git urls and other protocols */
+function isValidVersionType(packageName: string, specifier: string) {
+  if (
+    specifier.startsWith('patch:') ||
+    specifier.startsWith('file:') ||
+    specifier.startsWith('link:') ||
+    specifier.startsWith('portal:') ||
+    specifier.startsWith('git:') ||
+    specifier.startsWith('git+') ||
+    specifier.startsWith('http:') ||
+    specifier.startsWith('https:') ||
+    specifier.startsWith('workspace:')
+  ) {
+    logger.debug(`Skipping ${packageName} as it does not have a valid version type: ${specifier}`);
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -41,65 +65,62 @@ async function getLatestVersions(
  * See: https://github.com/storybookjs/storybook/issues/25731#issuecomment-1977346398
  */
 export const upgradeStorybookRelatedDependencies = {
-  id: 'upgradeStorybookRelatedDependencies',
-  versionRange: ['*.*.*', '*.*.*'],
+  id: 'upgrade-storybook-related-dependencies',
   promptType: 'auto',
-  promptDefaultValue: false,
+  defaultSelected: false,
 
   async check({ packageManager, storybookVersion }) {
+    logger.debug('Checking for incompatible storybook packages...');
     const analyzedPackages = await getIncompatibleStorybookPackages({
       currentStorybookVersion: storybookVersion,
       packageManager,
       skipErrors: true,
     });
 
-    const allDependencies = (await packageManager.getAllDependencies()) as Record<string, string>;
+    const allDependencies = packageManager.getAllDependencies();
+
     const storybookDependencies = Object.keys(allDependencies)
       .filter((dep) => dep.includes('storybook'))
       .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep));
+
     const incompatibleDependencies = analyzedPackages
       .filter((pkg) => pkg.hasIncompatibleDependencies)
       .map((pkg) => pkg.packageName);
 
     const uniquePackages = Array.from(
-      new Set([...storybookDependencies, ...incompatibleDependencies])
+      new Set(
+        [...storybookDependencies, ...incompatibleDependencies].filter((dep) =>
+          isValidVersionType(dep, allDependencies[dep])
+        )
+      )
     ).map((packageName) => [packageName, allDependencies[packageName]]) as [string, string][];
 
     const packageVersions = await getLatestVersions(packageManager, uniquePackages);
+    const upgradablePackages = packageVersions.filter(
+      ({ afterVersion, beforeVersion, packageName }) => {
+        if (
+          beforeVersion === null ||
+          afterVersion === null ||
+          allDependencies[packageName] === null
+        ) {
+          return false;
+        }
 
-    const upgradablePackages = packageVersions.filter(({ afterVersion, beforeVersion }) => {
-      if (beforeVersion === null || afterVersion === null) {
-        return false;
+        return gt(afterVersion, beforeVersion);
       }
-
-      return gt(afterVersion, beforeVersion);
-    });
+    );
 
     return upgradablePackages.length > 0 ? { upgradable: upgradablePackages } : null;
   },
 
-  prompt({ upgradable }) {
-    return dedent`
-      You're upgrading Storybook, but you are using community packages that might need to be upgraded as well. We recommend upgrading them:
-      ${upgradable
-        .map(({ packageName, afterVersion, beforeVersion }) => {
-          return `- ${cyan(packageName)}: ${cyan(beforeVersion)} => ${cyan(afterVersion)}`;
-        })
-        .join('\n')}
-
-      After upgrading, we will run the dedupe command, which could possibly have effects on dependencies that are not Storybook related.
-      see: https://docs.npmjs.com/cli/commands/npm-dedupe
-
-      Attention: As these packages are maintained by the community, we cannot guarantee that they are compatible with the new version of Storybook. If you encounter any issues, please report them to the package maintainers.
-
-      Do you want to proceed (upgrade the detected packages)?
-    `;
+  prompt() {
+    return "We'll upgrade the community packages that are compatible.";
   },
 
   async run({ result: { upgradable }, packageManager, dryRun }) {
     if (dryRun) {
-      console.log(dedent`
-        We would have upgrade the following:
+      logger.log(dedent`
+        The following would have been upgraded:
         ${upgradable
           .map(
             ({ packageName, afterVersion, beforeVersion }) =>
@@ -111,44 +132,29 @@ export const upgradeStorybookRelatedDependencies = {
     }
 
     if (upgradable.length > 0) {
-      const packageJson = await packageManager.readPackageJson();
+      packageManager.packageJsonPaths.forEach((packageJsonPath) => {
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as PackageJson;
+        upgradable.forEach((item) => {
+          if (!item) {
+            return;
+          }
 
-      upgradable.forEach((item) => {
-        if (!item) {
-          return;
-        }
+          const { packageName, afterVersion: version } = item;
+          const prefixed = `^${version}`;
 
-        const { packageName, afterVersion: version } = item;
-        const prefixed = `^${version}`;
+          if (packageJson.dependencies?.[packageName]) {
+            packageJson.dependencies[packageName] = prefixed;
+          }
+          if (packageJson.devDependencies?.[packageName]) {
+            packageJson.devDependencies[packageName] = prefixed;
+          }
+          if (packageJson.peerDependencies?.[packageName]) {
+            packageJson.peerDependencies[packageName] = prefixed;
+          }
+        });
 
-        if (packageJson.dependencies?.[packageName]) {
-          packageJson.dependencies[packageName] = prefixed;
-        }
-        if (packageJson.devDependencies?.[packageName]) {
-          packageJson.devDependencies[packageName] = prefixed;
-        }
-        if (packageJson.peerDependencies?.[packageName]) {
-          packageJson.peerDependencies[packageName] = prefixed;
-        }
+        packageManager.writePackageJson(packageJson, dirname(packageJsonPath));
       });
-
-      await packageManager.writePackageJson(packageJson);
-      await packageManager.installDependencies();
-
-      await packageManager
-        .executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' })
-        .catch(() => {});
-
-      console.log();
-      console.log(dedent`
-        We upgraded ${yellow(upgradable.length)} packages:
-        ${upgradable
-          .map(({ packageName, afterVersion, beforeVersion }) => {
-            return `- ${cyan(packageName)}: ${cyan(beforeVersion)} => ${cyan(afterVersion)}`;
-          })
-          .join('\n')}
-        `);
     }
-    console.log();
   },
 } satisfies Fix<Options>;

@@ -7,5 +7,5 @@ pnpm create storybook@latest
 ```
 
 ```shell renderer="common" language="js" packageManager="yarn"
-yarn create storybook@latest
+yarn create storybook
 ```

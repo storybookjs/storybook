@@ -93,6 +93,7 @@ Type:
   exportName: string;
   importPath: string;
   type: 'story';
+  subtype?: 'story' | 'test';
   rawComponentPath?: string;
   metaId?: string;
   name?: string;
@@ -129,6 +130,16 @@ It is likely that the [`fileName`](#filename) being indexed is not CSF, in which
 Type: `'story'`
 
 The type of entry.
+
+##### `subtype`
+
+(⚠️ **Experimental**)
+
+Type: `'story' | 'test'`
+
+Default: `'story'`
+
+The subtype of the story entry when [`type`](#type) is `'story'`. Use this to mark an entry as a [_test_ (experimental)](https://github.com/storybookjs/storybook/discussions/30119). If not specified, defaults to `'story'`.
 
 ##### `rawComponentPath`
 
@@ -434,7 +445,8 @@ Some example usages of custom indexers include:
   Update your Storybook configuration (i.e., `.storybook/main.js|ts`) to include the custom indexer.
 
   ```ts title=".storybook/main.js|ts"
-  import type { StorybookConfig } from '@storybook/svelte-vite';
+  // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+  import type { StorybookConfig } from '@storybook/your-framework';
   import type { Indexer } from 'storybook/internal/types';
 
   const urlIndexer: Indexer = {

@@ -1,7 +1,7 @@
 import { once } from 'storybook/internal/client-logger';
 import type { Args } from 'storybook/internal/types';
 
-import { isPlainObject } from 'es-toolkit';
+import { isPlainObject } from 'es-toolkit/predicate';
 import { type Options, parse } from 'picoquery';
 import { dedent } from 'ts-dedent';
 
@@ -114,7 +114,7 @@ export const parseArgsParam = (argsString: string): Args => {
     once.warn(dedent`
       Omitted potentially unsafe URL args.
 
-      More info: https://storybook.js.org/docs/writing-stories/args#setting-args-through-the-url
+      More info: https://storybook.js.org/docs/writing-stories/args#setting-args-through-the-url?ref=error
     `);
     return acc;
   }, {} as Args);

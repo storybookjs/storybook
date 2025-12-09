@@ -1,5 +1,5 @@
-```js filename="MyForm.stories.js" renderer="react" language="js"
-import { expect, fireEvent, userEvent, within } from 'storybook/test';
+```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF 3"
+import { expect } from 'storybook/test';
 
 /*
  * Replace your-framework with nextjs or nextjs-vite
@@ -14,8 +14,7 @@ export default {
 };
 
 export const GoBack = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
+  async play({ canvas, userEvent }) {
     const backBtn = await canvas.findByText('Go back');
 
     await userEvent.click(backBtn);
@@ -25,11 +24,11 @@ export const GoBack = {
 };
 ```
 
-```ts filename="MyForm.stories.ts" renderer="react" language="ts"
+```ts filename="MyForm.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with nextjs or nextjs-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { expect, fireEvent, userEvent, within } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { getRouter } from '@storybook/your-framework/router.mock';
@@ -44,8 +43,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const GoBack: Story = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
+  async play({ canvas, userEvent }) {
     const backBtn = await canvas.findByText('Go back');
 
     await userEvent.click(backBtn);
@@ -53,4 +51,55 @@ export const GoBack: Story = {
     await expect(getRouter().back).toHaveBeenCalled();
   },
 };
+```
+
+```ts filename="MyForm.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { expect } from 'storybook/test';
+
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+import { getRouter } from '@storybook/your-framework/router.mock';
+
+import MyForm from './my-form';
+
+const meta = preview.meta({
+  component: MyForm,
+});
+
+export const GoBack = meta.story({
+  async play({ canvas, userEvent }) {
+    const backBtn = await canvas.findByText('Go back');
+
+    await userEvent.click(backBtn);
+    // 👇 Assert that your component called back()
+    await expect(getRouter().back).toHaveBeenCalled();
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { expect } from 'storybook/test';
+
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+import { getRouter } from '@storybook/your-framework/router.mock';
+
+import MyForm from './my-form';
+
+const meta = preview.meta({
+  component: MyForm,
+});
+
+export const GoBack = meta.story({
+  async play({ canvas, userEvent }) {
+    const backBtn = await canvas.findByText('Go back');
+
+    await userEvent.click(backBtn);
+    // 👇 Assert that your component called back()
+    await expect(getRouter().back).toHaveBeenCalled();
+  },
+});
 ```

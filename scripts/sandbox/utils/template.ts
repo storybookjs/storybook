@@ -1,6 +1,6 @@
+import { readFile } from 'node:fs/promises';
+
 import { render } from 'ejs';
-// eslint-disable-next-line depend/ban-dependencies
-import { readFile } from 'fs-extra';
 import prettier from 'prettier';
 
 import { allTemplates as sandboxTemplates } from '../../../code/lib/cli-storybook/src/sandbox-templates';

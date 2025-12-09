@@ -1,5 +1,3 @@
-import { join, parse } from 'node:path';
-
 import { logger } from 'storybook/internal/node-logger';
 import { CriticalPresetLoadError } from 'storybook/internal/server-errors';
 import type {
@@ -14,14 +12,15 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
+import { join, parse, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { interopRequireDefault } from './utils/interpret-require';
-import { loadCustomPresets } from './utils/load-custom-presets';
-import { safeResolve, safeResolveFrom } from './utils/safeResolve';
+import { importModule, safeResolveModule } from '../shared/utils/module';
+import { getInterpretedFile } from './utils/interpret-files';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
+import { validateConfigurationFiles } from './utils/validate-configuration-files';
 
-type InterPresetOptions = Omit<
+export type InterPresetOptions = Omit<
   CLIOptions &
     LoadOptions &
     BuilderOptions & { isCritical?: boolean; build?: StorybookConfigRaw['build'] },
@@ -37,15 +36,6 @@ export function filterPresetsConfig(presetsConfig: PresetConfig[]): PresetConfig
     const presetName = typeof preset === 'string' ? preset : preset.name;
     return !/@storybook[\\\\/]preset-typescript/.test(presetName);
   });
-}
-
-function resolvePathToMjs(filePath: string): string {
-  const { dir, name } = parse(filePath);
-  const mjsPath = join(dir, `${name}.mjs`);
-  if (safeResolve(mjsPath)) {
-    return mjsPath;
-  }
-  return filePath;
 }
 
 function resolvePresetFunction<T = any>(
@@ -79,98 +69,38 @@ export const resolveAddonName = (
   name: string,
   options: any
 ): CoreCommon_ResolvedAddonPreset | CoreCommon_ResolvedAddonVirtual | undefined => {
-  const resolve = name.startsWith('/') ? safeResolve : safeResolveFrom.bind(null, configDir);
-  const resolved = resolve(name);
+  const resolved = safeResolveModule({ specifier: name, parent: configDir });
 
-  if (resolved) {
-    const { dir: fdir, name: fname } = parse(resolved);
-
-    if (name.match(/\/(manager|register(-panel)?)(\.(js|mjs|ts|tsx|jsx))?$/)) {
-      return {
-        type: 'virtual',
-        name,
-        // we remove the extension
-        // this is a bit of a hack to try to find .mjs files
-        // node can only ever resolve .js files; it does not look at the exports field in package.json
-        managerEntries: [resolvePathToMjs(join(fdir, fname))],
-      };
-    }
-    if (name.match(/\/(preset)(\.(js|mjs|ts|tsx|jsx))?$/)) {
-      return {
-        type: 'presets',
-        name: resolved,
-      };
-    }
-  }
-
-  const checkExists = (exportName: string) => {
-    if (resolve(`${name}${exportName}`)) {
-      return `${name}${exportName}`;
-    }
-    return undefined;
-  };
-
-  /**
-   * This is used to maintain back-compat with community addons that do not re-export their
-   * sub-addons but reference the sub-addon name directly. We need to turn it into an absolute path
-   * so that webpack can serve it up correctly when yarn pnp or pnpm is being used. Vite will be
-   * broken in such cases, because it does not process absolute paths, and it will try to import
-   * from the bare import, breaking in pnp/pnpm.
-   */
-  const absolutizeExport = (exportName: string, preferMJS: boolean) => {
-    const found = resolve(`${name}${exportName}`);
-
-    if (found) {
-      return preferMJS ? resolvePathToMjs(found) : found;
-    }
-    return undefined;
-  };
-
-  const managerFile = absolutizeExport(`/manager`, true);
-  const registerFile =
-    absolutizeExport(`/register`, true) || absolutizeExport(`/register-panel`, true);
-  const previewFile = checkExists(`/preview`);
-  const previewFileAbsolute = absolutizeExport('/preview', true);
-  const presetFile = absolutizeExport(`/preset`, false);
-
-  if (!(managerFile || previewFile) && presetFile) {
+  if (resolved && parse(name).name === 'preset') {
     return {
       type: 'presets',
-      name: presetFile,
+      name: resolved,
     };
   }
 
-  if (managerFile || registerFile || previewFile || presetFile) {
-    const managerEntries = [];
+  const presetFile = safeResolveModule({ specifier: join(name, 'preset'), parent: configDir });
+  const managerFile = safeResolveModule({ specifier: join(name, 'manager'), parent: configDir });
+  const previewFile = safeResolveModule({ specifier: join(name, 'preview'), parent: configDir });
 
-    if (managerFile) {
-      managerEntries.push(managerFile);
+  if (managerFile || previewFile || presetFile) {
+    const previewAnnotations = [];
+    if (previewFile) {
+      const parsedPreviewFile = stripAbsNodeModulesPath(previewFile);
+      if (parsedPreviewFile !== previewFile) {
+        previewAnnotations.push({
+          bare: parsedPreviewFile,
+          absolute: previewFile,
+        });
+      } else {
+        previewAnnotations.push(previewFile);
+      }
     }
-    // register file is the old way of registering addons
-    if (!managerFile && registerFile && !presetFile) {
-      managerEntries.push(registerFile);
-    }
-
     return {
       type: 'virtual',
       name,
-      ...(managerEntries.length ? { managerEntries } : {}),
-      ...(previewFile
-        ? {
-            previewAnnotations: [
-              previewFileAbsolute
-                ? {
-                    // TODO: Evaluate if searching for node_modules in a yarn pnp environment is correct
-                    bare: previewFile.includes('node_modules')
-                      ? stripAbsNodeModulesPath(previewFile)
-                      : previewFile,
-                    absolute: previewFileAbsolute,
-                  }
-                : previewFile,
-            ],
-          }
-        : {}),
-      ...(presetFile ? { presets: [{ name: presetFile, options }] } : {}),
+      presets: presetFile ? [{ name: presetFile, options }] : [],
+      managerEntries: managerFile ? [managerFile] : [],
+      previewAnnotations,
     };
   }
 
@@ -219,7 +149,7 @@ async function getContent(input: any) {
   }
   const name = input.name ? input.name : input;
 
-  return interopRequireDefault(name);
+  return importModule(name);
 }
 
 export async function loadPreset(
@@ -391,7 +321,7 @@ export async function getPresets(
   const loadedPresets: LoadedPreset[] = await loadPresets(presets, 0, storybookOptions);
 
   return {
-    apply: async (extension: string, config: any, args = {}) =>
+    apply: async (extension: string, config?: any, args = {}) =>
       applyPresets(loadedPresets, extension, config, args, storybookOptions),
   };
 }
@@ -408,12 +338,10 @@ export async function loadAllPresets(
     }
 ) {
   const { corePresets = [], overridePresets = [], ...restOptions } = options;
+  validateConfigurationFiles(options.configDir);
 
-  const presetsConfig: PresetConfig[] = [
-    ...corePresets,
-    ...loadCustomPresets(options),
-    ...overridePresets,
-  ];
+  const mainUrl = getInterpretedFile(resolve(options.configDir, 'main')) as string;
+  const presetsConfig: PresetConfig[] = [...corePresets, mainUrl, ...overridePresets];
 
   // Remove `@storybook/preset-typescript` and add a warning if in use.
   const filteredPresetConfig = filterPresetsConfig(presetsConfig);

@@ -1,0 +1,134 @@
+executor:
+  class: small
+  name: sb_node_22_browsers
+
+parameters:
+  packageManager:
+    type: string
+  template:
+    type: string
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - attach_workspace:
+      at: /tmp
+  - when:
+      condition:
+        equal: ['npm', << parameters.packageManager >>]
+      steps:
+        - run:
+            name: Verdaccio
+            background: true
+            command: |
+              cd code
+              yarn local-registry --open
+        - run:
+            name: Wait on Verdaccio
+            command: |
+              cd code
+              yarn wait-on tcp:127.0.0.1:6001
+              yarn wait-on tcp:127.0.0.1:6002
+        - run:
+            name: Storybook init from empty directory (NPM)
+            command: |
+              cd ..
+              mkdir empty-<< parameters.template >>
+              cd empty-<< parameters.template >>
+              npm set registry http://localhost:6001
+              npx storybook init --yes --package-manager npm
+              npm run storybook -- --smoke-test
+            environment:
+              IN_STORYBOOK_SANDBOX: true
+              STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+              STORYBOOK_DISABLE_TELEMETRY: true
+  - when:
+      condition:
+        equal: ['yarn2', << parameters.packageManager >>]
+      steps:
+        - run:
+            name: Verdaccio
+            background: true
+            command: |
+              cd code
+              yarn local-registry --open
+        - run:
+            name: Wait on Verdaccio
+            command: |
+              cd code
+              yarn wait-on tcp:127.0.0.1:6001
+              yarn wait-on tcp:127.0.0.1:6002
+        - run:
+            name: Storybook init from empty directory (Yarn 2)
+            command: |
+              cd ..
+              mkdir empty-<< parameters.template >>
+              cd empty-<< parameters.template >>
+              yarn set version berry
+              yarn config set registry http://localhost:6001
+              yarn dlx storybook init --yes --package-manager yarn2
+              yarn storybook --smoke-test
+            environment:
+              IN_STORYBOOK_SANDBOX: true
+              STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+              STORYBOOK_DISABLE_TELEMETRY: true
+  - when:
+      condition:
+        equal: ['pnpm', << parameters.packageManager >>]
+      steps:
+        - run:
+            name: Verdaccio
+            background: true
+            command: |
+              cd code
+              yarn local-registry --open
+        - run:
+            name: Wait on Verdaccio
+            command: |
+              cd code
+              yarn wait-on tcp:127.0.0.1:6001
+              yarn wait-on tcp:127.0.0.1:6002
+        - run:
+            name: Storybook init from empty directory (PNPM)
+            command: |
+              cd ..
+              mkdir empty-<< parameters.template >>
+              cd empty-<< parameters.template >>
+              npm i -g pnpm
+              pnpm config set registry http://localhost:6001
+              pnpm dlx storybook init --yes --package-manager pnpm
+              pnpm run storybook --smoke-test
+            environment:
+              IN_STORYBOOK_SANDBOX: true
+              STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+              STORYBOOK_DISABLE_TELEMETRY: true
+  - when:
+      condition:
+        equal: ['react-vite-ts', << parameters.template >>]
+      steps:
+        - run:
+            name: Verdaccio
+            background: true
+            command: |
+              cd code
+              yarn local-registry --open
+        - run:
+            name: Wait on Verdaccio
+            command: |
+              cd code
+              yarn wait-on tcp:127.0.0.1:6001
+              yarn wait-on tcp:127.0.0.1:6002
+        - run:
+            name: Storybook init from empty directory (--skip-install)
+            command: |
+              cd ..
+              mkdir empty-<< parameters.template >>-no-install
+              cd empty-<< parameters.template >>-no-install
+              npx storybook init --yes --skip-install
+              npm install
+              npm run build-storybook
+            environment:
+              IN_STORYBOOK_SANDBOX: true
+              STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+              STORYBOOK_DISABLE_TELEMETRY: true
+  - report-workflow-on-failure

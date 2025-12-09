@@ -1,4 +1,5 @@
 import type { ComponentType, JSX } from 'react';
+import type { RootOptions } from 'react-dom/client';
 
 import type { Canvas, WebRenderer } from 'storybook/internal/types';
 
@@ -25,11 +26,12 @@ export interface ReactParameters {
      */
     rsc?: boolean;
     /** Options passed to React root creation */
-    rootOptions?: {
-      /** Custom error handler for caught errors */
-      onCaughtError?: (error: unknown) => void;
-    };
+    rootOptions?: RootOptions;
   };
+}
+
+export interface ReactTypes extends ReactRenderer {
+  parameters: ReactParameters;
 }
 
 export type StoryFnReactReturnType = JSX.Element;

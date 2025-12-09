@@ -1,21 +1,23 @@
 import { basename, parse, relative } from 'node:path';
 
-import { sync as spawnSync } from 'cross-spawn';
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 
+import { executeCommandSync } from '../utils/command';
+import { getProjectRoot } from '../utils/paths';
 import { BUNProxy } from './BUNProxy';
-import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
-import { COMMON_ENV_VARS } from './JsPackageManager';
+import type { JsPackageManager } from './JsPackageManager';
+import { PackageManagerName } from './JsPackageManager';
 import { NPMProxy } from './NPMProxy';
 import { PNPMProxy } from './PNPMProxy';
 import { Yarn1Proxy } from './Yarn1Proxy';
 import { Yarn2Proxy } from './Yarn2Proxy';
-
-const NPM_LOCKFILE = 'package-lock.json';
-const PNPM_LOCKFILE = 'pnpm-lock.yaml';
-const YARN_LOCKFILE = 'yarn.lock';
-const BUN_LOCKFILE = 'bun.lock';
-const BUN_LOCKFILE_BINARY = 'bun.lockb';
+import {
+  BUN_LOCKFILE,
+  BUN_LOCKFILE_BINARY,
+  NPM_LOCKFILE,
+  PNPM_LOCKFILE,
+  YARN_LOCKFILE,
+} from './constants';
 
 type PackageManagerProxy =
   | typeof NPMProxy
@@ -25,21 +27,40 @@ type PackageManagerProxy =
   | typeof BUNProxy;
 
 export class JsPackageManagerFactory {
-  public static getPackageManager(
-    { force }: { force?: PackageManagerName } = {},
-    cwd?: string
-  ): JsPackageManager {
-    // Option 1: If the user has provided a forcing flag, we use it
-    if (force && force in this.PROXY_MAP) {
-      return new this.PROXY_MAP[force]({ cwd });
-    }
+  /** Cache for package manager instances */
+  private static cache = new Map<string, JsPackageManager>();
+
+  /** Generate a cache key based on the parameters */
+  private static getCacheKey(
+    force?: PackageManagerName,
+    configDir = '.storybook',
+    cwd = process.cwd(),
+    storiesPaths?: string[]
+  ): string {
+    return JSON.stringify({ force: force || null, configDir, cwd, storiesPaths });
+  }
+
+  /** Clear the package manager cache */
+  public static clearCache(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * Determine which package manager type to use based on lockfiles, commands, and environment
+   *
+   * @param cwd - Current working directory
+   * @returns Package manager type as string: 'npm', 'pnpm', 'bun', 'yarn1', or 'yarn2'
+   * @throws Error if no usable package manager is found
+   */
+  public static getPackageManagerType(cwd = process.cwd()): PackageManagerName {
+    const root = getProjectRoot();
 
     const lockFiles = [
-      findUpSync(YARN_LOCKFILE, { cwd }),
-      findUpSync(PNPM_LOCKFILE, { cwd }),
-      findUpSync(NPM_LOCKFILE, { cwd }),
-      findUpSync(BUN_LOCKFILE, { cwd }),
-      findUpSync(BUN_LOCKFILE_BINARY, { cwd }),
+      find.up(YARN_LOCKFILE, { cwd, last: root }),
+      find.up(PNPM_LOCKFILE, { cwd, last: root }),
+      find.up(NPM_LOCKFILE, { cwd, last: root }),
+      find.up(BUN_LOCKFILE, { cwd, last: root }),
+      find.up(BUN_LOCKFILE_BINARY, { cwd, last: root }),
     ]
       .filter(Boolean)
       .sort((a, b) => {
@@ -59,57 +80,94 @@ export class JsPackageManagerFactory {
         return 1;
       });
 
-    // Option 2: We try to infer the package manager from the closest lockfile
+    // Option 1: We try to infer the package manager from the closest lockfile
     const closestLockfilePath = lockFiles[0];
-
     const closestLockfile = closestLockfilePath && basename(closestLockfilePath);
 
-    const hasNPMCommand = hasNPM(cwd);
-    const hasPNPMCommand = hasPNPM(cwd);
-    const hasBunCommand = hasBun(cwd);
     const yarnVersion = getYarnVersion(cwd);
 
-    if (yarnVersion && (closestLockfile === YARN_LOCKFILE || (!hasNPMCommand && !hasPNPMCommand))) {
-      return yarnVersion === 1 ? new Yarn1Proxy({ cwd }) : new Yarn2Proxy({ cwd });
+    if (yarnVersion && closestLockfile === YARN_LOCKFILE) {
+      return yarnVersion === 1 ? PackageManagerName.YARN1 : PackageManagerName.YARN2;
     }
 
-    if (hasPNPMCommand && closestLockfile === PNPM_LOCKFILE) {
-      return new PNPMProxy({ cwd });
+    if (hasPNPM(cwd) && closestLockfile === PNPM_LOCKFILE) {
+      return PackageManagerName.PNPM;
     }
 
-    if (hasNPMCommand && closestLockfile === NPM_LOCKFILE) {
-      return new NPMProxy({ cwd });
+    const isNPMCommandOk = hasNPM(cwd);
+
+    if (isNPMCommandOk && closestLockfile === NPM_LOCKFILE) {
+      return PackageManagerName.NPM;
     }
 
     if (
-      hasBunCommand &&
+      hasBun(cwd) &&
       (closestLockfile === BUN_LOCKFILE || closestLockfile === BUN_LOCKFILE_BINARY)
     ) {
-      return new BUNProxy({ cwd });
+      return PackageManagerName.BUN;
     }
 
-    // Option 3: If the user is running a command via npx/pnpx/yarn create/etc, we infer the package manager from the command
+    // Option 2: If the user is running a command via npx/pnpx/yarn create/etc, we infer the package manager from the command
     const inferredPackageManager = this.inferPackageManagerFromUserAgent();
     if (inferredPackageManager && inferredPackageManager in this.PROXY_MAP) {
-      return new this.PROXY_MAP[inferredPackageManager]({ cwd });
+      return inferredPackageManager;
     }
 
     // Default fallback, whenever users try to use something different than NPM, PNPM, Yarn,
     // but still have NPM installed
-    if (hasNPMCommand) {
-      return new NPMProxy({ cwd });
+    if (isNPMCommandOk) {
+      return PackageManagerName.NPM;
     }
 
     throw new Error('Unable to find a usable package manager within NPM, PNPM, Yarn and Yarn 2');
   }
 
+  public static getPackageManager(
+    {
+      force,
+      configDir = '.storybook',
+      storiesPaths,
+      ignoreCache = false,
+    }: {
+      force?: PackageManagerName;
+      configDir?: string;
+      storiesPaths?: string[];
+      ignoreCache?: boolean;
+    } = {},
+    cwd = process.cwd()
+  ): JsPackageManager {
+    // Check cache first, unless ignored
+    const cacheKey = this.getCacheKey(force, configDir, cwd, storiesPaths);
+    const cached = this.cache.get(cacheKey);
+    if (cached && !ignoreCache) {
+      return cached;
+    }
+
+    // Option 1: If the user has provided a forcing flag, we use it
+    if (force && force in this.PROXY_MAP) {
+      const packageManager = new this.PROXY_MAP[force]({
+        cwd,
+        configDir,
+        storiesPaths,
+      });
+      this.cache.set(cacheKey, packageManager as unknown as JsPackageManager);
+      return packageManager as unknown as JsPackageManager;
+    }
+
+    // Option 2: Detect package managers based on some heuristics
+    const packageManagerType = this.getPackageManagerType(cwd);
+    const packageManager = new this.PROXY_MAP[packageManagerType]({ cwd, configDir, storiesPaths });
+    this.cache.set(cacheKey, packageManager as unknown as JsPackageManager);
+    return packageManager as unknown as JsPackageManager;
+  }
+
   /** Look up map of package manager proxies by name */
   private static PROXY_MAP: Record<PackageManagerName, PackageManagerProxy> = {
-    npm: NPMProxy,
-    pnpm: PNPMProxy,
-    yarn1: Yarn1Proxy,
-    yarn2: Yarn2Proxy,
-    bun: BUNProxy,
+    [PackageManagerName.NPM]: NPMProxy,
+    [PackageManagerName.PNPM]: PNPMProxy,
+    [PackageManagerName.YARN1]: Yarn1Proxy,
+    [PackageManagerName.YARN2]: Yarn2Proxy,
+    [PackageManagerName.BUN]: BUNProxy,
   };
 
   /**
@@ -124,15 +182,17 @@ export class JsPackageManagerFactory {
       const [pkgMgrName, pkgMgrVersion] = packageSpec.split('/');
 
       if (pkgMgrName === 'pnpm') {
-        return 'pnpm';
+        return PackageManagerName.PNPM;
       }
 
       if (pkgMgrName === 'npm') {
-        return 'npm';
+        return PackageManagerName.NPM;
       }
 
       if (pkgMgrName === 'yarn') {
-        return `yarn${pkgMgrVersion?.startsWith('1.') ? '1' : '2'}`;
+        return pkgMgrVersion?.startsWith('1.')
+          ? PackageManagerName.YARN1
+          : PackageManagerName.YARN2;
       }
     }
 
@@ -141,56 +201,60 @@ export class JsPackageManagerFactory {
 }
 
 function hasNPM(cwd?: string) {
-  const npmVersionCommand = spawnSync('npm', ['--version'], {
-    cwd,
-    shell: true,
-    env: {
-      ...process.env,
-      ...COMMON_ENV_VARS,
-    },
-  });
-  return npmVersionCommand.status === 0;
+  try {
+    executeCommandSync({
+      command: 'npm',
+      args: ['--version'],
+      cwd,
+      env: process.env,
+    });
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
 function hasBun(cwd?: string) {
-  const pnpmVersionCommand = spawnSync('bun', ['--version'], {
-    cwd,
-    shell: true,
-    env: {
-      ...process.env,
-      ...COMMON_ENV_VARS,
-    },
-  });
-  return pnpmVersionCommand.status === 0;
+  try {
+    executeCommandSync({
+      command: 'bun',
+      args: ['--version'],
+      cwd,
+      env: process.env,
+    });
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
 function hasPNPM(cwd?: string) {
-  const pnpmVersionCommand = spawnSync('pnpm', ['--version'], {
-    cwd,
-    shell: true,
-    env: {
-      ...process.env,
-      ...COMMON_ENV_VARS,
-    },
-  });
-  return pnpmVersionCommand.status === 0;
+  try {
+    executeCommandSync({
+      command: 'pnpm',
+      args: ['--version'],
+      cwd,
+      env: process.env,
+    });
+
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
 function getYarnVersion(cwd?: string): 1 | 2 | undefined {
-  const yarnVersionCommand = spawnSync('yarn', ['--version'], {
-    cwd,
-    shell: true,
-    env: {
-      ...process.env,
-      ...COMMON_ENV_VARS,
-    },
-  });
-
-  if (yarnVersionCommand.status !== 0) {
+  try {
+    const yarnVersion = executeCommandSync({
+      command: 'yarn',
+      args: ['--version'],
+      cwd,
+      env: {
+        ...process.env,
+      },
+    });
+    return /^1\.+/.test(yarnVersion.trim()) ? 1 : 2;
+  } catch (err) {
     return undefined;
   }
-
-  const yarnVersion = yarnVersionCommand.output.toString().replace(/,/g, '').replace(/"/g, '');
-
-  return /^1\.+/.test(yarnVersion) ? 1 : 2;
 }

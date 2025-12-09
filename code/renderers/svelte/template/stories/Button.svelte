@@ -1,5 +1,5 @@
 <script>
-  const Button = globalThis.Components?.Button;
+  const Button = globalThis.__TEMPLATE_COMPONENTS__?.Button;
 
   const { text = 'You clicked' } = $props();
 

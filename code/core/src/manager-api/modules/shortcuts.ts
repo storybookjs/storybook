@@ -7,6 +7,8 @@ import {
 
 import { global } from '@storybook/global';
 
+import copy from 'copy-to-clipboard';
+
 import type { KeyboardEventLike } from '../lib/shortcut';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut';
 import type { ModuleFn } from '../lib/types';
@@ -110,6 +112,10 @@ export interface API_Shortcuts {
   collapseAll: API_KeyCollection;
   expandAll: API_KeyCollection;
   remount: API_KeyCollection;
+  openInEditor: API_KeyCollection;
+  copyStoryLink: API_KeyCollection;
+  // TODO: bring this back once we want to add shortcuts for this
+  // copyStoryName: API_KeyCollection;
 }
 
 export type API_Action = keyof API_Shortcuts;
@@ -145,13 +151,25 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   collapseAll: [controlOrMetaKey(), 'shift', 'ArrowUp'],
   expandAll: [controlOrMetaKey(), 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],
+  openInEditor: ['alt', 'shift', 'E'],
+  copyStoryLink: ['alt', 'shift', 'L'],
+  // TODO: bring this back once we want to add shortcuts for this
+  // copyStoryName: ['alt', 'shift', 'C'],
 });
 
 const addonsShortcuts: API_AddonShortcuts = {};
 
-function focusInInput(event: KeyboardEvent) {
+function shouldSkipShortcut(event: KeyboardEvent) {
   const target = event.target as Element;
-  return /input|textarea/i.test(target.tagName) || target.getAttribute('contenteditable') !== null;
+  if (/input|textarea/i.test(target.tagName) || target.getAttribute('contenteditable') !== null) {
+    return true;
+  }
+  const dialogElement = target.closest('dialog[open]');
+  if (dialogElement) {
+    return true;
+  }
+
+  return false;
 }
 
 export const init: ModuleFn = ({ store, fullAPI, provider }) => {
@@ -371,6 +389,26 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           fullAPI.emit(FORCE_REMOUNT, { storyId });
           break;
         }
+        case 'openInEditor': {
+          if (global.CONFIG_TYPE === 'DEVELOPMENT') {
+            fullAPI.openInEditor({
+              file: fullAPI.getCurrentStoryData().importPath,
+            });
+          }
+          break;
+        }
+        // TODO: bring this back once we want to add shortcuts for this
+        // case 'copyStoryName': {
+        //   const storyData = fullAPI.getCurrentStoryData();
+        //   if (storyData.type === 'story') {
+        //     copy(storyData.exportName);
+        //   }
+        //   break;
+        // }
+        case 'copyStoryLink': {
+          copy(window.location.href);
+          break;
+        }
         default:
           addonsShortcuts[feature].action();
           break;
@@ -390,7 +428,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
   const initModule = () => {
     // Listen for keydown events in the manager
     document.addEventListener('keydown', (event: KeyboardEvent) => {
-      if (!focusInInput(event)) {
+      if (!shouldSkipShortcut(event)) {
         api.handleKeydownEvent(event);
       }
     });

@@ -1,7 +1,5 @@
 import React, { Fragment } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
-
 import { BrowserIcon, MobileIcon, TabletIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
@@ -27,17 +25,7 @@ export const ActiveViewportLabel = styled.div(({ theme }) => ({
   background: 'transparent',
 }));
 
-export const IconButtonWithLabel = styled(IconButton)(() => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-}));
-
-export const IconButtonLabel = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s2 - 1,
-  marginLeft: 10,
-}));
-
-export const iconsMap: Record<Viewport['type'], React.ReactNode> = {
+export const iconsMap: Record<NonNullable<Viewport['type']>, React.ReactNode> = {
   desktop: <BrowserIcon />,
   mobile: <MobileIcon />,
   tablet: <TabletIcon />,

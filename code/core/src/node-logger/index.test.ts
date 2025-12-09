@@ -3,8 +3,18 @@ import { describe, expect, it, vi } from 'vitest';
 import npmlog from 'npmlog';
 
 import { logger } from '.';
+import * as loggerRaw from './logger/logger';
 
-globalThis.console = { log: vi.fn() } as any;
+vi.mock('./logger/logger', () => ({
+  log: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  setLogLevel: vi.fn(),
+}));
+
+const loggerMock = vi.mocked(loggerRaw);
 
 vi.mock('npmlog', () => ({
   default: {
@@ -26,29 +36,26 @@ vi.mock('npmlog', () => ({
   },
 }));
 
+vi.mock('./prompts/prompt-config', () => ({
+  isClackEnabled: vi.fn(() => false),
+}));
+
 //
 
 describe('node-logger', () => {
-  it('should have an info method', () => {
-    const message = 'information';
-    logger.info(message);
-    expect(npmlog.info).toHaveBeenCalledWith('', message);
-  });
   it('should have a warn method', () => {
     const message = 'warning message';
     logger.warn(message);
-    expect(npmlog.warn).toHaveBeenCalledWith('', message);
+    expect(loggerMock.warn).toHaveBeenCalledWith(message);
   });
   it('should have an error method', () => {
     const message = 'error message';
     logger.error(message);
-    expect(globalThis.console.log).toHaveBeenCalledWith(expect.stringMatching('message'));
+    expect(loggerMock.error).toHaveBeenCalledWith(expect.stringMatching('message'));
   });
   it('should format errors', () => {
     const message = new Error('A complete disaster');
     logger.error(message);
-    expect(globalThis.console.log).toHaveBeenCalledWith(
-      expect.stringMatching('A complete disaster')
-    );
+    expect(loggerMock.error).toHaveBeenCalledWith(expect.stringMatching('A complete disaster'));
   });
 });

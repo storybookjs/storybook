@@ -24,6 +24,8 @@ import { PREPARE_ABORTED } from './Render';
  */
 
 export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRenderer> {
+  public readonly renderId: number;
+
   public readonly type: RenderType = 'docs';
 
   public readonly subtype = 'mdx';
@@ -51,6 +53,7 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
     private callbacks: RenderContextCallbacks<TRenderer>
   ) {
     this.id = entry.id;
+    this.renderId = Date.now();
   }
 
   isPreparing() {
@@ -104,7 +107,7 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
 
     const docsContext = this.docsContext(renderStoryToElement);
 
-    const { docs } = this.store.projectAnnotations.parameters || {};
+    const { docs } = this.store.projectAnnotations.parameters ?? ({} as { docs: any });
 
     if (!docs) {
       throw new Error(

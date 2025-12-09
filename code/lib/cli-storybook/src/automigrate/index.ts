@@ -1,19 +1,9 @@
-import { createWriteStream } from 'node:fs';
-import { rename, rm } from 'node:fs/promises';
-import { join } from 'node:path';
-
-import type { PackageJson } from 'storybook/internal/common';
-import {
-  type JsPackageManager,
-  JsPackageManagerFactory,
-  temporaryFile,
-} from 'storybook/internal/common';
+import { type JsPackageManager } from 'storybook/internal/common';
+import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { AutomigrateError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import boxen from 'boxen';
 import picocolors from 'picocolors';
-import prompts from 'prompts';
-import semver from 'semver';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
@@ -29,35 +19,8 @@ import type {
 } from './fixes';
 import { FixStatus, allFixes, commandFixes } from './fixes';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
-import { cleanLog } from './helpers/cleanLog';
-import { getMigrationSummary } from './helpers/getMigrationSummary';
+import { logMigrationSummary } from './helpers/logMigrationSummary';
 import { getStorybookData } from './helpers/mainConfigFile';
-
-const logger = console;
-const LOG_FILE_NAME = 'migration-storybook.log';
-const LOG_FILE_PATH = join(process.cwd(), LOG_FILE_NAME);
-let TEMP_LOG_FILE_PATH = '';
-
-const originalStdOutWrite = process.stdout.write.bind(process.stdout);
-const originalStdErrWrite = process.stderr.write.bind(process.stdout);
-
-const augmentLogsToFile = async () => {
-  TEMP_LOG_FILE_PATH = await temporaryFile({ name: LOG_FILE_NAME });
-  const logStream = createWriteStream(TEMP_LOG_FILE_PATH);
-
-  process.stdout.write = (d: string) => {
-    originalStdOutWrite(d);
-    return logStream.write(cleanLog(d));
-  };
-  process.stderr.write = (d: string) => {
-    return logStream.write(cleanLog(d));
-  };
-};
-
-const cleanup = () => {
-  process.stdout.write = originalStdOutWrite;
-  process.stderr.write = originalStdErrWrite;
-};
 
 const logAvailableMigrations = () => {
   const availableFixes = [...allFixes, ...commandFixes]
@@ -65,31 +28,34 @@ const logAvailableMigrations = () => {
     .map((x) => `- ${x}`)
     .join('\n');
 
-  console.log();
-  logger.info(dedent`
+  logger.log(dedent`
     The following migrations are available:
     ${availableFixes}
   `);
 };
 
-export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
-  const packageManager = JsPackageManagerFactory.getPackageManager({
-    force: options.packageManager,
-  });
+const hasFailures = (fixResults: Record<string, FixStatus> | undefined): boolean => {
+  return Object.values(fixResults || {}).some(
+    (r) => r === FixStatus.FAILED || r === FixStatus.CHECK_FAILED
+  );
+};
 
+export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
+  logger.debug('Extracting storybook data...');
   const {
     mainConfig,
     mainConfigPath,
     previewConfigPath,
-    storybookVersion,
+    versionInstalled,
     configDir,
-    packageJson,
+    packageManager,
+    storiesPaths,
   } = await getStorybookData({
     configDir: options.configDir,
-    packageManager,
+    packageManagerName: options.packageManager,
   });
 
-  if (!storybookVersion) {
+  if (!versionInstalled) {
     throw new Error('Could not determine Storybook version');
   }
 
@@ -99,20 +65,39 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
 
   const outcome = await automigrate({
     ...options,
-    packageJson,
     packageManager,
-    storybookVersion,
-    beforeVersion: storybookVersion,
+    storybookVersion: versionInstalled,
     mainConfigPath,
     mainConfig,
     previewConfigPath,
     configDir,
     isUpgrade: false,
     isLatest: false,
+    storiesPaths,
   });
 
-  if (outcome) {
+  // only install dependencies if the outcome contains any fixes that were not failed or skipped
+  const hasAppliedFixes = Object.values(outcome?.fixResults ?? {}).some(
+    (r) => r === FixStatus.SUCCEEDED || r === FixStatus.MANUAL_SUCCEEDED
+  );
+
+  if (hasAppliedFixes && !options.skipInstall) {
+    packageManager.installDependencies();
+  }
+
+  if (outcome && !options.skipDoctor) {
     await doctor({ configDir, packageManager: options.packageManager });
+  }
+
+  if (hasFailures(outcome?.fixResults)) {
+    const failedMigrations = Object.entries(outcome?.fixResults ?? {})
+      .filter(([, status]) => status === FixStatus.FAILED || status === FixStatus.CHECK_FAILED)
+      .map(([id, status]) => {
+        const statusLabel = status === FixStatus.CHECK_FAILED ? 'check failed' : 'failed';
+        return `${picocolors.cyan(id)} (${statusLabel})`;
+      });
+
+    throw new AutomigrateError({ errors: failedMigrations });
   }
 };
 
@@ -122,19 +107,18 @@ export const automigrate = async ({
   dryRun,
   yes,
   packageManager,
-  packageJson,
   list,
   configDir,
   mainConfig,
   mainConfigPath,
   previewConfigPath,
   storybookVersion,
-  beforeVersion,
   renderer: rendererPackage,
   skipInstall,
   hideMigrationSummary = false,
   isUpgrade,
   isLatest,
+  storiesPaths,
 }: AutofixOptions): Promise<{
   fixResults: Record<string, FixStatus>;
   preCheckFailure?: PreCheckFailure;
@@ -147,18 +131,18 @@ export const automigrate = async ({
   // if an on-command migration is triggered, run it and bail
   const commandFix = commandFixes.find((f) => f.id === fixId);
   if (commandFix) {
-    logger.info(`🔎 Running migration ${picocolors.magenta(fixId)}..`);
+    logger.step(`Running migration ${picocolors.magenta(fixId)}..`);
 
     await commandFix.run({
       mainConfigPath,
       previewConfigPath,
       packageManager,
-      packageJson,
       configDir,
       dryRun,
       mainConfig,
       result: null,
       storybookVersion,
+      storiesPaths,
     });
 
     return null;
@@ -181,19 +165,16 @@ export const automigrate = async ({
   const fixes: Fix[] = fixId ? selectedFixes.filter((f) => f.id === fixId) : selectedFixes;
 
   if (fixId && fixes.length === 0) {
-    logger.info(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
+    logger.log(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
     logAvailableMigrations();
     return null;
   }
 
-  await augmentLogsToFile();
-
-  logger.info('🔎 checking possible migrations..');
+  logger.step('Checking possible migrations..');
 
   const { fixResults, fixSummary, preCheckFailure } = await runFixes({
     fixes,
     packageManager,
-    packageJson,
     rendererPackage,
     skipInstall,
     configDir,
@@ -201,39 +182,41 @@ export const automigrate = async ({
     mainConfig,
     mainConfigPath,
     storybookVersion,
-    beforeVersion,
     isUpgrade: !!isUpgrade,
     dryRun,
     yes,
+    storiesPaths,
   });
 
-  const hasFailures = Object.values(fixResults).some(
-    (r) => r === FixStatus.FAILED || r === FixStatus.CHECK_FAILED
-  );
-
   // if migration failed, display a log file in the users cwd
-  if (hasFailures) {
-    await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
-  } else {
-    await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
+  if (hasFailures(fixResults)) {
+    logTracker.enableLogWriting();
   }
 
   if (!hideMigrationSummary) {
-    const installationMetadata = await packageManager.findInstallations([
-      '@storybook/*',
-      'storybook',
-    ]);
-
-    logger.info();
-    logger.info(
-      getMigrationSummary({ fixResults, fixSummary, logFile: LOG_FILE_PATH, installationMetadata })
-    );
-    logger.info();
+    logMigrationSummary({
+      fixResults,
+      fixSummary,
+    });
   }
 
-  cleanup();
-
   return { fixResults, preCheckFailure };
+};
+
+type RunFixesOptions = {
+  fixes: Fix[];
+  yes?: boolean;
+  storiesPaths: string[];
+  dryRun?: boolean;
+  rendererPackage?: string;
+  skipInstall?: boolean;
+  configDir: string;
+  packageManager: JsPackageManager;
+  mainConfigPath: string;
+  previewConfigPath?: string;
+  mainConfig: StorybookConfigRaw;
+  storybookVersion: string;
+  isUpgrade?: boolean;
 };
 
 export async function runFixes({
@@ -244,29 +227,12 @@ export async function runFixes({
   skipInstall,
   configDir,
   packageManager,
-  packageJson,
   mainConfig,
   mainConfigPath,
   previewConfigPath,
   storybookVersion,
-  beforeVersion,
-  isUpgrade,
-}: {
-  fixes: Fix[];
-  yes?: boolean;
-  dryRun?: boolean;
-  rendererPackage?: string;
-  skipInstall?: boolean;
-  configDir: string;
-  packageManager: JsPackageManager;
-  packageJson: PackageJson;
-  mainConfigPath: string;
-  previewConfigPath?: string;
-  mainConfig: StorybookConfigRaw;
-  storybookVersion: string;
-  beforeVersion: string;
-  isUpgrade?: boolean;
-}): Promise<{
+  storiesPaths,
+}: RunFixesOptions): Promise<{
   preCheckFailure?: PreCheckFailure;
   fixResults: Record<FixId, FixStatus>;
   fixSummary: FixSummary;
@@ -279,24 +245,20 @@ export async function runFixes({
     let result;
 
     try {
-      if (
-        (isUpgrade &&
-          semver.satisfies(beforeVersion, f.versionRange[0], { includePrerelease: true }) &&
-          semver.satisfies(storybookVersion, f.versionRange[1], { includePrerelease: true })) ||
-        !isUpgrade
-      ) {
-        result = await f.check({
-          packageManager,
-          configDir,
-          rendererPackage,
-          mainConfig,
-          storybookVersion,
-          previewConfigPath,
-          mainConfigPath,
-        });
-      }
+      logger.debug(`Running ${picocolors.cyan(f.id)} migration checks`);
+      result = await f.check({
+        packageManager,
+        configDir,
+        rendererPackage,
+        mainConfig,
+        storybookVersion,
+        previewConfigPath,
+        mainConfigPath,
+        storiesPaths,
+      });
+      logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
     } catch (error) {
-      logger.info(`⚠️  failed to check fix ${picocolors.bold(f.id)}`);
+      logger.warn(`⚠️  failed to check fix ${picocolors.bold(f.id)}`);
       if (error instanceof Error) {
         logger.error(`\n${error.stack}`);
         fixSummary.failed[f.id] = error.message;
@@ -308,8 +270,7 @@ export async function runFixes({
       const promptType: Prompt =
         typeof f.promptType === 'function' ? await f.promptType(result) : (f.promptType ?? 'auto');
 
-      logger.info(`\n🔎 found a '${picocolors.cyan(f.id)}' migration:`);
-      const message = f.prompt(result);
+      logger.log(`🔎 found a '${picocolors.cyan(f.id)}' migration:`);
 
       const getTitle = () => {
         switch (promptType) {
@@ -322,14 +283,12 @@ export async function runFixes({
         }
       };
 
-      logger.info(
-        boxen(message, {
-          borderStyle: 'round',
-          padding: 1,
-          borderColor: '#F1618C',
-          title: getTitle(),
-        })
-      );
+      const currentTaskLogger = prompt.taskLog({
+        id: `automigrate-task-${f.id}`,
+        title: `${getTitle()}: ${picocolors.cyan(f.id)}`,
+      });
+
+      logger.logBox(f.prompt());
 
       let runAnswer: { fix: boolean } | undefined;
 
@@ -346,14 +305,11 @@ export async function runFixes({
           fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
           fixSummary.manual.push(f.id);
 
-          logger.info();
-          const { shouldContinue } = await prompts(
+          const shouldContinue = await prompt.confirm(
             {
-              type: 'toggle',
-              name: 'shouldContinue',
               message:
                 'Select continue once you have made the required changes, or quit to exit the migration process',
-              initial: true,
+              initialValue: true,
               active: 'continue',
               inactive: 'quit',
             },
@@ -369,28 +325,24 @@ export async function runFixes({
             break;
           }
         } else if (promptType === 'auto') {
-          runAnswer = await prompts(
-            {
-              type: 'confirm',
-              name: 'fix',
-              message: `Do you want to run the '${picocolors.cyan(
-                f.id
-              )}' migration on your project?`,
-              initial: f.promptDefaultValue ?? true,
-            },
-            {
-              onCancel: () => {
-                throw new Error();
-              },
-            }
-          );
+          const shouldRun = yes
+            ? true
+            : await prompt.confirm(
+                {
+                  message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
+                  initialValue: f.defaultSelected ?? true,
+                },
+                {
+                  onCancel: () => {
+                    throw new Error();
+                  },
+                }
+              );
+          runAnswer = { fix: shouldRun };
         } else if (promptType === 'notification') {
-          runAnswer = await prompts(
+          const shouldContinue = await prompt.confirm(
             {
-              type: 'confirm',
-              name: 'fix',
               message: `Do you want to continue?`,
-              initial: true,
             },
             {
               onCancel: () => {
@@ -398,6 +350,7 @@ export async function runFixes({
               },
             }
           );
+          runAnswer = { fix: shouldContinue };
         }
       } catch (err) {
         break;
@@ -416,27 +369,27 @@ export async function runFixes({
               mainConfigPath,
               configDir,
               previewConfigPath,
-              packageJson,
               mainConfig,
               skipInstall,
               storybookVersion,
+              storiesPaths,
             });
-            logger.info(`✅ ran ${picocolors.cyan(f.id)} migration`);
+            logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
 
             fixResults[f.id] = FixStatus.SUCCEEDED;
             fixSummary.succeeded.push(f.id);
+            currentTaskLogger.success(`Ran ${picocolors.cyan(f.id)} migration`);
           } catch (error) {
             fixResults[f.id] = FixStatus.FAILED;
-            fixSummary.failed[f.id] =
-              error instanceof Error ? error.message : 'Failed to run migration';
+            const errorMessage = error instanceof Error ? error.message : 'Failed to run migration';
+            fixSummary.failed[f.id] = errorMessage;
 
-            logger.info(`❌ error when running ${picocolors.cyan(f.id)} migration`);
-            logger.info(error);
-            logger.info();
+            currentTaskLogger.error(`Error when running ${picocolors.cyan(f.id)} migration`);
           }
         } else {
           fixResults[f.id] = FixStatus.SKIPPED;
           fixSummary.skipped.push(f.id);
+          currentTaskLogger.success(`Skipped ${picocolors.cyan(f.id)} migration`);
         }
       }
     } else {

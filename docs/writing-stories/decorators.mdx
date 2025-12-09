@@ -33,6 +33,10 @@ When writing stories, decorators are typically used to wrap stories with extra m
 
   {/* prettier-ignore-end */}
 
+  If you need to pass props to the component returned by your decorator, you can do so by returning an object with `Component` and `props` keys in the decorator function. This allows you to customize the behavior of the decorator based on the [story's context](#context-for-mocking).
+
+  <CodeSnippets path="your-component-with-decorator-with-props.md" />
+
 </IfRenderer>
 
 <If notRenderer="svelte">

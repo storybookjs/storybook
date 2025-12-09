@@ -2,12 +2,11 @@ import { readFile } from 'node:fs/promises';
 
 import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';
 import { enrichCsf, formatCsf, loadCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
 import type { RollupPlugin } from 'unplugin';
 
 import { STORIES_REGEX } from './constants';
-
-const logger = console;
 
 export function rollupBasedPlugin(options: EnrichCsfOptions): Partial<RollupPlugin<any>> {
   return {
@@ -24,7 +23,7 @@ export function rollupBasedPlugin(options: EnrichCsfOptions): Partial<RollupPlug
         const csfSource = loadCsf(sourceCode, {
           makeTitle,
         }).parse();
-        enrichCsf(csf, csfSource, options);
+        await enrichCsf(csf, csfSource, options);
         const inputSourceMap = this.getCombinedSourcemap();
         return formatCsf(csf, { sourceMaps: true, inputSourceMap }, code);
       } catch (err: any) {

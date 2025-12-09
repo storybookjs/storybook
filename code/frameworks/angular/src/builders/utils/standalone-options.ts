@@ -1,7 +1,7 @@
-import { BuilderOptions, CLIOptions, LoadOptions } from 'storybook/internal/types';
+import type { BuilderOptions, CLIOptions, LoadOptions } from 'storybook/internal/types';
 
-import { BuilderContext } from '@angular-devkit/architect';
-import {
+import type { BuilderContext } from '@angular-devkit/architect';
+import type {
   AssetPattern,
   SourceMapUnion,
   StyleElement,

@@ -1,11 +1,11 @@
-import { CompatibleString } from 'storybook/internal/types';
+import type { CompatibleString } from 'storybook/internal/types';
 
-import {
+import type {
   BuilderOptions,
   StorybookConfigWebpack,
   TypescriptOptions as TypescriptOptionsBuilder,
 } from '@storybook/builder-webpack5';
-import {
+import type {
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsReact,
 } from '@storybook/core-webpack';

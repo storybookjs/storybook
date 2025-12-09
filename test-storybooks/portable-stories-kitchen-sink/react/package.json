@@ -7,7 +7,7 @@
     "cypress": "cypress run --component",
     "cypress-open": "cypress open --component",
     "dev": "vite",
-    "jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "jest": "node node_modules/jest/bin/jest.js",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "playwright-ct": "playwright test -c playwright-ct.config.ts",
     "playwright-e2e": "playwright test -c playwright-e2e.config.ts",
@@ -15,11 +15,13 @@
     "storybook": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" storybook dev -p 6006",
     "vitest": "SKIP_FAIL_ON_PURPOSE=true vitest run"
   },
+  "nx": {
+    "includedScripts": []
+  },
   "resolutions": {
-    "@playwright/test": "1.48.1",
+    "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
     "@storybook/addon-docs": "file:../../../code/addons/docs",
-    "@storybook/addon-jest": "file:../../../code/addons/jest",
     "@storybook/addon-links": "file:../../../code/addons/links",
     "@storybook/addon-themes": "file:../../../code/addons/themes",
     "@storybook/angular": "file:../../../code/frameworks/angular",
@@ -45,7 +47,6 @@
     "@storybook/react-webpack5": "file:../../../code/frameworks/react-webpack5",
     "@storybook/server": "file:../../../code/renderers/server",
     "@storybook/server-webpack5": "file:../../../code/frameworks/server-webpack5",
-    "@storybook/source-loader": "file:../../../code/lib/source-loader",
     "@storybook/svelte": "file:../../../code/renderers/svelte",
     "@storybook/svelte-vite": "file:../../../code/frameworks/svelte-vite",
     "@storybook/sveltekit": "file:../../../code/frameworks/sveltekit",
@@ -53,21 +54,22 @@
     "@storybook/vue3-vite": "file:../../../code/frameworks/vue3-vite",
     "@storybook/web-components": "file:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
-    "playwright": "1.48.1"
+    "playwright": "1.52.0"
   },
   "dependencies": {
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
   },
   "devDependencies": {
-    "@playwright/experimental-ct-react": "1.48.1",
-    "@playwright/test": "1.48.1",
-    "@storybook/addon-a11y": "^8.0.0",
-    "@storybook/addon-vitest": "^8.0.0",
-    "@storybook/react": "^8.0.0",
-    "@storybook/react-vite": "^8.0.0",
+    "@playwright/experimental-ct-react": "1.52.0",
+    "@playwright/test": "1.52.0",
+    "@storybook/addon-a11y": "^10.0.0",
+    "@storybook/addon-vitest": "^10.0.0",
+    "@storybook/react": "^10.0.0",
+    "@storybook/react-vite": "^10.0.0",
     "@swc/core": "^1.4.2",
     "@swc/jest": "^0.2.36",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@types/identity-obj-proxy": "^3",
@@ -76,9 +78,10 @@
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^4.2.1",
-    "@vitest/browser": "^3.0.8",
-    "@vitest/coverage-v8": "^3.0.8",
-    "@vitest/ui": "^3.0.8",
+    "@vitest/browser": "4.0.4",
+    "@vitest/browser-playwright": "4.0.4",
+    "@vitest/coverage-v8": "4.0.4",
+    "@vitest/ui": "4.0.4",
     "cypress": "^13.6.4",
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -87,9 +90,9 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "storybook": "^8.0.0",
+    "storybook": "^10.0.0",
     "typescript": "^5.8.3",
-    "vite": "^5.1.1",
-    "vitest": "^3.0.8"
+    "vite": "^7",
+    "vitest": "4.0.4"
   }
 }

@@ -1,17 +1,11 @@
 import { readdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
-import boxen from 'boxen';
-// eslint-disable-next-line depend/ban-dependencies
-import execa from 'execa';
-import picocolors from 'picocolors';
-import prompts from 'prompts';
-import { dedent } from 'ts-dedent';
+import { type PackageManagerName, executeCommand } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
+import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
 
-import type { PackageManagerName } from '../../../core/src/common/js-package-manager/JsPackageManager';
-import { logger } from '../../../core/src/node-logger';
-import { GenerateNewProjectOnInitError } from '../../../core/src/server-errors';
-import { telemetry } from '../../../core/src/telemetry';
 import type { CommandOptions } from './generators/types';
 
 type CoercedPackageManagerName = 'npm' | 'yarn' | 'pnpm';
@@ -35,7 +29,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template react-ts',
-      yarn: 'yarn create vite@latest . --template react-ts',
+      yarn: 'yarn create vite . --template react-ts',
       pnpm: 'pnpm create vite@latest . --template react-ts',
     },
   },
@@ -45,10 +39,10 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
       language: 'TS',
     },
     createScript: {
-      npm: 'npm create next-app . -- --turbopack --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      npm: 'npm create next-app . -- --turbopack --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir --no-react-compiler',
       // yarn doesn't support version ranges, so we have to use npx
-      yarn: 'npx create-next-app . --turbopack --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
-      pnpm: 'pnpm create next-app . --turbopack --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      yarn: 'npx create-next-app . --turbopack --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir --no-react-compiler',
+      pnpm: 'pnpm create next-app . --turbopack --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir --no-react-compiler',
     },
   },
   'vue-vite-ts': {
@@ -59,7 +53,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template vue-ts',
-      yarn: 'yarn create vite@latest . --template vue-ts',
+      yarn: 'yarn create vite . --template vue-ts',
       pnpm: 'pnpm create vite@latest . --template vue-ts',
     },
   },
@@ -82,7 +76,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template lit-ts',
-      yarn: 'yarn create vite@latest . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker pnp',
+      yarn: 'yarn create vite . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker pnp',
       pnpm: 'pnpm create vite@latest . --template lit-ts',
     },
   },
@@ -103,7 +97,7 @@ const packageManagerToCoercedName = (
 
 const buildProjectDisplayNameForPrint = ({ displayName }: SupportedProject) => {
   const { type, builder, language } = displayName;
-  return `${picocolors.bold(picocolors.blue(type))} ${builder ? `+ ${builder} ` : ''}(${language})`;
+  return `${type} ${builder ? `+ ${builder} ` : ''}(${language})`;
 };
 
 /**
@@ -117,27 +111,6 @@ export const scaffoldNewProject = async (
 ) => {
   const packageManagerName = packageManagerToCoercedName(packageManager);
 
-  logger.plain(
-    boxen(
-      dedent`
-        Would you like to generate a new project from the following list?
-
-        ${picocolors.bold('Note:')}
-        Storybook supports many more frameworks and bundlers than listed below. If you don't see your
-        preferred setup, you can still generate a project then rerun this command to add Storybook.
-
-        ${picocolors.bold('Press ^C at any time to quit.')}
-      `,
-      {
-        title: picocolors.bold('🔎 Empty directory detected'),
-        padding: 1,
-        borderStyle: 'double',
-        borderColor: 'yellow',
-      }
-    )
-  );
-  logger.line(1);
-
   let projectStrategy;
 
   if (process.env.STORYBOOK_INIT_EMPTY_TYPE) {
@@ -145,31 +118,39 @@ export const scaffoldNewProject = async (
   }
 
   if (!projectStrategy) {
-    const { project } = await prompts(
-      {
-        type: 'select',
-        name: 'project',
-        message: 'Choose a project template',
-        choices: Object.entries(SUPPORTED_PROJECTS).map(([key, value]) => ({
-          title: buildProjectDisplayNameForPrint(value),
+    projectStrategy = await prompt.select({
+      message: 'Empty directory detected:',
+      options: [
+        ...Object.entries(SUPPORTED_PROJECTS).map(([key, value]) => ({
+          label: buildProjectDisplayNameForPrint(value),
           value: key,
         })),
-      },
-      { onCancel: () => process.exit(0) }
-    );
+        {
+          label: 'Other',
+          value: 'other',
+          hint: 'To install Storybook on another framework, first generate a project with that framework and then rerun this command.',
+        },
+      ],
+    });
+  }
 
-    projectStrategy = project;
+  if (projectStrategy === 'other') {
+    logger.warn(
+      'To install Storybook on another framework, first generate a project with that framework and then rerun this command.'
+    );
+    logger.outro('Exiting...');
+    process.exit(1);
   }
 
   const projectStrategyConfig = SUPPORTED_PROJECTS[projectStrategy];
   const projectDisplayName = buildProjectDisplayNameForPrint(projectStrategyConfig);
   const createScript = projectStrategyConfig.createScript[packageManagerName];
 
-  logger.line(1);
-  logger.plain(
-    `Creating a new "${projectDisplayName}" project with ${picocolors.bold(packageManagerName)}...`
-  );
-  logger.line(1);
+  const spinner = prompt.spinner({
+    id: 'create-new-project',
+  });
+
+  spinner.start(`Creating a new "${projectDisplayName}" project with ${packageManagerName}...`);
 
   const targetDir = process.cwd();
 
@@ -190,13 +171,17 @@ export const scaffoldNewProject = async (
 
   try {
     // Create new project in temp directory
-    await execa.command(createScript, {
-      stdio: 'pipe',
+    spinner.message(`Executing ${createScript}`);
+    await executeCommand({
+      command: createScript,
       shell: true,
+      stdio: 'pipe',
       cwd: targetDir,
-      cleanup: true,
     });
   } catch (e) {
+    spinner.error(
+      `Failed to create a new "${projectDisplayName}" project with ${packageManagerName}`
+    );
     throw new GenerateNewProjectOnInitError({
       error: e,
       packageManager: packageManagerName,
@@ -204,49 +189,31 @@ export const scaffoldNewProject = async (
     });
   }
 
+  spinner.stop(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
+
   if (!disableTelemetry) {
-    telemetry('scaffolded-empty', {
+    await telemetry('scaffolded-empty', {
       packageManager: packageManagerName,
       projectType: projectStrategy,
     });
   }
-
-  logger.plain(
-    boxen(
-      dedent`
-      "${projectDisplayName}" project with ${picocolors.bold(
-        packageManagerName
-      )} created successfully!
-
-      Continuing with Storybook installation...
-    `,
-      {
-        title: picocolors.bold('✅ Success!'),
-        padding: 1,
-        borderStyle: 'double',
-        borderColor: 'green',
-      }
-    )
-  );
-  logger.line(1);
 };
 
-const BASE_IGNORED_FILES = ['.git', '.gitignore', '.DS_Store', '.cache', 'node_modules'];
+const FILES_TO_IGNORE = [
+  '.git',
+  '.gitignore',
+  '.DS_Store',
+  '.cache',
+  'node_modules',
+  '.yarnrc.yml',
+  '.yarn',
+];
 
-const IGNORED_FILES_BY_PACKAGE_MANAGER: Record<CoercedPackageManagerName, string[]> = {
-  npm: [...BASE_IGNORED_FILES],
-  yarn: [...BASE_IGNORED_FILES, '.yarnrc.yml', '.yarn'],
-  pnpm: [...BASE_IGNORED_FILES],
-};
-
-export const currentDirectoryIsEmpty = (packageManager: PackageManagerName) => {
-  const packageManagerName = packageManagerToCoercedName(packageManager);
+export const currentDirectoryIsEmpty = () => {
   const cwdFolderEntries = readdirSync(process.cwd());
-
-  const filesToIgnore = IGNORED_FILES_BY_PACKAGE_MANAGER[packageManagerName];
 
   return (
     cwdFolderEntries.length === 0 ||
-    cwdFolderEntries.every((entry) => filesToIgnore.includes(entry))
+    cwdFolderEntries.every((entry) => FILES_TO_IGNORE.includes(entry))
   );
 };

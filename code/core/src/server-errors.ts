@@ -54,6 +54,7 @@ export enum Category {
 export class NxProjectDetectedError extends StorybookError {
   constructor() {
     super({
+      name: 'NxProjectDetectedError',
       category: Category.CLI_INIT,
       code: 1,
       documentation: 'https://nx.dev/nx-api/storybook#generating-storybook-configuration',
@@ -67,6 +68,7 @@ export class NxProjectDetectedError extends StorybookError {
 export class MissingFrameworkFieldError extends StorybookError {
   constructor() {
     super({
+      name: 'MissingFrameworkFieldError',
       category: Category.CORE_COMMON,
       code: 1,
       documentation:
@@ -82,6 +84,7 @@ export class MissingFrameworkFieldError extends StorybookError {
 export class InvalidFrameworkNameError extends StorybookError {
   constructor(public data: { frameworkName: string }) {
     super({
+      name: 'InvalidFrameworkNameError',
       category: Category.CORE_COMMON,
       code: 2,
       documentation:
@@ -98,6 +101,7 @@ export class InvalidFrameworkNameError extends StorybookError {
 export class CouldNotEvaluateFrameworkError extends StorybookError {
   constructor(public data: { frameworkName: string }) {
     super({
+      name: 'CouldNotEvaluateFrameworkError',
       category: Category.CORE_COMMON,
       code: 3,
       documentation: '',
@@ -114,6 +118,7 @@ export class CouldNotEvaluateFrameworkError extends StorybookError {
 export class ConflictingStaticDirConfigError extends StorybookError {
   constructor() {
     super({
+      name: 'ConflictingStaticDirConfigError',
       category: Category.CORE_SERVER,
       code: 1,
       documentation:
@@ -131,13 +136,14 @@ export class ConflictingStaticDirConfigError extends StorybookError {
 export class InvalidStoriesEntryError extends StorybookError {
   constructor() {
     super({
+      name: 'InvalidStoriesEntryError',
       category: Category.CORE_COMMON,
       code: 4,
       documentation:
         'https://storybook.js.org/docs/faq#can-i-have-a-storybook-with-no-local-stories',
       message: dedent`
         Storybook could not index your stories.
-        Your main configuration somehow does not contain a 'stories' field, or it resolved to an empty array.
+        Your main configuration does not contain a 'stories' field, or it resolved to an empty array.
         
         Please check your main configuration file and make sure it exports a 'stories' field that is not an empty array.`,
     });
@@ -147,6 +153,7 @@ export class InvalidStoriesEntryError extends StorybookError {
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({
+      name: 'WebpackMissingStatsError',
       category: Category.BUILDER_WEBPACK5,
       code: 1,
       documentation: [
@@ -167,6 +174,7 @@ export class WebpackInvocationError extends StorybookError {
     }
   ) {
     super({
+      name: 'WebpackInvocationError',
       category: Category.BUILDER_WEBPACK5,
       code: 2,
       message: data.error.message.trim(),
@@ -198,6 +206,7 @@ export class WebpackCompilationError extends StorybookError {
     });
 
     super({
+      name: 'WebpackCompilationError',
       category: Category.BUILDER_WEBPACK5,
       code: 3,
       // This error message is a followup of errors logged by Webpack to the user
@@ -216,9 +225,10 @@ export class MissingAngularJsonError extends StorybookError {
     }
   ) {
     super({
+      name: 'MissingAngularJsonError',
       category: Category.CLI_INIT,
       code: 2,
-      documentation: 'https://storybook.js.org/docs/faq#error-no-angularjson-file-found',
+      documentation: 'https://storybook.js.org/docs/faq#error-no-angularjson-file-found?ref=error',
       message: dedent`
         An angular.json file was not found in the current working directory: ${data.path}
         Storybook needs it to work properly, so please rerun the command at the root of your project, where the angular.json file is located.`,
@@ -229,6 +239,7 @@ export class MissingAngularJsonError extends StorybookError {
 export class AngularLegacyBuildOptionsError extends StorybookError {
   constructor() {
     super({
+      name: 'AngularLegacyBuildOptionsError',
       category: Category.FRAMEWORK_ANGULAR,
       code: 1,
       documentation: [
@@ -252,6 +263,7 @@ export class CriticalPresetLoadError extends StorybookError {
     }
   ) {
     super({
+      name: 'CriticalPresetLoadError',
       category: Category.CORE_SERVER,
       code: 2,
       documentation: '',
@@ -270,6 +282,7 @@ export class CriticalPresetLoadError extends StorybookError {
 export class MissingBuilderError extends StorybookError {
   constructor() {
     super({
+      name: 'MissingBuilderError',
       category: Category.CORE_SERVER,
       code: 3,
       documentation: 'https://github.com/storybookjs/storybook/issues/24071',
@@ -290,6 +303,7 @@ export class MissingBuilderError extends StorybookError {
 export class GoogleFontsDownloadError extends StorybookError {
   constructor(public data: { fontFamily: string; url: string }) {
     super({
+      name: 'GoogleFontsDownloadError',
       category: Category.FRAMEWORK_NEXTJS,
       code: 1,
       documentation:
@@ -303,6 +317,7 @@ export class GoogleFontsDownloadError extends StorybookError {
 export class GoogleFontsLoadingError extends StorybookError {
   constructor(public data: { error: unknown | Error; url: string }) {
     super({
+      name: 'GoogleFontsLoadingError',
       category: Category.FRAMEWORK_NEXTJS,
       code: 2,
       documentation:
@@ -318,6 +333,7 @@ export class GoogleFontsLoadingError extends StorybookError {
 export class SvelteViteWithSvelteKitError extends StorybookError {
   constructor() {
     super({
+      name: 'SvelteViteWithSvelteKitError',
       category: Category.FRAMEWORK_SVELTE_VITE,
       code: 1,
       documentation:
@@ -332,6 +348,7 @@ export class SvelteViteWithSvelteKitError extends StorybookError {
 export class NoMatchingExportError extends StorybookError {
   constructor(public data: { error: unknown | Error }) {
     super({
+      name: 'NoMatchingExportError',
       category: Category.CORE_SERVER,
       code: 4,
       documentation: '',
@@ -350,65 +367,24 @@ export class NoMatchingExportError extends StorybookError {
   }
 }
 
-export class MainFileESMOnlyImportError extends StorybookError {
-  constructor(
-    public data: { location: string; line: string | undefined; num: number | undefined }
-  ) {
-    const message = [
-      `Storybook failed to load ${data.location}`,
-      '',
-      `It looks like the file tried to load/import an ESM only module.`,
-      `Support for this is currently limited in ${data.location}`,
-      `You can import ESM modules in your main file, but only as dynamic import.`,
-      '',
-    ];
-    if (data.line) {
-      message.push(
-        picocolors.white(
-          `In your ${picocolors.yellow(data.location)} file, line ${picocolors.bold(
-            picocolors.cyan(data.num)
-          )} threw an error:`
-        ),
-        picocolors.gray(data.line)
-      );
-    }
-
-    message.push(
-      '',
-      picocolors.white(
-        `Convert the static import to a dynamic import ${picocolors.underline('where they are used')}.`
-      ),
-      picocolors.white(`Example:`) + ' ' + picocolors.gray(`await import(<your ESM only module>);`),
-      ''
-    );
-
-    super({
-      category: Category.CORE_SERVER,
-      code: 5,
-      documentation:
-        'https://github.com/storybookjs/storybook/issues/23972#issuecomment-1948534058',
-      message: message.join('\n'),
-    });
-  }
-}
-
 export class MainFileMissingError extends StorybookError {
   constructor(public data: { location: string; source?: 'storybook' | 'vitest' }) {
     const map = {
       storybook: {
         helperMessage:
           'You can pass a --config-dir flag to tell Storybook, where your main.js file is located at.',
-        documentation: 'https://storybook.js.org/docs/configure',
+        documentation: 'https://storybook.js.org/docs/configure?ref=error',
       },
       vitest: {
         helperMessage:
           'You can pass a configDir plugin option to tell where your main.js file is located at.',
         // TODO: add proper docs once available
-        documentation: 'https://storybook.js.org/docs/configure',
+        documentation: 'https://storybook.js.org/docs/configure?ref=error',
       },
     };
     const { documentation, helperMessage } = map[data.source || 'storybook'];
     super({
+      name: 'MainFileMissingError',
       category: Category.CORE_SERVER,
       code: 6,
       documentation,
@@ -428,6 +404,7 @@ export class MainFileEvaluationError extends StorybookError {
     );
 
     super({
+      name: 'MainFileEvaluationError',
       category: Category.CORE_SERVER,
       code: 7,
       message: dedent`
@@ -447,6 +424,7 @@ export class StatusTypeIdMismatchError extends StorybookError {
     }
   ) {
     super({
+      name: 'StatusTypeIdMismatchError',
       category: Category.CORE_SERVER,
       code: 16,
       message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(
@@ -463,6 +441,7 @@ export class GenerateNewProjectOnInitError extends StorybookError {
     public data: { error: unknown | Error; packageManager: string; projectType: string }
   ) {
     super({
+      name: 'GenerateNewProjectOnInitError',
       category: Category.CLI_INIT,
       code: 3,
       documentation: '',
@@ -476,9 +455,35 @@ export class GenerateNewProjectOnInitError extends StorybookError {
   }
 }
 
+export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError {
+  constructor(public data: { reasons: string[] }) {
+    super({
+      name: 'AddonVitestPostinstallPrerequisiteCheckError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 4,
+      documentation: '',
+      message: 'The prerequisite check for the Vitest addon failed.',
+    });
+  }
+}
+
+export class AddonVitestPostinstallError extends StorybookError {
+  constructor(public data: { errors: string[] }) {
+    super({
+      name: 'AddonVitestPostinstallError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 5,
+      message: 'The Vitest addon setup failed.',
+    });
+  }
+}
+
 export class UpgradeStorybookToLowerVersionError extends StorybookError {
   constructor(public data: { beforeVersion: string; currentVersion: string }) {
     super({
+      name: 'UpgradeStorybookToLowerVersionError',
       category: Category.CLI_UPGRADE,
       code: 3,
       message: dedent`
@@ -496,32 +501,10 @@ export class UpgradeStorybookToLowerVersionError extends StorybookError {
   }
 }
 
-export class UpgradeStorybookToSameVersionError extends StorybookError {
-  constructor(public data: { beforeVersion: string }) {
-    super({
-      category: Category.CLI_UPGRADE,
-      code: 4,
-      message: dedent`
-        You are upgrading Storybook to the same version that is currently installed in the project, version ${data.beforeVersion}.
-        
-        This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
-        This will cause npm to run the globally cached storybook binary, which might be the same version that you already have.
-        This also happens if you're running the Storybook CLI that is locally installed in your project.
-        
-        If you intended to upgrade to the latest version, you should always run the Storybook CLI with a version specifier to force npm to download the latest version:
-        
-        "npx storybook@latest upgrade"
-        
-        If you intended to re-run automigrations, you should run the "automigrate" command directly instead:
-        
-        "npx storybook automigrate"`,
-    });
-  }
-}
-
 export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
   constructor() {
     super({
+      name: 'UpgradeStorybookUnknownCurrentVersionError',
       category: Category.CLI_UPGRADE,
       code: 5,
       message: dedent`
@@ -533,22 +516,10 @@ export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
   }
 }
 
-export class UpgradeStorybookInWrongWorkingDirectory extends StorybookError {
-  constructor() {
-    super({
-      category: Category.CLI_UPGRADE,
-      code: 6,
-      message: dedent`
-        You are running the upgrade command in a CWD that does not contain Storybook dependencies.
-        
-        Did you mean to run it in a different directory? Make sure the directory you run this command in contains a package.json with your Storybook dependencies.`,
-    });
-  }
-}
-
 export class NoStatsForViteDevError extends StorybookError {
   constructor() {
     super({
+      name: 'NoStatsForViteDevError',
       category: Category.BUILDER_VITE,
       code: 1,
       message: dedent`
@@ -564,6 +535,7 @@ export class FindPackageVersionsError extends StorybookError {
     public data: { error: Error | unknown; packageName: string; packageManager: string }
   ) {
     super({
+      name: 'FindPackageVersionsError',
       category: Category.CLI,
       code: 1,
       message: dedent`
@@ -576,6 +548,7 @@ export class FindPackageVersionsError extends StorybookError {
 export class IncompatiblePostCssConfigError extends StorybookError {
   constructor(public data: { error: Error }) {
     super({
+      name: 'IncompatiblePostCssConfigError',
       category: Category.FRAMEWORK_NEXTJS,
       code: 3,
       message: dedent`
@@ -606,11 +579,42 @@ export class IncompatiblePostCssConfigError extends StorybookError {
 export class SavingGlobalSettingsFileError extends StorybookError {
   constructor(public data: { filePath: string; error: Error | unknown }) {
     super({
+      name: 'SavingGlobalSettingsFileError',
       category: Category.CORE_SERVER,
       code: 1,
       message: dedent`
         Unable to save global settings file to ${data.filePath}
         ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}
+
+export class CommonJsConfigNotSupportedError extends StorybookError {
+  constructor() {
+    super({
+      name: 'CommonJsConfigNotSupportedError',
+      category: Category.CLI_AUTOMIGRATE,
+      code: 1,
+      documentation: 'https://storybook.js.org/docs/configure/overview?ref=error#es-modules',
+      message: dedent`
+        Support for CommonJS Storybook config files has been removed in Storybook 10.0.0.
+        Please migrate your config to a valid ESM file.
+        
+        CommonJS files (ending in .cjs, .cts, .cjsx, .ctsx) or files containing 'module.exports' are no longer supported.
+        Please convert your config to use ES modules (import/export syntax).`,
+    });
+  }
+}
+
+export class AutomigrateError extends StorybookError {
+  constructor(public data: { errors: Array<Error | unknown> }) {
+    super({
+      name: 'AutomigrateError',
+      category: Category.CLI_AUTOMIGRATE,
+      code: 2,
+      message: dedent`
+        An error occurred while running the automigrate command.
+      `,
     });
   }
 }

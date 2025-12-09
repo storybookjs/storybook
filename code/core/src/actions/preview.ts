@@ -1,10 +1,13 @@
-import { definePreview } from 'storybook/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
 import * as addArgs from './addArgs';
 import * as loaders from './loaders';
+import type { ActionsTypes } from './types';
+
+export type { ActionsTypes };
 
 export default () =>
-  definePreview({
+  definePreviewAddon<ActionsTypes>({
     ...addArgs,
     ...loaders,
   });

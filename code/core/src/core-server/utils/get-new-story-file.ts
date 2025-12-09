@@ -3,12 +3,10 @@ import { readFile } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
 
 import {
-  extractProperFrameworkName,
-  extractProperRendererNameFromFramework,
+  extractFrameworkPackageName,
   findConfigFile,
   getFrameworkName,
   getProjectRoot,
-  rendererPackages,
 } from 'storybook/internal/common';
 import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
 import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
@@ -28,10 +26,8 @@ export async function getNewStoryFile(
   }: CreateNewStoryRequestPayload,
   options: Options
 ) {
-  const cwd = getProjectRoot();
-
   const frameworkPackageName = await getFrameworkName(options);
-  const sanitizedFrameworkPackageName = extractProperFrameworkName(frameworkPackageName);
+  const sanitizedFrameworkPackageName = extractFrameworkPackageName(frameworkPackageName);
 
   const base = basename(componentFilePath);
   const extension = extname(componentFilePath);
@@ -82,9 +78,9 @@ export async function getNewStoryFile(
   }
 
   const storyFilePath =
-    doesStoryFileExist(join(cwd, dir), storyFileName) && componentExportCount > 1
-      ? join(cwd, dir, alternativeStoryFileNameWithExtension)
-      : join(cwd, dir, storyFileNameWithExtension);
+    doesStoryFileExist(join(getProjectRoot(), dir), storyFileName) && componentExportCount > 1
+      ? join(getProjectRoot(), dir, alternativeStoryFileNameWithExtension)
+      : join(getProjectRoot(), dir, storyFileNameWithExtension);
 
   return { storyFilePath, exportedStoryName, storyFileContent, dirname };
 }

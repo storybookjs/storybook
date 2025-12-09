@@ -1,4 +1,4 @@
-import { beforeAll, vi, expect as vitestExpect } from 'vitest';
+import { vi, expect as vitestExpect } from 'vitest';
 
 import { setProjectAnnotations } from '@storybook/react';
 
@@ -8,16 +8,17 @@ import preview from './preview';
 
 vi.spyOn(console, 'warn').mockImplementation((...args) => console.log(...args));
 
-const annotations = setProjectAnnotations([
+setProjectAnnotations([
   preview.composed,
   {
     // experiment with injecting Vitest's interactivity API over our userEvent while tests run in browser mode
     // https://vitest.dev/guide/browser/interactivity-api.html
     loaders: async (context) => {
       if (globalThis.__vitest_browser__) {
-        const vitest = await import('@vitest/browser/context');
+        const vitest = await import('vitest/browser');
         const { userEvent: browserEvent } = vitest;
-        context.userEvent = browserEvent.setup();
+        // Unfortunately the types of userEvent don't match so we cast it
+        context.userEvent = (browserEvent as unknown as typeof storybookEvent).setup();
         context.expect = vitestExpect;
       } else {
         context.userEvent = storybookEvent.setup();
@@ -26,5 +27,3 @@ const annotations = setProjectAnnotations([
     },
   },
 ]);
-
-beforeAll(annotations.beforeAll);

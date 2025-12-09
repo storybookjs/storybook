@@ -1,7 +1,6 @@
+import { definePreviewAddon } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
 import type { PlayFunction, StepLabel, StoryContext } from 'storybook/internal/types';
-
-import { definePreview } from 'storybook/preview-api';
 
 const { step } = instrument(
   {
@@ -16,7 +15,7 @@ const { step } = instrument(
 );
 
 export default () =>
-  definePreview({
+  definePreviewAddon({
     parameters: {
       throwPlayFunctionExceptions: false,
     },

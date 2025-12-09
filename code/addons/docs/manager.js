@@ -1,1 +1,1 @@
-export * from './dist/manager';
+export * from './dist/manager.js';

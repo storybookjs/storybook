@@ -3,10 +3,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
+import { add } from '../../add';
 import type { CheckOptions, RunOptions } from '../types';
 import { type StorysourceOptions, addonStorysourceCodePanel } from './addon-storysource-code-panel';
+
+vi.mock('../../add');
+
+vi.mock('storybook/internal/common', async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  return {
+    ...actual,
+    removeAddon: vi.fn(),
+  };
+});
 
 // Mock modules before any other imports or declarations
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -48,11 +59,7 @@ vi.mock('picocolors', () => {
 });
 
 // Create mock package manager
-const mockPackageManager = {
-  retrievePackageJson: vi.fn(),
-  removeDependencies: vi.fn(),
-  runPackageCommand: vi.fn(),
-} as unknown as JsPackageManager;
+const mockPackageManager = {} as JsPackageManager;
 
 // Set up test data
 const baseCheckOptions: CheckOptions = {
@@ -63,10 +70,13 @@ const baseCheckOptions: CheckOptions = {
   } as StorybookConfigRaw,
   storybookVersion: '8.0.0',
   configDir: '.storybook',
+  storiesPaths: [],
 };
 
 describe('addon-storysource-remove', () => {
   beforeEach(() => {
+    mockPackageManager.runPackageCommand = vi.fn();
+    mockPackageManager.removeDependencies = vi.fn();
     vi.clearAllMocks();
   });
 
@@ -130,48 +140,6 @@ describe('addon-storysource-remove', () => {
     });
   });
 
-  describe('prompt phase', () => {
-    it('returns the correct prompt message', () => {
-      const promptMessage = addonStorysourceCodePanel.prompt({
-        hasStorysource: true,
-        hasDocs: true,
-      });
-
-      expect(promptMessage).toMatchInlineSnapshot(dedent`
-        "We've detected that you're using @storybook/addon-storysource.
-
-        The @storybook/addon-storysource addon is being removed in Storybook 9.0. 
-        Instead, Storybook now provides a Code Panel via @storybook/addon-docs 
-        that offers similar functionality with improved integration and performance.
-
-        We'll remove @storybook/addon-storysource from your project and 
-        enable the Code Panel in your preview configuration. 
-
-        More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed"
-      `);
-    });
-
-    it('returns the correct prompt message when docs addon is not present', () => {
-      const promptMessage = addonStorysourceCodePanel.prompt({
-        hasStorysource: true,
-        hasDocs: false,
-      });
-
-      expect(promptMessage).toMatchInlineSnapshot(dedent`
-        "We've detected that you're using @storybook/addon-storysource.
-
-        The @storybook/addon-storysource addon is being removed in Storybook 9.0. 
-        Instead, Storybook now provides a Code Panel via @storybook/addon-docs 
-        that offers similar functionality with improved integration and performance.
-
-        We'll remove @storybook/addon-storysource from your project and 
-        enable the Code Panel in your preview configuration. Additionally, we will install @storybook/addon-docs for you.
-
-        More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed"
-      `);
-    });
-  });
-
   describe('run phase', () => {
     it('does nothing if storysource addon not found', async () => {
       await addonStorysourceCodePanel.run?.({
@@ -179,7 +147,7 @@ describe('addon-storysource-remove', () => {
           hasStorysource: false,
           hasDocs: false,
         },
-        packageManager: mockPackageManager,
+        packageManager: mockPackageManager as JsPackageManager,
         configDir: '.storybook',
       } as RunOptions<StorysourceOptions>);
 
@@ -187,30 +155,26 @@ describe('addon-storysource-remove', () => {
     });
 
     it('removes storysource addon and updates preview config', async () => {
+      const { removeAddon } = await import('storybook/internal/common');
+
       await addonStorysourceCodePanel.run?.({
         result: {
           hasStorysource: true,
           hasDocs: true,
         },
-        packageManager: mockPackageManager,
+        packageManager: mockPackageManager as JsPackageManager,
         previewConfigPath: '.storybook/preview.js',
         configDir: '.storybook',
       } as RunOptions<StorysourceOptions>);
 
-      // Verify package manager was called with correct arguments
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'remove',
-        '@storybook/addon-storysource',
-        '--config-dir',
-        '.storybook',
-      ]);
+      // Verify removeAddon was called with correct arguments
+      expect(removeAddon).toHaveBeenCalledWith('@storybook/addon-storysource', {
+        configDir: '.storybook',
+        skipInstall: true,
+        packageManager: mockPackageManager,
+      });
 
-      expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalledWith('storybook', [
-        'add',
-        '@storybook/addon-docs',
-        '--config-dir',
-        '.storybook',
-      ]);
+      expect(vi.mocked(add)).not.toHaveBeenCalled();
 
       const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
 
@@ -246,17 +210,18 @@ describe('addon-storysource-remove', () => {
           hasStorysource: true,
           hasDocs: false,
         },
-        packageManager: mockPackageManager,
+        packageManager: mockPackageManager as JsPackageManager,
         previewConfigPath: '.storybook/preview.js',
         configDir: '.storybook',
+        storybookVersion: '9.0.0',
       } as RunOptions<StorysourceOptions>);
 
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'add',
-        '@storybook/addon-docs',
-        '--config-dir',
-        '.storybook',
-      ]);
+      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-docs', {
+        configDir: '.storybook',
+        skipInstall: true,
+        skipPostinstall: true,
+        yes: true,
+      });
     });
 
     it('does nothing in dry run mode', async () => {
@@ -266,7 +231,7 @@ describe('addon-storysource-remove', () => {
           hasDocs: true,
         },
         previewConfigPath: '.storybook/preview.js',
-        packageManager: mockPackageManager,
+        packageManager: mockPackageManager as JsPackageManager,
         configDir: '.storybook',
         dryRun: true,
       } as RunOptions<StorysourceOptions>);

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "9.0.0-beta.11",
+  "version": "10.2.0-alpha.3",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -19,42 +19,25 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
-    },
+    "./entry-preview": "./dist/entry-preview.js",
+    "./entry-preview-argtypes": "./dist/entry-preview-argtypes.js",
+    "./entry-preview-docs": "./dist/entry-preview-docs.js",
+    "./entry-preview-rsc": "./dist/entry-preview-rsc.js",
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
-      "import": "./dist/playwright.mjs",
-      "require": "./dist/playwright.js"
+      "default": "./dist/playwright.js"
     },
-    "./preset": "./preset.js",
-    "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
-    "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
-    "./dist/entry-preview-rsc.mjs": "./dist/entry-preview-rsc.mjs",
-    "./package.json": "./package.json"
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "preview": [
-        "dist/preview.d.ts"
-      ],
-      "experimental-playwright": [
-        "dist/playwright.d.ts"
-      ]
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
     }
   },
   "files": [
@@ -65,38 +48,35 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/react-dom-shim": "workspace:*"
+    "@storybook/react-dom-shim": "workspace:*",
+    "react-docgen": "^8.0.2"
   },
   "devDependencies": {
     "@types/babel-plugin-react-docgen": "^4.2.3",
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^1.0.6",
     "@types/node": "^22.0.0",
-    "@types/semver": "^7.3.4",
     "acorn": "^7.4.1",
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",
     "babel-plugin-react-docgen": "^4.2.1",
+    "comment-parser": "^1.4.1",
+    "empathic": "^2.0.0",
     "es-toolkit": "^1.36.0",
     "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
     "html-tags": "^3.1.0",
     "prop-types": "^15.7.2",
-    "react-element-to-jsx-string": "^15.0.0",
+    "react-element-to-jsx-string": "npm:@7rulnik/react-element-to-jsx-string@15.0.1",
     "require-from-string": "^2.0.2",
-    "semver": "^7.3.7",
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",
     "typescript": ">= 4.9.x"
   },
@@ -105,23 +85,8 @@
       "optional": true
     }
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/preset.ts",
-      "./src/preview.tsx",
-      "./src/entry-preview.tsx",
-      "./src/entry-preview-docs.ts",
-      "./src/entry-preview-rsc.tsx",
-      "./src/playwright.ts"
-    ],
-    "platform": "browser"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

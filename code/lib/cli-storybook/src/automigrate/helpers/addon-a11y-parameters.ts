@@ -1,6 +1,7 @@
+import { types as t } from 'storybook/internal/babel';
 import { type ConfigFile, type CsfFile, loadConfig, loadCsf } from 'storybook/internal/csf-tools';
 
-import * as t from '@babel/types';
+import { getObjectProperty, transformStories } from './ast-utils';
 
 // TODO: this is copied from the codemod, we should move both utilities to the csf-tools package at some point
 const isStoryAnnotation = (stmt: t.Statement, objectExports: Record<string, any>) =>
@@ -11,18 +12,12 @@ const isStoryAnnotation = (stmt: t.Statement, objectExports: Record<string, any>
   objectExports[stmt.expression.left.object.name];
 
 function migrateA11yParameters(obj: t.ObjectExpression): boolean {
-  const parametersProp = obj.properties.find(
-    (prop) => t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === 'parameters'
-  );
+  const parametersValue = getObjectProperty(obj, 'parameters') as t.ObjectExpression | undefined;
 
-  if (parametersProp && t.isObjectProperty(parametersProp)) {
-    const parametersValue = parametersProp.value as t.ObjectExpression;
-    const a11yProp = parametersValue.properties.find(
-      (prop) => t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === 'a11y'
-    );
+  if (parametersValue) {
+    const a11yValue = getObjectProperty(parametersValue, 'a11y') as t.ObjectExpression | undefined;
 
-    if (a11yProp && t.isObjectProperty(a11yProp)) {
-      const a11yValue = a11yProp.value as t.ObjectExpression;
+    if (a11yValue) {
       const elementProp = a11yValue.properties.find(
         (prop) =>
           t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === 'element'
@@ -38,16 +33,14 @@ function migrateA11yParameters(obj: t.ObjectExpression): boolean {
 }
 
 export function transformStoryA11yParameters(code: string): CsfFile | null {
-  const parsed = loadCsf(code, { makeTitle: (title) => title }).parse();
+  const parsed = loadCsf(code, { makeTitle: (title?: string) => title || 'default' }).parse();
 
-  let hasChanges = false;
+  // Use the story transformer utility to handle all story iteration
+  let hasChanges = transformStories(parsed, (storyObject, storyName, csf) => {
+    return migrateA11yParameters(storyObject);
+  });
 
-  if (t.isObjectExpression(parsed._metaNode)) {
-    if (migrateA11yParameters(parsed._metaNode)) {
-      hasChanges = true;
-    }
-  }
-
+  // Also handle CSF2-style story annotations
   parsed._ast.program.body.forEach((stmt: t.Statement) => {
     const statement = stmt;
     if (
@@ -73,27 +66,7 @@ export function transformStoryA11yParameters(code: string): CsfFile | null {
     }
   });
 
-  Object.values(parsed._storyExports).forEach((declaration) => {
-    const declarator = declaration as t.VariableDeclarator;
-    let init = t.isVariableDeclarator(declarator) ? declarator.init : undefined;
-
-    // For type annotations e.g. A<B> in `const Story = {} satisfies A<B>;`
-    if (t.isTSSatisfiesExpression(init) || t.isTSAsExpression(init)) {
-      init = init.expression;
-    }
-
-    if (t.isObjectExpression(init)) {
-      if (migrateA11yParameters(init)) {
-        hasChanges = true;
-      }
-    }
-  });
-
-  if (hasChanges) {
-    return parsed;
-  }
-
-  return null;
+  return hasChanges ? parsed : null;
 }
 
 export function transformPreviewA11yParameters(code: string): ConfigFile | null {

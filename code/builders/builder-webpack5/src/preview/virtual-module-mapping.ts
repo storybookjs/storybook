@@ -1,4 +1,5 @@
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   getBuilderOptions,
@@ -10,6 +11,7 @@ import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
 import { toImportFn } from '@storybook/core-webpack';
 
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import type { BuilderOptions } from '../types';
@@ -51,7 +53,9 @@ export const getVirtualModules = async (options: Options) => {
   const configEntryPath = resolve(join(workingDir, 'storybook-config-entry.js'));
   virtualModules[configEntryPath] = (
     await readTemplate(
-      require.resolve('@storybook/builder-webpack5/templates/virtualModuleModernEntry.js')
+      fileURLToPath(
+        import.meta.resolve('@storybook/builder-webpack5/templates/virtualModuleModernEntry.js')
+      )
     )
   )
     .replaceAll(`'{{storiesFilename}}'`, `'./${storiesFilename}'`)

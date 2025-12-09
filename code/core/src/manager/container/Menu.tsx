@@ -1,104 +1,108 @@
 import type { FC } from 'react';
 import React, { useCallback, useMemo } from 'react';
 
-import { Badge } from 'storybook/internal/components';
+import { ActionList, ProgressSpinner } from 'storybook/internal/components';
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
 
-import { CheckIcon, InfoIcon, ShareAltIcon, WandIcon } from '@storybook/icons';
+import { global } from '@storybook/global';
+import {
+  CheckIcon,
+  CommandIcon,
+  DocumentIcon,
+  InfoIcon,
+  ListUnorderedIcon,
+  ShareAltIcon,
+} from '@storybook/icons';
 
-import type { API, State } from 'storybook/manager-api';
+import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
-import type { Link } from '../../components/components/tooltip/TooltipLinkList';
+import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList';
+import { useChecklist } from '../components/sidebar/useChecklist';
 
-const focusableUIElements = {
-  storySearchField: 'storybook-explorer-searchfield',
-  storyListMenu: 'storybook-explorer-menu',
-  storyPanelRoot: 'storybook-panel-root',
+export type MenuItem = NormalLink & {
+  closeOnClick?: boolean;
 };
 
 const Key = styled.span(({ theme }) => ({
-  display: 'inline-block',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   height: 16,
-  lineHeight: '16px',
-  textAlign: 'center',
   fontSize: '11px',
+  fontWeight: theme.typography.weight.regular,
   background: theme.base === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
   color: theme.base === 'light' ? theme.color.dark : theme.textMutedColor,
   borderRadius: 2,
   userSelect: 'none',
   pointerEvents: 'none',
-  padding: '0 6px',
+  padding: '0 4px',
 }));
 
-const KeyChild = styled.code(
-  ({ theme }) => `
-  padding: 0;
-  vertical-align: middle;
+const KeyChild = styled.code(({ theme }) => ({
+  padding: 0,
+  fontFamily: theme.typography.fonts.base,
+  verticalAlign: 'middle',
+  '& + &': {
+    marginLeft: 6,
+  },
+}));
 
-  & + & {
-    margin-left: 6px;
-  }
-`
-);
+const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
+  color: theme.color.secondary,
+}));
 
 export const Shortcut: FC<{ keys: string[] }> = ({ keys }) => (
-  <>
-    <Key>
-      {keys.map((key, index) => (
-        <KeyChild key={key}>{shortcutToHumanString([key])}</KeyChild>
-      ))}
-    </Key>
-  </>
+  <Key>
+    {keys.map((key) => (
+      <KeyChild key={key}>{shortcutToHumanString([key])}</KeyChild>
+    ))}
+  </Key>
 );
 
-export const useMenu = (
-  state: State,
-  api: API,
-  showToolbar: boolean,
-  isFullscreen: boolean,
-  isPanelShown: boolean,
-  isNavShown: boolean,
-  enableShortcuts: boolean
-): Link[][] => {
+export const useMenu = ({
+  api,
+  showToolbar,
+  isPanelShown,
+  isNavShown,
+  enableShortcuts,
+}: {
+  api: API;
+  showToolbar: boolean;
+  isPanelShown: boolean;
+  isNavShown: boolean;
+  enableShortcuts: boolean;
+}): MenuItem[][] => {
   const shortcutKeys = api.getShortcutKeys();
+  const { progress } = useChecklist();
 
   const about = useMemo(
     () => ({
       id: 'about',
       title: 'About your Storybook',
       onClick: () => api.changeSettingsTab('about'),
+      closeOnClick: true,
       icon: <InfoIcon />,
     }),
     [api]
   );
 
-  const documentation = useMemo(() => {
-    const docsUrl = api.getDocsUrl({ versioned: true, renderer: true });
-
-    return {
-      id: 'documentation',
-      title: 'Documentation',
-      href: docsUrl,
-      icon: <ShareAltIcon />,
-    };
-  }, [api]);
-
-  const whatsNewNotificationsEnabled =
-    state.whatsNewData?.status === 'SUCCESS' && !state.disableWhatsNewNotifications;
-  const isWhatsNewUnread = api.isWhatsNewUnread();
-  const whatsNew = useMemo(
+  const guide = useMemo(
     () => ({
-      id: 'whats-new',
-      title: "What's new?",
-      onClick: () => api.changeSettingsTab('whats-new'),
-      right: whatsNewNotificationsEnabled && isWhatsNewUnread && (
-        <Badge status="positive">Check it out</Badge>
+      id: 'guide',
+      title: 'Onboarding guide',
+      onClick: () => api.changeSettingsTab('guide'),
+      closeOnClick: true,
+      icon: <ListUnorderedIcon />,
+      right: progress < 100 && (
+        <ActionList.Button as="div" readOnly padding="none" ariaLabel={`${progress}% completed`}>
+          <ProgressCircle percentage={progress} running={false} size={16} width={1.5} />
+          {progress}%
+        </ActionList.Button>
       ),
-      icon: <WandIcon />,
     }),
-    [api, whatsNewNotificationsEnabled, isWhatsNewUnread]
+    [api, progress]
   );
 
   const shortcuts = useMemo(
@@ -106,7 +110,9 @@ export const useMenu = (
       id: 'shortcuts',
       title: 'Keyboard shortcuts',
       onClick: () => api.changeSettingsTab('shortcuts'),
+      closeOnClick: true,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.shortcutsPage} /> : null,
+      icon: <CommandIcon />,
     }),
     [api, enableShortcuts, shortcutKeys.shortcutsPage]
   );
@@ -116,9 +122,10 @@ export const useMenu = (
       id: 'S',
       title: 'Show sidebar',
       onClick: () => api.toggleNav(),
+      closeOnClick: true,
       active: isNavShown,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.toggleNav} /> : null,
-      icon: isNavShown ? <CheckIcon /> : null,
+      icon: isNavShown ? <CheckIcon /> : <></>,
     }),
     [api, enableShortcuts, shortcutKeys, isNavShown]
   );
@@ -130,7 +137,7 @@ export const useMenu = (
       onClick: () => api.toggleToolbar(),
       active: showToolbar,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.toolbar} /> : null,
-      icon: showToolbar ? <CheckIcon /> : null,
+      icon: showToolbar ? <CheckIcon /> : <></>,
     }),
     [api, enableShortcuts, shortcutKeys, showToolbar]
   );
@@ -138,45 +145,13 @@ export const useMenu = (
   const addonsToggle = useMemo(
     () => ({
       id: 'A',
-      title: 'Show addons',
+      title: 'Show addons panel',
       onClick: () => api.togglePanel(),
       active: isPanelShown,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.togglePanel} /> : null,
-      icon: isPanelShown ? <CheckIcon /> : null,
+      icon: isPanelShown ? <CheckIcon /> : <></>,
     }),
     [api, enableShortcuts, shortcutKeys, isPanelShown]
-  );
-
-  const addonsOrientationToggle = useMemo(
-    () => ({
-      id: 'D',
-      title: 'Change addons orientation',
-      onClick: () => api.togglePanelPosition(),
-      right: enableShortcuts ? <Shortcut keys={shortcutKeys.panelPosition} /> : null,
-    }),
-    [api, enableShortcuts, shortcutKeys]
-  );
-
-  const fullscreenToggle = useMemo(
-    () => ({
-      id: 'F',
-      title: 'Go full screen',
-      onClick: () => api.toggleFullscreen(),
-      active: isFullscreen,
-      right: enableShortcuts ? <Shortcut keys={shortcutKeys.fullScreen} /> : null,
-      icon: isFullscreen ? <CheckIcon /> : null,
-    }),
-    [api, enableShortcuts, shortcutKeys, isFullscreen]
-  );
-
-  const searchToggle = useMemo(
-    () => ({
-      id: '/',
-      title: 'Search',
-      onClick: () => api.focusOnUIElement(focusableUIElements.storySearchField),
-      right: enableShortcuts ? <Shortcut keys={shortcutKeys.search} /> : null,
-    }),
-    [api, enableShortcuts, shortcutKeys]
   );
 
   const up = useMemo(
@@ -185,6 +160,7 @@ export const useMenu = (
       title: 'Previous component',
       onClick: () => api.jumpToComponent(-1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.prevComponent} /> : null,
+      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -195,6 +171,7 @@ export const useMenu = (
       title: 'Next component',
       onClick: () => api.jumpToComponent(1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.nextComponent} /> : null,
+      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -205,6 +182,7 @@ export const useMenu = (
       title: 'Previous story',
       onClick: () => api.jumpToStory(-1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.prevStory} /> : null,
+      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -215,6 +193,7 @@ export const useMenu = (
       title: 'Next story',
       onClick: () => api.jumpToStory(1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.nextStory} /> : null,
+      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -225,9 +204,27 @@ export const useMenu = (
       title: 'Collapse all',
       onClick: () => api.emit(STORIES_COLLAPSE_ALL),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.collapseAll} /> : null,
+      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
+
+  const documentation = useMemo(() => {
+    const docsUrl = api.getDocsUrl({ versioned: true, renderer: true });
+
+    return {
+      id: 'documentation',
+      title: 'Documentation',
+      closeOnClick: true,
+      href: docsUrl,
+      right: (
+        <ActionList.Icon>
+          <ShareAltIcon />
+        </ActionList.Icon>
+      ),
+      icon: <DocumentIcon />,
+    };
+  }, [api]);
 
   const getAddonsShortcuts = useCallback(() => {
     const addonsShortcuts = api.getAddonsShortcuts();
@@ -247,43 +244,28 @@ export const useMenu = (
       [
         [
           about,
-          ...(state.whatsNewData?.status === 'SUCCESS' ? [whatsNew] : []),
-          documentation,
-          shortcuts,
+          ...(global.CONFIG_TYPE === 'DEVELOPMENT' ? [guide] : []),
+          ...(enableShortcuts ? [shortcuts] : []),
         ],
-        [
-          sidebarToggle,
-          toolbarToogle,
-          addonsToggle,
-          addonsOrientationToggle,
-          fullscreenToggle,
-          searchToggle,
-          up,
-          down,
-          prev,
-          next,
-          collapse,
-        ],
+        [sidebarToggle, toolbarToogle, addonsToggle, up, down, prev, next, collapse],
         getAddonsShortcuts(),
-      ] satisfies Link[][],
+        [documentation],
+      ] satisfies NormalLink[][],
     [
       about,
-      state,
-      whatsNew,
+      guide,
       documentation,
       shortcuts,
       sidebarToggle,
       toolbarToogle,
       addonsToggle,
-      addonsOrientationToggle,
-      fullscreenToggle,
-      searchToggle,
       up,
       down,
       prev,
       next,
       collapse,
       getAddonsShortcuts,
+      enableShortcuts,
     ]
   );
 };

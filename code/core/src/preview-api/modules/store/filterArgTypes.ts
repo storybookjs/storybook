@@ -1,6 +1,6 @@
 import type { StrictArgTypes } from 'storybook/internal/types';
 
-import { pickBy } from 'es-toolkit';
+import { pickBy } from 'es-toolkit/object';
 
 export type PropDescriptor = string[] | RegExp;
 

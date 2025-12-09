@@ -1,10 +1,15 @@
-import { cache, loadAllPresets } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
-import { getPrecedingUpgrade, oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import { HandledError, cache, isCI, loadAllPresets } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
+import {
+  ErrorCollector,
+  getPrecedingUpgrade,
+  oneWayHash,
+  telemetry,
+} from 'storybook/internal/telemetry';
 import type { EventType } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
 
-import prompts from 'prompts';
+import { StorybookError } from '../storybook-error';
 
 type TelemetryOptions = {
   cliOptions: CLIOptions;
@@ -14,15 +19,14 @@ type TelemetryOptions = {
 };
 
 const promptCrashReports = async () => {
-  if (process.env.CI) {
+  if (isCI() || !process.stdout.isTTY) {
     return undefined;
   }
 
-  const { enableCrashReports } = await prompts({
-    type: 'confirm',
-    name: 'enableCrashReports',
-    message: `Would you like to help improve Storybook by sending anonymous crash reports?`,
-    initial: true,
+  const enableCrashReports = await prompt.confirm({
+    message:
+      'Would you like to send anonymous crash reports to improve Storybook and fix bugs faster?',
+    initialValue: true,
   });
 
   await cache.set('enableCrashReports', enableCrashReports);
@@ -43,7 +47,7 @@ export async function getErrorLevel({
 
   // If we are running init or similar, we just have to go with true here
   if (!presetOptions) {
-    return 'full';
+    return 'error';
   }
 
   // should we load the preset?
@@ -85,7 +89,8 @@ export async function getErrorLevel({
 export async function sendTelemetryError(
   _error: unknown,
   eventType: EventType,
-  options: TelemetryOptions
+  options: TelemetryOptions,
+  blocking = true
 ) {
   try {
     let errorLevel = 'error';
@@ -114,6 +119,7 @@ export async function sendTelemetryError(
           name,
           category,
           eventType,
+          blocking,
           precedingUpgrade,
           error: errorLevel === 'full' ? error : undefined,
           errorHash,
@@ -132,14 +138,16 @@ export async function sendTelemetryError(
   }
 }
 
+export function isTelemetryEnabled(options: TelemetryOptions) {
+  return !(options.cliOptions.disableTelemetry || options.cliOptions.test === true);
+}
+
 export async function withTelemetry<T>(
   eventType: EventType,
   options: TelemetryOptions,
   run: () => Promise<T>
 ): Promise<T | undefined> {
-  const enableTelemetry = !(
-    options.cliOptions.disableTelemetry || options.cliOptions.test === true
-  );
+  const enableTelemetry = isTelemetryEnabled(options);
 
   let canceled = false;
 
@@ -168,8 +176,13 @@ export async function withTelemetry<T>(
       return undefined;
     }
 
-    const { printError = logger.error } = options;
-    printError(error);
+    const isHandledError =
+      error instanceof HandledError || (error instanceof StorybookError && error.isHandledError);
+
+    if (!isHandledError) {
+      const { printError = logger.error } = options;
+      printError(error);
+    }
 
     if (enableTelemetry) {
       await sendTelemetryError(error, eventType, options);
@@ -177,6 +190,12 @@ export async function withTelemetry<T>(
 
     throw error;
   } finally {
-    process.off('SIGINIT', cancelTelemetry);
+    if (enableTelemetry) {
+      const errors = ErrorCollector.getErrors();
+      for (const error of errors) {
+        await sendTelemetryError(error, eventType, options, false);
+      }
+      process.off('SIGINT', cancelTelemetry);
+    }
   }
 }

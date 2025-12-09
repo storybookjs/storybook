@@ -1,9 +1,12 @@
+import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
 import type { Server } from 'http';
+import { dedent } from 'ts-dedent';
 import type { InlineConfig, ServerOptions } from 'vite';
 
 import { sanitizeEnvVars } from './envs';
+import { createViteLogger } from './logger';
 import { getOptimizeDeps } from './optimizeDeps';
 import { commonConfig } from './vite-config';
 
@@ -29,18 +32,24 @@ export async function createViteServer(options: Options, devServer: Server) {
     optimizeDeps: await getOptimizeDeps(commonCfg, options),
   };
 
-  const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$|^(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}$/;
-
-  if (
-    !(config.server.allowedHosts as string[])?.length &&
-    options.host &&
-    !ipRegex.test(options.host)
-  ) {
-    config.server.allowedHosts = [options.host.toLowerCase()];
+  // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.
+  // but without server.allowedHosts set, requests from outside the container will be rejected.
+  if (options.host === '0.0.0.0' && !config.server.allowedHosts) {
+    config.server.allowedHosts = true;
+    logger.warn(dedent`'host' is set to '0.0.0.0' but 'allowedHosts' is not defined.
+      Defaulting 'allowedHosts' to true, which permits all hostnames.
+      To restrict allowed hostnames, add the following to your 'viteFinal' config:
+      Example: { server: { allowedHosts: ['mydomain.com'] } }
+      See:
+      - https://vite.dev/config/server-options.html#server-allowedhosts
+      - https://storybook.js.org/docs/api/main-config/main-config-vite-final
+    `);
   }
 
   const finalConfig = await presets.apply('viteFinal', config, options);
 
   const { createServer } = await import('vite');
+
+  finalConfig.customLogger ??= await createViteLogger();
   return createServer(await sanitizeEnvVars(options, finalConfig));
 }

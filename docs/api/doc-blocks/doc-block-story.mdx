@@ -5,7 +5,7 @@ sidebar:
   title: Story
 ---
 
-Stories (component tests) are Storybook's fundamental building blocks.
+[Stories](../../writing-stories/index.mdx) are Storybook's fundamental building blocks.
 
 In Storybook Docs, you can render any of your stories from your CSF files in the context of an MDX file with all annotations (parameters, args, loaders, decorators, play function) applied using the `Story` block.
 
@@ -73,7 +73,7 @@ Because all stories render simultaneously in docs entries, play functions can pe
 However, if you know your play function is “safe” to run in docs, you can use this prop to run it automatically.
 
 <Callout variant="info">
-  If a story uses [`mount` in its play function](../../writing-tests/component-testing.mdx#run-code-before-the-component-gets-rendered), it will not render in docs unless `autoplay` is set to `true`.
+  If a story uses [`mount` in its play function](../../writing-tests/interaction-testing.mdx#run-code-before-the-component-gets-rendered), it will not render in docs unless `autoplay` is set to `true`.
 </Callout>
 
 ### `height`

@@ -1,12 +1,12 @@
 import type { ChangeEvent, FC, FocusEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Form, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { Button, Form, PopoverProvider } from 'storybook/internal/components';
 
 import { MarkupIcon } from '@storybook/icons';
 
 import convert from 'color-convert';
-import { debounce } from 'es-toolkit/compat';
+import { debounce } from 'es-toolkit/function';
 import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
 import { styled } from 'storybook/theming';
 
@@ -16,19 +16,6 @@ import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types
 const Wrapper = styled.div({
   position: 'relative',
   maxWidth: 250,
-  '&[aria-readonly="true"]': {
-    opacity: 0.5,
-  },
-});
-
-const PickerTooltip = styled(WithTooltip)({
-  position: 'absolute',
-  zIndex: 1,
-  top: 4,
-  left: 4,
-  '[aria-readonly=true] &': {
-    cursor: 'not-allowed',
-  },
 });
 
 const TooltipContent = styled.div({
@@ -46,10 +33,6 @@ const TooltipContent = styled.div({
   },
 });
 
-const Note = styled(TooltipNote)(({ theme }) => ({
-  fontFamily: theme.typography.fonts.base,
-}));
-
 const Swatches = styled.div({
   display: 'grid',
   gridTemplateColumns: 'repeat(9, 16px)',
@@ -59,32 +42,47 @@ const Swatches = styled.div({
   width: 200,
 });
 
-const SwatchColor = styled.div<{ active?: boolean }>(({ theme, active }) => ({
-  width: 16,
-  height: 16,
-  boxShadow: active
-    ? `${theme.appBorderColor} 0 0 0 1px inset, ${theme.textMutedColor}50 0 0 0 4px`
-    : `${theme.appBorderColor} 0 0 0 1px inset`,
-  borderRadius: theme.appBorderRadius,
-}));
+const swatchBackground = (isDark: boolean) =>
+  `url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill-opacity="0.05" fill="${isDark ? 'white' : 'black'}"><path d="M8 0h8v8H8zM0 8h8v8H0z"/></svg>')`;
 
-const swatchBackground = `url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill-opacity=".05"><path d="M8 0h8v8H8zM0 8h8v8H0z"/></svg>')`;
+const SwatchColor = styled(Button)<{ selected?: boolean; value: string }>(
+  ({ value, selected, theme }) => ({
+    width: 16,
+    height: 16,
+    boxShadow: selected
+      ? `${theme.appBorderColor} 0 0 0 1px inset, ${theme.textMutedColor}50 0 0 0 4px`
+      : `${theme.appBorderColor} 0 0 0 1px inset`,
+    border: 'none',
+    borderRadius: theme.appBorderRadius,
+    '&, &:hover': {
+      background: 'unset',
+      backgroundColor: 'unset',
+      backgroundImage: `linear-gradient(${value}, ${value}), ${swatchBackground(theme.base === 'dark')}`,
+    },
+  })
+);
 
-type SwatchProps = { value: string } & React.ComponentProps<typeof SwatchColor>;
-const Swatch = ({ value, style, ...props }: SwatchProps) => {
-  const backgroundImage = `linear-gradient(${value}, ${value}), ${swatchBackground}, linear-gradient(#fff, #fff)`;
-  return <SwatchColor {...props} style={{ ...style, backgroundImage }} />;
-};
-
-const Input = styled(Form.Input)(({ theme, readOnly }) => ({
+const Input = styled(Form.Input)(({ theme }) => ({
   width: '100%',
   paddingLeft: 30,
   paddingRight: 30,
   boxSizing: 'border-box',
   fontFamily: theme.typography.fonts.base,
+
+  '[aria-readonly="true"] > &': {
+    background: theme.base === 'light' ? theme.color.lighter : 'transparent',
+  },
 }));
 
-const ToggleIcon = styled(MarkupIcon)(({ theme }) => ({
+const PopoverTrigger = styled(SwatchColor)<{ disabled: boolean }>(({ disabled }) => ({
+  position: 'absolute',
+  top: 4,
+  left: 4,
+  zIndex: 1,
+  cursor: disabled ? 'not-allowed' : 'pointer',
+}));
+
+const CycleColorSpaceButton = styled(Button)(({ theme }) => ({
   position: 'absolute',
   zIndex: 1,
   top: 6,
@@ -142,52 +140,51 @@ const stringToArgs = (value: string) => {
   return [x, y, z, a].map(Number);
 };
 
-const parseValue = (value: string): ParsedColor | undefined => {
-  if (!value) {
-    return undefined;
-  }
-  let valid = true;
+const parseRgb = (value: string): ParsedColor => {
+  const [r, g, b, a] = stringToArgs(value);
+  const [h, s, l] = convert.rgb.hsl([r, g, b]) || [0, 0, 0];
 
-  if (RGB_REGEXP.test(value)) {
-    const [r, g, b, a] = stringToArgs(value);
-    const [h, s, l] = convert.rgb.hsl([r, g, b]) || [0, 0, 0];
-    return {
-      valid,
-      value,
-      keyword: convert.rgb.keyword([r, g, b]),
-      colorSpace: ColorSpace.RGB,
-      [ColorSpace.RGB]: value,
-      [ColorSpace.HSL]: `hsla(${h}, ${s}%, ${l}%, ${a})`,
-      [ColorSpace.HEX]: `#${convert.rgb.hex([r, g, b]).toLowerCase()}`,
-    };
-  }
+  return {
+    valid: true,
+    value,
+    keyword: convert.rgb.keyword([r, g, b]),
+    colorSpace: ColorSpace.RGB,
+    [ColorSpace.RGB]: value,
+    [ColorSpace.HSL]: `hsla(${h}, ${s}%, ${l}%, ${a})`,
+    [ColorSpace.HEX]: `#${convert.rgb.hex([r, g, b]).toLowerCase()}`,
+  };
+};
 
-  if (HSL_REGEXP.test(value)) {
-    const [h, s, l, a] = stringToArgs(value);
-    const [r, g, b] = convert.hsl.rgb([h, s, l]) || [0, 0, 0];
-    return {
-      valid,
-      value,
-      keyword: convert.hsl.keyword([h, s, l]),
-      colorSpace: ColorSpace.HSL,
-      [ColorSpace.RGB]: `rgba(${r}, ${g}, ${b}, ${a})`,
-      [ColorSpace.HSL]: value,
-      [ColorSpace.HEX]: `#${convert.hsl.hex([h, s, l]).toLowerCase()}`,
-    };
-  }
+const parseHsl = (value: string): ParsedColor => {
+  const [h, s, l, a] = stringToArgs(value);
+  const [r, g, b] = convert.hsl.rgb([h, s, l]) || [0, 0, 0];
 
+  return {
+    valid: true,
+    value,
+    keyword: convert.hsl.keyword([h, s, l]),
+    colorSpace: ColorSpace.HSL,
+    [ColorSpace.RGB]: `rgba(${r}, ${g}, ${b}, ${a})`,
+    [ColorSpace.HSL]: value,
+    [ColorSpace.HEX]: `#${convert.hsl.hex([h, s, l]).toLowerCase()}`,
+  };
+};
+
+const parseHexOrKeyword = (value: string): ParsedColor => {
   const plain = value.replace('#', '');
+  // Try interpreting as keyword or hex
   const rgb = convert.keyword.rgb(plain as any) || convert.hex.rgb(plain);
   const hsl = convert.rgb.hsl(rgb);
 
   let mapped = value;
-
   if (/[^#a-f0-9]/i.test(value)) {
+    // Possibly a keyword
     mapped = plain;
   } else if (HEX_REGEXP.test(value)) {
     mapped = `#${plain}`;
   }
 
+  let valid = true;
   if (mapped.startsWith('#')) {
     valid = HEX_REGEXP.test(mapped);
   } else {
@@ -207,6 +204,19 @@ const parseValue = (value: string): ParsedColor | undefined => {
     [ColorSpace.HSL]: `hsla(${hsl[0]}, ${hsl[1]}%, ${hsl[2]}%, 1)`,
     [ColorSpace.HEX]: mapped,
   };
+};
+
+const parseValue = (value: string): ParsedColor | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  if (RGB_REGEXP.test(value)) {
+    return parseRgb(value);
+  }
+  if (HSL_REGEXP.test(value)) {
+    return parseHsl(value);
+  }
+  return parseHexOrKeyword(value);
 };
 
 const getRealValue = (value: string, color: ParsedColor | undefined, colorSpace: ColorSpace) => {
@@ -279,15 +289,14 @@ const useColorInput = (
   );
 
   const cycleColorSpace = useCallback(() => {
-    let next = COLOR_SPACES.indexOf(colorSpace) + 1;
+    const currentIndex = COLOR_SPACES.indexOf(colorSpace);
+    const nextIndex = (currentIndex + 1) % COLOR_SPACES.length;
+    const nextSpace = COLOR_SPACES[nextIndex];
 
-    if (next >= COLOR_SPACES.length) {
-      next = 0;
-    }
-    setColorSpace(COLOR_SPACES[next]);
-    const update = color?.[COLOR_SPACES[next]] || '';
-    setValue(update);
-    onChange(update);
+    setColorSpace(nextSpace);
+    const updatedValue = color?.[nextSpace] || '';
+    setValue(updatedValue);
+    onChange(updatedValue);
   }, [color, colorSpace, onChange]);
 
   return { value, realValue, updateValue, color, colorSpace, cycleColorSpace };
@@ -367,16 +376,27 @@ export const ColorControl: FC<ColorControlProps> = ({
   const { presets, addPreset } = usePresets(presetColors ?? [], color, colorSpace);
   const Picker = ColorPicker[colorSpace];
 
-  const readonly = !!argType?.table?.readonly;
+  const readOnly = !!argType?.table?.readonly;
+  const controlId = getControlId(name);
 
   return (
-    <Wrapper aria-readonly={readonly}>
-      <PickerTooltip
-        startOpen={startOpen}
-        trigger={readonly ? null : undefined}
-        closeOnOutsideClick
+    <Wrapper>
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
+      <Input
+        id={controlId}
+        value={value}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => updateValue(e.target.value)}
+        onFocus={(e: FocusEvent<HTMLInputElement>) => e.target.select()}
+        readOnly={readOnly}
+        placeholder="Choose color..."
+      />
+      <PopoverProvider
+        defaultVisible={startOpen}
+        visible={readOnly ? false : undefined}
         onVisibleChange={() => color && addPreset(color)}
-        tooltip={
+        popover={
           <TooltipContent>
             <Picker
               color={realValue === 'transparent' ? '#000000' : realValue}
@@ -385,41 +405,52 @@ export const ColorControl: FC<ColorControlProps> = ({
             {presets.length > 0 && (
               <Swatches>
                 {presets.map((preset, index: number) => (
-                  <WithTooltip
+                  <SwatchColor
                     key={`${preset?.value || index}-${index}`}
-                    hasChrome={false}
-                    tooltip={<Note note={preset?.keyword || preset?.value || ''} />}
-                  >
-                    <Swatch
-                      value={preset?.[colorSpace] || ''}
-                      active={
-                        !!(
-                          color &&
-                          preset &&
-                          preset[colorSpace] &&
-                          id(preset[colorSpace] || '') === id(color[colorSpace])
-                        )
-                      }
-                      onClick={() => preset && updateValue(preset.value || '')}
-                    />
-                  </WithTooltip>
+                    variant="ghost"
+                    padding="small"
+                    size="small"
+                    ariaLabel="Pick this color"
+                    tooltip={preset?.keyword || preset?.value || ''}
+                    value={preset?.value || ''}
+                    selected={
+                      !!(
+                        color &&
+                        preset &&
+                        preset[colorSpace] &&
+                        id(preset[colorSpace] || '') === id(color[colorSpace])
+                      )
+                    }
+                    onClick={() => preset && updateValue(preset.value || '')}
+                  />
                 ))}
               </Swatches>
             )}
           </TooltipContent>
         }
       >
-        <Swatch value={realValue} style={{ margin: 4 }} />
-      </PickerTooltip>
-      <Input
-        id={getControlId(name)}
-        value={value}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => updateValue(e.target.value)}
-        onFocus={(e: FocusEvent<HTMLInputElement>) => e.target.select()}
-        readOnly={readonly}
-        placeholder="Choose color..."
-      />
-      {value ? <ToggleIcon onClick={cycleColorSpace} /> : null}
+        <PopoverTrigger
+          variant="ghost"
+          padding="small"
+          size="small"
+          ariaLabel="Open color picker"
+          value={realValue}
+          style={{ margin: 4 }}
+          disabled={readOnly}
+        />
+      </PopoverProvider>
+      {value ? (
+        <CycleColorSpaceButton
+          variant="ghost"
+          padding="small"
+          size="small"
+          ariaLabel="Cycle through color spaces"
+          disabled={readOnly}
+          onClick={readOnly ? undefined : cycleColorSpace}
+        >
+          <MarkupIcon />
+        </CycleColorSpaceButton>
+      ) : null}
     </Wrapper>
   );
 };

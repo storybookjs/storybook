@@ -1,18 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { SyntaxHighlighter } from 'storybook/internal/components';
-import { ADDON_ID as CONTROLS_ADDON_ID } from 'storybook/internal/controls';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 
-import type { Step } from 'react-joyride';
 import { type API } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
+import { HighlightElement } from '../../../core/src/manager/components/TourGuide/HighlightElement';
+import { TourGuide } from '../../../core/src/manager/components/TourGuide/TourGuide';
 import { Confetti } from './components/Confetti/Confetti';
-import { HighlightElement } from './components/HighlightElement/HighlightElement';
 import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants';
-import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
-import { GuidedTour } from './features/GuidedTour/GuidedTour';
+import { ADDON_CONTROLS_ID, ADDON_ONBOARDING_CHANNEL } from './constants';
+import { IntentSurvey } from './features/IntentSurvey/IntentSurvey';
 import { SplashScreen } from './features/SplashScreen/SplashScreen';
 
 const SpanHighlight = styled.span(({ theme }) => ({
@@ -44,30 +43,14 @@ const CodeWrapper = styled.div(({ theme }) => ({
 const theme = convert();
 
 export type StepKey = (typeof STORYBOOK_ADDON_ONBOARDING_STEPS)[number];
-export type StepDefinition = {
-  key: StepKey;
-  hideNextButton?: boolean;
-  onNextButtonClick?: () => void;
-} & Partial<
-  Pick<
-    // Unfortunately we can't use ts-expect-error here for some reason
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore Ignore circular reference
-    Step,
-    | 'content'
-    | 'disableBeacon'
-    | 'disableOverlay'
-    | 'floaterProps'
-    | 'offset'
-    | 'placement'
-    | 'spotlightClicks'
-    | 'styles'
-    | 'target'
-    | 'title'
-  >
->;
 
-export default function Onboarding({ api }: { api: API }) {
+export default function Onboarding({
+  api,
+  hasCompletedSurvey,
+}: {
+  api: API;
+  hasCompletedSurvey: boolean;
+}) {
   const [enabled, setEnabled] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
   const [step, setStep] = useState<StepKey>('1:Intro');
@@ -82,6 +65,9 @@ export default function Onboarding({ api }: { api: API }) {
     sourceFileName: string;
   } | null>();
 
+  // eslint-disable-next-line compat/compat
+  const userAgent = globalThis?.navigator?.userAgent;
+
   const selectStory = useCallback(
     (storyId: string) => {
       try {
@@ -95,32 +81,44 @@ export default function Onboarding({ api }: { api: API }) {
     [api]
   );
 
-  const disableOnboarding = useCallback(() => {
-    // remove onboarding query parameter from current url
-    const url = new URL(window.location.href);
-    // @ts-expect-error (not strict)
-    const path = decodeURIComponent(url.searchParams.get('path'));
-    url.search = `?path=${path}&onboarding=false`;
-    history.replaceState({}, '', url.href);
-    api.setQueryParams({ onboarding: 'false' });
-    setEnabled(false);
-  }, [api, setEnabled]);
+  const disableOnboarding = useCallback(
+    (dismissedStep?: StepKey) => {
+      if (dismissedStep) {
+        api.emit(ADDON_ONBOARDING_CHANNEL, {
+          dismissedStep,
+          type: 'dismiss',
+          userAgent,
+        });
+      }
+      // remove onboarding query parameter from current url
+      const url = new URL(window.location.href);
+      url.searchParams.set('onboarding', 'false');
+      history.replaceState({}, '', url.href);
+      api.setQueryParams({ onboarding: 'false' });
+      setEnabled(false);
+    },
+    [api, setEnabled, userAgent]
+  );
 
-  const completeOnboarding = useCallback(() => {
-    api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
-      step: '6:FinishedOnboarding' satisfies StepKey,
-      type: 'telemetry',
-    });
-    selectStory('configure-your-project--docs');
-    disableOnboarding();
-  }, [api, selectStory, disableOnboarding]);
+  const completeSurvey = useCallback(
+    (answers: Record<string, unknown>) => {
+      api.emit(ADDON_ONBOARDING_CHANNEL, {
+        answers,
+        type: 'survey',
+        userAgent,
+      });
+      setStep('7:FinishedOnboarding');
+      selectStory('configure-your-project--docs');
+    },
+    [api, selectStory, userAgent]
+  );
 
   useEffect(() => {
     api.setQueryParams({ onboarding: 'true' });
     selectStory('example-button--primary');
     api.togglePanel(true);
     api.togglePanelPosition('bottom');
-    api.setSelectedPanel(CONTROLS_ADDON_ID);
+    api.setSelectedPanel(ADDON_CONTROLS_ID);
   }, [api, selectStory]);
 
   useEffect(() => {
@@ -136,7 +134,13 @@ export default function Onboarding({ api }: { api: API }) {
 
   useEffect(() => {
     setStep((current) => {
-      if (['1:Intro', '5:StoryCreated', '6:FinishedOnboarding'].includes(current)) {
+      if (hasCompletedSurvey && current === '6:IntentSurvey') {
+        return '7:FinishedOnboarding';
+      }
+
+      if (
+        ['1:Intro', '5:StoryCreated', '6:IntentSurvey', '7:FinishedOnboarding'].includes(current)
+      ) {
         return current;
       }
 
@@ -148,12 +152,13 @@ export default function Onboarding({ api }: { api: API }) {
         return '3:SaveFromControls';
       }
 
-      if (primaryControl) {
+      if (primaryControl || current === '2:Controls') {
         return '2:Controls';
       }
+
       return '1:Intro';
     });
-  }, [createNewStoryForm, primaryControl, saveFromControls]);
+  }, [hasCompletedSurvey, createNewStoryForm, primaryControl, saveFromControls]);
 
   useEffect(() => {
     return api.on(SAVE_STORY_RESPONSE, ({ payload, success }) => {
@@ -164,12 +169,13 @@ export default function Onboarding({ api }: { api: API }) {
       setShowConfetti(true);
       setStep('5:StoryCreated');
       setTimeout(() => api.clearNotification('save-story-success'));
+      setTimeout(() => setShowConfetti(false), 10000);
     });
   }, [api]);
 
   useEffect(
-    () => api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, { step, type: 'telemetry' }),
-    [api, step]
+    () => api.emit(ADDON_ONBOARDING_CHANNEL, { step, type: 'telemetry', userAgent }),
+    [api, step, userAgent]
   );
 
   if (!enabled) {
@@ -181,7 +187,7 @@ export default function Onboarding({ api }: { api: API }) {
   const snippet = source?.slice(startIndex).trim();
   const startingLineNumber = source?.slice(0, startIndex).split('\n').length;
 
-  const steps: StepDefinition[] = [
+  const controlsTour = [
     {
       key: '2:Controls',
       target: '#control-primary',
@@ -198,7 +204,7 @@ export default function Onboarding({ api }: { api: API }) {
       disableBeacon: true,
       disableOverlay: true,
       spotlightClicks: true,
-      onNextButtonClick: () => {
+      onNext: () => {
         const input = document.querySelector('#control-primary') as HTMLInputElement;
         input.click();
       },
@@ -219,7 +225,7 @@ export default function Onboarding({ api }: { api: API }) {
       disableBeacon: true,
       disableOverlay: true,
       spotlightClicks: true,
-      onNextButtonClick: () => {
+      onNext: () => {
         const button = document.querySelector(
           'button[aria-label="Create new story with these settings"]'
         ) as HTMLButtonElement;
@@ -265,19 +271,59 @@ export default function Onboarding({ api }: { api: API }) {
         },
       },
     },
-  ] as const;
+  ];
+
+  const checklistTour = [
+    {
+      key: '7:FinishedOnboarding',
+      target: '#storybook-checklist-module',
+      title: 'Continue at your own pace using the guide',
+      content: (
+        <>
+          Nice! You've got the essentials. You can continue at your own pace using the guide to
+          discover more of Storybook's capabilities.
+          <HighlightElement targetSelector="#storybook-checklist-module" pulsating />
+        </>
+      ),
+      offset: 0,
+      placement: 'right-start',
+      disableBeacon: true,
+      disableOverlay: true,
+      styles: {
+        tooltip: {
+          width: 350,
+        },
+      },
+    },
+  ];
 
   return (
     <ThemeProvider theme={theme}>
       {showConfetti && <Confetti />}
       {step === '1:Intro' ? (
         <SplashScreen onDismiss={() => setStep('2:Controls')} />
-      ) : (
-        <GuidedTour
+      ) : step === '6:IntentSurvey' ? (
+        <IntentSurvey
+          onComplete={completeSurvey}
+          onDismiss={() => disableOnboarding('6:IntentSurvey')}
+        />
+      ) : step === '7:FinishedOnboarding' ? (
+        <TourGuide
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore Circular reference in Step type
           step={step}
-          steps={steps}
-          onClose={disableOnboarding}
-          onComplete={completeOnboarding}
+          steps={checklistTour}
+          onComplete={() => disableOnboarding()}
+          onDismiss={() => disableOnboarding(step)}
+        />
+      ) : (
+        <TourGuide
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore Circular reference in Step type
+          step={step}
+          steps={controlsTour}
+          onComplete={() => setStep(hasCompletedSurvey ? '7:FinishedOnboarding' : '6:IntentSurvey')}
+          onDismiss={() => disableOnboarding(step)}
         />
       )}
     </ThemeProvider>

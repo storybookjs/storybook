@@ -1,14 +1,14 @@
 {
   "name": "eslint-plugin-storybook",
-  "version": "9.0.0-beta.11",
-  "description": "Best practice rules for Storybook",
+  "version": "10.2.0-alpha.3",
+  "description": "Storybook ESLint Plugin: Best practice rules for writing stories",
   "keywords": [
     "eslint",
     "eslintplugin",
     "eslint-plugin",
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/code/lib/eslint-plugin#readme",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/eslint-plugin#readme",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },
@@ -25,16 +25,21 @@
       "email": "rafaelrozon.developer@gmail.com"
     }
   ],
-  "main": "dist/index.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist/**/*",
     "README.md"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
     "generate-rule": "jiti ./scripts/generate-rule",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts",
-    "update-rules": "jiti ./scripts/update-all.ts"
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@typescript-eslint/utils": "^8.8.1"
@@ -46,7 +51,7 @@
     "@typescript-eslint/eslint-plugin": "^8.8.1",
     "@typescript-eslint/parser": "^8.8.1",
     "@typescript-eslint/rule-tester": "^8.8.1",
-    "@vitest/coverage-v8": "^3.0.9",
+    "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^8.57.1",
     "eslint-plugin-eslint-plugin": "^6.2.0",
     "eslint-plugin-node": "^11.1.0",
@@ -59,26 +64,8 @@
     "eslint": ">=8",
     "storybook": "workspace:^"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "pre": "./scripts/update-all.ts",
-    "entries": [
-      "./src/index.ts",
-      "./src/configs/recommended.ts",
-      "./src/configs/csf.ts",
-      "./src/configs/csf-strict.ts",
-      "./src/configs/addon-interactions.ts",
-      "./src/configs/flat/recommended.ts",
-      "./src/configs/flat/csf.ts",
-      "./src/configs/flat/csf-strict.ts",
-      "./src/configs/flat/addon-interactions.ts"
-    ],
-    "platform": "node"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

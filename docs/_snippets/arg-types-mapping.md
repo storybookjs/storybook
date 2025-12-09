@@ -88,7 +88,7 @@ export default meta;
 {/snippet}
 ```
 
-```js filename="Example.stories.js|jsx" renderer="common" language="js"
+```js filename="Example.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Example } from './Example';
 
 export default {
@@ -106,8 +106,8 @@ export default {
 };
 ```
 
-```ts filename="Example.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+```ts filename="Example.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
 import { Example } from './Example';
@@ -167,4 +167,45 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```ts filename="Example.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Example } from './Example';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    label: {
+      control: { type: 'select' },
+      options: ['Normal', 'Bold', 'Italic'],
+      mapping: {
+        Bold: <b>Bold</b>,
+        Italic: <i>Italic</i>,
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Example.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Example } from './Example';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    label: {
+      control: { type: 'select' },
+      options: ['Normal', 'Bold', 'Italic'],
+      mapping: {
+        Bold: <b>Bold</b>,
+        Italic: <i>Italic</i>,
+      },
+    },
+  },
+});
 ```

@@ -1,53 +1,62 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { prompt } from 'storybook/internal/node-logger';
+
+import { executeCommand } from '../utils/command';
+import { JsPackageManager } from './JsPackageManager';
 import { PNPMProxy } from './PNPMProxy';
+
+vi.mock('storybook/internal/node-logger', () => ({
+  prompt: {
+    executeTaskWithSpinner: vi.fn(),
+    getPreferredStdio: vi.fn(() => 'inherit'),
+  },
+  logger: {
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+vi.mock(import('../utils/command'), { spy: true });
+const mockedExecuteCommand = vi.mocked(executeCommand);
 
 describe('PNPM Proxy', () => {
   let pnpmProxy: PNPMProxy;
 
   beforeEach(() => {
     pnpmProxy = new PNPMProxy();
+    JsPackageManager.clearLatestVersionCache();
+    vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
   });
 
   it('type should be pnpm', () => {
     expect(pnpmProxy.type).toEqual('pnpm');
   });
 
-  describe('initPackageJson', () => {
-    it('should run `pnpm init`', async () => {
-      const executeCommandSpy = vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await pnpmProxy.initPackageJson();
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['init'] })
-      );
-    });
-  });
-
   describe('installDependencies', () => {
     it('should run `pnpm install`', async () => {
-      const executeCommandSpy = vi
-        .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('7.1.0');
+      // sort of un-mock part of the function so executeCommand (also mocked) is called
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '7.1.0' } as any);
 
       await pnpmProxy.installDependencies();
 
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+      expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'pnpm', args: ['install'] })
       );
     });
   });
 
   describe('runScript', () => {
-    it('should execute script `pnpm exec compodoc -- -e json -d .`', async () => {
-      const executeCommandSpy = vi
-        .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('7.1.0');
+    it('should execute script `pnpm exec compodoc -- -e json -d .`', () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '7.1.0' } as any);
 
-      await pnpmProxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
+      pnpmProxy.runPackageCommand({ args: ['compodoc', '-e', 'json', '-d', '.'] });
 
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+      expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
           args: ['exec', 'compodoc', '-e', 'json', '-d', '.'],
@@ -58,13 +67,11 @@ describe('PNPM Proxy', () => {
 
   describe('addDependencies', () => {
     it('with devDep it should run `pnpm add -D storybook`', async () => {
-      const executeCommandSpy = vi
-        .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('6.0.0');
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '6.0.0' } as any);
 
-      await pnpmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+      expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
           args: ['add', '-D', 'storybook'],
@@ -74,58 +81,38 @@ describe('PNPM Proxy', () => {
   });
 
   describe('removeDependencies', () => {
-    it('with devDep it should run `npm uninstall storybook`', async () => {
-      const executeCommandSpy = vi
-        .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('6.0.0');
+    it('should only change package.json without running install', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '7.0.0' } as any);
+      const writePackageSpy = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
 
-      await pnpmProxy.removeDependencies({}, ['storybook']);
-
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          command: 'pnpm',
-          args: ['remove', 'storybook'],
-        })
-      );
-    });
-
-    describe('skipInstall', () => {
-      it('should only change package.json without running install', async () => {
-        const executeCommandSpy = vi
-          .spyOn(pnpmProxy, 'executeCommand')
-          .mockResolvedValueOnce('7.0.0');
-        const writePackageSpy = vi
-          .spyOn(pnpmProxy, 'writePackageJson')
-          .mockImplementation(vi.fn<any>());
-
-        await pnpmProxy.removeDependencies(
-          {
-            skipInstall: true,
-            packageJson: {
-              devDependencies: {
-                '@storybook/manager-webpack5': 'x.x.x',
-                '@storybook/react': 'x.x.x',
-              },
-            },
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((args) => {
+        return {
+          dependencies: {},
+          devDependencies: {
+            '@storybook/manager-webpack5': 'x.x.x',
+            '@storybook/react': 'x.x.x',
           },
-          ['@storybook/manager-webpack5']
-        );
+        };
+      });
 
-        expect(writePackageSpy).toHaveBeenCalledWith({
+      await pnpmProxy.removeDependencies(['@storybook/manager-webpack5']);
+
+      expect(writePackageSpy).toHaveBeenCalledWith(
+        {
+          dependencies: {},
           devDependencies: {
             '@storybook/react': 'x.x.x',
           },
-        });
-        expect(executeCommandSpy).not.toHaveBeenCalled();
-      });
+        },
+        expect.any(String)
+      );
+      expect(executeCommandSpy).not.toHaveBeenCalled();
     });
   });
 
   describe('latestVersion', () => {
     it('without constraint it returns the latest version', async () => {
-      const executeCommandSpy = vi
-        .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('5.3.19');
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '5.3.19' } as any);
 
       const version = await pnpmProxy.latestVersion('storybook');
 
@@ -139,9 +126,9 @@ describe('PNPM Proxy', () => {
     });
 
     it('with constraint it returns the latest version satisfying the constraint', async () => {
-      const executeCommandSpy = vi
-        .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('["4.25.3","5.3.19","6.0.0-beta.23"]');
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+        stdout: '["4.25.3","5.3.19","6.0.0-beta.23"]',
+      } as any);
 
       const version = await pnpmProxy.latestVersion('storybook', '5.X');
 
@@ -155,18 +142,16 @@ describe('PNPM Proxy', () => {
     });
 
     it('with constraint it throws an error if command output is not a valid JSON', async () => {
-      vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce('NOT A JSON');
+      mockedExecuteCommand.mockResolvedValue({ stdout: 'NOT A JSON' } as any);
 
-      await expect(pnpmProxy.latestVersion('storybook', '5.X')).rejects.toThrow();
+      await expect(pnpmProxy.latestVersion('storybook', '5.X')).resolves.toBe(null);
     });
   });
 
   describe('getVersion', () => {
     it('with a Storybook package listed in versions.json it returns the version', async () => {
       const storybookAngularVersion = (await import('../versions')).default['@storybook/angular'];
-      const executeCommandSpy = vi
-        .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('5.3.19');
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '5.3.19' } as any);
 
       const version = await pnpmProxy.getVersion('@storybook/angular');
 
@@ -181,9 +166,9 @@ describe('PNPM Proxy', () => {
 
     it('with a Storybook package not listed in versions.json it returns the latest version', async () => {
       const packageVersion = '5.3.19';
-      const executeCommandSpy = vi
-        .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce(`${packageVersion}`);
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+        stdout: `${packageVersion}`,
+      } as any);
 
       const version = await pnpmProxy.getVersion('@storybook/react-native');
 
@@ -199,43 +184,44 @@ describe('PNPM Proxy', () => {
 
   describe('addPackageResolutions', () => {
     it('adds resolutions to package.json and account for existing resolutions', async () => {
-      const writePackageSpy = vi
-        .spyOn(pnpmProxy, 'writePackageJson')
-        .mockImplementation(vi.fn<any>());
-
       const basePackageAttributes = {
         dependencies: {},
         devDependencies: {},
       };
 
-      vi.spyOn(pnpmProxy, 'retrievePackageJson').mockImplementation(
-        vi.fn(async () => ({
-          ...basePackageAttributes,
-          overrides: {
-            bar: 'x.x.x',
-          },
-        }))
-      );
+      const writePackageSpy = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation(() => ({
+        dependencies: {},
+        devDependencies: {},
+        overrides: {
+          bar: 'x.x.x',
+        },
+      }));
 
       const versions = {
         foo: 'x.x.x',
       };
-      await pnpmProxy.addPackageResolutions(versions);
+      pnpmProxy.addPackageResolutions(versions);
 
-      expect(writePackageSpy).toHaveBeenCalledWith({
-        ...basePackageAttributes,
-        overrides: {
-          ...versions,
-          bar: 'x.x.x',
+      expect(writePackageSpy).toHaveBeenCalledWith(
+        {
+          ...basePackageAttributes,
+          overrides: {
+            ...versions,
+            bar: 'x.x.x',
+          },
         },
-      });
+        expect.any(String)
+      );
     });
   });
 
   describe('mapDependencies', () => {
     it('should display duplicated dependencies based on pnpm output', async () => {
       // pnpm list "@storybook/*" "storybook" --depth 10 --json
-      vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce(`
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: `
         [
           {
             "peerDependencies": {
@@ -306,7 +292,8 @@ describe('PNPM Proxy', () => {
             }
           }
         ]      
-      `);
+      `,
+      } as any);
 
       const installations = await pnpmProxy.findInstallations(['@storybook/*']);
 

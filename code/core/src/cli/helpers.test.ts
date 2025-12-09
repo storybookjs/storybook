@@ -4,13 +4,12 @@ import fsp from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import type { SupportedRenderers } from 'storybook/internal/types';
+import { Feature, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
 
 import { sep } from 'path';
 
 import { IS_WINDOWS } from '../../../vitest.helpers';
 import * as helpers from './helpers';
-import { SupportedLanguage } from './project_types';
 
 const normalizePath = (path: string) => (IS_WINDOWS ? path.replace(/\//g, sep) : path);
 
@@ -53,8 +52,8 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   };
 });
 
-vi.mock('find-up', () => ({
-  sync: vi.fn(),
+vi.mock('empathic/find', () => ({
+  up: vi.fn(),
 }));
 
 vi.mock('path', async (importOriginal) => {
@@ -67,7 +66,11 @@ vi.mock('path', async (importOriginal) => {
 });
 
 const packageManagerMock = {
-  retrievePackageJson: async () => ({ dependencies: {}, devDependencies: {} }),
+  primaryPackageJson: {
+    packageJson: { dependencies: {}, devDependencies: {} },
+    packageJsonPath: '/some/path',
+    operationDir: '/some/path',
+  },
 } as JsPackageManager;
 
 describe('Helpers', () => {
@@ -88,7 +91,7 @@ describe('Helpers', () => {
         const packageManager = {
           getInstalledVersion: async (pkg: string) =>
             pkg === 'svelte' ? svelteVersion : undefined,
-          getAllDependencies: async () => ({ svelte: `^${svelteVersion}` }),
+          getAllDependencies: () => ({ svelte: `^${svelteVersion}` }),
         } as any as JsPackageManager;
         await expect(helpers.getVersionSafe(packageManager, 'svelte')).resolves.toBe(
           expectedAddonSpecifier
@@ -107,7 +110,7 @@ describe('Helpers', () => {
       ])('svelte %s => %s', async (svelteSpecifier, expectedAddonSpecifier) => {
         const packageManager = {
           getInstalledVersion: async (pkg: string) => undefined,
-          getAllDependencies: async () => ({ svelte: svelteSpecifier }),
+          getAllDependencies: () => ({ svelte: svelteSpecifier }),
         } as any as JsPackageManager;
         await expect(helpers.getVersionSafe(packageManager, 'svelte')).resolves.toBe(
           expectedAddonSpecifier
@@ -158,11 +161,11 @@ describe('Helpers', () => {
           filePath === normalizePath('@storybook/react/template/cli')
       );
       await helpers.copyTemplateFiles({
-        templateLocation: 'react',
+        templateLocation: SupportedRenderer.REACT,
         language,
         packageManager: packageManagerMock,
         commonAssetsDir: normalizePath('create-storybook/rendererAssets/common'),
-        features: ['dev', 'docs', 'test'],
+        features: new Set([Feature.DOCS, Feature.TEST]),
       });
 
       expect(fsp.cp).toHaveBeenNthCalledWith(
@@ -182,10 +185,10 @@ describe('Helpers', () => {
       return filePath === normalizePath('@storybook/react/template/cli') || filePath === './src';
     });
     await helpers.copyTemplateFiles({
-      templateLocation: 'react',
+      templateLocation: SupportedRenderer.REACT,
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
-      features: ['dev', 'docs', 'test'],
+      features: new Set([Feature.DOCS, Feature.TEST]),
     });
     expect(fsp.cp).toHaveBeenCalledWith(expect.anything(), './src/stories', expect.anything());
   });
@@ -195,49 +198,25 @@ describe('Helpers', () => {
       return filePath === normalizePath('@storybook/react/template/cli');
     });
     await helpers.copyTemplateFiles({
-      templateLocation: 'react',
+      templateLocation: SupportedRenderer.REACT,
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
-      features: ['dev', 'docs', 'test'],
+      features: new Set([Feature.DOCS, Feature.TEST]),
     });
     expect(fsp.cp).toHaveBeenCalledWith(expect.anything(), './stories', expect.anything());
   });
 
   it(`should throw an error for unsupported renderer`, async () => {
-    const renderer = 'unknown renderer' as SupportedRenderers;
+    const renderer = 'unknown renderer' as unknown as SupportedRenderer;
     const expectedMessage = `Unsupported renderer: ${renderer}`;
     await expect(
       helpers.copyTemplateFiles({
         templateLocation: renderer,
         language: SupportedLanguage.JAVASCRIPT,
         packageManager: packageManagerMock,
-        features: ['dev', 'docs', 'test'],
+        features: new Set([Feature.DOCS, Feature.TEST]),
       })
     ).rejects.toThrowError(expectedMessage);
-  });
-
-  describe('getStorybookVersionSpecifier', () => {
-    it(`should return the specifier if storybook lib exists in package.json`, () => {
-      expect(
-        helpers.getStorybookVersionSpecifier({
-          dependencies: {},
-          devDependencies: {
-            '@storybook/react': '^x.x.x',
-          },
-        })
-      ).toEqual('^x.x.x');
-    });
-
-    it(`should throw an error if no package is found`, () => {
-      expect(() => {
-        helpers.getStorybookVersionSpecifier({
-          dependencies: {},
-          devDependencies: {
-            'something-else': '^x.x.x',
-          },
-        });
-      }).toThrowError("Couldn't find any official storybook packages in package.json");
-    });
   });
 
   describe('coerceSemver', () => {
@@ -251,15 +230,15 @@ describe('Helpers', () => {
 
   describe('hasStorybookDependencies', () => {
     it(`should return true when any storybook dependency exists`, async () => {
-      const result = await helpers.hasStorybookDependencies({
-        getAllDependencies: async () => ({ storybook: 'x.y.z' }),
+      const result = helpers.hasStorybookDependencies({
+        getAllDependencies: () => ({ storybook: 'x.y.z' }),
       } as unknown as JsPackageManager);
       expect(result).toEqual(true);
     });
 
     it(`should return false when no storybook dependency exists`, async () => {
-      const result = await helpers.hasStorybookDependencies({
-        getAllDependencies: async () => ({ axios: 'x.y.z' }),
+      const result = helpers.hasStorybookDependencies({
+        getAllDependencies: () => ({ axios: 'x.y.z' }),
       } as unknown as JsPackageManager);
       expect(result).toEqual(false);
     });

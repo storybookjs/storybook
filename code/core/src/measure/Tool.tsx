@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { ToggleButton } from 'storybook/internal/components';
 
 import { RulerIcon } from '@storybook/icons';
 
@@ -23,7 +23,7 @@ export const Tool = () => {
 
   useEffect(() => {
     api.setAddonShortcut(ADDON_ID, {
-      label: 'Toggle Measure [M]',
+      label: 'Toggle Measure',
       defaultShortcut: ['M'],
       actionName: 'measure',
       showInMenu: false,
@@ -32,13 +32,17 @@ export const Tool = () => {
   }, [toggleMeasure, api]);
 
   return (
-    <IconButton
+    <ToggleButton
       key={TOOL_ID}
-      active={measureEnabled}
-      title="Enable measure"
+      pressed={measureEnabled}
+      padding="small"
+      variant="ghost"
+      ariaLabel="Measure tool"
+      tooltip="Toggle measure"
+      ariaDescription="When enabled, this tool shows dimensions and whitespace (margin, padding, border) for the currently hovered element in the preview area. Does not work with keyboard focus."
       onClick={toggleMeasure}
     >
       <RulerIcon />
-    </IconButton>
+    </ToggleButton>
   );
 };

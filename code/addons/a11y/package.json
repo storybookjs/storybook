@@ -1,15 +1,23 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "9.0.0-beta.11",
-  "description": "Test component compliance with web accessibility standards",
+  "version": "10.2.0-alpha.3",
+  "description": "Storybook Addon A11y: Test UI component compliance with WCAG web accessibility standards",
   "keywords": [
     "a11y",
     "accessibility",
-    "addon",
     "storybook",
-    "valid",
-    "verify",
-    "test"
+    "storybook-addon",
+    "test",
+    "axe",
+    "WCAG",
+    "ARIA",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/a11y",
   "bugs": {
@@ -25,33 +33,18 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+      "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
-    "./register": "./dist/manager.js",
     "./package.json": "./package.json",
-    "./postinstall": "./dist/postinstall.js"
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "preview": [
-        "dist/preview.d.ts"
-      ]
+    "./postinstall": "./dist/postinstall.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
     }
   },
   "files": [
@@ -61,17 +54,13 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "axe-core": "^4.2.0"
   },
   "devDependencies": {
     "@radix-ui/react-tabs": "1.0.4",
-    "@storybook/icons": "^1.4.0",
+    "@storybook/icons": "^2.0.0",
     "@testing-library/react": "^14.0.0",
     "execa": "^9.5.2",
     "react": "^18.2.0",
@@ -86,21 +75,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "exportEntries": [
-      "./src/index.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.tsx"
-    ],
-    "previewEntries": [
-      "./src/preview.tsx"
-    ],
-    "nodeEntries": [
-      "./src/postinstall.ts"
-    ]
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l",
   "storybook": {
     "displayName": "Accessibility",
     "icon": "https://user-images.githubusercontent.com/263385/101991665-47042f80-3c7c-11eb-8f00-64b5a18f498a.png",

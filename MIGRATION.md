@@ -1,5 +1,46 @@
 <h1>Migration</h1>
 
+- [From version 10.0.0 to 10.1.0](#from-version-1000-to-1010)
+  - [API and Component Changes](#api-and-component-changes)
+    - [Button Component API Changes](#button-component-api-changes)
+      - [Added: ariaLabel](#added-arialabel)
+      - [Added: shortcut](#added-shortcut)
+      - [Added: tooltip](#added-tooltip)
+      - [Deprecated: active](#deprecated-active)
+    - [IconButton is deprecated](#iconbutton-is-deprecated)
+    - [Bar Component API Changes](#bar-component-api-changes)
+      - [Added: innerStyle](#added-innerstyle)
+    - [FlexBar is deprecated](#flexbar-is-deprecated)
+    - [Tabs is deprecated](#tabs-is-deprecated)
+    - [TabsState is deprecated](#tabsstate-is-deprecated)
+    - [TabWrapper is deprecated](#tabwrapper-is-deprecated)
+    - [TabButton is deprecated](#tabbutton-is-deprecated)
+    - [TabBar is deprecated](#tabbar-is-deprecated)
+    - [Modal Component API Changes](#modal-component-api-changes)
+      - [Deprecated: onInteractOutside](#deprecated-oninteractoutside)
+      - [Deprecated: onEscapeKeyDown](#deprecated-onescapekeydown)
+      - [Added: `ariaLabel`](#added-arialabel-1)
+      - [Renamed: Modal.Dialog.Close and Modal.CloseButton](#renamed-modaldialogclose-and-modalclosebutton)
+    - [ListItem, TooltipLinkList and TooltipMessage are deprecated](#listitem-tooltiplinklist-and-tooltipmessage-are-deprecated)
+    - [PopoverProvider Component Added](#popoverprovider-component-added)
+    - [WithTooltip Component API Changes](#withtooltip-component-api-changes)
+      - [Removed: trigger](#removed-trigger)
+    - [Added: triggerOnFocusOnly](#added-triggeronfocusonly)
+    - [Renamed: startOpen](#renamed-startopen)
+    - [Removed: svg, strategy, withArrows, mutationObserverOptions](#removed-svg-strategy-witharrows-mutationobserveroptions)
+    - [Removed: hasChrome](#removed-haschrome)
+    - [Removed: closeOnTriggerHidden, followCursor, closeOnOutsideClick](#removed-closeontriggerhidden-followcursor-closeonoutsideclick)
+    - [Removed: interactive](#removed-interactive)
+      - [Other changes](#other-changes)
+    - [WithTooltipPure and WithTooltipState are deprecated](#withtooltippure-and-withtooltipstate-are-deprecated)
+- [From version 9.x to 10.0.0](#from-version-9x-to-1000)
+  - [Core Changes](#core-changes)
+    - [Local addons must be fully resolved](#local-addons-must-be-fully-resolved)
+    - [The `.storybook/main.*` file and other presets must be valid ESM](#the-storybookmain-file-and-other-presets-must-be-valid-esm)
+    - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
+    - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
+    - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
+    - [Removed x-only builtin tags](#removed-x-only-builtin-tags)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -17,13 +58,15 @@
     - [Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped](#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped)
     - [Viewport/Backgrounds Addon synchronized configuration and `globals` usage](#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage)
     - [Storysource Addon removed](#storysource-addon-removed)
-  - [API and Component Changes](#api-and-component-changes)
-    - [Button Component API Changes](#button-component-api-changes)
+    - [Mdx-gfm Addon removed](#mdx-gfm-addon-removed)
+  - [API and Component Changes](#api-and-component-changes-1)
+    - [Button Component API Changes](#button-component-api-changes-1)
     - [Icon System Updates](#icon-system-updates)
     - [Sidebar Component Changes](#sidebar-component-changes)
     - [Story Store API Changes](#story-store-api-changes)
     - [Global State Management](#global-state-management)
     - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
+    - [`experimental_afterEach` has been stabilized](#experimental_aftereach-has-been-stabilized)
     - [Testing Module Changes](#testing-module-changes)
     - [Consolidate `@storybook/blocks` into addon docs](#consolidate-storybookblocks-into-addon-docs)
   - [Configuration and Type Changes](#configuration-and-type-changes)
@@ -95,7 +138,7 @@
     - [MDX is upgraded to v3](#mdx-is-upgraded-to-v3)
     - [Dropping support for \*.stories.mdx (CSF in MDX) format and MDX1 support](#dropping-support-for-storiesmdx-csf-in-mdx-format-and-mdx1-support)
     - [Dropping support for id, name and story in Story block](#dropping-support-for-id-name-and-story-in-story-block)
-  - [Core changes](#core-changes)
+  - [Core changes](#core-changes-1)
     - [`framework.options.builder.useSWC` for Webpack5-based projects removed](#frameworkoptionsbuilderuseswc-for-webpack5-based-projects-removed)
     - [Removed `@babel/core` and `babel-loader` from `@storybook/builder-webpack5`](#removed-babelcore-and-babel-loader-from-storybookbuilder-webpack5)
     - [`framework.options.fastRefresh` for Webpack5-based projects removed](#frameworkoptionsfastrefresh-for-webpack5-based-projects-removed)
@@ -475,11 +518,293 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
+
+## From version 10.0.0 to 10.1.0
+
+### API and Component Changes
+
+#### Button Component API Changes
+
+##### Added: ariaLabel
+The Button component now has an `ariaLabel` prop, to ensure that Storybook UI code is accessible to screenreader users. The prop will become mandatory in Storybook 11.
+
+When buttons have text content as children, and when that text content does not rely on visual context to be understood, you may pass `false` to the `ariaLabel` prop to indicate that an ARIA label is not necessary.
+
+In every other case (your Button only contains an icon, has a responsive layout that can hide its text, or relies on visual context to make sense), you must pass a label to `ariaLabel`, which screenreaders will read. The label should be short and start with an action verb.
+
+##### Added: shortcut
+
+An optional `shortcut` prop was added for internal use. When `shortcut` is set, the Button will be appended with a human-readable string for the shortcut, and the `aria-keyshortcuts` prop will be set.
+
+##### Added: tooltip
+
+Button now displays a tooltip whenever `ariaLabel` or `shortcut` is set. The tooltip can be customised by passing a string to the optional `tooltip` prop.
+
+##### Deprecated: active
+
+The `active` prop is deprecated and will be removed in Storybook 11.
+
+The Button component has historically been used to implement Toggle and Select interactions. When you need a Button to have an active state, use ToggleButton if the active state denotes that a state or feature is enabled after pressing the Button. Use Select if the active state denotes that the Button is open while a selection is being made, or that the Button currently has a selected value.
+
+#### IconButton is deprecated
+
+The IconButton component is deprecated, as it overlaps with Button. Instead, use Button with the `'ghost'` variant and `'small'` padding, and add an `ariaLabel` prop for screenreaders to announce.
+
+IconButton will be removed in future versions.
+
+#### Bar Component API Changes
+
+The `Bar` component's internal layout has changed, to fix a height bug in scrollable bars. It now applies flex positioning and applies a default item gap, that can be controlled with the `innerStyle` prop. You may see slight changes in default padding as a result of this change.
+
+##### Added: innerStyle
+When `scrollable` is set to `true`, `Bar` now adds an inner container that is used to ensure the scrollbar size does not impact the height of the bar. This inner container displays as 'flex' and has the following default style:
+
+```css
+  width: 100%;
+  min-height: 40;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-inline: 6px;
+```
+
+The inner container's style can be overridden by passing CSS properties to `innerStyle`.
+
+#### FlexBar is deprecated
+
+The `FlexBar` component is deprecated. Instead, use the `Bar` component and apply `justifyContent: 'space-between'` through the `innerStyle` prop.
+
+#### Tabs is deprecated
+
+The `Tabs` component is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
+
+#### TabsState is deprecated
+
+The `TabsState` class is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
+
+#### TabWrapper is deprecated
+
+The `TabWrapper` component is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
+
+#### TabButton is deprecated
+
+The `TabButton` class is deprecated as it was not accessible. It does not have a replacement, as the new `TabList` component handles tab buttons internally.
+
+#### TabBar is deprecated
+
+The `TabBar` component, a styled bar used inside `Tabs` and not intended to be public, is deprecated and will be hidden in Storybook 11. Use `TabsView` instead.
+
+#### Modal Component API Changes
+
+##### Deprecated: onInteractOutside
+The `onInteractOutside` prop is deprecated in favor of `dismissOnClickOutside`, because it was only used to close the modal when clicking outside. Use `dismissOnClickOutside` to control whether clicking outside the modal should close it or not.
+
+##### Deprecated: onEscapeKeyDown
+The `onEscapeKeyDown` prop is deprecated in favor of `dismissOnEscape`, because it was only used to close the modal when pressing Escape. Use `dismissOnEscape` to control whether pressing Escape should close it or not.
+
+##### Added: `ariaLabel`
+Modal elements must have a title to be accessible. Set that title through the `ariaLabel` prop. It will become mandatory in Storybook 11.
+
+##### Renamed: Modal.Dialog.Close and Modal.CloseButton
+The `Modal.Dialog.Close` component and `Modal.CloseButton` components are replaced by `Modal.Close` for consistency with other components. Those names are deprecated and will be removed in Storybook 11. You may call `<Modal.Close />` for a default close button, or `<Modal.Close asChild>...</Modal.Close>` to wrap your own custom button.
+
+The `Modal.Close` component no longer requires an `onClick` handler to close the modal. It will automatically close the modal when clicked. If you need to perform additional actions when the close button is clicked, you can still provide an `onClick` handler, and it will be called in addition to closing the modal.
+#### ListItem, TooltipLinkList and TooltipMessage are deprecated
+
+The ListItem and TooltipLinkList components were used in Storybook to make menus, and TooltipMessage to make message popovers. However, WithTooltip does not support keyboard interactions, so these components were not accessible.
+
+These components are now deprecated and will be removed in future versions. To replace TooltipMessage, replace WithTooltip with PopoverProvider, and use Popover as a base component for your popovers. To replace ListItem and TooltipLinkList, a dedicated menu component will be introduced in a future version, and Popover can be used in the meantime.
+
+#### PopoverProvider Component Added
+
+The PopoverProvider component acts as a counterpoint to WithTooltip. When you want an interactive overlay with buttons or inputs, use PopoverProvider and Popover. When you want a static overlay that shows on focus or hover, use WithTooltip with TooltipNote or Tooltip.
+
+PopoverProvider is based on react-aria. It must have a single child that acts as a trigger. This child must have a pressable role (can be clicked or pressed) and must be able to receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your popover.
+
+#### WithTooltip Component API Changes
+
+The WithTooltip component has been reimplemented from the ground up, under the new name `TooltipProvider`. The new implementation will replace `WithTooltip` entirely in Storybook 11. Below is a summary of the changes between both APIs, which will take full effect in Storybook 11.
+
+##### Removed: trigger
+The `trigger` prop was removed to enforce better accessibility compliance. WithTooltip must not be triggered on click, as it is not reachable by keyboard. Buttons that open a popover, menu or select must use appropriate components instead.
+
+#### Added: triggerOnFocusOnly
+The `triggerOnFocusOnly` prop was added. When set, tooltips will only show on focus. Use this to provide keyboard navigation hints to keyboard users. Do not use it for other purposes.
+
+#### Renamed: startOpen
+The `startOpen` prop was renamed `defaultVisible` to match naming in other components that expose both controlled and uncontrolled visibility. The `startOpen` prop will be removed in future versions.
+
+#### Removed: svg, strategy, withArrows, mutationObserverOptions
+These prop were not used inside Storybook and have been removed.
+
+#### Removed: hasChrome
+The `hasChrome` prop was removed because it should be handled by the tooltip being shown instead. Popover and Tooltip both have a `hasChrome` prop. TooltipNote never needs this prop and does not have it.
+
+#### Removed: closeOnTriggerHidden, followCursor, closeOnOutsideClick
+The `closeOnTriggerHidden`, `followCursor` and `closeOnOutsideClick` prop has been removed. WithTooltip will now authoritatively decide when and where to show or hide its tooltip. It will always close on clicks outside the tooltip, because tooltips should never be modal.
+
+#### Removed: interactive
+Thed `interactive` prop has been removed as it does not align with our vision for accessible components with a well-defined role. Use PopoverProvider instead of WithTooltip to show interactive overlays.
+
+##### Other changes
+The underlying implementation was switched from Popper.js to react-aria. Due to these changes, WithTooltip must now have a single child that has a focusable role and that can receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your tooltip.
+
+#### WithTooltipPure and WithTooltipState are deprecated
+
+Instead, use `WithTooltipNew` in Storybook 10, or `WithTooltip` in Storybook 11 or newer. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
+
+
+## From version 9.x to 10.0.0
+
+### Core Changes
+
+#### Local addons must be fully resolved
+
+In Storybook 9 it was possible to do reference local addons by a relative path, like so:
+
+```ts
+// main.ts
+
+export default {
+  addons: ["./my-addon.ts"],
+};
+```
+
+In Storybook 10 this relative path, should be fully resolved, like so:
+
+```ts
+// main.ts
+
+export default {
+  addons: [import.meta.resolve("./my-addon.ts")],
+};
+```
+
+When adding managerEntries, ensure you resolve a path, you may need to convert it from a URL:
+
+For example:
+
+```ts
+// main.ts
+export default {
+  managerEntries(entry = []) {
+    return [...entry, require.resolve("./iframe.js")];
+  },
+};
+```
+
+Would become:
+
+```ts
+// main.ts
+import { fileURLToPath } from "node:url";
+
+export default {
+  managerEntries(entry = []) {
+    return [...entry, fileURLToPath(import.meta.resolve("./iframe.js"))];
+  },
+};
+```
+
+#### The `.storybook/main.*` file and other presets must be valid ESM
+
+Storybook will load the `.storybook/main.*` file and any custom preset files as ESM files.
+Thus CJS constants (`require`, `__dirname`, `__filename`) will not be defined.
+
+You can define these constants yourself, like so:
+
+```ts
+import { createRequire } from "node:module";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const require = createRequire(import.meta.url);
+```
+
+A `main.ts` file that's CJS is no longer supported. The same applies to any custom preset files.
+
+Additionally, **extensionless relative imports are no longer supported** in JavaScript-based configuration files (`.storybook/main.js`) and custom presets. All relative imports must now include explicit file extensions.
+
+**Before (no longer works):**
+```js
+// .storybook/main.js
+import myPreset from './my-file';
+```
+
+**After:**
+```js
+// .storybook/main.js
+import myPreset from './my-file.js';
+```
+
+This change aligns with Node.js ESM requirements, where relative imports must specify the full file extension. This applies to `.storybook/main.js` and any custom preset files. While TypeScript-based files (`.storybook/main.ts`) will continue to work with extensionless imports for now through automatic resolution, we recommend migrating to explicit extensions for consistency and better compatibility.
+
+**Recommended approach for all files:**
+- Use `.js` for JavaScript files
+- Use `.mjs` for ES modules
+- Use `.ts` for TypeScript files
+- Always include the extension in relative imports
+
+#### Node.js 20.19+ or 22.12+ required
+
+Storybook 10 now requires Node.js version 20.19+ or 22.12+. We require these new ranges so Node.js supports `require(esm)` without a flag.
+
+#### Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition
+
+Storybook 10 has removed all `typesVersions` fields from `package.json` files. This field was previously needed for older TypeScript module resolution strategies that didn't support the `types` condition in package.json exports.
+
+**Required action:** Update your `tsconfig.json` to use a `moduleResolution` that supports the `types` condition:
+
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler" // or "node16"/"nodenext"
+  }
+}
+```
+
+**Supported values:**
+
+- `"bundler"` (recommended for modern bundler-based projects)
+- `"node16"` or `"nodenext"` (Node.js 16+ module resolution)
+
+**Note:** If you're currently using `moduleResolution: "node"` (the old Node.js 10-style resolution), you'll need to upgrade to one of the supported values above.
+
+This change simplifies our package structure and aligns with modern TypeScript standards. Only TypeScript projects are affected - JavaScript projects require no changes.
+
+#### `core.builder` configuration must be a fully resolved path
+
+> [!NOTE]  
+> In the majority of cases, this is only relevant for authors of Storybook framework packages, as regular users very rarely set the `core.builder` property manually.
+
+When setting the `core.builder` or `core.builder.name` option in the main configuration, it must now be a fully resolved path to a builder's entry point, instead of just to the builder package's root directory.
+
+In a preset:
+
+```diff
+import { dirname } from 'node:path';
+
+const getAbsolutePath = (input) =>
+  dirname(require.resolve(`${input}/package.json`));
+
+export const core = {
+-  builder: getAbsolutePath('@storybook/builder-vite'),
+-  // 👆 results in eg. `/absolute/path/node_modules/@storybook/builder-vite
++  builder: import.meta.resolve('@storybook/builder-vite'),
++  // 👆 results in eg. `/absolute/path/node_modules/@storybook/builder-vite/index.js
+  renderer: getAbsolutePath('@storybook/react'),
+};
+```
+
+#### Removed x-only builtin tags
+During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superceded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+
 ## From version 8.x to 9.0.0
 
 ### Core Changes and Removals
-
-Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 #### Dropped support for legacy packages
 
@@ -553,6 +878,8 @@ export default {
 ```
 
 The public API remains the same, so no additional changes should be needed in your test files or configuration.
+
+Additionally, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 #### Dropped support
 
@@ -691,7 +1018,22 @@ export const MyStory = {
 
 #### Experimental Test Addon: Stabilized and renamed
 
-In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
+In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports.
+
+The vitest addon automatically loads Storybook's `beforeAll` hook, so that you can remove the following line in your vitest.setup.ts file:
+
+```diff
+// .storybook/vitest.setup.ts
+import { setProjectAnnotations } from '@storybook/react-vite';
+import * as addonAnnotations from 'my-addon/preview';
+import * as previewAnnotations from './.storybook/preview';
+
+- const project = setProjectAnnotations([previewAnnotations, addonAnnotations]);
++ setProjectAnnotations([previewAnnotations, addonAnnotations]);
+
+// the vitest addon automatically loads beforeAll
+- beforeAll(project.beforeAll);
+```
 
 #### Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped
 
@@ -708,7 +1050,11 @@ See here for the ways you have to configure addon viewports & backgrounds:
 
 #### Storysource Addon removed
 
-The `@storybook/addon-storysource` addon is being removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+The `@storybook/addon-storysource` addon and the `@storybook/source-loader` package are removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+
+#### Mdx-gfm Addon removed
+
+The `@storybook/addon-mdx-gfm` addon is removed in Storybook 9.0 since it is no longer needed.
 
 **Migration Steps:**
 
@@ -743,7 +1089,6 @@ export const MyStory = {
   },
 };
 ```
-
 
 ### API and Component Changes
 
@@ -862,6 +1207,21 @@ addons.register(MY_ADDON_ID, (api) => {
 +  }]);
 ```
 
+#### `experimental_afterEach` has been stabilized
+
+The experimental_afterEach hook has been promoted to a stable API and renamed to afterEach.
+
+To migrate, simply replace all instances of experimental_afterEach with afterEach in your stories, preview files, and configuration.
+
+```diff
+ export const MyStory = {
+-   experimental_afterEach: async ({ canvasElement }) => {
++   afterEach: async ({ canvasElement }) => {
+     // cleanup logic
+   },
+ };
+```
+
 #### Testing Module Changes
 
 The `TESTING_MODULE_RUN_ALL_REQUEST` event has been removed:
@@ -877,6 +1237,15 @@ The package `@storybook/blocks` is no longer published as of Storybook 9.
 
 All exports can now be found in the export `@storybook/addon-docs/blocks`.
 
+Previously, you were able to import all blocks from `@storybook/addon-docs`, this is no longer the case.
+
+This is the only correct import path:
+
+```diff
+- import { Meta } from "@storybook/addon-docs";
++ import { Meta } from "@storybook/addon-docs/blocks";
+```
+
 ### Configuration and Type Changes
 
 #### Manager builder removed alias for `util`, `assert` and `process`
@@ -888,7 +1257,6 @@ Starting with Storybook `9.0`, we no longer alias these anymore.
 Adding these aliases meant storybook core, had to depend on these packages, which have a deep dependency graph, added to every storybook project.
 
 If you addon fails to load after this change, we recommend looking at implementing the alias at compile time of your addon, or alternatively look at other bundling config to ensure the correct entries/packages/dependencies are used.
-
 
 #### Type System Updates
 
@@ -911,7 +1279,6 @@ Deprecated getters have been removed from the CsfFile class:
 
 - `_fileName`
 - `_makeTitle`
-
 
 #### React-Native config dir renamed
 
@@ -1067,14 +1434,14 @@ Key changes:
 
 #### Angular: Introduce `features.angularFilterNonInputControls`
 
-Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular compoennts in Storybook's controls panel.
+Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular components in Storybook's controls panel.
 
 To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
 
 ```tsx
 export default {
   features: {
-    angularFilterNonInputControls: true
+    angularFilterNonInputControls: true,
   },
   // ... other configurations
 };
@@ -1661,14 +2028,12 @@ These sections explain the rationale, and the required changes you might have to
 
 ### Deprecated `@storybook/testing-library` package
 
-    @@ -1082,7 +800,7 @@ To migrate by hand, install `@storybook/test` and replace `@storybook/testing-li
+The `@storybook/testing-library` package has been deprecated with the release of Storybook 8.0, and we recommend using the `@storybook/test` package instead. If you're migrating manually, you'll need to install the new package and update your imports as follows:
 
-```ts
+```diff
 - import { userEvent } from '@storybook/testing-library';
 + import { userEvent } from '@storybook/test';
 ```
-
-For more information on the change, see the [announcement post](https://storybook.js.org/blog/storybook-test/).
 
 ### Framework-specific Vite plugins have to be explicitly added
 

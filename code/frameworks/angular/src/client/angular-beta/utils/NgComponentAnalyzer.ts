@@ -1,3 +1,4 @@
+import type { Type } from '@angular/core';
 import {
   Component,
   Directive,
@@ -5,7 +6,6 @@ import {
   Output,
   Pipe,
   ɵReflectionCapabilities as ReflectionCapabilities,
-  Type,
 } from '@angular/core';
 
 const reflectionCapabilities = new ReflectionCapabilities();

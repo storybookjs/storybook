@@ -21,17 +21,19 @@ export const StyledHighlight: Story = {
       emit(HIGHLIGHT, {
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
-          {
-            id: 'button-name',
-            title: 'Login',
-            description: 'Navigate to the login page',
-            clickEvent: 'my-menu-click-event',
-          },
-          {
-            id: 'h2-home',
-            title: 'Acme',
-            description: 'Navigate to the home page',
-          },
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
         ],
       });
       return story;
@@ -40,7 +42,7 @@ export const StyledHighlight: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
 
@@ -57,17 +59,19 @@ export const StyledHighlight = {
       emit(HIGHLIGHT, {
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
-          {
-            id: 'button-name',
-            title: 'Login',
-            description: 'Navigate to the login page',
-            clickEvent: 'my-menu-click-event',
-          },
-          {
-            id: 'h2-home',
-            title: 'Acme',
-            description: 'Navigate to the home page',
-          },
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
         ],
       });
       return storyFn();
@@ -76,8 +80,9 @@ export const StyledHighlight = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
@@ -98,17 +103,19 @@ export const StyledHighlight: Story = {
       emit(HIGHLIGHT, {
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
-          {
-            id: 'button-name',
-            title: 'Login',
-            description: 'Navigate to the login page',
-            clickEvent: 'my-menu-click-event',
-          },
-          {
-            id: 'h2-home',
-            title: 'Acme',
-            description: 'Navigate to the home page',
-          },
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
         ],
       });
       return storyFn();
@@ -139,17 +146,19 @@ export const StyledHighlight: Story = {
       emit(HIGHLIGHT, {
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
-          {
-            id: 'button-name',
-            title: 'Login',
-            description: 'Navigate to the login page',
-            clickEvent: 'my-menu-click-event',
-          },
-          {
-            id: 'h2-home',
-            title: 'Acme',
-            description: 'Navigate to the home page',
-          },
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ]
         ],
       });
       return storyFn();
@@ -175,17 +184,19 @@ export const StyledHighlight = {
       emit(HIGHLIGHT, {
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
-          {
-            id: 'button-name',
-            title: 'Login',
-            description: 'Navigate to the login page',
-            clickEvent: 'my-menu-click-event',
-          },
-          {
-            id: 'h2-home',
-            title: 'Acme',
-            description: 'Navigate to the home page',
-          },
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
         ],
       });
       return storyFn();
@@ -216,17 +227,19 @@ export const StyledHighlight = {
       emit(HIGHLIGHT, {
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
-          {
-            id: 'button-name',
-            title: 'Login',
-            description: 'Navigate to the login page',
-            clickEvent: 'my-menu-click-event',
-          },
-          {
-            id: 'h2-home',
-            title: 'Acme',
-            description: 'Navigate to the home page',
-          },
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ]
         ],
       });
       return storyFn();
@@ -258,17 +271,19 @@ export const StyledHighlight: Story = {
       emit(HIGHLIGHT, {
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
-          {
-            id: 'button-name',
-            title: 'Login',
-            description: 'Navigate to the login page',
-            clickEvent: 'my-menu-click-event',
-          },
-          {
-            id: 'h2-home',
-            title: 'Acme',
-            description: 'Navigate to the home page',
-          },
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
         ],
       });
       return storyFn();
@@ -294,17 +309,19 @@ export const StyledHighlight = {
       emit(HIGHLIGHT, {
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
-          {
-            id: 'button-name',
-            title: 'Login',
-            description: 'Navigate to the login page',
-            clickEvent: 'my-menu-click-event',
-          },
-          {
-            id: 'h2-home',
-            title: 'Acme',
-            description: 'Navigate to the home page',
-          },
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
         ],
       });
       return {
@@ -337,17 +354,19 @@ export const StyledHighlight: Story = {
       emit(HIGHLIGHT, {
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
-          {
-            id: 'button-name',
-            title: 'Login',
-            description: 'Navigate to the login page',
-            clickEvent: 'my-menu-click-event',
-          },
-          {
-            id: 'h2-home',
-            title: 'Acme',
-            description: 'Navigate to the home page',
-          },
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
         ],
       });
       return {
@@ -373,17 +392,19 @@ export const StyledHighlight = {
       emit(HIGHLIGHT, {
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
-          {
-            id: 'button-name',
-            title: 'Login',
-            description: 'Navigate to the login page',
-            clickEvent: 'my-menu-click-event',
-          },
-          {
-            id: 'h2-home',
-            title: 'Acme',
-            description: 'Navigate to the home page',
-          },
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
         ],
       });
       return story();
@@ -412,21 +433,104 @@ export const StyledHighlight: Story = {
       emit(HIGHLIGHT, {
         selectors: ['h2', 'a', '.storybook-button'],
         menu: [
-          {
-            id: 'button-name',
-            title: 'Login',
-            description: 'Navigate to the login page',
-            clickEvent: 'my-menu-click-event',
-          },
-          {
-            id: 'h2-home',
-            title: 'Acme',
-            description: 'Navigate to the home page',
-          },
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
         ],
       });
       return story();
     },
   ],
 };
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const StyledHighlight = meta.story({
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
+        ],
+      });
+      return storyFn();
+    },
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const StyledHighlight = meta.story({
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
+        ],
+      });
+      return storyFn();
+    },
+  ],
+});
 ```

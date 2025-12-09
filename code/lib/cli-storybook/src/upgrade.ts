@@ -1,31 +1,39 @@
-import { hasStorybookDependencies } from 'storybook/internal/cli';
-import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import { PackageManagerName } from 'storybook/internal/common';
+import { HandledError, JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
 import {
-  JsPackageManagerFactory,
-  isCorePackage,
-  isSatelliteAddon,
-  versions,
-} from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
-import { logger } from 'storybook/internal/node-logger';
+  CLI_COLORS,
+  createHyperlink,
+  logTracker,
+  logger,
+  prompt,
+} from 'storybook/internal/node-logger';
+import type { LogLevel } from 'storybook/internal/node-logger';
 import {
-  UpgradeStorybookInWrongWorkingDirectory,
   UpgradeStorybookToLowerVersionError,
-  UpgradeStorybookToSameVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
-import boxen from 'boxen';
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
-import semver, { clean, eq, lt, prerelease } from 'semver';
+import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { autoblock } from './autoblock/index';
-import { getStorybookData } from './automigrate/helpers/mainConfigFile';
-import { automigrate } from './automigrate/index';
-import { doctor } from './doctor';
+import { processAutoblockerResults } from './autoblock/utils';
+import {
+  type AutomigrationCheckResult,
+  type AutomigrationResult,
+  runAutomigrations,
+} from './automigrate/multi-project';
+import { FixStatus } from './automigrate/types';
+import { displayDoctorResults, runMultiProjectDoctor } from './doctor';
+import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types';
+import {
+  type CollectProjectsSuccessResult,
+  getProjects,
+  shortenPath,
+  upgradeStorybookDependencies,
+} from './util';
 
 type Package = {
   package: string;
@@ -48,20 +56,6 @@ export const getStorybookVersion = (line: string) => {
   };
 };
 
-const getInstalledStorybookVersion = async (packageManager: JsPackageManager) => {
-  const storybookCliVersion = await packageManager.getInstalledVersion('storybook');
-  if (storybookCliVersion) {
-    return storybookCliVersion;
-  }
-
-  const installations = await packageManager.findInstallations(Object.keys(versions));
-  if (!installations) {
-    return;
-  }
-
-  return Object.entries(installations.dependencies)[0]?.[1]?.[0].version;
-};
-
 const deprecatedPackages = [
   {
     minVersion: '6.0.0-alpha.0',
@@ -78,13 +72,10 @@ const deprecatedPackages = [
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
 
-const warnPackages = (pkgs: Package[]) =>
-  pkgs.forEach((pkg) => logger.warn(`- ${formatPackage(pkg)}`));
+const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
 export const checkVersionConsistency = () => {
-  const lines = spawnSync('npm', ['ls'], { stdio: 'pipe', shell: true })
-    .output.toString()
-    .split('\n');
+  const lines = spawnSync('npm', ['ls'], { stdio: 'pipe' }).output.toString().split('\n');
   const storybookPackages = lines
     .map(getStorybookVersion)
     .filter((item): item is NonNullable<typeof item> => !!item)
@@ -99,360 +90,448 @@ export const checkVersionConsistency = () => {
   const outdated = storybookPackages.filter((pkg) => pkg.version !== latestVersion);
   if (outdated.length > 0) {
     logger.warn(
-      `Found ${outdated.length} outdated packages (relative to '${formatPackage(
+      dedent`Found ${outdated.length} outdated packages (relative to '${formatPackage(
         storybookPackages[0]
-      )}')`
+      )}')
+      Please make sure your packages are updated to ensure a consistent experience:
+
+      ${warnPackages(outdated)}`
     );
-    logger.warn('Please make sure your packages are updated to ensure a consistent experience.');
-    warnPackages(outdated);
   }
 
   deprecatedPackages.forEach(({ minVersion, url, deprecations }) => {
     if (semver.gte(latestVersion, minVersion)) {
       const deprecated = storybookPackages.filter((pkg) => deprecations.includes(pkg.package));
       if (deprecated.length > 0) {
-        logger.warn(`Found ${deprecated.length} deprecated packages since ${minVersion}`);
-        logger.warn(`See ${url}`);
-        warnPackages(deprecated);
+        logger.warn(
+          dedent`Found ${deprecated.length} deprecated packages since ${minVersion}
+          See ${url}
+          ${warnPackages(deprecated)}`
+        );
       }
     }
   });
+  logger.debug('End of version consistency check');
 };
 
-function getVersionModifier(versionSpecifier: string) {
-  if (!versionSpecifier || typeof versionSpecifier !== 'string') {
-    return '';
-  }
-
-  // Split in case of complex version strings like "9.0.0 || >= 0.0.0-pr.0"
-  const firstPart = versionSpecifier.split(/\s*\|\|\s*/)[0].trim();
-
-  // Match common modifiers
-  const match = firstPart.match(/^([~^><=]+)/);
-
-  return match ? match[1] : '';
-}
-
-/** Based on a list of dependencies, return a which need upgrades and to which versions */
-export const toUpgradedDependencies = async (
-  deps: Record<string, string> = {},
-  packageManager: JsPackageManager,
-  {
-    isCanary = false,
-    isCLIOutdated = false,
-    isCLIPrerelease = false,
-    isCLIExactPrerelease = false,
-    isCLIExactLatest = false,
-  } = {}
-): Promise<string[]> => {
-  const monorepoDependencies = Object.keys(deps || {}).filter((dependency) => {
-    // only upgrade packages that are in the monorepo
-    return dependency in versions;
-  }) as Array<keyof typeof versions>;
-
-  const storybookCoreUpgrades = monorepoDependencies.map((dependency) => {
-    /**
-     * Respect the modifier that the user set to the dependency, but make it fixed when the CLI is
-     * outdated (e.g. user is downgrading) or when upgrading to a canary version.
-     *
-     * Example outputs:
-     *
-     * - @storybook/react@9.0.0
-     * - @storybook/react@^9.0.0
-     * - @storybook/react@~9.0.0
-     */
-    let char = getVersionModifier(deps[dependency]);
-
-    if (isCLIOutdated) {
-      char = '';
-    }
-    if (isCanary) {
-      char = '';
-    }
-
-    return `${dependency}@${char}${versions[dependency]}`;
-  });
-
-  let storybookSatelliteUpgrades: string[] = [];
-  if (isCLIExactPrerelease || isCLIExactLatest) {
-    const satelliteDependencies = Object.keys(deps).filter(isSatelliteAddon);
-
-    if (satelliteDependencies.length > 0) {
-      try {
-        storybookSatelliteUpgrades = (
-          await Promise.all(
-            satelliteDependencies.map(async (dependency) => {
-              try {
-                const mostRecentVersion = await packageManager.latestVersion(
-                  isCLIPrerelease ? `${dependency}@next` : dependency
-                );
-                const modifier = getVersionModifier(deps[dependency]);
-                return `${dependency}@${modifier}${mostRecentVersion}`;
-              } catch (err) {
-                return null;
-              }
-            })
-          )
-        ).filter(Boolean) as string[];
-      } catch (error) {
-        // If there is an error fetching satellite dependencies, we don't want to block the upgrade
-      }
-    }
-  }
-
-  return [...storybookCoreUpgrades, ...storybookSatelliteUpgrades];
-};
-
-export interface UpgradeOptions {
+export type UpgradeOptions = {
   skipCheck: boolean;
   packageManager?: PackageManagerName;
   dryRun: boolean;
   yes: boolean;
   force: boolean;
   disableTelemetry: boolean;
-  configDir?: string;
-}
-
-export const doUpgrade = async (allOptions: UpgradeOptions) => {
-  const {
-    skipCheck,
-    packageManager: packageManagerName,
-    dryRun,
-    configDir: userSpecifiedConfigDir,
-    yes,
-    ...options
-  } = allOptions;
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: packageManagerName });
-
-  // If we can't determine the existing version fallback to v0.0.0 to not block the upgrade
-  const beforeVersion = (await getInstalledStorybookVersion(packageManager)) ?? '0.0.0';
-
-  const currentCLIVersion = versions.storybook;
-  const isCanary =
-    currentCLIVersion.startsWith('0.0.0') ||
-    beforeVersion.startsWith('portal:') ||
-    beforeVersion.startsWith('workspace:');
-
-  if (!(await hasStorybookDependencies(packageManager))) {
-    throw new UpgradeStorybookInWrongWorkingDirectory();
-  }
-  if (!isCanary && lt(currentCLIVersion, beforeVersion)) {
-    throw new UpgradeStorybookToLowerVersionError({
-      beforeVersion,
-      currentVersion: currentCLIVersion,
-    });
-  }
-
-  if (!isCanary && eq(currentCLIVersion, beforeVersion)) {
-    // Not throwing, as the beforeVersion calculation doesn't always work in monorepos.
-    logger.warn(new UpgradeStorybookToSameVersionError({ beforeVersion }).message);
-  }
-
-  const latestCLIVersionOnNPM = await packageManager.latestVersion('storybook');
-  const latestPrereleaseCLIVersionOnNPM = await packageManager.latestVersion('storybook@next');
-
-  const isCLIOutdated = lt(currentCLIVersion, latestCLIVersionOnNPM);
-  const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
-  const isCLIPrerelease = prerelease(currentCLIVersion) !== null;
-  const isCLIExactPrerelease = currentCLIVersion === latestPrereleaseCLIVersionOnNPM;
-
-  const isUpgrade = lt(beforeVersion, currentCLIVersion);
-
-  const borderColor = isCLIOutdated ? '#FC521F' : '#F1618C';
-
-  const messages = {
-    welcome: `Upgrading Storybook from version ${picocolors.bold(
-      beforeVersion
-    )} to version ${picocolors.bold(currentCLIVersion)}..`,
-    notLatest: picocolors.red(dedent`
-      This version is behind the latest release, which is: ${picocolors.bold(
-        latestCLIVersionOnNPM
-      )}!
-      You likely ran the upgrade command through a remote command like npx, which can use a locally cached version. To upgrade to the latest version please run:
-      ${picocolors.bold(`${packageManager.getRemoteRunCommand()} storybook@latest upgrade`)}
-      
-      You may want to CTRL+C to stop, and run with the latest version instead.
-    `),
-    prerelease: picocolors.yellow('This is a pre-release version.'),
-  };
-
-  logger.plain(
-    boxen(
-      [messages.welcome]
-        .concat(isCLIOutdated && !isCLIPrerelease ? [messages.notLatest] : [])
-        .concat(isCLIPrerelease ? [messages.prerelease] : [])
-        .join('\n'),
-      { borderStyle: 'round', padding: 1, borderColor }
-    )
-  );
-
-  let results;
-
-  const { configDir, mainConfig, mainConfigPath, previewConfigPath, packageJson } =
-    await getStorybookData({
-      packageManager,
-      configDir: userSpecifiedConfigDir,
-    });
-
-  // GUARDS
-  if (!beforeVersion) {
-    throw new UpgradeStorybookUnknownCurrentVersionError();
-  }
-
-  // BLOCKERS
-  if (
-    !results &&
-    typeof mainConfig !== 'boolean' &&
-    typeof mainConfigPath !== 'undefined' &&
-    !options.force
-  ) {
-    const blockResult = await autoblock({
-      packageManager,
-      configDir,
-      packageJson,
-      mainConfig,
-      mainConfigPath,
-    });
-    if (blockResult) {
-      results = { preCheckFailure: blockResult };
-    }
-  }
-
-  // INSTALL UPDATED DEPENDENCIES
-  if (!dryRun && !results) {
-    const upgradedDependencies = await toUpgradedDependencies(
-      packageJson.dependencies as Record<string, string>,
-      packageManager,
-      {
-        isCanary,
-        isCLIOutdated,
-        isCLIPrerelease,
-        isCLIExactPrerelease,
-        isCLIExactLatest,
-      }
-    );
-
-    const upgradedDevDependencies = await toUpgradedDependencies(
-      packageJson.devDependencies as Record<string, string>,
-      packageManager,
-      {
-        isCanary,
-        isCLIOutdated,
-        isCLIPrerelease,
-        isCLIExactPrerelease,
-        isCLIExactLatest,
-      }
-    );
-
-    // Add Storybook overrides to package.json when using npm to prevent peer dependency conflicts
-    if (packageManager.type === 'npm') {
-      try {
-        // Add overrides section if it doesn't exist
-        if (!packageJson.overrides) {
-          packageJson.overrides = {};
-        }
-
-        // Add Storybook overrides
-        packageJson.overrides.storybook = `$storybook`;
-
-        if (!dryRun) {
-          await packageManager.writePackageJson(packageJson);
-          logger.info(
-            `Added Storybook overrides to ${picocolors.cyan(
-              'package.json'
-            )} to ensure consistent dependency resolution`
-          );
-        }
-      } catch (err) {
-        logger.warn('Failed to add Storybook overrides to package.json');
-      }
-    }
-
-    // Users struggle to upgrade Storybook with npm because of conflicting peer-dependencies
-    // GitHub Issue: https://github.com/storybookjs/storybook/issues/30306
-    // Solution: Remove all Storybook packages (except 'storybook') from the package.json and install them again
-    if (packageManager.type === 'npm') {
-      const getPackageName = (dep: string) => {
-        const lastAtIndex = dep.lastIndexOf('@');
-        return lastAtIndex > 0 ? dep.slice(0, lastAtIndex) : dep;
-      };
-
-      // Remove all Storybook packages except 'storybook'
-      await packageManager.removeDependencies(
-        { skipInstall: false },
-        [...upgradedDependencies, ...upgradedDevDependencies]
-          .map(getPackageName)
-          .filter((dep) => dep !== 'storybook')
-      );
-
-      // Handle 'storybook' package separately to maintain peer dependencies
-      const findStorybookPackage = (deps: string[]) =>
-        deps.find((dep) => getPackageName(dep) === 'storybook');
-
-      const storybookDep = findStorybookPackage(upgradedDependencies);
-      const storybookDevDep = findStorybookPackage(upgradedDevDependencies);
-
-      if (storybookDep) {
-        await packageManager.addDependencies({ installAsDevDependencies: false }, [storybookDep]);
-      }
-      if (storybookDevDep) {
-        await packageManager.addDependencies({ installAsDevDependencies: true }, [storybookDevDep]);
-      }
-    }
-
-    // Update all dependencies
-    logger.info(`Updating dependencies in ${picocolors.cyan('package.json')}..`);
-    const addDeps = async (deps: string[], isDev: boolean) => {
-      if (deps.length > 0) {
-        await packageManager.addDependencies(
-          { installAsDevDependencies: isDev, skipInstall: true, packageJson },
-          deps
-        );
-      }
-    };
-
-    await addDeps(upgradedDependencies, false);
-    await addDeps(upgradedDevDependencies, true);
-    await packageManager.installDependencies();
-  }
-
-  // AUTOMIGRATIONS
-  if (!skipCheck && !results && mainConfigPath) {
-    checkVersionConsistency();
-    results = await automigrate({
-      dryRun,
-      yes,
-      packageManager,
-      packageJson,
-      mainConfig,
-      configDir,
-      previewConfigPath,
-      mainConfigPath,
-      beforeVersion,
-      storybookVersion: currentCLIVersion,
-      isUpgrade,
-      isLatest: isCLIExactLatest,
-    });
-  }
-
-  // TELEMETRY
-  if (!options.disableTelemetry) {
-    const { preCheckFailure, fixResults } = results || {};
-    const automigrationTelemetry = {
-      automigrationResults: preCheckFailure ? null : fixResults,
-      automigrationPreCheckFailure: preCheckFailure || null,
-    };
-
-    await telemetry('upgrade', {
-      beforeVersion,
-      afterVersion: currentCLIVersion,
-      ...automigrationTelemetry,
-    });
-  }
-
-  await doctor(allOptions);
+  configDir?: string[];
+  fixId?: string;
+  skipInstall?: boolean;
+  loglevel?: LogLevel;
+  logfile?: string | boolean;
 };
 
+function getUpgradeResults(
+  projectResults: Record<string, AutomigrationResult>,
+  doctorResults: Record<string, ProjectDoctorResults>
+) {
+  const successfulProjects: string[] = [];
+  const failedProjects: string[] = [];
+  const projectsWithNoFixes: string[] = [];
+
+  const allProjects = Object.entries(projectResults).map(([configDir, resultData]) => {
+    const automigrationResults = Object.entries(resultData.automigrationStatuses).map(
+      ([fixId, status]) => {
+        const succeeded = status === FixStatus.SUCCEEDED || status === FixStatus.MANUAL_SUCCEEDED;
+        return {
+          fixId,
+          status,
+          succeeded,
+        };
+      }
+    );
+
+    const hasFailures = automigrationResults.some(
+      (fix) => fix.status === FixStatus.FAILED || fix.status === FixStatus.CHECK_FAILED
+    );
+    const hasSuccessfulFixes = automigrationResults.some(
+      (fix) => fix.status === FixStatus.SUCCEEDED || fix.status === FixStatus.MANUAL_SUCCEEDED
+    );
+    const noFixesNeeded = Object.keys(resultData.automigrationStatuses).length === 0;
+
+    // Determine if migration was successful (has successful fixes and no failures)
+    const migratedSuccessfully = hasSuccessfulFixes && !hasFailures;
+
+    // Check if doctor report exists
+    const hasDoctorReport = !!doctorResults[configDir];
+
+    // Categorize this project
+    if (hasFailures) {
+      failedProjects.push(configDir);
+    } else if (migratedSuccessfully) {
+      successfulProjects.push(configDir);
+    } else if (noFixesNeeded) {
+      projectsWithNoFixes.push(configDir);
+    }
+
+    return {
+      configDir,
+      migratedSuccessfully,
+      hasDoctorReport,
+      automigrations: {
+        fixes: automigrationResults,
+        noFixesNeeded,
+        hasFailures,
+        hasSuccessfulFixes,
+      },
+      doctor: doctorResults[configDir]
+        ? {
+            status: doctorResults[configDir].status,
+            isHealthy: doctorResults[configDir].status === 'healthy',
+          }
+        : null,
+    };
+  });
+
+  return {
+    allProjects,
+    successfulProjects,
+    failedProjects,
+    projectsWithNoFixes,
+  };
+}
+
+/** Logs the results of the upgrade process, including project categorization and diagnostic messages */
+function logUpgradeResults(
+  projectResults: Record<string, AutomigrationResult>,
+  detectedAutomigrations: AutomigrationCheckResult[],
+  doctorResults: Record<string, ProjectDoctorResults>
+) {
+  const { successfulProjects, failedProjects, projectsWithNoFixes } = getUpgradeResults(
+    projectResults,
+    doctorResults
+  );
+
+  // If there are any failures, show detailed summary
+  if (failedProjects.length > 0) {
+    logTracker.enableLogWriting();
+    logger.step(
+      'The upgrade is complete, but some projects failed to upgrade or migrate completely. Please see the debug logs for more details.'
+    );
+    // Display appropriate messages based on results
+    if (successfulProjects.length > 0) {
+      const successfulProjectsList = successfulProjects
+        .map((dir) => `  • ${shortenPath(dir)}`)
+        .join('\n');
+      logger.log(`${CLI_COLORS.success('Successfully upgraded:')}\n${successfulProjectsList}`);
+    }
+
+    const failedProjectsList = failedProjects.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
+    logger.log(
+      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed, please check the logs in the log file for more details.\n${failedProjectsList}`
+    );
+
+    if (projectsWithNoFixes.length > 0) {
+      const projectList = projectsWithNoFixes.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
+      logger.log(`${CLI_COLORS.info('No applicable migrations:')}\n${projectList}`);
+    }
+  } else {
+    if (Object.values(doctorResults).every((result) => result.status === 'healthy')) {
+      logger.step(`${CLI_COLORS.success('Your project(s) have been upgraded successfully! 🎉')}`);
+    } else {
+      logger.step(
+        `${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
+      );
+    }
+  }
+
+  const automigrationLinks = detectedAutomigrations
+    .filter((am) =>
+      Object.entries(projectResults).some(
+        ([_, resultData]) =>
+          resultData.automigrationStatuses[am.fix.id] === FixStatus.FAILED ||
+          resultData.automigrationStatuses[am.fix.id] === FixStatus.SUCCEEDED ||
+          resultData.automigrationStatuses[am.fix.id] === FixStatus.CHECK_FAILED
+      )
+    )
+    .map((am) => `• ${createHyperlink(am.fix.id, am.fix.link!)}`);
+
+  if (automigrationLinks.length > 0) {
+    const automigrationLinksMessage = [
+      'If you want to learn more about the automigrations that executed in your project(s), please check the following links:',
+      ...automigrationLinks,
+    ].join('\n');
+
+    logger.log(automigrationLinksMessage);
+  }
+
+  logger.log(
+    `For a full list of changes, please check our migration guide: ${CLI_COLORS.cta('https://storybook.js.org/docs/releases/migration-guide?ref=upgrade')}`
+  );
+}
+
+interface MultiUpgradeTelemetryOptions {
+  allProjects: CollectProjectsSuccessResult[];
+  selectedProjects: CollectProjectsSuccessResult[];
+  projectResults: Record<string, AutomigrationResult>;
+  doctorResults: Record<string, ProjectDoctorResults>;
+  hasUserInterrupted?: boolean;
+}
+
+async function sendMultiUpgradeTelemetry(options: MultiUpgradeTelemetryOptions) {
+  const {
+    allProjects,
+    selectedProjects,
+    projectResults,
+    doctorResults,
+    hasUserInterrupted = false,
+  } = options;
+
+  const { successfulProjects, failedProjects, projectsWithNoFixes } = getUpgradeResults(
+    projectResults,
+    doctorResults
+  );
+
+  // Calculate incomplete projects (projects that were supposed to be processed but have no results)
+  const processedProjects = new Set([
+    ...Object.keys(projectResults),
+    ...Object.keys(doctorResults),
+  ]);
+  const incompleteProjects = selectedProjects
+    .map((p) => p.configDir)
+    .filter((configDir) => !processedProjects.has(configDir));
+  const projectsWithDoctorReports = Object.values(doctorResults).filter(
+    (result) => result.status !== 'healthy'
+  ).length;
+
+  try {
+    await telemetry('multi-upgrade', {
+      totalDetectedProjects: allProjects.length,
+      totalSelectedProjects: selectedProjects.length,
+      projectsWithSuccessfulAutomigrations: successfulProjects.length,
+      projectsWithFailedAutomigrations: failedProjects.length,
+      projectsWithNoAutomigrations: projectsWithNoFixes.length,
+      projectsWithDoctorReports,
+      incompleteProjects: incompleteProjects.length,
+      hasUserInterrupted,
+    });
+  } catch (error) {
+    // Silently handle telemetry errors to avoid disrupting the upgrade process
+    logger.debug(`Failed to send multi-upgrade telemetry: ${String(error)}`);
+  }
+}
+
 export async function upgrade(options: UpgradeOptions): Promise<void> {
-  await withTelemetry('upgrade', { cliOptions: options }, () => doUpgrade(options));
+  const projectsResult = await getProjects(options);
+
+  if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
+    // nothing to upgrade
+    return;
+  }
+
+  const { allProjects, selectedProjects: storybookProjects } = projectsResult;
+
+  if (storybookProjects.length > 1) {
+    logger.info(`Upgrading the following projects:
+          ${storybookProjects.map((p) => `${picocolors.cyan(shortenPath(p.configDir))}: ${picocolors.bold(p.beforeVersion)} -> ${picocolors.bold(p.currentCLIVersion)}`).join('\n')}`);
+  } else {
+    logger.info(
+      `Upgrading from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}`
+    );
+  }
+
+  const automigrationResults: Record<string, AutomigrationResult> = {};
+  let doctorResults: Record<string, ProjectDoctorResults> = {};
+
+  // Set up signal handling for interruptions
+  const handleInterruption = async () => {
+    logger.log('\n\nUpgrade interrupted by user.');
+    if (allProjects.length > 1) {
+      await sendMultiUpgradeTelemetry({
+        allProjects,
+        selectedProjects: storybookProjects,
+        projectResults: automigrationResults,
+        doctorResults,
+        hasUserInterrupted: true,
+      });
+    }
+    throw new HandledError('Upgrade cancelled by user');
+  };
+
+  process.on('SIGINT', handleInterruption);
+  process.on('SIGTERM', handleInterruption);
+
+  try {
+    // Handle autoblockers
+    const hasBlockers = processAutoblockerResults(storybookProjects, (message) => {
+      logger.error(dedent`Blockers detected\n\n${message}`);
+    });
+
+    if (hasBlockers) {
+      throw new HandledError('Blockers detected');
+    }
+
+    // Checks whether we can upgrade
+    storybookProjects.some((project) => {
+      if (!project.isCanary && lt(project.currentCLIVersion, project.beforeVersion)) {
+        throw new UpgradeStorybookToLowerVersionError({
+          beforeVersion: project.beforeVersion,
+          currentVersion: project.currentCLIVersion,
+        });
+      }
+
+      if (!project.beforeVersion) {
+        throw new UpgradeStorybookUnknownCurrentVersionError();
+      }
+    });
+
+    // Update dependencies in package.jsons for all projects
+    if (!options.dryRun) {
+      const task = prompt.taskLog({
+        id: 'upgrade-dependencies',
+        title: `Fetching versions to update package.json files..`,
+      });
+      try {
+        const loggedPaths: string[] = [];
+        for (const project of storybookProjects) {
+          logger.debug(`Updating dependencies in ${shortenPath(project.configDir)}...`);
+          const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
+          const newPaths = packageJsonPaths.filter((path) => !loggedPaths.includes(path));
+          if (newPaths.length > 0) {
+            task.message(newPaths.join('\n'));
+            loggedPaths.push(...newPaths);
+          }
+          await upgradeStorybookDependencies({
+            packageManager: project.packageManager,
+            isCanary: project.isCanary,
+            isCLIOutdated: project.isCLIOutdated,
+            isCLIPrerelease: project.isCLIPrerelease,
+            isCLIExactLatest: project.isCLIExactLatest,
+            isCLIExactPrerelease: project.isCLIExactPrerelease,
+          });
+        }
+        task.success(`Updated package versions in package.json files`);
+      } catch (err) {
+        task.error(`Failed to upgrade dependencies: ${String(err)}`);
+      }
+    }
+
+    // Run automigrations for all projects
+    const { automigrationResults, detectedAutomigrations } = await runAutomigrations(
+      storybookProjects,
+      options
+    );
+
+    // Install dependencies
+    const rootPackageManager =
+      storybookProjects.length > 1
+        ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
+        : storybookProjects[0].packageManager;
+
+    if (rootPackageManager.type === 'npm') {
+      // see https://github.com/npm/cli/issues/8059 for more details
+      await rootPackageManager.installDependencies({ force: true });
+    } else {
+      await rootPackageManager.installDependencies();
+    }
+
+    if (
+      rootPackageManager.type !== PackageManagerName.YARN1 &&
+      rootPackageManager.isStorybookInMonorepo()
+    ) {
+      logger.warn(
+        `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
+      );
+
+      const dedupe =
+        options.yes ||
+        (await prompt.confirm({
+          message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
+          initialValue: true,
+        }));
+
+      if (dedupe) {
+        if (rootPackageManager.type === 'npm') {
+          // see https://github.com/npm/cli/issues/8059 for more details
+          await rootPackageManager.dedupeDependencies({ force: true });
+        } else {
+          await rootPackageManager.dedupeDependencies();
+        }
+      } else {
+        logger.log(
+          `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
+        );
+      }
+    }
+
+    // Run doctor for each project
+    const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
+      configDir: project.configDir,
+      packageManager: project.packageManager,
+      storybookVersion: project.currentCLIVersion,
+      mainConfig: project.mainConfig,
+    }));
+
+    logger.step('Checking the health of your project(s)..');
+    doctorResults = await runMultiProjectDoctor(doctorProjects);
+    const hasIssues = displayDoctorResults(doctorResults);
+    if (hasIssues) {
+      logTracker.enableLogWriting();
+    }
+
+    // Display upgrade results summary
+    logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
+
+    // TELEMETRY
+    if (!options.disableTelemetry) {
+      for (const project of storybookProjects) {
+        const resultData = automigrationResults[project.configDir] || {
+          automigrationStatuses: {},
+          automigrationErrors: {},
+        };
+        let doctorFailureCount = 0;
+        let doctorErrorCount = 0;
+        Object.values(doctorResults[project.configDir]?.diagnostics || {}).forEach((status) => {
+          if (status === 'has_issues') {
+            doctorFailureCount++;
+          }
+
+          if (status === 'check_error') {
+            doctorErrorCount++;
+          }
+        });
+        const automigrationFailureCount = Object.keys(resultData.automigrationErrors).length;
+        const automigrationPreCheckFailure =
+          project.autoblockerCheckResults && project.autoblockerCheckResults.length > 0
+            ? project.autoblockerCheckResults
+                ?.map((result) => {
+                  if (result.result !== null) {
+                    return result.blocker.id;
+                  }
+                  return null;
+                })
+                .filter(Boolean)
+            : null;
+        await telemetry('upgrade', {
+          beforeVersion: project.beforeVersion,
+          afterVersion: project.currentCLIVersion,
+          automigrationResults: resultData.automigrationStatuses,
+          automigrationErrors: resultData.automigrationErrors,
+          automigrationFailureCount,
+          automigrationPreCheckFailure,
+          doctorResults: doctorResults[project.configDir]?.diagnostics || {},
+          doctorFailureCount,
+          doctorErrorCount,
+        });
+      }
+
+      await sendMultiUpgradeTelemetry({
+        allProjects,
+        selectedProjects: storybookProjects,
+        projectResults: automigrationResults,
+        doctorResults,
+      });
+    }
+  } finally {
+    // Clean up signal handlers
+    process.removeListener('SIGINT', handleInterruption);
+    process.removeListener('SIGTERM', handleInterruption);
+  }
 }

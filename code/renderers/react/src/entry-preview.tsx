@@ -1,11 +1,12 @@
 import * as React from 'react';
 
-import semver from 'semver';
+import { global } from '@storybook/global';
+
+import { configure } from 'storybook/test';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
 import type { Decorator } from './public-types';
 
-export const parameters = { renderer: 'react' };
 export { render } from './render';
 export { renderToCanvas } from './renderToCanvas';
 export { mount } from './mount';
@@ -17,21 +18,36 @@ export const decorators: Decorator[] = [
       return story();
     }
 
-    const major = semver.major(React.version);
-    const minor = semver.minor(React.version);
+    const [major, minor] = React.version.split('.').map((part) => parseInt(part, 10));
+
+    if (!Number.isInteger(major) || !Number.isInteger(minor)) {
+      throw new Error('Unable to parse React version');
+    }
     if (major < 18 || (major === 18 && minor < 3)) {
       throw new Error('React Server Components require React >= 18.3');
     }
 
     return <React.Suspense>{story()}</React.Suspense>;
   },
+  (story, context) => {
+    // @ts-expect-error this feature flag only exists in the react frameworks
+    if (context.tags?.includes('test-fn') && !global.FEATURES?.experimentalTestSyntax) {
+      throw new Error(
+        'To use the experimental test function, you must enable the experimentalTestSyntax feature flag. See https://storybook.js.org/docs/10/api/main-config/main-config-features#experimentalTestSyntax'
+      );
+    }
+    return story();
+  },
 ];
+
+export const parameters = {
+  renderer: 'react',
+};
 
 export const beforeAll = async () => {
   try {
     // copied from
     // https://github.com/testing-library/react-testing-library/blob/3dcd8a9649e25054c0e650d95fca2317b7008576/src/pure.js
-    const { configure } = await import('storybook/test');
 
     const act = await getAct();
 
@@ -55,7 +71,6 @@ export const beforeAll = async () => {
             }, 0);
 
             if (jestFakeTimersAreEnabled()) {
-              // @ts-expect-error global jest
               jest.advanceTimersByTime(0);
             }
           });
@@ -82,7 +97,6 @@ export const beforeAll = async () => {
 
 /** The function is used to configure jest's fake timers in environments where React's act is enabled */
 function jestFakeTimersAreEnabled() {
-  // @ts-expect-error global jest
   if (typeof jest !== 'undefined' && jest !== null) {
     return (
       // legacy timers

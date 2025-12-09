@@ -1,0 +1,196 @@
+---
+title: 'Upgrading Storybook'
+sidebar:
+  order: 3
+  title: Upgrading
+---
+
+The frontend ecosystem is a fast-moving place. Regular dependency upgrades are a way of life, whether upgrading a framework, library, tooling, or all of the above! Storybook provides a few resources to help ease the pain of upgrading.
+
+## Upgrade script
+
+The most common upgrade is Storybook itself. [Storybook releases](https://storybook.js.org/releases) follow [Semantic Versioning](https://semver.org/). We publish patch releases with bug fixes continuously, minor versions of Storybook with new features every few months, and major versions of Storybook with breaking changes roughly once per year.
+
+To help ease the pain of keeping Storybook up-to-date, we provide a command-line script that automatically detects all Storybook projects in your repository:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-upgrade.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+  **Important:** Always run the upgrade command from your repository root. The script will automatically detect all Storybook projects in your repository, including in mono-repository setups.
+</Callout>
+
+The `upgrade` command will use whichever version you specify. For example:
+
+* `storybook@latest upgrade` will upgrade to the latest version
+* `storybook@8.6.1 upgrade` will upgrade to `8.6.1`
+* `storybook@9 upgrade` will upgrade to the newest `9.x.x` version
+
+<Callout variant="warning">
+  The `upgrade` command is designed to upgrade from one major version to the next.
+
+  - ✅ OK: Using Storybook 8 and running `storybook@9 upgrade`
+  - ❌ Not OK: Using Storybook 7 and running `storybook@9 upgrade`
+
+  If you want to upgrade across more than major version, run the command multiple times. For example, to upgrade from Storybook 7 to Storybook 9, you first need to upgrade to the latest version of Storybook 8 with `storybook@8 upgrade`, and then run `storybook@9 upgrade` to upgrade to the latest version of Storybook 9.
+
+  The only exception to this is when upgrading from 6 to 8, where you can run `storybook@8 upgrade` directly to upgrade from 6.x.x to 8.x.x.
+</Callout>
+
+### Mono-repository support
+
+The upgrade script provides enhanced support for mono-repositories:
+
+- **Automatic detection**: The script automatically detects all Storybook projects in your repository
+- **Selective upgrades**: If your Storybooks are truly encapsulated (meaning each Storybook project has its own independent Storybook dependencies in its own `package.json`), you can select which Storybook project to upgrade
+- **Bulk upgrades**: If your Storybooks share dependencies, all detected projects will be upgraded together to ensure consistency
+
+#### Limiting scope in large mono-repositories
+
+For large mono-repositories where you want to limit the upgrade to a specific directory, use the `STORYBOOK_PROJECT_ROOT` environment variable:
+
+```bash
+STORYBOOK_PROJECT_ROOT=./packages/frontend storybook@latest upgrade
+```
+
+This is especially helpful in huge mono-repositories with semi-encapsulated Storybooks.
+
+
+## Upgrade process
+
+After running the command, the script will:
+
+* Detect all Storybook projects in your repository
+* Upgrade all Storybook packages to the specified version
+* Run the relevant [automigrations](../releases/migration-guide.mdx#automatic-upgrade) factoring in the [breaking changes](../releases/migration-guide.mdx#major-breaking-changes) between your current version and the specified version
+* Automatically run the [doctor command](#automatic-health-check) to verify the upgrade
+
+<Callout variant="info">
+  In addition to running the command, we also recommend checking the [MIGRATION.md file](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md), for the detailed log of relevant changes and deprecations that might affect your upgrade.
+</Callout>
+
+### Automatic health check
+
+The upgrade script automatically runs a health check on all detected Storybook projects after the upgrade. This verifies that the upgrade was completed successfully and checks for common issues that might arise after an upgrade, such as duplicated dependencies, incompatible addons, or mismatched versions.
+
+The health check runs automatically for all detected Storybooks. You can also run it manually at any time using the `storybook doctor` command:
+
+<CodeSnippets path="storybook-doctor.md" />
+
+### Error handling and debugging
+
+If you encounter issues during the upgrade:
+
+1. A `debug-storybook.log` file will be created in the repository root containing all relevant logs
+2. For more detailed information, set the log level to `debug` using the `--loglevel debug` flag
+3. Create a GitHub issue with the logs if you need help resolving the problem
+
+## Command-line options
+
+The upgrade command supports several flags to customize the upgrade process:
+
+```bash
+storybook@latest upgrade [options]
+```
+
+### Available flags
+
+| Flag                             | Description                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| `-c, --config-dir <dir-name...>` | Directory or directories to find Storybook configurations                                  |
+| `--debug`                        | Enable more logs for debugging (default: false)                                            |
+| `--disable-telemetry`            | Disable sending telemetry data                                                             |
+| `--enable-crash-reports`         | Enable sending crash reports to telemetry data                                             |
+| `-f, --force`                    | Force the upgrade, skipping autoblockers                                                   |
+| `--loglevel <level>`             | Define log level: `debug`, `error`, `info`, `silent`, `trace`, or `warn` (default: `info`) |
+| `--package-manager <manager>`    | Force package manager: `npm`, `pnpm`, `yarn1`, `yarn2`, or `bun`                           |
+| `-s, --skip-check`               | Skip postinstall version and automigration checks                                          |
+| `--logfile [path]`               | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided.                                    |
+| `-y, --yes`                      | Skip prompting the user                                                                    |
+
+### Example usage
+
+```bash
+# Upgrade with logging for debugging
+storybook@latest upgrade --loglevel debug --logfile debug-storybook.log
+
+# Force upgrade without prompts
+storybook@latest upgrade --force --yes
+
+# Upgrade specific config directories only
+storybook@latest upgrade --config-dir .storybook-app .storybook-ui
+```
+
+## Automigrate script
+
+Storybook upgrades are not the only thing to consider: changes in the ecosystem also present challenges. For example well-known frontend frameworks, such as [Angular](https://update.angular.io/?l=2\&v=16.0-17.0), [Next.js](https://nextjs.org/docs/pages/building-your-application/upgrading) or [Svelte](https://svelte.dev/docs/v4-migration-guide) have been rolling out significant changes to their ecosystem, so even if you don't upgrade your Storybook version, you might need to update your configuration accordingly. That's what Automigrate is for:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-automigrate.md" />
+
+{/* prettier-ignore-end */}
+
+It runs a set of standard configuration checks, explains what is potentially out-of-date, and offers to fix it for you automatically. It also points to the relevant documentation so you can learn more. It runs automatically as part of [`storybook upgrade`](#upgrade-script) command, but it's also available on its own if you don't want to upgrade Storybook.
+
+## Prereleases
+
+In addition to the above, Storybook is under constant development, and we publish pre-release versions almost daily. Pre-releases are the best way to try out new features before they are generally available, and we do our best to keep them as stable as possible, although this is not always possible.
+
+To upgrade to the latest pre-release:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-upgrade-prerelease.md" />
+
+{/* prettier-ignore-end */}
+
+The `upgrade` command will use whichever version you specify. For example:
+
+* `storybook@next upgrade` will upgrade to the newest pre-release version
+* `storybook@8.0.0-beta.1 upgrade` will upgrade to `8.0.0-beta.1`
+* `storybook@8 upgrade` will upgrade to the newest `8.x` version
+
+If you'd like to downgrade to a stable version, manually edit the package version numbers in your `package.json` and re-install.
+
+<Callout variant="info">
+  Storybook collects completely anonymous data to help us improve user experience. Participation is optional, and you may [opt-out](../configure/telemetry.mdx#how-to-opt-out) if you'd not like to share any information.
+</Callout>
+
+
+## Troubleshooting
+
+### Storybook doesn't detect my Storybook project
+
+By default, the upgrade script will attempt to find Storybook configuration in `.storybook` directories in your repository. If your Storybook configuration is located in a different directory, you can specify it using the `--config-dir` flag.
+
+The `--config-dir` flag can accept multiple directories.
+
+```bash
+storybook@latest upgrade --config-dir .storybook-app .storybook-ui
+```
+
+If your project can be detected, but you get an error during the detection process, please check the `debug-storybook.log` file in the root of your repository. It will contain the full output of the detection process and will help you troubleshoot the issue.
+
+### Storybook doesn't automigrate non-Storybook files
+
+Our automigrations usually only transform and migrate files inside of your `.storybook` directory and your story and mdx files, which are mentioned as part of the Storybook configuration.
+
+If you have other files that contain Storybook-specific code, you might need to manually migrate them.
+
+<IfRenderer renderer="vue">
+
+  ### Storybook doesn't upgrade to the latest version when using Vue 2
+
+  If you're attempting to upgrade Storybook to the latest version in your existing Vue 2 project, you will no longer be able to. This is because Vue 2 entered [End of Life](https://v2.vuejs.org/lts/) (EOL) on December 31st, 2023, and will no longer receive any updates from the Vue team. We recommend you upgrade your Vue 2 project to Vue 3 and then upgrade Storybook to the latest version. If you cannot upgrade your Vue 2 project to Vue 3, you can still upgrade Storybook, but only for the latest 7.x version. You can do this by running the following command:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="upgrade-command-specific-version.md" />
+
+  {/* prettier-ignore-end */}
+
+</IfRenderer>

@@ -16,7 +16,6 @@
   "resolutions": {
     "@storybook/addon-a11y": "file:../../code/addons/a11y",
     "@storybook/addon-docs": "file:../../code/addons/docs",
-    "@storybook/addon-jest": "file:../../code/addons/jest",
     "@storybook/addon-links": "file:../../code/addons/links",
     "@storybook/addon-themes": "file:../../code/addons/themes",
     "@storybook/angular": "file:../../code/frameworks/angular",
@@ -40,7 +39,6 @@
     "@storybook/react-webpack5": "file:../../code/frameworks/react-webpack5",
     "@storybook/server": "file:../../code/renderers/server",
     "@storybook/server-webpack5": "file:../../code/frameworks/server-webpack5",
-    "@storybook/source-loader": "file:../../code/lib/source-loader",
     "@storybook/svelte": "file:../../code/renderers/svelte",
     "@storybook/svelte-vite": "file:../../code/frameworks/svelte-vite",
     "@storybook/sveltekit": "file:../../code/frameworks/sveltekit",

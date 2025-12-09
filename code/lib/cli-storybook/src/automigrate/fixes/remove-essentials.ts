@@ -1,22 +1,17 @@
-import {
-  type PackageJson,
-  getAddonNames,
-  scanAndTransformFiles,
-  transformImportFiles,
-} from 'storybook/internal/common';
+import { getAddonNames, removeAddon, transformImportFiles } from 'storybook/internal/common';
 
-import picocolors from 'picocolors';
-import { dedent } from 'ts-dedent';
-
+import { add } from '../../add';
+import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
+import { moveEssentialOptions } from './remove-essentials.utils';
 
 interface AddonDocsOptions {
   hasEssentials: boolean;
+  essentialsOptions?: Record<string, any>;
   hasDocsDisabled: boolean;
   hasDocsAddon: boolean;
   additionalAddonsToRemove: string[];
   allDeps: Record<string, string>;
-  packageJson: PackageJson;
 }
 
 const consolidatedAddons = {
@@ -38,8 +33,8 @@ const consolidatedAddons = {
  * - If user had docs disabled: Skip addon-docs installation
  */
 export const removeEssentials: Fix<AddonDocsOptions> = {
-  id: 'remove-essentials',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+  id: 'remove-essential-addons',
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addon-viewport-controls-interactions-and-actions-moved-to-core',
 
   async check({ mainConfigPath, mainConfig, packageManager }) {
     if (!mainConfigPath) {
@@ -50,6 +45,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       let hasEssentialsAddon = false;
       let hasDocsAddon = false;
       let hasDocsDisabled = false;
+      let essentialsOptions: Record<string, any> | undefined = undefined;
       const additionalAddonsToRemove: string[] = [];
 
       const CORE_ADDONS = [
@@ -69,12 +65,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       hasEssentialsAddon = addonNames.includes('@storybook/addon-essentials');
       hasDocsAddon = addonNames.includes('@storybook/addon-docs');
 
-      const packageJson = await packageManager.retrievePackageJson();
-
-      const allDeps = {
-        ...packageJson.dependencies,
-        ...packageJson.devDependencies,
-      } as Record<string, string>;
+      const allDeps = packageManager.getAllDependencies();
 
       const installedAddons = Object.keys(allDeps);
 
@@ -98,6 +89,14 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
         if (typeof essentialsEntry === 'object') {
           const options = essentialsEntry.options || {};
           hasDocsDisabled = options.docs === false;
+
+          const optionsExceptDocs = Object.fromEntries(
+            Object.entries(options).filter(([key]) => key !== 'docs')
+          );
+
+          if (Object.keys(optionsExceptDocs).length > 0) {
+            essentialsOptions = optionsExceptDocs;
+          }
         }
       }
 
@@ -105,62 +104,38 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
         return null;
       }
 
-      return {
+      const result: AddonDocsOptions = {
         hasEssentials: hasEssentialsAddon,
         hasDocsDisabled,
         hasDocsAddon,
         additionalAddonsToRemove,
         allDeps,
-        packageJson,
       };
+
+      if (essentialsOptions) {
+        result.essentialsOptions = essentialsOptions;
+      }
+
+      return result;
     } catch (err) {
       return null;
     }
   },
 
-  prompt({ hasDocsDisabled, additionalAddonsToRemove, hasEssentials }) {
-    let message = '';
-
-    if (hasEssentials) {
-      message = dedent`
-        We've detected that you have ${picocolors.yellow('@storybook/addon-essentials')} installed.
-        
-        In Storybook 9.0, all features from ${picocolors.yellow('@storybook/addon-essentials')} (except docs) 
-        have been moved into Storybook's core. You no longer need to install or configure them separately.
-        
-        We'll remove ${picocolors.yellow('@storybook/addon-essentials')} from your configuration and dependencies.
-      `;
-    }
-
-    const additionalAddonsMessage =
-      additionalAddonsToRemove.length > 0
-        ? dedent`
-        ${hasEssentials ? '' : "In Storybook 9.0, several features have been moved into Storybook's core."}\n\nWe've detected the following addons that are now part of Storybook core:
-        ${additionalAddonsToRemove.map((addon) => `\n- ${picocolors.yellow(addon)}`).join('')}
-        
-        These will be removed as they are no longer needed.
-        
-        We'll also need to update your code to use the new core addons.`
-        : '';
-
-    if (hasDocsDisabled) {
-      return `${message}${additionalAddonsMessage}`;
-    }
-
-    if (!hasEssentials) {
-      return additionalAddonsMessage;
-    }
-
-    return dedent`
-      ${message}${additionalAddonsMessage}
-      
-      Since you were using the docs feature, we'll install ${picocolors.yellow('@storybook/addon-docs')} 
-      separately and add it to your configuration if it's not already present.
-    `;
+  prompt() {
+    return "In Storybook 9.0, several addons have been moved into Storybook's core and are no longer needed as separate packages. We'll remove the unnecessary addons from your configuration and dependencies, and update your code to use the new core features.";
   },
 
-  async run({ result, dryRun, packageManager, configDir, packageJson }) {
-    const { hasEssentials, hasDocsDisabled, hasDocsAddon, additionalAddonsToRemove } = result;
+  async run({
+    result,
+    dryRun,
+    packageManager,
+    configDir,
+    storiesPaths,
+    mainConfigPath,
+    previewConfigPath,
+  }) {
+    const { hasEssentials, hasDocsDisabled, additionalAddonsToRemove, essentialsOptions } = result;
 
     if (!hasEssentials && additionalAddonsToRemove.length === 0) {
       return;
@@ -169,31 +144,27 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
     if (!dryRun) {
       // Remove addon-essentials package if present
       if (hasEssentials) {
-        console.log('Removing @storybook/addon-essentials...');
-
-        await packageManager.runPackageCommand('storybook', [
-          'remove',
-          '@storybook/addon-essentials',
-          '--config-dir',
+        await removeAddon('@storybook/addon-essentials', {
           configDir,
-        ]);
+          packageManager,
+          skipInstall: true,
+        });
       }
 
       // Remove additional core addons
       for (const addon of additionalAddonsToRemove) {
-        await packageManager.runPackageCommand('storybook', [
-          'remove',
-          addon,
-          '--config-dir',
+        await removeAddon(addon, {
           configDir,
-        ]);
+          packageManager,
+          skipInstall: true,
+        });
       }
 
-      const errors = await scanAndTransformFiles({
-        dryRun: !!dryRun,
-        transformFn: transformImportFiles,
-        transformOptions: consolidatedAddons,
-      });
+      const errors = await transformImportFiles(
+        [...storiesPaths, mainConfigPath, previewConfigPath].filter(Boolean) as string[],
+        consolidatedAddons,
+        dryRun
+      );
 
       if (errors.length > 0) {
         // eslint-disable-next-line local-rules/no-uncategorized-errors
@@ -204,30 +175,22 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
         );
       }
 
+      if (essentialsOptions) {
+        await updateMainConfig(
+          { mainConfigPath, dryRun: !!dryRun },
+          moveEssentialOptions(dryRun, essentialsOptions)
+        );
+      }
+
       // If docs was enabled (not disabled) and not already installed, add it
       if (!hasDocsDisabled && hasEssentials) {
-        if (!hasDocsAddon) {
-          console.log('Adding @storybook/addon-docs...');
-          await packageManager.runPackageCommand('storybook', [
-            'add',
-            '@storybook/addon-docs',
-            '--config-dir',
-            configDir,
-          ]);
-        } else {
-          const allDeps = result.allDeps;
-          const isDocsInstalled = allDeps['@storybook/addon-docs'] !== undefined;
-
-          if (!isDocsInstalled) {
-            const storybookVersion = allDeps.storybook;
-            const isStorybookDevDependency = packageJson.devDependencies?.storybook !== undefined;
-
-            await packageManager.addDependencies(
-              { installAsDevDependencies: isStorybookDevDependency },
-              ['@storybook/addon-docs@' + storybookVersion]
-            );
-          }
-        }
+        await add('@storybook/addon-docs', {
+          configDir,
+          packageManager: packageManager.type,
+          skipInstall: true,
+          skipPostinstall: true,
+          yes: true,
+        });
       }
     }
   },

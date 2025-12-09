@@ -1,9 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import type { JsPackageManager } from 'storybook/internal/common';
-import {
-  JsPackageManagerFactory,
-  versions as storybookCorePackages,
-} from 'storybook/internal/common';
+import { versions as storybookCorePackages } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import semver from 'semver';
@@ -33,7 +31,7 @@ export const checkPackageCompatibility = async (
 ): Promise<AnalysedPackage> => {
   const { currentStorybookVersion, skipErrors, packageManager } = context;
   try {
-    const dependencyPackageJson = await packageManager.getPackageJSON(dependency);
+    const dependencyPackageJson = await packageManager.getModulePackageJSON(dependency);
     if (dependencyPackageJson === null) {
       return { packageName: dependency };
     }
@@ -60,6 +58,8 @@ export const checkPackageCompatibility = async (
         // prevent issues with "tag" based versions e.g. "latest" or "next" instead of actual numbers
         return (
           versionRange &&
+          // We can't check compatibility for 0.x packages, so we skip them
+          !/^[~^]?0\./.test(versionRange) &&
           semver.validRange(versionRange) &&
           !semver.satisfies(currentStorybookVersion, versionRange)
         );
@@ -92,26 +92,31 @@ export const checkPackageCompatibility = async (
     };
   } catch (err) {
     if (!skipErrors) {
-      console.log(`Error checking compatibility for ${dependency}, please report an issue:\n`, err);
+      logger.log(
+        `Error checking compatibility for ${dependency}, please report an issue:\n` + String(err)
+      );
     }
     return { packageName: dependency };
   }
 };
 
 export const getIncompatibleStorybookPackages = async (
-  context: Omit<Context, 'packageManager'> & Partial<Pick<Context, 'packageManager'>>
+  context: Context
 ): Promise<AnalysedPackage[]> => {
-  const packageManager = context.packageManager ?? JsPackageManagerFactory.getPackageManager();
+  if (context.currentStorybookVersion.includes('0.0.0')) {
+    // We can't know if a Storybook canary version is compatible with other packages, so we skip it
+    return [];
+  }
 
-  const allDeps = await packageManager.getAllDependencies();
+  const allDeps = context.packageManager.getAllDependencies();
   const storybookLikeDeps = Object.keys(allDeps).filter((dep) => dep.includes('storybook'));
-
   if (storybookLikeDeps.length === 0 && !context.skipErrors) {
     throw new Error('No Storybook dependencies found in the package.json');
   }
-
   return Promise.all(
-    storybookLikeDeps.map((dep) => checkPackageCompatibility(dep, { ...context, packageManager }))
+    storybookLikeDeps
+      .filter((dep) => !storybookCorePackages[dep as keyof typeof storybookCorePackages])
+      .map((dep) => checkPackageCompatibility(dep, context))
   );
 };
 
@@ -129,7 +134,7 @@ export const getIncompatiblePackagesSummary = (
     summaryMessage.push(
       `You are currently using Storybook ${picocolors.bold(
         currentStorybookVersion
-      )} but you have packages which are incompatible with it:`
+      )} but you have packages which are incompatible with it:\n`
     );
     incompatiblePackages.forEach(
       ({
@@ -139,13 +144,11 @@ export const getIncompatiblePackagesSummary = (
         availableUpdate,
         packageStorybookVersion,
       }) => {
-        const packageDescription = `${picocolors.cyan(addonName)}@${picocolors.cyan(addonVersion)}`;
+        const packageDescription = `${addonName}@${addonVersion}`;
         const updateMessage = availableUpdate ? ` (${availableUpdate} available!)` : '';
         const dependsOnStorybook =
-          packageStorybookVersion != null
-            ? ` which depends on ${picocolors.red(packageStorybookVersion)}`
-            : '';
-        const packageRepo = homepage ? `\n Repo: ${picocolors.yellow(homepage)}` : '';
+          packageStorybookVersion != null ? ` which depends on ${packageStorybookVersion}` : '';
+        const packageRepo = homepage ? `\n Repo: ${homepage}` : '';
 
         summaryMessage.push(
           `- ${packageDescription}${updateMessage}${dependsOnStorybook}${packageRepo}`
@@ -154,10 +157,9 @@ export const getIncompatiblePackagesSummary = (
     );
 
     summaryMessage.push(
-      '\n',
-      'Please consider updating your packages or contacting the maintainers for compatibility details.',
-      'For more on Storybook 9 compatibility, see the linked GitHub issue:',
-      picocolors.yellow('https://github.com/storybookjs/storybook/issues/30944')
+      '\nPlease consider updating your packages or contacting the maintainers for compatibility details.',
+      '\nFor more details on compatibility guidance, see:',
+      'https://github.com/storybookjs/storybook/issues/32836'
     );
 
     if (incompatiblePackages.some((dep) => dep.availableCoreUpdate)) {
@@ -171,6 +173,7 @@ export const getIncompatiblePackagesSummary = (
               `- ${picocolors.blue(`${packageName}@${packageVersion}`)}`
           )
           .join('\n')}`,
+        '\n',
         `Upgrade Storybook with:`,
         picocolors.blue('npx storybook@latest upgrade')
       );

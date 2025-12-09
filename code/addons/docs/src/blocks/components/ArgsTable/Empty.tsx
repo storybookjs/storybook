@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 import { EmptyTabContent, Link } from 'storybook/internal/components';
 
-import { DocumentIcon, VideoIcon } from '@storybook/icons';
+import { DocumentIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
@@ -28,12 +28,6 @@ const Links = styled.div(({ theme }) => ({
   display: 'flex',
   fontSize: theme.typography.size.s2 - 1,
   gap: 25,
-}));
-
-const Divider = styled.div(({ theme }) => ({
-  width: 1,
-  height: 16,
-  backgroundColor: theme.appBorderColor,
 }));
 
 export const Empty: FC<EmptyProps> = ({ inAddonPanel }) => {
@@ -72,12 +66,8 @@ export const Empty: FC<EmptyProps> = ({ inAddonPanel }) => {
           <Links>
             {inAddonPanel && (
               <>
-                <Link href="https://youtu.be/0gOfS6K0x0E" target="_blank" withArrow>
-                  <VideoIcon /> Watch 5m video
-                </Link>
-                <Divider />
                 <Link
-                  href="https://storybook.js.org/docs/essentials/controls"
+                  href="https://storybook.js.org/docs/essentials/controls?ref=ui"
                   target="_blank"
                   withArrow
                 >
@@ -87,7 +77,7 @@ export const Empty: FC<EmptyProps> = ({ inAddonPanel }) => {
             )}
             {!inAddonPanel && (
               <Link
-                href="https://storybook.js.org/docs/essentials/controls"
+                href="https://storybook.js.org/docs/essentials/controls?ref=ui"
                 target="_blank"
                 withArrow
               >

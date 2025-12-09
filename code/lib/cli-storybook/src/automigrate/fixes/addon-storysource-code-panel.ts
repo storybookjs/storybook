@@ -1,8 +1,10 @@
-import { getAddonNames } from 'storybook/internal/common';
+import { getAddonNames, removeAddon } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import { add } from '../../add';
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix, RunOptions } from '../types';
 
@@ -11,11 +13,9 @@ export interface StorysourceOptions {
   hasDocs: boolean;
 }
 
-const logger = console;
-
 export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
   id: 'addon-storysource-code-panel',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed',
 
   async check({ mainConfigPath, mainConfig }) {
     if (!mainConfigPath) {
@@ -36,22 +36,9 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
     };
   },
 
-  prompt: ({ hasDocs }) => {
+  prompt: () => {
     return dedent`
-      We've detected that you're using ${picocolors.yellow('@storybook/addon-storysource')}.
-      
-      The ${picocolors.yellow('@storybook/addon-storysource')} addon is being removed in Storybook 9.0. 
-      Instead, Storybook now provides a Code Panel via ${picocolors.yellow('@storybook/addon-docs')} 
-      that offers similar functionality with improved integration and performance.
-      
-      We'll remove ${picocolors.yellow('@storybook/addon-storysource')} from your project and 
-      enable the Code Panel in your preview configuration. ${
-        hasDocs
-          ? ''
-          : `Additionally, we will install ${picocolors.yellow('@storybook/addon-docs')} for you.`
-      }
-      
-      More info: ${picocolors.cyan('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed')}
+      We'll remove @storybook/addon-storysource and enable the Code Panel instead.
     `;
   },
 
@@ -66,24 +53,24 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
 
     // Remove the addon
     if (!dryRun) {
-      logger.log('Removing @storybook/addon-storysource...');
+      logger.debug('Removing @storybook/addon-storysource...');
 
-      await packageManager.runPackageCommand('storybook', [
-        'remove',
-        '@storybook/addon-storysource',
-        '--config-dir',
+      await removeAddon('@storybook/addon-storysource', {
         configDir,
-      ]);
+        skipInstall: true,
+        packageManager,
+      });
 
       if (!hasDocs) {
         logger.log('Installing @storybook/addon-docs...');
 
-        await packageManager.runPackageCommand('storybook', [
-          'add',
-          '@storybook/addon-docs',
-          '--config-dir',
+        await add(`@storybook/addon-docs`, {
           configDir,
-        ]);
+          packageManager: packageManager.type,
+          skipInstall: true,
+          skipPostinstall: true,
+          yes: true,
+        });
       }
 
       // Update preview config to enable code panel

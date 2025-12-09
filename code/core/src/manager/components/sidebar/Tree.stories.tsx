@@ -10,7 +10,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
 import { DEFAULT_REF_ID } from './Sidebar';
 import { Tree } from './Tree';
@@ -27,7 +27,10 @@ const managerContext: any = {
   api: {
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
+    once: fn().mockName('api::once'),
     emit: fn().mockName('api::emit'),
+    getShortcutKeys: fn().mockName('api::getShortcutKeys'),
+    getCurrentStoryData: fn().mockName('api::getCurrentStoryData'),
     getElements: fn(
       () =>
         ({
@@ -45,6 +48,7 @@ const managerContext: any = {
           },
         }) satisfies Addon_Collection<Addon_TestProviderType>
     ),
+    getData: fn().mockName('api::getData'),
   },
 };
 
@@ -138,6 +142,7 @@ export const SingleStoryComponents: Story = {
             },
             'single--single': {
               type: 'story',
+              subtype: 'story',
               id: 'single--single',
               title: 'Single',
               name: 'Single',
@@ -296,19 +301,16 @@ export const WithContextContent: Story = {
     viewport: { value: 'desktop' },
   },
   play: async ({ canvasElement }) => {
-    const screen = await within(canvasElement);
+    const canvas = within(canvasElement);
 
-    const link = await screen.findByText('TooltipBuildList');
+    const link = await canvas.findByText('TooltipBuildList');
     await userEvent.hover(link);
 
-    const contextButton = await screen.findByTestId('context-menu');
-    await userEvent.click(contextButton);
+    const contextButton = await canvas.findAllByTestId('context-menu');
+    await userEvent.click(contextButton[0]);
 
-    const body = await within(document.body);
-
-    const tooltip = await body.findByTestId('tooltip');
-
-    await expect(tooltip).toBeVisible();
-    expect(tooltip).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
+    const popover = screen.getByRole('dialog');
+    await expect(popover).toBeVisible();
+    expect(popover).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
   },
 };

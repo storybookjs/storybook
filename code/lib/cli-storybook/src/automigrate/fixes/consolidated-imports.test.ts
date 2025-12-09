@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { versions } from 'storybook/internal/common';
+import { JsPackageManager, versions } from 'storybook/internal/common';
 
 import { consolidatedImports, transformPackageJsonFiles } from './consolidated-imports';
 
@@ -34,13 +34,14 @@ const mockPackageJson = {
   },
 };
 
+const mockPackageManager = vi.mocked(JsPackageManager.prototype);
+
 const mockRunOptions = {
-  packageManager: {
-    retrievePackageJson: async () => mockPackageJson,
-  } as any,
+  packageManager: mockPackageManager,
   mainConfig: {} as any,
   mainConfigPath: 'main.ts',
   packageJson: mockPackageJson,
+  storiesPaths: [],
 };
 
 const setupGlobby = async (files: string[]) => {
@@ -59,6 +60,13 @@ const setupCheck = async (packageJsonContents: string, packageJsonFiles: string[
   });
   await setupGlobby(packageJsonFiles);
 
+  // Mock packageJsonPaths
+  Object.defineProperty(mockPackageManager, 'packageJsonPaths', {
+    value: packageJsonFiles,
+    writable: true,
+    configurable: true,
+  });
+
   return consolidatedImports.check({
     ...mockRunOptions,
     storybookVersion: '8.0.0',
@@ -72,14 +80,9 @@ describe('check', () => {
 
     await setupCheck(contents, [filePath]);
 
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    expect(globby).toHaveBeenCalledWith(
-      ['**/package.json'],
-      expect.objectContaining({
-        ignore: ['**/node_modules/**'],
-      })
-    );
+    // The implementation doesn't call globby directly, it uses packageJsonPaths
+    // So we shouldn't expect globby to be called
+    expect(mockPackageManager.packageJsonPaths).toEqual([filePath]);
   });
 
   it('should detect consolidated packages in package.json', async () => {
@@ -88,8 +91,10 @@ describe('check', () => {
 
     const result = await setupCheck(contents, [filePath]);
     expect(result).toMatchObject({
-      packageJsonFiles: [filePath],
+      consolidatedDeps: expect.any(Set),
     });
+    expect(result?.consolidatedDeps).toContain('@storybook/core-common');
+    expect(result?.consolidatedDeps).toContain('@storybook/manager-api');
   });
 
   it('should not detect non-consolidated packages in package.json', async () => {
@@ -106,33 +111,6 @@ describe('check', () => {
 
     const result = await setupCheck(contents, [filePath]);
     expect(result).toBeNull();
-  });
-});
-
-describe('prompt', () => {
-  it('should return a prompt', () => {
-    const result = consolidatedImports.prompt({
-      packageJsonFiles: ['test/package.json'],
-      consolidatedDeps: new Set(['@storybook/core-common', '@storybook/experimental-nextjs-vite']),
-    });
-
-    expect(result).toMatchInlineSnapshot(`
-  "Found package.json files that contain consolidated or renamed Storybook packages that need to be updated:
-  - test/package.json
-
-  We will automatically rename the following packages:
-  - @storybook/core-common -> storybook/internal/common
-  - @storybook/experimental-nextjs-vite -> @storybook/nextjs-vite
-
-  These packages have been renamed or consolidated into the main storybook package and should be removed.
-  The main storybook package will be added to devDependencies if not already present.
-
-  Would you like to:
-  1. Update these package.json files
-  2. Scan your codebase and update any imports from these updated packages
-
-  This will ensure your project is properly updated to use the new updated package structure and to use the latest package names."
-`);
   });
 });
 

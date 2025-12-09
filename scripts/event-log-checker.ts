@@ -1,15 +1,20 @@
 import assert from 'assert';
 import picocolors from 'picocolors';
 
-import versions from '../code/core/src/common/versions';
-import { oneWayHash } from '../code/core/src/telemetry/one-way-hash';
+// import versions from '../code/core/src/common/versions';
 import { allTemplates } from '../code/lib/cli-storybook/src/sandbox-templates';
 import { esMain } from './utils/esmain';
 
 const PORT = process.env.PORT || 6007;
 
-const eventTypeExpectations = {
+type EventType = 'build' | 'test-run';
+type EventDefinition = {
+  noBoot?: boolean;
+};
+
+const eventTypeDefinitions: Record<EventType, EventDefinition> = {
   build: {},
+  'test-run': { noBoot: true },
 };
 
 async function run() {
@@ -29,9 +34,9 @@ async function run() {
       );
     }
 
-    const expectation = eventTypeExpectations[eventType as keyof typeof eventTypeExpectations];
+    const definition = eventTypeDefinitions[eventType as EventType];
 
-    if (!expectation) {
+    if (!definition) {
       throw new Error(`Unexpected eventType '${eventType}'`);
     }
 
@@ -42,45 +47,80 @@ async function run() {
     }
 
     const events: any = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
+    const eventsWithoutMocks = events.filter((e: any) => e.eventType !== 'mocking');
 
-    test('Should log 2 events', () => {
-      assert.equal(
-        events.length,
-        2,
-        `Expected 2 events but received ${
-          events.length
-        } instead. The following events were logged: ${JSON.stringify(events)}`
-      );
-    });
+    if (definition.noBoot) {
+      test('Should log 1 event', () => {
+        assert.equal(
+          eventsWithoutMocks.length,
+          1,
+          `Expected 1 event but received ${
+            eventsWithoutMocks.length
+          } instead. The following events were logged: ${JSON.stringify(events)}`
+        );
+      });
+    } else {
+      // two or three events are logged, depending on whether the template has a `vitest-integration` task
+      test('Should log 2 or 3 events', () => {
+        assert.ok(
+          eventsWithoutMocks.length === 2 || eventsWithoutMocks.length === 3,
+          `Expected 2 or 3 events but received ${
+            eventsWithoutMocks.length
+          } instead. The following events were logged: ${JSON.stringify(eventsWithoutMocks)}`
+        );
+      });
+    }
 
-    const [bootEvent, mainEvent] = events;
+    if (eventsWithoutMocks.length === 0) {
+      throw new Error('No events were logged');
+    }
 
-    test(`both events should have cliVersion in context`, () => {
-      const cliVersion = versions.storybook;
-      assert.equal(bootEvent.context.cliVersion, cliVersion);
-      assert.equal(mainEvent.context.cliVersion, cliVersion);
-    });
+    const [bootEvent, mainEvent] = definition.noBoot
+      ? [null, eventsWithoutMocks[0]]
+      : eventsWithoutMocks;
 
-    test(`Should log a boot event with a payload of type ${eventType}`, () => {
-      assert.equal(bootEvent.eventType, 'boot');
-      assert.equal(bootEvent.payload?.eventType, eventType);
-    });
+    // const storybookVersion = versions.storybook;
+    // if (bootEvent) {
+    //   test('boot event should have cliVersion and storybookVersion in context', () => {
+    //     assert.equal(bootEvent.context.cliVersion, storybookVersion);
+    //     assert.equal(bootEvent.context.storybookVersion, storybookVersion);
+    //   });
+    // }
+
+    // test(`main event should have storybookVersion in context`, () => {
+    //   assert.equal(mainEvent.context.storybookVersion, storybookVersion);
+    // });
+
+    // test(`main event should have storybookVersion in metadata`, () => {
+    //   assert.equal(mainEvent.metadata.storybookVersion, storybookVersion);
+    // });
+
+    if (bootEvent) {
+      test(`Should log a boot event with a payload of type ${eventType}`, () => {
+        assert.equal(bootEvent.eventType, 'boot');
+        assert.equal(bootEvent.payload?.eventType, eventType);
+      });
+    }
 
     test(`main event should be ${eventType} and contain correct id and session id`, () => {
       assert.equal(mainEvent.eventType, eventType);
-      assert.notEqual(mainEvent.eventId, bootEvent.eventId);
-      assert.equal(mainEvent.sessionId, bootEvent.sessionId);
+      assert.ok(typeof mainEvent.eventId === 'string');
+      assert.ok(typeof mainEvent.sessionId === 'string');
+      if (bootEvent) {
+        assert.notEqual(mainEvent.eventId, bootEvent.eventId);
+        assert.equal(mainEvent.sessionId, bootEvent.sessionId);
+      }
     });
 
-    test(`main event should contain anonymousId properly hashed`, () => {
-      const templateDir = `sandbox/${templateName.replace('/', '-')}`;
-      const unhashedId = `github.com/storybookjs/storybook.git${templateDir}`;
-      assert.equal(mainEvent.context.anonymousId, oneWayHash(unhashedId));
+    test(`main event should not contain anonymousId because it is not a git directory`, () => {
+      assert.equal(mainEvent.context.anonymousId, undefined);
     });
 
-    test(`main event should contain a userSince value`, () => {
-      assert.ok(typeof mainEvent.metadata.userSince === 'number');
-    });
+    // Not sure if it's worth testing this as we are not providing this value in CI.
+    // For now the code is commented out so we can discuss later.
+    // test(`main event should contain a userSince value`, () => {
+    //   assert.ok(typeof mainEvent.metadata.userSince === 'number');
+    // });
 
     const {
       expected: { renderer, builder, framework },

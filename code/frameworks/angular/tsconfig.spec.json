@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["webpack-env", "node"],
+    "types": ["node"],
     "typeRoots": ["../../node_modules/@types", "node_modules/@types"],
     "allowJs": true
   },

@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 
-import { NgModule, Component, EventEmitter, Input, Output } from '@angular/core';
+import type { NgModule } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
-import { ICollection } from '../types';
+import type { ICollection } from '../types';
 import { getApplication } from './StorybookModule';
 import { storyPropsProvider } from './StorybookProvider';
 import { PropertyExtractor } from './utils/PropertyExtractor';

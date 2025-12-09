@@ -1,0 +1,61 @@
+executor:
+  class: small
+  name: sb_node_22_classic
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - attach_workspace:
+      at: /tmp
+  # if there is a base branch AND a PR number in parameters, benchmark packages against those
+  # this happens when run against a PR
+  - when:
+      condition:
+        and:
+          - << pipeline.parameters.ghBaseBranch >>
+          - << pipeline.parameters.ghPrNumber >>
+      steps:
+        - run:
+            name: Verdaccio
+            background: true
+            command: |
+              cd code
+              yarn local-registry --open
+        - run:
+            name: Wait on Verdaccio
+            command: |
+              cd code
+              yarn wait-on tcp:127.0.0.1:6001
+              yarn wait-on tcp:127.0.0.1:6002
+        - run:
+            name: Benchmarking packages against base branch
+            working_directory: scripts
+            command: yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
+  # if there is a NOT a base branch OR NOT a PR number in parameters, just upload benchmarks for the branch
+  # this happens when run directly on branches, like next or main
+  - when:
+      condition:
+        or:
+          - not: << pipeline.parameters.ghBaseBranch >>
+          - not: << pipeline.parameters.ghPrNumber >>
+      steps:
+        - run:
+            name: Verdaccio
+            background: true
+            command: |
+              cd code
+              yarn local-registry --open
+        - run:
+            name: Wait on Verdaccio
+            command: |
+              cd code
+              yarn wait-on tcp:127.0.0.1:6001
+              yarn wait-on tcp:127.0.0.1:6002
+        - run:
+            name: Uploading package benchmarks for branch
+            working_directory: scripts
+            command: yarn bench-packages --upload
+  - store_artifacts:
+      path: storybook/bench/packages/results.json
+  - report-workflow-on-failure
+  - cancel-workflow-on-failure

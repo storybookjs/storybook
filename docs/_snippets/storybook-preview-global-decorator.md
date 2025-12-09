@@ -9,7 +9,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```jsx filename=".storybook/preview.jsx" renderer="react" language="js"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
 import React from 'react';
 
 export default {
@@ -24,10 +24,11 @@ export default {
 };
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="ts"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import React from 'react';
 
-import type { Preview } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Preview } from '@storybook/your-framework';
 
 const preview: Preview = {
   decorators: [
@@ -56,7 +57,7 @@ export default {
 ```
 
 ```js filename=".storybook/preview.tsx" renderer="solid" language="ts"
-import type { Preview } from 'storybook-solidjs';
+import type { Preview } from 'storybook-solidjs-vite';
 
 const preview: Preview = {
   decorators: [
@@ -78,7 +79,8 @@ export default { decorators: [() => MarginDecorator] };
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="svelte" language="ts"
-import type { Preview } from '@storybook/svelte-vite';
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import type { Preview } from '@storybook/your-framework';
 
 import MarginDecorator from './MarginDecorator.svelte';
 
@@ -132,4 +134,42 @@ const preview: Preview = {
 };
 
 export default preview;
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+export default definePreview({
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+export default definePreview({
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
 ```

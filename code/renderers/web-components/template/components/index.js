@@ -5,7 +5,7 @@ import { FormTag } from './Form';
 import { HtmlTag } from './Html';
 import { PreTag } from './Pre';
 
-globalThis.Components = {
+globalThis.__TEMPLATE_COMPONENTS__ = {
   Button: ButtonTag,
   Form: FormTag,
   Html: HtmlTag,

@@ -1,4 +1,4 @@
-import { ApplicationRef } from '@angular/core';
+import type { ApplicationRef } from '@angular/core';
 
 const queue: Array<() => Promise<void>> = [];
 let isProcessing = false;

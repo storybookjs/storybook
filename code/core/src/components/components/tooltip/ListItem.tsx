@@ -1,4 +1,6 @@
-import React, { type ComponentProps, type ReactNode, type SyntheticEvent } from 'react';
+import React, { type ComponentProps, type ReactNode, type SyntheticEvent, forwardRef } from 'react';
+
+import { deprecate } from 'storybook/internal/client-logger';
 
 import memoize from 'memoizerific';
 import { styled } from 'storybook/theming';
@@ -54,9 +56,6 @@ const Right = styled.span<RightProps>({
     margin: '3px 0',
     verticalAlign: 'top',
   },
-  '& path': {
-    fill: 'inherit',
-  },
 });
 
 const Center = styled.span<{ isIndented: boolean }>(
@@ -65,6 +64,7 @@ const Center = styled.span<{ isIndented: boolean }>(
     textAlign: 'left',
     display: 'flex',
     flexDirection: 'column',
+    minWidth: 0, // required for overflow
   },
   ({ isIndented }) => (isIndented ? { marginLeft: 24 } : {})
 );
@@ -116,14 +116,15 @@ export interface ItemProps {
   onClick?: (event: SyntheticEvent, ...args: any[]) => any;
 }
 
-const Item = styled.div<ItemProps>(
+const Item = styled.button<ItemProps>(
   ({ theme }) => ({
     width: '100%',
+    minWidth: 0, // required for overflow
     border: 'none',
     borderRadius: theme.appBorderRadius,
     background: 'none',
     fontSize: theme.typography.size.s1,
-    transition: 'all 150ms ease-out',
+    transition: 'background 150ms ease-out',
     color: theme.color.dark,
     textDecoration: 'none',
     justifyContent: 'space-between',
@@ -135,6 +136,11 @@ const Item = styled.div<ItemProps>(
 
     '& > * + *': {
       paddingLeft: 10,
+    },
+
+    '&:focus-visible': {
+      outline: `2px solid ${theme.color.secondary}`,
+      outlineOffset: 0,
     },
   }),
   ({ theme, href, onClick }) =>
@@ -162,6 +168,7 @@ const Item = styled.div<ItemProps>(
 const getItemProps = memoize(100)(({ onClick, input, href, LinkWrapper }) => ({
   ...(onClick && {
     as: 'button',
+    role: 'button',
     onClick,
   }),
   ...(input && {
@@ -169,6 +176,7 @@ const getItemProps = memoize(100)(({ onClick, input, href, LinkWrapper }) => ({
   }),
   ...(href && {
     as: 'a',
+    role: 'link',
     href,
     ...(LinkWrapper && {
       as: LinkWrapper,
@@ -193,7 +201,7 @@ export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'title'
   isIndented?: boolean;
 }
 
-const ListItem = (props: ListItemProps) => {
+const ListItem = forwardRef((props: ListItemProps, ref) => {
   const {
     loading = false,
     title = <span>Loading state</span>,
@@ -213,8 +221,12 @@ const ListItem = (props: ListItemProps) => {
   const itemProps = getItemProps(props);
   const left = icon || input;
 
+  deprecate(
+    '`ListItem` is deprecated and will be removed in Storybook 11, use `MenuItem` instead.'
+  );
+
   return (
-    <Item {...rest} {...commonProps} {...itemProps}>
+    <Item data-deprecated="ListItem" ref={ref} {...rest} {...commonProps} {...itemProps}>
       <>
         {left && <Left {...commonProps}>{left}</Left>}
         {title || center ? (
@@ -231,6 +243,7 @@ const ListItem = (props: ListItemProps) => {
       </>
     </Item>
   );
-};
+});
+ListItem.displayName = 'ListItem';
 
 export default ListItem;

@@ -1,4 +1,4 @@
-import prompts from 'prompts';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { commonGlobOptions } from './common-glob-options';
 import { getProjectRoot } from './paths';
@@ -30,18 +30,14 @@ export async function scanAndTransformFiles<T extends Record<string, unknown>>({
   transformOptions: T;
 }): Promise<Array<{ file: string; error: Error }>> {
   // Ask for glob pattern
-  const { glob } = force
-    ? { glob: defaultGlob }
-    : await prompts({
-        type: 'text',
-        name: 'glob',
+  const glob = force
+    ? defaultGlob
+    : await prompt.text({
         message: promptMessage,
-        initial: defaultGlob,
+        initialValue: defaultGlob,
       });
 
-  const projectRoot = getProjectRoot();
-
-  console.log('Scanning for affected files...');
+  logger.log('Scanning for affected files...');
 
   // eslint-disable-next-line depend/ban-dependencies
   const globby = (await import('globby')).globby;
@@ -50,11 +46,11 @@ export async function scanAndTransformFiles<T extends Record<string, unknown>>({
     ...commonGlobOptions(''),
     ignore: ['**/node_modules/**'],
     dot: true,
-    cwd: projectRoot,
+    cwd: getProjectRoot(),
     absolute: true,
   });
 
-  console.log(`Scanning ${sourceFiles.length} files...`);
+  logger.log(`Scanning ${sourceFiles.length} files...`);
 
   // Transform the files using the provided transform function
   return transformFn(sourceFiles, transformOptions, dryRun);

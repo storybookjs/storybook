@@ -5,7 +5,7 @@ import { actions, configureActions } from 'storybook/actions';
 const configs = actions('actionA', 'actionB', 'actionC');
 
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   args: {
     label: 'Click Me!',
   },

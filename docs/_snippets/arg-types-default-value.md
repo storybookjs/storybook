@@ -60,7 +60,7 @@ export default {
 };
 ```
 
-```js filename="Example.stories.js|jsx" renderer="common" language="js"
+```js filename="Example.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Example } from './Example';
 
 export default {
@@ -123,8 +123,8 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Example.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+```ts filename="Example.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
 import { Example } from './Example';
@@ -180,4 +180,45 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```ts filename="Example.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Example } from './Example';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    value: {
+      // ❌ Deprecated
+      defaultValue: 0,
+    },
+  },
+  // ✅ Do this instead
+  args: {
+    value: 0,
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Example.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Example } from './Example';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    value: {
+      // ⛔️ Deprecated, do not use
+      defaultValue: 0,
+    },
+  },
+  // ✅ Do this instead
+  args: {
+    value: 0,
+  },
+});
 ```

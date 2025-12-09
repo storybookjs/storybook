@@ -1,9 +1,11 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
+import { optionalEnvToBoolean } from 'storybook/internal/common';
 import {
+  JsPackageManagerFactory,
+  type RemoveAddonOptions,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
@@ -14,7 +16,6 @@ import { readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
-  CLIOptions,
   CoreConfig,
   Indexer,
   Options,
@@ -22,22 +23,23 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
+import { isAbsolute, join } from 'pathe';
+import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import { resolvePackageDir } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
-import { defaultStaticDirs } from '../utils/constants';
+import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
+import { initPreviewInitializedChannel } from '../server-channel/preview-initialized-channel';
+import { initializeChecklist } from '../utils/checklist';
+import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
-
-const defaultFavicon = join(
-  dirname(require.resolve('storybook/internal/package.json')),
-  '/assets/browser/favicon.svg'
-);
 
 export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = []) => [
   ...defaultStaticDirs,
@@ -51,14 +53,15 @@ export const favicon = async (
   if (value) {
     return value;
   }
+
   const staticDirsValue = await options.presets.apply('staticDirs');
 
   const statics = staticDirsValue
     ? staticDirsValue.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
     : [];
 
-  if (statics.length > 0) {
-    const lists = statics.map((dir) => {
+  const faviconPaths = statics
+    .map((dir) => {
       const results = [];
       const normalizedDir =
         staticDirsValue && !isAbsolute(dir)
@@ -71,37 +74,29 @@ export const favicon = async (
 
       const { staticPath, targetEndpoint } = parseStaticDir(normalizedDir);
 
-      if (targetEndpoint === '/') {
-        const url = 'favicon.svg';
-        const path = join(staticPath, url);
-        if (existsSync(path)) {
-          results.push(path);
-        }
+      // Direct favicon references (e.g. `staticDirs: ['favicon.svg']`)
+      if (['/favicon.svg', '/favicon.ico'].includes(targetEndpoint)) {
+        results.push(staticPath);
       }
+      // Favicon files in a static directory (e.g. `staticDirs: ['static']`)
       if (targetEndpoint === '/') {
-        const url = 'favicon.ico';
-        const path = join(staticPath, url);
-        if (existsSync(path)) {
-          results.push(path);
-        }
+        results.push(join(staticPath, 'favicon.svg'));
+        results.push(join(staticPath, 'favicon.ico'));
       }
 
-      return results;
-    });
-    const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
+      return results.filter((path) => existsSync(path));
+    })
+    .reduce((l1, l2) => l1.concat(l2), []);
 
-    if (flatlist.length > 1) {
-      logger.warn(dedent`
-        Looks like multiple favicons were detected. Using the first one.
+  if (faviconPaths.length > 1) {
+    logger.warn(dedent`
+      Looks like multiple favicons were detected. Using the first one.
 
-        ${flatlist.join(', ')}
-        `);
-    }
-
-    return flatlist[0] || defaultFavicon;
+      ${faviconPaths.join(', ')}
+    `);
   }
 
-  return defaultFavicon;
+  return faviconPaths[0] || defaultFavicon;
 };
 
 export const babel = async (_: unknown, options: Options) => {
@@ -149,7 +144,8 @@ export const previewHead = async (base: any, { configDir, presets }: Options) =>
 };
 
 export const env = async () => {
-  return loadEnvs({ production: true }).raw;
+  const { raw } = await loadEnvs({ production: true });
+  return raw;
 };
 
 export const previewBody = async (base: any, { configDir, presets }: Options) => {
@@ -170,28 +166,16 @@ export const typescript = () => ({
   },
 });
 
-const optionalEnvToBoolean = (input: string | undefined): boolean | undefined => {
-  if (input === undefined) {
-    return undefined;
-  }
-  if (input.toUpperCase() === 'FALSE') {
-    return false;
-  }
-  if (input.toUpperCase() === 'TRUE') {
-    return true;
-  }
-  if (typeof input === 'string') {
-    return true;
-  }
-  return undefined;
-};
-
+/** This API is used by third-parties to access certain APIs in a Node environment */
 export const experimental_serverAPI = (extension: Record<string, Function>, options: Options) => {
   let removeAddon = removeAddonBase;
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    configDir: options.configDir,
+  });
   if (!options.disableTelemetry) {
-    removeAddon = async (id: string, opts: any) => {
+    removeAddon = async (id: string, opts: RemoveAddonOptions) => {
       await telemetry('remove', { addon: id, source: 'api' });
-      return removeAddonBase(id, opts);
+      return removeAddonBase(id, { ...opts, packageManager });
     };
   }
   return { ...extension, removeAddon };
@@ -205,7 +189,7 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
  */
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
-  disableTelemetry: options.disableTelemetry === true || options.test === true,
+  disableTelemetry: options.disableTelemetry === true,
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
@@ -268,11 +252,14 @@ export const experimental_serverChannel = async (
 ) => {
   const coreOptions = await options.presets.apply('core');
 
+  initializeChecklist();
   initializeWhatsNew(channel, options, coreOptions);
   initializeSaveStory(channel, options, coreOptions);
 
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
+  initOpenInEditorChannel(channel, options, coreOptions);
+  initPreviewInitializedChannel(channel, options, coreOptions);
 
   return channel;
 };
@@ -287,30 +274,17 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: dirname(require.resolve('react/package.json')),
-      reactDom: dirname(require.resolve('react-dom/package.json')),
+      react: resolvePackageDir('react'),
+      reactDom: resolvePackageDir('react-dom'),
     };
   } catch (e) {
     return existing;
   }
 };
 
-/** Set up `dev-only`, `docs-only`, `test-only` tags out of the box */
-export const tags = async (existing: any) => {
-  return {
-    ...existing,
-    'dev-only': { excludeFromDocsStories: true },
-    'docs-only': { excludeFromSidebar: true },
-    'test-only': { excludeFromSidebar: true, excludeFromDocsStories: true },
-  };
-};
-
 export const managerEntries = async (existing: any) => {
   return [
-    join(
-      dirname(require.resolve('storybook/internal/package.json')),
-      'dist/core-server/presets/common-manager.js'
-    ),
+    pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
   ];
 };

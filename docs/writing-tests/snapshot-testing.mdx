@@ -1,0 +1,139 @@
+---
+title: Snapshot tests
+sidebar:
+  order: 5
+  title: Snapshot tests
+---
+
+## Snapshot tests
+
+Snapshot testing is simply rendering a component in a given state, taking a snapshot of the rendered DOM or HTML, and then comparing it against the previous snapshot. They’re convenient to create, but can be difficult and noisy to maintain if the snapshot contains too much information. For UI components, [visual tests](./visual-testing.mdx) (easier to review) or [interaction tests](./interaction-testing.mdx) (focused on functionality) are usually the better fit. However, there are some cases where snapshot testing may be necessary, such as ensuring an error is thrown correctly.
+
+You can reuse your stories as the basis of snapshot tests within another test environment, like Jest or Vitest. To enable this, Storybook provides the Portable Stories API, which composes your stories with their annotations ([args](../writing-stories/args.mdx), [decorators](../writing-stories/decorators.mdx), [parameters](../writing-stories/parameters.mdx), etc) and produces a renderable element for your tests. Portable Stories are available for:
+
+- [Vitest](../api/portable-stories/portable-stories-vitest.mdx)
+- [Jest](../api/portable-stories/portable-stories-jest.mdx)
+- [Playwright CT](../api/portable-stories/portable-stories-playwright.mdx)
+
+<Callout variant="info">
+
+Looking for snapshot testing with Storyshots? Storyshots is deprecated and no longer maintained. We recommend using the Portable Stories API instead.
+
+Please reference the [Storyshots documentation](../../../release-8-6/docs/writing-tests/snapshot-testing/storyshots-migration-guide.mdx) for more information on how to migrate your tests.
+
+</Callout>
+
+## Get started with Portable Stories
+
+If you’re using Storybook Test, your project is already configured to use Portable Stories in Vitest.
+
+If you’re not using Storybook Test or would like to test in another testing environment, please follow the relevant documentation:
+
+- [Vitest](../api/portable-stories/portable-stories-vitest.mdx#1-apply-project-level-annotations)
+- [Jest](../api/portable-stories/portable-stories-jest.mdx#1-apply-project-level-annotations)
+- [Playwright CT](../api/portable-stories/portable-stories-playwright.mdx#1-apply-project-level-annotations)
+
+## Snapshot testing a portable story
+
+Snapshot testing a reusable story is a straightforward process of using `composeStories` from the Portable Stories API to get a renderable element, rendering that element, and then taking and comparing a snapshot.
+
+This example renders a Button component in Vitest (by reusing one of Button’s stories) and asserts that the rendered HTML snapshot matches.
+
+<CodeSnippets path="button-snapshot-test-portable-stories.md" />
+
+Once the test has run, a snapshot will be inserted or created. Then, when you run tests again and the snapshot doesn’t match, the test will fail and you will see output something like this:
+
+```diff
+FAIL  src/components/ui/Button.test.ts > Button snapshot
+Error: Snapshot `Button snapshot 1` mismatched
+
+- Expected
++ Received
+
+  <div>
+    <button
+-     class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"
++     class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-3 py-2 has-[>svg]:px-3"
+      data-slot="button"
+    >
+      Button
+    </button>
+  </div>
+```
+
+<Callout variant="info" icon="💡">
+
+How long did it take you to find what changed? (`px-4` → `px-3`)
+
+This is exactly why [visual tests](./visual-testing.mdx) are so much better for testing the appearance of UI components. Not only is it immediately apparent what has changed, but it also tests the actual appearance your users will see, not merely the CSS applied.
+
+</Callout>
+
+### Verifying an error is thrown
+
+Now that we know how to do general snapshot testing, let’s apply it to a common use case: verifying that an expected error is thrown correctly.
+
+In this example, we have a simple Button React component which for some reason accepts a prop, `doNotUseThisItWillThrowAnError`, which will (unsurprisingly) throw an error if it is used.
+
+```tsx title="Button.tsx"
+function Button(props) {
+  if (props.doNotUseThisItWillThrowAnError) {
+    throw new Error("I tried to tell you...")
+  }
+
+  return <button {...props} />
+}
+```
+
+We then have a story which applies that prop via `args`. It also removes the default `dev` and `test` tags to prevent the story from displaying in the Storybook sidebar and from being tested as a story (by Storybook Test), respectively.
+
+```js title="Button.stories.js"
+export const ThrowError = {
+  tags: ['!dev', '!test'],
+  args: {
+    doNotUseThisItWillThrowAnError: true,
+  },
+}
+```
+
+Finally, we write a test in the test file which asserts that an error is thrown with a particular message.
+
+```ts title="Button.test.ts"
+// @vitest-environment jsdom
+
+import { expect, test } from "vitest";
+
+import { composeStories } from "@storybook/react";
+
+import * as stories from "./Button.stories";
+
+const { ThrowError } = composeStories(stories);
+
+test("Button throws error", async () => {
+  await expect(ThrowError.run()).rejects.toThrowError('I tried to tell you...');
+});
+```
+
+This example is simplified for educational purposes. The same technique could be applied to more complex scenarios, such as a form with invalid input or a simulated network failure.
+
+## Snapshot testing with the test-runner
+
+If you cannot use portable stories in your project, you can still run snapshot tests using the test-runner. Follow the instructions in the [test-runner documentation](./integrations/test-runner.mdx#run-snapshot-tests) to set up the test-runner with snapshot tests in your project.
+
+## FAQ
+
+### What’s the difference between snapshot tests and visual tests?
+
+Visual tests capture images of stories and compare them against image baselines. Snapshot tests take DOM or HTML snapshots and compare them against DOM or HTML baselines. Visual tests are better suited for verifying appearance. Snapshot tests are useful for validating non-visual output and ensuring the DOM doesn’t change.
+
+**More testing resources**
+
+* [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
+* [Interaction testing](./interaction-testing.mdx) for user behavior simulation
+* [Accessibility testing](./accessibility-testing.mdx) for accessibility
+* [Visual testing](./visual-testing.mdx) for appearance
+* [Test coverage](./test-coverage.mdx) for measuring code coverage
+* [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
+* [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
+* [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
+* [Test runner](./integrations/test-runner.mdx) to automate test execution

@@ -5,7 +5,7 @@ import { global as globalThis } from '@storybook/global';
 import { expect } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   title: 'manual title',
   args: { text: 'No content' },
 };

@@ -1,9 +1,7 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 
-import { types as t } from 'storybook/internal/babel';
-import { commonGlobOptions, getProjectRoot } from 'storybook/internal/common';
 import { writeConfig, writeCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -19,13 +17,11 @@ interface A11yOptions {
   previewFileToUpdate: string | undefined;
 }
 
-const logger = console;
-
 export const addonA11yParameters: Fix<A11yOptions> = {
   id: 'addon-a11y-parameters',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#a11y-addon-replace-element-parameter-with-context-parameter',
 
-  check: async ({ mainConfig, previewConfigPath }) => {
+  check: async ({ mainConfig, previewConfigPath, storiesPaths }) => {
     // Check if the a11y addon is installed
     const hasA11yAddon = mainConfig.addons?.some((addon) =>
       typeof addon === 'string'
@@ -37,24 +33,15 @@ export const addonA11yParameters: Fix<A11yOptions> = {
       return null;
     }
 
-    const projectRoot = getProjectRoot();
-    // eslint-disable-next-line depend/ban-dependencies
-    const globby = (await import('globby')).globby;
-
-    // Get story files from main config patterns
-    const storyFiles = await globby([join(projectRoot, '**/*.stor(y|ies).@(js|jsx|mjs|ts|tsx)')], {
-      ...commonGlobOptions(''),
-      cwd: projectRoot,
-      gitignore: true,
-      absolute: true,
-    });
+    const maybeHasA11yParameter = (content: string) =>
+      content.includes('a11y:') && content.includes('element:');
 
     // Filter files that contain both 'a11y' and 'element' in their content
     const storyFilesWithA11y = (
       await Promise.all(
-        storyFiles.map(async (file) => {
+        storiesPaths.map(async (file) => {
           const content = await readFile(file, 'utf-8');
-          return content.includes('a11y') && content.includes('element') ? file : null;
+          return maybeHasA11yParameter(content) ? file : null;
         })
       )
     ).filter((file): file is string => file !== null);
@@ -63,7 +50,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
 
     if (previewConfigPath) {
       const content = await readFile(previewConfigPath, 'utf-8');
-      hasA11yConfigInPreview = content.includes('a11y') && content.includes('element');
+      hasA11yConfigInPreview = maybeHasA11yParameter(content);
     }
 
     if (storyFilesWithA11y.length === 0 && !hasA11yConfigInPreview) {
@@ -78,16 +65,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
 
   prompt: () => {
     return dedent`
-      Found story or config files that may need to be updated.
-      
-      The a11y addon has removed the ${picocolors.yellow('element')} parameter and replaced it with the ${picocolors.yellow('context')} parameter:
-      ${picocolors.yellow('parameters.a11y.element')} -> ${picocolors.yellow('parameters.a11y.context')}
-
-      This change affects how accessibility checks are scoped in your stories and allows you to have more flexibility in defining the scope of your checks such as including or excluding multiple elements. We can update your code automatically.
-
-      More info: ${picocolors.cyan('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#a11y-addon-replace-element-parameter-with-context-parameter')}
-
-      Would you like to update these files to use the new parameter name?
+      The a11y addon has replaced ${picocolors.yellow('parameters.a11y.element')} with ${picocolors.yellow('parameters.a11y.context')} for more flexible accessibility check scoping.
     `;
   },
 
@@ -108,7 +86,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
             errors.push({ file: previewFileToUpdate, error: error as Error });
           }
         } else {
-          logger.log('Would have updated', code.fileName);
+          logger.log(`Would have updated ${code.fileName}`);
         }
       }
     }
@@ -127,7 +105,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
               if (!dryRun) {
                 await writeCsf(code, file);
               } else {
-                logger.log('Would have updated', file);
+                logger.log(`Would have updated ${file}`);
               }
             }
           } catch (error) {

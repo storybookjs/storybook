@@ -13,7 +13,7 @@ const meta: Meta<YourComponent> = {
 export default meta;
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="react" language="js"
+```jsx filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { YourComponent } from './YourComponent';
 
 export default {
@@ -29,8 +29,9 @@ export default {
 };
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta } from '@storybook/react-vite';
+```tsx filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta } from '@storybook/your-framework';
 
 import { YourComponent } from './YourComponent';
 
@@ -49,7 +50,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="YourComponent.stories.js|jsx" renderer="solid" language="js"
 import { YourComponent } from './YourComponent';
 
 export default {
@@ -66,7 +67,7 @@ export default {
 ```
 
 ```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta } from 'storybook-solidjs';
+import type { Meta } from 'storybook-solidjs-vite';
 
 import { YourComponent } from './YourComponent';
 
@@ -179,4 +180,41 @@ const meta: Meta = {
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 };
 export default meta;
+```
+
+```tsx filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
 ```

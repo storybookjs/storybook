@@ -55,6 +55,14 @@ By default, Storybook's production build will encapsulate all stories and docume
 
 {/* prettier-ignore-end */}
 
+### Build Storybook for older browsers
+
+The Storybook app's UI supports [modern browsers](../get-started/install.mdx#project-requirements). If you need to run the app in older, unsupported browsers, you can use the [`--preview-only` CLI flag](../api/cli-options.mdx#build) to build Storybook in "preview-only" mode. This skips building the Storybook manager (the UI surrounding your stories) and only builds the preview (the iframe that contains your stories). That makes your [Storybook builder](../builders/index.mdx) and its configuration solely responsible for which browsers are supported.
+
+When in "preview-only" mode, the normal entry point, `/index.html`, will result in a 404, because the client-side router is not available. To work around this, start from the `/iframe.html` route and add the `?navigator=true` query parameter to the URL. This will render a basic, HTML-only sidebar inside the preview so that you can navigate to your stories. For example, you can access the preview at `http://localhost:6006/iframe.html?navigator=true` (you may need to update the port number).
+
+This applies to both the [`build`](../api/cli-options.mdx#build) (for publishing) and [`dev`](../api/cli-options.mdx#dev) (for local development) commands.
+
 ## Publish Storybook with Chromatic
 
 Once you've built your Storybook as a static web application, you can publish it to your web host. We recommend [Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook), a free publishing service made for Storybook that documents, versions, and indexes your UI components securely in the cloud.

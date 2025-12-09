@@ -1,9 +1,13 @@
 {
   "name": "@storybook/preact",
-  "version": "9.0.0-beta.11",
-  "description": "Storybook Preact renderer",
+  "version": "10.2.0-alpha.3",
+  "description": "Storybook Preact renderer: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-renderer",
+    "preact",
+    "components",
+    "component"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/preact",
   "bugs": {
@@ -19,20 +23,17 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./preset": "./preset.js",
-    "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
-    "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
-    "./package.json": "./package.json"
+    "./entry-preview": "./dist/entry-preview.js",
+    "./entry-preview-docs": "./dist/entry-preview-docs.js",
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "template/cli/**/*",
@@ -41,10 +42,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "ts-dedent": "^2.0.0"
@@ -57,20 +54,8 @@
     "preact": "^8.0.0||^10.0.0",
     "storybook": "workspace:^"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/preset.ts",
-      "./src/entry-preview.ts",
-      "./src/entry-preview-docs.ts"
-    ],
-    "platform": "browser"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

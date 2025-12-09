@@ -1,0 +1,45 @@
+executor:
+  class: large
+  name: sb_node_22_browsers
+
+parameters:
+  parallelism:
+    type: integer
+
+parallelism: << parameters.parallelism >>
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - attach_workspace:
+      at: /tmp
+  - run:
+      name: Setup Corepack
+      command: |
+        # Enable corepack
+        sudo corepack enable
+
+        # Verify yarn is working
+        which yarn
+        yarn --version
+  - start-event-collector
+  - run:
+      name: Create Sandboxes
+      command: |
+        TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
+        yarn task --task build --template $TEMPLATE --no-link --start-from=sandbox --junit
+        if [[ $TEMPLATE != bench/* ]]; then
+          yarn --cwd scripts jiti ./event-log-checker.ts build $TEMPLATE
+        fi
+        cd $(yarn get-sandbox-dir --template $TEMPLATE) && rm -rf node_modules
+      environment:
+        STORYBOOK_TELEMETRY_DEBUG: 1
+        STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
+  - report-workflow-on-failure:
+      template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
+  - persist_to_workspace:
+      root: /tmp
+      paths:
+          storybook-sandboxes/**
+  - store_test_results:
+      path: storybook/test-results

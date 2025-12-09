@@ -1,14 +1,13 @@
-import { formatFileContent, getAddonNames, rendererPackages } from 'storybook/internal/common';
+import { formatFileContent, frameworkPackages, getAddonNames } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import * as jscodeshift from 'jscodeshift';
+import jscodeshift from 'jscodeshift';
 import path from 'path';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 // Relative path import to avoid dependency to storybook/test
-import { SUPPORTED_FRAMEWORKS } from '../../../../../addons/vitest/src/constants';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
@@ -40,16 +39,10 @@ interface AddonA11yAddonTestOptions {
  * - If we can't transform the files automatically, we'll prompt the user to do it manually.
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
-  id: 'addonA11yAddonTest',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+  id: 'addon-a11y-addon-test',
+  link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#with-the-vitest-addon',
 
-  promptType(result) {
-    if (result.setupFile === null && result.previewFile === null) {
-      return 'manual';
-    }
-
-    return 'auto';
-  },
+  promptType: 'auto',
 
   async check({ mainConfig, configDir }) {
     const addons = getAddonNames(mainConfig);
@@ -59,7 +52,9 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     const hasA11yAddon = !!addons.find((addon) => addon.includes('@storybook/addon-a11y'));
     const hasTestAddon = !!addons.find((addon) => addon.includes('@storybook/addon-vitest'));
 
-    if (!SUPPORTED_FRAMEWORKS.find((framework) => frameworkPackageName?.includes(framework))) {
+    if (
+      !Object.keys(frameworkPackages).find((framework) => frameworkPackageName?.includes(framework))
+    ) {
       return null;
     }
 
@@ -128,54 +123,44 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     };
   },
 
-  prompt({
-    setupFile,
-    previewFile,
-    transformedSetupCode,
-    transformedPreviewCode,
-    skipPreviewTransformation,
-    skipVitestSetupTransformation,
-  }) {
-    const introduction = dedent`
-      We have detected that you have ${picocolors.magenta(`@storybook/addon-a11y`)} and ${picocolors.magenta(`@storybook/addon-vitest`)} installed.
+  prompt() {
+    return 'We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed. The automigration will configure both for the new testing experience';
+  },
 
-      ${picocolors.magenta(`@storybook/addon-a11y`)} now integrates with ${picocolors.magenta(`@storybook/addon-vitest`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
-    `;
-
-    const prompt = [introduction];
-
+  async run({ result }) {
     let counter = 1;
 
+    const {
+      transformedSetupCode,
+      skipPreviewTransformation,
+      skipVitestSetupTransformation,
+      setupFile,
+      previewFile,
+      transformedPreviewCode,
+    } = result;
+
+    const errorMessage: string[] = [];
     if (!skipVitestSetupTransformation) {
       if (transformedSetupCode === null) {
-        prompt.push(dedent`
+        errorMessage.push(dedent`
           ${counter++}) We couldn't find or automatically update ${picocolors.cyan(`.storybook/vitest.setup.<ts|js>`)} in your project to smoothly set up project annotations from ${picocolors.magenta(`@storybook/addon-a11y`)}. 
           Please manually update your ${picocolors.cyan(`vitest.setup.ts`)} file to include the following:
 
           ${picocolors.gray('...')}   
           ${picocolors.green('+ import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";')}
 
-          ${picocolors.gray('const annotations = setProjectAnnotations([')}
+          ${picocolors.gray('setProjectAnnotations([')}
           ${picocolors.gray('  ...')}
           ${picocolors.green('+ a11yAddonAnnotations,')}
           ${picocolors.gray(']);')}
-
-          ${picocolors.gray('beforeAll(annotations.beforeAll);')}
         `);
-      } else {
-        const fileExtensionSetupFile = path.extname(setupFile!);
-
-        prompt.push(
-          dedent`${counter++}) We have to update your ${picocolors.cyan(`.storybook/vitest.setup${fileExtensionSetupFile}`)} file to set up project annotations from ${picocolors.magenta(`@storybook/addon-a11y`)}.`
-        );
       }
     }
 
     if (!skipPreviewTransformation) {
       if (transformedPreviewCode === null) {
-        prompt.push(dedent`
-          ${counter++}) We couldn't find or automatically update your ${picocolors.cyan(`.storybook/preview.<ts|js>`)} in your project to smoothly set up ${picocolors.yellow(`parameters.a11y.test`)} from ${picocolors.magenta(`@storybook/addon-a11y`)}. 
-          Please manually update your ${picocolors.cyan(`.storybook/preview.<ts|js>`)} file to include the following:
+        errorMessage.push(dedent`
+          ${counter++}) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up ${picocolors.cyan('parameters.a11y.test')} from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
 
           ${picocolors.gray('export default {')}
           ${picocolors.gray('  ...')}
@@ -186,29 +171,15 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
           ${picocolors.gray('  }')}
           ${picocolors.gray('}')}
         `);
-      } else {
-        const fileExtensionPreviewFile = path.extname(previewFile!);
-
-        prompt.push(
-          dedent`
-            ${counter++}) We have to update your ${picocolors.cyan(`.storybook/preview${fileExtensionPreviewFile}`)} file to set up ${picocolors.yellow('parameters.a11y.test')} from ${picocolors.magenta(`@storybook/addon-a11y`)}.
-          `
-        );
       }
     }
 
-    if (transformedPreviewCode === null || transformedSetupCode === null) {
-      prompt.push(dedent`
-        For more information, please refer to the accessibility addon documentation: 
-        ${picocolors.cyan('https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration')}
-      `);
+    if (errorMessage.length > 0) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(
+        dedent`The ${this.id} automigration couldn't make the changes but here are instructions for doing them yourself:\n${errorMessage.join('\n')}`
+      );
     }
-
-    return prompt.join('\n\n');
-  },
-
-  async run({ result }) {
-    const { setupFile, transformedSetupCode, transformedPreviewCode, previewFile } = result;
 
     if (transformedSetupCode && setupFile) {
       writeFileSync(setupFile, transformedSetupCode, 'utf8');

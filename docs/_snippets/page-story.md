@@ -32,7 +32,7 @@ export const LoggedIn: Story = {
 };
 ```
 
-```js filename="Page.stories.js|jsx" renderer="react" language="js"
+```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Page } from './Page';
 
 //👇 Imports all Header stories
@@ -49,8 +49,9 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+```ts filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Page } from './Page';
 
@@ -89,7 +90,7 @@ export const LoggedIn = {
 ```
 
 ```tsx filename="Page.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Page } from './Page';
 
@@ -278,4 +279,43 @@ export const LoggedIn: Story = {
     ...HeaderStories.LoggedIn.args,
   },
 };
+```
+
+```ts filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Page } from './Page';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
 ```

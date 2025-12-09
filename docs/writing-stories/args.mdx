@@ -115,13 +115,13 @@ You can use args in your stories to configure the component's appearance, simila
 
 ## Setting args through the URL
 
-You can also override the set of initial args for the active story by adding an `args` query parameter to the URL. Typically you would use the [Controls addon](../essentials/controls.mdx) to handle this. For example, here's how you could set a `size` and `style` arg in the Storybook's URL:
+You can also override the set of initial args for the active story by adding an `args` query parameter to the URL. Typically, you would use [Controls](../essentials/controls.mdx) to handle this. For example, here's how you could set a `size` and `style` arg in the Storybook's URL:
 
 ```
 ?path=/story/avatar--default&args=style:rounded;size:100
 ```
 
-As a safeguard against [XSS](https://owasp.org/www-community/attacks/xss/) attacks, the arg's keys and values provided in the URL are limited to alphanumeric characters, spaces, underscores, and dashes. Any other types will be ignored and removed from the URL, but you can still use them with the Controls addon and [within your story](#mapping-to-complex-arg-values).
+As a safeguard against [XSS](https://owasp.org/www-community/attacks/xss/) attacks, the arg's keys and values provided in the URL are limited to alphanumeric characters, spaces, underscores, and dashes. Any other types will be ignored and removed from the URL, but you can still use them with the Controls panel and [within your story](#mapping-to-complex-arg-values).
 
 The `args` param is always a set of `key: value` pairs delimited with a semicolon `;`. Values will be coerced (cast) to their respective `argTypes` (which may have been automatically inferred). Objects and arrays are supported. Special values `null` and `undefined` can be set by prefixing with a bang `!`. For example, `args=obj.key:val;arr[0]:one;arr[1]:two;nil:!null` will be interpreted as:
 

@@ -1,8 +1,11 @@
 {
-  "extends": "./tsconfig.build.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "noEmit": true,
+    "moduleResolution": "bundler",
+    "module": "ES2022",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "strict": false
   },
-  "include": ["src/**/*", "src/**/*.json"]
+  "include": ["src/**/*", "./src/typings.d.ts"]
 }

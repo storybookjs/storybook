@@ -5,7 +5,7 @@ import type { Meta, StoryObj, VueRenderer } from '@storybook/vue3';
 
 import { h } from 'vue';
 
-const { Button, Pre } = (globalThis as any).Components;
+const { Button, Pre } = (globalThis as any).__TEMPLATE_COMPONENTS__;
 
 const meta = {
   component: Button,

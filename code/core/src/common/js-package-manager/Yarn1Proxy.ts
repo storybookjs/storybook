@@ -1,13 +1,18 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import process from 'node:process';
 
+import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUp } from 'find-up';
-import { dedent } from 'ts-dedent';
+import * as find from 'empathic/find';
+// eslint-disable-next-line depend/ban-dependencies
+import type { ExecaChildProcess } from 'execa';
 
-import { createLogStream } from '../utils/cli';
-import { JsPackageManager } from './JsPackageManager';
+import type { ExecuteCommandOptions } from '../utils/command';
+import { executeCommand } from '../utils/command';
+import { getProjectRoot } from '../utils/paths';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 import { parsePackageData } from './util';
@@ -30,57 +35,58 @@ export type Yarn1ListOutput = {
 const YARN1_ERROR_REGEX = /^error\s(.*)$/gm;
 
 export class Yarn1Proxy extends JsPackageManager {
-  readonly type = 'yarn1';
+  readonly type = PackageManagerName.YARN1;
 
   installArgs: string[] | undefined;
 
   getInstallArgs(): string[] {
     if (!this.installArgs) {
-      this.installArgs = ['--ignore-workspace-root-check'];
+      this.installArgs = process.env.CI ? [] : ['--ignore-workspace-root-check'];
     }
     return this.installArgs;
-  }
-
-  async initPackageJson() {
-    await this.executeCommand({ command: 'yarn', args: ['init', '-y'] });
-  }
-
-  getRunStorybookCommand(): string {
-    return 'yarn storybook';
   }
 
   getRunCommand(command: string): string {
     return `yarn ${command}`;
   }
 
-  getRemoteRunCommand(): string {
-    return 'npx';
+  getPackageCommand(args: string[]): string {
+    const [command, ...rest] = args;
+    return `yarn exec ${command} -- ${rest.join(' ')}`;
   }
 
-  public runPackageCommandSync(
+  public runPackageCommand({
+    args,
+    ...options
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+    const [command, ...rest] = args;
+    return executeCommand({
+      command: `yarn`,
+      args: ['exec', command, '--', ...rest],
+      ...options,
+    });
+  }
+
+  public runInternalCommand(
     command: string,
     args: string[],
     cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ): string {
-    return this.executeCommandSync({ command: `yarn`, args: [command, ...args], cwd, stdio });
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ) {
+    return executeCommand({
+      command: `yarn`,
+      args: [command, ...args],
+      cwd: cwd ?? this.cwd,
+      stdio,
+    });
   }
 
-  async runPackageCommand(command: string, args: string[], cwd?: string): Promise<string> {
-    return this.executeCommand({ command: `yarn`, args: ['exec', command, ...args], cwd });
-  }
-
-  public async getPackageJSON(
-    packageName: string,
-    basePath = this.cwd
-  ): Promise<PackageJson | null> {
-    const packageJsonPath = await findUp(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: basePath }
-    );
+  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;
@@ -90,11 +96,11 @@ export class Yarn1Proxy extends JsPackageManager {
   }
 
   public async getRegistryURL() {
-    const res = await this.executeCommand({
+    const childProcess = await executeCommand({
       command: 'yarn',
       args: ['config', 'get', 'registry'],
     });
-    const url = res.trim();
+    const url = (childProcess.stdout ?? '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
@@ -106,13 +112,16 @@ export class Yarn1Proxy extends JsPackageManager {
     }
 
     try {
-      const commandResult = await this.executeCommand({
+      const process = executeCommand({
         command: 'yarn',
         args: yarnArgs.concat(pattern),
         env: {
           FORCE_COLOR: 'false',
         },
+        cwd: this.instanceDir,
       });
+      const result = await process;
+      const commandResult = result.stdout ?? '';
 
       const parsedOutput = JSON.parse(commandResult);
       return this.mapDependencies(parsedOutput, pattern);
@@ -130,57 +139,27 @@ export class Yarn1Proxy extends JsPackageManager {
     };
   }
 
-  protected async runInstall() {
-    await this.executeCommand({
+  protected runInstall(options?: { force?: boolean }) {
+    return executeCommand({
       command: 'yarn',
-      args: ['install', ...this.getInstallArgs()],
-      stdio: 'inherit',
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
+      stdio: prompt.getPreferredStdio(),
+      cwd: this.cwd,
     });
   }
 
-  protected async runAddDeps(
-    dependencies: string[],
-    installAsDevDependencies: boolean,
-    writeOutputToFile = true
-  ) {
+  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
     let args = [...dependencies];
 
     if (installAsDevDependencies) {
       args = ['-D', ...args];
     }
 
-    const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
-
-    try {
-      await this.executeCommand({
-        command: 'yarn',
-        args: ['add', ...this.getInstallArgs(), ...args],
-        stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
-      });
-    } catch (err) {
-      if (!writeOutputToFile) {
-        throw err;
-      }
-      const stdout = await readLogFile();
-      const errorMessage = this.parseErrorFromLogs(stdout);
-      await moveLogFile();
-      throw new Error(
-        dedent`${errorMessage}
-        
-        Please check the logfile generated at ./storybook.log for troubleshooting and try again.`
-      );
-    }
-
-    await removeLogFile();
-  }
-
-  protected async runRemoveDeps(dependencies: string[]) {
-    const args = [...dependencies];
-
-    await this.executeCommand({
+    return executeCommand({
       command: 'yarn',
-      args: ['remove', ...this.getInstallArgs(), ...args],
-      stdio: 'inherit',
+      args: ['add', ...this.getInstallArgs(), ...args],
+      stdio: prompt.getPreferredStdio(),
+      cwd: this.primaryPackageJson.operationDir,
     });
   }
 
@@ -190,10 +169,12 @@ export class Yarn1Proxy extends JsPackageManager {
   ): Promise<T extends true ? string[] : string> {
     const args = [fetchAllVersions ? 'versions' : 'version', '--json'];
     try {
-      const commandResult = await this.executeCommand({
+      const process = executeCommand({
         command: 'yarn',
         args: ['info', packageName, ...args],
       });
+      const result = await process;
+      const commandResult = result.stdout ?? '';
 
       const parsedOutput = JSON.parse(commandResult);
       if (parsedOutput.type === 'inspect') {

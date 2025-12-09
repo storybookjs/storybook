@@ -1,8 +1,9 @@
 ```ts filename="Page.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
+import { mocked } from 'storybook/test';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
 
 import { Page } from './Page';
 
@@ -16,7 +17,7 @@ type Story = StoryObj<Page>;
 export const Default: Story = {
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
-    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+    mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
   },
 };
 ```
@@ -25,8 +26,8 @@ export const Default: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { getUserFromSession } from '#api/session.mock';
+  // 👇 Automocked module resolves to '../lib/__mocks__/session'
+  import { getUserFromSession } from '../lib/session';
 
   import Page from './Page.svelte';
 
@@ -42,7 +43,8 @@ export const Default: Story = {
 ```
 
 ```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF"
-import { getUserFromSession } from '#api/session.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
 
 import Page from './Page.svelte';
 
@@ -58,8 +60,9 @@ export const Default = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="common" language="js"
-import { getUserFromSession } from '#api/session.mock';
+```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
 
 import { Page } from './Page';
 
@@ -78,9 +81,10 @@ export const Default = {
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { mocked } from 'storybook/test';
 
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { getUserFromSession } from '#api/session.mock';
+  // 👇 Automocked module resolves to '../lib/__mocks__/session'
+  import { getUserFromSession } from '../lib/session';
 
   import Page from './Page.svelte';
 
@@ -91,16 +95,17 @@ export const Default = {
 
 <Story name="Default" beforeEach={() => {
   // 👇 Set the return value for the getUserFromSession function
-  getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+  mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
 }} />
 ```
 
 ```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
+import { mocked } from 'storybook/test';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
 
 import Page from './Page.svelte';
 
@@ -115,17 +120,18 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
-    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+    mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
   },
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
+import { mocked } from 'storybook/test';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
 
 import { Page } from './Page';
 
@@ -140,13 +146,14 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
-    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+    mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
   },
 };
 ```
 
 ```js filename="Page.stories.js" renderer="web-components" language="js"
-import { getUserFromSession } from '#api/session.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
 
 export default {
   component: 'my-page',
@@ -162,9 +169,10 @@ export const Default = {
 
 ```ts filename="Page.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
+import { mocked } from 'storybook/test';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
 
 const meta: Meta = {
   component: 'my-page',
@@ -176,7 +184,49 @@ type Story = StoryObj;
 export const Default: Story = {
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
-    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+    mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
   },
 };
+```
+
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { mocked } from 'storybook/test';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const Default = meta.story({
+  async beforeEach() {
+    // 👇 Set the return value for the getUserFromSession function
+    mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const Default = meta.story({
+  async beforeEach() {
+    // 👇 Set the return value for the getUserFromSession function
+    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+  },
+});
 ```

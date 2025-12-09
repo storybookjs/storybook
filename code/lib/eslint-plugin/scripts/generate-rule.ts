@@ -1,6 +1,7 @@
-import cp from 'child_process';
-import fs from 'fs/promises';
-import path from 'path';
+import cp from 'node:child_process';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
 import type { PromptObject } from 'prompts';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
@@ -53,7 +54,7 @@ const generateRule = async () => {
   logger.log(
     '👋 Welcome to the Storybook ESLint rule generator! Please answer a few questions so I can provide everything you need for your new rule.'
   );
-  logger.log();
+  logger.log('');
   const { authorName, ruleId, ruleDescription, isAutoFixable } = await prompts(questions, {
     onCancel: () => {
       logger.log('Process canceled by the user.');
@@ -82,7 +83,7 @@ const generateRule = async () => {
       // Rule Definition
       //------------------------------------------------------------------------------
 
-      export = createStorybookRule({
+      export default createStorybookRule({
         name: '${ruleId}',
         defaultOptions: [],
         meta: {

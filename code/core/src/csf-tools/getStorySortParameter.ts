@@ -1,10 +1,9 @@
 import { babelParse, generate, types as t, traverse } from 'storybook/internal/babel';
+import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
 import { findVarInitialization } from './findVarInitialization';
-
-const logger = console;
 
 const getValue = (obj: t.ObjectExpression, key: string) => {
   let value: t.Expression | undefined;
@@ -57,7 +56,7 @@ const unsupported = (unexpectedVar: string, isError: boolean) => {
   if (isError) {
     throw new Error(message);
   } else {
-    logger.info(message);
+    logger.log(message);
   }
 };
 

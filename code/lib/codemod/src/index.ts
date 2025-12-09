@@ -1,13 +1,16 @@
 /* eslint import/prefer-default-export: "off" */
 import { readdirSync } from 'node:fs';
 import { rename as renameAsync } from 'node:fs/promises';
-import { extname } from 'node:path';
+import { extname, join } from 'node:path';
+
+import { resolvePackageDir } from 'storybook/internal/common';
 
 import { sync as spawnSync } from 'cross-spawn';
+import { glob as tinyglobby } from 'tinyglobby';
 
 import { jscodeshiftToPrettierParser } from './lib/utils';
 
-const TRANSFORM_DIR = `${__dirname}/transforms`;
+const TRANSFORM_DIR = join(resolvePackageDir('@storybook/codemod'), 'dist', 'transforms');
 
 export function listCodemods() {
   return readdirSync(TRANSFORM_DIR)
@@ -57,18 +60,14 @@ export async function runCodemod(
     }
   }
 
-  // Dynamically import globby because it is a pure ESM module
-  // eslint-disable-next-line depend/ban-dependencies
-  const { globby } = await import('globby');
-
-  const files = await globby([glob, '!**/node_modules', '!**/dist']);
+  const files = await tinyglobby([glob, '!**/node_modules', '!**/dist']);
   const extensions = new Set(files.map((file) => extname(file).slice(1)));
   const commaSeparatedExtensions = Array.from(extensions).join(',');
 
-  logger.log(`=> Applying ${codemod}: ${files.length} files`);
+  logger.step(`Applying ${codemod}: ${files.length} files`);
 
   if (files.length === 0) {
-    logger.log(`=> No matching files for glob: ${glob}`);
+    logger.step(`No matching files for glob: ${glob}`);
     return;
   }
 
@@ -77,7 +76,7 @@ export async function runCodemod(
     const result = spawnSync(
       'node',
       [
-        require.resolve('jscodeshift/bin/jscodeshift'),
+        join(resolvePackageDir('jscodeshift'), 'bin', 'jscodeshift'),
         // this makes sure codeshift doesn't transform our own source code with babel
         // which is faster, and also makes sure the user won't see babel messages such as:
         // [BABEL] Note: The code generator has deoptimised the styling of repo/node_modules/prettier/index.js as it exceeds the max of 500KB.
@@ -91,7 +90,6 @@ export async function runCodemod(
       ],
       {
         stdio: 'inherit',
-        shell: true,
       }
     );
 
@@ -107,7 +105,7 @@ export async function runCodemod(
 
   if (renameParts) {
     const [from, to] = renameParts;
-    logger.log(`=> Renaming ${rename}: ${files.length} files`);
+    logger.step(`Renaming ${rename}: ${files.length} files`);
     await Promise.all(
       files.map((file) => renameFile(file, new RegExp(`${from}$`), to, { logger }))
     );

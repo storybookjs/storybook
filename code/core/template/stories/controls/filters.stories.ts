@@ -3,7 +3,7 @@ import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 import { global as globalThis } from '@storybook/global';
 
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   decorators: [
     (storyFn: PartialStoryFn, context: StoryContext) =>
       storyFn({ args: { object: { ...context.args } } }),

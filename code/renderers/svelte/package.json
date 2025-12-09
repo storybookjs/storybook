@@ -1,9 +1,12 @@
 {
   "name": "@storybook/svelte",
-  "version": "9.0.0-beta.11",
-  "description": "Storybook Svelte renderer",
+  "version": "10.2.0-alpha.3",
+  "description": "Storybook Svelte renderer: Develop, document, and test UI components in isolation.",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-renderer",
+    "svelte",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/svelte",
   "bugs": {
@@ -19,75 +22,53 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
+    "./entry-preview": "./dist/entry-preview.js",
+    "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
-      "import": "./dist/playwright.mjs",
-      "require": "./dist/playwright.js"
+      "default": "./dist/playwright.js"
     },
-    "./preset": "./preset.js",
-    "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
-    "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
+    "./internal/AddStorybookIdDecorator.svelte": "./static/AddStorybookIdDecorator.svelte",
+    "./internal/createReactiveProps": "./static/createReactiveProps.svelte.js",
+    "./internal/DecoratorHandler.svelte": "./static/DecoratorHandler.svelte",
+    "./internal/PreviewRender.svelte": "./static/PreviewRender.svelte",
     "./package.json": "./package.json",
-    "./internal/PreviewRender.svelte": "./dist/components/PreviewRender.svelte",
-    "./internal/DecoratorHandler.svelte": "./dist/components/DecoratorHandler.svelte",
-    "./internal/AddStorybookIdDecorator.svelte": "./dist/components/AddStorybookIdDecorator.svelte",
-    "./internal/createReactiveProps": "./dist/createReactiveProps.svelte.js"
+    "./preset": "./dist/preset.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
+    "static/**/*",
     "template/cli/**/*",
     "README.md",
     "*.js",
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "svelte-check",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
-  },
   "dependencies": {
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@sveltejs/vite-plugin-svelte": "^6.2.0",
     "@testing-library/svelte": "^5.2.4",
-    "expect-type": "^1.1.0",
-    "svelte": "^5.20.5",
-    "svelte-check": "^4.1.4",
+    "svelte": "^5.39.5",
+    "svelte-check": "^4.3.2",
     "sveltedoc-parser": "^4.2.1",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5"
+    "vite": "^7.0.4"
   },
   "peerDependencies": {
     "storybook": "workspace:^",
     "svelte": "^5.0.0"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "post": "./scripts/copy-unbundled-to-dist.ts",
-    "entries": [
-      "./src/index.ts",
-      "./src/preset.ts",
-      "./src/entry-preview.ts",
-      "./src/entry-preview-docs.ts",
-      "./src/playwright.ts"
-    ],
-    "platform": "browser"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

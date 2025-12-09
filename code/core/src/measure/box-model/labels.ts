@@ -1,3 +1,5 @@
+import type { ElementMeasurements, FloatingAlignment } from '../util-types';
+
 type LabelType = 'margin' | 'padding' | 'border' | 'content';
 type LabelPosition = 'top' | 'right' | 'bottom' | 'left' | 'center';
 type Direction = 'top' | 'right' | 'bottom' | 'left';

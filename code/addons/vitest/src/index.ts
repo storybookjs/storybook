@@ -1,5 +1,3 @@
-import { definePreview } from 'storybook/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
-export default () => definePreview({});
-
-export type { TestParameters } from './types';
+export default () => definePreviewAddon({});

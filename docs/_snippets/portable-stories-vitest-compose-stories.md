@@ -1,8 +1,8 @@
 ```tsx filename="Button.test.tsx" renderer="react" language="ts"
 import { test, expect } from 'vitest';
 import { screen } from '@testing-library/react';
-// 👉 Using Next.js? Import from @storybook/nextjs instead
-import { composeStories } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 // Import all stories and the component annotations from the stories file
 import * as stories from './Button.stories';
@@ -28,7 +28,8 @@ test('renders primary button with overridden props', async () => {
 ```ts filename="Button.test.ts" renderer="svelte" language="ts"
 import { test, expect } from 'vitest';
 import { screen } from '@testing-library/svelte';
-import { composeStories } from '@storybook/svelte-vite';
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import { composeStories } from '@storybook/your-framework';
 
 // Import all stories and the component annotations from the stories file
 import * as stories from './Button.stories';

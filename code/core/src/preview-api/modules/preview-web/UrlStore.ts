@@ -74,8 +74,10 @@ export const getSelectionSpecifierFromPath: () => SelectionSpecifier | null = ()
     const globals = typeof query.globals === 'string' ? parseArgsParam(query.globals) : undefined;
 
     let viewMode = getFirstString(query.viewMode) as ViewMode;
-    if (typeof viewMode !== 'string' || !viewMode.match(/docs|story/)) {
+    if (typeof viewMode !== 'string' || !viewMode) {
       viewMode = 'story';
+    } else if (!viewMode.match(/docs|story/)) {
+      return null;
     }
 
     const path = getFirstString(query.path);

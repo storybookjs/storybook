@@ -2,6 +2,7 @@ import type { BabelFile, NodePath } from 'storybook/internal/babel';
 import { core as babel, types as t } from 'storybook/internal/babel';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
 import type { API, FileInfo } from 'jscodeshift';
 import prettier from 'prettier';
@@ -10,8 +11,6 @@ import invariant from 'tiny-invariant';
 import { upgradeDeprecatedTypes } from './upgrade-deprecated-types';
 
 const { isIdentifier, isTSTypeAnnotation, isTSTypeReference } = t;
-
-const logger = console;
 
 const renameAnnotation = (annotation: string) => {
   return annotation === 'storyName' ? 'name' : annotation;

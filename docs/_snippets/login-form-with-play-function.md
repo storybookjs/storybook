@@ -1,27 +1,21 @@
 ```ts filename="LoginForm.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { userEvent, within, expect } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm.component';
 
 const meta: Meta<LoginForm> = {
   component: LoginForm,
 };
-
 export default meta;
+
 type Story = StoryObj<LoginForm>;
 
 export const EmptyForm: Story = {};
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
 export const FilledForm: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -33,15 +27,15 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!'
-      )
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
     ).toBeInTheDocument();
   },
 };
 ```
 
-```js filename="LoginForm.stories.js|jsx" renderer="react" language="js"
-import { userEvent, within, expect } from 'storybook/test';
+```js filename="LoginForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+import { expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
@@ -51,14 +45,8 @@ export default {
 
 export const EmptyForm = {};
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
 export const FilledForm = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -70,37 +58,32 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!'
-      )
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
     ).toBeInTheDocument();
   },
 };
 ```
 
-```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within, expect } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
 const meta = {
   component: LoginForm,
 } satisfies Meta<typeof LoginForm>;
-
 export default meta;
+
 type Story = StoryObj<typeof meta>;
 
 export const EmptyForm: Story = {};
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
 export const FilledForm: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -112,15 +95,15 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!'
-      )
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
     ).toBeInTheDocument();
   },
 };
 ```
 
 ```js filename="LoginForm.stories.js|jsx" renderer="solid" language="js"
-import { userEvent, within, expect } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
@@ -130,14 +113,8 @@ export default {
 
 export const EmptyForm = {};
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
 export const FilledForm = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -149,37 +126,31 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!'
-      )
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
     ).toBeInTheDocument();
   },
 };
 ```
 
 ```tsx filename="LoginForm.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
-import { userEvent, within, expect } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
 const meta = {
   component: LoginForm,
 } satisfies Meta<typeof LoginForm>;
-
 export default meta;
+
 type Story = StoryObj<typeof meta>;
 
 export const EmptyForm: Story = {};
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
 export const FilledForm: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -191,8 +162,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!'
-      )
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
     ).toBeInTheDocument();
   },
 };
@@ -215,13 +186,11 @@ export const FilledForm: Story = {
 
 <!--
   See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
-  to learn more about using the canvasElement to query the DOM
+  to learn more about using the canvas to query the DOM
 -->
 <Story
   name="FilledForm"
-  play={async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play={async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -251,14 +220,8 @@ export default {
 
 export const EmptyForm = {};
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
 export const FilledForm = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -270,8 +233,8 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!'
-      )
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
     ).toBeInTheDocument();
   },
 };
@@ -294,13 +257,11 @@ export const FilledForm = {
 
 <!--
   See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
-  to learn more about using the canvasElement to query the DOM
+  to learn more about using the canvas to query the DOM
 -->
 <Story
   name="FilledForm"
-  play={async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play={async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -330,20 +291,14 @@ import LoginForm from './LoginForm.svelte';
 const meta = {
   component: LoginForm,
 } satisfies Meta<typeof LoginForm>;
-
 export default meta;
+
 type Story = StoryObj<typeof meta>;
 
 export const EmptyForm: Story = {};
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
 export const FilledForm: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -355,15 +310,15 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!'
-      )
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
     ).toBeInTheDocument();
   },
 };
 ```
 
 ```js filename="LoginForm.stories.js" renderer="vue" language="js"
-import { userEvent, within, expect } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 import LoginForm from './LoginForm.vue';
 
@@ -378,18 +333,12 @@ export const EmptyForm = {
   }),
 };
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
 export const FilledForm = {
   render: () => ({
     components: { LoginForm },
     template: `<LoginForm />`,
   }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -401,8 +350,8 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!'
-      )
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
     ).toBeInTheDocument();
   },
 };
@@ -411,15 +360,15 @@ export const FilledForm = {
 ```ts filename="LoginForm.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
-import { userEvent, within, expect } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 import LoginForm from './LoginForm.vue';
 
 const meta = {
   component: LoginForm,
 } satisfies Meta<typeof LoginForm>;
-
 export default meta;
+
 type Story = StoryObj<typeof meta>;
 
 export const EmptyForm: Story = {
@@ -429,18 +378,12 @@ export const EmptyForm: Story = {
   }),
 };
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
 export const FilledForm: Story = {
   render: () => ({
     components: { LoginForm },
     template: `<LoginForm />`,
   }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -452,15 +395,15 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!'
-      )
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
     ).toBeInTheDocument();
   },
 };
 ```
 
 ```js filename="LoginForm.stories.js" renderer="web-components" language="js"
-import { userEvent, within, expect } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 export default {
   component: 'demo-login-form',
@@ -468,14 +411,8 @@ export default {
 
 export const EmptyForm = {};
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
 export const FilledForm = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -487,8 +424,8 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!'
-      )
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
     ).toBeInTheDocument();
   },
 };
@@ -497,25 +434,19 @@ export const FilledForm = {
 ```ts filename="LoginForm.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
-import { userEvent, within, expect } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 const meta: Meta = {
   component: 'demo-login-form',
 };
-
 export default meta;
+
 type Story = StoryObj;
 
 export const EmptyForm: Story = {};
 
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
 export const FilledForm: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     // 👇 Simulate interactions with the component
     await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
 
@@ -527,9 +458,76 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!'
-      )
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
     ).toBeInTheDocument();
   },
 };
+```
+
+```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { expect } from 'storybook/test';
+
+import { LoginForm } from './LoginForm';
+
+const meta = preview.meta({
+  component: LoginForm,
+});
+
+export const EmptyForm = meta.story();
+
+export const FilledForm = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // 👇 Simulate interactions with the component
+    await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
+
+    await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+
+    // 👇 Assert DOM structure
+    await expect(
+      canvas.getByText(
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
+    ).toBeInTheDocument();
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="LoginForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { expect } from 'storybook/test';
+
+import { LoginForm } from './LoginForm';
+
+const meta = preview.meta({
+  component: LoginForm,
+});
+
+export const EmptyForm = meta.story();
+
+export const FilledForm = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // 👇 Simulate interactions with the component
+    await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
+
+    await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+
+    // 👇 Assert DOM structure
+    await expect(
+      canvas.getByText(
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
+    ).toBeInTheDocument();
+  },
+});
 ```

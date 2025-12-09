@@ -3,6 +3,7 @@ import { relative } from 'node:path';
 import { getProjectRoot } from 'storybook/internal/common';
 
 import { execSync } from 'child_process';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
 import { oneWayHash } from './one-way-hash';
@@ -38,9 +39,7 @@ export const getAnonymousProjectId = () => {
   }
 
   try {
-    const projectRoot = getProjectRoot();
-
-    const projectRootPath = relative(projectRoot, process.cwd());
+    const projectRootPath = relative(getProjectRoot(), process.cwd());
 
     const originBuffer = execSync(`git config --local --get remote.origin.url`, {
       timeout: 1000,

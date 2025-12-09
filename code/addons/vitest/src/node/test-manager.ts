@@ -1,13 +1,14 @@
-import type { TestResult, TestState } from 'vitest/dist/node.js';
+import type { TestResult, TestState } from 'vitest/node';
 
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
 import type {
+  Options,
   StatusStoreByTypeId,
   StatusValue,
   TestProviderStoreById,
 } from 'storybook/internal/types';
 
-import { throttle } from 'es-toolkit';
+import { throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
 
 import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
@@ -16,6 +17,7 @@ import { errorToErrorLike } from '../utils';
 import { VitestManager } from './vitest-manager';
 
 export type TestManagerOptions = {
+  storybookOptions: Options;
   store: experimental_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
@@ -45,6 +47,8 @@ export class TestManager {
 
   private onReady?: TestManagerOptions['onReady'];
 
+  public storybookOptions: Options;
+
   private batchedTestCaseResults: {
     storyId: string;
     testResult: TestResult;
@@ -57,17 +61,17 @@ export class TestManager {
     this.a11yStatusStore = options.a11yStatusStore;
     this.testProviderStore = options.testProviderStore;
     this.onReady = options.onReady;
+    this.storybookOptions = options.storybookOptions;
 
     this.vitestManager = new VitestManager(this);
 
     this.store.subscribe('TRIGGER_RUN', this.handleTriggerRunEvent.bind(this));
     this.store.subscribe('CANCEL_RUN', this.handleCancelEvent.bind(this));
-
     this.store
       .untilReady()
-      .then(() =>
-        this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage })
-      )
+      .then(() => {
+        return this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage });
+      })
       .then(() => this.onReady?.())
       .catch((e) => {
         this.reportFatalError('Failed to start Vitest', e);
@@ -255,6 +259,7 @@ export class TestManager {
   }, 500);
 
   onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {
+    this.throttledFlushTestCaseResults.flush();
     this.store.setState((s) => ({
       ...s,
       currentRun: {

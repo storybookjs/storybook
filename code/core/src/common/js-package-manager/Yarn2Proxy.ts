@@ -1,15 +1,21 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
+import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
-import { findUp, findUpSync } from 'find-up';
-import { dedent } from 'ts-dedent';
+import * as find from 'empathic/find';
+// eslint-disable-next-line depend/ban-dependencies
+import type { ExecaChildProcess } from 'execa';
 
-import { createLogStream } from '../utils/cli';
-import { JsPackageManager } from './JsPackageManager';
+import { logger } from '../../node-logger';
+import type { ExecuteCommandOptions } from '../utils/command';
+import { executeCommand } from '../utils/command';
+import { getProjectRoot } from '../utils/paths';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 import { parsePackageData } from './util';
@@ -73,7 +79,7 @@ const CRITICAL_YARN2_ERROR_CODES = {
 
 // This encompasses Yarn Berry (v2+)
 export class Yarn2Proxy extends JsPackageManager {
-  readonly type = 'yarn2';
+  readonly type = PackageManagerName.YARN2;
 
   installArgs: string[] | undefined;
 
@@ -84,33 +90,37 @@ export class Yarn2Proxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  async initPackageJson() {
-    await this.executeCommand({ command: 'yarn', args: ['init'] });
-  }
-
-  getRunStorybookCommand(): string {
-    return 'yarn storybook';
-  }
-
   getRunCommand(command: string): string {
     return `yarn ${command}`;
   }
 
-  getRemoteRunCommand(): string {
-    return 'yarn dlx';
+  getPackageCommand(args: string[]): string {
+    return `yarn exec ${args.join(' ')}`;
   }
 
-  public runPackageCommandSync(
+  public runPackageCommand({
+    args,
+    ...options
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+    return executeCommand({
+      command: 'yarn',
+      args: ['exec', ...args],
+      ...options,
+    });
+  }
+
+  public runInternalCommand(
     command: string,
     args: string[],
     cwd?: string,
-    stdio?: 'pipe' | 'inherit'
+    stdio?: 'inherit' | 'pipe' | 'ignore'
   ) {
-    return this.executeCommandSync({ command: 'yarn', args: [command, ...args], cwd, stdio });
-  }
-
-  async runPackageCommand(command: string, args: string[], cwd?: string) {
-    return this.executeCommand({ command: 'yarn', args: ['exec', command, ...args], cwd });
+    return executeCommand({
+      command: 'yarn',
+      args: [command, ...args],
+      cwd: cwd ?? this.cwd,
+      stdio,
+    });
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
@@ -121,13 +131,17 @@ export class Yarn2Proxy extends JsPackageManager {
     }
 
     try {
-      const commandResult = await this.executeCommand({
+      const childProcess = await executeCommand({
         command: 'yarn',
         args: yarnArgs.concat(pattern),
         env: {
           FORCE_COLOR: 'false',
         },
+        cwd: this.instanceDir,
       });
+      const commandResult = childProcess.stdout ?? '';
+
+      logger.debug(`Installation found for ${pattern.join(', ')}: ${commandResult}`);
 
       return this.mapDependencies(commandResult, pattern);
     } catch (e) {
@@ -135,16 +149,33 @@ export class Yarn2Proxy extends JsPackageManager {
     }
   }
 
-  async getPackageJSON(packageName: string, basePath = this.cwd): Promise<PackageJson | null> {
-    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], { cwd: basePath });
+  // TODO: Remove pnp compatibility code in SB11
+  async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
+    const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (pnpapiPath) {
       try {
-        const pnpApi = require(pnpapiPath);
+        /*
+          This is a rather fragile way to access Yarn's PnP API, essentially manually loading it.
+          The proper way to do this would be to just do await import('pnpapi'),
+          as documented at https://yarnpkg.com/advanced/pnpapi#requirepnpapi
 
-        const resolvedPath = await pnpApi.resolveToUnqualified(packageName, basePath, {
-          considerBuiltins: false,
-        });
+          However the 'pnpapi' module is only injected when the Node process is started via Yarn,
+          which is not always the case for us, because we spawn child processes directly with Node,
+          eg. when running automigrations.
+        */
+        const { default: pnpApi } = await import(pathToFileURL(pnpapiPath).href);
+
+        const resolvedPath = pnpApi.resolveToUnqualified(
+          packageName,
+          this.primaryPackageJson.operationDir,
+          {
+            considerBuiltins: false,
+          }
+        );
 
         const pkgLocator = pnpApi.findPackageLocator(resolvedPath);
         const pkg = pnpApi.getPackageInformation(pkgLocator);
@@ -160,20 +191,18 @@ export class Yarn2Proxy extends JsPackageManager {
 
         return crossFs.readJsonSync(virtualPath);
       } catch (error: any) {
-        if (error.code !== 'MODULE_NOT_FOUND') {
+        if (error.code !== 'ERR_MODULE_NOT_FOUND') {
           console.error('Error while fetching package version in Yarn PnP mode:', error);
         }
         return null;
       }
     }
 
-    const packageJsonPath = await findUp(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: basePath }
-    );
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;
@@ -192,67 +221,38 @@ export class Yarn2Proxy extends JsPackageManager {
     };
   }
 
-  protected async runInstall() {
-    await this.executeCommand({
+  protected runInstall() {
+    return executeCommand({
       command: 'yarn',
       args: ['install', ...this.getInstallArgs()],
-      stdio: 'inherit',
+      cwd: this.cwd,
+      stdio: prompt.getPreferredStdio(),
     });
   }
 
-  protected async runAddDeps(
-    dependencies: string[],
-    installAsDevDependencies: boolean,
-    writeOutputToFile = true
-  ) {
+  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
     let args = [...dependencies];
 
     if (installAsDevDependencies) {
       args = ['-D', ...args];
     }
 
-    const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
-
-    try {
-      await this.executeCommand({
-        command: 'yarn',
-        args: ['add', ...this.getInstallArgs(), ...args],
-        stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
-      });
-    } catch (err) {
-      if (!writeOutputToFile) {
-        throw err;
-      }
-      const stdout = await readLogFile();
-      const errorMessage = this.parseErrorFromLogs(stdout);
-      await moveLogFile();
-      throw new Error(
-        dedent`${errorMessage}
-        
-        Please check the logfile generated at ./storybook.log for troubleshooting and try again.`
-      );
-    }
-
-    await removeLogFile();
+    return executeCommand({
+      command: 'yarn',
+      args: ['add', ...this.getInstallArgs(), ...args],
+      stdio: prompt.getPreferredStdio(),
+      cwd: this.primaryPackageJson.operationDir,
+    });
   }
 
   public async getRegistryURL() {
-    const res = await this.executeCommand({
+    const process = executeCommand({
       command: 'yarn',
       args: ['config', 'get', 'npmRegistryServer'],
     });
-    const url = res.trim();
+    const result = await process;
+    const url = (result.stdout ?? '').trim();
     return url === 'undefined' ? undefined : url;
-  }
-
-  protected async runRemoveDeps(dependencies: string[]) {
-    const args = [...dependencies];
-
-    await this.executeCommand({
-      command: 'yarn',
-      args: ['remove', ...this.getInstallArgs(), ...args],
-      stdio: 'inherit',
-    });
   }
 
   protected async runGetVersions<T extends boolean>(
@@ -262,10 +262,12 @@ export class Yarn2Proxy extends JsPackageManager {
     const field = fetchAllVersions ? 'versions' : 'version';
     const args = ['--fields', field, '--json'];
     try {
-      const commandResult = await this.executeCommand({
+      const process = executeCommand({
         command: 'yarn',
         args: ['npm', 'info', packageName, ...args],
       });
+      const result = await process;
+      const commandResult = result.stdout ?? '';
 
       const parsedOutput = JSON.parse(commandResult);
       return parsedOutput[field];
@@ -285,6 +287,7 @@ export class Yarn2Proxy extends JsPackageManager {
     const duplicatedDependencies: Record<string, string[]> = {};
 
     lines.forEach((packageName) => {
+      logger.debug(`Processing package ${packageName}`);
       if (
         !packageName ||
         !pattern.some((p) => new RegExp(`${p.replace(/\*/g, '.*')}`).test(packageName))
@@ -293,6 +296,7 @@ export class Yarn2Proxy extends JsPackageManager {
       }
 
       const { name, value } = parsePackageData(packageName.replaceAll(`"`, ''));
+      logger.debug(`Package ${name} found with version ${value.version}`);
       if (!existingVersions[name]?.includes(value.version)) {
         if (acc[name]) {
           acc[name].push(value);

@@ -23,6 +23,7 @@ export enum Category {
 export class ProviderDoesNotExtendBaseProviderError extends StorybookError {
   constructor() {
     super({
+      name: 'ProviderDoesNotExtendBaseProviderError',
       category: Category.MANAGER_UI,
       code: 1,
       message: `The Provider passed into Storybook's UI is not extended from the base Provider. Please check your Provider implementation.`,
@@ -37,6 +38,7 @@ export class UncaughtManagerError extends StorybookError {
     }
   ) {
     super({
+      name: 'UncaughtManagerError',
       category: Category.MANAGER_UNCAUGHT,
       code: 1,
       message: data.error.message,
@@ -53,6 +55,7 @@ export class StatusTypeIdMismatchError extends StorybookError {
     }
   ) {
     super({
+      name: 'StatusTypeIdMismatchError',
       category: Category.MANAGER_API,
       code: 1,
       message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(

@@ -1,44 +1,37 @@
-import { createRequire } from 'node:module';
-import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { Plugin } from 'vitest/config';
 import { mergeConfig } from 'vitest/config';
 import type { ViteUserConfig } from 'vitest/config';
 
 import {
+  DEFAULT_FILES_PATTERN,
   getInterpretedFile,
   normalizeStories,
+  optionalEnvToBoolean,
+  resolvePathInStorybookCache,
   validateConfigurationFiles,
 } from 'storybook/internal/common';
-import type {
-  experimental_loadStorybook as ExperimentalLoadStorybookType,
-  mapStaticDir as MapStaticDirType,
-  StoryIndexGenerator as StoryIndexGeneratorType,
+import {
+  StoryIndexGenerator,
+  experimental_loadStorybook,
+  mapStaticDir,
 } from 'storybook/internal/core-server';
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
+import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
-import { join, resolve } from 'pathe';
+import { match } from 'micromatch';
+import { join, normalize, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
-import { convertPathToPattern } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
 
 // ! Relative import to prebundle it without needing to depend on the Vite builder
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
-
-const require = createRequire(import.meta.url);
-
-// we need to require core-server here, because its ESM output is not valid
-
-const { StoryIndexGenerator, experimental_loadStorybook, mapStaticDir } =
-  require('storybook/internal/core-server') as {
-    StoryIndexGenerator: typeof StoryIndexGeneratorType;
-    experimental_loadStorybook: typeof ExperimentalLoadStorybookType;
-    mapStaticDir: typeof MapStaticDirType;
-  };
 
 const WORKING_DIR = process.cwd();
 
@@ -46,6 +39,7 @@ const defaultOptions: UserOptions = {
   storybookScript: undefined,
   configDir: resolve(join(WORKING_DIR, '.storybook')),
   storybookUrl: 'http://localhost:6006',
+  disableAddonDocs: true,
 };
 
 const extractTagsFromPreview = async (configDir: string) => {
@@ -63,21 +57,45 @@ const getStoryGlobsAndFiles = async (
   directories: { configDir: string; workingDir: string }
 ) => {
   const stories = await presets.apply('stories', []);
-  const docs = await presets.apply('docs', {});
-  const indexers = await presets.apply('experimental_indexers', []);
-  const generator = new StoryIndexGenerator(normalizeStories(stories, directories), {
-    ...directories,
-    indexers,
-    docs,
+
+  const normalizedStories = normalizeStories(stories, {
+    configDir: directories.configDir,
+    workingDir: directories.workingDir,
   });
-  await generator.initialize();
+
+  const matchingStoryFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
+    normalizedStories,
+    directories.workingDir
+  );
+
   return {
     storiesGlobs: stories,
-    storiesFiles: generator.storyFileNames(),
+    storiesFiles: StoryIndexGenerator.storyFileNames(
+      new Map(matchingStoryFiles.map(([specifier, cache]) => [specifier, cache]))
+    ),
   };
 };
 
-const PACKAGE_DIR = dirname(require.resolve('@storybook/addon-vitest/package.json'));
+/**
+ * Plugin to stub MDX imports during testing This prevents the need to process MDX files in the test
+ * environment
+ */
+const mdxStubPlugin: Plugin = {
+  name: 'storybook:stub-mdx-plugin',
+  enforce: 'pre',
+  resolveId(id) {
+    if (id.endsWith('.mdx')) {
+      return id;
+    }
+    return null;
+  },
+  load(id) {
+    if (id.endsWith('.mdx')) {
+      return `export default {};`;
+    }
+    return null;
+  },
+};
 
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   const finalOptions = {
@@ -93,13 +111,17 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
   } as InternalOptions;
 
-  if (process.env.DEBUG) {
+  if (optionalEnvToBoolean(process.env.DEBUG)) {
     finalOptions.debug = true;
   }
 
   // To be accessed by the global setup file
   process.env.__STORYBOOK_URL__ = finalOptions.storybookUrl;
   process.env.__STORYBOOK_SCRIPT__ = finalOptions.storybookScript;
+
+  // We signal the test runner that we are not running it via Storybook
+  // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
+  const isVitestStorybook = optionalEnvToBoolean(process.env.VITEST_STORYBOOK);
 
   const directories = {
     configDir: finalOptions.configDir,
@@ -111,32 +133,51 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     packageJson: {},
   });
 
+  const stories = await presets.apply('stories', []);
+
+  // We can probably add more config here. See code/builders/builder-vite/src/vite-config.ts
+  // This one is specifically needed for code/builders/builder-vite/src/preset.ts
+  const commonConfig = { root: resolve(finalOptions.configDir, '..') };
+
   const [
-    { storiesGlobs, storiesFiles },
+    { storiesGlobs },
     framework,
     storybookEnv,
     viteConfigFromStorybook,
     staticDirs,
     previewLevelTags,
+    core,
+    extraOptimizeDeps,
+    features,
   ] = await Promise.all([
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
     presets.apply('env', {}),
-    presets.apply<{ plugins?: Plugin[] }>('viteFinal', {}),
+    presets.apply<{ plugins?: Plugin[]; root: string }>('viteFinal', commonConfig),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
+    presets.apply('core'),
+    presets.apply('optimizeViteDeps', []),
+    presets.apply('features', {}),
   ]);
 
-  // filter out plugins that we know are unnecesary for tests, eg. docgen plugins
-  const plugins = (await withoutVitePlugins(viteConfigFromStorybook.plugins ?? [], [
-    'storybook:package-deduplication', // addon-docs
-    'storybook:mdx-plugin', // addon-docs
+  const pluginsToIgnore = [
     'storybook:react-docgen-plugin',
     'vite:react-docgen-typescript', // aka @joshwooding/vite-plugin-react-docgen-typescript
     'storybook:svelte-docgen-plugin',
     'storybook:vue-component-meta-plugin',
-    'storybook:vue-docgen-plugin',
-  ])) as unknown as Plugin[];
+  ];
+
+  if (finalOptions.disableAddonDocs) {
+    pluginsToIgnore.push('storybook:package-deduplication', 'storybook:mdx-plugin');
+  }
+
+  // filter out plugins that we know are unnecesary for tests, eg. docgen plugins
+  const plugins = await withoutVitePlugins(viteConfigFromStorybook.plugins ?? [], pluginsToIgnore);
+
+  if (finalOptions.disableAddonDocs) {
+    plugins.push(mdxStubPlugin);
+  }
 
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
@@ -150,7 +191,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         .replace('</head>', `${headHtmlSnippet ?? ''}</head>`)
         .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
     },
-    async config(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED) {
+    async config(nonMutableInputConfig) {
       // ! We're not mutating the input config, instead we're returning a new partial config
       // ! see https://vite.dev/guide/api-plugin.html#config
       try {
@@ -169,23 +210,46 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       //   plugin.name?.startsWith('vitest:browser')
       // )
 
-      // We signal the test runner that we are not running it via Storybook
-      // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
-      const vitestStorybook = process.env.VITEST_STORYBOOK ?? 'false';
+      const testConfig = nonMutableInputConfig.test;
+      finalOptions.vitestRoot =
+        testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
+
+      const includeStories = stories
+        .map((story) => {
+          let storyPath;
+
+          if (typeof story === 'string') {
+            storyPath = story;
+          } else {
+            storyPath = `${story.directory}/${story.files ?? DEFAULT_FILES_PATTERN}`;
+          }
+
+          return join(finalOptions.configDir, storyPath);
+        })
+        .map((story) => {
+          return relative(finalOptions.vitestRoot, story);
+        });
+
+      finalOptions.includeStories = includeStories;
+      const projectId = oneWayHash(finalOptions.configDir);
 
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
+        cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
           setupFiles: [
-            join(PACKAGE_DIR, 'dist/vitest-plugin/setup-file.mjs'),
+            fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/setup-file')),
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
-            typeof inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test
-              ?.setupFiles === 'string' &&
-              inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.setupFiles,
+            typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
+              nonMutableInputConfig.test?.setupFiles,
           ].filter(Boolean) as string[],
 
           ...(finalOptions.storybookScript
             ? {
-                globalSetup: [join(PACKAGE_DIR, 'dist/vitest-plugin/global-setup.mjs')],
+                globalSetup: [
+                  fileURLToPath(
+                    import.meta.resolve('@storybook/addon-vitest/internal/global-setup')
+                  ),
+                ],
               }
             : {}),
 
@@ -194,19 +258,21 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             // To be accessed by the setup file
             __STORYBOOK_URL__: finalOptions.storybookUrl,
 
-            VITEST_STORYBOOK: vitestStorybook,
+            VITEST_STORYBOOK: isVitestStorybook ? 'true' : 'false',
             __VITEST_INCLUDE_TAGS__: finalOptions.tags.include.join(','),
             __VITEST_EXCLUDE_TAGS__: finalOptions.tags.exclude.join(','),
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
 
-          include: storiesFiles
-            .filter((path) => !path.endsWith('.mdx'))
-            .map((path) => convertPathToPattern(path)),
+          include: includeStories,
+          exclude: [
+            ...(nonMutableInputConfig.test?.exclude ?? []),
+            join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
+          ],
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything
-          ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.server?.deps
-            ?.inline !== true
+          // TODO: Remove the check once we don't support Vitest 3 anymore
+          ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
             ? {
                 server: {
                   deps: {
@@ -221,9 +287,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
               getInitialGlobals: () => {
                 const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
 
-                const shouldRunA11yTests = process.env.VITEST_STORYBOOK
-                  ? (envConfig.a11y ?? false)
-                  : true;
+                const shouldRunA11yTests = isVitestStorybook ? (envConfig.a11y ?? false) : true;
 
                 return {
                   a11y: {
@@ -233,9 +297,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
               },
             },
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
-            ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.browser &&
-            inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test.browser
-              .screenshotFailures === undefined
+            ...(nonMutableInputConfig.test?.browser &&
+            nonMutableInputConfig.test.browser.screenshotFailures === undefined
               ? {
                   screenshotFailures: false,
                 }
@@ -244,11 +307,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         },
 
         envPrefix: Array.from(
-          new Set([
-            ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.envPrefix || []),
-            'STORYBOOK_',
-            'VITE_',
-          ])
+          new Set([...(nonMutableInputConfig.envPrefix || []), 'STORYBOOK_', 'VITE_'])
         ),
 
         resolve: {
@@ -266,6 +325,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
         optimizeDeps: {
           include: [
+            ...extraOptimizeDeps,
             '@storybook/addon-vitest/internal/setup-file',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
@@ -279,6 +339,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           ...(frameworkName?.includes('vue3')
             ? { __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false' }
             : {}),
+          FEATURES: JSON.stringify(features),
         },
       };
 
@@ -289,13 +350,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       );
 
       // alert the user of problems
-      if (
-        (inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.include?.length ??
-          0) > 0
-      ) {
+      if ((nonMutableInputConfig.test?.include?.length ?? 0) > 0) {
         // remove the user's existing include, because we're replacing it with our own heuristic based on main.ts#stories
         // @ts-expect-error: Ignore
-        inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test.include = [];
+        nonMutableInputConfig.test.include = [];
         console.log(
           picocolors.yellow(dedent`
             Warning: Starting in Storybook 8.5.0-alpha.18, the "test.include" option in Vitest is discouraged in favor of just using the "stories" field in your Storybook configuration.
@@ -312,6 +370,23 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
+
+      if (
+        !core?.disableTelemetry &&
+        !optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
+      ) {
+        // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
+        // before the tests do. If not we may miss the event, we are OK with that.
+        telemetry(
+          'test-run',
+          {
+            runner: 'vitest',
+            watch: context.vitest.config.watch,
+            coverage: !!context.vitest.config.coverage?.enabled,
+          },
+          { configDir: finalOptions.configDir }
+        );
+      }
     },
     async configureServer(server) {
       if (staticDirs) {
@@ -333,11 +408,13 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       }
     },
     async transform(code, id) {
-      if (process.env.VITEST !== 'true') {
+      if (!optionalEnvToBoolean(process.env.VITEST)) {
         return code;
       }
 
-      if (storiesFiles.includes(id)) {
+      const relativeId = relative(finalOptions.vitestRoot, id);
+
+      if (match([relativeId], finalOptions.includeStories).length > 0) {
         return vitestTransform({
           code,
           fileName: id,
@@ -351,6 +428,26 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   };
 
   plugins.push(storybookTestPlugin);
+
+  // When running tests via the Storybook UI, we need
+  // to find the right project to run, thus we override
+  // with a unique identifier using the path to the config dir
+  if (isVitestStorybook) {
+    const projectName = `storybook:${normalize(finalOptions.configDir)}`;
+    plugins.push({
+      name: 'storybook:workspace-name-override',
+      config: {
+        order: 'pre',
+        handler: () => {
+          return {
+            test: {
+              name: projectName,
+            },
+          };
+        },
+      },
+    });
+  }
   return plugins;
 };
 

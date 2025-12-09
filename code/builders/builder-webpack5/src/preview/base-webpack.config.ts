@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
@@ -23,7 +25,7 @@ export async function createDefaultWebpackConfig(
 
   let cssLoaders = {};
   if (!hasPostcssAddon) {
-    logger.info(`=> Using implicit CSS loaders`);
+    logger.info(`Using implicit CSS loaders`);
     cssLoaders = {
       test: /\.css$/,
       sideEffects: true,
@@ -32,9 +34,9 @@ export async function createDefaultWebpackConfig(
         // Trying to apply style-loader or css-loader to files that already have been
         // processed by them causes webpack to crash, so no one else can add similar
         // loader configurations to the `.css` extension.
-        require.resolve('style-loader'),
+        fileURLToPath(import.meta.resolve('style-loader')),
         {
-          loader: require.resolve('css-loader'),
+          loader: fileURLToPath(import.meta.resolve('css-loader')),
           options: {
             importLoaders: 1,
           },
@@ -47,6 +49,12 @@ export async function createDefaultWebpackConfig(
 
   return {
     ...storybookBaseConfig,
+    // TODO: Implement the clearing functionality of StyledConsoleLogger so that we can use it for webpack
+    // The issue currently is that the status line is not cleared when the webpack compiler is run,
+    // which causes the status line to be printed multiple times.
+    // infrastructureLogging: {
+    //   console: new StyledConsoleLogger({ prefix: 'Webpack', color: 'bgBlue' }),
+    // },
     module: {
       ...storybookBaseConfig.module,
       rules: [

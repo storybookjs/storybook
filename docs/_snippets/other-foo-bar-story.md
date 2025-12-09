@@ -21,7 +21,7 @@ export const Baz: Story = {
 };
 ```
 
-```js filename="FooBar.stories.js|jsx" renderer="common" language="js"
+```js filename="FooBar.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Foo } from './Foo';
 
 export default {
@@ -39,8 +39,8 @@ export const Baz = {
 };
 ```
 
-```ts filename="FooBar.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+```ts filename="FooBar.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Foo } from './Foo';
@@ -90,4 +90,46 @@ type Story = StoryObj;
 export const Baz: Story = {
   name: 'Insert name here',
 };
+```
+
+```ts filename="FooBar.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Foo } from './Foo';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'OtherFoo/Bar',
+  component: Foo,
+  id: 'Foo/Bar', // Or 'foo-bar' if you prefer
+});
+
+export const Baz = meta.story({
+  name: 'Insert name here',
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="FooBar.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Foo } from './Foo';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'OtherFoo/Bar',
+  component: Foo,
+  // Or 'foo-bar' if you prefer
+  id: 'Foo/Bar',
+});
+
+export const Baz = meta.story({
+  name: 'Insert name here',
+});
 ```

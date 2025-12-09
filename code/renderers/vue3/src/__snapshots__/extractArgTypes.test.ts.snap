@@ -1,0 +1,883 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`extractArgTypes (vue-docgen-api) > should extract events for Vue component 1`] = `
+{
+  "bar": {
+    "control": {
+      "disable": true,
+    },
+    "description": "",
+    "name": "bar",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "[value: { year: number; title?: any; }]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "[value: { year: number; title?: any; }]",
+    },
+  },
+  "baz": {
+    "control": {
+      "disable": true,
+    },
+    "description": "",
+    "name": "baz",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "[]",
+    },
+  },
+  "foo": {
+    "control": {
+      "disable": true,
+    },
+    "description": "",
+    "name": "foo",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "[data?: { foo: string; }]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "[data?: { foo: string; } | undefined]",
+    },
+  },
+}
+`;
+
+exports[`extractArgTypes (vue-docgen-api) > should extract events for component 1`] = `
+{
+  "bar": {
+    "control": {
+      "disable": true,
+    },
+    "description": "Test description bar",
+    "name": "bar",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ year: number; title?: any }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "{ year: number; title?: any }",
+    },
+  },
+  "baz": {
+    "control": {
+      "disable": true,
+    },
+    "description": "Test description baz",
+    "name": "baz",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+}
+`;
+
+exports[`extractArgTypes (vue-docgen-api) > should extract expose for component 1`] = `
+{
+  "count": {
+    "control": {
+      "disable": true,
+    },
+    "description": "a count number",
+    "name": "count",
+    "table": {
+      "category": "expose",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "value": "",
+    },
+  },
+  "label": {
+    "control": {
+      "disable": true,
+    },
+    "description": "a label string",
+    "name": "label",
+    "table": {
+      "category": "expose",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "value": "",
+    },
+  },
+}
+`;
+
+exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1`] = `
+{
+  "array": {
+    "defaultValue": undefined,
+    "description": "description required array object",
+    "name": "array",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "MyNestedProps[]",
+      },
+    },
+    "type": {
+      "name": "array",
+      "required": true,
+      "value": {
+        "name": "object",
+        "required": false,
+        "value": {},
+      },
+    },
+  },
+  "arrayOptional": {
+    "defaultValue": undefined,
+    "description": "description optional array object",
+    "name": "arrayOptional",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "MyNestedProps[]",
+      },
+    },
+    "type": {
+      "name": "array",
+      "required": false,
+      "value": {
+        "name": "object",
+        "required": false,
+        "value": {},
+      },
+    },
+  },
+  "bar": {
+    "defaultValue": {
+      "summary": "1",
+    },
+    "description": "description bar is optional number",
+    "name": "bar",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "1",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "baz": {
+    "defaultValue": undefined,
+    "description": "description baz is required boolean",
+    "name": "baz",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": true,
+    },
+  },
+  "enumValue": {
+    "defaultValue": undefined,
+    "description": "description enum value",
+    "name": "enumValue",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "MyEnum",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": true,
+      "value": [
+        "MyEnum.Small",
+        "MyEnum.Medium",
+        "MyEnum.Large",
+      ],
+    },
+  },
+  "foo": {
+    "defaultValue": undefined,
+    "description": "@default: "rounded"<br>@since: v1.0.0<br>@see: https://vuejs.org/<br>@deprecated: v1.1.0<br><br>string foo",
+    "name": "foo",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "inlined": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "inlined",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "{ foo: string; }",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+  "literalFromContext": {
+    "defaultValue": undefined,
+    "description": "description literal type alias that require context",
+    "name": "literalFromContext",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": ""Uncategorized" | "Content" | "Interaction" | "Display" | "Forms" | "Addons"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": true,
+      "value": [
+        "Uncategorized",
+        "Content",
+        "Interaction",
+        "Display",
+        "Forms",
+        "Addons",
+      ],
+    },
+  },
+  "nested": {
+    "defaultValue": undefined,
+    "description": "description nested is required nested object",
+    "name": "nested",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "MyNestedProps",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+  "nestedIntersection": {
+    "defaultValue": undefined,
+    "description": "description required nested object with intersection",
+    "name": "nestedIntersection",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "MyNestedProps & { additionalProp: string; }",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+  "nestedOptional": {
+    "defaultValue": undefined,
+    "description": "description optional nested object",
+    "name": "nestedOptional",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "MyNestedProps | MyIgnoredNestedProps",
+      },
+    },
+    "type": {
+      "name": "union",
+      "required": false,
+      "value": [
+        {
+          "name": "object",
+          "required": false,
+          "value": {},
+        },
+        {
+          "name": "object",
+          "required": false,
+          "value": {},
+        },
+      ],
+    },
+  },
+  "recursive": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "recursive",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "MyNestedRecursiveProps",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": false,
+      "value": {},
+    },
+  },
+  "stringArray": {
+    "defaultValue": {
+      "summary": "["foo", "bar"]",
+    },
+    "description": "description stringArray is string array",
+    "name": "stringArray",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "["foo", "bar"]",
+      },
+      "type": {
+        "summary": "string[]",
+      },
+    },
+    "type": {
+      "name": "array",
+      "required": false,
+      "value": {
+        "name": "string",
+        "required": false,
+      },
+    },
+  },
+  "union": {
+    "defaultValue": undefined,
+    "description": "description union is required union type",
+    "name": "union",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string | number",
+      },
+    },
+    "type": {
+      "name": "union",
+      "required": true,
+      "value": [
+        {
+          "name": "string",
+          "required": false,
+        },
+        {
+          "name": "number",
+          "required": false,
+        },
+      ],
+    },
+  },
+  "unionOptional": {
+    "defaultValue": undefined,
+    "description": "description unionOptional is optional union type",
+    "name": "unionOptional",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string | number | boolean",
+      },
+    },
+    "type": {
+      "name": "union",
+      "required": false,
+      "value": [
+        {
+          "name": "string",
+          "required": false,
+        },
+        {
+          "name": "number",
+          "required": false,
+        },
+        {
+          "name": "boolean",
+          "required": false,
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2`] = `
+{
+  "array": {
+    "description": "description required array object",
+    "name": "array",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "MyNestedProps[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Array([object Object])",
+    },
+  },
+  "arrayOptional": {
+    "description": "description optional array object",
+    "name": "arrayOptional",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "MyNestedProps[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "Array([object Object])",
+    },
+  },
+  "bar": {
+    "description": "description bar is optional number",
+    "name": "bar",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "1",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "baz": {
+    "description": "description baz is required boolean",
+    "name": "baz",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": true,
+    },
+  },
+  "enumValue": {
+    "description": "description enum value",
+    "name": "enumValue",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "MyEnum",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "MyEnum",
+    },
+  },
+  "foo": {
+    "description": "string foo",
+    "name": "foo",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "inlined": {
+    "description": undefined,
+    "name": "inlined",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ foo: string }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "{ foo: string }",
+    },
+  },
+  "literalFromContext": {
+    "description": "description literal type alias that require context",
+    "name": "literalFromContext",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "MyCategories",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "MyCategories",
+    },
+  },
+  "nested": {
+    "description": "description nested is required nested object",
+    "name": "nested",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "MyNestedProps",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "MyNestedProps",
+    },
+  },
+  "nestedIntersection": {
+    "description": "description required nested object with intersection",
+    "name": "nestedIntersection",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "MyNestedProps & {
+  /**
+   * description required additional property
+   */
+  additionalProp: string;
+}",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "intersection([object Object],[object Object])",
+    },
+  },
+  "nestedOptional": {
+    "description": "description optional nested object",
+    "name": "nestedOptional",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "MyNestedProps | MyIgnoredNestedProps",
+      },
+    },
+    "type": {
+      "name": "union",
+      "required": false,
+      "value": [
+        {
+          "name": "other",
+          "value": "MyNestedProps",
+        },
+        {
+          "name": "other",
+          "value": "MyIgnoredNestedProps",
+        },
+      ],
+    },
+  },
+  "recursive": {
+    "description": undefined,
+    "name": "recursive",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "MyNestedRecursiveProps",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "MyNestedRecursiveProps",
+    },
+  },
+  "stringArray": {
+    "description": "description stringArray is string array",
+    "name": "stringArray",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "() => ['foo', 'bar']",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "Array([object Object])",
+    },
+  },
+  "union": {
+    "description": "description union is required union type",
+    "name": "union",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string | number",
+      },
+    },
+    "type": {
+      "name": "union",
+      "required": true,
+      "value": [
+        {
+          "name": "string",
+        },
+        {
+          "name": "number",
+        },
+      ],
+    },
+  },
+  "unionOptional": {
+    "description": "description unionOptional is optional union type",
+    "name": "unionOptional",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string | number | boolean",
+      },
+    },
+    "type": {
+      "name": "union",
+      "required": false,
+      "value": [
+        {
+          "name": "string",
+        },
+        {
+          "name": "number",
+        },
+        {
+          "name": "boolean",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`extractArgTypes (vue-docgen-api) > should extract slots for component 1`] = `
+{
+  "default": {
+    "description": undefined,
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ num: unknown }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "{ num: unknown }",
+    },
+  },
+  "named": {
+    "description": undefined,
+    "name": "named",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ str: unknown }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "{ str: unknown }",
+    },
+  },
+  "no-bind": {
+    "description": undefined,
+    "name": "no-bind",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "vbind": {
+    "description": undefined,
+    "name": "vbind",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ num: unknown; str: unknown }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "{ num: unknown; str: unknown }",
+    },
+  },
+}
+`;
+
+exports[`extractArgTypes (vue-docgen-api) > should extract slots type for Vue component 1`] = `
+{
+  "default": {
+    "description": "",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{ num: number; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{ num: number; }",
+    },
+  },
+  "named": {
+    "description": "",
+    "name": "named",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{ str: string; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{ str: string; }",
+    },
+  },
+  "no-bind": {
+    "description": "",
+    "name": "no-bind",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{}",
+    },
+  },
+  "vbind": {
+    "description": "",
+    "name": "vbind",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{ num: number; str: string; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{ num: number; str: string; }",
+    },
+  },
+}
+`;

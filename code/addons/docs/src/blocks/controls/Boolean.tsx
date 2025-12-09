@@ -45,6 +45,11 @@ const Label = styled.label(({ theme }) => ({
       outline: 'none',
       boxShadow: `${theme.color.secondary} 0 0 0 1px inset !important`,
     },
+    '@media (forced-colors: active)': {
+      '&:focus': {
+        outline: '1px solid highlight',
+      },
+    },
   },
 
   span: {
@@ -87,6 +92,10 @@ const Label = styled.label(({ theme }) => ({
         : `${theme.appBorderColor} 0 0 0 1px`,
     color: theme.color.defaultText,
     padding: '7px 15px',
+
+    '@media (forced-colors: active)': {
+      textDecoration: 'underline',
+    },
   },
 }));
 
@@ -118,6 +127,7 @@ export const BooleanControl: FC<BooleanProps> = ({
   if (value === undefined) {
     return (
       <Button
+        ariaLabel={false}
         variant="outline"
         size="medium"
         id={getControlSetterButtonId(name)}

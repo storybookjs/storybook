@@ -105,7 +105,7 @@ export const Default = {
 };
 ```
 
-```js filename="Histogram.stories.js|jsx" renderer="react" language="js"
+```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Histogram } from './Histogram';
 
 export default {
@@ -122,8 +122,9 @@ export const Default = {
 };
 ```
 
-```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Histogram } from './Histogram';
 
@@ -162,7 +163,7 @@ export const Default = {
 ```
 
 ```ts filename="Histogram.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Histogram } from './Histogram';
 
@@ -363,4 +364,43 @@ export const Default: Story = {
     label: 'Latency distribution',
   },
 };
+```
+
+```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Histogram } from './Histogram';
+
+const meta = preview.meta({
+  component: Histogram,
+});
+
+export const Default = meta.story({
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Histogram } from './Histogram';
+
+const meta = preview.meta({
+  component: Histogram,
+});
+
+export const Default = meta.story({
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
 ```

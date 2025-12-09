@@ -30,7 +30,15 @@ const meta = {
   globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn: any) => (
-      <div style={{ padding: 20, maxWidth: '230px' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          padding: 20,
+          maxWidth: '230px',
+        }}
+      >
         <IconSymbols />
         {storyFn()}
       </div>
@@ -49,7 +57,7 @@ export const Simple: StoryFn = () => <Search {...baseProps}>{() => null}</Search
 export const SimpleWithCreateButton: StoryFn = () => <Search {...baseProps}>{() => null}</Search>;
 
 export const FilledIn: StoryFn = () => (
-  <Search {...baseProps} initialQuery="Search query">
+  <Search {...baseProps} initialQuery="Foo bar">
     {() => <SearchResults {...noResults} />}
   </Search>
 );

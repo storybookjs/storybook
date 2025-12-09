@@ -1,5 +1,3 @@
-import { join, relative, resolve } from 'node:path';
-
 import {
   getProjectRoot,
   loadAllPresets,
@@ -12,6 +10,10 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
+import { dirname, join, relative, resolve } from 'pathe';
+
+import { resolvePackageDir } from '../shared/utils/module';
+
 export async function loadStorybook(
   options: CLIOptions &
     LoadOptions &
@@ -22,8 +24,7 @@ export async function loadStorybook(
 ): Promise<Options> {
   const configDir = resolve(options.configDir);
 
-  const rootDir = getProjectRoot();
-  const cacheKey = oneWayHash(relative(rootDir, configDir));
+  const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
   options.configType = 'DEVELOPMENT';
   options.configDir = configDir;
@@ -50,25 +51,31 @@ export async function loadStorybook(
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     isCritical: true,
   });
 
-  const { renderer } = await presets.apply('core', {});
+  const { renderer, builder } = await presets.apply('core', {});
   const resolvedRenderer = renderer && resolveAddonName(options.configDir, renderer, options);
+
+  const builderName = typeof builder === 'string' ? builder : builder?.name;
+
+  if (builderName) {
+    corePresets.push(join(dirname(builderName), 'preset.js'));
+  }
 
   // Load second pass: all presets are applied in order
 
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-preset'),
+      join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-preset.js'),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
       ...corePresets,
     ],
     overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
   });

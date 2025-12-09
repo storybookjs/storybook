@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
+
+import { ModalDecorator } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, findByText, fireEvent, fn } from 'storybook/test';
+import { expect, fireEvent, fn, within } from 'storybook/test';
 
 import { WithResults } from './FileSearchList.stories';
 import { FileSearchModal } from './FileSearchModal';
@@ -20,29 +22,10 @@ const meta = {
   parameters: {
     layout: 'fullscreen',
   },
-  // This decorator is used to show the modal in the side by side view
-  decorators: [
-    (Story, context) => {
-      const [container, setContainer] = useState<HTMLElement | null>(null);
-
-      return (
-        <div
-          ref={(element) => {
-            setContainer(element);
-          }}
-          style={{
-            width: '100%',
-            height: '100%',
-            minHeight: '600px',
-            transform: 'translateZ(0)',
-          }}
-        >
-          {/* @ts-expect-error (non strict) */}
-          {Story({ args: { ...context.args, container } })}
-        </div>
-      );
-    },
-  ],
+  decorators: [ModalDecorator],
+  globals: {
+    sb_theme: 'dark',
+  },
 } satisfies Meta<typeof FileSearchModal>;
 
 export default meta;
@@ -58,6 +41,9 @@ export const InitialState: Story = {
     searchResults: null,
   },
 };
+export const InitialStateLight = Object.assign({}, InitialState, {
+  globals: { sb_theme: 'light' },
+});
 
 export const Loading: Story = {
   args: {
@@ -68,6 +54,7 @@ export const Loading: Story = {
     searchResults: null,
   },
 };
+export const LoadingLight = Object.assign({}, Loading, { globals: { sb_theme: 'light' } });
 
 export const LoadingWithPreviousResults: Story = {
   args: {
@@ -78,6 +65,9 @@ export const LoadingWithPreviousResults: Story = {
     searchResults: WithResults.args.searchResults,
   },
 };
+export const LoadingWithPreviousResultsLight = Object.assign({}, LoadingWithPreviousResults, {
+  globals: { sb_theme: 'light' },
+});
 
 export const Empty: Story = {
   args: {
@@ -88,6 +78,7 @@ export const Empty: Story = {
     searchResults: [],
   },
 };
+export const EmptyLight = Object.assign({}, Empty, { globals: { sb_theme: 'light' } });
 
 export const WithSearchResults: Story = {
   args: {
@@ -98,12 +89,16 @@ export const WithSearchResults: Story = {
     searchResults: WithResults.args.searchResults,
   },
   play: async ({ canvasElement, args }) => {
-    const parent = canvasElement.parentNode as HTMLElement;
+    const parent = within(canvasElement.parentNode as HTMLElement);
 
-    const moduleSingleExport = await findByText(parent, 'module-single-export.js');
+    const moduleSingleExport = await parent.findByText(
+      'module-single-export.js',
+      {},
+      { timeout: 3000 }
+    );
     await fireEvent.click(moduleSingleExport);
 
-    expect(args.onCreateNewStory).toHaveBeenCalledWith({
+    await expect(args.onCreateNewStory).toHaveBeenCalledWith({
       componentExportCount: 1,
       componentExportName: 'default',
       componentFilePath: 'src/module-single-export.js',
@@ -112,6 +107,9 @@ export const WithSearchResults: Story = {
     });
   },
 };
+export const WithSearchResultsLight = Object.assign({}, WithSearchResults, {
+  globals: { sb_theme: 'light' },
+});
 
 export const WithSearchResultsAndError: Story = {
   args: {
@@ -122,6 +120,9 @@ export const WithSearchResultsAndError: Story = {
     searchResults: WithResults.args.searchResults,
   },
 };
+export const WithSearchResultsAndErrorLight = Object.assign({}, WithSearchResultsAndError, {
+  globals: { sb_theme: 'light' },
+});
 
 export const WithSearchResultsAndMultiLineError: Story = {
   args: {
@@ -135,3 +136,8 @@ export const WithSearchResultsAndMultiLineError: Story = {
     searchResults: WithResults.args.searchResults,
   },
 };
+export const WithSearchResultsAndMultiLineErrorLight = Object.assign(
+  {},
+  WithSearchResultsAndMultiLineError,
+  { globals: { sb_theme: 'light' } }
+);

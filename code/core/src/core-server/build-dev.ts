@@ -1,28 +1,30 @@
 import { readFile } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
 
 import {
+  JsPackageManagerFactory,
   getConfigInfo,
+  getInterpretedFile,
   getProjectRoot,
   loadAllPresets,
   loadMainConfig,
   resolveAddonName,
   resolvePathInStorybookCache,
-  serverResolve,
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';
-import { deprecate } from 'storybook/internal/node-logger';
+import { deprecate, logger, prompt } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import prompts from 'prompts';
+import { join, relative, resolve } from 'pathe';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
+import { detectPnp } from '../cli/detect';
+import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
 import { buildOrThrow } from './utils/build-or-throw';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
@@ -50,7 +52,7 @@ export async function buildDevStandalone(
       `Expected package.json#version to be defined in the "${packageJson.name}" package}`
     );
     storybookVersion = packageJson.version;
-    previewConfigPath = getConfigInfo(packageJson, configDir).previewConfig ?? undefined;
+    previewConfigPath = getConfigInfo(configDir).previewConfigPath ?? undefined;
   } else {
     if (!storybookVersion) {
       storybookVersion = versions.storybook;
@@ -65,19 +67,19 @@ export async function buildDevStandalone(
   ]);
 
   if (!options.ci && !options.smokeTest && options.port != null && port !== options.port) {
-    const { shouldChangePort } = await prompts({
-      type: 'confirm',
-      initial: true,
-      name: 'shouldChangePort',
-      message: `Port ${options.port} is not available. Would you like to run Storybook on port ${port} instead?`,
+    const shouldChangePort = await prompt.confirm({
+      message: dedent`
+        Port ${options.port} is not available. 
+        Would you like to run Storybook on port ${port} instead?
+      `,
+      initialValue: true,
     });
     if (!shouldChangePort) {
       process.exit(1);
     }
   }
 
-  const rootDir = getProjectRoot();
-  const cacheKey = oneWayHash(relative(rootDir, configDir));
+  const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
   const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
   let outputDir = resolve(options.outputDir || cacheOutputDir);
@@ -93,6 +95,17 @@ export async function buildDevStandalone(
   options.outputDir = outputDir;
   options.serverChannelUrl = getServerChannelUrl(port, options);
 
+  // TODO: Remove in SB11
+  options.pnp = await detectPnp();
+  if (options.pnp) {
+    deprecate(dedent`
+      As of Storybook 10.0, PnP is deprecated.
+      If you are using PnP, you can continue to use Storybook 10.0, but we recommend migrating to a different package manager or linker-mode.
+
+      In future versions, PnP compatibility will be removed.
+    `);
+  }
+
   const config = await loadMainConfig(options);
   const { framework } = config;
   const corePresets = [];
@@ -107,10 +120,15 @@ export async function buildDevStandalone(
 
   frameworkName = frameworkName || 'custom';
 
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    configDir: options.configDir,
+  });
+
   try {
-    await warnOnIncompatibleAddons(storybookVersion);
+    await warnOnIncompatibleAddons(storybookVersion, packageManager);
   } catch (e) {
-    console.warn('Storybook failed to check addon compatibility', e);
+    logger.warn('Storybook failed to check addon compatibility');
+    logger.debug(`${e instanceof Error ? e.stack : String(e)}`);
   }
 
   // TODO: Bring back in 9.x when we officialy launch CSF4
@@ -129,7 +147,7 @@ export async function buildDevStandalone(
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     isCritical: true,
@@ -147,18 +165,20 @@ export async function buildDevStandalone(
     }
   }
 
-  const builderName = typeof builder === 'string' ? builder : builder.name;
+  const resolvedPreviewBuilder = typeof builder === 'string' ? builder : builder.name;
   const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(builderName, options.configDir),
+    getPreviewBuilder(resolvedPreviewBuilder),
     getManagerBuilder(),
   ]);
 
-  if (builderName.includes('builder-vite')) {
+  if (resolvedPreviewBuilder.includes('builder-vite')) {
     const deprecationMessage =
       dedent(`Using CommonJS in your main configuration file is deprecated with Vite.
               - Refer to the migration guide at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#commonjs-with-vite-is-deprecated`);
 
-    const mainJsPath = serverResolve(resolve(options.configDir || '.storybook', 'main')) as string;
+    const mainJsPath = getInterpretedFile(
+      resolve(options.configDir || '.storybook', 'main')
+    ) as string;
     if (/\.c[jt]s$/.test(mainJsPath)) {
       deprecate(deprecationMessage);
     }
@@ -176,7 +196,7 @@ export async function buildDevStandalone(
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-preset'),
+      join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-preset.js'),
       ...(managerBuilder.corePresets || []),
       ...(previewBuilder.corePresets || []),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
@@ -184,7 +204,7 @@ export async function buildDevStandalone(
     ],
     overridePresets: [
       ...(previewBuilder.overridePresets || []),
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
   });
@@ -235,7 +255,7 @@ export async function buildDevStandalone(
         (warning) => !warning.message.includes(`Conflicting values for 'process.env.NODE_ENV'`)
       );
 
-    console.log(problems.map((p) => p.stack));
+    logger.log(problems.map((p) => p.stack).join('\n'));
     process.exit(problems.length > 0 ? 1 : 0);
   } else {
     const name =

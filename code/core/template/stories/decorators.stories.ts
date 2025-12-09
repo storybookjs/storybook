@@ -16,7 +16,7 @@ import { useEffect } from 'storybook/preview-api';
 import { expect, within } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   parameters: { useProjectDecorator: true },
   decorators: [
     (storyFn: PartialStoryFn, context: StoryContext) =>

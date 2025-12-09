@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as cliImports from 'storybook/internal/cli';
 import type { PackageJson } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { makePackageManager } from '../helpers/testing-helpers';
 import { eslintPlugin } from './eslint-plugin';
@@ -19,6 +20,7 @@ const checkEslint = async ({ packageJson }: { packageJson: PackageJson }) => {
     packageManager: makePackageManager(packageJson),
     mainConfig: {} as any,
     storybookVersion: '7.0.0',
+    storiesPaths: [],
   });
 };
 
@@ -61,7 +63,7 @@ describe('eslint-plugin fix', () => {
 
     describe('should no-op and warn when', () => {
       it('.eslintrc is not found', async () => {
-        const loggerSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
         vi.spyOn(cliImports, 'extractEslintInfo').mockImplementation(async () => {
           return { ...defaultHasEslintValues, hasEslint: true, eslintConfigFile: undefined };
@@ -73,7 +75,7 @@ describe('eslint-plugin fix', () => {
 
         expect(loggerSpy).toHaveBeenCalledWith('Unable to find eslint config file, skipping');
 
-        await expect(result).toBeFalsy();
+        expect(result).toBeFalsy();
         loggerSpy.mockRestore();
       });
     });

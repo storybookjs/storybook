@@ -1,5 +1,7 @@
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import * as pkg from 'empathic/package';
+import type { PackageJson } from 'type-fest';
 
 import type { Dependency } from './types';
 
@@ -12,18 +14,33 @@ export const getActualPackageVersion = async (packageName: string) => {
   try {
     const packageJson = await getActualPackageJson(packageName);
     return {
-      name: packageName,
-      version: packageJson.version,
+      name: packageJson?.name || packageName,
+      version: packageJson?.version || null,
     };
   } catch (err) {
-    return { name: packageName, version: null };
+    return {
+      name: packageName,
+      version: null,
+    };
   }
 };
 
-export const getActualPackageJson = async (packageName: string) => {
-  const resolvedPackageJson = require.resolve(join(packageName, 'package.json'), {
-    paths: [process.cwd()],
-  });
-  const packageJson = JSON.parse(await readFile(resolvedPackageJson, { encoding: 'utf8' }));
-  return packageJson;
+export const getActualPackageJson = async (
+  packageName: string
+): Promise<PackageJson | undefined> => {
+  try {
+    let resolvedPackageJsonPath = pkg.up({
+      cwd: fileURLToPath(import.meta.resolve(packageName, process.cwd())),
+    });
+    if (!resolvedPackageJsonPath) {
+      resolvedPackageJsonPath = import.meta.resolve(`${packageName}/package.json`, process.cwd());
+    }
+
+    const { default: packageJson } = await import(pathToFileURL(resolvedPackageJsonPath).href, {
+      with: { type: 'json' },
+    });
+    return packageJson;
+  } catch (err) {
+    return undefined;
+  }
 };

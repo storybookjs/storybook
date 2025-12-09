@@ -99,6 +99,17 @@ describe('ConfigFile', () => {
           )
         ).toEqual('webpack5');
       });
+      it('resolves values through various TS satisfies/as syntaxes', () => {
+        const syntaxes = [
+          'const coreVar = { builder: "webpack5" } as const; export const core = coreVar satisfies any;',
+          'const coreVar = { builder: "webpack5" } as const; export const core = coreVar as any;',
+          'const coreVar = { builder: "webpack5" } as const satisfies Record<string, unknown>; export { coreVar as core };',
+        ];
+
+        for (const source of syntaxes) {
+          expect(getField(['core', 'builder'], source)).toEqual('webpack5');
+        }
+      });
     });
 
     describe('module exports', () => {
@@ -1259,6 +1270,25 @@ describe('ConfigFile', () => {
       `);
     });
 
+    it(`uses the existing node import when using node:xyz paths but the package xyz is already imported`, () => {
+      const source = dedent`
+        import { join } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setImport(['dirname'], 'node:path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        import { join, dirname } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
     it(`supports setting a default import for a field that does exist`, () => {
       const source = dedent`
         const config: StorybookConfig = { };
@@ -1417,6 +1447,339 @@ describe('ConfigFile', () => {
         export default config;
       `);
     });
+
+    it(`supports setting a named import for a field where the source already exists without "node:" prefix`, () => {
+      const source = dedent`
+        const { dirname } = require('path');
+
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setRequireImport(['dirname', 'basename'], 'node:path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const {
+          dirname,
+          basename,
+        } = require('path');
+
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+  });
+
+  describe('removeImport', () => {
+    it(`removes a default require import`, () => {
+      const source = dedent`
+        const path = require('path');
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport('path', 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`removes a default ES6 import`, () => {
+      const source = dedent`
+        import path from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport('path', 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`removes a named require import`, () => {
+      const source = dedent`
+        const { dirname, basename } = require('path');
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['dirname'], 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const {
+          basename,
+        } = require('path');
+        const config: StorybookConfig = { };
+        export default config;
+        `);
+    });
+
+    it(`removes a named ES6 import`, () => {
+      const source = dedent`
+        import { dirname, basename } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['dirname'], 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        import { basename } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+        `);
+    });
+
+    it(`removes multiple named require imports`, () => {
+      const source = dedent`
+        const { dirname, basename, join } = require('path');
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['dirname', 'basename'], 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const {
+          join,
+        } = require('path');
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`removes multiple named ES6 imports`, () => {
+      const source = dedent`
+        import { dirname, basename, join } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['dirname', 'basename'], 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        import { join } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`removes a namespace ES6 import`, () => {
+      const source = dedent`
+        import * as path from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+      const config = loadConfig(source).parse();
+      config.removeImport({ namespace: 'path' }, 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`preserves default import when removing a namespace ES6 import`, () => {
+      const source = dedent`
+        import path, * as alsoPath from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+      const config = loadConfig(source).parse();
+      config.removeImport({ namespace: 'alsoPath' }, 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        import path from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`removes entire require declaration when all named imports are removed`, () => {
+      const source = dedent`
+        const { dirname, basename } = require('path');
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['dirname', 'basename'], 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`removes entire ES6 declaration when all named imports are removed`, () => {
+      const source = dedent`
+        import { dirname, basename } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['dirname', 'basename'], 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`handles node: prefix in require imports`, () => {
+      const source = dedent`
+        const { dirname } = require('path');
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['dirname'], 'node:path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`handles node: prefix in ES6 imports`, () => {
+      const source = dedent`
+        import { dirname } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['dirname'], 'node:path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`does nothing when require import does not exist`, () => {
+      const source = dedent`
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport('path', 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(source);
+    });
+
+    it(`does nothing when trying to remove non-existent named require import`, () => {
+      const source = dedent`
+        const { dirname } = require('path');
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['nonexistent'], 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(source);
+    });
+
+    it(`does nothing when trying to remove non-existent named ES6 import`, () => {
+      const source = dedent`
+        import { dirname } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['nonexistent'], 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(source);
+    });
+
+    it(`removes ES6 import while preserving require import`, () => {
+      const source = dedent`
+        import { readFile } from 'fs';
+        const { dirname } = require('path');
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['readFile'], 'fs');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const { dirname } = require('path');
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`removes require import while preserving ES6 import`, () => {
+      const source = dedent`
+        import { readFile } from 'fs';
+        const { dirname } = require('path');
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.removeImport(['dirname'], 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        import { readFile } from 'fs';
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
   });
 
   describe('removeEntryFromArray', () => {
@@ -1524,6 +1887,24 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
 
       expect(Object.keys(config._exportDecls)).toHaveLength(3);
+    });
+
+    it('detects exports object on various TS satisfies/as export syntaxes', () => {
+      const syntaxes = [
+        'const config = { framework: "foo" }; export default config;',
+        'const config = { framework: "foo" }; export default config satisfies StorybookConfig;',
+        'const config = { framework: "foo" }; export default config as StorybookConfig;',
+        'const config = { framework: "foo" }; export default config as unknown as StorybookConfig;',
+        'export default { framework: "foo" };',
+        'export default { framework: "foo" } satisfies StorybookConfig;',
+        'export default { framework: "foo" } as StorybookConfig;',
+        'export default { framework: "foo" } as unknown as StorybookConfig;',
+      ];
+      for (const source of syntaxes) {
+        const config = loadConfig(source).parse();
+        expect(config._exportsObject?.type).toBe('ObjectExpression');
+        expect(config._exportsObject?.properties).toHaveLength(1);
+      }
     });
   });
 });

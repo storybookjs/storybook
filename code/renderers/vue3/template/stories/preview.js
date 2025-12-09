@@ -17,7 +17,7 @@ const someColor = 'someColor';
 // add components to global scope
 setup((app) => {
   // This adds a component that can be used globally in stories
-  app.component('GlobalButton', globalThis.Components.Button);
+  app.component('GlobalButton', globalThis.__TEMPLATE_COMPONENTS__.Button);
 });
 
 // this adds a plugin to vue app that can be used globally in stories

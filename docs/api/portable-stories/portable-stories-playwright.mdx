@@ -75,7 +75,7 @@ sidebar:
     Because of this, you have to compose the stories *in a separate file than your own test file*:
 
     ```ts title="Button.stories.portable.ts"
-    // Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite)
+    // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
     import { composeStories } from '@storybook/your-framework';
 
     import * as stories from './Button.stories';
@@ -119,7 +119,7 @@ sidebar:
   These are the configurations needed in the setup file:
   - preview annotations: those defined in `.storybook/preview.ts`
   - addon annotations (optional): those exported by addons
-  - beforeAll: code that runs before all tests ([more info](../../writing-tests/component-testing.mdx#beforeall))
+  - beforeAll: code that runs before all tests ([more info](../../writing-tests/interaction-testing.mdx#beforeall))
 
   {/* prettier-ignore-start */}
 
@@ -171,7 +171,7 @@ sidebar:
 
   ### 2. Prepare, load, render, and play
 
-  The story pipeline includes preparing the story, [loading data](../../writing-stories/loaders.mdx), rendering the story, and [playing interactions](../../essentials/interactions.mdx#play-function-for-interactions). In portable stories within Playwright CT, the `mount` function takes care of these steps for you.
+  The story pipeline includes preparing the story, [loading data](../../writing-stories/loaders.mdx), rendering the story, and [playing interactions](../../writing-tests/interaction-testing.mdx#debugging-interaction-tests). In portable stories within Playwright CT, the `mount` function takes care of these steps for you.
 
   👉 For this, you use the [`createTest`](#createtest) API.
 

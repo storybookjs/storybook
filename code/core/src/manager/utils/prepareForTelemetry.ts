@@ -25,6 +25,8 @@ const errorMessages = [
   // Safari does not seem to provide any helpful info on window.onerror
   // https://bugs.webkit.org/show_bug.cgi?id=132945
   'Script error.',
+  // When react-dev-tools is installed as a browser extension, it will log this error
+  'React is running in production mode',
 ];
 
 export const shouldSkipError = (error: Error) => errorMessages.includes(error?.message);

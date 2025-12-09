@@ -15,7 +15,7 @@ Code executed in the preview file (`.storybook/preview.js|ts`) runs for every st
   Here's an example of how you might use the preview file to initialize a library that must run before your components render:
 
   ```ts title=".storybook/preview.ts"
-  // Replace your-framework with the framework you are using (e.g., react-vite, web-components-vite, etc.)
+  // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
   import type { Preview } from '@storybook/your-framework';
 
   import { initialize } from '../lib/your-library';

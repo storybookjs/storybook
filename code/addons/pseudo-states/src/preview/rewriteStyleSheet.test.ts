@@ -390,6 +390,30 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
+  it('skips escaped pseudo-selectors "\\:hover"', () => {
+    const sheet = new Sheet('a\\:hover { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules.length).toEqual(1);
+    expect(sheet.cssRules[0].cssText).toEqual('a\\:hover { color: red }');
+    expect(sheet.cssRules[0].selectorText).toEqual('a\\:hover');
+  });
+
+  it('supports "\\\\:hover"', () => {
+    const sheet = new Sheet('.btn\\\\:hover { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      '.btn\\\\:hover, .btn\\\\.pseudo-hover, .pseudo-hover-all .btn\\\\ { color: red }'
+    );
+  });
+
+  it('supports selectors with escaped and unescaped pseudo-selectors', () => {
+    const sheet = new Sheet('.foo\\:hover\\:red:hover { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      '.foo\\:hover\\:red:hover, .foo\\:hover\\:red.pseudo-hover, .pseudo-hover-all .foo\\:hover\\:red { color: red }'
+    );
+  });
+
   it('override correct rules with media query present', () => {
     const sheet = new Sheet(
       `@media (max-width: 790px) {

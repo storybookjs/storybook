@@ -1,23 +1,22 @@
-import { normalize } from 'node:path';
+import { dirname, isAbsolute, join, normalize } from 'node:path';
 
 import {
+  JsPackageManagerFactory,
   builderPackages,
-  extractProperFrameworkName,
+  extractFrameworkPackageName,
   frameworkPackages,
   getStorybookInfo,
-  loadMainConfig,
-  rendererPackages,
 } from 'storybook/internal/common';
-import type { JsPackageManager } from 'storybook/internal/common';
-import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
+import type { PackageManagerName } from 'storybook/internal/common';
+import { frameworkToRenderer } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { dedent } from 'ts-dedent';
 
-const logger = console;
+import { getStoriesPathsFromConfig } from '../../util';
 
 /**
  * Given a Storybook configuration object, retrieves the package name or file path of the framework.
@@ -33,7 +32,7 @@ export const getFrameworkPackageName = (mainConfig?: StorybookConfigRaw) => {
     return null;
   }
 
-  return extractProperFrameworkName(packageNameOrPath);
+  return extractFrameworkPackageName(packageNameOrPath);
 };
 
 /**
@@ -81,7 +80,9 @@ export const getBuilderPackageName = (mainConfig?: StorybookConfigRaw) => {
 
   const normalizedPath = normalize(packageNameOrPath).replace(new RegExp(/\\/, 'g'), '/');
 
-  return builderPackages.find((pkg) => normalizedPath.endsWith(pkg)) || packageNameOrPath;
+  return (
+    Object.keys(builderPackages).find((pkg) => normalizedPath.endsWith(pkg)) || packageNameOrPath
+  );
 };
 
 /**
@@ -98,65 +99,62 @@ export const getFrameworkOptions = (
     : (mainConfig?.framework?.options ?? null);
 };
 
-/**
- * Returns a renderer package name given a framework package name.
- *
- * @param frameworkPackageName - The package name of the framework to lookup.
- * @returns - The corresponding package name in `rendererPackages`. If not found, returns null.
- */
-export const getRendererPackageNameFromFramework = (frameworkPackageName: string) => {
-  if (frameworkPackageName) {
-    if (Object.keys(rendererPackages).includes(frameworkPackageName)) {
-      // at some point in 6.4 we introduced a framework field, but filled with a renderer package
-      return frameworkPackageName;
-    }
-
-    if (Object.values(rendererPackages).includes(frameworkPackageName)) {
-      // for scenarios where the value is e.g. "react" instead of "@storybook/react"
-      return Object.keys(rendererPackages).find(
-        (k) => rendererPackages[k] === frameworkPackageName
-      );
-    }
-  }
-
-  return null;
-};
-
 export const getStorybookData = async ({
-  packageManager,
   configDir: userDefinedConfigDir,
+  packageManagerName,
 }: {
-  packageManager: JsPackageManager;
   configDir?: string;
+  packageManagerName?: PackageManagerName;
+  cache?: boolean;
 }) => {
-  const packageJson = await packageManager.retrievePackageJson();
+  logger.debug('Getting Storybook info...');
   const {
-    mainConfig: mainConfigPath,
-    version: storybookVersionSpecifier,
+    mainConfig,
+    mainConfigPath: mainConfigPath,
     configDir: configDirFromScript,
-    previewConfig: previewConfigPath,
-  } = getStorybookInfo(packageJson, userDefinedConfigDir);
-  const storybookVersion = await getCoercedStorybookVersion(packageManager);
+    previewConfigPath,
+    versionSpecifier,
+  } = await getStorybookInfo(
+    userDefinedConfigDir,
+    userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined
+  );
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
-  let mainConfig: StorybookConfigRaw;
-  try {
-    mainConfig = (await loadMainConfig({ configDir, noCache: true })) as StorybookConfigRaw;
-  } catch (err) {
-    throw new Error(
-      dedent`Unable to find or evaluate ${picocolors.blue(mainConfigPath)}: ${String(err)}`
-    );
-  }
+  logger.debug('Loading main config...');
+
+  const workingDir = isAbsolute(configDir)
+    ? dirname(configDir)
+    : dirname(join(process.cwd(), configDir));
+
+  logger.debug('Getting stories paths...');
+  const storiesPaths = await getStoriesPathsFromConfig({
+    stories: mainConfig.stories,
+    configDir,
+    workingDir,
+  });
+
+  logger.debug('Getting package manager...');
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    force: packageManagerName,
+    configDir,
+    storiesPaths,
+  });
+
+  logger.debug('Getting Storybook version...');
+  const versionInstalled = (await packageManager.getModulePackageJSON('storybook'))?.version;
 
   return {
     configDir,
     mainConfig,
-    storybookVersionSpecifier,
-    storybookVersion,
+    /** The version specifier of Storybook from the user's package.json */
+    versionSpecifier,
+    /** The version of Storybook installed in the user's project */
+    versionInstalled,
     mainConfigPath,
     previewConfigPath,
-    packageJson,
+    packageManager,
+    storiesPaths,
   };
 };
 export type GetStorybookData = typeof getStorybookData;
@@ -188,16 +186,89 @@ export const updateMainConfig = async (
       await writeConfigFile(main);
     }
   } catch (e) {
-    logger.info(
+    logger.log(
       `❌ The migration failed to update your ${picocolors.blue(
         mainConfigPath
       )} on your behalf because of the following error:
         ${e}\n`
     );
-    logger.info(
+    logger.log(
       `⚠️ Storybook automigrations are based on AST parsing and it's possible that your ${picocolors.blue(
         mainConfigPath
       )} file contains a non-standard format (e.g. your export is not an object) or that there was an error when parsing dynamic values (e.g. "require" calls, or usage of environment variables). When your main config is non-standard, automigrations are unfortunately not possible. Please follow the instructions given previously and follow the documentation to make the updates manually.`
     );
   }
+};
+
+/** Check if a file is in ESM format based on its content */
+export function containsESMUsage(content: string): boolean {
+  // For .js/.ts files, check the content for ESM syntax
+  // Check for ESM syntax indicators (multiline aware)
+  const hasImportStatement =
+    /^\s*import\s+/m.test(content) ||
+    /^\s*import\s*{/m.test(content) ||
+    /^\s*import\s*\(/m.test(content);
+  const hasExportStatement =
+    /^\s*export\s+/m.test(content) ||
+    /^\s*export\s*{/m.test(content) ||
+    /^\s*export\s*default/m.test(content);
+  const hasImportMeta = /import\.meta/.test(content);
+
+  // If any ESM syntax is found, it's likely an ESM file
+  return hasImportStatement || hasExportStatement || hasImportMeta;
+}
+
+/** Check if the file content contains require usage */
+export function containsRequireUsage(content: string): boolean {
+  // Check for require() calls
+  const requireCallRegex = /\brequire\(/;
+  const requireDotRegex = /\brequire\./;
+  return requireCallRegex.test(content) || requireDotRegex.test(content);
+}
+
+/** Check if the file content contains a pattern matching the given regex */
+export function containsPatternUsage(content: string, pattern: RegExp): boolean {
+  // Remove strings first, then comments
+  const stripStrings = (s: string) => s.replace(/(['"`])(?:\\.|(?!\1)[\s\S])*?\1/g, '""');
+  const withoutStrings = stripStrings(content);
+  const withoutBlock = withoutStrings.replace(/\/\*[\s\S]*?\*\//g, '');
+  const cleanContent = withoutBlock
+    .split('\n')
+    .map((line) => line.split('//')[0])
+    .join('\n');
+
+  // Check for pattern usage in the cleaned content
+  return pattern.test(cleanContent);
+}
+
+/** Check if the file content contains __dirname usage */
+export function containsDirnameUsage(content: string): boolean {
+  return containsPatternUsage(content, /\b__dirname\b/);
+}
+
+export function containsFilenameUsage(content: string): boolean {
+  return containsPatternUsage(content, /\b__filename\b/);
+}
+
+/** Check if __dirname is already defined in the file */
+export function hasDirnameDefined(content: string): boolean {
+  // Check if __dirname is already defined as a const/let/var
+  const dirnameDefinedRegex = /(?:const|let|var)\s+__dirname\s*=/;
+  return dirnameDefinedRegex.test(content);
+}
+
+/** Check if a specific import already exists in the file */
+
+/** Configuration for what should be included in the compatibility banner */
+export interface BannerConfig {
+  hasRequireUsage: boolean;
+  hasUnderscoreDirname: boolean;
+  hasUnderscoreFilename: boolean;
+}
+
+export const bannerComment =
+  '// This file has been automatically migrated to valid ESM format by Storybook.';
+
+export const hasRequireBanner = (content: string): boolean => {
+  return content.includes(bannerComment);
 };

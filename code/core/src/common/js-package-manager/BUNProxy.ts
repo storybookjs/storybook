@@ -1,16 +1,18 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { platform } from 'node:os';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
+// eslint-disable-next-line depend/ban-dependencies
+import type { ExecaChildProcess } from 'execa';
 import sort from 'semver/functions/sort.js';
-import { dedent } from 'ts-dedent';
 
-import { createLogStream } from '../utils/cli';
-import { JsPackageManager } from './JsPackageManager';
+import type { ExecuteCommandOptions } from '../utils/command';
+import { executeCommand } from '../utils/command';
+import { getProjectRoot } from '../utils/paths';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 
@@ -65,12 +67,12 @@ const NPM_ERROR_CODES = {
 };
 
 export class BUNProxy extends JsPackageManager {
-  readonly type = 'bun';
+  readonly type = PackageManagerName.BUN;
 
   installArgs: string[] | undefined;
 
   async initPackageJson() {
-    await this.executeCommand({ command: 'bun', args: ['init'] });
+    return executeCommand({ command: 'bun', args: ['init'] });
   }
 
   getRunStorybookCommand(): string {
@@ -81,21 +83,20 @@ export class BUNProxy extends JsPackageManager {
     return `bun run ${command}`;
   }
 
-  getRemoteRunCommand(): string {
-    return 'bunx';
+  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
+    return `bunx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
   }
 
-  public async getPackageJSON(
-    packageName: string,
-    basePath = this.cwd
-  ): Promise<PackageJson | null> {
-    const packageJsonPath = await findUp(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: basePath }
-    );
+  getPackageCommand(args: string[]): string {
+    return `bunx ${args.join(' ')}`;
+  }
+
+  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;
@@ -112,34 +113,45 @@ export class BUNProxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  public runPackageCommandSync(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ): string {
-    return this.executeCommandSync({
-      command: 'bun',
-      args: ['run', command, ...args],
-      cwd,
-      stdio,
+  public runPackageCommand(
+    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
+  ): ExecaChildProcess {
+    // The following command is unsafe to use with `bun run`
+    // because it will always favour a equally script named in the package.json instead of the installed binary.
+    // so running `bun storybook automigrate` will run the
+    // `storybook` script (dev) instead of the `storybook`. binary.
+    // return executeCommand({
+    //   command: 'bun',
+    //   args: ['run', ...args],
+    //   ...options,
+    // });
+    return executeCommand({
+      command: 'bunx',
+      ...options,
     });
   }
 
-  public async runPackageCommand(command: string, args: string[], cwd?: string): Promise<string> {
-    return this.executeCommand({
+  public runInternalCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ) {
+    return executeCommand({
       command: 'bun',
-      args: ['run', command, ...args],
-      cwd,
+      args: [command, ...args],
+      cwd: cwd ?? this.cwd,
+      stdio,
     });
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     const exec = async ({ packageDepth }: { packageDepth: number }) => {
-      const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
-      return this.executeCommand({
+      return executeCommand({
         command: 'npm',
-        args: ['ls', '--json', `--depth=${packageDepth}`, pipeToNull],
+        args: ['ls', '--json', `--depth=${packageDepth}`],
+        cwd: this.cwd,
+        stdio: ['ignore', 'pipe', 'ignore'],
         env: {
           FORCE_COLOR: 'false',
         },
@@ -147,7 +159,9 @@ export class BUNProxy extends JsPackageManager {
     };
 
     try {
-      const commandResult = await exec({ packageDepth: depth });
+      const process = await exec({ packageDepth: depth });
+      const result = await process;
+      const commandResult = result.stdout ?? '';
       const parsedOutput = JSON.parse(commandResult);
 
       return this.mapDependencies(parsedOutput, pattern);
@@ -155,12 +169,16 @@ export class BUNProxy extends JsPackageManager {
       // when --depth is higher than 0, npm can return a non-zero exit code
       // in case the user's project has peer dependency issues. So we try again with no depth
       try {
-        const commandResult = await exec({ packageDepth: 0 });
+        const process = await exec({ packageDepth: 0 });
+        const result = await process;
+        const commandResult = result.stdout ?? '';
         const parsedOutput = JSON.parse(commandResult);
 
         return this.mapDependencies(parsedOutput, pattern);
       } catch (err) {
-        logger.warn(`An issue occurred while trying to find dependencies metadata using npm.`);
+        logger.debug(
+          `An issue occurred while trying to find dependencies metadata using npm: ${err}`
+        );
         return undefined;
       }
     }
@@ -175,67 +193,40 @@ export class BUNProxy extends JsPackageManager {
     };
   }
 
-  protected async runInstall() {
-    await this.executeCommand({
+  protected runInstall(options?: { force?: boolean }) {
+    return executeCommand({
       command: 'bun',
-      args: ['install', ...this.getInstallArgs()],
-      stdio: 'inherit',
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
+      cwd: this.cwd,
+      stdio: prompt.getPreferredStdio(),
     });
   }
 
   public async getRegistryURL() {
-    const res = await this.executeCommand({
+    const process = executeCommand({
       command: 'npm',
+      cwd: this.cwd,
       // "npm config" commands are not allowed in workspaces per default
       // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
       args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
     });
-    const url = res.trim();
+    const result = await process;
+    const url = (result.stdout ?? '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
-  protected async runAddDeps(
-    dependencies: string[],
-    installAsDevDependencies: boolean,
-    writeOutputToFile = true
-  ) {
-    const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
+  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
     let args = [...dependencies];
 
     if (installAsDevDependencies) {
       args = ['-D', ...args];
     }
 
-    try {
-      await this.executeCommand({
-        command: 'bun',
-        args: ['add', ...args, ...this.getInstallArgs()],
-        stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
-      });
-    } catch (err) {
-      if (!writeOutputToFile) {
-        throw err;
-      }
-      const stdout = await readLogFile();
-      const errorMessage = this.parseErrorFromLogs(stdout);
-      await moveLogFile();
-      throw new Error(
-        dedent`${errorMessage}
-        
-        Please check the logfile generated at ./storybook.log for troubleshooting and try again.`
-      );
-    }
-
-    await removeLogFile();
-  }
-
-  protected async runRemoveDeps(dependencies: string[]) {
-    const args = [...dependencies];
-
-    await this.executeCommand({
+    return executeCommand({
       command: 'bun',
-      args: ['remove', ...args, ...this.getInstallArgs()],
-      stdio: 'inherit',
+      args: ['add', ...args, ...this.getInstallArgs()],
+      stdio: 'pipe',
+      cwd: this.primaryPackageJson.operationDir,
     });
   }
 
@@ -245,10 +236,13 @@ export class BUNProxy extends JsPackageManager {
   ): Promise<T extends true ? string[] : string> {
     const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
     try {
-      const commandResult = await this.executeCommand({
+      const process = executeCommand({
         command: 'npm',
+        cwd: this.cwd,
         args: ['info', packageName, ...args],
       });
+      const result = await process;
+      const commandResult = result.stdout ?? '';
 
       const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 

@@ -280,9 +280,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
 
     const { selection } = this.selectionStore;
-    // Protected function, shouldn't be possible
-
-    // Protected function, shouldn't be possible
 
     if (!selection) {
       throw new Error('Cannot call renderSelection as no selection was made');
@@ -509,8 +506,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // renderException is used if we fail to render the story and it is uncaught by the app layer
   renderException(storyId: StoryId, error: Error) {
     const { name = 'Error', message = String(error), stack } = error;
+    const renderId = this.currentRender?.renderId;
     this.channel.emit(STORY_THREW_EXCEPTION, { name, message, stack });
-    this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', storyId });
+    this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', renderId, storyId });
 
     this.view.showErrorDisplay(error);
     logger.error(`Error rendering story '${storyId}':`);
@@ -520,12 +518,11 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // renderError is used by the various app layers to inform the user they have done something
   // wrong -- for instance returned the wrong thing from a story
   renderError(storyId: StoryId, { title, description }: { title: string; description: string }) {
-    logger.error(`Error rendering story ${title}: ${description}`);
+    const renderId = this.currentRender?.renderId;
     this.channel.emit(STORY_ERRORED, { title, description });
-    this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', storyId });
-    this.view.showErrorDisplay({
-      message: title,
-      stack: description,
-    });
+    this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', renderId, storyId });
+
+    this.view.showErrorDisplay({ message: title, stack: description });
+    logger.error(`Error rendering story ${title}: ${description}`);
   }
 }

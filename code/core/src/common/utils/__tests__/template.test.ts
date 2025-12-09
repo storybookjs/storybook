@@ -1,6 +1,6 @@
-import { dirname } from 'node:path';
+import { join } from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
@@ -18,71 +18,60 @@ const BASE_HTML_CONTENTS = '<script>console.log("base script!");</script>';
 const BASE_BODY_HTML_CONTENTS = '<div>story contents</div>';
 const BODY_HTML_CONTENTS = '<div>custom body contents</div>';
 
-const base = dirname(require.resolve('storybook/internal/package.json'));
+const BASE_CORE_PKG_DIR = join(import.meta.url, '..', '..', '..', '..', '..');
+
+vi.mock('../../../shared/utils/module', () => {
+  return {
+    resolvePackageDir: () => BASE_CORE_PKG_DIR,
+  };
+});
+
+afterEach(() => {
+  vol.reset();
+});
 
 describe('server.getPreviewHeadHtml', () => {
-  afterEach(() => {
-    vol.reset();
-  });
-  describe('when .storybook/preview-head.html does not exist', () => {
-    beforeEach(() => {
-      vol.fromNestedJSON({
-        [`${base}/assets/server/base-preview-head.html`]: BASE_HTML_CONTENTS,
-        config: {},
-      });
+  it('return an empty string when .storybook/preview-head.html does NOT exist', () => {
+    vol.fromNestedJSON({
+      [`${BASE_CORE_PKG_DIR}/assets/server/base-preview-head.html`]: BASE_HTML_CONTENTS,
+      config: {},
     });
 
-    it('return an empty string', () => {
-      const result = getPreviewHeadTemplate('./config');
-      expect(result).toEqual(BASE_HTML_CONTENTS);
-    });
+    expect(getPreviewHeadTemplate('./config')).toEqual(BASE_HTML_CONTENTS);
   });
 
-  describe('when .storybook/preview-head.html exists', () => {
-    beforeEach(() => {
-      vol.fromNestedJSON({
-        [`${base}/assets/server/base-preview-head.html`]: BASE_HTML_CONTENTS,
-        config: {
-          'preview-head.html': HEAD_HTML_CONTENTS,
-        },
-      });
+  it('return the contents of the file when .storybook/preview-head.html exists', () => {
+    vol.fromNestedJSON({
+      [`${BASE_CORE_PKG_DIR}/assets/server/base-preview-head.html`]: BASE_HTML_CONTENTS,
+      config: {
+        'preview-head.html': HEAD_HTML_CONTENTS,
+      },
     });
 
-    it('return the contents of the file', () => {
-      const result = getPreviewHeadTemplate('./config');
-      expect(result).toEqual(BASE_HTML_CONTENTS + HEAD_HTML_CONTENTS);
-    });
+    expect(getPreviewHeadTemplate('./config')).toEqual(BASE_HTML_CONTENTS + HEAD_HTML_CONTENTS);
   });
 });
 
 describe('server.getPreviewBodyHtml', () => {
-  describe('when .storybook/preview-body.html does not exist', () => {
-    beforeEach(() => {
-      vol.fromNestedJSON({
-        [`${base}/assets/server/base-preview-body.html`]: BASE_BODY_HTML_CONTENTS,
-        config: {},
-      });
+  it('return an empty string when .storybook/preview-body.html does NOT exist', () => {
+    vol.fromNestedJSON({
+      [`${BASE_CORE_PKG_DIR}/assets/server/base-preview-body.html`]: BASE_BODY_HTML_CONTENTS,
+      config: {},
     });
 
-    it('return an empty string', () => {
-      const result = getPreviewBodyTemplate('./config');
-      expect(result).toEqual(BASE_BODY_HTML_CONTENTS);
-    });
+    expect(getPreviewBodyTemplate('./config')).toEqual(BASE_BODY_HTML_CONTENTS);
   });
 
-  describe('when .storybook/preview-body.html exists', () => {
-    beforeEach(() => {
-      vol.fromNestedJSON({
-        [`${base}/assets/server/base-preview-body.html`]: BASE_BODY_HTML_CONTENTS,
-        config: {
-          'preview-body.html': BODY_HTML_CONTENTS,
-        },
-      });
+  it('return the contents of the file when .storybook/preview-body.html exists', () => {
+    vol.fromNestedJSON({
+      [`${BASE_CORE_PKG_DIR}/assets/server/base-preview-body.html`]: BASE_BODY_HTML_CONTENTS,
+      config: {
+        'preview-body.html': BODY_HTML_CONTENTS,
+      },
     });
 
-    it('return the contents of the file', () => {
-      const result = getPreviewBodyTemplate('./config');
-      expect(result).toEqual(BODY_HTML_CONTENTS + BASE_BODY_HTML_CONTENTS);
-    });
+    expect(getPreviewBodyTemplate('./config')).toEqual(
+      BODY_HTML_CONTENTS + BASE_BODY_HTML_CONTENTS
+    );
   });
 });

@@ -3,11 +3,18 @@ import path from 'node:path';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getProjectRoot } from 'storybook/internal/common';
-import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
+import { getStorybookInfo, isCI } from 'storybook/internal/common';
+import {
+  type PackageJson,
+  type StorybookConfig,
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
 import { detect } from 'package-manager-detector';
 
+import { type Settings, globalSettings } from '../cli/globalSettings';
 import { getMonorepoType } from '../telemetry/get-monorepo-type';
 import {
   getActualPackageJson,
@@ -16,6 +23,7 @@ import {
 } from './package-json';
 import { computeStorybookMetadata, metaFrameworks, sanitizeAddonName } from './storybook-metadata';
 
+vi.mock(import('../cli/globalSettings'), { spy: true });
 vi.mock(import('./package-json'), { spy: true });
 vi.mock(import('./get-monorepo-type'), { spy: true });
 vi.mock(import('package-manager-detector'), { spy: true });
@@ -32,14 +40,31 @@ const mainJsMock: StorybookConfig = {
   stories: [],
 };
 
+const defaultInfo = {
+  framework: SupportedFramework.REACT_VITE,
+  renderer: SupportedRenderer.REACT,
+  builder: SupportedBuilder.VITE,
+  frameworkPackage: '@storybook/react-vite',
+  rendererPackage: '@storybook/react',
+  builderPackage: '@storybook/builder-vite',
+  addons: [],
+  mainConfig: {
+    stories: [],
+  },
+  mainConfigPath: '',
+  previewConfigPath: '',
+  managerConfigPath: '',
+  version: 'x.x.x',
+};
+
 beforeEach(() => {
+  vi.mocked(getStorybookInfo).mockImplementation(async () => defaultInfo);
+
   vi.mocked(detect).mockImplementation(async () => ({
     name: 'yarn',
     version: '3.1.1',
     agent: 'yarn@berry',
   }));
-
-  vi.mocked(getProjectRoot).mockImplementation(() => process.cwd());
 
   vi.mocked(getMonorepoType).mockImplementation(() => 'Nx');
 
@@ -129,6 +154,7 @@ describe('storybook-metadata', () => {
         const unixResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -148,6 +174,7 @@ describe('storybook-metadata', () => {
         const windowsResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -166,9 +193,16 @@ describe('storybook-metadata', () => {
       });
 
       it('should parse pnp paths for unknown frameworks', async () => {
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          frameworkPackage:
+            '/Users/foo/my-project/.yarn/__virtual__/@storybook-react-vite-virtual-769c990b9/0/cache/@storybook-react-rust-npm-7.1.0-alpha.38-512b-a23.zip/node_modules/storybook-react-rust' as any,
+        }));
+
         const unixResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -184,6 +218,7 @@ describe('storybook-metadata', () => {
         const windowsResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -202,9 +237,15 @@ describe('storybook-metadata', () => {
         path.sep = '/';
         cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/Users/foo/my-projects');
 
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          frameworkPackage: '/Users/foo/my-projects/.storybook/some-local-framework' as any,
+        }));
+
         const unixResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -216,13 +257,22 @@ describe('storybook-metadata', () => {
         expect(unixResult.framework).toEqual({
           name: '$SNIP/.storybook/some-local-framework',
         });
+      });
 
+      it('should sanitize pnp paths for local frameworks on Windows', async () => {
         // @ts-expect-error the property is read only but we can change it for testing purposes
         path.sep = '\\';
         cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('C:\\Users\\foo\\my-project');
+
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          frameworkPackage: 'C:\\Users\\foo\\my-project\\.storybook\\some-local-framework' as any,
+        }));
+
         const windowsResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -237,47 +287,6 @@ describe('storybook-metadata', () => {
       });
     });
 
-    it('should return frameworkOptions from mainjs', async () => {
-      const reactResult = await computeStorybookMetadata({
-        packageJson: packageJsonMock,
-        packageJsonPath,
-        mainConfig: {
-          ...mainJsMock,
-          framework: {
-            name: '@storybook/react-vite',
-            options: {
-              strictMode: false,
-            },
-          },
-        },
-      });
-
-      expect(reactResult.framework).toEqual({
-        name: '@storybook/react-vite',
-        options: { strictMode: false },
-      });
-
-      const angularResult = await computeStorybookMetadata({
-        packageJson: packageJsonMock,
-        packageJsonPath,
-        mainConfig: {
-          ...mainJsMock,
-          framework: {
-            name: '@storybook/angular',
-            options: {
-              enableIvy: true,
-              enableNgcc: true,
-            },
-          },
-        },
-      });
-
-      expect(angularResult.framework).toEqual({
-        name: '@storybook/angular',
-        options: { enableIvy: true, enableNgcc: true },
-      });
-    });
-
     it('should separate storybook packages and addons', async () => {
       const result = await computeStorybookMetadata({
         packageJson: {
@@ -289,6 +298,7 @@ describe('storybook-metadata', () => {
             'storybook-addon-deprecated': 'x.x.z',
           },
         } as PackageJson,
+        configDir: '.storybook',
         packageJsonPath,
         mainConfig: {
           ...mainJsMock,
@@ -331,6 +341,7 @@ describe('storybook-metadata', () => {
       const result = await computeStorybookMetadata({
         packageJson: packageJsonMock,
         packageJsonPath,
+        configDir: '.storybook',
         mainConfig: {
           ...mainJsMock,
           features,
@@ -345,6 +356,7 @@ describe('storybook-metadata', () => {
         await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: '@storybook/react-vite',
@@ -361,6 +373,7 @@ describe('storybook-metadata', () => {
       const res = await computeStorybookMetadata({
         packageJson: packageJsonMock,
         packageJsonPath,
+        configDir: '.storybook',
         mainConfig: {
           ...mainJsMock,
           refs: {
@@ -376,6 +389,7 @@ describe('storybook-metadata', () => {
       const res = await computeStorybookMetadata({
         packageJson: packageJsonMock,
         packageJsonPath,
+        configDir: '.storybook',
         mainConfig: {
           ...mainJsMock,
           addons: [
@@ -404,6 +418,7 @@ describe('storybook-metadata', () => {
       'should detect the supported metaframework: %s',
       async (metaFramework, name) => {
         const res = await computeStorybookMetadata({
+          configDir: '.storybook',
           packageJson: {
             ...packageJsonMock,
             dependencies: {
@@ -422,13 +437,38 @@ describe('storybook-metadata', () => {
     );
 
     it('should detect userSince info', async () => {
+      vi.mocked(isCI).mockImplementation(() => false);
+      vi.mocked(globalSettings).mockResolvedValue({
+        value: {
+          userSince: 1717334400000,
+        },
+      } as Settings);
+
       const res = await computeStorybookMetadata({
+        configDir: '.storybook',
         packageJson: packageJsonMock,
         packageJsonPath,
         mainConfig: mainJsMock,
       });
 
-      expect(res.userSince).toBeDefined();
+      expect(globalSettings).toHaveBeenCalled();
+
+      expect(res.userSince).toEqual(1717334400000);
+    });
+
+    it('should not detect userSince info in CI', async () => {
+      vi.mocked(isCI).mockImplementation(() => true);
+      vi.mocked(globalSettings).mockResolvedValue({} as Settings);
+
+      const res = await computeStorybookMetadata({
+        configDir: '.storybook',
+        packageJson: packageJsonMock,
+        packageJsonPath,
+        mainConfig: mainJsMock,
+      });
+
+      expect(globalSettings).not.toHaveBeenCalled();
+      expect(res.userSince).not.toBeDefined();
     });
   });
 });

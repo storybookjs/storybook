@@ -1,4 +1,4 @@
-import { Parameters, StoryFnAngularReturnType } from '../types';
+import type { Parameters, StoryFnAngularReturnType } from '../types';
 import { AbstractRenderer } from './AbstractRenderer';
 
 export class CanvasRenderer extends AbstractRenderer {

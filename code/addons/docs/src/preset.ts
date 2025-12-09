@@ -1,15 +1,13 @@
-import { dirname, isAbsolute, join } from 'node:path';
+import { isAbsolute } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
-import type {
-  CLIOptions,
-  Options,
-  PresetProperty,
-  StorybookConfigRaw,
-} from 'storybook/internal/types';
+import type { Options, PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
+import { type CsfEnricher } from 'storybook/internal/types';
 
 import type { CsfPluginOptions } from '@storybook/csf-plugin';
 
+import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 import type { CompileOptions } from './compiler';
 
 /**
@@ -20,14 +18,14 @@ const getResolvedReact = async (options: Options) => {
   const resolvedReact = (await options.presets.apply('resolvedReact', {})) as any;
   // resolvedReact should always be set by the time we get here, but just in case, we'll default to addon-docs's react dependencies
   return {
-    react: resolvedReact.react ?? dirname(require.resolve('react/package.json')),
-    reactDom: resolvedReact.reactDom ?? dirname(require.resolve('react-dom/package.json')),
+    react: resolvedReact.react ?? resolvePackageDir('react'),
+    reactDom: resolvedReact.reactDom ?? resolvePackageDir('react-dom'),
     // In Webpack, symlinked MDX files will cause @mdx-js/react to not be resolvable if it is not hoisted
     // This happens for the SB monorepo's template stories when a sandbox has a different react version than
     // addon-docs, causing addon-docs's dependencies not to be hoisted.
     // This might also affect regular users who have a similar setup.
     // Explicitly alias @mdx-js/react to avoid this issue.
-    mdx: resolvedReact.mdx ?? dirname(require.resolve('@mdx-js/react')),
+    mdx: resolvedReact.mdx ?? fileURLToPath(import.meta.resolve('@mdx-js/react')),
   };
 };
 
@@ -44,16 +42,15 @@ async function webpack(
 
   const { csfPluginOptions = {}, mdxPluginOptions = {} } = options;
 
+  const enrichCsf = await options.presets.apply('experimental_enrichCsf');
+
   const rehypeSlug = (await import('rehype-slug')).default;
   const rehypeExternalLinks = (await import('rehype-external-links')).default;
 
   const mdxLoaderOptions: CompileOptions = await options.presets.apply('mdxLoaderOptions', {
     ...mdxPluginOptions,
     mdxCompileOptions: {
-      providerImportSource: join(
-        dirname(require.resolve('@storybook/addon-docs/package.json')),
-        '/dist/shims/mdx-react-shim.mjs'
-      ),
+      providerImportSource: import.meta.resolve('@storybook/addon-docs/mdx-react-shim'),
       ...mdxPluginOptions.mdxCompileOptions,
       rehypePlugins: [
         ...(mdxPluginOptions?.mdxCompileOptions?.rehypePlugins ?? []),
@@ -106,7 +103,12 @@ async function webpack(
       ...(webpackConfig.plugins || []),
 
       ...(csfPluginOptions
-        ? [(await import('@storybook/csf-plugin')).webpack(csfPluginOptions)]
+        ? [
+            (await import('@storybook/csf-plugin')).webpack({
+              ...csfPluginOptions,
+              enrichCsf,
+            }),
+          ]
         : []),
     ],
     resolve: {
@@ -122,7 +124,7 @@ async function webpack(
           exclude: /(stories|story)\.mdx$/,
           use: [
             {
-              loader: require.resolve('./mdx-loader'),
+              loader: fileURLToPath(import.meta.resolve('@storybook/addon-docs/mdx-loader')),
               options: mdxLoaderOptions,
             },
           ],
@@ -152,17 +154,17 @@ const docs: PresetProperty<'docs'> = (input = {}, options) => {
 };
 
 export const addons: PresetProperty<'addons'> = [
-  require.resolve('@storybook/react-dom-shim/dist/preset'),
+  import.meta.resolve('@storybook/react-dom-shim/preset'),
 ];
 
 export const viteFinal = async (config: any, options: Options) => {
   const { plugins = [] } = config;
-  const { mdxPlugin } = await import('./plugins/mdx-plugin');
+
+  const { mdxPlugin } = await import('./mdx-plugin');
 
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
   const { react, reactDom, mdx } = await getResolvedReact(options);
 
-  const themingPath = dirname(require.resolve('storybook/theming'));
   const packageDeduplicationPlugin = {
     name: 'storybook:package-deduplication',
     enforce: 'pre',
@@ -174,7 +176,6 @@ export const viteFinal = async (config: any, options: Options) => {
           ...(isAbsolute(reactDom) && { 'react-dom/server': `${reactDom}/server.browser.js` }),
           'react-dom': reactDom,
           '@mdx-js/react': mdx,
-          'storybook/theming': themingPath,
         },
       },
     }),
@@ -186,7 +187,10 @@ export const viteFinal = async (config: any, options: Options) => {
   // mdx plugin needs to be before any react plugins
   plugins.unshift(mdxPlugin(options));
 
-  return config;
+  return {
+    ...config,
+    plugins,
+  };
 };
 
 /*
@@ -203,16 +207,15 @@ const docsX = docs as any;
  * is always a resolved react.
  */
 export const resolvedReact = async (existing: any) => ({
-  react: existing?.react ?? dirname(require.resolve('react/package.json')),
-  reactDom: existing?.reactDom ?? dirname(require.resolve('react-dom/package.json')),
-  mdx: existing?.mdx ?? dirname(require.resolve('@mdx-js/react')),
+  react: existing?.react ?? resolvePackageDir('react'),
+  reactDom: existing?.reactDom ?? resolvePackageDir('react-dom'),
+  mdx: existing?.mdx ?? fileURLToPath(import.meta.resolve('@mdx-js/react')),
 });
 
 const optimizeViteDeps = [
-  '@mdx-js/react',
-  '@storybook/addon-docs > acorn-jsx',
   '@storybook/addon-docs',
-  'markdown-to-jsx',
+  '@storybook/addon-docs/blocks',
+  '@storybook/addon-docs > @mdx-js/react',
 ];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };

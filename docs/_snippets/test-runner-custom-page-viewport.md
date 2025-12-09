@@ -32,8 +32,7 @@ module.exports = {
 ```ts filename=".storybook/test-runner.ts" renderer="common" language="ts"
 import type { TestRunnerConfig } from '@storybook/test-runner';
 import { getStoryContext } from '@storybook/test-runner';
-
-const { MINIMAL_VIEWPORTS } = require('storybook/viewport');
+import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 
 const DEFAULT_VIEWPORT_SIZE = { width: 1280, height: 720 };
 

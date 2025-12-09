@@ -1,0 +1,26 @@
+executor: sb_node_22_browsers
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - attach_workspace:
+      at: /tmp
+  - run:
+      name: Check parallelism count
+      command: |
+        cd scripts
+        yarn get-template --check
+  - run:
+      name: Type check
+      command: |
+        cd scripts
+        yarn check
+  - run:
+      name: Run tests
+      command: |
+        cd scripts
+        yarn test --coverage
+  - store_test_results:
+      path: storybook/scripts/junit.xml
+  - report-workflow-on-failure
+  - cancel-workflow-on-failure

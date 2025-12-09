@@ -1,14 +1,14 @@
 ```js filename="my-preset/index.js" renderer="common" language="js"
 function managerEntries(entry = []) {
-  return [...entry, require.resolve('my-other-addon/register')];
+  return [...entry, import.meta.resolve('my-other-addon/manager')];
 }
 
-const config = (entry = [], options) => {
-  return [...entry, require.resolve('my-other-addon/addDecorator')];
+const previewAnnotations = (entry = [], options) => {
+  return [...entry, import.meta.resolve('my-other-addon/preview')];
 };
 
 export default {
   managerEntries,
-  config,
+  previewAnnotations,
 };
 ```

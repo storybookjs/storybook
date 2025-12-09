@@ -1,15 +1,18 @@
 import * as React from 'react';
 
 import { transparentize } from 'polished';
+import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { type Call, type CallStates, type ControlStates } from '../../instrumenter/types';
 import { INTERNAL_RENDER_CALL_ID } from '../constants';
 import { isTestAssertionError, useAnsiToHtmlFilter } from '../utils';
+import { DetachedDebuggerMessage } from './DetachedDebuggerMessage';
 import { Empty } from './EmptyState';
 import { Interaction } from './Interaction';
-import { Subnav } from './Subnav';
+import type { PlayStatus } from './StatusBadge';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
+import { Toolbar } from './Toolbar';
 
 export interface Controls {
   start: (args?: any) => void;
@@ -21,11 +24,13 @@ export interface Controls {
 }
 
 interface InteractionsPanelProps {
+  storyUrl: string;
+  status: PlayStatus;
   controls: Controls;
   controlStates: ControlStates;
   interactions: (Call & {
     status?: CallStates;
-    childCallIds: Call['id'][];
+    childCallIds?: Call['id'][];
     isHidden: boolean;
     isCollapsed: boolean;
     toggleCollapsed: () => void;
@@ -34,13 +39,15 @@ interface InteractionsPanelProps {
   hasException?: boolean;
   caughtException?: Error;
   unhandledErrors?: SerializedError[];
-  isPlaying?: boolean;
   pausedAt?: Call['id'];
   calls: Map<string, any>;
   endRef?: React.Ref<HTMLDivElement>;
   onScrollToEnd?: () => void;
   hasResultMismatch?: boolean;
   browserTestStatus?: CallStates;
+  importPath?: string;
+  canOpenInEditor?: boolean;
+  api: API;
 }
 
 const Container = styled.div(({ theme }) => ({
@@ -86,6 +93,8 @@ const CaughtExceptionStack = styled.pre(({ theme }) => ({
 
 export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   function InteractionsPanel({
+    storyUrl,
+    status,
     calls,
     controls,
     controlStates,
@@ -94,27 +103,34 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     hasException,
     caughtException,
     unhandledErrors,
-    isPlaying,
     pausedAt,
     onScrollToEnd,
     endRef,
     hasResultMismatch,
     browserTestStatus,
+    importPath,
+    canOpenInEditor,
+    api,
   }) {
     const filter = useAnsiToHtmlFilter();
+    const hasRealInteractions = interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID);
 
     return (
       <Container>
         {hasResultMismatch && <TestDiscrepancyMessage browserTestStatus={browserTestStatus} />}
-        {(interactions.length > 0 || hasException) && (
-          <Subnav
-            controls={controls}
-            controlStates={controlStates}
-            status={browserTestStatus}
-            storyFileName={fileName}
-            onScrollToEnd={onScrollToEnd}
-          />
+        {controlStates.detached && (hasRealInteractions || hasException) && (
+          <DetachedDebuggerMessage storyUrl={storyUrl} />
         )}
+        <Toolbar
+          controls={controls}
+          controlStates={controlStates}
+          status={status}
+          storyFileName={fileName}
+          onScrollToEnd={onScrollToEnd}
+          importPath={importPath}
+          canOpenInEditor={canOpenInEditor}
+          api={api}
+        />
         <div aria-label="Interactions list">
           {interactions.map((call) => (
             <Interaction
@@ -163,15 +179,13 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           </CaughtException>
         )}
         <div ref={endRef} />
-        {!isPlaying &&
-          !caughtException &&
-          !interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID) && <Empty />}
+        {status === 'completed' && !caughtException && !hasRealInteractions && <Empty />}
       </Container>
     );
   }
 );
 
-interface SerializedError {
+export interface SerializedError {
   name: string;
   stack?: string;
   message: string;

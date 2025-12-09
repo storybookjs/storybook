@@ -1,9 +1,14 @@
 {
   "name": "@storybook/svelte-vite",
-  "version": "9.0.0-beta.11",
-  "description": "Storybook for Svelte and Vite: Develop Svelte components in isolation with Hot Reloading.",
+  "version": "10.2.0-alpha.3",
+  "description": "Storybook for Svelte and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-framework",
+    "svelte",
+    "vite",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/svelte-vite",
   "bugs": {
@@ -19,28 +24,22 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./preset": {
-      "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
+      "default": "./dist/index.js"
     },
     "./node": {
       "types": "./dist/node/index.d.ts",
-      "node": "./dist/node/index.js",
-      "import": "./dist/node/index.mjs",
-      "require": "./dist/node/index.js"
+      "default": "./dist/node/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "default": "./dist/preset.js"
+    }
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "template/**/*",
@@ -49,44 +48,29 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
-  },
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/svelte": "workspace:*",
     "magic-string": "^0.30.0",
-    "svelte2tsx": "^0.7.35",
+    "svelte2tsx": "^0.7.44",
     "typescript": "^4.9.4 || ^5.0.0"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@sveltejs/vite-plugin-svelte": "^6.2.0",
     "@types/node": "^22.0.0",
-    "svelte": "^5.0.5",
+    "svelte": "^5.39.5",
     "sveltedoc-parser": "^4.2.1",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5"
+    "vite": "^7.0.4"
   },
   "peerDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0",
+    "@sveltejs/vite-plugin-svelte": "^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0",
     "storybook": "workspace:^",
     "svelte": "^5.0.0",
-    "vite": "^5.0.0 || ^6.0.0"
-  },
-  "engines": {
-    "node": ">=20.0.0"
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/preset.ts",
-      "./src/node/index.ts"
-    ],
-    "platform": "node"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

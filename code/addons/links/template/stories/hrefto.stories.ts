@@ -1,7 +1,7 @@
 import { hrefTo } from '@storybook/addon-links';
 
 export default {
-  component: globalThis.Components.Html,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Html,
   title: 'hrefTo',
   parameters: {
     chromatic: { disable: true },

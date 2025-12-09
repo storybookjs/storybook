@@ -7,30 +7,23 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+env:
+  NODE_OPTIONS: '--max_old_space_size=4096'
+
 jobs:
   build:
-    name: Core Unit Tests, ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest]
-    runs-on: ${{ matrix.os }}
+    name: Core Unit Tests, windows-latest
+    if: github.repository_owner == 'storybookjs'
+    runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: Set node version
-        uses: actions/setup-node@v4
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
         with:
-          node-version-file: ".nvmrc"
-
-      - name: install scripts
-        run: | 
-          cd scripts && yarn install
-
-      - name: install code
-        run: | 
-          cd code && yarn install
+          install-code-deps: true
 
       - name: compile
         run: yarn task --task compile --start-from=compile

@@ -389,8 +389,6 @@ jobs:
                   clone_options: --depth 1
             - attach_workspace:
                   at: /tmp
-              environment:
-                  TAR_OPTIONS: --no-same-owner
             - restore_cache:
                   keys:
                       - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
@@ -420,8 +418,6 @@ jobs:
                   clone_options: --depth 1
             - attach_workspace:
                   at: /tmp
-              environment:
-                  TAR_OPTIONS: --no-same-owner
             - restore_cache:
                   keys:
                       - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
@@ -449,8 +445,6 @@ jobs:
                   clone_options: --depth 1
             - attach_workspace:
                   at: /tmp
-              environment:
-                  TAR_OPTIONS: --no-same-owner
             - restore_cache:
                   keys:
                       - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
@@ -490,8 +484,6 @@ jobs:
                       corepack prepare yarn@stable --activate
             - attach_workspace:
                   at: C:\Users\circleci\project
-              environment:
-                  TAR_OPTIONS: --no-same-owner
             - run:
                   command: yarn install
                   name: Install dependencies
@@ -509,8 +501,6 @@ jobs:
                   clone_options: --depth 1
             - attach_workspace:
                   at: /tmp
-              environment:
-                  TAR_OPTIONS: --no-same-owner
             - restore_cache:
                   keys:
                       - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
@@ -552,8 +542,6 @@ jobs:
                       corepack prepare yarn@stable --activate
             - attach_workspace:
                   at: C:\Users\circleci
-              environment:
-                  TAR_OPTIONS: --no-same-owner
             - run:
                   name: Install dependencies
                   command: yarn install
@@ -595,8 +583,6 @@ jobs:
                   clone_options: --depth 1
             - attach_workspace:
                   at: /tmp
-              environment:
-                  TAR_OPTIONS: --no-same-owner
             - restore_cache:
                   keys:
                       - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
@@ -649,8 +635,6 @@ jobs:
                   clone_options: --depth 1
             - attach_workspace:
                   at: /tmp
-              environment:
-                  TAR_OPTIONS: --no-same-owner
             - restore_cache:
                   keys:
                       - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
@@ -683,8 +667,6 @@ jobs:
                   clone_options: --depth 1
             - attach_workspace:
                   at: /tmp
-              environment:
-                  TAR_OPTIONS: --no-same-owner
             - restore_cache:
                   keys:
                       - v4-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
@@ -725,8 +707,6 @@ jobs:
                       corepack prepare yarn@stable --activate
             - attach_workspace:
                   at: C:\Users\circleci\project
-              environment:
-                  TAR_OPTIONS: --no-same-owner
             - run:
                   name: Install dependencies
                   command: yarn install

@@ -638,21 +638,21 @@ const windows_sandbox_build = defineJob(
       {
         run: {
           name: 'Run Install',
-          working_directory: `C:\\Users\\circleci\\sandbox\\react-vite\\default-ts`,
+          working_directory: `C:\\Users\\circleci\\sandboxes\\react-vite\\default-ts`,
           command: 'yarn install',
         },
       },
       {
         run: {
           name: 'Install playwright',
-          working_directory: `C:\\Users\\circleci\\sandbox\\react-vite\\default-ts`,
+          working_directory: `C:\\Users\\circleci\\sandboxes\\react-vite\\default-ts`,
           command: 'yarn playwright install chromium --with-deps',
         },
       },
       {
         run: {
           name: 'Build storybook',
-          working_directory: `C:\\Users\\circleci\\sandbox\\react-vite\\default-ts`,
+          working_directory: `C:\\Users\\circleci\\sandboxes\\react-vite\\default-ts`,
           command: 'yarn build-storybook',
         },
       },

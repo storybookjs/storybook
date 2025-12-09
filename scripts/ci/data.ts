@@ -626,11 +626,34 @@ const windows_sandbox_build = defineJob(
     steps: [
       git.checkout({ forceHttps: true }),
       node.installOnWindows(),
-      workspace.attach('C:\\Users\\circleci\\project'),
+      workspace.attach('C:\\Users\\circleci'),
       {
         run: {
           name: 'Install dependencies',
           command: 'yarn install',
+        },
+      },
+      verdaccio.start(),
+      server.wait([...verdaccio.ports]),
+      {
+        run: {
+          name: 'Run Install',
+          working_directory: `C:\\Users\\circleci\\sandbox\\react-vite\\default-ts`,
+          command: 'yarn install',
+        },
+      },
+      {
+        run: {
+          name: 'Install playwright',
+          working_directory: `C:\\Users\\circleci\\sandbox\\react-vite\\default-ts`,
+          command: 'yarn playwright install chromium --with-deps',
+        },
+      },
+      {
+        run: {
+          name: 'Build storybook',
+          working_directory: `C:\\Users\\circleci\\sandbox\\react-vite\\default-ts`,
+          command: 'yarn build-storybook',
         },
       },
     ],

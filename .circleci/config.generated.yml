@@ -541,10 +541,33 @@ jobs:
                       corepack enable
                       corepack prepare yarn@stable --activate
             - attach_workspace:
-                  at: C:\Users\circleci\project
+                  at: C:\Users\circleci
             - run:
                   name: Install dependencies
                   command: yarn install
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Run Install
+                  working_directory: C:\Users\circleci\sandbox\react-vite\default-ts
+                  command: yarn install
+            - run:
+                  name: Install playwright
+                  working_directory: C:\Users\circleci\sandbox\react-vite\default-ts
+                  command: yarn playwright install chromium --with-deps
+            - run:
+                  name: Build storybook
+                  working_directory: C:\Users\circleci\sandbox\react-vite\default-ts
+                  command: yarn build-storybook
     pretty-docs:
         executor:
             name: sb_node_22_classic

@@ -1,5 +1,5 @@
 export const ROOT_DIR = '/tmp';
-export const WORKING_DIR = `storybook`;
+export const WORKING_DIR = `project`;
 export const SANDBOX_DIR = `storybook-sandboxes`;
 
 export const workspace = {

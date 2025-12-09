@@ -306,6 +306,7 @@ command('doctor')
 command('generate-stories [glob]')
   .description('Generate stories for components matching a glob pattern (picomatch syntax)')
   .option('-i, --interactive', 'Interactively select which components to generate stories for')
+  .option('-s, --sample', 'Only select a subset of components to generate stories for')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .action(async (globPattern = 'src/**/*.{jsx,tsx}', options) => {
     withTelemetry(
@@ -318,6 +319,7 @@ command('generate-stories [glob]')
           glob: globPattern,
           interactive: options.interactive,
           configDir: options.configDir,
+          sampleComponents: options.sample,
         });
 
         if (result.success) {

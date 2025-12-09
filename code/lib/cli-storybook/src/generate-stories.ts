@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import { experimental_loadStorybook, generateStoryFile } from 'storybook/internal/core-server';
@@ -6,13 +7,74 @@ import { logger } from 'storybook/internal/node-logger';
 import { prompt } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
+import { getComponentComplexity } from '@hipster/sb-utils/component-analyzer';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
+
+async function findEasyToStorybookComponents(files: string[]) {
+  const candidates = [];
+
+  for (const file of files) {
+    try {
+      const analysis = await getComponentComplexity(file);
+      const { low, high } = analysis.features;
+
+      // 2. APPLY FILTERS
+      // We want components that are "Pure" and isolated.
+
+      // CRITICAL BLOCKERS: These almost always require Storybook decorators with providers
+      if (
+        high.hasAuthIntegration ||
+        high.hasDataFetching ||
+        high.hasRouting ||
+        high.hasComplexState
+      ) {
+        continue;
+      }
+
+      // PREFERENCE: 'Design System' components are usually just props -> UI
+      // But 'Feature' components might be okay if they are simple enough
+      // Pages are too big
+      if (analysis.type === 'page') {
+        continue;
+      }
+
+      // METRIC CHECKS:
+      // If it imports 10+ internal files, it's probably complex
+      if (low.imports.internal.length > 10) {
+        continue;
+      }
+
+      // If it's "Ultra" complex, it probably has hidden side effects
+      if (analysis.level === 'very-high') {
+        continue;
+      }
+
+      logger.debug(`Found easy to Storybook component: ${file}`);
+      logger.debug(`Factors: ${analysis.factors.join(', ')}`);
+
+      // If we got here, it's a great candidate!
+      candidates.push({
+        file,
+        score: analysis.score,
+      });
+    } catch (e) {
+      logger.error(`Failed to analyze ${file}: ${e}`);
+    }
+  }
+
+  // Get top 10 simplest components, easiest first
+  return candidates
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 10)
+    .map((c) => c.file);
+}
 
 interface GenerateStoriesOptions {
   glob: string;
   interactive?: boolean;
   configDir?: string;
+  sampleComponents?: boolean;
 }
 
 interface ComponentInfo {
@@ -26,6 +88,7 @@ export const generateStories = async ({
   glob: globPattern,
   interactive = false,
   configDir = '.storybook',
+  sampleComponents = true,
 }: GenerateStoriesOptions) => {
   logger.debug(`Starting story generation with glob: ${globPattern}`);
   logger.debug(`Interactive mode: ${interactive}`);
@@ -69,13 +132,11 @@ export const generateStories = async ({
         ],
       });
 
-      console.log({
-        globPattern,
-        files,
-      });
-
       logger.debug(`Found ${files.length} files matching glob pattern`);
     }
+
+    // Filter out barrel files that only export other files
+    files = await filterOutBarrelFiles(files);
 
     if (files.length === 0) {
       logger.warn(`No files found matching glob pattern: ${globPattern}`);
@@ -85,6 +146,12 @@ export const generateStories = async ({
         skipped: 0,
         failed: 0,
       };
+    }
+
+    if (sampleComponents) {
+      logger.debug('Filtering out easy to Storybook components...');
+      files = await findEasyToStorybookComponents(files);
+      logger.debug(`Found ${files.length} easy to Storybook components`);
     }
 
     // Extract component information from files
@@ -136,6 +203,21 @@ export const generateStories = async ({
     };
   }
 };
+
+async function filterOutBarrelFiles(files: string[]) {
+  const filteredFiles = [];
+  for (const file of files) {
+    if (file.includes('index')) {
+      const content = await readFile(file, 'utf-8');
+      if (!content.includes('export * from')) {
+        filteredFiles.push(file);
+      }
+    } else {
+      filteredFiles.push(file);
+    }
+  }
+  return filteredFiles;
+}
 
 async function extractComponentsFromFiles(files: string[]): Promise<ComponentInfo[]> {
   const components: ComponentInfo[] = [];

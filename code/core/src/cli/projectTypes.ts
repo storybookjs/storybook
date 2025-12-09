@@ -16,6 +16,7 @@ export enum ProjectType {
   SERVER = 'server',
   SOLID = 'solid',
   SVELTE = 'svelte',
+  STENCIL = 'stencil',
   SVELTEKIT = 'sveltekit',
   UNDETECTED = 'undetected',
   UNSUPPORTED = 'unsupported',

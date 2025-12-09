@@ -36,6 +36,7 @@ export const frameworkToRenderer: Record<
   [SupportedRenderer.SVELTE]: SupportedRenderer.SVELTE,
   [SupportedRenderer.VUE3]: SupportedRenderer.VUE3,
   [SupportedRenderer.WEB_COMPONENTS]: SupportedRenderer.WEB_COMPONENTS,
+  [SupportedRenderer.STENCIL]: SupportedRenderer.STENCIL,
 };
 
 export const frameworkToBuilder: Record<SupportedFramework, SupportedBuilder> = {
@@ -61,4 +62,5 @@ export const frameworkToBuilder: Record<SupportedFramework, SupportedBuilder> = 
   [SupportedFramework.VUE3_RSBUILD]: SupportedBuilder.RSBUILD,
   [SupportedFramework.HTML_RSBUILD]: SupportedBuilder.RSBUILD,
   [SupportedFramework.WEB_COMPONENTS_RSBUILD]: SupportedBuilder.RSBUILD,
+  [SupportedFramework.STENCIL]: SupportedBuilder.STENCIL,
 };

@@ -5,7 +5,10 @@
  * directory of this source tree.
  */
 import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { logger } from 'storybook/internal/node-logger';
 
 import spawn from 'cross-spawn';
 import open, { type App } from 'open';
@@ -24,19 +27,13 @@ const Actions = Object.freeze({
   SHELL_SCRIPT: 3,
 });
 
-const isWindows = process.platform === 'win32';
-
 function isWsl() {
-  if (!isWindows) {
-    return false;
-  }
-
   if (process.env.WSL_DISTRO_NAME || process.env.WSL_INTEROP) {
     return true;
   }
 
   try {
-    const version = require('fs').readFileSync('/proc/version', 'utf8').toLowerCase();
+    const version = readFileSync('/proc/version', 'utf8').toLowerCase();
     return version.includes('microsoft');
   } catch {
     return false;
@@ -83,10 +80,9 @@ class BrowserEnvError extends StorybookError {
 function attachCloseHandler(child: ReturnType<typeof spawn>, scriptPath: string) {
   child.on('close', (code) => {
     if (code !== 0) {
-      console.log();
-      console.log(picocolors.red('The script specified as BROWSER environment variable failed.'));
-      console.log(`${picocolors.cyan(scriptPath)} exited with code ${code}.`);
-      console.log();
+      logger.error(
+        `The script specified as BROWSER environment variable failed.\n${picocolors.cyan(scriptPath)} exited with code ${code}.`
+      );
       return;
     }
   });
@@ -200,7 +196,7 @@ function startBrowserProcess(
  */
 export function openBrowser(url: string) {
   const { action, value, args } = getBrowserEnv();
-  const canRunShell = !isWindows || isWsl();
+  const canRunShell = process.platform !== 'win32' || isWsl();
   const browserTarget = value as unknown as App | readonly App[] | undefined;
 
   switch (action) {

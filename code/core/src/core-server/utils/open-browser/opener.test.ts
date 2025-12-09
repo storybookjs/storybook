@@ -73,7 +73,7 @@ describe('openBrowser BROWSER script handling', () => {
     expect(vi.mocked(open)).not.toHaveBeenCalled();
   });
 
-  it('falls back to opening the browser when BROWSER points to a shell script', () => {
+  it('falls back to opening the browser when BROWSER points to a shell script on Windows', () => {
     process.env.BROWSER = '/tmp/customBrowser.sh';
     Object.defineProperty(process, 'platform', { value: 'win32' });
     delete process.env.WSL_DISTRO_NAME;
@@ -89,16 +89,49 @@ describe('openBrowser BROWSER script handling', () => {
     });
   });
 
-  it('executes a shell script on WSL', () => {
+  it('executes a shell script on Linux', () => {
     process.env.BROWSER = '/tmp/findAHandler.sh';
-    Object.defineProperty(process, 'platform', { value: 'win32' });
-    process.env.WSL_DISTRO_NAME = 'Ubuntu';
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    delete process.env.WSL_DISTRO_NAME;
+    delete process.env.WSL_INTEROP;
 
     openBrowser('http://localhost:6006/');
 
     expect(vi.mocked(spawn)).toHaveBeenCalledWith(
       '/bin/sh',
-      ['/tmp/browser.sh', 'http://localhost:6006/'],
+      ['/tmp/findAHandler.sh', 'http://localhost:6006/'],
+      { stdio: 'inherit' }
+    );
+    expect(vi.mocked(open)).not.toHaveBeenCalled();
+  });
+
+  it('executes a shell script on WSL testing for env var WSL_DISTRO_NAME', () => {
+    process.env.BROWSER = '/tmp/findAHandler.sh';
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    process.env.WSL_DISTRO_NAME = 'AnyDistro';
+    delete process.env.WSL_INTEROP;
+
+    openBrowser('http://localhost:6006/');
+
+    expect(vi.mocked(spawn)).toHaveBeenCalledWith(
+      '/bin/sh',
+      ['/tmp/findAHandler.sh', 'http://localhost:6006/'],
+      { stdio: 'inherit' }
+    );
+    expect(vi.mocked(open)).not.toHaveBeenCalled();
+  });
+
+  it('executes a shell script on WSL testing for env var WSL_INTEROP', () => {
+    process.env.BROWSER = '/tmp/findAHandler.sh';
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    process.env.WSL_INTEROP = '/run/WSL';
+    delete process.env.WSL_DISTRO_NAME;
+
+    openBrowser('http://localhost:6006/');
+
+    expect(vi.mocked(spawn)).toHaveBeenCalledWith(
+      '/bin/sh',
+      ['/tmp/findAHandler.sh', 'http://localhost:6006/'],
       { stdio: 'inherit' }
     );
     expect(vi.mocked(open)).not.toHaveBeenCalled();

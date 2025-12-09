@@ -549,6 +549,70 @@ describe('configureEslintPlugin', () => {
         export default myConfig;"
       `);
     });
+
+    it('should configure ESLint plugin correctly with CommonJS module.exports array', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        const js = require('@eslint/js');
+        module.exports = [
+          js.configs.recommended,
+        ];
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.cjs',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        const storybook = require("eslint-plugin-storybook");
+
+        const js = require('@eslint/js');
+        module.exports = [js.configs.recommended, ...storybook.configs["flat/recommended"]];"
+      `);
+    });
+
+    it('should configure ESLint plugin correctly with CommonJS module.exports and tseslint.config', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        const tseslint = require('typescript-eslint');
+        module.exports = tseslint.config({
+          rules: {
+            'no-console': 'error'
+          }
+        });
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.cjs',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        const storybook = require("eslint-plugin-storybook");
+
+        const tseslint = require('typescript-eslint');
+        module.exports = tseslint.config({
+          rules: {
+            'no-console': 'error'
+          }
+        }, storybook.configs["flat/recommended"]);"
+      `);
+    });
   });
 });
 

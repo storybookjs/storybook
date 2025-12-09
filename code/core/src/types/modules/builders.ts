@@ -4,5 +4,4 @@ export enum SupportedBuilder {
   VITE = 'vite',
   // COMMUNITY
   RSBUILD = 'rsbuild',
-  STENCIL = 'stencil',
 }

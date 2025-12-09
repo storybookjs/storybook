@@ -43,7 +43,7 @@ export class FrameworkDetectionService {
 
     const detectedBuilders: SupportedBuilder[] = [];
 
-    if (hasVite) {
+    if (hasVite || hasStencil) {
       detectedBuilders.push(SupportedBuilder.VITE);
     }
 
@@ -53,10 +53,6 @@ export class FrameworkDetectionService {
 
     if (hasRsbuild) {
       detectedBuilders.push(SupportedBuilder.RSBUILD);
-    }
-
-    if (hasStencil) {
-      detectedBuilders.push(SupportedBuilder.STENCIL);
     }
 
     // If exactly one builder is detected, return it
@@ -69,7 +65,6 @@ export class FrameworkDetectionService {
       { label: 'Vite', value: SupportedBuilder.VITE },
       { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
       { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
-      { label: 'Stencil', value: SupportedBuilder.STENCIL },
     ];
 
     return prompt.select({

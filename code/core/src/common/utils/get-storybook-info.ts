@@ -68,7 +68,6 @@ export const builderPackages: Record<string, SupportedBuilder> = {
   '@storybook/builder-vite': SupportedBuilder.VITE,
   // community (outside of monorepo)
   'storybook-builder-rsbuild': SupportedBuilder.RSBUILD,
-  '@stencil/storybook-plugin': SupportedBuilder.STENCIL,
 };
 
 export const compilerPackages: Record<string, CoreWebpackCompiler> = {

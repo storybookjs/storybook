@@ -7,6 +7,8 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import type { CheckOptions } from '.';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite';
 
+const VITE_DEFAULT_VERSION = '^7.0.0';
+
 // Mock dependencies
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn(),
@@ -142,7 +144,8 @@ describe('nextjs-to-nextjs-vite', () => {
         })
       );
 
-      // Mock getDependencyVersion to return undefined (vite not installed)
+      // Explicitly set getDependencyVersion to return undefined for this test scenario
+      // Even though beforeEach sets it, we keep this for clarity and test documentation
       vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(undefined);
 
       await nextjsToNextjsVite.run!({
@@ -158,7 +161,7 @@ describe('nextjs-to-nextjs-vite', () => {
       expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
         { type: 'devDependencies', skipInstall: true },
-        ['@storybook/nextjs-vite@9.0.0', 'vite@^7.0.0']
+        [`@storybook/nextjs-vite@9.0.0`, `vite@${VITE_DEFAULT_VERSION}`]
       );
     });
 

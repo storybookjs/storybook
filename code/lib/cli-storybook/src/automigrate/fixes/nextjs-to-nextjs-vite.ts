@@ -98,9 +98,11 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
       logger.debug('Dry run: Skipping package.json updates.');
     } else {
       logger.debug('Updating package.json files...');
+      const viteVersion = packageManager.getDependencyVersion('vite');
       await packageManager.removeDependencies(['@storybook/nextjs']);
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `@storybook/nextjs-vite@${storybookVersion}`,
+        ...(viteVersion ? [] : ['vite@^7.0.0']), // Add vite if it's not installed yet
       ]);
     }
 

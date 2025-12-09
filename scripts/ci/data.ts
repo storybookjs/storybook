@@ -712,7 +712,7 @@ const windows_sandbox_dev = defineJob(
           name: 'Run storybook',
           background: true,
           working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite-default-ts`,
-          command: 'yarn install',
+          command: 'yarn storybook --port 8001',
         },
       },
       server.wait(['8001']),

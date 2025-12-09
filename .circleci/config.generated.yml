@@ -754,7 +754,7 @@ jobs:
                   name: Run storybook
                   background: true
                   working_directory: C:\Users\circleci\storybook-sandboxes\react-vite-default-ts
-                  command: yarn install
+                  command: yarn storybook --port 8001
             - run:
                   name: Wait on servers
                   working_directory: code

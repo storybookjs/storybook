@@ -3,21 +3,22 @@ import { dirname, isAbsolute, join, normalize } from 'node:path';
 import {
   JsPackageManagerFactory,
   builderPackages,
-  extractProperFrameworkName,
+  extractFrameworkPackageName,
   frameworkPackages,
   getStorybookInfo,
-  loadMainConfig,
-  rendererPackages,
 } from 'storybook/internal/common';
 import type { PackageManagerName } from 'storybook/internal/common';
-import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
+import { frameworkToRenderer } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
+import {
+  isCsfFactoryPreview,
+  readConfig,
+  writeConfig as writeConfigFile,
+} from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { dedent } from 'ts-dedent';
 
 import { getStoriesPathsFromConfig } from '../../util';
 
@@ -35,7 +36,7 @@ export const getFrameworkPackageName = (mainConfig?: StorybookConfigRaw) => {
     return null;
   }
 
-  return extractProperFrameworkName(packageNameOrPath);
+  return extractFrameworkPackageName(packageNameOrPath);
 };
 
 /**
@@ -83,7 +84,9 @@ export const getBuilderPackageName = (mainConfig?: StorybookConfigRaw) => {
 
   const normalizedPath = normalize(packageNameOrPath).replace(new RegExp(/\\/, 'g'), '/');
 
-  return builderPackages.find((pkg) => normalizedPath.endsWith(pkg)) || packageNameOrPath;
+  return (
+    Object.keys(builderPackages).find((pkg) => normalizedPath.endsWith(pkg)) || packageNameOrPath
+  );
 };
 
 /**
@@ -100,63 +103,33 @@ export const getFrameworkOptions = (
     : (mainConfig?.framework?.options ?? null);
 };
 
-/**
- * Returns a renderer package name given a framework package name.
- *
- * @param frameworkPackageName - The package name of the framework to lookup.
- * @returns - The corresponding package name in `rendererPackages`. If not found, returns null.
- */
-export const getRendererPackageNameFromFramework = (frameworkPackageName: string) => {
-  if (frameworkPackageName) {
-    if (Object.keys(rendererPackages).includes(frameworkPackageName)) {
-      // at some point in 6.4 we introduced a framework field, but filled with a renderer package
-      return frameworkPackageName;
-    }
-
-    if (Object.values(rendererPackages).includes(frameworkPackageName)) {
-      // for scenarios where the value is e.g. "react" instead of "@storybook/react"
-      return Object.keys(rendererPackages).find(
-        (k) => rendererPackages[k] === frameworkPackageName
-      );
-    }
-  }
-
-  return null;
-};
-
 export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
-  cwd,
   packageManagerName,
 }: {
   configDir?: string;
-  cwd?: string;
   packageManagerName?: PackageManagerName;
   cache?: boolean;
 }) => {
   logger.debug('Getting Storybook info...');
   const {
+    mainConfig,
     mainConfigPath: mainConfigPath,
-    version: storybookVersionSpecifier,
     configDir: configDirFromScript,
     previewConfigPath,
-  } = await getStorybookInfo(userDefinedConfigDir);
+    versionSpecifier,
+  } = await getStorybookInfo(
+    userDefinedConfigDir,
+    userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined
+  );
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
   logger.debug('Loading main config...');
-  let mainConfig: StorybookConfigRaw;
-  try {
-    mainConfig = (await loadMainConfig({ configDir, cwd })) as StorybookConfigRaw;
-  } catch (err) {
-    throw new Error(
-      dedent`Unable to find or evaluate ${picocolors.blue(mainConfigPath)}: ${String(err)}`
-    );
-  }
 
   const workingDir = isAbsolute(configDir)
     ? dirname(configDir)
-    : dirname(join(cwd ?? process.cwd(), configDir));
+    : dirname(join(process.cwd(), configDir));
 
   logger.debug('Getting stories paths...');
   const storiesPaths = await getStoriesPathsFromConfig({
@@ -173,17 +146,25 @@ export const getStorybookData = async ({
   });
 
   logger.debug('Getting Storybook version...');
-  const storybookVersion = await getCoercedStorybookVersion(packageManager);
+  const versionInstalled = (await packageManager.getModulePackageJSON('storybook'))?.version;
+
+  logger.debug('Detecting CSF factory usage...');
+  const hasCsfFactoryPreview = previewConfigPath
+    ? isCsfFactoryPreview(await readConfig(previewConfigPath))
+    : false;
 
   return {
     configDir,
     mainConfig,
-    storybookVersionSpecifier,
-    storybookVersion,
+    /** The version specifier of Storybook from the user's package.json */
+    versionSpecifier,
+    /** The version of Storybook installed in the user's project */
+    versionInstalled,
     mainConfigPath,
     previewConfigPath,
     packageManager,
     storiesPaths,
+    hasCsfFactoryPreview,
   };
 };
 export type GetStorybookData = typeof getStorybookData;

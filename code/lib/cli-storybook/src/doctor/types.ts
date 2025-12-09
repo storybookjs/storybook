@@ -9,7 +9,7 @@ export interface DoctorOptions {
 export interface ProjectDoctorData {
   configDir: string;
   packageManager: JsPackageManager;
-  storybookVersion: string;
+  storybookVersion?: string;
   mainConfig: StorybookConfigRaw;
 }
 

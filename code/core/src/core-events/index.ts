@@ -58,6 +58,8 @@ enum events {
   // A global was just updated
   GLOBALS_UPDATED = 'globalsUpdated',
   REGISTER_SUBSCRIPTION = 'registerSubscription',
+  // Preview initialized for first-load-event
+  PREVIEW_INITIALIZED = 'previewInitialized',
   // Tell the manager that the user pressed a key in the preview
   PREVIEW_KEYDOWN = 'previewKeydown',
   // Tell the preview that the builder is in progress
@@ -89,6 +91,8 @@ enum events {
   // Open a file in the code editor
   OPEN_IN_EDITOR_REQUEST = 'openInEditorRequest',
   OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
+  // Emitted when the manager UI sets up a focus trap
+  MANAGER_INERT_ATTRIBUTE_CHANGED = 'managerInertAttributeChanged',
 }
 
 // Enables: `import Events from ...`
@@ -114,6 +118,7 @@ export const {
   PLAY_FUNCTION_THREW_EXCEPTION,
   UNHANDLED_ERRORS_WHILE_PLAYING,
   PRELOAD_ENTRIES,
+  PREVIEW_INITIALIZED,
   PREVIEW_BUILDER_PROGRESS,
   PREVIEW_KEYDOWN,
   REGISTER_SUBSCRIPTION,
@@ -156,6 +161,7 @@ export const {
   ARGTYPES_INFO_RESPONSE,
   OPEN_IN_EDITOR_REQUEST,
   OPEN_IN_EDITOR_RESPONSE,
+  MANAGER_INERT_ATTRIBUTE_CHANGED,
 } = events;
 
 export * from './data/create-new-story';

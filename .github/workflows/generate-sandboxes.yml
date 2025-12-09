@@ -24,8 +24,26 @@ defaults:
 jobs:
   generate-next:
     name: Generate to next
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
+      - name: Remove unnecessary files to release disk space
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo rm -rf \
+            /opt/ghc \
+            /opt/google/chrome \
+            /opt/microsoft/msedge \
+            /opt/microsoft/powershell \
+            /usr/lib/mono \
+            /usr/local/julia* \
+            /usr/local/lib/android \
+            /usr/local/share/chromium \
+            /usr/local/share/powershell \
+            /usr/local/share/powershell \
+            /usr/share/dotnet \
+            /usr/share/swift
+
       - uses: actions/checkout@v4
         with:
           ref: next
@@ -76,8 +94,25 @@ jobs:
 
   generate-main:
     name: Generate to main
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
+      - name: Remove unnecessary files to release disk space
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo rm -rf \
+            /opt/ghc \
+            /opt/google/chrome \
+            /opt/microsoft/msedge \
+            /opt/microsoft/powershell \
+            /usr/lib/mono \
+            /usr/local/julia* \
+            /usr/local/lib/android \
+            /usr/local/share/chromium \
+            /usr/local/share/powershell \
+            /usr/local/share/powershell \
+            /usr/share/dotnet \
+            /usr/share/swift
       - uses: actions/checkout@v4
         with:
           ref: main

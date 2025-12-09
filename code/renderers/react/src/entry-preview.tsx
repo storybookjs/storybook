@@ -2,7 +2,6 @@ import * as React from 'react';
 
 import { global } from '@storybook/global';
 
-import semver from 'semver';
 import { configure } from 'storybook/test';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
@@ -19,8 +18,11 @@ export const decorators: Decorator[] = [
       return story();
     }
 
-    const major = semver.major(React.version);
-    const minor = semver.minor(React.version);
+    const [major, minor] = React.version.split('.').map((part) => parseInt(part, 10));
+
+    if (!Number.isInteger(major) || !Number.isInteger(minor)) {
+      throw new Error('Unable to parse React version');
+    }
     if (major < 18 || (major === 18 && minor < 3)) {
       throw new Error('React Server Components require React >= 18.3');
     }
@@ -69,7 +71,6 @@ export const beforeAll = async () => {
             }, 0);
 
             if (jestFakeTimersAreEnabled()) {
-              // @ts-expect-error global jest
               jest.advanceTimersByTime(0);
             }
           });
@@ -96,7 +97,6 @@ export const beforeAll = async () => {
 
 /** The function is used to configure jest's fake timers in environments where React's act is enabled */
 function jestFakeTimersAreEnabled() {
-  // @ts-expect-error global jest
   if (typeof jest !== 'undefined' && jest !== null) {
     return (
       // legacy timers

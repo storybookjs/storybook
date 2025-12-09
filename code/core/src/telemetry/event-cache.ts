@@ -1,6 +1,6 @@
 import { cache } from 'storybook/internal/common';
 
-import type { EventType } from './types';
+import type { EventType, TelemetryEvent } from './types';
 
 interface UpgradeSummary {
   timestamp: number;
@@ -9,9 +9,14 @@ interface UpgradeSummary {
   sessionId?: string;
 }
 
+export interface CacheEntry {
+  timestamp: number;
+  body: TelemetryEvent;
+}
+
 let operation: Promise<any> = Promise.resolve();
 
-const setHelper = async (eventType: EventType, body: any) => {
+const setHelper = async (eventType: EventType, body: TelemetryEvent) => {
   const lastEvents = (await cache.get('lastEvents')) || {};
   lastEvents[eventType] = { body, timestamp: Date.now() };
   await cache.set('lastEvents', lastEvents);
@@ -23,12 +28,20 @@ export const set = async (eventType: EventType, body: any) => {
   return operation;
 };
 
-export const get = async (eventType: EventType) => {
-  const lastEvents = await cache.get('lastEvents');
-  return lastEvents?.[eventType];
+export const get = async (eventType: EventType): Promise<CacheEntry | undefined> => {
+  const lastEvents = await getLastEvents();
+  return lastEvents[eventType];
 };
 
-const upgradeFields = (event: any): UpgradeSummary => {
+export const getLastEvents = async (): Promise<Record<EventType, CacheEntry>> => {
+  // Wait for any pending set operations to complete before reading
+  // This prevents race conditions where getLastEvents() reads stale data
+  // while a set() operation is still in progress
+  await operation;
+  return (await cache.get('lastEvents')) || {};
+};
+
+const upgradeFields = (event: CacheEntry): UpgradeSummary => {
   const { body, timestamp } = event;
   return {
     timestamp,

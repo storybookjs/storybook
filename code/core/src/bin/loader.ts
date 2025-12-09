@@ -37,11 +37,11 @@ export function resolveWithExtension(importPath: string, currentFilePath: string
     return importPath;
   }
 
-  deprecate(dedent`One or more extensionless imports detected: "${importPath}" in file "${currentFilePath}".
-    For maximum compatibility, you should add an explicit file extension to this import.
-    Storybook will attempt to resolve it automatically, but this may change in the future.
-    If adding the extension results in an error from TypeScript, we recommend setting moduleResolution to "bundler" in tsconfig.json
-    or alternatively look into the allowImportingTsExtensions option.`);
+  deprecate(dedent`
+    One or more extensionless imports detected: "${importPath}" in file "${currentFilePath}".
+    For more information on how to resolve the issue: 
+    https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensions
+  `);
 
   // Resolve the import path relative to the current file
   const currentDir = path.dirname(currentFilePath);

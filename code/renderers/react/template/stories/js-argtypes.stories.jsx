@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { PureArgsTable as ArgsTable } from '@storybook/addon-docs/blocks';
 
-import { mapValues } from 'es-toolkit/compat';
+import { mapValues } from 'es-toolkit/object';
 import PropTypes from 'prop-types';
 import { inferControls } from 'storybook/preview-api';
 import { ThemeProvider, convert, themes } from 'storybook/theming';

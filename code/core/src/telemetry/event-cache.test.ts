@@ -1,9 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import type { MockInstance } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getPrecedingUpgrade } from './event-cache';
+import { cache } from 'storybook/internal/common';
+
+import { get, getLastEvents, getPrecedingUpgrade, set } from './event-cache';
+
+vi.mock('storybook/internal/common', { spy: true });
 
 expect.addSnapshotSerializer({
-  print: (val: any) => JSON.stringify(val, null, 2),
+  print: (val: unknown) => JSON.stringify(val, null, 2),
   test: (val) => typeof val !== 'string',
 });
 
@@ -172,6 +177,70 @@ describe('event-cache', () => {
           "eventId": "upgrade"
         }
       `);
+    });
+  });
+
+  describe('race condition prevention', () => {
+    let cacheGetMock: MockInstance;
+    let cacheSetMock: MockInstance;
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      cacheGetMock = vi.mocked(cache.get);
+      cacheSetMock = vi.mocked(cache.set);
+    });
+
+    it('getLastEvents waits for pending set operations to complete', async () => {
+      const initialData = {
+        init: { timestamp: 1, body: { eventType: 'init', eventId: 'init-1' } },
+      };
+      const updatedData = {
+        init: { timestamp: 1, body: { eventType: 'init', eventId: 'init-1' } },
+        upgrade: { timestamp: 2, body: { eventType: 'upgrade', eventId: 'upgrade-1' } },
+      };
+
+      // Use a simple delay to simulate async operations
+      let setGetResolved = false;
+      let setSetResolved = false;
+
+      cacheGetMock.mockImplementationOnce(async () => {
+        while (!setGetResolved) {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        return initialData;
+      });
+
+      cacheSetMock.mockImplementationOnce(async () => {
+        while (!setSetResolved) {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+      });
+
+      // Mock cache.get to return updated data after set completes
+      cacheGetMock.mockResolvedValueOnce(updatedData);
+
+      // Start a set operation (this will be pending)
+      const setPromiseResult = set('upgrade', { eventType: 'upgrade', eventId: 'upgrade-1' });
+
+      // Immediately call getLastEvents() - it should wait for set() to complete
+      const getPromise = getLastEvents();
+
+      // Verify that getLastEvents hasn't resolved yet (it's waiting)
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Resolve the set operations
+      setGetResolved = true;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      setSetResolved = true;
+      await setPromiseResult;
+
+      // Now getLastEvents should complete and return the updated data
+      const result = await getPromise;
+
+      // Verify that getLastEvents waited for set to complete and got the updated data
+      expect(result).toEqual(updatedData);
+      expect(cacheGetMock).toHaveBeenCalledTimes(2); // Once in setHelper, once in getLastEvents
+      expect(cacheSetMock).toHaveBeenCalledTimes(1);
     });
   });
 });

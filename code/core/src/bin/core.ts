@@ -25,6 +25,16 @@ addToGlobalContext('cliVersion', version);
  *
  * The dispatch CLI at ./dispatcher.ts routes commands to this core CLI.
  */
+
+const handleCommandFailure = async (logFilePath: string | boolean): Promise<never> => {
+  try {
+    const logFile = await logTracker.writeToFile(logFilePath);
+    logger.log(`Debug logs are written to: ${logFile}`);
+  } catch {}
+  logger.outro('Storybook exited with an error');
+  process.exit(1);
+};
+
 const command = (name: string) =>
   program
     .command(name)
@@ -36,7 +46,10 @@ const command = (name: string) =>
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
     .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
-    .option('--write-logs', 'Write all debug logs to a file at the end of the run')
+    .option(
+      '--logfile [path]',
+      'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
+    )
     .hook('preAction', async (self) => {
       try {
         const options = self.opts();
@@ -44,7 +57,7 @@ const command = (name: string) =>
           logger.setLogLevel(options.loglevel);
         }
 
-        if (options.writeLogs) {
+        if (options.logfile) {
           logTracker.enableLogWriting();
         }
 
@@ -53,10 +66,12 @@ const command = (name: string) =>
         logger.error('Error loading global settings:\n' + String(e));
       }
     })
-    .hook('postAction', async () => {
+    .hook('postAction', async (command) => {
       if (logTracker.shouldWriteLogsToFile) {
-        const logFile = await logTracker.writeToFile();
-        logger.outro(`Storybook debug logs can be found at: ${logFile}`);
+        try {
+          const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
+          logger.outro(`Debug logs are written to: ${logFile}`);
+        } catch {}
       }
     });
 
@@ -103,9 +118,7 @@ command('dev')
       with: { type: 'json' },
     });
 
-    logger.log(
-      picocolors.bold(`${packageJson.name} v${packageJson.version}`) + picocolors.reset('\n')
-    );
+    logger.intro(`${packageJson.name} v${packageJson.version}`);
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -121,7 +134,9 @@ command('dev')
       options.port = parseInt(`${options.port}`, 10);
     }
 
-    await dev({ ...options, packageJson }).catch(() => process.exit(1));
+    await dev({ ...options, packageJson }).catch(() => {
+      handleCommandFailure(options.logfile);
+    });
   });
 
 command('build')
@@ -150,7 +165,7 @@ command('build')
       with: { type: 'json' },
     });
 
-    logger.log(picocolors.bold(`${packageJson.name} v${packageJson.version}\n`));
+    logger.intro(`Building ${packageJson.name} v${packageJson.version}`);
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -164,7 +179,12 @@ command('build')
       ...options,
       packageJson,
       test: !!options.test || optionalEnvToBoolean(process.env.SB_TESTBUILD),
-    }).catch(() => process.exit(1));
+    }).catch(() => {
+      logger.outro('Storybook exited with an error');
+      process.exit(1);
+    });
+
+    logger.outro('Storybook build completed successfully');
   });
 
 command('index')

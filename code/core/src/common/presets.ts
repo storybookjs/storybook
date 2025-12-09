@@ -20,7 +20,7 @@ import { getInterpretedFile } from './utils/interpret-files';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
 import { validateConfigurationFiles } from './utils/validate-configuration-files';
 
-type InterPresetOptions = Omit<
+export type InterPresetOptions = Omit<
   CLIOptions &
     LoadOptions &
     BuilderOptions & { isCritical?: boolean; build?: StorybookConfigRaw['build'] },
@@ -321,7 +321,7 @@ export async function getPresets(
   const loadedPresets: LoadedPreset[] = await loadPresets(presets, 0, storybookOptions);
 
   return {
-    apply: async (extension: string, config: any, args = {}) =>
+    apply: async (extension: string, config?: any, args = {}) =>
       applyPresets(loadedPresets, extension, config, args, storybookOptions),
   };
 }

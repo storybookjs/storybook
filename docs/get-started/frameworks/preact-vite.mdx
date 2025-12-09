@@ -1,51 +1,49 @@
 ---
-title: Storybook for Preact & Vite
+title: Storybook for Preact with Vite
 hideRendererSelector: true
 sidebar:
-  order: 3
-  title: Preact & Vite
+  order: 4
+  title: Preact (Vite)
 ---
 
-Storybook for Preact & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Preact](https://preactjs.com/) applications built with [Vite](https://vitejs.dev/). It includes:
+Storybook for Preact & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Preact](https://preactjs.com/) applications built with [Vite](https://vitejs.dev/).
 
-* 🏎️ Pre-bundled for performance
-* 🪄 Zero config
-* 💫 and more!
+## Install
 
-## Requirements
+To install Storybook in an existing Preact project, run this command in your project's root directory:
 
-* Preact 8.x || 10.x
-* Vite ≥ 5.0
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
-## Getting started
+You can then get started [writing stories](/docs/get-started/whats-a-story/), [running tests](/docs/writing-tests/) and [documenting your components](/docs/writing-docs/). For more control over the installation process, refer to the [installation guide](/docs/install/).
 
-### In a project without Storybook
+### Requirements
 
-Follow the prompts after running this command in your Preact project's root directory:
+<GetStartedVersions versions={[{
+  name: 'Preact',
+  range: '8.x || 10.x',
+  icon: '/images/logos/renderers/logo-preact.svg'
+}, {
+  name: 'Vite',
+  range: '≥ 5',
+  icon: '/images/logos/builders/vite.svg'
+}]} />
 
-{/* prettier-ignore-start */}
 
-<CodeSnippets path="create-command.md" />
+## Run Storybook
 
-{/* prettier-ignore-end */}
+To run Storybook for a particular project, run the following:
 
-[More on getting started with Storybook.](../install.mdx)
+<CodeSnippets path="storybook-run-dev.md" />
 
-### In a project with Storybook
+To build Storybook, run:
 
-This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+<CodeSnippets path="build-storybook-production-mode.md" />
 
-{/* prettier-ignore-start */}
+You will find the output in the configured `outputDir` (default is `storybook-static`).
 
-<CodeSnippets path="storybook-upgrade.md" />
 
-{/* prettier-ignore-end */}
-
-#### Automatic migration
-
-When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/preact-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
-
-#### Manual migration
+## FAQ
+### How do I manually install the Preact framework?
 
 First, install the framework:
 

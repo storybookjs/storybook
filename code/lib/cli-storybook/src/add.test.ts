@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
+import { PackageManagerName } from '../../../core/src/common';
 import { add, getVersionSpecifier } from './add';
 
 const MockedConfig = vi.hoisted(() => {
@@ -66,9 +69,6 @@ vi.mock('storybook/internal/csf-tools', () => {
 vi.mock('./postinstallAddon', () => {
   return MockedPostInstall;
 });
-vi.mock('./automigrate/fixes/wrap-getAbsolutePath-utils', () => {
-  return MockWrapGetAbsolutePathUtils;
-});
 vi.mock('./automigrate/helpers/mainConfigFile', () => {
   return MockedMainConfigFileHelper;
 });
@@ -81,8 +81,10 @@ vi.mock('storybook/internal/common', () => {
     JsPackageManagerFactory: {
       getPackageManager: vi.fn(() => MockedPackageManager),
     },
-    syncStorybookAddons: vi.fn(),
-    getCoercedStorybookVersion: vi.fn(() => '8.0.0'),
+    setupAddonInConfig: vi.fn(),
+    getAbsolutePathWrapperName: MockWrapGetAbsolutePathUtils.getAbsolutePathWrapperName,
+    wrapValueWithGetAbsolutePathWrapper:
+      MockWrapGetAbsolutePathUtils.wrapValueWithGetAbsolutePathWrapper,
     versions: {
       storybook: '8.0.0',
       '@storybook/addon-docs': '8.0.0',
@@ -128,14 +130,7 @@ describe('add', () => {
   ];
 
   test.each(testData)('$input', async ({ input, expected }) => {
-    const [packageName] = getVersionSpecifier(input);
-
-    await add(input, { packageManager: 'npm', skipPostinstall: true }, MockedConsole);
-
-    expect(MockedConfig.appendValueToArray).toHaveBeenCalledWith(
-      expect.arrayContaining(['addons']),
-      packageName
-    );
+    await add(input, { packageManager: PackageManagerName.NPM, skipPostinstall: true });
 
     expect(MockedPackageManager.addDependencies).toHaveBeenCalledWith(
       { type: 'devDependencies', writeOutputToFile: false },
@@ -148,58 +143,30 @@ describe('add (extra)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
-  test('should not add a "wrap getAbsolutePath" to the addon when not needed', async () => {
-    MockedConfig.getFieldNode.mockReturnValue({});
-    MockWrapGetAbsolutePathUtils.getAbsolutePathWrapperName.mockReturnValue(null);
-    await add(
-      '@storybook/addon-docs',
-      { packageManager: 'npm', skipPostinstall: true },
-      MockedConsole
-    );
-
-    expect(MockWrapGetAbsolutePathUtils.wrapValueWithGetAbsolutePathWrapper).not.toHaveBeenCalled();
-    expect(MockedConfig.appendValueToArray).toHaveBeenCalled();
-    expect(MockedConfig.appendNodeToArray).not.toHaveBeenCalled();
-  });
-  test('should add a "wrap getAbsolutePath" to the addon when applicable', async () => {
-    MockedConfig.getFieldNode.mockReturnValue({});
-    MockWrapGetAbsolutePathUtils.getAbsolutePathWrapperName.mockReturnValue('getAbsolutePath');
-    await add(
-      '@storybook/addon-docs',
-      { packageManager: 'npm', skipPostinstall: true },
-      MockedConsole
-    );
-
-    expect(MockWrapGetAbsolutePathUtils.wrapValueWithGetAbsolutePathWrapper).toHaveBeenCalled();
-    expect(MockedConfig.appendValueToArray).not.toHaveBeenCalled();
-    expect(MockedConfig.appendNodeToArray).toHaveBeenCalled();
-  });
   test('not warning when installing the correct version of storybook', async () => {
-    await add(
-      '@storybook/addon-docs',
-      { packageManager: 'npm', skipPostinstall: true },
-      MockedConsole
-    );
+    await add('@storybook/addon-docs', {
+      packageManager: PackageManagerName.NPM,
+      skipPostinstall: true,
+    });
 
-    expect(MockedConsole.warn).not.toHaveBeenCalledWith(
+    expect(logger.warn).not.toHaveBeenCalledWith(
       expect.stringContaining(`is not the same as the version of Storybook you are using.`)
     );
   });
   test('not warning when installing unrelated package', async () => {
-    await add('aa', { packageManager: 'npm', skipPostinstall: true }, MockedConsole);
+    await add('aa', { packageManager: PackageManagerName.NPM, skipPostinstall: true });
 
-    expect(MockedConsole.warn).not.toHaveBeenCalledWith(
+    expect(logger.warn).not.toHaveBeenCalledWith(
       expect.stringContaining(`is not the same as the version of Storybook you are using.`)
     );
   });
   test('warning when installing a core addon mismatching version of storybook', async () => {
-    await add(
-      '@storybook/addon-docs@2.0.0',
-      { packageManager: 'npm', skipPostinstall: true },
-      MockedConsole
-    );
+    await add('@storybook/addon-docs@2.0.0', {
+      packageManager: PackageManagerName.NPM,
+      skipPostinstall: true,
+    });
 
-    expect(MockedConsole.warn).toHaveBeenCalledWith(
+    expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining(
         `The version of @storybook/addon-docs (2.0.0) you are installing is not the same as the version of Storybook you are using (8.0.0). This may lead to unexpected behavior.`
       )
@@ -207,15 +174,16 @@ describe('add (extra)', () => {
   });
 
   test('postInstall', async () => {
-    await add(
-      '@storybook/addon-docs',
-      { packageManager: 'npm', skipPostinstall: false },
-      MockedConsole
-    );
+    await add('@storybook/addon-docs', {
+      packageManager: PackageManagerName.NPM,
+      skipPostinstall: false,
+    });
 
     expect(MockedPostInstall.postinstallAddon).toHaveBeenCalledWith('@storybook/addon-docs', {
       packageManager: 'npm',
       configDir: '.storybook',
+      logger: expect.any(Object),
+      prompt: expect.any(Object),
     });
   });
 });

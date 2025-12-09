@@ -101,6 +101,7 @@ const PlayFnNotice = styled.div(
     padding: '3px 8px',
     fontSize: '10px',
     fontWeight: 'bold',
+    zIndex: 99,
     '> *': {
       display: 'block',
     },
@@ -387,8 +388,8 @@ const parameters = {
   },
   backgrounds: {
     options: {
-      light: { name: 'light', value: '#edecec' },
-      dark: { name: 'dark', value: '#262424' },
+      light: { name: 'light', value: '#F6F9FC' },
+      dark: { name: 'dark', value: '#1B1C1D' },
       blue: { name: 'blue', value: '#1b1a2c' },
     },
     grid: {

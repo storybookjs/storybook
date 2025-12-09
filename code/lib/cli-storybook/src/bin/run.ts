@@ -2,16 +2,17 @@ import { globalSettings } from 'storybook/internal/cli';
 import {
   HandledError,
   JsPackageManagerFactory,
+  PackageManagerName,
   isCI,
   optionalEnvToBoolean,
   removeAddon as remove,
   versions,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
-import { program } from 'commander';
+import { Option, program } from 'commander';
 import envinfo from 'envinfo';
 import leven from 'leven';
 import picocolors from 'picocolors';
@@ -28,16 +29,20 @@ import { type UpgradeOptions, upgrade } from '../upgrade';
 addToGlobalContext('cliVersion', versions.storybook);
 
 // Return a failed exit code but write the logs to a file first
-const handleCommandFailure = async (error: unknown): Promise<never> => {
-  if (!(error instanceof HandledError)) {
-    logger.error(String(error));
-  }
+const handleCommandFailure =
+  (logFilePath: string | boolean | undefined) =>
+  async (error: unknown): Promise<never> => {
+    if (!(error instanceof HandledError)) {
+      logger.error(String(error));
+    }
 
-  const logFile = await logTracker.writeToFile();
-  logger.log(`Storybook debug logs can be found at: ${logFile}`);
-  logger.outro('');
-  process.exit(1);
-};
+    try {
+      const logFile = await logTracker.writeToFile(logFilePath);
+      logger.log(`Debug logs are written to: ${logFile}`);
+    } catch {}
+    logger.outro('');
+    process.exit(1);
+  };
 
 const command = (name: string) =>
   program
@@ -49,28 +54,37 @@ const command = (name: string) =>
     )
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
-    .option('--write-logs', 'Write all debug logs to a file at the end of the run')
+    .option(
+      '--logfile [path]',
+      'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
+    )
     .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
     .hook('preAction', async (self) => {
+      const options = self.opts();
+      if (options.debug) {
+        logger.setLogLevel('debug');
+      }
+
+      if (options.loglevel) {
+        logger.setLogLevel(options.loglevel);
+      }
+
+      if (options.logfile) {
+        logTracker.enableLogWriting();
+      }
+
       try {
-        const options = self.opts();
-        if (options.loglevel) {
-          logger.setLogLevel(options.loglevel);
-        }
-
-        if (options.writeLogs) {
-          logTracker.enableLogWriting();
-        }
-
         await globalSettings();
       } catch (e) {
         logger.error('Error loading global settings:\n' + String(e));
       }
     })
-    .hook('postAction', async () => {
+    .hook('postAction', async (command) => {
       if (logTracker.shouldWriteLogsToFile) {
-        const logFile = await logTracker.writeToFile();
-        logger.log(`Storybook debug logs can be found at: ${logFile}`);
+        try {
+          const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
+          logger.log(`Debug logs are written to: ${logFile}`);
+        } catch {}
         logger.outro(CLI_COLORS.success('Done!'));
       }
     });
@@ -79,7 +93,12 @@ command('init')
   .description('Initialize Storybook into your project')
   .option('-f --force', 'Force add Storybook')
   .option('-s --skip-install', 'Skip installing deps')
-  .option('--package-manager <npm|pnpm|yarn1|yarn2>', 'Force package manager for installing deps')
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
+  )
+  // TODO: Remove in SB11
   .option('--use-pnp', 'Enable PnP mode for Yarn 2+')
   .option('-p --parser <babel | babylon | flow | ts | tsx>', 'jscodeshift parser')
   .option('-t --type <type>', 'Add Storybook for a specific project type')
@@ -98,27 +117,41 @@ command('init')
 
 command('add <addon>')
   .description('Add an addon to your Storybook')
-  .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
-    'Force package manager for installing dependencies'
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('--skip-install', 'Skip installing deps')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
   .option('-y --yes', 'Skip prompting the user')
   .option('--skip-doctor', 'Skip doctor check')
-  .action((addonName: string, options: any) => add(addonName, options));
+  .action((addonName: string, options: any) => {
+    withTelemetry('add', { cliOptions: options }, async () => {
+      logger.intro(`Setting up your project for ${addonName}`);
+
+      await add(addonName, options);
+
+      if (!options.disableTelemetry) {
+        await telemetry('add', { addon: addonName, source: 'cli' });
+      }
+      logger.outro('Done!');
+    }).catch(handleCommandFailure);
+  });
 
 command('remove <addon>')
   .description('Remove an addon from your Storybook')
-  .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
-    'Force package manager for installing dependencies'
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('-s --skip-install', 'Skip installing deps')
   .action((addonName: string, options: any) =>
     withTelemetry('remove', { cliOptions: options }, async () => {
+      logger.intro(`Removing ${addonName} from your Storybook`);
       const packageManager = JsPackageManagerFactory.getPackageManager({
         configDir: options.configDir,
         force: options.packageManager,
@@ -131,14 +164,16 @@ command('remove <addon>')
       if (!options.disableTelemetry) {
         await telemetry('remove', { addon: addonName, source: 'cli' });
       }
-    })
+      logger.outro('Done!');
+    }).catch(handleCommandFailure(options.logfile))
   );
 
 command('upgrade')
   .description(`Upgrade your Storybook packages to v${versions.storybook}`)
-  .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
-    'Force package manager for installing dependencies'
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
   )
   .option('-y --yes', 'Skip prompting the user')
   .option('-f --force', 'force the upgrade, skipping autoblockers')
@@ -149,8 +184,15 @@ command('upgrade')
     'Directory(ies) where to load Storybook configurations from'
   )
   .action(async (options: UpgradeOptions) => {
-    prompt.setPromptLibrary('clack');
-    await upgrade(options).catch(handleCommandFailure);
+    await withTelemetry(
+      'upgrade',
+      { cliOptions: { ...options, configDir: options.configDir?.[0] } },
+      async () => {
+        logger.intro(`Storybook upgrade - v${versions.storybook}`);
+        await upgrade(options);
+        logger.outro('Storybook upgrade completed!');
+      }
+    ).catch(handleCommandFailure(options.logfile));
   });
 
 command('info')
@@ -189,15 +231,12 @@ command('migrate [migration]')
     '-r --rename <from-to>',
     'Rename suffix of matching files after codemod has been applied, e.g. ".js:.ts"'
   )
-  .action((migration, { configDir, glob, dryRun, list, rename, parser }) => {
-    migrate(migration, {
-      configDir,
-      glob,
-      dryRun,
-      list,
-      rename,
-      parser,
-    }).catch(handleCommandFailure);
+  .action((migration, options) => {
+    withTelemetry('migrate', { cliOptions: options }, async () => {
+      logger.intro(`Running ${migration} migration`);
+      await migrate(migration, options);
+      logger.outro('Migration completed');
+    }).catch(handleCommandFailure(options.logfile));
   });
 
 command('sandbox [filterValue]')
@@ -205,21 +244,32 @@ command('sandbox [filterValue]')
   .description('Create a sandbox from a set of possible templates')
   .option('-o --output <outDir>', 'Define an output directory')
   .option('--no-init', 'Whether to download a template without an initialized Storybook', false)
-  .action((filterValue, options) =>
-    sandbox({ filterValue, ...options }).catch(handleCommandFailure)
-  );
+  .action((filterValue, options) => {
+    logger.intro(`Creating a Storybook sandbox...`);
+    sandbox({ filterValue, ...options })
+      .catch(handleCommandFailure)
+      .finally(() => {
+        logger.outro('Done!');
+      });
+  });
 
 command('link <repo-url-or-directory>')
   .description('Pull down a repro from a URL (or a local directory), link it, and run storybook')
   .option('--local', 'Link a local directory already in your file system')
   .option('--no-start', 'Start the storybook', true)
-  .action((target, { local, start }) => link({ target, local, start }).catch(handleCommandFailure));
+  .action((target, { local, start, logfile }) =>
+    link({ target, local, start }).catch(handleCommandFailure(logfile))
+  );
 
 command('automigrate [fixId]')
   .description('Check storybook for incompatibilities or migrations and apply fixes')
   .option('-y --yes', 'Skip prompting the user')
   .option('-n --dry-run', 'Only check for fixes, do not actually run them')
-  .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
+  )
   .option('-l --list', 'List available migrations')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configurations to migrate')
   .option('-s --skip-install', 'Skip installing deps')
@@ -229,16 +279,27 @@ command('automigrate [fixId]')
   )
   .option('--skip-doctor', 'Skip doctor check')
   .action(async (fixId, options) => {
-    prompt.setPromptLibrary('clack');
-    await doAutomigrate({ fixId, ...options }).catch(handleCommandFailure);
+    withTelemetry('automigrate', { cliOptions: options }, async () => {
+      logger.intro(fixId ? `Running ${fixId} automigration` : 'Running automigrations');
+      await doAutomigrate({ fixId, ...options });
+      logger.outro('Done');
+    }).catch(handleCommandFailure(options.logfile));
   });
 
 command('doctor')
   .description('Check Storybook for known problems and provide suggestions or fixes')
-  .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
+  .addOption(
+    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
+      Object.values(PackageManagerName)
+    )
+  )
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
   .action(async (options) => {
-    await doctor(options).catch(handleCommandFailure);
+    withTelemetry('doctor', { cliOptions: options }, async () => {
+      logger.intro('Doctoring Storybook');
+      await doctor(options);
+      logger.outro('Done');
+    }).catch(handleCommandFailure(options.logfile));
   });
 
 program.on('command:*', ([invalidCmd]) => {

@@ -1,6 +1,6 @@
 import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
@@ -74,8 +74,9 @@ const SearchField = styled.div<{ isMobile: boolean }>(({ theme, isMobile }) => (
   borderRadius: theme.appBorderRadius + 2,
 
   '&:has(input:focus), &:has(input:active)': {
-    boxShadow: `${theme.color.secondary} 0 0 0 1px inset`,
     background: theme.background.app,
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: 2,
   },
 }));
 
@@ -327,13 +328,13 @@ export const Search = React.memo<SearchProps>(function Search({
         openMenu,
         closeMenu,
         inputValue,
-        clearSelection,
         getInputProps,
         getItemProps,
         getLabelProps,
         getMenuProps,
         getRootProps,
         highlightedIndex,
+        reset,
       }) => {
         const input = inputValue ? inputValue.trim() : '';
         let results: DownshiftItem[] = input ? getResults(input) : [];
@@ -409,10 +410,19 @@ export const Search = React.memo<SearchProps>(function Search({
                   </FocusKey>
                 )}
                 <Actions>
-                  {isOpen && (
-                    <IconButton onClick={() => clearSelection()}>
+                  {input && (
+                    <Button
+                      padding="small"
+                      variant="ghost"
+                      ariaLabel="Clear search"
+                      onClick={() => {
+                        reset({ inputValue: '' });
+                        closeMenu();
+                        inputRef.current?.focus();
+                      }}
+                    >
                       <CloseIcon />
-                    </IconButton>
+                    </Button>
                   )}
                   {searchFieldContent}
                 </Actions>

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { printCsf } from 'storybook/internal/csf-tools';
 
 // Import common to mock
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 // Import FixResult type
 import { addonGlobalsApi, transformStoryFile } from './addon-globals-api';
@@ -38,6 +38,7 @@ const check = async (previewContents: string) => {
     storybookVersion: '9.0.0', // Assume v9 for testing migrations
     previewConfigPath,
     storiesPaths: [],
+    hasCsfFactoryPreview: false,
   });
 };
 

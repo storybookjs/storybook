@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-onboarding",
-  "version": "10.0.0-beta.13",
+  "version": "10.2.0-alpha.4",
   "description": "Storybook Onboarding: Help new users learn how to write stories",
   "keywords": [
     "storybook",
@@ -46,13 +46,9 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "devDependencies": {
     "@neoconfetti/react": "^1.0.0",
-    "@storybook/icons": "^1.6.0",
+    "@storybook/icons": "^2.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-joyride": "^2.8.2",

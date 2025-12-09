@@ -62,5 +62,5 @@ export const frameworkToBuilder: Record<SupportedFramework, SupportedBuilder> = 
   [SupportedFramework.VUE3_RSBUILD]: SupportedBuilder.RSBUILD,
   [SupportedFramework.HTML_RSBUILD]: SupportedBuilder.RSBUILD,
   [SupportedFramework.WEB_COMPONENTS_RSBUILD]: SupportedBuilder.RSBUILD,
-  [SupportedFramework.STENCIL]: SupportedBuilder.STENCIL,
+  [SupportedFramework.STENCIL]: SupportedBuilder.VITE,
 };

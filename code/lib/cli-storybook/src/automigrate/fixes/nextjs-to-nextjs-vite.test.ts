@@ -5,9 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 
 import type { CheckOptions } from '.';
-import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite';
-
-const VITE_DEFAULT_VERSION = '^7.0.0';
+import { VITE_DEFAULT_VERSION, nextjsToNextjsVite } from './nextjs-to-nextjs-vite';
 
 // Mock dependencies
 vi.mock('node:fs/promises', () => ({
@@ -143,10 +141,6 @@ describe('nextjs-to-nextjs-vite', () => {
           },
         })
       );
-
-      // Explicitly set getDependencyVersion to return undefined for this test scenario
-      // Even though beforeEach sets it, we keep this for clarity and test documentation
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(undefined);
 
       await nextjsToNextjsVite.run!({
         result,

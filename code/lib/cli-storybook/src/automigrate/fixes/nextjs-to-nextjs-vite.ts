@@ -5,7 +5,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import type { Fix } from '../types';
 
-const VITE_DEFAULT_VERSION = '^7.0.0';
+export const VITE_DEFAULT_VERSION = '^7.0.0';
 
 interface NextjsToNextjsViteOptions {
   hasNextjsPackage: boolean;

@@ -30,6 +30,8 @@ export enum PackageManagerName {
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
 
+const indentSymbol = Symbol('indent');
+
 /**
  * Extract package name and version from input
  *
@@ -182,7 +184,7 @@ export abstract class JsPackageManager {
     // Read from disk if not in cache
     const jsonContent = readFileSync(absolutePath, 'utf8');
     const packageJSON = JSON.parse(jsonContent);
-    packageJSON[Symbol.for('indent')] = detectIndent(jsonContent).indent ?? 2;
+    packageJSON[indentSymbol] = detectIndent(jsonContent).indent ?? 2;
 
     const result: PackageJsonWithDepsAndDevDeps = {
       ...packageJSON,
@@ -200,7 +202,7 @@ export abstract class JsPackageManager {
   #getIndent(filePath: string): string | number {
     try {
       const packageJson = JsPackageManager.getPackageJson(filePath);
-      return packageJson[Symbol.for('indent')];
+      return packageJson[indentSymbol];
     } catch (e) {
       return 2;
     }

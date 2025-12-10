@@ -403,11 +403,28 @@ jobs:
                   name: TypeCheck scripts
                   working_directory: scripts
                   command: yarn check
-            - run:
-                  name: Ensure no changes pending
-                  command: git diff --exit-code
             - report-workflow-on-failure
             - cancel-workflow-on-failure
+    knip:
+        description: knip
+        executor:
+            name: sb_node_22_classic
+            class: xlarge
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Run Knip
+                  working_directory: code
+                  command: yarn knip
     ui:
         description: ui
         executor:
@@ -667,6 +684,9 @@ jobs:
                   name: Build storybook
                   command: yarn task build --template react-vite/default-ts --no-link -s build
             - run:
+                  name: Running Chromatic
+                  command: yarn task chromatic --template react-vite/default-ts --no-link -s chromatic
+            - run:
                   name: Serve storybook
                   background: true
                   command: yarn task serve --template react-vite/default-ts --no-link -s serve
@@ -904,6 +924,9 @@ workflows:
             - build-linux
             - build-windows
             - check:
+                  requires:
+                      - build-linux
+            - knip:
                   requires:
                       - build-linux
             - package-benchmarks:

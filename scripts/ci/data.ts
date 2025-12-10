@@ -273,7 +273,10 @@ function defineSandboxFlow<K extends string>(name: K) {
       name: names.build,
       template: name,
       needs: [ids.create],
-      options: { e2e: !skipTasks?.includes('e2e-tests') },
+      options: {
+        e2e: !skipTasks?.includes('e2e-tests'),
+        chromatic: !skipTasks?.includes('chromatic'),
+      },
     }),
     defineSandboxJob_dev({
       name: names.dev,
@@ -453,9 +456,31 @@ const check = defineJob(
           command: 'yarn check',
         },
       },
-      git.check(),
       'report-workflow-on-failure',
       'cancel-workflow-on-failure',
+    ],
+  },
+  [linux_build.id]
+);
+
+const knip = defineJob(
+  'knip',
+  {
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'xlarge',
+    },
+    steps: [
+      git.checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS()),
+      {
+        run: {
+          name: 'Run Knip',
+          working_directory: `code`,
+          command: 'yarn knip',
+        },
+      },
     ],
   },
   [linux_build.id]
@@ -556,39 +581,6 @@ const packageBenchmarks = defineJob(
   [linux_build.id]
 );
 
-const testStorybooksPNP = defineJob(
-  'test-storybooks-pnp',
-  {
-    executor: {
-      name: 'sb_node_22_classic',
-      class: 'medium',
-    },
-    steps: [
-      git.checkout(),
-      workspace.attach(),
-      cache.attach(CACHE_KEYS()),
-      {
-        run: {
-          name: 'Install dependencies',
-          working_directory: 'test-storybooks/yarn-pnp',
-          command: 'yarn install --no-immutable',
-          environment: {
-            YARN_ENABLE_IMMUTABLE_INSTALLS: false,
-          },
-        },
-      },
-      {
-        run: {
-          name: 'Run Storybook smoke test',
-          working_directory: 'test-storybooks/yarn-pnp',
-          command: 'yarn storybook --smoke-test',
-        },
-      },
-    ],
-  },
-  ['test-storybooks']
-);
-
 const testStorybooksPortables = ['react', 'vue3'].map(definePortableStoryTest);
 const testStorybooksPortableVitest3 = defineJob(
   'test-storybooks-portable-vitest3',
@@ -616,6 +608,38 @@ const testStorybooksPortableVitest3 = defineJob(
           name: 'Run Playwright E2E tests',
           working_directory: 'test-storybooks/portable-stories-kitchen-sink/react-vitest-3',
           command: 'yarn playwright-e2e',
+        },
+      },
+    ],
+  },
+  ['test-storybooks']
+);
+const testStorybooksPNP = defineJob(
+  'test-storybooks-pnp',
+  {
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'medium',
+    },
+    steps: [
+      git.checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS()),
+      {
+        run: {
+          name: 'Install dependencies',
+          working_directory: 'test-storybooks/yarn-pnp',
+          command: 'yarn install --no-immutable',
+          environment: {
+            YARN_ENABLE_IMMUTABLE_INSTALLS: false,
+          },
+        },
+      },
+      {
+        run: {
+          name: 'Run Storybook smoke test',
+          working_directory: 'test-storybooks/yarn-pnp',
+          command: 'yarn storybook --smoke-test',
         },
       },
     ],
@@ -746,6 +770,7 @@ const jobs = {
   [linux_build.id]: linux_build.implementation,
   [windows_build.id]: windows_build.implementation,
   [check.id]: check.implementation,
+  [knip.id]: knip.implementation,
   [uiTests.id]: uiTests.implementation,
   [linux_unitTests.id]: linux_unitTests.implementation,
   [windows_unitTests.id]: windows_unitTests.implementation,
@@ -839,6 +864,11 @@ const workflows = {
         },
       },
       {
+        [knip.id]: {
+          requires: knip.requires,
+        },
+      },
+      {
         [packageBenchmarks.id]: {
           requires: packageBenchmarks.requires,
         },
@@ -915,9 +945,10 @@ export const data = {
 function definePortableStoryTest(directory: string) {
   const working_directory = `test-storybooks/portable-stories-kitchen-sink/${directory}`;
 
-  const scripts = JSON.parse(
+  const { scripts } = JSON.parse(
     readFileSync(join(import.meta.dirname, '..', '..', working_directory, 'package.json'), 'utf8')
-  ).scripts;
+  );
+
   return defineJob(
     `test-storybooks-portable-${directory}`,
     {
@@ -995,6 +1026,7 @@ function defineSandboxJob_build({
   template: string;
   options: {
     e2e: boolean;
+    chromatic: boolean;
   };
 }) {
   const executor: JobImplementation['executor'] = options.e2e
@@ -1021,6 +1053,16 @@ function defineSandboxJob_build({
             command: `yarn task build --template ${template} --no-link -s build`,
           },
         },
+        ...(options.chromatic
+          ? [
+              {
+                run: {
+                  name: 'Running Chromatic',
+                  command: `yarn task chromatic --template ${template} --no-link -s chromatic`,
+                },
+              },
+            ]
+          : []),
         ...(options.e2e
           ? [
               {

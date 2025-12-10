@@ -645,7 +645,7 @@ The `startOpen` prop was renamed `defaultVisible` to match naming in other compo
 
 #### Removed: svg, strategy, withArrows, mutationObserverOptions
 
-These prop were not used inside Storybook and have been removed.
+These props were not used inside Storybook and have been removed.
 
 #### Removed: hasChrome
 
@@ -653,11 +653,11 @@ The `hasChrome` prop was removed because it should be handled by the tooltip bei
 
 #### Removed: closeOnTriggerHidden, followCursor, closeOnOutsideClick
 
-The `closeOnTriggerHidden`, `followCursor` and `closeOnOutsideClick` prop has been removed. WithTooltip will now authoritatively decide when and where to show or hide its tooltip. It will always close on clicks outside the tooltip, because tooltips should never be modal.
+The `closeOnTriggerHidden`, `followCursor` and `closeOnOutsideClick` props have been removed. WithTooltip will now authoritatively decide when and where to show or hide its tooltip. It will always close on clicks outside the tooltip, because tooltips should never be modal.
 
 #### Removed: interactive
 
-Thed `interactive` prop has been removed as it does not align with our vision for accessible components with a well-defined role. Use PopoverProvider instead of WithTooltip to show interactive overlays.
+The `interactive` prop has been removed as it does not align with our vision for accessible components with a well-defined role. Use PopoverProvider instead of WithTooltip to show interactive overlays.
 
 ##### Other changes
 

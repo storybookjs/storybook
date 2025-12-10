@@ -2186,13 +2186,21 @@ Storybook now uses MDX3 under the hood. This change contains many improvements a
 
 #### Dropping support for \*.stories.mdx (CSF in MDX) format and MDX1 support
 
-In Storybook 7, we deprecated the ability of using MDX both for documentation and for defining stories in the same .stories.mdx file. It is now removed, and Storybook won't support .stories.mdx files anymore. We provide migration scripts to help you onto the new format.
+In Storybook 7, we deprecated the ability to use MDX for both documentation and story definition in the same .stories.mdx file. It is now removed, and Storybook won't support `.stories.mdx` files anymore. We provide migration scripts to help you onto the new format. To migrate your `.stories.mdx` files to the new format, you can run the following command:
+
+```sh
+# Convert stories in MDX to CSF
+npx storybook@latest migrate mdx-to-csf --glob "src/**/*.stories.mdx"
+```
+
+> To ensure a smooth migration, you'll also need to:
+>
+> - Update your stories glob in your `.storybook/main.js` configuration to include the newly created `.mdx` and `.stories.js|ts` files.
+> - Manually remove the stories from the original `.stories.mdx` files, as by default the codemod won't delete them.
 
 If you were using the [legacy MDX1 format](#legacy-mdx1-support), you will have to remove the `legacyMdx1` main.js feature flag and the `@storybook/mdx1-csf` package.
 
 Alongside with this change, the `jsxOptions` configuration was removed as it is not used anymore.
-
-[More info here](https://storybook.js.org/docs/8/migration-guide#storiesmdx-to-mdxcsf).
 
 #### Dropping support for id, name and story in Story block
 

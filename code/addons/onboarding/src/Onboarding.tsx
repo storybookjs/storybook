@@ -119,6 +119,7 @@ export default function Onboarding({
     api.togglePanel(true);
     api.togglePanelPosition('bottom');
     api.setSelectedPanel(ADDON_CONTROLS_ID);
+    api.setSizes({ bottomPanelHeight: 300 });
   }, [api, selectStory]);
 
   useEffect(() => {

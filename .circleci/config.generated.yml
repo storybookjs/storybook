@@ -682,8 +682,8 @@ jobs:
     react-vite-default-ts--dev:
         description: react-vite/default-ts (dev)
         executor:
-            class: xlarge
             name: sb_playwright
+            class: xlarge
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1

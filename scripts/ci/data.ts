@@ -3,6 +3,7 @@ import { join } from 'node:path';
 // eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';
 
+import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import {
   ROOT_DIR,
   SANDBOX_DIR,
@@ -204,6 +205,9 @@ function defineJob<K extends string, I extends JobImplementation>(
 
 function defineSandboxFlow<K extends string>(name: K) {
   const id = toId(name);
+  const data = allTemplates[name as keyof typeof allTemplates];
+  const { skipTasks } = data;
+
   const names = {
     create: `${name} (create)`,
     build: `${name} (build)`,
@@ -214,6 +218,7 @@ function defineSandboxFlow<K extends string>(name: K) {
     build: `${toId(names.build)}`,
     dev: `${toId(names.dev)}`,
   };
+
   const jobs = [
     defineJob(
       names.create,
@@ -263,77 +268,18 @@ function defineSandboxFlow<K extends string>(name: K) {
       },
       ['sandboxes']
     ),
-    defineJob(
-      names.build,
-      {
-        executor: {
-          name: 'sb_playwright',
-          class: 'xlarge',
-        },
-        steps: [
-          git.checkout(),
-          workspace.attach(),
-          cache.attach(CACHE_KEYS()),
-          {
-            run: {
-              name: 'Build storybook',
-              command: `yarn task build --template ${name} --no-link -s build`,
-            },
-          },
-          {
-            run: {
-              name: 'Serve storybook',
-              background: true,
-              command: `yarn task serve --template ${name} --no-link -s serve`,
-            },
-          },
-          server.wait(['8001']),
-          {
-            run: {
-              name: 'Running E2E Tests',
-              command: [
-                `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
-                `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
-              ].join('\n'),
-            },
-          },
-        ],
-      },
-      [ids.create]
-    ),
-    defineJob(
-      names.dev,
-      {
-        executor: {
-          class: 'xlarge',
-          name: 'sb_playwright',
-        },
-        steps: [
-          git.checkout(),
-          workspace.attach(),
-          cache.attach(CACHE_KEYS()),
-          {
-            run: {
-              name: 'Run storybook',
-              working_directory: 'code',
-              background: true,
-              command: `yarn task dev --template ${name} --no-link -s dev`,
-            },
-          },
-          server.wait(['6006']),
-          {
-            run: {
-              name: 'Running E2E Tests',
-              command: [
-                'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
-                `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${name} --no-link -s never" --verbose --index=0 --total=1`,
-              ].join('\n'),
-            },
-          },
-        ],
-      },
-      [ids.create]
-    ),
+    defineSandboxJob_build({
+      name: names.build,
+      template: name,
+      needs: [ids.create],
+      options: { e2e: !skipTasks?.includes('e2e-tests') },
+    }),
+    defineSandboxJob_dev({
+      name: names.dev,
+      template: name,
+      needs: [ids.create],
+      options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
+    }),
   ];
   return {
     jobs,
@@ -864,3 +810,134 @@ export const data = {
   jobs,
   workflows,
 };
+
+function defineSandboxJob_build({
+  name,
+  template,
+  needs,
+  options,
+}: {
+  name: string;
+  needs: string[];
+  template: string;
+  options: {
+    e2e: boolean;
+  };
+}) {
+  const executor: JobImplementation['executor'] = options.e2e
+    ? {
+        name: 'sb_playwright',
+        class: 'xlarge',
+      }
+    : {
+        name: 'sb_node_22_classic',
+        class: 'large',
+      };
+
+  return defineJob(
+    name,
+    {
+      executor,
+      steps: [
+        git.checkout(),
+        workspace.attach(),
+        cache.attach(CACHE_KEYS()),
+        {
+          run: {
+            name: 'Build storybook',
+            command: `yarn task build --template ${template} --no-link -s build`,
+          },
+        },
+        ...(options.e2e
+          ? [
+              {
+                run: {
+                  name: 'Serve storybook',
+                  background: true,
+                  command: `yarn task serve --template ${template} --no-link -s serve`,
+                },
+              },
+              server.wait(['8001']),
+              {
+                run: {
+                  name: 'Running E2E Tests',
+                  command: [
+                    `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${template} --no-link -s never" --verbose --index=0 --total=1`,
+                  ].join('\n'),
+                },
+              },
+            ]
+          : []),
+      ],
+    },
+    needs
+  );
+}
+function defineSandboxJob_dev({
+  name,
+  template,
+  needs,
+  options,
+}: {
+  name: string;
+  needs: string[];
+  template: string;
+  options: {
+    e2e: boolean;
+  };
+}) {
+  const executor: JobImplementation['executor'] = options.e2e
+    ? {
+        name: 'sb_playwright',
+        class: 'xlarge',
+      }
+    : {
+        name: 'sb_node_22_classic',
+        class: 'large',
+      };
+
+  return defineJob(
+    name,
+    {
+      executor,
+      steps: [
+        git.checkout(),
+        workspace.attach(),
+        cache.attach(CACHE_KEYS()),
+        ...(options.e2e
+          ? [
+              {
+                run: {
+                  name: 'Run storybook',
+                  working_directory: 'code',
+                  background: true,
+                  command: `yarn task dev --template ${template} --no-link -s dev`,
+                },
+              },
+              server.wait(['6006']),
+              {
+                run: {
+                  name: 'Running E2E Tests',
+                  command: [
+                    'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s never" --verbose --index=0 --total=1`,
+                  ].join('\n'),
+                },
+              },
+            ]
+          : [
+              {
+                run: {
+                  name: 'Run storybook smoke test',
+                  working_directory: 'code',
+                  background: true,
+                  command: `yarn task smoke-test --template ${template} --no-link -s dev`,
+                },
+              },
+            ]),
+      ],
+    },
+    needs
+  );
+}

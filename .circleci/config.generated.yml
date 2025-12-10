@@ -763,6 +763,60 @@ jobs:
                   name: Running E2E Tests
                   working_directory: code
                   command: yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never
+    test-storybooks:
+        type: no-op
+    test-storybooks-pnp:
+        description: test-storybooks-pnp
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Install dependencies
+                  working_directory: test-storybooks/yarn-pnp
+                  command: yarn install --no-immutable
+                  environment:
+                      YARN_ENABLE_IMMUTABLE_INSTALLS: false
+            - run:
+                  name: Run Storybook smoke test
+                  working_directory: test-storybooks/yarn-pnp
+                  command: yarn storybook --smoke-test
+    test-storybooks-react-vite-default-ts:
+        description: test-storybooks-react-vite-default-ts
+        executor:
+            name: sb_playwright
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Install dependencies
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
+                  command: yarn install --no-immutable
+                  environment:
+                      YARN_ENABLE_IMMUTABLE_INSTALLS: false
+            - run:
+                  name: Run Playwright E2E tests
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
+                  command: yarn playwright-e2e
 workflows:
     generated:
         jobs:
@@ -802,6 +856,15 @@ workflows:
             - react-vite-default-ts--build-windows:
                   requires:
                       - react-vite-default-ts--create
+            - test-storybooks:
+                  requires:
+                      - build-linux
+            - test-storybooks-pnp:
+                  requires:
+                      - test-storybooks
+            - test-storybooks-react-vite-default-ts:
+                  requires:
+                      - test-storybooks
         when:
             equal:
                 - docs

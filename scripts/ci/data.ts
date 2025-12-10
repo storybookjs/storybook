@@ -555,6 +555,71 @@ const packageBenchmarks = defineJob(
   [linux_build.id]
 );
 
+const testStorybooksPNP = defineJob(
+  'test-storybooks-pnp',
+  {
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'medium',
+    },
+    steps: [
+      git.checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS()),
+      {
+        run: {
+          name: 'Install dependencies',
+          working_directory: 'test-storybooks/yarn-pnp',
+          command: 'yarn install --no-immutable',
+          environment: {
+            YARN_ENABLE_IMMUTABLE_INSTALLS: false,
+          },
+        },
+      },
+      {
+        run: {
+          name: 'Run Storybook smoke test',
+          working_directory: 'test-storybooks/yarn-pnp',
+          command: 'yarn storybook --smoke-test',
+        },
+      },
+    ],
+  },
+  ['test-storybooks']
+);
+const testStorybooksPortableReact = defineJob(
+  'test-storybooks-react-vite-default-ts',
+  {
+    executor: {
+      name: 'sb_playwright',
+      class: 'medium',
+    },
+    steps: [
+      git.checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS()),
+      {
+        run: {
+          name: 'Install dependencies',
+          working_directory: 'test-storybooks/portable-stories-kitchen-sink/react',
+          command: 'yarn install --no-immutable',
+          environment: {
+            YARN_ENABLE_IMMUTABLE_INSTALLS: false,
+          },
+        },
+      },
+      {
+        run: {
+          name: 'Run Playwright E2E tests',
+          working_directory: 'test-storybooks/portable-stories-kitchen-sink/react',
+          command: 'yarn playwright-e2e',
+        },
+      },
+    ],
+  },
+  ['test-storybooks']
+);
+
 const sandboxes = [
   //
   'react-vite/default-ts',
@@ -715,6 +780,12 @@ const jobs = {
   ),
   [windows_sandbox_dev.id]: windows_sandbox_dev.implementation,
   [windows_sandbox_build.id]: windows_sandbox_build.implementation,
+
+  ['test-storybooks']: {
+    type: 'no-op',
+  },
+  [testStorybooksPNP.id]: testStorybooksPNP.implementation,
+  [testStorybooksPortableReact.id]: testStorybooksPortableReact.implementation,
 };
 
 const orbs = {
@@ -791,6 +862,21 @@ const workflows = {
       {
         [windows_sandbox_build.id]: {
           requires: windows_sandbox_build.requires,
+        },
+      },
+      {
+        ['test-storybooks']: {
+          requires: [linux_build.id],
+        },
+      },
+      {
+        [testStorybooksPNP.id]: {
+          requires: testStorybooksPNP.requires,
+        },
+      },
+      {
+        [testStorybooksPortableReact.id]: {
+          requires: testStorybooksPortableReact.requires,
         },
       },
     ],

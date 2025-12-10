@@ -41,7 +41,7 @@ export const compile: Task = {
     const command = link && !prod ? linkCommand : noLinkCommand;
     await rm(join(codeDir, 'bench/esbuild-metafiles'), { recursive: true, force: true });
     return exec(
-      `${command} ${skipCache ? '--skip-nx-cache' : ''}`,
+      `${command} ${skipCache || process.env.CI ? '--skip-nx-cache' : ''}`,
       { cwd: ROOT_DIRECTORY },
       {
         startMessage: '🥾 Bootstrapping',

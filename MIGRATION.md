@@ -6091,10 +6091,10 @@ Example.story = {
 
 The MDX analog:
 
-```jsx
+```mdx
 <Story name="Example" parameters={{ storySource: { source: 'custom source' } }}>
   <Button />
-</Story>;;;
+</Story>
 ```
 
 ### 6.0 Addon API changes

@@ -117,7 +117,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       !!options.dev &&
       !options.skipInstall &&
       shouldRunDev !== false &&
-      ErrorCollector.getErrors().length === 0,
+      dependencyInstallationResult.status === 'success',
     shouldOnboard: newUser,
     projectType,
     packageManager,

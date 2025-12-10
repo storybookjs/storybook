@@ -32,6 +32,10 @@ type StorybookPackage = keyof typeof storybookPackagesVersions;
 
 const indentSymbol = Symbol('indent');
 
+type PackageJsonWithIndent = PackageJsonWithDepsAndDevDeps & {
+  [indentSymbol]?: any;
+};
+
 /**
  * Extract package name and version from input
  *
@@ -88,7 +92,7 @@ export abstract class JsPackageManager {
   static readonly installedVersionCache = new Map<string, string | null>();
 
   /** Cache for package.json files to avoid repeated file system calls. */
-  static readonly packageJsonCache = new Map<string, PackageJsonWithDepsAndDevDeps>();
+  static readonly packageJsonCache = new Map<string, PackageJsonWithIndent>();
 
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
@@ -167,7 +171,7 @@ export abstract class JsPackageManager {
   }
 
   /** Read the `package.json` file available in the provided directory */
-  static getPackageJson(packageJsonPath: string): PackageJsonWithDepsAndDevDeps {
+  static getPackageJson(packageJsonPath: string): PackageJsonWithIndent {
     // Normalize path to absolute for consistent cache keys
     // Always use resolve() to ensure consistent format on Windows
     // (handles drive letter casing and path separator differences)
@@ -187,7 +191,7 @@ export abstract class JsPackageManager {
     // Symbol key keeps this metadata non-enumerable so JSON.stringify omits it
     packageJSON[indentSymbol] = detectIndent(jsonContent).indent ?? 2;
 
-    const result: PackageJsonWithDepsAndDevDeps = {
+    const result: PackageJsonWithIndent = {
       ...packageJSON,
       dependencies: { ...(packageJSON.dependencies || {}) },
       devDependencies: { ...(packageJSON.devDependencies || {}) },
@@ -227,12 +231,13 @@ export abstract class JsPackageManager {
 
     // Update cache with the written content
     // Ensure dependencies and devDependencies exist (even if empty) to match PackageJsonWithDepsAndDevDeps type
-    const cachedPackageJson: PackageJsonWithDepsAndDevDeps = {
+    const cachedPackageJson: PackageJsonWithIndent = {
       ...packageJsonToWrite,
       dependencies: { ...(packageJsonToWrite.dependencies || {}) },
       devDependencies: { ...(packageJsonToWrite.devDependencies || {}) },
       peerDependencies: { ...(packageJsonToWrite.peerDependencies || {}) },
     };
+    cachedPackageJson[indentSymbol] = indent;
     JsPackageManager.packageJsonCache.set(packageJsonPath, cachedPackageJson);
   }
 

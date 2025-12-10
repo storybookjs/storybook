@@ -111,6 +111,7 @@ const common = {
   mainConfigPath,
   isUpgrade,
   storiesPaths: [],
+  hasCsfFactoryPreview: false,
 };
 
 const runFixWrapper = async ({ storybookVersion }: { storybookVersion: string }) => {

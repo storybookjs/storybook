@@ -5,6 +5,8 @@ import type { Status } from './shared/status-store';
 import type { StatusTypeId } from './shared/status-store';
 import { StorybookError } from './storybook-error';
 
+export { StorybookError } from './storybook-error';
+
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
  * path of which the error is thrown. For instance: If it's from `@storybook/node-logger`, then
@@ -468,14 +470,75 @@ export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError
   }
 }
 
+export class AddonVitestPostinstallFailedAddonA11yError extends StorybookError {
+  constructor(public data: { error: unknown | Error }) {
+    super({
+      name: 'AddonVitestPostinstallFailedAddonA11yError',
+      message: "The @storybook/addon-a11y couldn't be set up for the Vitest addon",
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 6,
+    });
+  }
+}
+
+export class AddonVitestPostinstallExistingSetupFileError extends StorybookError {
+  constructor(public data: { filePath: string }) {
+    super({
+      name: 'AddonVitestPostinstallExistingSetupFileError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 7,
+      documentation: `https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup`,
+      message: dedent`
+        Found an existing Vitest setup file: ${data.filePath}
+        Please refer to the documentation to complete the setup manually.
+      `,
+    });
+  }
+}
+
+export class AddonVitestPostinstallWorkspaceUpdateError extends StorybookError {
+  constructor(public data: { filePath: string }) {
+    super({
+      name: 'AddonVitestPostinstallWorkspaceUpdateError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 8,
+      documentation: `https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup`,
+      message: dedent`
+        Could not update existing Vitest workspace file: ${data.filePath}
+        Please refer to the documentation to complete the setup manually.
+      `,
+    });
+  }
+}
+
+export class AddonVitestPostinstallConfigUpdateError extends StorybookError {
+  constructor(public data: { filePath: string }) {
+    super({
+      name: 'AddonVitestPostinstallConfigUpdateError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 9,
+      documentation: `https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup`,
+      message: dedent`
+        Unable to update existing Vitest config file: ${data.filePath}
+        Please refer to the documentation to complete the setup manually.
+      `,
+    });
+  }
+}
+
 export class AddonVitestPostinstallError extends StorybookError {
-  constructor(public data: { errors: string[] }) {
+  constructor(public data: { errors: StorybookError[] }) {
     super({
       name: 'AddonVitestPostinstallError',
       category: Category.CLI_INIT,
       isHandledError: true,
       code: 5,
       message: 'The Vitest addon setup failed.',
+      subErrors: data.errors,
     });
   }
 }

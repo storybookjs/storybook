@@ -18,6 +18,7 @@ import { styled } from 'storybook/theming';
 
 import {
   ArgsTable,
+  type SortCustom,
   type SortType,
 } from '../../../../addons/docs/src/blocks/components/ArgsTable/ArgsTable';
 import type { PresetColor } from '../../../../addons/docs/src/blocks/controls/types';
@@ -39,7 +40,7 @@ const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI }
 }));
 
 interface ControlsParameters {
-  sort?: SortType;
+  sort?: SortType | SortCustom;
   expanded?: boolean;
   presetColors?: PresetColor[];
   disableSaveFromUI?: boolean;

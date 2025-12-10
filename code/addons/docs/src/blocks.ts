@@ -3,7 +3,7 @@
 export { ArgsTable as PureArgsTable } from './blocks/components/ArgsTable/ArgsTable';
 export { TableOfContents } from './blocks/components';
 
-export type { SortType } from './blocks/components';
+export type { SortType, SortCustom } from './blocks/components';
 
 export * from './blocks/blocks';
 export * from './blocks/controls';

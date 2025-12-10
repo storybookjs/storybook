@@ -1,4 +1,3 @@
-import { resolvePackageDir } from 'storybook/internal/common';
 import { getMockerRuntime } from 'storybook/internal/mocking-utils';
 
 // HtmlWebpackPlugin is a standard part of Storybook's Webpack setup.
@@ -53,8 +52,7 @@ export class WebpackInjectMockerRuntimePlugin {
         PLUGIN_NAME,
         (data, cb) => {
           try {
-            const absWorkingDir = resolvePackageDir('@storybook/builder-webpack5');
-            const runtimeScriptContent = getMockerRuntime(absWorkingDir);
+            const runtimeScriptContent = getMockerRuntime();
             const runtimeAssetName = 'mocker-runtime-injected.js';
 
             // Use the documented `emitAsset` method to add the pre-bundled runtime script

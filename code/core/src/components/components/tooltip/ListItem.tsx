@@ -226,7 +226,7 @@ const ListItem = forwardRef((props: ListItemProps, ref) => {
   );
 
   return (
-    <Item ref={ref} {...rest} {...commonProps} {...itemProps}>
+    <Item data-deprecated="ListItem" ref={ref} {...rest} {...commonProps} {...itemProps}>
       <>
         {left && <Left {...commonProps}>{left}</Left>}
         {title || center ? (

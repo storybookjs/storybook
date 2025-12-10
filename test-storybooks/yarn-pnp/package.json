@@ -10,6 +10,9 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
+  "nx": {
+    "includedScripts": []
+  },
   "resolutions": {
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "file:../../code/addons/a11y",
@@ -70,7 +73,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.34.1",
     "vite": "^7.1.7",
-    "vitest": "^4.0.7",
+    "vitest": "^4.0.14",
     "vue-tsc": "^3.1.0"
   }
 }

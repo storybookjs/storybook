@@ -82,7 +82,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   );
 
   if (hasAppliedFixes && !options.skipInstall) {
-    packageManager.installDependencies();
+    await packageManager.installDependencies();
   }
 
   if (outcome && !options.skipDoctor) {

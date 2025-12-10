@@ -32,6 +32,7 @@ const baseCheckOptions: CheckOptions = {
   storybookVersion: '9.0.0',
   configDir: '.storybook',
   storiesPaths: [],
+  hasCsfFactoryPreview: false,
 };
 
 const typedRemoveDocsAutodocs = removeDocsAutodocs as Required<

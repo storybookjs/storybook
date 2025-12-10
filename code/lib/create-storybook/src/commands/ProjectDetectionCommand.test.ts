@@ -11,14 +11,7 @@ import type { CommandOptions } from '../generators/types';
 import { ProjectTypeService } from '../services/ProjectTypeService';
 import { ProjectDetectionCommand } from './ProjectDetectionCommand';
 
-vi.mock('storybook/internal/common', async () => {
-  const actual = await vi.importActual('storybook/internal/common');
-  return {
-    ...actual,
-    HandledError: class HandledError extends Error {},
-  };
-});
-
+vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../services/ProjectTypeService', { spy: true });
 
@@ -45,9 +38,9 @@ describe('ProjectDetectionCommand', () => {
       detectLanguage: vi.fn().mockResolvedValue(SupportedLanguage.JAVASCRIPT),
     };
 
-    vi.mocked(ProjectTypeService).mockImplementation(
-      () => mockProjectTypeService as unknown as InstanceType<typeof ProjectTypeService>
-    );
+    vi.mocked(ProjectTypeService).mockImplementation(function () {
+      return mockProjectTypeService;
+    });
 
     options = {
       packageManager: PackageManagerName.NPM,
@@ -55,6 +48,16 @@ describe('ProjectDetectionCommand', () => {
     };
 
     command = new ProjectDetectionCommand(options, mockPackageManager);
+
+    // Mock HandledError constructor
+    vi.mocked(HandledError).mockImplementation(
+      class MockHandledError extends Error {
+        constructor(message: string) {
+          super(message);
+          this.name = 'HandledError';
+        }
+      } as any
+    );
 
     vi.mocked(logger.step).mockImplementation(() => {});
     vi.mocked(logger.error).mockImplementation(() => {});

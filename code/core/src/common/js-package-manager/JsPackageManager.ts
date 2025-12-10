@@ -184,6 +184,7 @@ export abstract class JsPackageManager {
     // Read from disk if not in cache
     const jsonContent = readFileSync(absolutePath, 'utf8');
     const packageJSON = JSON.parse(jsonContent);
+    // Symbol key keeps this metadata non-enumerable so JSON.stringify omits it
     packageJSON[indentSymbol] = detectIndent(jsonContent).indent ?? 2;
 
     const result: PackageJsonWithDepsAndDevDeps = {

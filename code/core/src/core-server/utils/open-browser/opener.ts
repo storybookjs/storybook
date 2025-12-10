@@ -5,7 +5,6 @@
  * directory of this source tree.
  */
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -42,7 +41,8 @@ function getBrowserEnv() {
   } else if (
     value.toLowerCase().endsWith('.js') ||
     value.toLowerCase().endsWith('.mjs') ||
-    value.toLowerCase().endsWith('.cjs')
+    value.toLowerCase().endsWith('.cjs') ||
+    value.toLowerCase().endsWith('.ts')
   ) {
     action = Actions.SCRIPT;
   } else if (value.toLowerCase().endsWith('.sh')) {
@@ -64,7 +64,13 @@ class BrowserEnvError extends StorybookError {
   }
 }
 
-function attachCloseHandler(child: ReturnType<typeof spawn>, scriptPath: string) {
+function attachEventHandlers(child: ReturnType<typeof spawn>, scriptPath: string) {
+  child.on('error', (error) => {
+    logger.error(
+      `Failed to run script specified in BROWSER.\n${picocolors.cyan(scriptPath)}: ${error.message}`
+    );
+  });
+
   child.on('close', (code) => {
     if (code !== 0) {
       logger.error(
@@ -80,16 +86,16 @@ function executeNodeScript(scriptPath: string, url: string) {
   const child = spawn(process.execPath, [scriptPath, ...extraArgs, url], {
     stdio: 'inherit',
   });
-  attachCloseHandler(child, scriptPath);
+  attachEventHandlers(child, scriptPath);
   return true;
 }
 
 function executeShellScript(scriptPath: string, url: string) {
   const extraArgs = process.argv.slice(2);
-  const child = spawn('/bin/sh', [scriptPath, ...extraArgs, url], {
+  const child = spawn('sh', [scriptPath, ...extraArgs, url], {
     stdio: 'inherit',
   });
-  attachCloseHandler(child, scriptPath);
+  attachEventHandlers(child, scriptPath);
   return true;
 }
 

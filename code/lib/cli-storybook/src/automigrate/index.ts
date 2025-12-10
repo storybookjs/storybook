@@ -50,6 +50,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     configDir,
     packageManager,
     storiesPaths,
+    hasCsfFactoryPreview,
   } = await getStorybookData({
     configDir: options.configDir,
     packageManagerName: options.packageManager,
@@ -74,6 +75,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     isUpgrade: false,
     isLatest: false,
     storiesPaths,
+    hasCsfFactoryPreview,
   });
 
   // only install dependencies if the outcome contains any fixes that were not failed or skipped
@@ -119,6 +121,7 @@ export const automigrate = async ({
   isUpgrade,
   isLatest,
   storiesPaths,
+  hasCsfFactoryPreview,
 }: AutofixOptions): Promise<{
   fixResults: Record<string, FixStatus>;
   preCheckFailure?: PreCheckFailure;
@@ -186,6 +189,7 @@ export const automigrate = async ({
     dryRun,
     yes,
     storiesPaths,
+    hasCsfFactoryPreview,
   });
 
   // if migration failed, display a log file in the users cwd
@@ -217,6 +221,7 @@ type RunFixesOptions = {
   mainConfig: StorybookConfigRaw;
   storybookVersion: string;
   isUpgrade?: boolean;
+  hasCsfFactoryPreview: boolean;
 };
 
 export async function runFixes({
@@ -232,6 +237,7 @@ export async function runFixes({
   previewConfigPath,
   storybookVersion,
   storiesPaths,
+  hasCsfFactoryPreview,
 }: RunFixesOptions): Promise<{
   preCheckFailure?: PreCheckFailure;
   fixResults: Record<FixId, FixStatus>;
@@ -255,6 +261,7 @@ export async function runFixes({
         previewConfigPath,
         mainConfigPath,
         storiesPaths,
+        hasCsfFactoryPreview,
       });
       logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
     } catch (error) {

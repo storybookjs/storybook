@@ -141,6 +141,13 @@ export class ProjectTypeService {
           return dependencies?.every(Boolean) ?? true;
         },
       },
+      {
+        preset: ProjectType.STENCIL,
+        dependencies: ['@stencil/core'],
+        matcherFunction: ({ dependencies }) => {
+          return dependencies?.every(Boolean) ?? true;
+        },
+      },
       // DO NOT MOVE ANY TEMPLATES BELOW THIS LINE
       // React is part of every Template, after Storybook is initialized once
       {

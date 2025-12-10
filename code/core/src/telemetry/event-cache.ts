@@ -14,16 +14,7 @@ export interface CacheEntry {
   body: TelemetryEvent;
 }
 
-type QueueItem = {
-  eventType: EventType;
-  body: TelemetryEvent;
-  resolve: () => void;
-  reject: (error: Error) => void;
-};
-
-const queue: QueueItem[] = [];
-let isProcessing = false;
-let currentOperation: Promise<void> = Promise.resolve();
+let processingPromise: Promise<void> = Promise.resolve();
 
 const setHelper = async (eventType: EventType, body: TelemetryEvent) => {
   const lastEvents = (await cache.get('lastEvents')) || {};
@@ -31,62 +22,15 @@ const setHelper = async (eventType: EventType, body: TelemetryEvent) => {
   await cache.set('lastEvents', lastEvents);
 };
 
-const processQueue = async () => {
-  if (isProcessing) {
-    return;
-  }
-
-  isProcessing = true;
-
-  while (queue.length > 0) {
-    const item = queue.shift();
-    if (!item) {
-      continue;
-    }
-
-    try {
-      await setHelper(item.eventType, item.body);
-      item.resolve();
-    } catch (error) {
-      item.reject(error instanceof Error ? error : new Error(String(error)));
-    }
-  }
-
-  isProcessing = false;
-};
-
-export const set = async (eventType: EventType, body: any): Promise<void> => {
-  // Wait for current operation to complete before queuing new one
-  // Catch errors from previous operations so they don't prevent new operations
-  try {
-    await currentOperation;
-  } catch {
-    // Previous operation failed, but we can still queue new operations
-  }
-
-  // Create a new promise for this operation
-  let resolveOperation: () => void;
-  let rejectOperation: (error: Error) => void;
-  const operationPromise = new Promise<void>((resolve, reject) => {
-    resolveOperation = resolve;
-    rejectOperation = reject;
+export const set = (eventType: EventType, body: TelemetryEvent): Promise<void> => {
+  const run = processingPromise.then(async () => {
+    await setHelper(eventType, body);
   });
 
-  // Add to queue
-  queue.push({
-    eventType,
-    body,
-    resolve: resolveOperation!,
-    reject: rejectOperation!,
-  });
+  // Keep the chain alive even if this operation rejects, so later callers still queue
+  processingPromise = run.catch(() => {});
 
-  // Update current operation to track this one (so getLastEvents waits for it)
-  currentOperation = operationPromise;
-
-  // Start processing if not already processing
-  processQueue();
-
-  return operationPromise;
+  return run;
 };
 
 export const get = async (eventType: EventType): Promise<CacheEntry | undefined> => {
@@ -96,9 +40,7 @@ export const get = async (eventType: EventType): Promise<CacheEntry | undefined>
 
 export const getLastEvents = async (): Promise<Record<EventType, CacheEntry>> => {
   // Wait for any pending set operations to complete before reading
-  // This prevents race conditions where getLastEvents() reads stale data
-  // while a set() operation is still in progress
-  await currentOperation;
+  await processingPromise;
   return (await cache.get('lastEvents')) || {};
 };
 
@@ -115,16 +57,19 @@ const upgradeFields = (event: CacheEntry): UpgradeSummary => {
 const UPGRADE_EVENTS: EventType[] = ['init', 'upgrade'];
 const RUN_EVENTS: EventType[] = ['build', 'dev', 'error'];
 
-const lastEvent = (lastEvents: Record<EventType, any>, eventTypes: EventType[]) => {
+const lastEvent = (lastEvents: Partial<Record<EventType, CacheEntry>>, eventTypes: EventType[]) => {
   const descendingEvents = eventTypes
     .map((eventType) => lastEvents?.[eventType])
-    .filter(Boolean)
+    .filter((event): event is CacheEntry => Boolean(event))
     .sort((a, b) => b.timestamp - a.timestamp);
   return descendingEvents.length > 0 ? descendingEvents[0] : undefined;
 };
 
-export const getPrecedingUpgrade = async (events: any = undefined) => {
-  const lastEvents = events || (await cache.get('lastEvents')) || {};
+export const getPrecedingUpgrade = async (
+  events: Partial<Record<EventType, CacheEntry>> | undefined = undefined
+) => {
+  const lastEvents =
+    events || ((await cache.get('lastEvents')) as Partial<Record<EventType, CacheEntry>>) || {};
   const lastUpgradeEvent = lastEvent(lastEvents, UPGRADE_EVENTS);
   const lastRunEvent = lastEvent(lastEvents, RUN_EVENTS);
 

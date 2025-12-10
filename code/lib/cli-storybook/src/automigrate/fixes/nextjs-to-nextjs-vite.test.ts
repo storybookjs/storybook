@@ -47,7 +47,7 @@ describe('nextjs-to-nextjs-vite', () => {
     vi.clearAllMocks();
     vi.mocked(mockPackageManager.removeDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
-    vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(undefined);
+    vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
   });
 
   describe('check function', () => {

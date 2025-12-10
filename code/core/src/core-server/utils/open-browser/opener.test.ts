@@ -13,13 +13,13 @@ vi.mock('cross-spawn', { spy: true });
 describe('openBrowser BROWSER script handling', () => {
   const originalEnv = { ...process.env };
   const originalArgv = [...process.argv];
-  const originalPlatform = process.platform;
+  let platformSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.resetAllMocks();
+    platformSpy = vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
     process.env = { ...originalEnv };
     process.argv = ['node', 'test'];
-    Object.defineProperty(process, 'platform', { value: 'linux' });
 
     vi.mocked(open).mockImplementation(() => {
       return Promise.resolve({} as unknown as Awaited<ReturnType<typeof open>>);
@@ -29,9 +29,9 @@ describe('openBrowser BROWSER script handling', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     process.env = originalEnv;
     process.argv = originalArgv;
-    Object.defineProperty(process, 'platform', { value: originalPlatform });
   });
 
   it('executes a node script when BROWSER points to a JS file', () => {
@@ -75,7 +75,7 @@ describe('openBrowser BROWSER script handling', () => {
 
   it('falls back to opening the browser when BROWSER points to a shell script on Windows', () => {
     process.env.BROWSER = '/tmp/customBrowser.sh';
-    Object.defineProperty(process, 'platform', { value: 'win32' });
+    platformSpy.mockReturnValue('win32');
     delete process.env.WSL_DISTRO_NAME;
     delete process.env.WSL_INTEROP;
 
@@ -91,7 +91,7 @@ describe('openBrowser BROWSER script handling', () => {
 
   it('executes a shell script on Linux', () => {
     process.env.BROWSER = '/tmp/findAHandler.sh';
-    Object.defineProperty(process, 'platform', { value: 'linux' });
+    platformSpy.mockReturnValue('linux');
     delete process.env.WSL_DISTRO_NAME;
     delete process.env.WSL_INTEROP;
 
@@ -107,7 +107,7 @@ describe('openBrowser BROWSER script handling', () => {
 
   it('executes a shell script on WSL testing for env var WSL_DISTRO_NAME', () => {
     process.env.BROWSER = '/tmp/findAHandler.sh';
-    Object.defineProperty(process, 'platform', { value: 'linux' });
+    platformSpy.mockReturnValue('linux');
     process.env.WSL_DISTRO_NAME = 'AnyDistro';
     delete process.env.WSL_INTEROP;
 
@@ -123,7 +123,7 @@ describe('openBrowser BROWSER script handling', () => {
 
   it('executes a shell script on WSL testing for env var WSL_INTEROP', () => {
     process.env.BROWSER = '/tmp/findAHandler.sh';
-    Object.defineProperty(process, 'platform', { value: 'linux' });
+    platformSpy.mockReturnValue('linux');
     process.env.WSL_INTEROP = '/run/WSL';
     delete process.env.WSL_DISTRO_NAME;
 

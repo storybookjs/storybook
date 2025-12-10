@@ -156,6 +156,15 @@ export async function vitestTransform({
     ? t.stringLiteral(parsed._rawComponentPath)
     : null;
 
+  let componentNameLiteral = null;
+  if (
+    parsed._componentImportSpecifier &&
+    (t.isImportSpecifier(parsed._componentImportSpecifier) ||
+      t.isImportDefaultSpecifier(parsed._componentImportSpecifier))
+  ) {
+    componentNameLiteral = t.stringLiteral(parsed._componentImportSpecifier.local.name);
+  }
+
   /**
    * In Storybook users might be importing stories from other story files. As a side effect, tests
    * can get re-triggered. To avoid this, we add a guard to only run tests if the current file is
@@ -242,6 +251,10 @@ export async function vitestTransform({
       objectProperties.push(t.objectProperty(t.identifier('componentPath'), componentPathLiteral));
     }
 
+    if (componentNameLiteral) {
+      objectProperties.push(t.objectProperty(t.identifier('componentName'), componentNameLiteral));
+    }
+
     // Create the _test expression directly using the exportName identifier
     const testStoryCall = t.expressionStatement(
       t.callExpression(vitestTestId, [
@@ -291,6 +304,12 @@ export async function vitestTransform({
             if (componentPathLiteral) {
               objectProperties.push(
                 t.objectProperty(t.identifier('componentPath'), componentPathLiteral)
+              );
+            }
+
+            if (componentNameLiteral) {
+              objectProperties.push(
+                t.objectProperty(t.identifier('componentName'), componentNameLiteral)
               );
             }
 

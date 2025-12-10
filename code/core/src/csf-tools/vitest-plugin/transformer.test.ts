@@ -596,6 +596,57 @@ describe('transformer', () => {
       });
     });
 
+    describe('component info extraction', () => {
+      it('should extract component name from named import specifier', async () => {
+        const code = `
+        import { Button } from './Button';
+        export default {
+          component: Button,
+        }
+        export const Primary = {};
+      `;
+
+        const result = await transform({
+          code,
+        });
+
+        expect(result.code).toContain('componentPath: "./Button"');
+        expect(result.code).toContain('componentName: "Button"');
+      });
+      it('should extract component name from default import specifier', async () => {
+        const code = `
+        import Button from './Button';
+        export default {
+          component: Button,
+        }
+        export const Primary = {};
+      `;
+
+        const result = await transform({
+          code,
+        });
+
+        expect(result.code).toContain('componentPath: "./Button"');
+        expect(result.code).toContain('componentName: "Button"');
+      });
+      it('should extract component name from aliased import specifier', async () => {
+        const code = `
+        import { Component as Button } from './Button';
+        export default {
+          component: Button,
+        }
+        export const Primary = {};
+      `;
+
+        const result = await transform({
+          code,
+        });
+
+        expect(result.code).toContain('componentPath: "./Button"');
+        expect(result.code).toContain('componentName: "Button"');
+      });
+    });
+
     describe('source map calculation', () => {
       it('should remap the location of an inline named export to its relative testStory function', async () => {
         const originalCode = `

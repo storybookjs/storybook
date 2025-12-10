@@ -39,6 +39,7 @@ export const testStory = ({
   storyId,
   componentPath,
   testName,
+  componentName,
 }: {
   exportName: string;
   story: ComposedStoryFn | Story<Renderer>;
@@ -47,6 +48,7 @@ export const testStory = ({
   storyId: string;
   componentPath?: string;
   testName?: string;
+  componentName?: string;
 }) => {
   return async (context: TestContext & { story: ComposedStoryFn }) => {
     const annotations = getCsfFactoryAnnotations(story, meta);
@@ -73,13 +75,19 @@ export const testStory = ({
     context.story = composedStory;
 
     const _task = context.task as RunnerTask & {
-      meta: TaskMeta & { storyId: string; reports: Report[]; componentPath?: string };
+      meta: TaskMeta & {
+        storyId: string;
+        reports: Report[];
+        componentPath?: string;
+        componentName?: string;
+      };
     };
 
     // The id will always be present, calculated by CsfFile
     // and is needed so that we can add the test to the story in Storybook's UI for the status
     _task.meta.storyId = storyId;
     _task.meta.componentPath = componentPath;
+    _task.meta.componentName = componentName;
 
     await setViewport(composedStory.parameters, composedStory.globals);
 

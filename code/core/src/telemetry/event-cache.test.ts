@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cache } from 'storybook/internal/common';
 
-import { get, getLastEvents, getPrecedingUpgrade, set } from './event-cache';
+import { getLastEvents, getPrecedingUpgrade, set } from './event-cache';
 
 vi.mock('storybook/internal/common', { spy: true });
 
@@ -199,39 +199,21 @@ describe('event-cache', () => {
         upgrade: { timestamp: 2, body: { eventType: 'upgrade', eventId: 'upgrade-1' } },
       };
 
-      // Use a simple delay to simulate async operations
-      let setGetResolved = false;
-      let setSetResolved = false;
+      // Mock cache.get to return initial data first, then updated data
+      cacheGetMock
+        .mockResolvedValueOnce(initialData) // First call in setHelper
+        .mockResolvedValueOnce(updatedData); // Second call in getLastEvents
 
-      cacheGetMock.mockImplementationOnce(async () => {
-        while (!setGetResolved) {
-          await new Promise((resolve) => setTimeout(resolve, 10));
-        }
-        return initialData;
-      });
+      // Mock cache.set to resolve immediately
+      cacheSetMock.mockResolvedValue(undefined);
 
-      cacheSetMock.mockImplementationOnce(async () => {
-        while (!setSetResolved) {
-          await new Promise((resolve) => setTimeout(resolve, 10));
-        }
-      });
-
-      // Mock cache.get to return updated data after set completes
-      cacheGetMock.mockResolvedValueOnce(updatedData);
-
-      // Start a set operation (this will be pending)
+      // Start a set operation (this will be queued and processed)
       const setPromiseResult = set('upgrade', { eventType: 'upgrade', eventId: 'upgrade-1' });
 
       // Immediately call getLastEvents() - it should wait for set() to complete
       const getPromise = getLastEvents();
 
-      // Verify that getLastEvents hasn't resolved yet (it's waiting)
-      await new Promise((resolve) => setTimeout(resolve, 50));
-
-      // Resolve the set operations
-      setGetResolved = true;
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      setSetResolved = true;
+      // Wait for set operation to complete
       await setPromiseResult;
 
       // Now getLastEvents should complete and return the updated data
@@ -241,6 +223,80 @@ describe('event-cache', () => {
       expect(result).toEqual(updatedData);
       expect(cacheGetMock).toHaveBeenCalledTimes(2); // Once in setHelper, once in getLastEvents
       expect(cacheSetMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('queues multiple set operations sequentially', async () => {
+      const initialData = {};
+      const afterFirst = {
+        init: { timestamp: 1, body: { eventType: 'init', eventId: 'init-1' } },
+      };
+      const afterSecond = {
+        init: { timestamp: 1, body: { eventType: 'init', eventId: 'init-1' } },
+        upgrade: { timestamp: 2, body: { eventType: 'upgrade', eventId: 'upgrade-1' } },
+      };
+      const afterThird = {
+        init: { timestamp: 1, body: { eventType: 'init', eventId: 'init-1' } },
+        upgrade: { timestamp: 2, body: { eventType: 'upgrade', eventId: 'upgrade-1' } },
+        dev: { timestamp: 3, body: { eventType: 'dev', eventId: 'dev-1' } },
+      };
+
+      // Mock cache.get to return data in sequence
+      cacheGetMock
+        .mockResolvedValueOnce(initialData) // First set: get initial
+        .mockResolvedValueOnce(afterFirst) // Second set: get after first
+        .mockResolvedValueOnce(afterSecond) // Third set: get after second
+        .mockResolvedValueOnce(afterThird); // getLastEvents: get after third
+
+      // Mock cache.set to resolve immediately
+      cacheSetMock.mockResolvedValue(undefined);
+
+      // Queue multiple set operations
+      const set1 = set('init', { eventType: 'init', eventId: 'init-1' });
+      const set2 = set('upgrade', { eventType: 'upgrade', eventId: 'upgrade-1' });
+      const set3 = set('dev', { eventType: 'dev', eventId: 'dev-1' });
+
+      // Wait for all operations to complete
+      await Promise.all([set1, set2, set3]);
+
+      // Now getLastEvents should return the final state
+      const result = await getLastEvents();
+
+      // Verify all operations were processed sequentially
+      expect(result).toEqual(afterThird);
+      expect(cacheGetMock).toHaveBeenCalledTimes(4); // 3 sets + 1 getLastEvents
+      expect(cacheSetMock).toHaveBeenCalledTimes(3); // One for each set
+    });
+
+    it('handles errors in queued operations', async () => {
+      const initialData = {
+        init: { timestamp: 1, body: { eventType: 'init', eventId: 'init-1' } },
+      };
+      const afterDev = {
+        init: { timestamp: 1, body: { eventType: 'init', eventId: 'init-1' } },
+        dev: { timestamp: 3, body: { eventType: 'dev', eventId: 'dev-1' } },
+      };
+
+      // First operation will fail
+      cacheGetMock.mockResolvedValueOnce(initialData);
+      cacheSetMock.mockRejectedValueOnce(new Error('Cache write failed'));
+
+      // Queue an operation that will fail
+      const failedOperation = set('upgrade', { eventType: 'upgrade', eventId: 'upgrade-1' });
+      await expect(failedOperation).rejects.toThrow('Cache write failed');
+
+      // Wait a bit to ensure queue processing completes
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Verify subsequent operations can still be queued and succeed
+      cacheGetMock.mockResolvedValueOnce(initialData);
+      cacheSetMock.mockResolvedValueOnce(undefined);
+      cacheGetMock.mockResolvedValueOnce(afterDev);
+
+      await expect(set('dev', { eventType: 'dev', eventId: 'dev-1' })).resolves.toBeUndefined();
+
+      // Verify the successful operation was processed
+      const result = await getLastEvents();
+      expect(result).toEqual(afterDev);
     });
   });
 });

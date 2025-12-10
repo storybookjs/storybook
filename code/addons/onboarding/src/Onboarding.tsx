@@ -114,6 +114,16 @@ export default function Onboarding({
   );
 
   useEffect(() => {
+    if (step === '6:IntentSurvey' && !hasCompletedSurvey) {
+      api.emit(ADDON_ONBOARDING_CHANNEL, {
+        from: 'onboarding',
+        type: 'openSurvey',
+        userAgent,
+      });
+    }
+  }, [api, hasCompletedSurvey, step, userAgent]);
+
+  useEffect(() => {
     api.setQueryParams({ onboarding: 'true' });
     selectStory('example-button--primary');
     api.togglePanel(true);

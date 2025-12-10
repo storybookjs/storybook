@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 
 import { type API } from 'storybook/manager-api';
 import { ThemeProvider, convert } from 'storybook/theming';
@@ -11,6 +11,14 @@ const theme = convert();
 export default function Survey({ api }: { api: API }) {
   // eslint-disable-next-line compat/compat
   const userAgent = globalThis?.navigator?.userAgent;
+
+  useEffect(() => {
+    api.emit(ADDON_ONBOARDING_CHANNEL, {
+      from: 'guide',
+      type: 'openSurvey',
+      userAgent,
+    });
+  }, [api, userAgent]);
 
   const disableOnboarding = useCallback(() => {
     // remove onboarding query parameter from current url

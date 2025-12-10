@@ -27,19 +27,6 @@ const Actions = Object.freeze({
   SHELL_SCRIPT: 3,
 });
 
-function isWsl() {
-  if (process.env.WSL_DISTRO_NAME || process.env.WSL_INTEROP) {
-    return true;
-  }
-
-  try {
-    const version = readFileSync('/proc/version', 'utf8').toLowerCase();
-    return version.includes('microsoft');
-  } catch {
-    return false;
-  }
-}
-
 function getBrowserEnv() {
   // Attempt to honor this environment variable.
   // It is specific to the operating system.
@@ -196,7 +183,7 @@ function startBrowserProcess(
  */
 export function openBrowser(url: string) {
   const { action, value, args } = getBrowserEnv();
-  const canRunShell = process.platform !== 'win32' || isWsl();
+  const canRunShell = process.platform !== 'win32';
   const browserTarget = value as unknown as App | readonly App[] | undefined;
 
   switch (action) {

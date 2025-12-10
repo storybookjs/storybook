@@ -1,74 +1,84 @@
 import type { ReactNode } from 'react';
 import React, { Component } from 'react';
 
-import { StorybookLogo } from 'storybook/internal/components';
+import { Badge, Button, Collapsible } from 'storybook/internal/components';
 
-import { AlertIcon, SyncIcon } from '@storybook/icons';
+import { SyncIcon, UnfoldIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
-import { keyframes, styled, useTheme } from 'storybook/theming';
-
-const fadeIn = keyframes({
-  from: { opacity: 0, transform: 'translateY(20px)' },
-  to: { opacity: 1, transform: 'translateY(0)' },
-});
+import { styled } from 'storybook/theming';
 
 const Container = styled.div(({ theme }) => ({
   display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
   justifyContent: 'center',
-  minHeight: '100vh',
-  padding: 40,
+  alignItems: 'center',
+  width: '100vw',
+  height: '100vh',
   backgroundColor: theme.background.app,
   color: theme.color.defaultText,
   fontFamily: theme.typography.fonts.base,
-  animation: `${fadeIn} 0.3s ease-out`,
 }));
 
-const Content = styled.div({
-  maxWidth: 480,
-  textAlign: 'center',
-});
-
-const IconWrapper = styled.div(({ theme }) => ({
+const Content = styled.div(({ theme }) => ({
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 80,
-  height: 80,
-  borderRadius: '50%',
-  backgroundColor: transparentize(theme.base === 'light' ? 0.9 : 0.8, theme.color.negative),
-  marginBottom: 24,
-  margin: '0 auto 24px',
+  flexDirection: 'column',
+  justifyContent: 'space-between',
+  width: '80%',
+  height: '80%',
+  padding: 20,
+  gap: 20,
+  backgroundColor: theme.background.content,
+  borderRadius: theme.appBorderRadius,
+  border: `1px solid ${theme.color.negative}`,
+  boxShadow: '0 0 64px rgba(0, 0, 0, 0.1)',
+  overflow: 'auto',
+}));
+
+const Info = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'start',
+  gap: 15,
 }));
 
 const Heading = styled.h1(({ theme }) => ({
-  fontSize: theme.typography.size.l1,
+  display: 'flex',
+  alignItems: 'center',
+  margin: 0,
+  gap: 10,
+  fontSize: theme.typography.size.s2,
   fontWeight: theme.typography.weight.bold,
-  margin: '0 0 12px',
   color: theme.color.defaultText,
 }));
 
 const SubHeading = styled.p(({ theme }) => ({
   fontSize: theme.typography.size.s2,
-  color: theme.color.mediumdark,
-  margin: '0 0 24px',
-  lineHeight: 1.5,
+  color: theme.textMutedColor,
+  margin: 0,
+  lineHeight: 1.4,
+  textWrap: 'balance',
 }));
 
-const ErrorDetails = styled.details(({ theme }) => ({
+const ErrorWrapper = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column-reverse',
   width: '100%',
-  marginTop: 24,
-  textAlign: 'left',
-  backgroundColor: theme.base === 'light' ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.05)',
-  borderRadius: theme.appBorderRadius,
+  flex: '0 0 auto',
   border: `1px solid ${theme.appBorderColor}`,
-  overflow: 'hidden',
+  borderRadius: theme.appBorderRadius,
+  pre: {
+    borderRadius: 0,
+  },
 }));
 
-const ErrorSummary = styled.summary(({ theme }) => ({
-  padding: '12px 16px',
+const CollapseToggle = styled.div(({ theme }) => ({
+  flex: '0 0 auto',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  height: 40,
+  width: '100%',
+  padding: '0 10px',
   cursor: 'pointer',
   fontSize: theme.typography.size.s2,
   fontWeight: theme.typography.weight.bold,
@@ -77,65 +87,36 @@ const ErrorSummary = styled.summary(({ theme }) => ({
   '&:hover': {
     backgroundColor: theme.base === 'light' ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.03)',
   },
+  svg: {
+    color: theme.textMutedColor,
+  },
 }));
 
 const ErrorMessage = styled.pre(({ theme }) => ({
-  padding: 16,
+  order: 1,
+  padding: '11px 15px',
   margin: 0,
   fontSize: theme.typography.size.s1,
-  color: theme.color.negative,
+  color: theme.color.negativeText,
   backgroundColor: transparentize(theme.base === 'light' ? 0.95 : 0.9, theme.color.negative),
-  borderTop: `1px solid ${theme.appBorderColor}`,
-  overflow: 'auto',
+  borderBottom: `1px solid ${theme.appBorderColor}`,
   whiteSpace: 'pre-wrap',
   wordBreak: 'break-word',
   fontFamily: theme.typography.fonts.mono,
-  maxHeight: 300,
+  lineHeight: '18px',
 }));
 
 const ErrorStack = styled.pre(({ theme }) => ({
-  padding: 16,
+  padding: 15,
   margin: 0,
   fontSize: theme.typography.size.s1,
-  color: theme.color.mediumdark,
-  backgroundColor: theme.base === 'light' ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.02)',
-  borderTop: `1px solid ${theme.appBorderColor}`,
-  overflow: 'auto',
+  color: theme.textMutedColor,
+  borderBottom: `1px solid ${theme.appBorderColor}`,
+  borderRadius: 0,
   whiteSpace: 'pre-wrap',
   wordBreak: 'break-word',
   fontFamily: theme.typography.fonts.mono,
-  maxHeight: 300,
 }));
-
-const Button = styled.button(({ theme }) => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 8,
-  padding: '10px 20px',
-  fontSize: theme.typography.size.s2,
-  fontWeight: theme.typography.weight.bold,
-  color: theme.color.lightest,
-  backgroundColor: theme.color.secondary,
-  border: 'none',
-  borderRadius: theme.appBorderRadius,
-  cursor: 'pointer',
-  transition: 'background-color 0.2s ease',
-  '&:hover': {
-    backgroundColor: theme.barHoverColor,
-  },
-  '&:focus': {
-    outline: 'none',
-    boxShadow: `0 0 0 2px ${transparentize(0.75, theme.color.secondary)}`,
-  },
-}));
-
-const LogoWrapper = styled.div({
-  marginBottom: 32,
-  '& svg': {
-    height: 40,
-    width: 'auto',
-  },
-});
 
 interface ErrorFallbackProps {
   error: Error;
@@ -143,40 +124,45 @@ interface ErrorFallbackProps {
 }
 
 const ErrorFallback = ({ error, errorInfo }: ErrorFallbackProps) => {
-  const theme = useTheme();
-
-  const handleReload = () => {
-    window.location.reload();
-  };
-
   return (
     <Container data-testid="manager-error-boundary">
       <Content>
-        <LogoWrapper>
-          <StorybookLogo />
-        </LogoWrapper>
-        <IconWrapper>
-          <AlertIcon size={32} color={theme.color.negative} />
-        </IconWrapper>
-        <Heading>Something went wrong</Heading>
-        <SubHeading>
-          The Storybook Manager UI encountered an error. This is usually caused by custom addon code
-          or configuration. Please check your browser console for more details.
-        </SubHeading>
-        <Button onClick={handleReload}>
-          <SyncIcon size={14} />
-          Reload Storybook
-        </Button>
-        <ErrorDetails>
-          <ErrorSummary>Error details</ErrorSummary>
+        <Info>
+          <Heading>
+            <Badge status="negative">Error</Badge>
+            <span>Something went wrong</span>
+          </Heading>
+          <SubHeading>
+            The Storybook Manager UI encountered an error. This is usually caused by custom addon
+            code or configuration. Please check your browser console for more details. Try clearing
+            browser storage if the issue persists.
+          </SubHeading>
+          <Button asChild size="medium">
+            <a href={window.location.origin + window.location.pathname}>
+              <SyncIcon size={14} />
+              Reload Storybook
+            </a>
+          </Button>
+        </Info>
+        <ErrorWrapper>
           <ErrorMessage>{error.message || 'Unknown error'}</ErrorMessage>
-          {(error.stack || errorInfo?.componentStack) && (
-            <ErrorStack>
-              {error.stack}
-              {errorInfo?.componentStack && `\nComponent Stack:${errorInfo.componentStack}`}
-            </ErrorStack>
-          )}
-        </ErrorDetails>
+          <Collapsible
+            collapsed={true}
+            summary={({ isCollapsed, toggleCollapsed }) => (
+              <CollapseToggle onClick={toggleCollapsed}>
+                <UnfoldIcon />
+                {isCollapsed ? 'Expand error' : 'Collapse error'}
+              </CollapseToggle>
+            )}
+          >
+            {(error.stack || errorInfo?.componentStack) && (
+              <ErrorStack>
+                {error.stack}
+                {errorInfo?.componentStack && `\n\nComponent Stack:${errorInfo.componentStack}`}
+              </ErrorStack>
+            )}
+          </Collapsible>
+        </ErrorWrapper>
       </Content>
     </Container>
   );

@@ -14,7 +14,6 @@ import type { Combo } from 'storybook/manager-api';
 import { ThemeProvider, ensure as ensureTheme } from 'storybook/theming';
 
 import { App } from './App';
-import { ManagerErrorBoundary } from './components/error-boundary';
 import type { Layout } from './components/layout/Layout';
 import { LayoutProvider } from './components/layout/LayoutProvider';
 import Provider from './provider';
@@ -69,20 +68,18 @@ const Main: FC<{ provider: Provider }> = ({ provider }) => {
 
             return (
               <ThemeProvider key="theme.provider" theme={ensureTheme(state.theme)}>
-                <ManagerErrorBoundary>
-                  <LayoutProvider>
-                    <App
-                      key="app"
-                      pages={pages}
-                      managerLayoutState={{
-                        ...state.layout,
-                        viewMode: state.viewMode,
-                      }}
-                      hasTab={!!api.getQueryParam('tab')}
-                      setManagerLayoutState={setManagerLayoutState}
-                    />
-                  </LayoutProvider>
-                </ManagerErrorBoundary>
+                <LayoutProvider>
+                  <App
+                    key="app"
+                    pages={pages}
+                    managerLayoutState={{
+                      ...state.layout,
+                      viewMode: state.viewMode,
+                    }}
+                    hasTab={!!api.getQueryParam('tab')}
+                    setManagerLayoutState={setManagerLayoutState}
+                  />
+                </LayoutProvider>
               </ThemeProvider>
             );
           }}

@@ -6,6 +6,7 @@ import type { Addon_PageType } from 'storybook/internal/types';
 import { addons } from 'storybook/manager-api';
 import { Global, createGlobal } from 'storybook/theming';
 
+import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBoundary';
 import { Layout } from './components/layout/Layout';
 import { useLayout } from './components/layout/LayoutProvider';
 import Panel from './container/Panel';
@@ -30,17 +31,19 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
   return (
     <>
       <Global styles={createGlobal} />
-      <Layout
-        hasTab={hasTab}
-        managerLayoutState={managerLayoutState}
-        setManagerLayoutState={setManagerLayoutState}
-        slotMain={<Preview id="main" withLoader />}
-        slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
-        slotPanel={<Panel />}
-        slotPages={pages.map(({ id, render: Content }) => (
-          <Content key={id} />
-        ))}
-      />
+      <ManagerErrorBoundary>
+        <Layout
+          hasTab={hasTab}
+          managerLayoutState={managerLayoutState}
+          setManagerLayoutState={setManagerLayoutState}
+          slotMain={<Preview id="main" withLoader />}
+          slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
+          slotPanel={<Panel />}
+          slotPages={pages.map(({ id, render: Content }) => (
+            <Content key={id} />
+          ))}
+        />
+      </ManagerErrorBoundary>
     </>
   );
 };

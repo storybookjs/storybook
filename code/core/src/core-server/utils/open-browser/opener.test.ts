@@ -76,8 +76,6 @@ describe('openBrowser BROWSER script handling', () => {
   it('falls back to opening the browser when BROWSER points to a shell script on Windows', () => {
     process.env.BROWSER = '/tmp/customBrowser.sh';
     platformSpy.mockReturnValue('win32');
-    delete process.env.WSL_DISTRO_NAME;
-    delete process.env.WSL_INTEROP;
 
     openBrowser('http://localhost:6006/');
 
@@ -89,11 +87,9 @@ describe('openBrowser BROWSER script handling', () => {
     });
   });
 
-  it('executes a shell script on Linux', () => {
+  it('executes a shell script on Linux when BROWSER is a shell script', () => {
     process.env.BROWSER = '/tmp/findAHandler.sh';
     platformSpy.mockReturnValue('linux');
-    delete process.env.WSL_DISTRO_NAME;
-    delete process.env.WSL_INTEROP;
 
     openBrowser('http://localhost:6006/');
 
@@ -105,35 +101,17 @@ describe('openBrowser BROWSER script handling', () => {
     expect(vi.mocked(open)).not.toHaveBeenCalled();
   });
 
-  it('executes a shell script on WSL testing for env var WSL_DISTRO_NAME', () => {
-    process.env.BROWSER = '/tmp/findAHandler.sh';
+  it('starts browser process on Linux when BROWSER is not a shell script', () => {
+    process.env.BROWSER = 'google chrome';
     platformSpy.mockReturnValue('linux');
-    process.env.WSL_DISTRO_NAME = 'AnyDistro';
-    delete process.env.WSL_INTEROP;
 
     openBrowser('http://localhost:6006/');
 
-    expect(vi.mocked(spawn)).toHaveBeenCalledWith(
-      '/bin/sh',
-      ['/tmp/findAHandler.sh', 'http://localhost:6006/'],
-      { stdio: 'inherit' }
-    );
-    expect(vi.mocked(open)).not.toHaveBeenCalled();
-  });
-
-  it('executes a shell script on WSL testing for env var WSL_INTEROP', () => {
-    process.env.BROWSER = '/tmp/findAHandler.sh';
-    platformSpy.mockReturnValue('linux');
-    process.env.WSL_INTEROP = '/run/WSL';
-    delete process.env.WSL_DISTRO_NAME;
-
-    openBrowser('http://localhost:6006/');
-
-    expect(vi.mocked(spawn)).toHaveBeenCalledWith(
-      '/bin/sh',
-      ['/tmp/findAHandler.sh', 'http://localhost:6006/'],
-      { stdio: 'inherit' }
-    );
-    expect(vi.mocked(open)).not.toHaveBeenCalled();
+    expect(vi.mocked(spawn)).not.toHaveBeenCalled();
+    expect(vi.mocked(open)).toHaveBeenCalledWith('http://localhost:6006/', {
+      app: 'google chrome',
+      wait: false,
+      url: true,
+    });
   });
 });

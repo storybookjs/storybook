@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
@@ -587,8 +588,10 @@ const testStorybooksPNP = defineJob(
   },
   ['test-storybooks']
 );
-const testStorybooksPortableReact = defineJob(
-  'test-storybooks-react-vite-default-ts',
+
+const testStorybooksPortables = ['react', 'vue3'].map(definePortableStoryTest);
+const testStorybooksPortableVitest3 = defineJob(
+  'test-storybooks-portable-vitest3',
   {
     executor: {
       name: 'sb_playwright',
@@ -601,7 +604,7 @@ const testStorybooksPortableReact = defineJob(
       {
         run: {
           name: 'Install dependencies',
-          working_directory: 'test-storybooks/portable-stories-kitchen-sink/react',
+          working_directory: 'test-storybooks/portable-stories-kitchen-sink/react-vitest-3',
           command: 'yarn install --no-immutable',
           environment: {
             YARN_ENABLE_IMMUTABLE_INSTALLS: false,
@@ -611,7 +614,7 @@ const testStorybooksPortableReact = defineJob(
       {
         run: {
           name: 'Run Playwright E2E tests',
-          working_directory: 'test-storybooks/portable-stories-kitchen-sink/react',
+          working_directory: 'test-storybooks/portable-stories-kitchen-sink/react-vitest-3',
           command: 'yarn playwright-e2e',
         },
       },
@@ -785,7 +788,14 @@ const jobs = {
     type: 'no-op',
   },
   [testStorybooksPNP.id]: testStorybooksPNP.implementation,
-  [testStorybooksPortableReact.id]: testStorybooksPortableReact.implementation,
+  ...testStorybooksPortables.reduce(
+    (acc, test) => {
+      acc[test.id] = test.implementation;
+      return acc;
+    },
+    {} as Record<string, JobImplementation>
+  ),
+  [testStorybooksPortableVitest3.id]: testStorybooksPortableVitest3.implementation,
 };
 
 const orbs = {
@@ -874,9 +884,14 @@ const workflows = {
           requires: testStorybooksPNP.requires,
         },
       },
+      ...testStorybooksPortables.map((test) => ({
+        [test.id]: {
+          requires: test.requires,
+        },
+      })),
       {
-        [testStorybooksPortableReact.id]: {
-          requires: testStorybooksPortableReact.requires,
+        [testStorybooksPortableVitest3.id]: {
+          requires: testStorybooksPortableVitest3.requires,
         },
       },
     ],
@@ -896,6 +911,78 @@ export const data = {
   jobs,
   workflows,
 };
+
+function definePortableStoryTest(directory: string) {
+  const working_directory = `test-storybooks/portable-stories-kitchen-sink/${directory}`;
+
+  const scripts = JSON.parse(
+    readFileSync(join(import.meta.dirname, '..', '..', working_directory, 'package.json'), 'utf8')
+  ).scripts;
+  return defineJob(
+    `test-storybooks-portable-${directory}`,
+    {
+      executor: {
+        name: 'sb_playwright',
+        class: 'medium',
+      },
+      steps: [
+        git.checkout(),
+        workspace.attach(),
+        cache.attach(CACHE_KEYS()),
+        {
+          run: {
+            name: 'Install dependencies',
+            working_directory,
+            command: 'yarn install --no-immutable',
+            environment: {
+              YARN_ENABLE_IMMUTABLE_INSTALLS: false,
+            },
+          },
+        },
+        {
+          run: {
+            name: 'Run Jest tests',
+            working_directory,
+            command: 'yarn jest',
+          },
+        },
+        {
+          run: {
+            name: 'Run Vitest tests',
+            working_directory,
+            command: 'yarn vitest',
+          },
+        },
+        {
+          run: {
+            name: 'Run Playwright CT tests',
+            working_directory,
+            command: 'yarn playwright-ct',
+          },
+        },
+        ...(scripts['playwright-e2e']
+          ? [
+              {
+                run: {
+                  name: 'Run Playwright E2E tests',
+                  working_directory,
+                  command: 'yarn playwright-e2e',
+                },
+              },
+            ]
+          : []),
+        {
+          run: {
+            name: 'Run Cypress CT tests',
+            working_directory,
+            command: 'yarn cypress',
+          },
+        },
+      ],
+    },
+    ['test-storybooks']
+  );
+}
 
 function defineSandboxJob_build({
   name,

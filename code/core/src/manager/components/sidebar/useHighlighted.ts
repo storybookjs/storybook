@@ -56,6 +56,7 @@ export const useHighlighted = ({
   const highlightedRef = useRef<Highlight>(initialHighlight);
   const [highlighted, setHighlighted] = useState<Highlight>(initialHighlight);
   const api = useStorybookApi();
+  const isManuallyNavigatingRef = useRef(false);
 
   const updateHighlighted = useCallback(
     (highlight: Highlight) => {
@@ -74,6 +75,7 @@ export const useHighlighted = ({
       if (!itemId || !refId) {
         return;
       }
+      isManuallyNavigatingRef.current = true;
       updateHighlighted({ itemId, refId });
       scrollIntoView(element, center);
     },
@@ -83,13 +85,18 @@ export const useHighlighted = ({
   // Highlight and scroll to the selected story whenever the selection or dataset changes
   useEffect(() => {
     const highlight = fromSelection(selected);
-    updateHighlighted(highlight);
-    if (highlight) {
-      scrollToSelector(`[data-item-id="${highlight.itemId}"][data-ref-id="${highlight.refId}"]`, {
-        containerRef,
-        center: true,
-      });
+    // Only auto-sync if user isn't manually navigating with keyboard
+    if (!isManuallyNavigatingRef.current) {
+      updateHighlighted(highlight);
+      if (highlight) {
+        scrollToSelector(`[data-item-id="${highlight.itemId}"][data-ref-id="${highlight.refId}"]`, {
+          containerRef,
+          center: true,
+        });
+      }
     }
+    // Reset the flag after a short delay to allow auto-sync for future selections
+    isManuallyNavigatingRef.current = false;
   }, [containerRef, selected, updateHighlighted]);
 
   // Highlight nodes up/down the tree using arrow keys

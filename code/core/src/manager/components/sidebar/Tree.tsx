@@ -379,6 +379,8 @@ const Node = React.memo<NodeProps>(function Node(props) {
           isExpanded={isExpanded}
           onClick={(event) => {
             event.preventDefault();
+            // Remove focus to prevent Enter key from re-triggering this click
+            (event.currentTarget as HTMLElement).blur();
             if (item.type === 'story') {
               onSelectStoryId(item.id);
               if (!isExpanded || isSelected) {
@@ -393,7 +395,8 @@ const Node = React.memo<NodeProps>(function Node(props) {
               setExpanded({ ids: [item.id], value: !isExpanded });
             }
           }}
-          onMouseEnter={() => {
+          onMouseEnter={(event) => {
+            event.preventDefault();
             if (item.type === 'component' || item.type === 'story') {
               api.emit(PRELOAD_ENTRIES, {
                 ids: [children[0]],
@@ -453,6 +456,8 @@ const Node = React.memo<NodeProps>(function Node(props) {
         depth={isOrphan ? item.depth : item.depth - 1}
         onClick={(event) => {
           event.preventDefault();
+          // Remove focus to prevent Enter key from re-triggering this click
+          (event.currentTarget as HTMLElement).blur();
           onSelectStoryId(item.id);
 
           if (isMobile) {

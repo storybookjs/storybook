@@ -121,7 +121,9 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
   );
 
   const onSelectStoryId = useCallback(
-    (storyId: string) => api?.selectStory(storyId, undefined, { ref: isMain ? undefined : refId }),
+    (storyId: string) => {
+      api?.selectStory(storyId, undefined, { ref: isMain ? undefined : refId });
+    },
     [api, isMain, refId]
   );
 

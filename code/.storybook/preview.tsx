@@ -349,7 +349,6 @@ const parameters = {
             plugins: [prettierPluginBabel, prettierPluginEstree],
           });
         } catch (error) {
-          console.error(error);
           return source;
         }
       },

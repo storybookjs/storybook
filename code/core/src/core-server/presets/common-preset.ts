@@ -296,10 +296,14 @@ let initializedStoryIndexGenerator: StoryIndexGenerator | undefined = undefined;
 export const storyIndexGenerator: PresetPropertyFn<
   'storyIndexGenerator',
   StorybookConfigRaw,
-  { normalizedStories: NormalizedStoriesSpecifier[] }
+  { normalizedStories?: NormalizedStoriesSpecifier[] }
 > = async (_, options) => {
   if (initializedStoryIndexGenerator) {
     return initializedStoryIndexGenerator;
+  }
+
+  if (!options.normalizedStories) {
+    throw new Error(`uninitialized storyIndexGenerator preset requires normalizedStories option`);
   }
 
   const workingDir = process.cwd();

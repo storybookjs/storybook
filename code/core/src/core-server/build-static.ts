@@ -5,6 +5,7 @@ import {
   loadAllPresets,
   loadMainConfig,
   logConfig,
+  normalizeStories,
   resolveAddonName,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -137,7 +138,20 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   let initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);
   if (!options.ignorePreview) {
-    initializedStoryIndexGenerator = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+    const workingDir = process.cwd();
+    const configDir = options.configDir;
+    const stories = await presets.apply('stories');
+    // StoryIndexGenerator depends on these normalized stories to be referentially equal
+    // So it's important that we only normalize them once here and pass the same reference around
+    const normalizedStories = normalizeStories(stories, {
+      configDir,
+      workingDir,
+    });
+    initializedStoryIndexGenerator = presets.apply<StoryIndexGenerator>(
+      'storyIndexGenerator',
+      undefined,
+      { normalizedStories }
+    );
 
     effects.push(
       writeIndexJson(

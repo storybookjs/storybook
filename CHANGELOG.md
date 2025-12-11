@@ -1,3 +1,16 @@
+## 10.1.6
+
+- Manager: Do not display non-existing shortcuts in the settings page - [#32711](https://github.com/storybookjs/storybook/pull/32711), thanks @DKER2!
+- Preview: Enforce inert body if manager is focus-trapped - [#33186](https://github.com/storybookjs/storybook/pull/33186), thanks @Sidnioulz!
+- Telemetry: Await pending operations in getLastEvents to prevent race conditions - [#33285](https://github.com/storybookjs/storybook/pull/33285), thanks @valentinpalkovic!
+- UI: Fix keyboard navigation bug for "reset" option in `Select` - [#33268](https://github.com/storybookjs/storybook/pull/33268), thanks @Sidnioulz!
+
+## 10.1.5
+
+- Addon-Vitest: Isolate error reasons during postinstall - [#33295](https://github.com/storybookjs/storybook/pull/33295), thanks @valentinpalkovic!
+- CLI: Fix react native template not copying in init - [#33308](https://github.com/storybookjs/storybook/pull/33308), thanks @dannyhw!
+- Docs: Support Rolldown bundler module namespace objects - [#33280](https://github.com/storybookjs/storybook/pull/33280), thanks @akornmeier!
+
 ## 10.1.4
 
 - Core: Enhance getPrettier function to provide prettier interface - [#33260](https://github.com/storybookjs/storybook/pull/33260), thanks @valentinpalkovic!

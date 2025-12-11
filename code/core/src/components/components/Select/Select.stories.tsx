@@ -429,6 +429,47 @@ export const KeyboardSelectionMultiSS = meta.story({
   play: kbMultiSelectionTest(' ', ' '),
 });
 
+export const FullArrowNavigation = meta.story({
+  play: async ({ canvas, step }) => {
+    const selectButton = await canvas.findByRole('button');
+    await step('Open select', async () => {
+      selectButton.focus();
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Tadpole');
+    });
+
+    await step('Navigate to option 2 with ArrowDown', async () => {
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Pollywog');
+    });
+
+    await step('Navigate to option 3 with ArrowDown', async () => {
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Frog');
+    });
+
+    await step('Loop back to option 1 with ArrowDown', async () => {
+      await userEvent.keyboard('{ArrowDown}');
+      expect(selectButton).toHaveTextContent('Tadpole');
+    });
+
+    await step('Navigate backwards with ArrowUp', async () => {
+      await userEvent.keyboard('{ArrowUp}');
+      expect(selectButton).toHaveTextContent('Frog');
+    });
+
+    await step('Navigate backwards with ArrowUp', async () => {
+      await userEvent.keyboard('{ArrowUp}');
+      expect(selectButton).toHaveTextContent('Pollywog');
+    });
+
+    await step('Navigate back to option 1 with ArrowUp', async () => {
+      await userEvent.keyboard('{ArrowUp}');
+      expect(selectButton).toHaveTextContent('Tadpole');
+    });
+  },
+});
+
 export const MouseOpenNoAutoselect = meta.story({
   name: 'AutoSelect - nothing selected on Mouse open (single)',
   play: async ({ canvas, args, step }) => {

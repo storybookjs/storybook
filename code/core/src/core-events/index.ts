@@ -91,6 +91,8 @@ enum events {
   // Open a file in the code editor
   OPEN_IN_EDITOR_REQUEST = 'openInEditorRequest',
   OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
+  // Emitted when the manager UI sets up a focus trap
+  MANAGER_INERT_ATTRIBUTE_CHANGED = 'managerInertAttributeChanged',
 }
 
 // Enables: `import Events from ...`
@@ -159,6 +161,7 @@ export const {
   ARGTYPES_INFO_RESPONSE,
   OPEN_IN_EDITOR_REQUEST,
   OPEN_IN_EDITOR_RESPONSE,
+  MANAGER_INERT_ATTRIBUTE_CHANGED,
 } = events;
 
 export * from './data/create-new-story';

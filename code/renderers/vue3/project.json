@@ -8,5 +8,5 @@
       "options": { "cwd": "{projectRoot}", "command": "vue-tsc --noEmit" }
     }
   },
-  "tags": ["ci:normal"]
+  "tags": ["library"]
 }

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/code",
-  "version": "10.2.0-alpha.4",
+  "version": "10.2.0-alpha.6",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",

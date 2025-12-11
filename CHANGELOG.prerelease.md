@@ -1,3 +1,15 @@
+## 10.2.0-alpha.6
+
+- Automigrate: Fix missing await - [#33333](https://github.com/storybookjs/storybook/pull/33333), thanks @valentinpalkovic!
+- CLI: Remove REACT_PROJECT projectType - [#33334](https://github.com/storybookjs/storybook/pull/33334), thanks @valentinpalkovic!
+- Controls: Fix displaying as object instead of select for optional union types - [#33200](https://github.com/storybookjs/storybook/pull/33200), thanks @tanujbhaud!
+- Controls: Force object control JSON mode to reset - [#33330](https://github.com/storybookjs/storybook/pull/33330), thanks @Sidnioulz!
+- Core: Exclude open from pre-bundling to make local xdg-open reachable - [#33325](https://github.com/storybookjs/storybook/pull/33325), thanks @Sidnioulz!
+- Docs-Blocks: Fix broken tooltip in ArgValue details - [#33264](https://github.com/storybookjs/storybook/pull/33264), thanks @Sidnioulz!
+- Manager: Ensure reset item only appears in globals toolbar when specified - [#33276](https://github.com/storybookjs/storybook/pull/33276), thanks @mrginglymus!
+- Nextjs-Vite: Install `vite` during migration if not installed yet - [#33316](https://github.com/storybookjs/storybook/pull/33316), thanks @ghengeveld!
+- UI: Make vertical alignment of TestStatusIcon more robust - [#33305](https://github.com/storybookjs/storybook/pull/33305), thanks @Sidnioulz!
+
 ## 10.2.0-alpha.5
 
 - Addon-Vitest: Added timeout for fetching localhost 6006 during global setup.  - [#33232](https://github.com/storybookjs/storybook/pull/33232), thanks @snippy4!

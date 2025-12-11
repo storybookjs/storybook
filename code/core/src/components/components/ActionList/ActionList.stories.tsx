@@ -2,7 +2,7 @@ import { CheckIcon, EllipsisIcon, PlayAllHollowIcon } from '@storybook/icons';
 
 import { Badge, Form, ProgressSpinner } from '../..';
 import preview from '../../../../../.storybook/preview';
-import { Shortcut } from '../../../manager/container/Menu';
+import { Shortcut } from '../../../manager/components/Shortcut';
 import { ActionList } from './ActionList';
 
 const meta = preview.meta({

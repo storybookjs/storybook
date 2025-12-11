@@ -295,9 +295,9 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               });
             }}
           >
-            <TestStatusIcon status={componentTestStatusIcon} isRunning={isRunning} />
             {componentTestStatusValueToStoryIds['status-value:error'].length +
               componentTestStatusValueToStoryIds['status-value:warning'].length || null}
+            <TestStatusIcon status={componentTestStatusIcon} isRunning={isRunning} />
           </ActionList.Button>
         </ActionList.Item>
 
@@ -343,12 +343,12 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 }
               >
                 <a href="/coverage/index.html" target="_blank">
+                  {currentRun.coverageSummary.percentage}%
                   <TestStatusIcon
                     isRunning={isRunning}
                     percentage={currentRun.coverageSummary.percentage}
                     status={currentRun.coverageSummary.status}
                   />
-                  {currentRun.coverageSummary.percentage}%
                 </a>
               </ActionList.Button>
             ) : (
@@ -412,9 +412,9 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 });
               }}
             >
-              <TestStatusIcon status={a11yStatusIcon} isRunning={isRunning} />
               {a11yStatusValueToStoryIds['status-value:error'].length +
                 a11yStatusValueToStoryIds['status-value:warning'].length || null}
+              <TestStatusIcon status={a11yStatusIcon} isRunning={isRunning} />
             </ActionList.Button>
           </ActionList.Item>
         )}

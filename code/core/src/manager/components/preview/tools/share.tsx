@@ -17,7 +17,7 @@ import { Consumer, types, useStorybookApi } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { Shortcut } from '../../../container/Menu';
+import { Shortcut } from '../../Shortcut';
 
 const { PREVIEW_URL, document } = global as any;
 

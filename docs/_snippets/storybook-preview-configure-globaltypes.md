@@ -9,7 +9,7 @@ const preview = {
         icon: 'circlehollow',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
-        // Change title based on selected value
+        // Change title based on selected value (recommended for consistency with the Storybook UI)
         dynamicTitle: true,
       },
     },
@@ -36,7 +36,7 @@ const preview: Preview = {
         icon: 'circlehollow',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
-        // Change title based on selected value
+        // Change title based on selected value (recommended for consistency with the Storybook UI)
         dynamicTitle: true,
       },
     },
@@ -63,7 +63,7 @@ export default definePreview({
         icon: 'circlehollow',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
-        // Change title based on selected value
+        // Change title based on selected value (recommended for consistency with the Storybook UI)
         dynamicTitle: true,
       },
     },
@@ -90,7 +90,7 @@ export default definePreview({
         icon: 'circlehollow',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
-        // Change title based on selected value
+        // Change title based on selected value (recommended for consistency with the Storybook UI)
         dynamicTitle: true,
       },
     },

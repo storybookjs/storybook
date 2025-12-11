@@ -51,18 +51,20 @@ export const artifact = {
 
 export const git = {
   checkout: ({ forceHttps = false, shallow = true } = {}) => {
-    const configs = forceHttps
-      ? [
-          '--config url."https://github.com/".insteadOf=ssh://git@github.com/',
-          '--config url."https://github.com/".insteadOf=git@github.com:',
-        ].join(' ')
-      : '';
+    const flags = [];
+    if (shallow) {
+      flags.push('--depth 1');
+    } else {
+      flags.push('--depth 500');
+    }
 
-    const depth = shallow ? '--depth 1' : '';
-
+    if (forceHttps) {
+      flags.push('--config url."https://github.com/".insteadOf=ssh://git@github.com/');
+      flags.push('--config url."https://github.com/".insteadOf=git@github.com:');
+    }
     return {
       'git-shallow-clone/checkout_advanced': {
-        clone_options: `${depth} ${configs}`.trim(),
+        clone_options: flags.join(' '),
       },
     };
   },

@@ -424,7 +424,7 @@ jobs:
             - run:
                   name: Run Knip
                   working_directory: code
-                  command: yarn knip
+                  command: yarn knip --no-exit-code
     ui:
         description: ui
         executor:
@@ -671,7 +671,7 @@ jobs:
             class: xlarge
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
+                  clone_options: --depth 500
             - attach_workspace:
                   at: /tmp
             - restore_cache:

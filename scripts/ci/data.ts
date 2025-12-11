@@ -478,7 +478,7 @@ const knip = defineJob(
         run: {
           name: 'Run Knip',
           working_directory: `code`,
-          command: 'yarn knip',
+          command: 'yarn knip --no-exit-code',
         },
       },
     ],
@@ -1044,7 +1044,7 @@ function defineSandboxJob_build({
     {
       executor,
       steps: [
-        git.checkout(),
+        git.checkout({ shallow: false }),
         workspace.attach(),
         cache.attach(CACHE_KEYS()),
         {

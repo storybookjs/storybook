@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
+import { optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -19,9 +19,11 @@ import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
   Indexer,
+  NormalizedStoriesSpecifier,
   Options,
   PresetProperty,
   PresetPropertyFn,
+  StorybookConfigRaw,
 } from 'storybook/internal/types';
 
 import { isAbsolute, join } from 'pathe';
@@ -291,7 +293,11 @@ export const managerEntries = async (existing: any) => {
 };
 
 let initializedStoryIndexGenerator: StoryIndexGenerator | undefined = undefined;
-export const storyIndexGenerator: PresetPropertyFn<'storyIndexGenerator'> = async (_, options) => {
+export const storyIndexGenerator: PresetPropertyFn<
+  'storyIndexGenerator',
+  StorybookConfigRaw,
+  { normalizedStories: NormalizedStoriesSpecifier[] }
+> = async (_, options) => {
   if (initializedStoryIndexGenerator) {
     return initializedStoryIndexGenerator;
   }
@@ -299,18 +305,12 @@ export const storyIndexGenerator: PresetPropertyFn<'storyIndexGenerator'> = asyn
   const workingDir = process.cwd();
   const configDir = options.configDir;
 
-  const [stories, indexers, docs] = await Promise.all([
-    options.presets.apply('stories'),
+  const [indexers, docs] = await Promise.all([
     options.presets.apply('experimental_indexers', []),
     options.presets.apply('docs'),
   ]);
 
-  const normalizedStories = normalizeStories(stories, {
-    configDir,
-    workingDir,
-  });
-
-  const generator = new StoryIndexGenerator(normalizedStories, {
+  const generator = new StoryIndexGenerator(options.normalizedStories, {
     workingDir,
     configDir,
     indexers,

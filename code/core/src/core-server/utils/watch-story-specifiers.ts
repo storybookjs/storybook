@@ -116,7 +116,32 @@ export function watchStorySpecifiers(
     }
   }
 
-  wp.on('change', async (filePath: Path, mtime: Date, explanation: string) => {
+  // Batch rapid file events to avoid redundant processing.
+  // Watchpack fires multiple events for the same file in rapid succession.
+  // We collect events for 100ms, then process unique paths only.
+  const pendingEvents = new Map<Path, { removed: boolean }>();
+  let batchTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  function queueEvent(absolutePath: Path, removed: boolean) {
+    // Store/overwrite the event for this path (last event type wins)
+    pendingEvents.set(absolutePath, { removed });
+
+    // Reset the timer on each new event to batch them together
+    if (batchTimeout) {
+      clearTimeout(batchTimeout);
+    }
+    batchTimeout = setTimeout(async () => {
+      batchTimeout = undefined;
+      const events = new Map(pendingEvents);
+      pendingEvents.clear();
+
+      await Promise.all(
+        Array.from(events.entries()).map(([path, { removed }]) => onChangeOrRemove(path, removed))
+      );
+    }, 100);
+  }
+
+  wp.on('change', (filePath: Path, mtime: Date, explanation: string) => {
     // When a file is renamed (including being moved out of the watched dir)
     // we see first an event with explanation=rename and no mtime for the old name.
     // then an event with explanation=rename with an mtime for the new name.
@@ -124,10 +149,10 @@ export function watchStorySpecifiers(
     // but that seems dangerous (what if the contents changed?) and frankly not worth it
     // (at this stage at least)
     const removed = !mtime;
-    await onChangeOrRemove(filePath, removed);
+    queueEvent(filePath, removed);
   });
-  wp.on('remove', async (filePath: Path, explanation: string) => {
-    await onChangeOrRemove(filePath, true);
+  wp.on('remove', (filePath: Path) => {
+    queueEvent(filePath, true);
   });
 
   return () => wp.close();

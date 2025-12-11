@@ -25,6 +25,8 @@ export function codeGeneratorPlugin(options: Options): Plugin {
     enforce: 'pre',
     async configureServer(server) {
       (await storyIndexGeneratorPromise).onInvalidated(() => {
+        // TODO: this is only necessary when new files are added.
+        // Changes and removals are already watched and handled by Vite, so they actually trigger a double HMR event right now.
         server.watcher.emit(
           'change',
           getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)

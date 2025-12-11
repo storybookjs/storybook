@@ -1,23 +1,31 @@
-import type { EventHandler, PropsWithChildren, SyntheticEvent } from 'react';
-import React, { Component, createContext, memo, useCallback } from 'react';
+import type { PropsWithChildren } from 'react';
+import React, { Component, createContext, memo, useCallback, useEffect, useRef } from 'react';
 
-import { Button, Separator } from 'storybook/internal/components';
+import { ActionList, Button, PopoverProvider } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
-import { ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
+import { types, useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
-import { types } from 'storybook/manager-api';
+import { Shortcut } from '../../Shortcut';
 
-const initialZoom = 1 as const;
+const BASE_ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+const INITIAL_ZOOM_LEVEL = 1;
 
-const Context = createContext({ value: initialZoom, set: (v: number) => {} });
+const ZoomButton = styled(Button)({
+  minWidth: 48,
+});
 
-class ZoomProvider extends Component<
+const Context = createContext({ value: INITIAL_ZOOM_LEVEL, set: (v: number) => {} });
+
+export const ZoomConsumer = Context.Consumer;
+
+export class ZoomProvider extends Component<
   PropsWithChildren<{ shouldScale: boolean }>,
   { value: number }
 > {
   state = {
-    value: initialZoom,
+    value: INITIAL_ZOOM_LEVEL,
   };
 
   set = (value: number) => this.setState({ value });
@@ -27,84 +35,126 @@ class ZoomProvider extends Component<
     const { set } = this;
     const { value } = this.state;
     return (
-      <Context.Provider value={{ value: shouldScale ? value : initialZoom, set }}>
+      <Context.Provider value={{ value: shouldScale ? value : INITIAL_ZOOM_LEVEL, set }}>
         {children}
       </Context.Provider>
     );
   }
 }
 
-const { Consumer: ZoomConsumer } = Context;
+export const Zoom = memo<{
+  value: number;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  zoomTo: (value: number) => void;
+}>(function Zoom({ value, zoomIn, zoomOut, zoomTo }) {
+  const inputRef = useRef<HTMLInputElement>(null);
 
-const Zoom = memo<{
-  zoomIn: EventHandler<SyntheticEvent>;
-  zoomOut: EventHandler<SyntheticEvent>;
-  reset: EventHandler<SyntheticEvent>;
-}>(function Zoom({ zoomIn, zoomOut, reset }) {
   return (
-    <>
-      <Button key="zoomin" padding="small" variant="ghost" onClick={zoomIn} ariaLabel="Zoom in">
-        <ZoomIcon />
-      </Button>
-      <Button key="zoomout" padding="small" variant="ghost" onClick={zoomOut} ariaLabel="Zoom out">
-        <ZoomOutIcon />
-      </Button>
-      <Button
-        key="zoomreset"
-        padding="small"
-        variant="ghost"
-        onClick={reset}
-        ariaLabel="Reset zoom"
-      >
-        <ZoomResetIcon />
-      </Button>
-    </>
+    <PopoverProvider
+      padding="none"
+      onVisibleChange={(isVisible) => {
+        if (isVisible) {
+          requestAnimationFrame(() => inputRef.current?.select());
+        }
+      }}
+      popover={
+        <div style={{ minWidth: 200 }}>
+          <ActionList>
+            <ActionList.Item>
+              <ActionList.Action onClick={zoomIn} ariaLabel={false}>
+                <ActionList.Text>Zoom in</ActionList.Text>
+                <Shortcut keys={['alt', '+']} />
+              </ActionList.Action>
+            </ActionList.Item>
+            <ActionList.Item>
+              <ActionList.Action onClick={zoomOut} ariaLabel={false}>
+                <ActionList.Text>Zoom out</ActionList.Text>
+                <Shortcut keys={['alt', '-']} />
+              </ActionList.Action>
+            </ActionList.Item>
+            <ActionList.Item>
+              <ActionList.Action onClick={() => zoomTo(0.5)} ariaLabel={false}>
+                <ActionList.Text>Zoom to 50%</ActionList.Text>
+              </ActionList.Action>
+            </ActionList.Item>
+            <ActionList.Item>
+              <ActionList.Action onClick={() => zoomTo(1)} ariaLabel={false}>
+                <ActionList.Text>Reset to 100%</ActionList.Text>
+                <Shortcut keys={['alt', '0']} />
+              </ActionList.Action>
+            </ActionList.Item>
+            <ActionList.Item>
+              <ActionList.Action onClick={() => zoomTo(2)} ariaLabel={false}>
+                Zoom to 200%
+              </ActionList.Action>
+            </ActionList.Item>
+          </ActionList>
+        </div>
+      }
+    >
+      <ZoomButton padding="small" variant="ghost" ariaLabel="Change zoom level">
+        {Math.round(value * 100)}%
+      </ZoomButton>
+    </PopoverProvider>
   );
 });
 
-export { Zoom, ZoomConsumer, ZoomProvider };
+const ZoomWrapper = memo<{
+  set: (zoomLevel: number) => void;
+  value: number;
+}>(function ZoomWrapper({ set, value }) {
+  const api = useStorybookApi();
 
-const ZoomWrapper = memo<{ set: (zoomLevel: number) => void; value: number }>(function ZoomWrapper({
-  set,
-  value,
-}) {
-  const zoomIn = useCallback(
-    (e: SyntheticEvent) => {
-      e.preventDefault();
-      set(0.8 * value);
+  const zoomIn = useCallback(() => {
+    const higherZoomLevel = BASE_ZOOM_LEVELS.find((level) => level > value);
+    if (higherZoomLevel) {
+      set(higherZoomLevel);
+    }
+  }, [set, value]);
+
+  const zoomOut = useCallback(() => {
+    const lowerZoomLevel = BASE_ZOOM_LEVELS.findLast((level) => level < value);
+    if (lowerZoomLevel) {
+      set(lowerZoomLevel);
+    }
+  }, [set, value]);
+
+  const zoomTo = useCallback(
+    (value: number) => {
+      set(value);
     },
-    [set, value]
+    [set]
   );
-  const zoomOut = useCallback(
-    (e: SyntheticEvent) => {
-      e.preventDefault();
-      set(1.25 * value);
-    },
-    [set, value]
-  );
-  const reset = useCallback(
-    (e: SyntheticEvent) => {
-      e.preventDefault();
-      set(initialZoom);
-    },
-    [set, initialZoom]
-  );
-  return <Zoom key="zoom" {...{ zoomIn, zoomOut, reset }} />;
+
+  useEffect(() => {
+    api.setAddonShortcut('zoom', {
+      label: 'Zoom to 100%',
+      defaultShortcut: ['alt', '0'],
+      actionName: 'zoomReset',
+      action: () => zoomTo(1),
+    });
+    api.setAddonShortcut('zoom', {
+      label: 'Zoom in',
+      defaultShortcut: ['alt', '='],
+      actionName: 'zoomIn',
+      action: zoomIn,
+    });
+    api.setAddonShortcut('zoom', {
+      label: 'Zoom out',
+      defaultShortcut: ['alt', '-'],
+      actionName: 'zoomOut',
+      action: zoomOut,
+    });
+  }, [api, zoomIn, zoomOut, zoomTo]);
+
+  return <Zoom key="zoom" {...{ value, zoomIn, zoomOut, zoomTo }} />;
 });
-
-function ZoomToolRenderer() {
-  return (
-    <>
-      <ZoomConsumer>{({ set, value }) => <ZoomWrapper {...{ set, value }} />}</ZoomConsumer>
-      <Separator />
-    </>
-  );
-}
 
 export const zoomTool: Addon_BaseType = {
   title: 'zoom',
   id: 'zoom',
   type: types.TOOL,
   match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
-  render: ZoomToolRenderer,
+  render: () => <ZoomConsumer>{(zoomContext) => <ZoomWrapper {...zoomContext} />}</ZoomConsumer>,
 };

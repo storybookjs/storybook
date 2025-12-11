@@ -1331,3 +1331,61 @@ export const ResetWithUndefinedOption = meta.story({
     });
   },
 });
+
+export const ShowSelectedOptionTitleTrue = meta.story({
+  name: 'Show Selected Option Title (prop=true)',
+  args: {
+    showSelectedOptionTitle: true,
+    defaultOptions: 'frog',
+  },
+  play: async ({ canvas, step }) => {
+    await step('Verify selected option title is shown', async () => {
+      const selectButton = await canvas.findByRole('button');
+      expect(selectButton).toHaveTextContent('Frog');
+    });
+  },
+});
+
+export const ShowSelectedOptionTitleFalse = meta.story({
+  name: 'Show Selected Option Title (prop=false)',
+  args: {
+    showSelectedOptionTitle: false,
+    defaultOptions: 'frog',
+  },
+  play: async ({ canvas, step }) => {
+    await step('Verify default title is shown instead of selected option', async () => {
+      const selectButton = await canvas.findByRole('button');
+      expect(selectButton).toHaveTextContent('Animal');
+    });
+  },
+});
+
+export const ShowSelectedOptionTitleFalseMulti = meta.story({
+  name: 'Show Selected Option Title (prop=false, multi)',
+  args: {
+    showSelectedOptionTitle: false,
+    multiSelect: true,
+    defaultOptions: ['frog', 'tadpole'],
+  },
+  play: async ({ canvas, step }) => {
+    await step('Verify default title is shown for multi-select', async () => {
+      const selectButton = await canvas.findByRole('button');
+      expect(selectButton).toHaveTextContent('Animal');
+    });
+  },
+});
+
+export const ShowSelectedOptionTitleTrueMulti = meta.story({
+  name: 'Show Selected Option Title (prop=true, multi)',
+  args: {
+    showSelectedOptionTitle: true,
+    multiSelect: true,
+    defaultOptions: ['frog'],
+  },
+  play: async ({ canvas, step }) => {
+    await step('Verify option count is shown for multi-select', async () => {
+      const selectButton = await canvas.findByRole('button');
+      expect(selectButton).toHaveTextContent('1');
+    });
+  },
+});

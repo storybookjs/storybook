@@ -215,7 +215,7 @@ export const useExpanded = ({
       if (
         type &&
         (isEnter || isSpace) &&
-        ['component', 'story', 'document', 'test'].includes(type)
+        ['component', 'group', 'story', 'document', 'test'].includes(type)
       ) {
         event.preventDefault();
 

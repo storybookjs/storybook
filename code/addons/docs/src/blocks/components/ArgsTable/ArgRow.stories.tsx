@@ -2,6 +2,10 @@ import React from 'react';
 
 import { ResetWrapper } from 'storybook/internal/components';
 
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { expect, screen } from 'storybook/test';
+
 import { ArgRow } from './ArgRow';
 import { TableWrapper } from './ArgsTable';
 
@@ -10,7 +14,7 @@ export default {
   title: 'Components/ArgsTable/ArgRow',
 
   decorators: [
-    (getStory: any) => (
+    (getStory) => (
       <ResetWrapper>
         <TableWrapper>
           <tbody>{getStory()}</tbody>
@@ -21,7 +25,7 @@ export default {
   argTypes: {
     updateArgs: { action: 'updateArgs' },
   },
-};
+} satisfies Meta<typeof ArgRow>;
 
 export const String = {
   args: {
@@ -309,6 +313,52 @@ export const Func = {
   },
 };
 
+export const LongFunc = {
+  args: {
+    row: {
+      ...Func.args.row,
+      table: {
+        ...Func.args.row.table,
+        defaultValue: {
+          summary: 'func',
+          detail: `(a, b) => {
+  // Calculate various metrics between a and b
+  const lengthA = a.length;
+  const lengthB = b.length;
+  
+  // Determine the longer string
+  const maxLength = Math.max(lengthA, lengthB);
+  const minLength = Math.min(lengthA, lengthB);
+  
+  // Calculate similarity score
+  let matchCount = 0;
+  for (let i = 0; i < minLength; i++) {
+    if (a[i] === b[i]) {
+      matchCount++;
+    }
+  }
+  
+  // Compute weighted average
+  const similarity = (matchCount / maxLength) * 100;
+  
+  // Generate result string
+  const result = \`Similarity: \${similarity.toFixed(2)}%, Length diff: \${Math.abs(lengthA - lengthB)}\`;
+  
+  return result;
+}`,
+        },
+      },
+    },
+  },
+  play: async ({ canvas }) => {
+    const funcButton = canvas.getByRole('button', { name: 'func' });
+    funcButton.click();
+    expect(
+      await screen.findByText(/Calculate various metrics between a and b/)
+    ).toBeInTheDocument();
+  },
+} satisfies StoryObj<typeof ArgRow>;
+
 const enumeration =
   '"search" | "arrow-to-bottom" | "arrow-to-right" | "bell" | "check" | "check-circle"';
 export const Enum = {
@@ -345,7 +395,20 @@ export const LongEnum = {
       },
     },
   },
-};
+  play: async ({ canvas, step }) => {
+    await step('Expand long enum', async () => {
+      canvas.getByRole('button', { name: 'Show 26 more...' }).click();
+      expect(await canvas.findByText(/exclamation-triangle/)).toBeVisible();
+    });
+    await step('Collapse long enum', async () => {
+      (await canvas.findByRole('button', { name: 'Show less...' })).click();
+      expect(await canvas.findByText(/exclamation-triangle/)).not.toBeVisible();
+    });
+    await step('Re-expand for visual test', async () => {
+      (await canvas.findByRole('button', { name: 'Show 26 more...' })).click();
+    });
+  },
+} satisfies StoryObj<typeof ArgRow>;
 
 const complexUnion =
   '((a: string | SVGSVGElement) => void) | RefObject<SVGSVGElement | number> | [a|b] | {a|b}';

@@ -33,14 +33,13 @@ export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
     id,
     name,
     description,
-    toolbar: { icon: _icon, items, title: _title, preventDynamicIcon, dynamicTitle },
+    toolbar: { icon: _icon, items, title, preventDynamicIcon, dynamicTitle = true },
   }) => {
     const [globals, updateGlobals, storyGlobals] = useGlobals();
 
     const currentValue = globals[id];
     const isOverridden = id in storyGlobals;
     let icon = _icon;
-    const title = _title;
 
     if (!preventDynamicIcon) {
       icon = getSelectedIcon({ currentValue, items }) || icon;
@@ -97,7 +96,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
         onReset={() => updateGlobals({ [id]: '_reset' })}
         onSelect={(selected) => updateGlobals({ [id]: selected })}
         icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
-        showSelectedLabel={dynamicTitle}
+        showSelectedOptionTitle={dynamicTitle}
       >
         {title}
       </Select>

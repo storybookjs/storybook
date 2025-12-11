@@ -208,15 +208,39 @@ export const useExpanded = ({
       }
 
       const type = highlightedElement.getAttribute('data-nodetype');
+      // aria-expanded is on the button element inside the wrapper, not on the wrapper itself
+      const buttonElement = highlightedElement.querySelector('button, a');
+      const isExpanded = buttonElement?.getAttribute('aria-expanded');
+
       if (
         type &&
         (isEnter || isSpace) &&
         ['component', 'story', 'document', 'test'].includes(type)
       ) {
-        onSelectStoryId(highlightedItemId);
-      }
+        event.preventDefault();
 
-      const isExpanded = highlightedElement.getAttribute('aria-expanded');
+        // If the element has children (aria-expanded is set), toggle expand/collapse
+        if (isExpanded === 'true' || isExpanded === 'false') {
+          const isCurrentlyExpanded = isExpanded === 'true';
+          const willExpand = !isCurrentlyExpanded;
+
+          // @ts-expect-error (non strict)
+          setExpanded({ ids: [highlightedItemId], value: willExpand });
+
+          // When expanding, select and highlight the first child
+          if (willExpand) {
+            const item = data[highlightedItemId];
+            if (item && 'children' in item && item.children && item.children.length > 0) {
+              const firstChildId = item.children[0];
+              // Select the first child
+              onSelectStoryId(firstChildId);
+            }
+          }
+        } else {
+          // No children, just select the item
+          onSelectStoryId(highlightedItemId);
+        }
+      }
 
       if (isArrowLeft) {
         if (isExpanded === 'true') {

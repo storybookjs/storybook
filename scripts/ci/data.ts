@@ -213,11 +213,13 @@ function defineSandboxFlow<K extends string>(name: K) {
     create: `${name} (create)`,
     build: `${name} (build)`,
     dev: `${name} (dev)`,
+    chromatic: `${name} (chromatic)`,
   };
   const ids = {
     create: `${toId(names.create)}`,
     build: `${toId(names.build)}`,
     dev: `${toId(names.dev)}`,
+    chromatic: `${toId(names.chromatic)}`,
   };
 
   const jobs = [
@@ -275,7 +277,6 @@ function defineSandboxFlow<K extends string>(name: K) {
       needs: [ids.create],
       options: {
         e2e: !skipTasks?.includes('e2e-tests'),
-        chromatic: !skipTasks?.includes('chromatic'),
       },
     }),
     defineSandboxJob_dev({
@@ -284,7 +285,30 @@ function defineSandboxFlow<K extends string>(name: K) {
       needs: [ids.create],
       options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
     }),
-  ];
+    !skipTasks?.includes('chromatic')
+      ? defineJob(
+          names.chromatic,
+          {
+            executor: {
+              name: 'sb_node_22_classic',
+              class: 'medium',
+            },
+            steps: [
+              'checkout',
+              workspace.attach(),
+              cache.attach(CACHE_KEYS()),
+              {
+                run: {
+                  name: 'Running Chromatic',
+                  command: `yarn task chromatic --template ${name} --no-link -s chromatic`,
+                },
+              },
+            ],
+          },
+          [ids.build]
+        )
+      : undefined,
+  ].filter(Boolean);
   return {
     jobs,
     workflow: jobs.map((job) => {
@@ -1026,7 +1050,6 @@ function defineSandboxJob_build({
   template: string;
   options: {
     e2e: boolean;
-    chromatic: boolean;
   };
 }) {
   const executor: JobImplementation['executor'] = options.e2e
@@ -1053,16 +1076,6 @@ function defineSandboxJob_build({
             command: `yarn task build --template ${template} --no-link -s build`,
           },
         },
-        ...(options.chromatic
-          ? [
-              {
-                run: {
-                  name: 'Running Chromatic',
-                  command: `yarn task chromatic --template ${template} --no-link -s chromatic`,
-                },
-              },
-            ]
-          : []),
         ...(options.e2e
           ? [
               {

@@ -684,9 +684,6 @@ jobs:
                   name: Build storybook
                   command: yarn task build --template react-vite/default-ts --no-link -s build
             - run:
-                  name: Running Chromatic
-                  command: yarn task chromatic --template react-vite/default-ts --no-link -s chromatic
-            - run:
                   name: Serve storybook
                   background: true
                   command: yarn task serve --template react-vite/default-ts --no-link -s serve
@@ -729,6 +726,24 @@ jobs:
                   command: |-
                       TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
                       echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never" --verbose --index=0 --total=1
+    react-vite-default-ts--chromatic:
+        description: react-vite/default-ts (chromatic)
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Running Chromatic
+                  command: yarn task chromatic --template react-vite/default-ts --no-link -s chromatic
     react-vite-default-ts--dev-windows:
         description: react-vite-default-ts--dev-windows
         executor:
@@ -953,6 +968,9 @@ workflows:
             - react-vite-default-ts--dev:
                   requires:
                       - react-vite-default-ts--create
+            - react-vite-default-ts--chromatic:
+                  requires:
+                      - react-vite-default-ts--build
             - react-vite-default-ts--dev-windows:
                   requires:
                       - react-vite-default-ts--create

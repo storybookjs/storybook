@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { fn } from 'storybook/test';
+import { expect, fn, userEvent } from 'storybook/test';
 
 import { OptionsControl } from './Options';
 
@@ -67,6 +67,28 @@ export const ArrayMulti: Story = {
 export const ArrayUndefined: Story = {
   args: {
     value: undefined,
+  },
+};
+
+export const ArrayResettable: Story = {
+  args: {
+    value: undefined,
+  },
+  play: async ({ canvas, args }) => {
+    const select = canvas.getByRole('combobox');
+    expect(select).toHaveValue('Choose option...');
+
+    await userEvent.click(select);
+    await userEvent.selectOptions(select, arrayOptions[2]);
+
+    expect(args.onChange).toHaveBeenCalledWith(arrayOptions[2]);
+    expect(select).toHaveValue(arrayOptions[2]);
+
+    await userEvent.click(select);
+    await userEvent.selectOptions(select, 'Choose option...');
+
+    expect(args.onChange).toHaveBeenCalledWith(undefined);
+    expect(select).toHaveValue('Choose option...');
   },
 };
 

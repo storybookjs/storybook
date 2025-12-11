@@ -1,3 +1,33 @@
+## 10.2.0-alpha.6
+
+- Controls: Fix displaying as object instead of select for optional union types - [#33200](https://github.com/storybookjs/storybook/pull/33200), thanks @tanujbhaud!
+- Controls: Force object control JSON mode to reset - [#33330](https://github.com/storybookjs/storybook/pull/33330), thanks @Sidnioulz!
+- Docs-Blocks: Fix broken tooltip in ArgValue details - [#33264](https://github.com/storybookjs/storybook/pull/33264), thanks @Sidnioulz!
+- Manager: Ensure reset item only appears in globals toolbar when specified - [#33276](https://github.com/storybookjs/storybook/pull/33276), thanks @mrginglymus!
+- Nextjs-Vite: Install `vite` during migration if not installed yet - [#33316](https://github.com/storybookjs/storybook/pull/33316), thanks @ghengeveld!
+- UI: Make vertical alignment of TestStatusIcon more robust - [#33305](https://github.com/storybookjs/storybook/pull/33305), thanks @Sidnioulz!
+
+## 10.2.0-alpha.5
+
+- Addon-Vitest: Added timeout for fetching localhost 6006 during global setup.  - [#33232](https://github.com/storybookjs/storybook/pull/33232), thanks @snippy4!
+- CLI: Skip vitest transform for CSF Factories in a11y-addon-test automigration - [#31941](https://github.com/storybookjs/storybook/pull/31941), thanks @mrginglymus!
+- Controls: Allow resetting the Select control - [#33289](https://github.com/storybookjs/storybook/pull/33289), thanks @Sidnioulz!
+- Core: Ensure /project.json route is up before builders serve local FS - [#33303](https://github.com/storybookjs/storybook/pull/33303), thanks @Sidnioulz!
+- Docs: Ensure CodePanel hooks are called within component - [#33162](https://github.com/storybookjs/storybook/pull/33162), thanks @mrginglymus!
+- Manager: Do not display non-existing shortcuts in the settings page - [#32711](https://github.com/storybookjs/storybook/pull/32711), thanks @DKER2!
+- Preview: Enforce inert body if manager is focus-trapped - [#33186](https://github.com/storybookjs/storybook/pull/33186), thanks @Sidnioulz!
+- Telemetry: Await pending operations in getLastEvents to prevent race conditions - [#33285](https://github.com/storybookjs/storybook/pull/33285), thanks @valentinpalkovic!
+- UI: Fix keyboard navigation bug for "reset" option in `Select` - [#33268](https://github.com/storybookjs/storybook/pull/33268), thanks @Sidnioulz!
+- Vue3: Update renderer's setup function to allow passing generic HostElement type - [#32029](https://github.com/storybookjs/storybook/pull/32029), thanks @DamianGlowala!
+
+## 10.2.0-alpha.4
+
+- Addon-Vitest: Isolate error reasons during postinstall - [#33295](https://github.com/storybookjs/storybook/pull/33295), thanks @valentinpalkovic!
+- CLI: Fix react native template not copying in init - [#33308](https://github.com/storybookjs/storybook/pull/33308), thanks @dannyhw!
+- Core: Retry `writeFile` cache when EBUSY error occurs - [#32981](https://github.com/storybookjs/storybook/pull/32981), thanks @reduckted!
+- Docs: Support Rolldown bundler module namespace objects - [#33280](https://github.com/storybookjs/storybook/pull/33280), thanks @akornmeier!
+- SvelteKit: Align JS template with TS template - [#31451](https://github.com/storybookjs/storybook/pull/31451), thanks @brettearle!
+
 ## 10.2.0-alpha.3
 
 - Addon Docs: Skip `!autodocs` stories when computing primary story - [#32712](https://github.com/storybookjs/storybook/pull/32712), thanks @ia319!

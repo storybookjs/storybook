@@ -129,7 +129,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
       ariaLabel={ariaLabel}
       tooltip={ariaLabel}
       resetLabel={resetLabel}
-      onReset={() => updateGlobals({ [id]: '_reset' })}
+      onReset={resetItem ? () => updateGlobals({ [id]: resetItem?.value }) : undefined}
       onSelect={(selected) => updateGlobals({ [id]: selected })}
       icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
     >

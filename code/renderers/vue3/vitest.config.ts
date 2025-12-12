@@ -10,5 +10,8 @@ export default mergeConfig(
   defineConfig({
     // @ts-expect-error seems like there's a type mismatch in the vue plugin
     plugins: [vue()],
+    test: {
+      environment: 'happy-dom',
+    },
   })
 );

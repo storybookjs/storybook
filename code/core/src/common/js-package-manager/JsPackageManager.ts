@@ -380,6 +380,10 @@ export abstract class JsPackageManager {
 
         const isLatestStableRelease = currentVersion === latestInRange;
 
+        if (latestInRange?.includes('-local.')) {
+          return `${packageName}@local`;
+        }
+
         if (isLatestStableRelease || !currentVersion) {
           return `${packageName}@^${latestInRange}`;
         }
@@ -440,7 +444,8 @@ export abstract class JsPackageManager {
       current && (!constraint || satisfies(current, constraint)) && gt(current, latest)
         ? current
         : latest;
-    return `^${versionToUse}`;
+
+    return latest.includes('-local.') ? 'local' : `^${versionToUse}`;
   }
 
   /**

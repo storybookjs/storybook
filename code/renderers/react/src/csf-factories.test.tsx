@@ -77,7 +77,7 @@ describe('Args can be provided in multiple ways', () => {
         args: { label: 'good' },
       });
       // @ts-expect-error disabled not provided ❌
-      const Basic = meta.story({});
+      const Basic = meta.story();
     }
     {
       const meta = preview.meta({ component: Button });

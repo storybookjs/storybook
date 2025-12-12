@@ -38,6 +38,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   preview.meta = (_input) => {
     const meta = defineMeta(_input);
     const defineStory = meta.story.bind(meta);
+    // @ts-expect-error internal code that is hard to type
     meta.story = (__input: any) => {
       const story = defineStory(__input);
       // TODO: [test-syntax] Are we sure we want this? the Component construct was for
@@ -95,7 +96,7 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
           render: () => ReactTypes['storyResult'];
         }),
   >(
-    story?: TInput
+    story: TInput
   ): ReactStory<T, TInput extends () => ReactTypes['storyResult'] ? { render: TInput } : TInput>;
 
   story<
@@ -108,9 +109,18 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
       >
     >,
   >(
-    story?: TInput
+    story: TInput
     /** @ts-expect-error hard */
   ): ReactStory<T, TInput>;
+
+  story(
+    ..._args: Partial<T['args']> extends SetOptional<
+      T['args'],
+      keyof T['args'] & keyof MetaInput['args']
+    >
+      ? []
+      : [never]
+  ): ReactStory<T, {}>;
 }
 
 export interface ReactStory<T extends ReactTypes, TInput extends StoryAnnotations<T, T['args']>>

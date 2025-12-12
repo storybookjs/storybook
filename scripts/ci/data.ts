@@ -272,11 +272,13 @@ function defineSandboxFlow<K extends string>(name: K) {
       ['sandboxes']
     ),
     defineSandboxJob_build({
+      id: ids.build,
       name: names.build,
       template: name,
       needs: [ids.create],
       options: {
         e2e: !skipTasks?.includes('e2e-tests'),
+        chromatic: !skipTasks?.includes('chromatic'),
       },
     }),
     defineSandboxJob_dev({
@@ -1040,16 +1042,19 @@ function definePortableStoryTest(directory: string) {
 }
 
 function defineSandboxJob_build({
+  id,
   name,
   template,
   needs,
   options,
 }: {
+  id: string;
   name: string;
   needs: string[];
   template: string;
   options: {
     e2e: boolean;
+    chromatic: boolean;
   };
 }) {
   const executor: JobImplementation['executor'] = options.e2e
@@ -1076,6 +1081,9 @@ function defineSandboxJob_build({
             command: `yarn task build --template ${template} --no-link -s build`,
           },
         },
+        ...(options.chromatic
+          ? [workspace.persist([`${SANDBOX_DIR}/${id}/storybook-static`])]
+          : []),
         ...(options.e2e
           ? [
               {

@@ -300,9 +300,19 @@ function defineSandboxFlow<K extends string>(name: K) {
               workspace.attach(),
               cache.attach(CACHE_KEYS()),
               {
+                // we copy to the working directory to get git history, which chromatic needs for baselines
+                run: {
+                  name: 'Copy sandbox to working directory',
+                  command: `cp ${join(ROOT_DIR, SANDBOX_DIR)} ${join(ROOT_DIR, WORKING_DIR, 'sandbox')} -r --remove-destination`,
+                },
+              },
+              {
                 run: {
                   name: 'Running Chromatic',
                   command: `yarn task chromatic --template ${name} --no-link -s chromatic`,
+                  environment: {
+                    STORYBOOK_SANDBOX_ROOT: `./sandbox`,
+                  },
                 },
               },
             ],

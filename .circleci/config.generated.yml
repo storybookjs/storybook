@@ -746,8 +746,13 @@ jobs:
                       - v5-linux-node_modules/{{ checksum ".nvmrc" }}
                       - v5-linux-node_modules
             - run:
+                  name: Copy sandbox to working directory
+                  command: cp /tmp/storybook-sandboxes /tmp/project/sandbox -r --remove-destination
+            - run:
                   name: Running Chromatic
                   command: yarn task chromatic --template react-vite/default-ts --no-link -s chromatic
+                  environment:
+                      STORYBOOK_SANDBOX_ROOT: ./sandbox
     react-vite-default-ts--dev-windows:
         description: react-vite-default-ts--dev-windows
         executor:

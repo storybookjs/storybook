@@ -291,37 +291,43 @@ export const managerEntries = async (existing: any) => {
   ];
 };
 
-let initializedStoryIndexGenerator: StoryIndexGenerator | undefined = undefined;
+// Store the promise (not the result) to prevent race conditions.
+// The promise is assigned synchronously, so concurrent calls will share the same initialization.
+// This is essentially an async singleton pattern.
+let storyIndexGeneratorPromise: Promise<StoryIndexGenerator> | undefined;
 export const storyIndexGenerator: PresetPropertyFn<
   'storyIndexGenerator',
   StorybookConfigRaw
 > = async (_, options) => {
-  if (initializedStoryIndexGenerator) {
-    return initializedStoryIndexGenerator;
+  if (storyIndexGeneratorPromise) {
+    return storyIndexGeneratorPromise;
   }
 
-  const workingDir = process.cwd();
-  const configDir = options.configDir;
-  const stories = await options.presets.apply('stories');
-  // StoryIndexGenerator depends on these normalized stories to be referentially equal
-  // So it's important that we only normalize them once here and pass the same reference around
-  const normalizedStories = normalizeStories(stories, {
-    configDir,
-    workingDir,
-  });
+  storyIndexGeneratorPromise = (async () => {
+    const workingDir = process.cwd();
+    const configDir = options.configDir;
+    const stories = await options.presets.apply('stories');
+    // StoryIndexGenerator depends on these normalized stories to be referentially equal
+    // So it's important that we only normalize them once here and pass the same reference around
+    const normalizedStories = normalizeStories(stories, {
+      configDir,
+      workingDir,
+    });
 
-  const [indexers, docs] = await Promise.all([
-    options.presets.apply('experimental_indexers', []),
-    options.presets.apply('docs'),
-  ]);
+    const [indexers, docs] = await Promise.all([
+      options.presets.apply('experimental_indexers', []),
+      options.presets.apply('docs'),
+    ]);
 
-  const generator = new StoryIndexGenerator(normalizedStories, {
-    workingDir,
-    configDir,
-    indexers,
-    docs,
-  });
-  await generator.initialize();
-  initializedStoryIndexGenerator = generator;
-  return initializedStoryIndexGenerator;
+    const generator = new StoryIndexGenerator(normalizedStories, {
+      workingDir,
+      configDir,
+      indexers,
+      docs,
+    });
+    await generator.initialize();
+    return generator;
+  })();
+
+  return storyIndexGeneratorPromise;
 };

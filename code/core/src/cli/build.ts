@@ -9,6 +9,7 @@ export const build = async (cliOptions: any) => {
     ...cliOptions,
     configDir: cliOptions.configDir || './.storybook',
     outputDir: cliOptions.outputDir || './storybook-static',
+    siteUrl: cliOptions.siteUrl || undefined,
     ignorePreview: !!cliOptions.previewUrl && !cliOptions.forceBuildPreview,
     configType: 'PRODUCTION',
     cache,

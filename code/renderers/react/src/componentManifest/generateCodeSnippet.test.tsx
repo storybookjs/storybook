@@ -50,6 +50,21 @@ function withCSF4(body: string) {
   `;
 }
 
+test('Synthesizes self-closing when no children', () => {
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    const meta: Meta<typeof Button> = {
+      component: Button,
+    };
+    export default meta;
+
+    export const NoChildren: Story = {};
+  `;
+  expect(generateExample(input)).toMatchInlineSnapshot(`"const NoChildren = () => <Button />;"`);
+});
+
 test('Default', () => {
   const input = withCSF3(`
     export const Default: Story = {};

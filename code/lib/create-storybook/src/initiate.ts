@@ -6,7 +6,6 @@ import {
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
-import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import {
   executeAddonConfiguration,

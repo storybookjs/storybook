@@ -532,6 +532,8 @@ export interface StorybookConfigRaw {
 
   experimental_indexers?: Indexer[];
 
+  storyIndexGenerator?: StoryIndexGenerator;
+
   experimental_devServer?: ServerApp;
 
   docs?: DocsOptions;

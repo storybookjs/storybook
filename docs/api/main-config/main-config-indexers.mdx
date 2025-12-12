@@ -115,13 +115,15 @@ For each `IndexInput`, the indexer will add this export (from the file found at 
 
 ##### `importPath`
 
-(Required)
-
 Type: `string`
+
+Default: The original [`fileName`](#filename) passed to the `createIndex` function
 
 The file to import from, e.g. the [CSF](../csf.mdx) file.
 
 It is likely that the [`fileName`](#filename) being indexed is not CSF, in which you will need to [transpile it to CSF](#transpiling-to-csf) so that Storybook can read it in the browser.
+
+⚠️ Custom `importPath`s are only supported in Vite-based projects. To use them in Webpack-based projects, you will need to [transpile the source file to CSF](#transpiling-to-csf) and leave `importPath` empty to use the original `fileName`.
 
 ##### `type`
 

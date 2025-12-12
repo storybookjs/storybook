@@ -19,13 +19,13 @@ import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../shared/utils/module';
 import { renderManifestComponentsPage } from './manifest';
-import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
 import { getBuilders } from './utils/get-builders';
+import { writeIndexJson } from './utils/index-json';
 import { extractStorybookMetadata } from './utils/metadata';
 import { outputStats } from './utils/output-stats';
-import { extractStoriesJson } from './utils/stories-json';
 import { summarizeIndex } from './utils/summarizeIndex';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
@@ -96,13 +96,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     build,
   });
 
-  const [features, core, staticDirs, indexers, stories, docsOptions] = await Promise.all([
+  const [features, core, staticDirs] = await Promise.all([
     presets.apply('features'),
     presets.apply('core'),
     presets.apply('staticDirs'),
-    presets.apply('experimental_indexers', []),
-    presets.apply('stories'),
-    presets.apply('docs'),
   ]);
 
   const invokedBy = process.env.STORYBOOK_INVOKED_BY;
@@ -141,23 +138,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   let initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);
   if (!options.ignorePreview) {
-    const workingDir = process.cwd();
-    const directories = {
-      configDir: options.configDir,
-      workingDir,
-    };
-    const normalizedStories = normalizeStories(stories, directories);
+    initializedStoryIndexGenerator = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
-    const generator = new StoryIndexGenerator(normalizedStories, {
-      ...directories,
-      indexers,
-      docs: docsOptions,
-      build,
-    });
-
-    initializedStoryIndexGenerator = generator.initialize().then(() => generator);
     effects.push(
-      extractStoriesJson(
+      writeIndexJson(
         join(options.outputDir, 'index.json'),
         initializedStoryIndexGenerator as Promise<StoryIndexGenerator>
       )

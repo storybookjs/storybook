@@ -138,20 +138,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   let initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);
   if (!options.ignorePreview) {
-    const workingDir = process.cwd();
-    const configDir = options.configDir;
-    const stories = await presets.apply('stories');
-    // StoryIndexGenerator depends on these normalized stories to be referentially equal
-    // So it's important that we only normalize them once here and pass the same reference around
-    const normalizedStories = normalizeStories(stories, {
-      configDir,
-      workingDir,
-    });
-    initializedStoryIndexGenerator = presets.apply<StoryIndexGenerator>(
-      'storyIndexGenerator',
-      undefined,
-      { normalizedStories }
-    );
+    initializedStoryIndexGenerator = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
     effects.push(
       writeIndexJson(

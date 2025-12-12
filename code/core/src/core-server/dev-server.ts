@@ -46,11 +46,8 @@ export async function storybookDevServer(options: Options) {
     workingDir,
   });
 
-  const storyIndexGeneratorPromise = options.presets.apply<StoryIndexGenerator>(
-    'storyIndexGenerator',
-    undefined,
-    { normalizedStories }
-  );
+  const storyIndexGeneratorPromise =
+    options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
   registerIndexJsonRoute({
     app,

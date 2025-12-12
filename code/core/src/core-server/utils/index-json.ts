@@ -41,8 +41,8 @@ export function registerIndexJsonRoute({
   const maybeInvalidate = debounce(() => serverChannel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
     edges: ['leading', 'trailing'],
   });
-  watchStorySpecifiers(normalizedStories, { workingDir }, async (specifier, path, removed) => {
-    (await storyIndexGeneratorPromise).invalidate(specifier, path, removed);
+  watchStorySpecifiers(normalizedStories, { workingDir }, async (path, removed) => {
+    (await storyIndexGeneratorPromise).invalidate(path, removed);
     maybeInvalidate();
   });
   if (configDir) {

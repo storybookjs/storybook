@@ -42,7 +42,7 @@ function getNestedFilesAndDirectories(directories: Path[]) {
 export function watchStorySpecifiers(
   specifiers: NormalizedStoriesSpecifier[],
   options: { workingDir: Path },
-  onInvalidate: (specifier: NormalizedStoriesSpecifier, path: Path, removed: boolean) => void
+  onInvalidate: (path: Path, removed: boolean) => void
 ) {
   // Watch all nested files and directories up front to avoid this issue:
   // https://github.com/webpack/watchpack/issues/222
@@ -71,7 +71,7 @@ export function watchStorySpecifiers(
 
     const matchingSpecifier = specifiers.find((ns) => ns.importPathMatcher.exec(importPath));
     if (matchingSpecifier) {
-      onInvalidate(matchingSpecifier, importPath, removed);
+      onInvalidate(importPath, removed);
       return;
     }
 
@@ -108,7 +108,7 @@ export function watchStorySpecifiers(
               const fileImportPath = toImportPath(filePath);
 
               if (specifier.importPathMatcher.exec(fileImportPath)) {
-                onInvalidate(specifier, fileImportPath, removed);
+                onInvalidate(fileImportPath, removed);
               }
             });
           })

@@ -806,8 +806,15 @@ export class StoryIndexGenerator {
     this.invalidationListeners.forEach((listener) => listener());
   }
 
-  invalidate(specifier: NormalizedStoriesSpecifier, importPath: Path, removed: boolean) {
+  invalidate(importPath: Path, removed: boolean) {
     const absolutePath = slash(resolve(this.options.workingDir, importPath));
+    const specifier = this.specifierToCache
+      .keys()
+      .find((ns) => ns.importPathMatcher.exec(importPath));
+    if (!specifier) {
+      // not a story file
+      return;
+    }
     const cache = this.specifierToCache.get(specifier);
     invariant(
       cache,

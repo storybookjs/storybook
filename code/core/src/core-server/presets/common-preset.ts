@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { optionalEnvToBoolean } from 'storybook/internal/common';
+import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -19,7 +19,6 @@ import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
   Indexer,
-  NormalizedStoriesSpecifier,
   Options,
   PresetProperty,
   PresetPropertyFn,
@@ -295,26 +294,28 @@ export const managerEntries = async (existing: any) => {
 let initializedStoryIndexGenerator: StoryIndexGenerator | undefined = undefined;
 export const storyIndexGenerator: PresetPropertyFn<
   'storyIndexGenerator',
-  StorybookConfigRaw,
-  { normalizedStories?: NormalizedStoriesSpecifier[] }
+  StorybookConfigRaw
 > = async (_, options) => {
   if (initializedStoryIndexGenerator) {
     return initializedStoryIndexGenerator;
   }
 
-  if (!options.normalizedStories) {
-    throw new Error(`uninitialized storyIndexGenerator preset requires normalizedStories option`);
-  }
-
   const workingDir = process.cwd();
   const configDir = options.configDir;
+  const stories = await options.presets.apply('stories');
+  // StoryIndexGenerator depends on these normalized stories to be referentially equal
+  // So it's important that we only normalize them once here and pass the same reference around
+  const normalizedStories = normalizeStories(stories, {
+    configDir,
+    workingDir,
+  });
 
   const [indexers, docs] = await Promise.all([
     options.presets.apply('experimental_indexers', []),
     options.presets.apply('docs'),
   ]);
 
-  const generator = new StoryIndexGenerator(options.normalizedStories, {
+  const generator = new StoryIndexGenerator(normalizedStories, {
     workingDir,
     configDir,
     indexers,

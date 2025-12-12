@@ -7,11 +7,14 @@
 import { execSync } from 'node:child_process';
 import { join } from 'node:path';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import spawn from 'cross-spawn';
 import open, { type App } from 'open';
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../../../common';
+import { StorybookError } from '../../../storybook-error';
 
 // https://github.com/sindresorhus/open#app
 const OSX_CHROME = 'google chrome';
@@ -20,6 +23,7 @@ const Actions = Object.freeze({
   NONE: 0,
   BROWSER: 1,
   SCRIPT: 2,
+  SHELL_SCRIPT: 3,
 });
 
 function getBrowserEnv() {
@@ -32,14 +36,49 @@ function getBrowserEnv() {
   if (!value) {
     // Default.
     action = Actions.BROWSER;
-  } else if (value.toLowerCase().endsWith('.js')) {
-    action = Actions.SCRIPT;
   } else if (value.toLowerCase() === 'none') {
     action = Actions.NONE;
+  } else if (
+    value.toLowerCase().endsWith('.js') ||
+    value.toLowerCase().endsWith('.mjs') ||
+    value.toLowerCase().endsWith('.cjs') ||
+    value.toLowerCase().endsWith('.ts')
+  ) {
+    action = Actions.SCRIPT;
+  } else if (value.toLowerCase().endsWith('.sh')) {
+    action = Actions.SHELL_SCRIPT;
   } else {
     action = Actions.BROWSER;
   }
   return { action, value, args };
+}
+
+class BrowserEnvError extends StorybookError {
+  constructor(message: string) {
+    super({
+      category: 'CORE_SERVER',
+      code: 1,
+      message,
+      name: 'BrowserEnvError',
+    });
+  }
+}
+
+function attachEventHandlers(child: ReturnType<typeof spawn>, scriptPath: string) {
+  child.on('error', (error) => {
+    logger.error(
+      `Failed to run script specified in BROWSER.\n${picocolors.cyan(scriptPath)}: ${error.message}`
+    );
+  });
+
+  child.on('close', (code) => {
+    if (code !== 0) {
+      logger.error(
+        `The script specified as BROWSER environment variable failed.\n${picocolors.cyan(scriptPath)} exited with code ${code}.`
+      );
+      return;
+    }
+  });
 }
 
 function executeNodeScript(scriptPath: string, url: string) {
@@ -47,15 +86,16 @@ function executeNodeScript(scriptPath: string, url: string) {
   const child = spawn(process.execPath, [scriptPath, ...extraArgs, url], {
     stdio: 'inherit',
   });
-  child.on('close', (code) => {
-    if (code !== 0) {
-      console.log();
-      console.log(picocolors.red('The script specified as BROWSER environment variable failed.'));
-      console.log(`${picocolors.cyan(scriptPath)} exited with code ${code}.`);
-      console.log();
-      return;
-    }
+  attachEventHandlers(child, scriptPath);
+  return true;
+}
+
+function executeShellScript(scriptPath: string, url: string) {
+  const extraArgs = process.argv.slice(2);
+  const child = spawn('sh', [scriptPath, ...extraArgs, url], {
+    stdio: 'inherit',
   });
+  attachEventHandlers(child, scriptPath);
   return true;
 }
 
@@ -111,7 +151,7 @@ function startBrowserProcess(
         });
 
         return true;
-      } catch (err) {
+      } catch {
         // Ignore errors.
       }
     }
@@ -138,7 +178,7 @@ function startBrowserProcess(
     const options = { app: browser, wait: false, url: true };
     open(url, options).catch(() => {}); // Prevent `unhandledRejection` error.
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
@@ -149,6 +189,9 @@ function startBrowserProcess(
  */
 export function openBrowser(url: string) {
   const { action, value, args } = getBrowserEnv();
+  const canRunShell = process.platform !== 'win32';
+  const browserTarget = value as unknown as App | readonly App[] | undefined;
+
   switch (action) {
     case Actions.NONE: {
       // Special case: BROWSER="none" will prevent opening completely.
@@ -156,15 +199,24 @@ export function openBrowser(url: string) {
     }
     case Actions.SCRIPT: {
       if (!value) {
-        throw new Error('BROWSER environment variable is not set.');
+        throw new BrowserEnvError('BROWSER environment variable is not set.');
       }
       return executeNodeScript(value, url);
     }
+    case Actions.SHELL_SCRIPT: {
+      if (!value) {
+        throw new BrowserEnvError('BROWSER environment variable is not set.');
+      }
+      if (canRunShell) {
+        return executeShellScript(value, url);
+      }
+      return startBrowserProcess(browserTarget, url, args);
+    }
     case Actions.BROWSER: {
-      return startBrowserProcess(value as App | readonly App[] | undefined, url, args);
+      return startBrowserProcess(browserTarget, url, args);
     }
     default: {
-      throw new Error('Not implemented.');
+      throw new BrowserEnvError('Not implemented.');
     }
   }
 }

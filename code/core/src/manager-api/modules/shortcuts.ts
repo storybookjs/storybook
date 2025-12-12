@@ -114,6 +114,7 @@ export interface API_Shortcuts {
   remount: API_KeyCollection;
   openInEditor: API_KeyCollection;
   copyStoryLink: API_KeyCollection;
+  openInIsolation: API_KeyCollection;
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: API_KeyCollection;
 }
@@ -153,6 +154,7 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   remount: ['alt', 'R'],
   openInEditor: ['alt', 'shift', 'E'],
   copyStoryLink: ['alt', 'shift', 'L'],
+  openInIsolation: ['alt', 'shift', 'I'],
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
 });
@@ -395,6 +397,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
               file: fullAPI.getCurrentStoryData().importPath,
             });
           }
+          break;
+        }
+        case 'openInIsolation': {
+          const { refId, storyId } = store.getState();
+          fullAPI.openInIsolation(storyId, refId);
           break;
         }
         // TODO: bring this back once we want to add shortcuts for this

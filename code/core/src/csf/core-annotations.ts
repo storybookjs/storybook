@@ -10,6 +10,15 @@ import outlineAnnotations, { type OutlineTypes } from '../outline/preview';
 import testAnnotations, { type TestTypes } from '../test/preview';
 import viewportAnnotations, { type ViewportTypes } from '../viewport/preview';
 
+export type { ActionsTypes } from '../actions/preview';
+export type { BackgroundsGlobals, BackgroundTypes } from '../backgrounds/preview';
+export type { ControlsTypes } from '../controls/preview';
+export type { HighlightTypes } from '../highlight/preview';
+export type { MeasureTypes } from '../measure/preview';
+export type { OutlineTypes } from '../outline/preview';
+export type { TestTypes } from '../test/preview';
+export type { ViewportGlobals, ViewportTypes } from '../viewport/preview';
+
 export type CoreTypes = StorybookTypes &
   ActionsTypes &
   BackgroundTypes &

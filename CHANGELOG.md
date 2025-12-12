@@ -1,3 +1,7 @@
+## 10.1.8
+
+- React-Vite: Update @joshwooding/vite-plugin-react-docgen-typescript - [#33349](https://github.com/storybookjs/storybook/pull/33349), thanks @valentinpalkovic!
+
 ## 10.1.7
 
 - Automigrate: Fix missing await - [#33333](https://github.com/storybookjs/storybook/pull/33333), thanks @valentinpalkovic!

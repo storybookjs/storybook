@@ -53,7 +53,7 @@
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
-    "@joshwooding/vite-plugin-react-docgen-typescript": "0.6.1",
+    "@joshwooding/vite-plugin-react-docgen-typescript": "^0.6.3",
     "@rollup/pluginutils": "^5.0.2",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",

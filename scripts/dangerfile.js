@@ -98,7 +98,56 @@ Bad examples:
   }
 };
 
+/** @param {string} body */
+const checkManualTestingSection = (body) => {
+  // Check if author is a core team member or maintainer
+  const author = danger.github.pr.user;
+  const authorAssociation = danger.github.pr.author_association;
+
+  // Bypass check for OWNER, MEMBER roles (but never for bots e.g. Copilot)
+  if (['OWNER', 'MEMBER'].includes(authorAssociation) && author.type !== 'Bot') {
+    return;
+  }
+
+  // Check if manual testing section exists
+  const manualTestingMatch = body.match(/####\s*Manual testing/i);
+  if (!manualTestingMatch) {
+    fail(
+      'PR description is missing the mandatory "#### Manual testing" section. Please add it so that reviewers know how to manually test your changes.'
+    );
+    return;
+  }
+
+  // Extract content after the manual testing section
+  const manualTestingSectionStart = manualTestingMatch.index + manualTestingMatch[0].length;
+  const restOfBody = body.substring(manualTestingSectionStart);
+
+  // Find the next section
+  const nextSectionMatch = restOfBody.match(/\n#+[^#]/);
+  const manualTestingContent = nextSectionMatch
+    ? restOfBody.substring(0, nextSectionMatch.index)
+    : restOfBody;
+
+  // Remove the caution block and check if there's any meaningful content left
+  const contentWithoutCaution = manualTestingContent
+    .replace(/>\s*\[!CAUTION\][^]*?This section is mandatory[^]*?Thanks!/i, '')
+    .trim();
+
+  // Check if there's any substantial content (ignoring whitespace and template comments)
+  const hasContent =
+    contentWithoutCaution
+      .replace(/<!--[^]*?-->/g, '') // Remove HTML comments
+      .replace(/\s+/g, '').length > 0; // Remove all whitespace
+
+  if (!hasContent) {
+    fail(
+      'The "#### Manual testing" section is mandatory. Please describe how to test the changes you\'ve made, step by step, so that reviewers can confirm your PR works as intended.'
+    );
+  }
+};
+
 if (prLogConfig) {
   checkRequiredLabels(labels.map((l) => l.name));
   checkPrTitle(danger.github.pr.title);
+  checkManualTestingSection(danger.github.pr.body);
 }

@@ -272,7 +272,7 @@ function defineSandboxFlow<K extends string>(name: K) {
       ['sandboxes']
     ),
     defineSandboxJob_build({
-      id: ids.build,
+      directory: id,
       name: names.build,
       template: name,
       needs: [ids.create],
@@ -1042,13 +1042,13 @@ function definePortableStoryTest(directory: string) {
 }
 
 function defineSandboxJob_build({
-  id,
+  directory,
   name,
   template,
   needs,
   options,
 }: {
-  id: string;
+  directory: string;
   name: string;
   needs: string[];
   template: string;
@@ -1082,7 +1082,7 @@ function defineSandboxJob_build({
           },
         },
         ...(options.chromatic
-          ? [workspace.persist([`${SANDBOX_DIR}/${id}/storybook-static`])]
+          ? [workspace.persist([`${SANDBOX_DIR}/${directory}/storybook-static`])]
           : []),
         ...(options.e2e
           ? [

@@ -32,16 +32,15 @@ jobs:
   generate-and-run-config:
     executor: 
       name: node/default
-      resource_class: medium+
+      resource_class: medium
     steps:
       - node/install:
           install-yarn: true
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1'
-      - node/install-packages:
-          app-dir: .
-          cache-only-lockfile: true
-          pkg-manager: yarn
+      - run:
+          name: Install dependencies
+          command: yarn workspaces focus @storybook/scripts
       - run:
           name: Generate config
           command: |

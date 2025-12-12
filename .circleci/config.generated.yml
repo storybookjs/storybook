@@ -685,7 +685,7 @@ jobs:
                   command: yarn task build --template react-vite/default-ts --no-link -s build
             - persist_to_workspace:
                   paths:
-                      - storybook-sandboxes/react-vite-default-ts--build/storybook-static
+                      - storybook-sandboxes/react-vite-default-ts/storybook-static
                   root: /tmp
             - run:
                   name: Serve storybook

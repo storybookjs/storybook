@@ -72,7 +72,9 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
       if ("fontReferenceId" in localFontSrc) {
         return dedent`@font-face {
 					font-family: ${id};
-					src: url(${localFontSrc.fontReferenceId ? getPlaceholderFontUrl(localFontSrc.fontReferenceId) : `/@fs${localFontSrc.fontPath}`})
+					src: url(${localFontSrc.fontReferenceId ? getPlaceholderFontUrl(localFontSrc.fontReferenceId) : `/@fs/${localFontSrc.fontPath}`});
+          ${weight ? `font-weight: ${weight};` : ""}
+          ${style ? `font-style: ${style};` : ""}
 					${fontDeclarations}
 				}`;
       }
@@ -86,7 +88,7 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
         .map((font) => {
           return dedent`@font-face {
 						font-family: ${id};
-						src: url(${font.path.fontReferenceId ? getPlaceholderFontUrl(font.path.fontReferenceId) : `/@fs${font.path.fontPath}`});
+						src: url(${font.path.fontReferenceId ? getPlaceholderFontUrl(font.path.fontReferenceId) : `/@fs/${font.path.fontPath}`});
 						${font.weight ? `font-weight: ${font.weight};` : ""}
 						${font.style ? `font-style: ${font.style};` : ""}
 						${fontDeclarations}

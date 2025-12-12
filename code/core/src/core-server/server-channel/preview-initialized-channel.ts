@@ -1,10 +1,9 @@
 import type { Channel } from 'storybook/internal/channels';
 import { PREVIEW_INITIALIZED } from 'storybook/internal/core-events';
 import { type InitPayload, telemetry } from 'storybook/internal/telemetry';
+import { type CacheEntry, getLastEvents } from 'storybook/internal/telemetry';
+import { getSessionId } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
-
-import { type CacheEntry, getLastEvents } from '../../telemetry/event-cache';
-import { getSessionId } from '../../telemetry/session-id';
 
 export const makePayload = (
   userAgent: string,

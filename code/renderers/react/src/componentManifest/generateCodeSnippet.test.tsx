@@ -50,6 +50,15 @@ function withCSF4(body: string) {
   `;
 }
 
+test('Default', () => {
+  const input = withCSF3(`
+    export const Default: Story = {};
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Default = () => <Button>Click me</Button>;"`
+  );
+});
+
 test('Synthesizes self-closing when no children', () => {
   const input = dedent`
     import type { Meta } from '@storybook/react';
@@ -63,15 +72,6 @@ test('Synthesizes self-closing when no children', () => {
     export const NoChildren: Story = {};
   `;
   expect(generateExample(input)).toMatchInlineSnapshot(`"const NoChildren = () => <Button />;"`);
-});
-
-test('Default', () => {
-  const input = withCSF3(`
-    export const Default: Story = {};
-  `);
-  expect(generateExample(input)).toMatchInlineSnapshot(
-    `"const Default = () => <Button>Click me</Button>;"`
-  );
 });
 
 test('Default satisfies or as', () => {

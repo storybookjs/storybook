@@ -160,7 +160,7 @@ If you want to make code changes to Storybook packages while running a sandbox, 
 
 1. In a second terminal, run `yarn build --watch <package-1> <package-2>` in the `code/` directory.
 
-For example, if you want to build the `@storybook/react`, `storybook` itself, `@storybook/builder-vite`, and `@storybook/addon-docs` packages, you would run: 
+For example, to build the `@storybook/react`, `storybook` itself, `@storybook/builder-vite`, and `@storybook/addon-docs` packages, you would run: 
 
 ```shell 
 # Navigate to the code directory 
@@ -174,7 +174,8 @@ Most package names can be found after `@storybook/` in the published package.
 For instance, to build the `@storybook/react storybook @storybook/builder-vite @storybook/addon-docs` packages at the same time in watch mode:
 
 ```shell 
-cd code yarn build --watch react storybook builder-vite addon-docs 
+cd code
+yarn build --watch react storybook builder-vite addon-docs 
 ```
 
 2. If you are running the sandbox in ["linked"](https://yarnpkg.com/cli/link) mode (the default), you should see the changes reflected on a refresh (you may need to restart it if changing server packages) 

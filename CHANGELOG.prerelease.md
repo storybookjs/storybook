@@ -1,3 +1,11 @@
+## 10.2.0-alpha.7
+
+- Automigrate: Fix missing await - [#33333](https://github.com/storybookjs/storybook/pull/33333), thanks @valentinpalkovic!
+- CLI: Remove REACT_PROJECT projectType - [#33334](https://github.com/storybookjs/storybook/pull/33334), thanks @valentinpalkovic!
+- Core: Exclude open from pre-bundling to make local xdg-open reachable - [#33325](https://github.com/storybookjs/storybook/pull/33325), thanks @Sidnioulz!
+- React-Vite: Update @joshwooding/vite-plugin-react-docgen-typescript - [#33349](https://github.com/storybookjs/storybook/pull/33349), thanks @valentinpalkovic!
+- Telemetry: Fix race condition in telemetry cache causing malformed JSON - [#33323](https://github.com/storybookjs/storybook/pull/33323), thanks @valentinpalkovic!
+
 ## 10.2.0-alpha.6
 
 - Controls: Fix displaying as object instead of select for optional union types - [#33200](https://github.com/storybookjs/storybook/pull/33200), thanks @tanujbhaud!

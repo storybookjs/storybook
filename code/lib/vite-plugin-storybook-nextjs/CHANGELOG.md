@@ -1,3 +1,15 @@
+# v3.1.7 (Fri Dec 12 2025)
+
+#### 🐛 Bug Fix
+
+- fix: resolve next/font/local loading issues [#81](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/81) ([@Chiman2937](https://github.com/Chiman2937))
+
+#### Authors: 1
+
+- Chiyoung ([@Chiman2937](https://github.com/Chiman2937))
+
+---
+
 # v3.1.6 (Fri Dec 12 2025)
 
 #### 🐛 Bug Fix

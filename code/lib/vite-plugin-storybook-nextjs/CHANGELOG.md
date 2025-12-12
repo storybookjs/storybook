@@ -1,3 +1,15 @@
+# v3.1.6 (Fri Dec 12 2025)
+
+#### 🐛 Bug Fix
+
+- Fix/typeof window swc env detection [#80](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/80) ([@robbchar](https://github.com/robbchar))
+
+#### Authors: 1
+
+- Robb ([@robbchar](https://github.com/robbchar))
+
+---
+
 # v3.1.5 (Wed Dec 03 2025)
 
 #### 🐛 Bug Fix

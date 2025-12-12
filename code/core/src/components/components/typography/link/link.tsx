@@ -67,7 +67,10 @@ const A = styled.a<LinkStylesProps>(
   ({ theme }) => ({
     display: 'inline-block',
     transition: 'all 150ms ease-out',
-    textDecoration: 'none',
+    // Ensure WCAG Level A compliance (SC 1.4.1), see https://www.w3.org/WAI/WCAG22/Techniques/failures/F73
+    textDecoration: 'underline',
+    textDecorationThickness: '0.5px',
+    textUnderlineOffset: '0.2em',
 
     color: theme.color.secondary,
 
@@ -173,6 +176,7 @@ const A = styled.a<LinkStylesProps>(
           background: 'none',
           padding: 0,
           fontSize: 'inherit',
+          textDecoration: 'none',
         }
       : {}
 );

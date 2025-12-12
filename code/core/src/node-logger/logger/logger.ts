@@ -166,6 +166,9 @@ type BoxOptions = {
 } & clack.BoxOptions;
 
 export const logBox = (message: string, { title, ...options }: BoxOptions = {}) => {
+  if (process.env.CI) {
+    return;
+  }
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
     if (isClackEnabled()) {

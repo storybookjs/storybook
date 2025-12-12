@@ -255,11 +255,10 @@ export class BadMetaError extends Error {
   }
 }
 
-export interface StaticMeta
-  extends Pick<
-    ComponentAnnotations,
-    'id' | 'title' | 'includeStories' | 'excludeStories' | 'tags'
-  > {
+export interface StaticMeta extends Pick<
+  ComponentAnnotations,
+  'id' | 'title' | 'includeStories' | 'excludeStories' | 'tags'
+> {
   component?: string;
 }
 

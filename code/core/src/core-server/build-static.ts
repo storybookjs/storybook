@@ -64,9 +64,8 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     resolvePackageDir('storybook'),
     'dist/core-server/presets/common-preset.js'
   );
-  const commonOverridePreset = import.meta.resolve(
-    'storybook/internal/core-server/presets/common-override-preset'
-  );
+  const commonOverridePreset = import.meta
+    .resolve('storybook/internal/core-server/presets/common-override-preset');
 
   logger.step('Loading presets');
   let presets = await loadAllPresets({

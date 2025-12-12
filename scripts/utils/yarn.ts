@@ -1,11 +1,10 @@
-import { access, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
 import type { TemplateKey } from '../get-template';
 import { exec } from './exec';
-import touch from './touch';
 
 export type YarnOptions = {
   cwd: string;
@@ -48,16 +47,21 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   await rm(join(cwd, '.yarnrc.yml'), { force: true }).catch(() => {});
 
-  // TODO: Remove in SB11
-  const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
+  const [pnpApiExists] = await Promise.all([
+    // TODO: Remove in SB11
+    pathExists(join(cwd, '.pnp.cjs')),
+    mkdir(cwd, { recursive: true }).then(() =>
+      Promise.all([
+        //
+        writeFile(join(cwd, 'yarn.lock'), ''),
+        writeFile(join(cwd, '.yarnrc.yml'), ''),
+      ])
+    ),
+  ]);
 
   const command = [
-    touch('yarn.lock'),
-    touch('.yarnrc.yml'),
     `yarn set version berry`,
-
-    // Use the global cache so we aren't re-caching dependencies each time we run sandbox
-    `yarn config set enableGlobalCache true`,
+    `yarn config set enableGlobalCache true`, // Use the global cache so we aren't re-caching dependencies each time we run sandbox
     `yarn config set checksumBehavior ignore`,
   ];
 
@@ -66,7 +70,7 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   }
 
   await exec(
-    command,
+    command.join(' && '),
     { cwd },
     {
       dryRun,
@@ -171,7 +175,7 @@ export const configureYarn2ForVerdaccio = async ({
   }
 
   await exec(
-    command,
+    command.join(' && '),
     { cwd },
     {
       dryRun,

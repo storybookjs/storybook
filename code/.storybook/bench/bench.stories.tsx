@@ -5,7 +5,7 @@ import type { Meta } from '@storybook/react-vite';
 import { safeMetafileArg } from '../../../scripts/bench/safe-args';
 
 // @ts-expect-error - TS doesn't know about import.meta.glob from Vite
-const allMetafiles = import.meta.glob(['../../bench/esbuild-metafiles/**/*.json'], {
+const allMetafiles = import.meta.glob('../../bench/esbuild-metafiles/**/*.json', {
   import: 'default',
 });
 

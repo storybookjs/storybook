@@ -384,3 +384,20 @@ describe('Composed getters', () => {
     expect(renderSpy).toHaveBeenCalled();
   });
 });
+
+it('meta.input also contains play', () => {
+  const meta = preview.meta({
+    /** Title, component, etc... */
+    play: async ({ canvas }) => {
+      /** Do some common interactions */
+    },
+  });
+
+  const ExtendedInteractionsStory = meta.story({
+    play: async ({ canvas, ...rest }) => {
+      await meta.input.play?.({ canvas, ...rest });
+
+      /** Do some extra interactions */
+    },
+  });
+});

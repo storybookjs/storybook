@@ -76,7 +76,19 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
           TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
         >;
       },
-    { args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs }
+    Omit<
+      ComponentAnnotations<
+        ReactTypes &
+          T & {
+            args: Simplify<
+              TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
+            >;
+          }
+      >,
+      'args'
+    > & {
+      args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs;
+    }
   >;
 }
 

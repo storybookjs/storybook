@@ -74,3 +74,4 @@ code/core/report
 *storybook.log
 
 .junie
+code/core/assets/server/mocker-runtime.bundled.js

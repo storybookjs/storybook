@@ -248,5 +248,9 @@
         "Dependency Upgrades"
       ]
     ]
+  },
+  "devDependencies": {
+    "@types/jsdom": "^27",
+    "jsdom": "^27.3.0"
   }
 }

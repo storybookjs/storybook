@@ -160,10 +160,6 @@ export interface StrictArgs {
 /** @see https://storybook.js.org/docs/api/arg-types#argtypes */
 export type ArgTypes<TArgs = Args> = { [name in keyof TArgs]: InputType };
 export type StrictArgTypes<TArgs = Args> = { [name in keyof TArgs]: StrictInputType };
-
-export interface Globals {
-  [name: string]: any;
-}
 export interface GlobalTypes {
   [name: string]: InputType;
 }
@@ -222,7 +218,7 @@ export type ArgTypesEnhancer<TRenderer extends Renderer = Renderer, TArgs = Args
 
 export interface StoryContextUpdate<TArgs = Args> {
   args?: TArgs;
-  globals?: Globals;
+  globals?: Record<string, any>;
   // NOTE: it is currently possibly to add *any* key you like to the context
   // (although you cannot override the basic keys). This will likely be removed in future.
   [key: string]: any;
@@ -420,7 +416,7 @@ export interface ProjectAnnotations<TRenderer extends Renderer = Renderer, TArgs
    */
   beforeAll?: BeforeAll;
 
-  initialGlobals?: Globals &
+  initialGlobals?: Record<string, any> &
     (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
   globalTypes?: GlobalTypes;
   applyDecorators?: DecoratorApplicator<TRenderer, Args>;
@@ -513,7 +509,7 @@ export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TAr
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for all stories in this component */
-  globals?: Globals &
+  globals?: Record<string, any> &
     (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
 }
 
@@ -532,7 +528,7 @@ export type StoryAnnotations<
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for this story */
-  globals?: Globals &
+  globals?: Record<string, any> &
     (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
 
   /** @deprecated */

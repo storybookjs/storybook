@@ -1,5 +1,23 @@
-//* @vitest-environment happy-dom */
+
+// @vitest-environment jsdom
+
 import { describe, expect, test, vi } from 'vitest';
+
+
+import { defineMeta, defineStory } from './csf-factories';
+
+describe('CSF Next play inheritance', () => {
+  test('should inherit play from meta to story and composed', () => {
+    const meta = defineMeta({
+      play: async () => {/* meta play */},
+    } as any, {} as any);
+    const Story = defineStory({ render: () => null }, meta);
+    expect(Story.play).toBeDefined();
+    expect(typeof Story.play).toBe('function');
+    expect(Story.composed.play).toBeDefined();
+    expect(typeof Story.composed.play).toBe('function');
+  });
+});
 
 import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories';
 

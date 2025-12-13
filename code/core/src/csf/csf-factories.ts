@@ -99,7 +99,7 @@ export function isMeta(input: unknown): input is Meta<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Meta';
 }
 
-function defineMeta<
+export function defineMeta<
   TRenderer extends Renderer,
   TInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
     TRenderer,
@@ -157,7 +157,7 @@ export function isStory<TRenderer extends Renderer>(input: unknown): input is St
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Story';
 }
 
-function defineStory<
+export function defineStory<
   TRenderer extends Renderer,
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
 >(input: TInput, meta: Meta<TRenderer>): Story<TRenderer, TInput> {
@@ -176,7 +176,7 @@ function defineStory<
 
   const __children: Story<TRenderer>[] = [];
 
-  return {
+  const story: any = {
     _tag: 'Story',
     input,
     meta,
@@ -186,7 +186,11 @@ function defineStory<
     get composed() {
       const composed = compose();
       const { args, argTypes, parameters, id, tags, globals, storyName: name } = composed;
-      return { args, argTypes, parameters, id, tags, name, globals };
+      // Inherit play onto composed
+      if (!composed.play) {
+        composed.play = story.play ?? meta.input?.play;
+      }
+      return { args, argTypes, parameters, id, tags, name, globals, play: composed.play };
     },
     get play() {
       return input.play ?? meta.input?.play ?? (async () => {});
@@ -203,17 +207,17 @@ function defineStory<
       const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
 
       const play =
-        mountDestructured(this.play) || mountDestructured(testFunction)
+        mountDestructured(story.play) || mountDestructured(testFunction)
           ? async ({ context }: StoryContext<TRenderer>) => {
-              await this.play?.(context);
+              await story.play?.(context);
               await testFunction(context);
             }
           : async (context: StoryContext<TRenderer>) => {
-              await this.play?.(context);
+              await story.play?.(context);
               await testFunction(context);
             };
 
-      const test = this.extend({
+      const test = story.extend({
         ...annotations,
         name,
         tags: ['test-fn', '!autodocs', ...(annotations.tags ?? [])],
@@ -226,34 +230,39 @@ function defineStory<
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(
         {
-          ...this.input,
+          ...story.input,
           ...input,
-          args: { ...(this.input.args || {}), ...input.args },
-          argTypes: combineParameters(this.input.argTypes, input.argTypes),
+          args: { ...(story.input.args || {}), ...input.args },
+          argTypes: combineParameters(story.input.argTypes, input.argTypes),
           afterEach: [
-            ...normalizeArrays(this.input?.afterEach ?? []),
+            ...normalizeArrays(story.input?.afterEach ?? []),
             ...normalizeArrays(input.afterEach ?? []),
           ],
           beforeEach: [
-            ...normalizeArrays(this.input?.beforeEach ?? []),
+            ...normalizeArrays(story.input?.beforeEach ?? []),
             ...normalizeArrays(input.beforeEach ?? []),
           ],
           decorators: [
-            ...normalizeArrays(this.input?.decorators ?? []),
+            ...normalizeArrays(story.input?.decorators ?? []),
             ...normalizeArrays(input.decorators ?? []),
           ],
-          globals: { ...this.input.globals, ...input.globals },
+          globals: { ...story.input.globals, ...input.globals },
           loaders: [
-            ...normalizeArrays(this.input?.loaders ?? []),
+            ...normalizeArrays(story.input?.loaders ?? []),
             ...normalizeArrays(input.loaders ?? []),
           ],
-          parameters: combineParameters(this.input.parameters, input.parameters),
-          tags: combineTags(...(this.input.tags ?? []), ...(input.tags ?? [])),
+          parameters: combineParameters(story.input.parameters, input.parameters),
+          tags: combineTags(...(story.input.tags ?? []), ...(input.tags ?? [])),
         },
-        this.meta
+        story.meta
       );
     },
   };
+  // Inherit play from meta if not defined
+  if (!('play' in story) && meta.input?.play) {
+    story.play = meta.input.play;
+  }
+  return story;
 }
 
 export function getStoryChildren<TRenderer extends Renderer>(

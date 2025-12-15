@@ -817,7 +817,6 @@ const initEmptyWindows = defineJob(
       {
         run: {
           name: 'Run Install',
-          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite-default-ts`,
           command: 'yarn install',
         },
       },

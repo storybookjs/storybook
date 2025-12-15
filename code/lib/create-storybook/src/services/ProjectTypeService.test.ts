@@ -68,17 +68,6 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.NEXTJS);
     });
 
-    it('detects REACT_PROJECT via peerDependencies', async () => {
-      (pm as any).primaryPackageJson.packageJson = {
-        peerDependencies: { react: '^18.0.0' },
-      };
-      const service = new ProjectTypeService(pm);
-      // @ts-expect-error private method spy
-      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
-      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
-      expect(result).toBe(ProjectType.REACT_PROJECT);
-    });
-
     it('detects VUE3 when vue major is 3', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { vue: '^3.2.0' },

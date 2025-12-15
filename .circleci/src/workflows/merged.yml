@@ -34,11 +34,11 @@ jobs:
       requires:
         - unit-tests
   - create-sandboxes:
-      parallelism: 19
+      parallelism: 22
       requires:
         - build
   - chromatic-sandboxes:
-      parallelism: 16
+      parallelism: 19
       requires:
         - create-sandboxes
   - e2e-production:
@@ -50,11 +50,15 @@ jobs:
       requires:
         - create-sandboxes
   - test-runner-production:
-      parallelism: 14
+      parallelism: 17
       requires:
         - create-sandboxes
   - vitest-integration:
       parallelism: 7
+      requires:
+        - create-sandboxes
+  - check-sandboxes:
+      parallelism: 1
       requires:
         - create-sandboxes
   - test-portable-stories:
@@ -75,6 +79,18 @@ jobs:
   - test-init-features:
       requires:
         - build
+  - test-init-empty-windows:
+      requires:
+        - build
+      matrix:
+        parameters:
+          packageManager:
+            - 'npm'
+          template:
+            - 'react-vite-ts'
+            - 'nextjs-ts'
+            - 'vue-vite-ts'
+            - 'lit-vite-ts'
 # TODO: don't forget to reenable this
 #      - bench-sandboxes:
 #          parallelism: 5

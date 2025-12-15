@@ -1179,7 +1179,7 @@ export const isCsfFactoryPreview = (previewConfig: ConfigFile) => {
   return !!program.body.find((node) => {
     return (
       t.isImportDeclaration(node) &&
-      node.source.value.includes('@storybook') &&
+      node.source.value.includes('storybook') &&
       node.specifiers.some((specifier) => {
         return (
           t.isImportSpecifier(specifier) &&

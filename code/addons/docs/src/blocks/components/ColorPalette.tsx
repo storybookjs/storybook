@@ -14,10 +14,7 @@ const ItemTitle = styled.div(({ theme }) => ({
 }));
 
 const ItemSubtitle = styled.div(({ theme }) => ({
-  color:
-    theme.base === 'light'
-      ? transparentize(0.2, theme.color.defaultText)
-      : transparentize(0.6, theme.color.defaultText),
+  color: transparentize(0.3, theme.color.defaultText),
 }));
 
 const ItemDescription = styled.div({
@@ -33,10 +30,7 @@ const SwatchLabel = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s1,
   lineHeight: 1,
   overflow: 'hidden',
-  color:
-    theme.base === 'light'
-      ? transparentize(0.4, theme.color.defaultText)
-      : transparentize(0.6, theme.color.defaultText),
+  color: transparentize(0.3, theme.color.defaultText),
 
   '> div': {
     display: 'inline-block',
@@ -120,10 +114,7 @@ const ListHeading = styled.div(({ theme }) => ({
   alignItems: 'center',
   paddingBottom: 20,
   fontWeight: theme.typography.weight.bold,
-  color:
-    theme.base === 'light'
-      ? transparentize(0.4, theme.color.defaultText)
-      : transparentize(0.6, theme.color.defaultText),
+  color: transparentize(0.3, theme.color.defaultText),
 }));
 
 const List = styled.div(({ theme }) => ({

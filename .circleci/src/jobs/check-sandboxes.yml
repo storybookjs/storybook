@@ -1,0 +1,28 @@
+executor:
+  class: medium
+  name: sb_node_22_classic
+
+parameters:
+  parallelism:
+    type: integer
+
+parallelism: << parameters.parallelism >>
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - attach_workspace:
+      at: /tmp
+  - run:
+      name: Install sandbox dependencies
+      command: |
+        corepack enable
+        TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
+        cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+  - run:
+      name: Type check Sandboxes
+      command: yarn task --task check-sandbox --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox) --no-link --start-from=never --junit
+  - report-workflow-on-failure:
+      template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
+  - store_test_results:
+      path: storybook/test-results

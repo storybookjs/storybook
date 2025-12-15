@@ -11,7 +11,7 @@ export function loadManagerOrAddonsFile({ configDir }: { configDir: string }) {
   const storybookCustomManagerPath = getInterpretedFile(resolve(configDir, 'manager'));
 
   if (storybookCustomAddonsPath || storybookCustomManagerPath) {
-    logger.info('=> Loading custom manager config');
+    logger.step('Loading custom manager config');
   }
 
   if (storybookCustomAddonsPath && storybookCustomManagerPath) {

@@ -64,10 +64,10 @@ export async function runCodemod(
   const extensions = new Set(files.map((file) => extname(file).slice(1)));
   const commaSeparatedExtensions = Array.from(extensions).join(',');
 
-  logger.log(`=> Applying ${codemod}: ${files.length} files`);
+  logger.step(`Applying ${codemod}: ${files.length} files`);
 
   if (files.length === 0) {
-    logger.log(`=> No matching files for glob: ${glob}`);
+    logger.step(`No matching files for glob: ${glob}`);
     return;
   }
 
@@ -90,7 +90,6 @@ export async function runCodemod(
       ],
       {
         stdio: 'inherit',
-        shell: true,
       }
     );
 
@@ -106,7 +105,7 @@ export async function runCodemod(
 
   if (renameParts) {
     const [from, to] = renameParts;
-    logger.log(`=> Renaming ${rename}: ${files.length} files`);
+    logger.step(`Renaming ${rename}: ${files.length} files`);
     await Promise.all(
       files.map((file) => renameFile(file, new RegExp(`${from}$`), to, { logger }))
     );

@@ -2,7 +2,8 @@ import React from 'react';
 
 import { AddonPanel } from 'storybook/internal/components';
 
-import { type API_StoryEntry, type Combo, Consumer, addons, types } from 'storybook/manager-api';
+import { type Combo, Consumer, addons, types } from 'storybook/manager-api';
+import type { API_StoryEntry } from 'storybook/internal/types';
 
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';

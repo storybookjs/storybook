@@ -740,7 +740,7 @@ const windows_sandbox_build = defineJob(
         run: {
           name: 'Running E2E Tests',
           working_directory: 'code',
-          command: 'yarn task e2e-tests --template react-vite/default-ts --no-link -s never',
+          command: 'yarn task e2e-tests --template react-vite/default-ts --no-link -s e2e-tests',
         },
       },
     ],
@@ -794,7 +794,8 @@ const windows_sandbox_dev = defineJob(
         run: {
           name: 'Running E2E Tests',
           working_directory: 'code',
-          command: 'yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s never',
+          command:
+            'yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s e2e-tests-dev',
         },
       },
     ],
@@ -1172,7 +1173,7 @@ function defineSandboxJob_build({
                   name: 'Running E2E Tests',
                   command: [
                     `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${template} --no-link -s never" --verbose --index=0 --total=1`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${template} --no-link -s e2e-tests" --verbose --index=0 --total=1`,
                   ].join('\n'),
                 },
               },
@@ -1230,7 +1231,7 @@ function defineSandboxJob_dev({
                   name: 'Running E2E Tests',
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s never" --verbose --index=0 --total=1`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev" --verbose --index=0 --total=1`,
                   ].join('\n'),
                 },
               },

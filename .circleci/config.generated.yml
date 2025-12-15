@@ -1050,7 +1050,7 @@ workflows:
             - test-storybooks-portable-vitest3:
                   requires:
                       - test-storybooks
-            - empty-init:
+            - init-empty:
                   requires:
                       - build-linux
             - init-empty-windows:

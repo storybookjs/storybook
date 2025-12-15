@@ -1008,7 +1008,7 @@ const workflows = {
         },
       },
       {
-        ['empty-init']: {
+        ['init-empty']: {
           requires: [linux_build.id],
         },
       },

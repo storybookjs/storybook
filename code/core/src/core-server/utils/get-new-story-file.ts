@@ -10,6 +10,7 @@ import {
 } from 'storybook/internal/common';
 import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
 import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
@@ -26,8 +27,7 @@ export async function getNewStoryFile(
     componentIsDefaultExport,
     componentExportCount,
   }: CreateNewStoryRequestPayload,
-  options: Options,
-  args?: Record<string, any>
+  options: Options
 ) {
   const frameworkPackageName = await getFrameworkName(options);
   const sanitizedFrameworkPackageName = extractFrameworkPackageName(frameworkPackageName);
@@ -58,6 +58,31 @@ export async function getNewStoryFile(
     }
   } catch {
     // TODO: improve this later on, for now while CSF factories are experimental, just fallback to CSF3
+  }
+
+  let args: Record<string, unknown> | undefined;
+
+  try {
+    // Try to generate mocked args for the component
+    try {
+      // Try to dynamically import the generateMockProps function from the react renderer
+      const { getMockedProps } = await import(
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore - Dynamic import from source for development
+        '@storybook/react/componentManifest'
+      );
+
+      // Get component docgen data
+      const { required } = getMockedProps(componentFilePath, componentExportName) ?? {};
+      args = required;
+      logger.debug(`Generated mocked props for ${componentExportName}: ${JSON.stringify(args)}`);
+    } catch (error) {
+      // If anything fails with the mock generation, just proceed without args
+      logger.debug(`Could not generate mocked props for ${componentExportName}: ${error}`);
+    }
+  } catch (error) {
+    // If anything fails with the mock generation, just proceed without args
+    logger.debug(`Could not generate mocked props for ${componentExportName}: ${error}`);
   }
 
   let storyFileContent = '';
@@ -101,6 +126,32 @@ export async function getNewStoryFile(
             exportedStoryName,
             args,
           });
+  }
+
+  // Add fn import and replace __function__ with fn() if needed
+  if (storyFileContent.includes('"__function__"')) {
+    // Add the fn import
+    const fnImport = "import { fn } from 'storybook/test';\n";
+    const lines = storyFileContent.split('\n');
+    let insertIndex = 0;
+
+    // Find the first import statement or the first non-empty line
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line.startsWith('import') || (line !== '' && !line.startsWith('//'))) {
+        insertIndex = i;
+        break;
+      }
+    }
+
+    lines.splice(insertIndex, 0, fnImport.trim());
+    storyFileContent = lines.join('\n');
+
+    // Replace "__function__" with fn()
+    storyFileContent = storyFileContent.replace(/"__function__"/g, 'fn()');
+
+    // Replace "__react_node__" with <div>Hello world</div>
+    storyFileContent = storyFileContent.replace(/"__react_node__"/g, '<div>Hello world</div>');
   }
 
   const storyFilePath =

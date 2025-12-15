@@ -35,10 +35,10 @@ export interface ViewportParameters {
    */
   viewport?: {
     /**
-     * Remove the addon panel and disable the addon's behavior . If you wish to turn off this addon
-     * for the entire Storybook, you should do so when registering addon-essentials
+     * Removes the tool and disables the feature's behavior. If you wish to turn off this feature
+     * for the entire Storybook, you can set the option in your `main.js|ts` configuration file.
      *
-     * @see https://storybook.js.org/docs/essentials/index#disabling-addons
+     * @see https://storybook.js.org/docs/essentials/viewport#disable
      */
     disable?: boolean;
 

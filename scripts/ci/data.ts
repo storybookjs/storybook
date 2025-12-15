@@ -802,6 +802,49 @@ const windows_sandbox_dev = defineJob(
   [sandboxes[0].jobs[0].id]
 );
 
+const initEmptyWindows = defineJob(
+  'init-empty-windows',
+  {
+    executor: {
+      name: 'win/default',
+      size: 'xlarge',
+      shell: 'bash.exe',
+    },
+    steps: [
+      git.checkout({ forceHttps: true }),
+      node.installOnWindows(),
+      workspace.attach('C:\\Users\\circleci'),
+      verdaccio.start(),
+      server.wait([...verdaccio.ports]),
+      {
+        run: {
+          name: 'Storybook init from empty directory (Windows NPM)',
+          working_directory: 'C:\\Users\\circleci',
+          command: [
+            `mkdir empty-react-vite-ts`,
+            `cd empty-react-vite-ts`,
+            `npm set registry http://localhost:6001`,
+            `npx storybook init --yes --package-manager npm`,
+          ].join('\n'),
+          environment: {
+            IN_STORYBOOK_SANDBOX: true,
+            STORYBOOK_DISABLE_TELEMETRY: true,
+            STORYBOOK_INIT_EMPTY_TYPE: 'react-vite-ts',
+          },
+        },
+      },
+      {
+        run: {
+          name: 'Run storybook smoke test',
+          working_directory: 'C:\\Users\\circleci\\empty-react-vite-ts',
+          command: 'npm run storybook -- --smoke-test',
+        },
+      },
+    ],
+  },
+  ['init-empty']
+);
+
 const jobs = {
   [linux_build.id]: linux_build.implementation,
   [windows_build.id]: windows_build.implementation,
@@ -857,6 +900,10 @@ const jobs = {
     {} as Record<string, JobImplementation>
   ),
   [testStorybooksPortableVitest3.id]: testStorybooksPortableVitest3.implementation,
+  ['init-empty']: {
+    type: 'no-op',
+  },
+  [initEmptyWindows.id]: initEmptyWindows.implementation,
 };
 
 const orbs = {
@@ -958,6 +1005,16 @@ const workflows = {
       {
         [testStorybooksPortableVitest3.id]: {
           requires: testStorybooksPortableVitest3.requires,
+        },
+      },
+      {
+        ['empty-init']: {
+          requires: [linux_build.id],
+        },
+      },
+      {
+        [initEmptyWindows.id]: {
+          requires: initEmptyWindows.requires,
         },
       },
     ],

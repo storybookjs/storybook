@@ -941,6 +941,55 @@ jobs:
                   name: Run Playwright E2E tests
                   working_directory: test-storybooks/portable-stories-kitchen-sink/react-vitest-3
                   command: yarn playwright-e2e
+    init-empty:
+        type: no-op
+    init-empty-windows:
+        description: init-empty-windows
+        executor:
+            name: win/default
+            size: xlarge
+            shell: bash.exe
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
+            - run:
+                  name: Install Node + Yarn
+                  shell: powershell.exe
+                  command: |-
+                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
+                      nvm install $nodeVersion
+                      nvm use $nodeVersion
+                      corepack enable
+                      corepack prepare yarn@stable --activate
+            - attach_workspace:
+                  at: C:\Users\circleci
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Storybook init from empty directory (Windows NPM)
+                  working_directory: C:\Users\circleci
+                  command: |-
+                      mkdir empty-react-vite-ts
+                      cd empty-react-vite-ts
+                      npm set registry http://localhost:6001
+                      npx storybook init --yes --package-manager npm
+                  environment:
+                      IN_STORYBOOK_SANDBOX: true
+                      STORYBOOK_DISABLE_TELEMETRY: true
+                      STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
+            - run:
+                  name: Run storybook smoke test
+                  working_directory: C:\Users\circleci\empty-react-vite-ts
+                  command: npm run storybook -- --smoke-test
 workflows:
     generated:
         jobs:
@@ -1001,6 +1050,12 @@ workflows:
             - test-storybooks-portable-vitest3:
                   requires:
                       - test-storybooks
+            - empty-init:
+                  requires:
+                      - build-linux
+            - init-empty-windows:
+                  requires:
+                      - init-empty
         when:
             equal:
                 - docs

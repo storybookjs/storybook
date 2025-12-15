@@ -88,6 +88,7 @@ export const getVitestSWCTransformConfig = ({
       : {
           env: {
             targets: getSupportedBrowsers(rootDir, isDev),
+            bugfixes: true,
           },
         }),
     module: {

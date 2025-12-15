@@ -85,16 +85,22 @@ export const scrollIntoView = (element: Element, center = false) => {
   if (!element) {
     return;
   }
-  const { top, bottom } = element.getBoundingClientRect();
-  if (!top || !bottom) {
+
+  if (center) {
+    element.scrollIntoView({ block: 'center', behavior: 'auto' });
     return;
   }
+
+  const { top, bottom } = element.getBoundingClientRect();
+  const topOffset =
+    document?.querySelector('#storybook-explorer-menu')?.getBoundingClientRect().top || 0;
   const bottomOffset =
     document?.querySelector('#sidebar-bottom-wrapper')?.getBoundingClientRect().top ||
     globalWindow.innerHeight ||
     document.documentElement.clientHeight;
-  if (bottom > bottomOffset) {
-    element.scrollIntoView({ block: center ? 'center' : 'nearest' });
+
+  if (bottom > bottomOffset || top < topOffset) {
+    element.scrollIntoView({ block: 'nearest', behavior: 'auto' });
   }
 };
 

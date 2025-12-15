@@ -306,7 +306,10 @@ command('doctor')
 command('generate-stories [glob]')
   .description('Generate stories for components matching a glob pattern (picomatch syntax)')
   .option('-i, --interactive', 'Interactively select which components to generate stories for')
-  .option('-s, --sample', 'Only select a subset of components to generate stories for')
+  .option(
+    '-s, --sample [num]',
+    'Only select a subset of N components to generate stories for (default: 10)'
+  )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .action(async (globPattern = 'src/**/*.{jsx,tsx}', options) => {
     withTelemetry(
@@ -315,11 +318,18 @@ command('generate-stories [glob]')
       { cliOptions: { ...options, disableTelemetry: true } },
       async () => {
         logger.intro(`Generating stories for components matching: ${globPattern}`);
+
+        let sampleComponents: number | undefined = undefined;
+        if (options.sample) {
+          const n = parseInt(options.sample, 10);
+          sampleComponents = isNaN(n) ? 10 : n;
+        }
+
         const result = await generateStories({
           glob: globPattern,
           interactive: options.interactive,
           configDir: options.configDir,
-          sampleComponents: options.sample,
+          sampleComponents,
         });
 
         if (result.success) {

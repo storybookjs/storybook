@@ -11,7 +11,7 @@ import { getComponentComplexity } from '@hipster/sb-utils/component-analyzer';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 
-async function findEasyToStorybookComponents(files: string[]) {
+async function findEasyToStorybookComponents(files: string[], sampleComponents: number) {
   const candidates = [];
 
   for (const file of files) {
@@ -66,7 +66,7 @@ async function findEasyToStorybookComponents(files: string[]) {
   // Get top 10 simplest components, easiest first
   return candidates
     .sort((a, b) => a.score - b.score)
-    .slice(0, 10)
+    .slice(0, sampleComponents)
     .map((c) => c.file);
 }
 
@@ -74,7 +74,7 @@ interface GenerateStoriesOptions {
   glob: string;
   interactive?: boolean;
   configDir?: string;
-  sampleComponents?: boolean;
+  sampleComponents?: number;
 }
 
 interface ComponentInfo {
@@ -88,7 +88,7 @@ export const generateStories = async ({
   glob: globPattern,
   interactive = false,
   configDir = '.storybook',
-  sampleComponents = true,
+  sampleComponents,
 }: GenerateStoriesOptions) => {
   logger.debug(`Starting story generation with glob: ${globPattern}`);
   logger.debug(`Interactive mode: ${interactive}`);
@@ -150,7 +150,7 @@ export const generateStories = async ({
 
     if (sampleComponents) {
       logger.debug('Filtering out easy to Storybook components...');
-      files = await findEasyToStorybookComponents(files);
+      files = await findEasyToStorybookComponents(files, sampleComponents);
       logger.debug(`Found ${files.length} easy to Storybook components`);
     }
 

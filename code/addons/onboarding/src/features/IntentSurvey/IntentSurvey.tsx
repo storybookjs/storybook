@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Fragment, useState } from 'react';
 
 import { Button, Form, Modal } from 'storybook/internal/components';
 
@@ -111,7 +111,7 @@ export const IntentSurvey = ({
       },
     },
     referrer: {
-      label: 'How did you learn about Storybook?',
+      label: 'How did you discover Storybook?',
       type: 'select',
       required: true,
       options: shuffleObject({
@@ -170,17 +170,26 @@ export const IntentSurvey = ({
   };
 
   return (
-    <Modal defaultOpen width={420} onEscapeKeyDown={onDismiss}>
+    <Modal
+      ariaLabel="Storybook user survey"
+      defaultOpen
+      width={420}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          onDismiss();
+        }
+      }}
+    >
       <Form onSubmit={onSubmitForm} id="intent-survey-form">
         <Content>
-          <Modal.Header>
+          <Modal.Header onClose={onDismiss}>
             <Modal.Title>Help improve Storybook</Modal.Title>
           </Modal.Header>
 
           {(Object.keys(formFields) as Array<keyof FormFields>).map((key) => {
             const field = formFields[key];
             return (
-              <React.Fragment key={key}>
+              <Fragment key={key}>
                 <Question>{field.label}</Question>
                 {field.type === 'checkbox' && (
                   <Row>
@@ -224,12 +233,18 @@ export const IntentSurvey = ({
                     ))}
                   </Form.Select>
                 )}
-              </React.Fragment>
+              </Fragment>
             );
           })}
 
           <Actions>
-            <Button disabled={isSubmitting || !isValid} size="medium" type="submit" variant="solid">
+            <Button
+              ariaLabel={false}
+              disabled={isSubmitting || !isValid}
+              size="medium"
+              type="submit"
+              variant="solid"
+            >
               Submit
             </Button>
           </Actions>

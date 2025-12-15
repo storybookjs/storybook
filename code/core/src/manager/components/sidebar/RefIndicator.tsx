@@ -1,14 +1,11 @@
-import type { FC, MouseEventHandler } from 'react';
+import type { FC, MouseEventHandler, ReactNode } from 'react';
 import React, { forwardRef, useCallback, useMemo } from 'react';
 
-import type { TooltipLinkListLink } from 'storybook/internal/components';
-import { Spaced, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { Button, PopoverProvider, Select, Spaced } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
 import {
   AlertIcon,
-  CheckIcon,
-  ChevronDownIcon,
   DocumentIcon,
   GlobeIcon,
   LightningIcon,
@@ -17,12 +14,12 @@ import {
   TimeIcon,
 } from '@storybook/icons';
 
-import { transparentize } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import type { NormalLink } from '../../../components/components/tooltip/TooltipLinkList';
 import type { getStateType } from '../../utils/tree';
+import { useLayout } from '../layout/LayoutProvider';
 import type { RefType } from './types';
 
 const { document, window: globalWindow } = global;
@@ -36,7 +33,7 @@ export interface CurrentVersionProps {
   versions: RefType['versions'];
 }
 
-const IndicatorPlacement = styled.aside(({ theme }) => ({
+const IndicatorPlacement = styled.div(({ theme }) => ({
   height: 16,
 
   display: 'flex',
@@ -47,34 +44,12 @@ const IndicatorPlacement = styled.aside(({ theme }) => ({
   },
 }));
 
-const IndicatorClickTarget = styled.button(({ theme }) => ({
-  height: 20,
-  width: 20,
-  padding: 0,
-  margin: 0,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: 'transparent',
-  outline: 'none',
-  border: '1px solid transparent',
-  borderRadius: '100%',
-  cursor: 'pointer',
-  color:
-    theme.base === 'light'
-      ? transparentize(0.3, theme.color.defaultText)
-      : transparentize(0.6, theme.color.defaultText),
-
-  '&:hover': {
-    color: theme.barSelectedColor,
-  },
-  '&:focus': {
-    color: theme.barSelectedColor,
-    borderColor: theme.color.secondary,
-  },
+const IndicatorClickTarget = styled(Button)(({ theme }) => ({
+  color: theme.textMutedColor,
   svg: {
-    height: 10,
-    width: 10,
+    height: 14,
+    width: 14,
+    padding: 2,
     transition: 'all 150ms ease-out',
     color: 'inherit',
   },
@@ -84,7 +59,7 @@ const MessageTitle = styled.span(({ theme }) => ({
   fontWeight: theme.typography.weight.bold,
 }));
 
-const Message = styled.a(({ theme }) => ({
+const StyledMessage = styled.a(({ theme }) => ({
   textDecoration: 'none',
   lineHeight: '16px',
   padding: 15,
@@ -92,21 +67,22 @@ const Message = styled.a(({ theme }) => ({
   flexDirection: 'row',
   alignItems: 'flex-start',
   color: theme.color.defaultText,
+
   '&:not(:last-child)': {
     borderBottom: `1px solid ${theme.appBorderColor}`,
   },
   '&:hover': {
     background: theme.background.hoverable,
-    color: theme.color.darker,
+    color: theme.color.defaultText,
   },
-  '&:link': {
-    color: theme.color.darker,
+  '&:link, &:active, &:focus': {
+    color: theme.color.defaultText,
   },
-  '&:active': {
-    color: theme.color.darker,
-  },
-  '&:focus': {
-    color: theme.color.darker,
+  '&:focus-visible': {
+    background: theme.background.hoverable,
+    borderRadius: 8,
+    boxShadow: `inset 0 0 0 2px ${theme.color.secondary}`,
+    outline: 'none',
   },
   '& > *': {
     flex: 1,
@@ -120,52 +96,45 @@ const Message = styled.a(({ theme }) => ({
   },
 }));
 
-export const MessageWrapper = styled.div({
-  width: 280,
-  boxSizing: 'border-box',
-  borderRadius: 8,
-  overflow: 'hidden',
-});
-
-const Version = styled.div(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  fontSize: theme.typography.size.s1,
-  fontWeight: theme.typography.weight.regular,
-  color:
-    theme.base === 'light'
-      ? transparentize(0.3, theme.color.defaultText)
-      : transparentize(0.6, theme.color.defaultText),
-
-  '& > * + *': {
-    marginLeft: 4,
-  },
-
-  svg: {
-    height: 10,
-    width: 10,
-  },
-}));
-
-const CurrentVersion: FC<CurrentVersionProps> = ({ url, versions }) => {
-  const currentVersionId = useMemo(() => {
-    // @ts-expect-error (non strict)
-    const c = Object.entries(versions).find(([k, v]) => v === url);
-    return c && c[0] ? c[0] : 'current';
-  }, [url, versions]);
-
+const Message: FC<{
+  blank?: boolean;
+  children: ReactNode;
+  href?: string;
+  onClick?: MouseEventHandler;
+}> = ({ href, blank = true, children, onClick }) => {
   return (
-    <Version>
-      <span>{currentVersionId}</span>
-      <ChevronDownIcon />
-    </Version>
+    <StyledMessage href={href} target={blank ? '_blank' : undefined} onClick={onClick}>
+      {children}
+    </StyledMessage>
   );
 };
 
+export const MessageWrapper = styled.div<{
+  isMobile: boolean;
+}>(
+  ({ isMobile }) => ({
+    width: isMobile ? 'calc(100vw - 20px)' : 280,
+    boxSizing: 'border-box',
+    borderRadius: 8,
+    overflow: 'hidden',
+  }),
+  ({ theme }) => ({
+    color: theme.color.dark,
+  })
+);
+
+const SubtleSelect = styled(Select)(({ theme }) => ({
+  background: 'transparent',
+  color: theme.color.defaultText,
+  fontSize: theme.typography.size.s1,
+  fontWeight: theme.typography.weight.regular,
+}));
+
 export const RefIndicator = React.memo(
-  forwardRef<HTMLElement, RefType & { state: ReturnType<typeof getStateType> }>(
+  forwardRef<HTMLDivElement, RefType & { state: ReturnType<typeof getStateType> }>(
     ({ state, ...ref }, forwardedRef) => {
       const api = useStorybookApi();
+      const { isMobile } = useLayout();
       const list = useMemo(() => Object.values(ref.index || {}), [ref.index]);
       const componentCount = useMemo(
         () => list.filter((v) => v.type === 'component').length,
@@ -176,14 +145,20 @@ export const RefIndicator = React.memo(
         [list]
       );
 
+      const currentVersion = useMemo(() => {
+        if (ref.versions) {
+          return Object.entries(ref.versions).find(([, v]) => v === ref.url)?.[0];
+        }
+        return undefined;
+      }, [ref.versions, ref.url]);
+
       return (
         <IndicatorPlacement ref={forwardedRef}>
-          <WithTooltip
-            placement="bottom-start"
-            trigger="click"
-            closeOnOutsideClick
-            tooltip={
-              <MessageWrapper>
+          <PopoverProvider
+            placement={isMobile ? 'bottom' : 'bottom-start'}
+            padding={0}
+            popover={() => (
+              <MessageWrapper isMobile={isMobile}>
                 <Spaced row={0}>
                   {state === 'loading' && <LoadingMessage url={ref.url} />}
                   {(state === 'error' || state === 'empty') && (
@@ -202,38 +177,43 @@ export const RefIndicator = React.memo(
                   {state !== 'loading' && <ReadDocsMessage />}
                 </Spaced>
               </MessageWrapper>
-            }
+            )}
           >
-            <IndicatorClickTarget data-action="toggle-indicator" aria-label="toggle indicator">
+            <IndicatorClickTarget
+              variant="ghost"
+              padding="small"
+              size="small"
+              data-action="toggle-indicator"
+              ariaLabel="Extra actions"
+            >
               <GlobeIcon />
             </IndicatorClickTarget>
-          </WithTooltip>
+          </PopoverProvider>
 
           {ref.versions && Object.keys(ref.versions).length ? (
-            <WithTooltip
-              placement="bottom-start"
-              trigger="click"
-              closeOnOutsideClick
-              tooltip={(tooltip) => (
-                <TooltipLinkList
-                  // @ts-expect-error (non strict)
-                  links={Object.entries(ref.versions).map(([id, href]) => ({
-                    icon: href === ref.url ? <CheckIcon /> : undefined,
-                    id,
-                    title: id,
-                    href,
-                    onClick: (event, item) => {
-                      event.preventDefault();
-                      // @ts-expect-error (non strict)
-                      api.changeRefVersion(ref.id, item.href);
-                      tooltip.onHide();
-                    },
-                  }))}
-                />
-              )}
-            >
-              <CurrentVersion url={ref.url} versions={ref.versions} />
-            </WithTooltip>
+            <>
+              <SubtleSelect
+                padding="small"
+                size="small"
+                ariaLabel="Version"
+                tooltip="Choose version"
+                defaultOptions={currentVersion}
+                onSelect={(item) => {
+                  // We only pass strings as version ids, so item is always a string
+                  const href = ref.versions?.[item as string];
+                  if (href) {
+                    api.changeRefVersion(ref.id, href);
+                  }
+                }}
+                options={Object.entries(ref.versions).map(([id, href]) => ({
+                  value: id,
+                  title: id,
+                  href,
+                }))}
+              >
+                version
+              </SubtleSelect>
+            </>
           ) : null}
         </IndicatorPlacement>
       );
@@ -249,7 +229,7 @@ const ReadyMessage: FC<{
   const theme = useTheme();
 
   return (
-    <Message href={url.replace(/\/?$/, '/index.html')} target="_blank">
+    <Message href={url.replace(/\/?$/, '/index.html')}>
       <GlobeIcon color={theme.color.secondary} />
       <div>
         <MessageTitle>View external Storybook</MessageTitle>
@@ -267,7 +247,7 @@ const SourceCodeMessage: FC<{
   const theme = useTheme();
 
   return (
-    <Message href={url} target="_blank">
+    <Message href={url}>
       <MarkupIcon color={theme.color.secondary} />
       <div>
         <MessageTitle>View source code</MessageTitle>
@@ -278,23 +258,30 @@ const SourceCodeMessage: FC<{
 
 const LoginRequiredMessage: FC<RefType> = ({ loginUrl, id }) => {
   const theme = useTheme();
-  const open = useCallback<MouseEventHandler>((e) => {
-    e.preventDefault();
-    const childWindow = globalWindow.open(loginUrl, `storybook_auth_${id}`, 'resizable,scrollbars');
+  const open = useCallback<MouseEventHandler>(
+    (e) => {
+      e.preventDefault();
+      const childWindow = globalWindow.open(
+        loginUrl,
+        `storybook_auth_${id}`,
+        'resizable,scrollbars'
+      );
 
-    // poll for window to close
-    const timer = setInterval(() => {
-      if (!childWindow) {
-        clearInterval(timer);
-      } else if (childWindow.closed) {
-        clearInterval(timer);
-        document.location.reload();
-      }
-    }, 1000);
-  }, []);
+      // poll for window to close
+      const timer = setInterval(() => {
+        if (!childWindow) {
+          clearInterval(timer);
+        } else if (childWindow.closed) {
+          clearInterval(timer);
+          document.location.reload();
+        }
+      }, 1000);
+    },
+    [id, loginUrl]
+  );
 
   return (
-    <Message onClick={open}>
+    <Message onClick={open} blank={false}>
       <LockIcon color={theme.color.gold} />
       <div>
         <MessageTitle>Log in required</MessageTitle>
@@ -308,7 +295,7 @@ const ReadDocsMessage: FC = () => {
   const theme = useTheme();
 
   return (
-    <Message href="https://storybook.js.org/docs/sharing/storybook-composition" target="_blank">
+    <Message href="https://storybook.js.org/docs/sharing/storybook-composition?ref=ui">
       <DocumentIcon color={theme.color.green} />
       <div>
         <MessageTitle>Read Composition docs</MessageTitle>
@@ -322,7 +309,7 @@ const ErrorOccurredMessage: FC<{ url: string }> = ({ url }) => {
   const theme = useTheme();
 
   return (
-    <Message href={url.replace(/\/?$/, '/index.html')} target="_blank">
+    <Message href={url.replace(/\/?$/, '/index.html')}>
       <AlertIcon color={theme.color.negative} />
       <div>
         <MessageTitle>Something went wrong</MessageTitle>
@@ -336,7 +323,7 @@ const LoadingMessage: FC<{ url: string }> = ({ url }) => {
   const theme = useTheme();
 
   return (
-    <Message href={url.replace(/\/?$/, '/index.html')} target="_blank">
+    <Message href={url.replace(/\/?$/, '/index.html')}>
       <TimeIcon color={theme.color.secondary} />
       <div>
         <MessageTitle>Please wait</MessageTitle>
@@ -351,7 +338,7 @@ const PerformanceDegradedMessage: FC = () => {
   const theme = useTheme();
 
   return (
-    <Message href="https://storybook.js.org/docs/sharing/storybook-composition" target="_blank">
+    <Message href="https://storybook.js.org/docs/sharing/storybook-composition?ref=ui">
       <LightningIcon color={theme.color.gold} />
       <div>
         <MessageTitle>Reduce lag</MessageTitle>

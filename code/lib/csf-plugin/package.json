@@ -1,6 +1,6 @@
 {
   "name": "@storybook/csf-plugin",
-  "version": "9.1.0-alpha.10",
+  "version": "10.2.0-alpha.6",
   "description": "Enrich CSF files via static analysis",
   "keywords": [
     "storybook"
@@ -20,24 +20,15 @@
   },
   "license": "MIT",
   "sideEffects": false,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./dist/webpack-loader": {
-      "types": "./dist/webpack-loader.d.ts",
-      "node": "./dist/webpack-loader.js",
-      "import": "./dist/webpack-loader.mjs",
-      "require": "./dist/webpack-loader.js"
-    },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./webpack-loader": "./dist/webpack-loader.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "README.md",
@@ -45,34 +36,35 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
-  },
   "dependencies": {
-    "unplugin": "^1.3.1"
+    "unplugin": "^2.3.5"
   },
   "devDependencies": {
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "storybook": "workspace:^"
+    "esbuild": "*",
+    "rollup": "*",
+    "storybook": "workspace:^",
+    "vite": "*",
+    "webpack": "*"
+  },
+  "peerDependenciesMeta": {
+    "esbuild": {
+      "optional": true
+    },
+    "rollup": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    },
+    "webpack": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/webpack-loader.ts"
-    ],
-    "externals": [
-      "webpack",
-      "vite",
-      "rollup",
-      "esbuild"
-    ],
-    "platform": "node"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

@@ -32,7 +32,7 @@ export const babel: PresetPropertyFn<'babel'> = (config: TransformOptions, optio
 
   const extraPlugins = [
     [
-      require.resolve('babel-plugin-htmlbars-inline-precompile'),
+      import.meta.resolve('babel-plugin-htmlbars-inline-precompile'),
       {
         precompile: precompileWithPlugins,
         modules: {
@@ -42,7 +42,7 @@ export const babel: PresetPropertyFn<'babel'> = (config: TransformOptions, optio
         },
       },
     ],
-    [require.resolve('babel-plugin-ember-modules-api-polyfill')],
+    [import.meta.resolve('babel-plugin-ember-modules-api-polyfill')],
   ];
 
   return {

@@ -118,7 +118,7 @@ const shortcutLabels = {
   togglePanel: 'Toggle addons',
   panelPosition: 'Toggle addons orientation',
   toggleNav: 'Toggle sidebar',
-  toolbar: 'Toggle canvas toolbar',
+  toolbar: 'Toggle toolbar',
   search: 'Focus search',
   focusNav: 'Focus sidebar',
   focusIframe: 'Focus canvas',
@@ -131,7 +131,11 @@ const shortcutLabels = {
   aboutPage: 'Go to about page',
   collapseAll: 'Collapse all items on sidebar',
   expandAll: 'Expand all items on sidebar',
-  remount: 'Remount component',
+  remount: 'Reload story',
+  openInEditor: 'Open story in editor',
+  copyStoryLink: 'Copy story link to clipboard',
+  // TODO: bring this back once we want to add shortcuts for this
+  // copyStoryName: 'Copy story name to clipboard',
 };
 
 export type Feature = keyof typeof shortcutLabels;
@@ -194,16 +198,21 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
       return false;
     }
 
+    // Normalize special characters produced by Option/Alt on macOS (e.g. ['Ø','O'] -> 'O')
+    const normalizedShortcut = shortcut.map((key) =>
+      Array.isArray(key) ? key.at(-1) : key
+    ) as string[];
+
     // Check we don't match any other shortcuts
     const error = !!Object.entries(shortcutKeys).find(
       ([feature, { shortcut: existingShortcut }]) =>
         feature !== activeFeature &&
         existingShortcut &&
-        shortcutMatchesShortcut(shortcut, existingShortcut)
+        shortcutMatchesShortcut(normalizedShortcut, existingShortcut)
     );
 
     return this.setState({
-      shortcutKeys: { ...shortcutKeys, [activeFeature]: { shortcut, error } },
+      shortcutKeys: { ...shortcutKeys, [activeFeature]: { shortcut: normalizedShortcut, error } },
     });
   };
 
@@ -278,8 +287,14 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
   renderKeyInput = () => {
     const { shortcutKeys, addonsShortcutLabels } = this.state;
-    // @ts-expect-error (non strict)
-    const arr = Object.entries(shortcutKeys).map(([feature, { shortcut }]: [Feature, any]) => (
+    // Filter out keyboard shortcuts from localStorage that no longer exist in code
+    const availableShortcuts = (Object.entries(shortcutKeys) as [Feature, any][]).filter(
+      ([feature]: [Feature, any]) =>
+        shortcutLabels[feature] !== undefined ||
+        (addonsShortcutLabels && addonsShortcutLabels[feature])
+    );
+
+    const arr = availableShortcuts.map(([feature, { shortcut }]: [Feature, any]) => (
       <Row key={feature}>
         {/* @ts-expect-error (non strict) */}
         <Description>{shortcutLabels[feature] || addonsShortcutLabels[feature]}</Description>
@@ -323,6 +338,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
         {layout}
         <Button
+          ariaLabel={false}
           variant="outline"
           size="small"
           id="restoreDefaultsHotkeys"

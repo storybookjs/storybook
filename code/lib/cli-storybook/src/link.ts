@@ -1,12 +1,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 
+import { executeCommand } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { spawn as spawnAsync, sync as spawnSync } from 'cross-spawn';
-import picocolors from 'picocolors';
-
-type ExecOptions = Parameters<typeof spawnAsync>[2];
+import { sync as spawnSync } from 'cross-spawn';
 
 interface LinkOptions {
   target: string;
@@ -14,55 +12,11 @@ interface LinkOptions {
   start: boolean;
 }
 
-// TODO: Extract this to somewhere else, or use `exec` from a different file that might already have it
-export const exec = async (
-  command: string,
-  options: ExecOptions = {},
-  {
-    startMessage,
-    errorMessage,
-    dryRun,
-  }: { startMessage?: string; errorMessage?: string; dryRun?: boolean } = {}
-) => {
-  if (startMessage) {
-    logger.info(startMessage);
-  }
-
-  if (dryRun) {
-    logger.info(`\n> ${command}\n`);
-    return undefined;
-  }
-
-  logger.info(command);
-  return new Promise((resolve, reject) => {
-    const child = spawnAsync(command, {
-      ...options,
-      shell: true,
-      stdio: 'pipe',
-    });
-
-    child.stderr.pipe(process.stdout);
-    child.stdout.pipe(process.stdout);
-
-    child.on('exit', (code) => {
-      if (code === 0) {
-        resolve(undefined);
-      } else {
-        logger.error(picocolors.red(`An error occurred while executing: \`${command}\``));
-        if (errorMessage) {
-          logger.info(errorMessage);
-        }
-        reject(new Error(`command exited with code: ${code}: `));
-      }
-    });
-  });
-};
-
 export const link = async ({ target, local, start }: LinkOptions) => {
   const storybookDir = process.cwd();
   try {
     const packageJson = JSON.parse(await readFile('package.json', { encoding: 'utf8' }));
-    if (packageJson.name !== '@storybook/root') {
+    if (packageJson.name !== '@storybook/code') {
       throw new Error();
     }
   } catch {
@@ -80,7 +34,11 @@ export const link = async ({ target, local, start }: LinkOptions) => {
     await mkdir(reprosDir, { recursive: true });
 
     logger.info(`Cloning ${target}`);
-    await exec(`git clone ${target}`, { cwd: reprosDir });
+    await executeCommand({
+      command: 'git',
+      args: ['clone', target],
+      cwd: reprosDir,
+    });
     // Extract a repro name from url given as input (take the last part of the path and remove the extension)
     reproName = basename(target, extname(target));
     reproDir = join(reprosDir, reproName);
@@ -101,7 +59,11 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   }
 
   logger.info(`Linking ${reproDir}`);
-  await exec(`yarn link --all --relative ${storybookDir}`, { cwd: reproDir });
+  await executeCommand({
+    command: 'yarn',
+    args: ['link', '--all', '--relative', storybookDir],
+    cwd: reproDir,
+  });
 
   logger.info(`Installing ${reproName}`);
 
@@ -124,10 +86,18 @@ export const link = async ({ target, local, start }: LinkOptions) => {
 
   await writeFile(join(reproDir, 'package.json'), JSON.stringify(reproPackageJson, null, 2));
 
-  await exec(`yarn install`, { cwd: reproDir });
+  await executeCommand({
+    command: 'yarn',
+    args: ['install'],
+    cwd: reproDir,
+  });
 
   if (start) {
     logger.info(`Running ${reproName} storybook`);
-    await exec(`yarn run storybook`, { cwd: reproDir });
+    await executeCommand({
+      command: 'yarn',
+      args: ['run', 'storybook'],
+      cwd: reproDir,
+    });
   }
 };

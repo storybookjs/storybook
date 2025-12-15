@@ -9,17 +9,23 @@ tab:
   title: CSF 3
 ---
 
-Component Story Format (CSF) is the recommended way to [write stories](../../writing-stories/index.mdx). It's an [open standard](https://github.com/ComponentDriven/csf) based on ES6 modules that is portable beyond Storybook.
-
-<Callout variant="info" icon="💡">
-  If you have stories written in the older `storiesOf()` syntax, it was removed in Storybook 8.0 and is no longer maintained. We recommend migrating your stories to CSF. See the [migration guide](../../releases/migration-guide.mdx#major-breaking-changes) for more information.
-</Callout>
+Component Story Format (CSF) is the recommended way to [write stories](../../writing-stories/index.mdx). It's an open standard based on ES6 modules that is portable beyond Storybook.
 
 In CSF, stories and component metadata are defined as ES Modules. Every component story file consists of a required [default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export) and one or more [named exports](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export).
 
 ## Default export
 
 The default export defines metadata about your component, including the `component` itself, its `title` (where it will show up in the [navigation UI story hierarchy](../../writing-stories/naming-components-and-hierarchy.mdx#sorting-stories)), [decorators](../../writing-stories/decorators.mdx), and [parameters](../../writing-stories/parameters.mdx).
+
+<If renderer="svelte">
+
+<Callout variant="info">
+
+When writing Svelte CSF stories, you use the `defineMeta` function instead of the default export to define the metadata for your component. 
+
+</Callout>
+
+</If>
 
 The `component` field is required and used by addons for automatic prop table generation and display of other component metadata. The `title` field is optional and should be unique (i.e., not re-used across files).
 
@@ -34,6 +40,16 @@ For more examples, see [writing stories](../../writing-stories/index.mdx).
 ## Named story exports
 
 With CSF, every named export in the file represents a story object by default.
+
+<If renderer="svelte">
+
+<Callout variant="info">
+
+With Svelte CSF, you use the `Story` component returned by `defineMeta` instead of a named export to define a story. The name of the story, shown in the sidebar, is defined by the `name` attribute of the Story component. Annotations, such as `args`, `decorators`, and `parameters`, are defined as attributes on the Story component.
+
+</Callout>
+
+</If>
 
 {/* prettier-ignore-start */}
 
@@ -91,7 +107,7 @@ Or even more simply:
 
 {/* prettier-ignore-end */}
 
-Not only are these versions shorter and more accessible to write than their no-args counterparts, but they are also more portable since the code doesn't depend on the actions addon specifically.
+Not only are these versions shorter and more accessible to write than their no-args counterparts, but they are also more portable since the code doesn't depend on the actions feature specifically.
 
 For more information on setting up [Docs](../../writing-docs/index.mdx) and [Actions](../../essentials/actions.mdx), see their respective documentation.
 
@@ -121,6 +137,19 @@ When the story renders in the UI, Storybook executes each step defined in the `p
   {/* prettier-ignore-end */}
 
   When Storybook loads this story, it will detect the existence of a `render` function and adjust the component rendering accordingly based on what's defined.
+</IfRenderer>
+
+<IfRenderer renderer="svelte">
+   ## Custom render functions
+
+   If you're using Svelte CSF to write your stories, you can add a custom snippet to allow you additional control over how your story renders. For example, if you were writing a story and you wanted to specify how your component should render, you could write the following:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="component-story-with-custom-render-function.md" />
+
+  {/* prettier-ignore-end */}
+  
 </IfRenderer>
 
 ## Storybook export vs. name handling

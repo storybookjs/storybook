@@ -90,6 +90,7 @@ const checkAddonExperimentalTest = async ({
     storybookVersion,
     mainConfig: mainConfig as any,
     storiesPaths: [],
+    hasCsfFactoryPreview: false,
   });
 };
 
@@ -152,7 +153,7 @@ describe('addon-experimental-test fix', () => {
 
   describe('run function', () => {
     it('should replace @storybook/experimental-addon-test in files', async () => {
-      packageManager.getModulePackageJSON.mockImplementation((packageName: string) => {
+      packageManager.getModulePackageJSON.mockImplementation(async (packageName: string) => {
         if (packageName === '@storybook/experimental-addon-test') {
           return {
             version: '8.6.0',
@@ -229,7 +230,7 @@ describe('addon-experimental-test fix', () => {
     });
 
     it('should replace @storybook/experimental-addon-test in files (dependency)', async () => {
-      packageManager.getModulePackageJSON.mockImplementation((packageName: string) => {
+      packageManager.getModulePackageJSON.mockImplementation(async (packageName: string) => {
         if (packageName === '@storybook/experimental-addon-test') {
           return {
             version: '8.6.0',

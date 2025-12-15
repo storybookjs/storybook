@@ -1,10 +1,13 @@
 {
   "name": "@storybook/angular",
-  "version": "9.1.0-alpha.10",
-  "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
+  "version": "10.2.0-alpha.6",
+  "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
-    "angular"
+    "storybook-framework",
+    "angular",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular",
   "bugs": {
@@ -20,56 +23,26 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./preset": "./preset.js",
-    "./server/framework-preset-angular-ivy": "./server/framework-preset-angular-ivy.js",
-    "./server/framework-preset-angular-cli": "./server/framework-preset-angular-cli.js",
-    "./client/config": {
-      "types": "./dist/client/config.d.ts",
-      "import": "./dist/client/config.mjs",
-      "require": "./dist/client/config.js"
-    },
-    "./client/preview-prod": {
-      "types": "./dist/client/preview-prod.d.ts",
-      "import": "./dist/client/preview-prod.mjs",
-      "require": "./dist/client/preview-prod.js"
-    },
-    "./client/docs/config": {
-      "types": "./dist/client/docs/config.d.ts",
-      "import": "./dist/client/docs/config.mjs",
-      "require": "./dist/client/docs/config.js"
-    },
+    "./builders/build-storybook": "./dist/builders/build-storybook/index.js",
+    "./builders/start-storybook": "./dist/builders/start-storybook/index.js",
+    "./client": "./dist/client/index.js",
+    "./client/config": "./dist/client/config.js",
+    "./client/docs/config": "./dist/client/docs/config.js",
+    "./client/preview-prod": "./dist/client/preview-prod.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
-      "import": "./dist/node/index.js",
-      "require": "./dist/node/index.js"
+      "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
-    "./*": "./*"
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "client/config": [
-        "dist/client/config.d.ts"
-      ],
-      "client/preview-prod": [
-        "dist/client/preview-prod.d.ts"
-      ],
-      "client/docs/config": [
-        "dist/client/docs/config.d.ts"
-      ]
-    }
+    "./preset": "./dist/preset.js",
+    "./server/framework-preset-angular-cli": "./dist/server/framework-preset-angular-cli.js",
+    "./server/framework-preset-angular-ivy": "./dist/server/framework-preset-angular-ivy.js"
   },
   "files": [
     "builders.json",
@@ -83,10 +56,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
-  },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
@@ -110,26 +79,24 @@
     "@angular/platform-browser-dynamic": "^19.1.1",
     "@storybook/core-webpack": "workspace:*",
     "@types/node": "^22.0.0",
-    "fd-package-json": "^1.2.0",
-    "find-up": "^7.0.0",
+    "empathic": "^2.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3",
     "webpack": "5",
     "zone.js": "^0.15.0"
   },
   "peerDependencies": {
-    "@angular-devkit/architect": ">=0.1800.0 < 0.2100.0",
-    "@angular-devkit/build-angular": ">=18.0.0 < 21.0.0",
-    "@angular-devkit/core": ">=18.0.0 < 21.0.0",
-    "@angular/animations": ">=18.0.0 < 21.0.0",
-    "@angular/cli": ">=18.0.0 < 21.0.0",
-    "@angular/common": ">=18.0.0 < 21.0.0",
-    "@angular/compiler": ">=18.0.0 < 21.0.0",
-    "@angular/compiler-cli": ">=18.0.0 < 21.0.0",
-    "@angular/core": ">=18.0.0 < 21.0.0",
-    "@angular/forms": ">=18.0.0 < 21.0.0",
-    "@angular/platform-browser": ">=18.0.0 < 21.0.0",
-    "@angular/platform-browser-dynamic": ">=18.0.0 < 21.0.0",
+    "@angular-devkit/architect": ">=0.1800.0 < 0.2200.0",
+    "@angular-devkit/build-angular": ">=18.0.0 < 22.0.0",
+    "@angular-devkit/core": ">=18.0.0 < 22.0.0",
+    "@angular/animations": ">=18.0.0 < 22.0.0",
+    "@angular/cli": ">=18.0.0 < 22.0.0",
+    "@angular/common": ">=18.0.0 < 22.0.0",
+    "@angular/compiler": ">=18.0.0 < 22.0.0",
+    "@angular/compiler-cli": ">=18.0.0 < 22.0.0",
+    "@angular/core": ">=18.0.0 < 22.0.0",
+    "@angular/platform-browser": ">=18.0.0 < 22.0.0",
+    "@angular/platform-browser-dynamic": ">=18.0.0 < 22.0.0",
     "rxjs": "^6.5.3 || ^7.4.0",
     "storybook": "workspace:^",
     "typescript": "^4.9.0 || ^5.0.0",
@@ -146,28 +113,9 @@
       "optional": true
     }
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
   "builders": "builders.json",
-  "bundler": {
-    "previewEntries": [
-      "./src/index.ts",
-      "./src/client/index.ts",
-      "./src/client/config.ts",
-      "./src/client/preview-prod.ts",
-      "./src/client/docs/config.ts"
-    ],
-    "nodeEntries": [
-      "./src/preset.ts",
-      "./src/server/framework-preset-angular-ivy.ts",
-      "./src/server/framework-preset-angular-cli.ts",
-      "./src/builders/start-storybook/index.ts",
-      "./src/builders/build-storybook/index.ts"
-    ]
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

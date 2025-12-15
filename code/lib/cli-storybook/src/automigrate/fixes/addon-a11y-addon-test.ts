@@ -1,14 +1,13 @@
-import { formatFileContent, getAddonNames } from 'storybook/internal/common';
+import { formatFileContent, frameworkPackages, getAddonNames } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import * as jscodeshift from 'jscodeshift';
+import jscodeshift from 'jscodeshift';
 import path from 'path';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 // Relative path import to avoid dependency to storybook/test
-import { SUPPORTED_FRAMEWORKS } from '../../../../../addons/vitest/src/constants';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
@@ -41,11 +40,11 @@ interface AddonA11yAddonTestOptions {
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   id: 'addon-a11y-addon-test',
-  link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration',
+  link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#with-the-vitest-addon',
 
   promptType: 'auto',
 
-  async check({ mainConfig, configDir }) {
+  async check({ mainConfig, configDir, hasCsfFactoryPreview }) {
     const addons = getAddonNames(mainConfig);
 
     const frameworkPackageName = getFrameworkPackageName(mainConfig);
@@ -53,7 +52,9 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     const hasA11yAddon = !!addons.find((addon) => addon.includes('@storybook/addon-a11y'));
     const hasTestAddon = !!addons.find((addon) => addon.includes('@storybook/addon-vitest'));
 
-    if (!SUPPORTED_FRAMEWORKS.find((framework) => frameworkPackageName?.includes(framework))) {
+    if (
+      !Object.keys(frameworkPackages).find((framework) => frameworkPackageName?.includes(framework))
+    ) {
       return null;
     }
 
@@ -71,15 +72,15 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
         .map((ext) => path.join(configDir, `preview${ext}`))
         .find((filePath) => existsSync(filePath)) ?? null;
 
-    let skipVitestSetupTransformation = false;
+    let skipVitestSetupTransformation = hasCsfFactoryPreview;
     let skipPreviewTransformation = false;
 
     if (vitestSetupFile && previewFile) {
       const vitestSetupSource = readFileSync(vitestSetupFile, 'utf8');
       const previewSetupSource = readFileSync(previewFile, 'utf8');
 
-      skipVitestSetupTransformation = vitestSetupSource.includes('@storybook/addon-a11y');
-      skipPreviewTransformation = !shouldPreviewFileBeTransformed(previewSetupSource);
+      skipVitestSetupTransformation ||= vitestSetupSource.includes('@storybook/addon-a11y');
+      skipPreviewTransformation ||= !shouldPreviewFileBeTransformed(previewSetupSource);
 
       if (skipVitestSetupTransformation && skipPreviewTransformation) {
         return null;
@@ -123,7 +124,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   },
 
   prompt() {
-    return 'We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed. The automigration will configure both for the new testing experience in Storybook 9';
+    return 'We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed. The automigration will configure both for the new testing experience';
   },
 
   async run({ result }) {

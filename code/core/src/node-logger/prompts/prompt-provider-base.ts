@@ -19,7 +19,7 @@ export interface BasePromptOptions {
 export interface TextPromptOptions extends BasePromptOptions {
   placeholder?: string;
   initialValue?: string;
-  validate?: (value: string) => string | Error | undefined;
+  validate?: (value: string | undefined) => string | Error | undefined;
 }
 
 export interface ConfirmPromptOptions extends BasePromptOptions {
@@ -46,6 +46,8 @@ export interface PromptOptions {
 export interface SpinnerInstance {
   start: (message?: string) => void;
   stop: (message?: string) => void;
+  cancel: (message?: string) => void;
+  error: (message?: string) => void;
   message: (text: string) => void;
 }
 
@@ -53,6 +55,11 @@ export interface TaskLogInstance {
   message: (text: string) => void;
   success: (message: string, options?: { showLog?: boolean }) => void;
   error: (message: string) => void;
+  group: (title: string) => {
+    message: (text: string, options?: any) => void;
+    success: (message: string) => void;
+    error: (message: string) => void;
+  };
 }
 
 export interface SpinnerOptions {

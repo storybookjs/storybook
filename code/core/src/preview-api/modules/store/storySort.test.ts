@@ -24,7 +24,10 @@ describe('preview.storySort', () => {
       c_b__b: { title: 'c / b', name: 'b' },
       c_b__c: { title: 'c / b', name: 'c' },
       c__c: { title: 'c', name: 'c' },
-    }).map(([id, entry]) => [id, { type: 'story', name: 'name', ...entry, id, importPath: id }])
+    }).map(([id, entry]) => [
+      id,
+      { type: 'story', subtype: 'story', name: 'name', ...entry, id, importPath: id },
+    ])
   );
 
   it('uses configure order by default', () => {

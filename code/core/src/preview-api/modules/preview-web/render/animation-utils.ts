@@ -5,13 +5,11 @@ const ANIMATION_TIMEOUT = 5000;
 export function isTestEnvironment() {
   try {
     return (
-      // @ts-expect-error this property exists in certain environments
+      // @ts-expect-error This property exists in Vitest browser mode
       !!globalThis.__vitest_browser__ ||
-      // @ts-expect-error this property exists in certain environments
-      !!globalThis.__playwright__binding__
+      !!globalThis.window?.navigator?.userAgent?.match(/StorybookTestRunner/)
     );
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (e) {
+  } catch {
     return false;
   }
 }

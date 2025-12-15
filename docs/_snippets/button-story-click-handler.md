@@ -23,7 +23,7 @@ export const Text: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { action } from 'storybook/actions';
 
 import { Button } from './Button';
@@ -37,7 +37,7 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -57,7 +57,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="Button.stories.js|jsx" renderer="solid" language="js"
 import { action } from 'storybook/actions';
 
 import { Button } from './Button';
@@ -72,7 +72,7 @@ export const Text = {
 ```
 
 ```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { action } from 'storybook/actions';
 
@@ -219,4 +219,37 @@ type Story = StoryObj;
 export const Text: Story = {
   render: () => html`<custom-button label="Hello" @click=${action('clicked')}></custom-button>`,
 };
+```
+
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { action } from 'storybook/actions';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Basic = meta.story({
+  render: () => <Button label="Hello" onClick={action('clicked')} />,
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { action } from 'storybook/actions';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  render: () => <Button label="Hello" onClick={action('clicked')} />,
+});
 ```

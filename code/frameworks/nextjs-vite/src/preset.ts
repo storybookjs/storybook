@@ -1,17 +1,23 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import { dirname, join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { getProjectRoot } from 'storybook/internal/common';
-import { IncompatiblePostCssConfigError } from 'storybook/internal/server-errors';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
-import postCssLoadConfig from 'postcss-load-config';
-import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
+import semver from 'semver';
 
+import { normalizePostCssConfig } from './find-postcss-config';
 import type { FrameworkOptions } from './types';
+import { getNextjsVersion } from './utils';
+
+const require = createRequire(import.meta.url);
+
+// the ESM output of this package is broken, so I had to force it to use the CJS version it's shipping.
+const vitePluginStorybookNextjs = require('vite-plugin-storybook-nextjs');
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -19,21 +25,30 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: dirname(
-        require.resolve(join('@storybook/builder-vite', 'package.json'))
-      ) as '@storybook/builder-vite',
+      name: fileURLToPath(import.meta.resolve('@storybook/builder-vite')),
       options: {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: dirname(require.resolve(join('@storybook/react', 'package.json'))),
+    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
-  const nextDir = dirname(require.resolve('@storybook/nextjs-vite/package.json'));
-  const result = [...entry, join(nextDir, 'dist/preview.mjs')];
-  return result;
+  const annotations = [
+    ...entry,
+    fileURLToPath(import.meta.resolve('@storybook/nextjs-vite/preview')),
+  ];
+
+  const nextjsVersion = getNextjsVersion();
+  const isNext16orNewer = semver.gte(nextjsVersion, '16.0.0');
+
+  // TODO: Remove this once we only support Next.js v16 and above
+  if (!isNext16orNewer) {
+    annotations.push(fileURLToPath(import.meta.resolve('@storybook/nextjs-vite/config/preview')));
+  }
+
+  return annotations;
 };
 
 export const optimizeViteDeps = [
@@ -46,22 +61,22 @@ export const optimizeViteDeps = [
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {
   const reactConfig = await reactViteFinal(config, options);
 
-  try {
-    const inlineOptions = config.css?.postcss;
-    const searchPath = typeof inlineOptions === 'string' ? inlineOptions : config.root;
-    await postCssLoadConfig({}, searchPath, { stopDir: getProjectRoot() });
-  } catch (e: any) {
-    if (!e.message.includes('No PostCSS Config found')) {
-      // This is a custom error that we throw when the PostCSS config is invalid
-      if (e.message.includes('Invalid PostCSS Plugin found')) {
-        throw new IncompatiblePostCssConfigError({ error: e });
-      }
-    }
+  const inlineOptions = config.css?.postcss;
+  const searchPath = typeof inlineOptions === 'string' ? inlineOptions : config.root;
+
+  if (searchPath) {
+    await normalizePostCssConfig(searchPath);
   }
 
-  const { nextConfigPath } = await options.presets.apply<FrameworkOptions>('frameworkOptions');
+  const { nextConfigPath, image = {} } =
+    await options.presets.apply<FrameworkOptions>('frameworkOptions');
 
   const nextDir = nextConfigPath ? dirname(nextConfigPath) : undefined;
+
+  const vitePluginOptions = {
+    image,
+    dir: nextDir,
+  };
 
   return {
     ...reactConfig,
@@ -69,11 +84,11 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
       ...(reactConfig?.resolve ?? {}),
       alias: {
         ...(reactConfig?.resolve?.alias ?? {}),
-        'styled-jsx': dirname(require.resolve('styled-jsx/package.json')),
-        'styled-jsx/style': require.resolve('styled-jsx/style'),
-        'styled-jsx/style.js': require.resolve('styled-jsx/style'),
+        'styled-jsx': dirname(fileURLToPath(import.meta.resolve('styled-jsx/package.json'))),
+        'styled-jsx/style': fileURLToPath(import.meta.resolve('styled-jsx/style')),
+        'styled-jsx/style.js': fileURLToPath(import.meta.resolve('styled-jsx/style')),
       },
     },
-    plugins: [...(reactConfig?.plugins ?? []), vitePluginStorybookNextjs({ dir: nextDir })],
+    plugins: [...(reactConfig?.plugins ?? []), vitePluginStorybookNextjs(vitePluginOptions)],
   };
 };

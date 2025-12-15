@@ -100,6 +100,136 @@ components/
 
 {/* prettier-ignore-end */}
 
+<If renderer="svelte">
+
+Unlike regular CSF, when using Svelte CSF, you cannot use [`args`](./args.mdx) for children. Instead, you pass children in-between the opening and closing `Story` tags and it will be passed to the component as the `children` snippet prop.
+
+```svelte title="Alert.stories.svelte"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+ 
+  import Alert from './Alert.svelte';
+ 
+  const { Story } = defineMeta({
+    component: Alert,
+  });
+</script>
+
+{/* Renders <Alert>Alert text</Alert> */}
+<Story name="Alert with children">
+  Alert text
+</Story>
+```
+
+If you want to render the children as the entire story itself, you can use the `asChild` prop of the `Story` component, which will ignore the default component rendering and render the children directly.
+
+```svelte title="Button.stories.svelte"
+<Story
+  name="Default Button in alert"
+  asChild
+/>
+  <Alert>
+    Alert text
+    <Button />
+  </Alert>
+</Story>
+```
+
+<Callout variant="warning">
+
+Note that features which require `args`, like [Controls](../essentials/controls.mdx), will not work when using `asChild`. You can customize the rendering of a story and retain the ability to use `args` by using a [custom render function](#custom-rendering).
+
+</Callout>
+
+</If>
+
+#### Custom rendering
+
+<If renderer="svelte">
+ 
+By default, stories will render the component defined in the `defineMeta` call (for Svelte CSF) or in the default export (for CSF), with the `args` passed to it.
+
+If you need to customize the rendering of your story, you can provide a snippet (for Svelte CSF) or a `render` fuction (for CSF) that accepts `args` and renders whatever you need.
+
+For example, if you want to render a `Button` inside an `Alert`:
+
+```svelte title="Button.stories.svelte"
+<Story
+  name="Primary in alert"
+  args={{
+    label: 'Button',
+    primary: true,
+  }}>
+  {#snippet template(args)}
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  {/snippet}
+</Story>
+```
+
+<Callout variant="info">
+
+Note how the template snippet or `render` function spreads `args` onto the Button component. This ensures that features like [Controls](../essentials/controls.mdx) will work as expected, allowing you to dynamically change the Button's properties in the Storybook UI.
+
+</Callout>
+
+You can re-use the same render function across stories by applying it at the meta level. For Svelte CSF, this can be done by defining the template snippet outside of the story and assigning it to the `render` property of the `defineMeta` function. For CSF, you can define a `render` function in the default export.
+
+```svelte title="Button.stories.svelte"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    render: template,
+  });
+</script>
+
+{#snippet template(args)}
+  <Alert>
+    Alert text
+    <Button {...args} />
+  </Alert>
+{/snippet}
+
+<Story name="Default in alert" args={{ label: 'Button' }} />
+
+<Story name="Primary in alert" args={{ label: 'Button', primary: true }} />
+```
+
+Whatever you define at the meta level can be overridden at the story level, so you can still customize the rendering of individual stories if needed.
+
+Finally, `render` functions and template snippets receive a second `context` argument, which contains all other details for the story, including [`parameters`](./parameters.mdx), [`globals`](../essentials/toolbars-and-globals.mdx), and more.
+
+</If>
+
+<If notRenderer="svelte">
+
+By default, stories will render the component defined in the meta (default export), with the `args` passed to it. If you need to render something else, you can provide a function to the `render` property that returns the desired output.
+
+For example, if you want to render a `Button` inside an `Alert`, you can define a custom render function like this:
+
+<CodeSnippets path="render-custom-in-story.md" />
+
+<Callout variant="info">
+
+Note how the `render` function spreads `args` onto the Button component. This ensures that features like [Controls](../essentials/controls.mdx) will work as expected, allowing you to dynamically change the Button's properties in the Storybook UI.
+
+</Callout>
+
+You can re-use the same render function across stories by applying it at the meta level:
+
+<CodeSnippets path="render-custom-in-meta.md" />
+
+Whatever you define at the meta level can be overridden at the story level, so you can still customize the rendering of individual stories if needed.
+
+Finally, `render` functions receive a second `context` argument, which contains all other details for the story, including [`parameters`](./parameters.mdx), [`globals`](../essentials/toolbars-and-globals.mdx), and more.
+
+</If>
+
 <IfRenderer renderer="react">
   #### Working with React Hooks
 
@@ -115,7 +245,7 @@ components/
 <IfRenderer renderer="solid">
   #### Working with Solid Signals
 
-  [Solid Signals](https://www.solidjs.com/docs/latest/api#basic-reactivity) are convenient helper methods to create components using a more streamlined approach. You can use them while creating your component's stories if you need them, although you should treat them as an advanced use case. We **recommend** [args](./args.mdx) as much as possible when writing your own stories. As an example, here’s a story that uses Solid Signals to change the button's state:
+  [Solid Signals](https://docs.solidjs.com/concepts/intro-to-reactivity) are convenient helper methods to create components using a more streamlined approach. You can use them while creating your component's stories if you need them, although you should treat them as an advanced use case. We **recommend** [args](./args.mdx) as much as possible when writing your own stories. As an example, here’s a story that uses Solid Signals to change the button's state:
 
   {/* prettier-ignore-start */}
 
@@ -126,7 +256,13 @@ components/
 
 ### Rename stories
 
-You can rename any particular story you need. For instance, to give it a more accurate name. Here's how you can change the name of the `Primary` story:
+By default, Storybook uses the name of the story export as the basis for the story name. However, you can customize the name of your story by adding a `name` property to the story object. This is useful when you want to provide a more descriptive or user-friendly name for your story.
+
+<If renderer="svelte">
+
+If you're using Svelte CSF, the `name` property is usually fairly descriptive and user-friendly already, so there is little need for renaming. However, the `name` is used as the basis for the export name, which must be unique within a file. In rare cases, this can lead to naming conflicts. For example, stories with the names "Primary" and "Primary!" would both be transformed to the "Primary" export name. To avoid this, you can use the `exportName` property to specify a unique export name for your story. `exportName` is also helpful to provide a more useful named export when re-using stories, e.g. as [portable stories](../api/portable-stories/portable-stories-vitest.mdx).
+
+</If>
 
 {/* prettier-ignore-start */}
 
@@ -134,8 +270,11 @@ You can rename any particular story you need. For instance, to give it a more ac
 
 {/* prettier-ignore-end */}
 
+<If notRenderer="svelte">
 
 Your story will now be shown in the sidebar with the given text.
+
+</If>
 
 {/* Maintaining a prior heading */}
 
@@ -218,7 +357,7 @@ For instance, suppose you wanted to test your Button component against a differe
 
 ![Parameters background color](../_assets/writing-stories/parameters-background-colors.png)
 
-This parameter would instruct the backgrounds addon to reconfigure itself whenever a Button story is selected. Most addons are configured via a parameter-based API and can be influenced at a [global](./parameters.mdx#global-parameters), [component](./parameters.mdx#component-parameters) and [story](./parameters.mdx#story-parameters) level.
+This parameter would instruct the backgrounds feature to reconfigure itself whenever a Button story is selected. Most features and addons are configured via a parameter-based API and can be influenced at a [global](./parameters.mdx#global-parameters), [component](./parameters.mdx#component-parameters), and [story](./parameters.mdx#story-parameters) level.
 
 ### Using decorators
 
@@ -261,7 +400,7 @@ Sometimes you may have two or more components created to work together. For inst
 
 {/* prettier-ignore-end */}
 
-In such cases, it makes sense to render a different function for each story:
+In such cases, it makes sense to [customize the rendering](#custom-rendering) to output the `List` component with different numbers of `ListItem` children.
 
 {/* prettier-ignore-start */}
 

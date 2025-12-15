@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
-import { debounce } from 'es-toolkit/compat';
+import { debounce } from 'es-toolkit/function';
 import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
@@ -16,8 +16,15 @@ import type { ServerChannel } from './get-server-channel';
 import { DEBOUNCE, useStoriesJson } from './stories-json';
 
 vi.mock('watchpack');
-vi.mock('es-toolkit/compat');
+vi.mock('es-toolkit/function', { spy: true });
 vi.mock('storybook/internal/node-logger');
+
+vi.mock('../utils/constants', () => {
+  return {
+    defaultStaticDirs: [{ from: './from', to: './to' }],
+    defaultFavicon: './favicon.svg',
+  };
+});
 
 const workingDir = join(__dirname, '__mockdata__');
 const normalizedStories = [
@@ -143,9 +150,11 @@ describe('useStoriesJson', () => {
               "type": "docs",
             },
             "a--story-one": {
+              "exportName": "StoryOne",
               "id": "a--story-one",
               "importPath": "./src/A.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -169,9 +178,11 @@ describe('useStoriesJson', () => {
               "type": "docs",
             },
             "b--story-one": {
+              "exportName": "StoryOne",
               "id": "b--story-one",
               "importPath": "./src/B.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -182,9 +193,11 @@ describe('useStoriesJson', () => {
             },
             "componentpath-extension--story-one": {
               "componentPath": "./src/componentPath/component.js",
+              "exportName": "StoryOne",
               "id": "componentpath-extension--story-one",
               "importPath": "./src/componentPath/extension.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -194,9 +207,11 @@ describe('useStoriesJson', () => {
             },
             "componentpath-noextension--story-one": {
               "componentPath": "./src/componentPath/component.js",
+              "exportName": "StoryOne",
               "id": "componentpath-noextension--story-one",
               "importPath": "./src/componentPath/noExtension.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -206,9 +221,11 @@ describe('useStoriesJson', () => {
             },
             "componentpath-package--story-one": {
               "componentPath": "component-package",
+              "exportName": "StoryOne",
               "id": "componentpath-package--story-one",
               "importPath": "./src/componentPath/package.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -230,9 +247,11 @@ describe('useStoriesJson', () => {
               "type": "docs",
             },
             "d--story-one": {
+              "exportName": "StoryOne",
               "id": "d--story-one",
               "importPath": "./src/D.stories.jsx",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -296,9 +315,11 @@ describe('useStoriesJson', () => {
               "type": "docs",
             },
             "example-button--story-one": {
+              "exportName": "StoryOne",
               "id": "example-button--story-one",
               "importPath": "./src/Button.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -308,9 +329,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-f--story-one": {
+              "exportName": "StoryOne",
               "id": "first-nested-deeply-f--story-one",
               "importPath": "./src/first-nested/deeply/F.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -319,9 +342,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-features--with-csf-1": {
+              "exportName": "WithCSF1",
               "id": "first-nested-deeply-features--with-csf-1",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With CSF 1",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -330,9 +355,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-features--with-play": {
+              "exportName": "WithPlay",
               "id": "first-nested-deeply-features--with-play",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Play",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -342,9 +369,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-features--with-render": {
+              "exportName": "WithRender",
               "id": "first-nested-deeply-features--with-render",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Render",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -353,9 +382,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-features--with-story-fn": {
+              "exportName": "WithStoryFn",
               "id": "first-nested-deeply-features--with-story-fn",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Story Fn",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -364,9 +395,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-features--with-test": {
+              "exportName": "WithTest",
               "id": "first-nested-deeply-features--with-test",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Test",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -389,9 +422,11 @@ describe('useStoriesJson', () => {
               "type": "docs",
             },
             "h--story-one": {
+              "exportName": "StoryOne",
               "id": "h--story-one",
               "importPath": "./src/H.stories.mjs",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -401,9 +436,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "nested-button--story-one": {
+              "exportName": "StoryOne",
               "id": "nested-button--story-one",
               "importPath": "./src/nested/Button.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -413,9 +450,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "second-nested-g--story-one": {
+              "exportName": "StoryOne",
               "id": "second-nested-g--story-one",
               "importPath": "./src/second-nested/G.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -536,7 +575,8 @@ describe('useStoriesJson', () => {
 
     it('debounces invalidation events', async () => {
       vi.mocked(debounce).mockImplementation(
-        (await vi.importActual<typeof import('es-toolkit/compat')>('es-toolkit/compat')).debounce
+        (await vi.importActual<typeof import('es-toolkit/function')>('es-toolkit/function'))
+          .debounce
       );
 
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;

@@ -131,18 +131,11 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
     dryRun,
     packageManager,
     configDir,
-    storybookVersion,
     storiesPaths,
     mainConfigPath,
     previewConfigPath,
   }) {
-    const {
-      hasEssentials,
-      hasDocsDisabled,
-      hasDocsAddon,
-      additionalAddonsToRemove,
-      essentialsOptions,
-    } = result;
+    const { hasEssentials, hasDocsDisabled, additionalAddonsToRemove, essentialsOptions } = result;
 
     if (!hasEssentials && additionalAddonsToRemove.length === 0) {
       return;
@@ -183,7 +176,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       }
 
       if (essentialsOptions) {
-        updateMainConfig(
+        await updateMainConfig(
           { mainConfigPath, dryRun: !!dryRun },
           moveEssentialOptions(dryRun, essentialsOptions)
         );

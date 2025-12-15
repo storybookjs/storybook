@@ -57,6 +57,8 @@ export function serializeError(error: any) {
 }
 
 export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer> {
+  public readonly renderId: number;
+
   public type: RenderType = 'story';
 
   public story?: PreparedStory<TRenderer>;
@@ -88,6 +90,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     story?: PreparedStory<TRenderer>
   ) {
     this.abortController = new AbortController();
+    this.renderId = Date.now();
 
     // Allow short-circuiting preparing if we happen to already
     // have the story (this is used by docs mode)
@@ -101,7 +104,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
   private async runPhase(signal: AbortSignal, phase: RenderPhase, phaseFn?: () => Promise<void>) {
     this.phase = phase;
-    this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: this.phase, storyId: this.id });
+    this.channel.emit(STORY_RENDER_PHASE_CHANGED, {
+      newPhase: this.phase,
+      renderId: this.renderId,
+      storyId: this.id,
+    });
     if (phaseFn) {
       await phaseFn();
       this.checkIfAborted(signal);
@@ -109,12 +116,15 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   private checkIfAborted(signal: AbortSignal): boolean {
-    if (signal.aborted) {
+    if (signal.aborted && !['finished', 'aborted', 'errored'].includes(this.phase as RenderPhase)) {
       this.phase = 'aborted';
-      this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: this.phase, storyId: this.id });
-      return true;
+      this.channel.emit(STORY_RENDER_PHASE_CHANGED, {
+        newPhase: this.phase,
+        renderId: this.renderId,
+        storyId: this.id,
+      });
     }
-    return false;
+    return signal.aborted;
   }
 
   async prepare() {

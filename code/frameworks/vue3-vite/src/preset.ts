@@ -1,5 +1,3 @@
-import { dirname, join } from 'node:path';
-
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
@@ -9,12 +7,9 @@ import { vueDocgen } from './plugins/vue-docgen';
 import { templateCompilation } from './plugins/vue-template';
 import type { FrameworkOptions, StorybookConfig, VueDocgenPlugin } from './types';
 
-const getAbsolutePath = <I extends string>(input: I): I =>
-  dirname(require.resolve(join(input, 'package.json'))) as any;
-
 export const core: PresetProperty<'core'> = {
-  builder: getAbsolutePath('@storybook/builder-vite'),
-  renderer: getAbsolutePath('@storybook/vue3'),
+  builder: import.meta.resolve('@storybook/builder-vite'),
+  renderer: import.meta.resolve('@storybook/vue3/preset'),
 };
 
 export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
@@ -27,10 +22,12 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   const docgen = resolveDocgenOptions(frameworkOptions.docgen);
 
   // add docgen plugin depending on framework option
-  if (docgen.plugin === 'vue-component-meta') {
-    plugins.push(await vueComponentMeta(docgen.tsconfig));
-  } else {
-    plugins.push(await vueDocgen());
+  if (docgen !== false) {
+    if (docgen.plugin === 'vue-component-meta') {
+      plugins.push(await vueComponentMeta(docgen.tsconfig));
+    } else {
+      plugins.push(await vueDocgen());
+    }
   }
 
   const { mergeConfig } = await import('vite');
@@ -42,13 +39,18 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
 /** Resolves the docgen framework option. */
 const resolveDocgenOptions = (
   docgen?: FrameworkOptions['docgen']
-): { plugin: VueDocgenPlugin; tsconfig?: string } => {
-  if (!docgen) {
+): false | { plugin: VueDocgenPlugin; tsconfig?: string } => {
+  if (docgen === false) {
+    return false;
+  }
+
+  if (docgen === undefined || docgen === true) {
     return { plugin: 'vue-docgen-api' };
   }
 
   if (typeof docgen === 'string') {
     return { plugin: docgen };
   }
+
   return docgen;
 };

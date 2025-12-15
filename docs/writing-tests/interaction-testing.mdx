@@ -239,6 +239,24 @@ It is _not_ necessary to restore `fn()` mocks, as Storybook will already do that
 
 </Callout>
 
+### Make assertions after interactions
+
+Sometimes, you may need to make assertions or run code after the component has been rendered and interacted with.
+
+#### `afterEach`
+
+`afterEach` runs after the story is rendered and the play function has completed. It can be used at the project level in the preview file (`.storybook/preview.js|ts`), at the component level in the component meta, or at the story level in the story definition. This is useful for making assertions after the component has been rendered and interacted with, such as running checks on the final rendered output or logging information.
+
+Like the `play` function, `afterEach` receives the `context` object, which contains the `args`, `canvas`, and other properties related to the story. You can use this to make assertions or run code after the story has been rendered.
+
+<CodeSnippets path="after-each-in-meta.md" />
+
+<Callout variant="info">
+
+You should not use `afterEach` to reset state in your tests. Because it runs after the story, resetting state here could prevent you from seeing the correct end state of your story. Instead, use the [`beforeEach`'s returned cleanup function](#beforeeach) to reset state, which will run only when navigating between stories to preserve the end state.
+
+</Callout>
+
 ### Group interactions with the step function
 
 For complex flows, it can be worthwhile to group sets of related interactions together using the step function. This allows you to provide a custom label that describes a set of interactions:
@@ -258,12 +276,12 @@ You can then import the mocked module (which has all of the helpful methods of a
 
 ## Running interaction tests
 
-If you're using the [Vitest addon](./integrations/vitest-addon.mdx), you can run your interaction tests in these ways:
+If you're using the [Vitest addon](./integrations/vitest-addon/index.mdx), you can run your interaction tests in these ways:
 
-- [In the Storybook UI](./integrations/vitest-addon.mdx#storybook-ui)
-- [In your editor](./integrations/vitest-addon.mdx#editor-extension)
-- [Via the CLI](./integrations/vitest-addon.mdx#cli)
-- [In CI environments](./integrations/vitest-addon.mdx#in-ci)
+- [In the Storybook UI](./integrations/vitest-addon/index.mdx#storybook-ui)
+- [In your editor](./integrations/vitest-addon/index.mdx#editor-extension)
+- [Via the CLI](./integrations/vitest-addon/index.mdx#cli)
+- [In CI environments](./integrations/vitest-addon/index.mdx#in-ci)
 
 In the Storybook UI, you can run interaction tests by clicking the **Run component tests** button in the expanded testing widget in the sidebar or by opening the context menu (three dots) on a story or folder and selecting **Run component tests**.
 
@@ -305,7 +323,7 @@ Interaction tests integrate Vitest and Testing Library into Storybook. The bigge
 
 **More testing resources**
 
-* [Vitest addon](./integrations/vitest-addon.mdx) for running tests in Storybook
+* [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
 * [Accessibility testing](./accessibility-testing.mdx) for accessibility
 * [Visual testing](./visual-testing.mdx) for appearance
 * [Snapshot testing](./snapshot-testing.mdx) for rendering errors and warnings

@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { transparentize } from 'polished';
+import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { type Call, type CallStates, type ControlStates } from '../../instrumenter/types';
@@ -10,8 +11,8 @@ import { DetachedDebuggerMessage } from './DetachedDebuggerMessage';
 import { Empty } from './EmptyState';
 import { Interaction } from './Interaction';
 import type { PlayStatus } from './StatusBadge';
-import { Subnav } from './Subnav';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
+import { Toolbar } from './Toolbar';
 
 export interface Controls {
   start: (args?: any) => void;
@@ -29,7 +30,7 @@ interface InteractionsPanelProps {
   controlStates: ControlStates;
   interactions: (Call & {
     status?: CallStates;
-    childCallIds: Call['id'][];
+    childCallIds?: Call['id'][];
     isHidden: boolean;
     isCollapsed: boolean;
     toggleCollapsed: () => void;
@@ -38,13 +39,15 @@ interface InteractionsPanelProps {
   hasException?: boolean;
   caughtException?: Error;
   unhandledErrors?: SerializedError[];
-  isPlaying?: boolean;
   pausedAt?: Call['id'];
   calls: Map<string, any>;
   endRef?: React.Ref<HTMLDivElement>;
   onScrollToEnd?: () => void;
   hasResultMismatch?: boolean;
   browserTestStatus?: CallStates;
+  importPath?: string;
+  canOpenInEditor?: boolean;
+  api: API;
 }
 
 const Container = styled.div(({ theme }) => ({
@@ -100,12 +103,14 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     hasException,
     caughtException,
     unhandledErrors,
-    isPlaying,
     pausedAt,
     onScrollToEnd,
     endRef,
     hasResultMismatch,
     browserTestStatus,
+    importPath,
+    canOpenInEditor,
+    api,
   }) {
     const filter = useAnsiToHtmlFilter();
     const hasRealInteractions = interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID);
@@ -116,15 +121,16 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
         {controlStates.detached && (hasRealInteractions || hasException) && (
           <DetachedDebuggerMessage storyUrl={storyUrl} />
         )}
-        {(interactions.length > 0 || hasException) && (
-          <Subnav
-            controls={controls}
-            controlStates={controlStates}
-            status={status}
-            storyFileName={fileName}
-            onScrollToEnd={onScrollToEnd}
-          />
-        )}
+        <Toolbar
+          controls={controls}
+          controlStates={controlStates}
+          status={status}
+          storyFileName={fileName}
+          onScrollToEnd={onScrollToEnd}
+          importPath={importPath}
+          canOpenInEditor={canOpenInEditor}
+          api={api}
+        />
         <div aria-label="Interactions list">
           {interactions.map((call) => (
             <Interaction
@@ -173,13 +179,13 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           </CaughtException>
         )}
         <div ref={endRef} />
-        {!isPlaying && !caughtException && !hasRealInteractions && <Empty />}
+        {status === 'completed' && !caughtException && !hasRealInteractions && <Empty />}
       </Container>
     );
   }
 );
 
-interface SerializedError {
+export interface SerializedError {
   name: string;
   stack?: string;
   message: string;

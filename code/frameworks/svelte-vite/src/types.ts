@@ -10,6 +10,14 @@ type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
 export type FrameworkOptions = {
   builder?: BuilderOptions;
+  /**
+   * Enable or disable automatic documentation generation for component properties, events, and
+   * slots. When disabled, Storybook will skip the docgen processing step during build, which can
+   * improve build performance.
+   *
+   * @default true
+   */
+  docgen?: boolean;
 };
 
 type StorybookConfigFramework = {

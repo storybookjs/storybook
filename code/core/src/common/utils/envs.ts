@@ -1,15 +1,14 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - Needed for Angular sandbox running without --no-link option. Do NOT convert to @ts-expect-error!
-import { getEnvironment } from 'lazy-universal-dotenv';
-
 import { nodePathsToArray } from './paths';
 
 // Load environment variables starts with STORYBOOK_ to the client side.
 
-export function loadEnvs(options: { production?: boolean } = {}): {
+export async function loadEnvs(options: { production?: boolean } = {}): Promise<{
   stringified: Record<string, string>;
   raw: Record<string, string>;
-} {
+}> {
+  const { getEnvironment } = await import('lazy-universal-dotenv');
   const defaultNodeEnv = options.production ? 'production' : 'development';
 
   const env: Record<string, string | undefined> = {
@@ -67,3 +66,26 @@ export const stringifyProcessEnvs = (raw: Record<string, string>): Record<string
   // envs['process.env'] = JSON.stringify(raw);
   return envs;
 };
+
+export const optionalEnvToBoolean = (input: string | undefined): boolean | undefined => {
+  if (input === undefined) {
+    return undefined;
+  }
+  if (input.toUpperCase() === 'FALSE' || input === '0') {
+    return false;
+  }
+  if (input.toUpperCase() === 'TRUE' || input === '1') {
+    return true;
+  }
+  return Boolean(input);
+};
+
+/**
+ * Consistently determine if we are in a CI environment
+ *
+ * Doing Boolean(process.env.CI) or !process.env.CI is not enough, because users might set CI=false
+ * or CI=0, which would be truthy, and thus return true in those cases.
+ */
+export function isCI(): boolean | undefined {
+  return optionalEnvToBoolean(process.env.CI);
+}

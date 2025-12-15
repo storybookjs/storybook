@@ -1,11 +1,12 @@
-import { join } from 'node:path';
-
 import {
   CouldNotEvaluateFrameworkError,
   InvalidFrameworkNameError,
   MissingFrameworkFieldError,
 } from 'storybook/internal/server-errors';
 
+import { resolveModulePath } from 'exsolve';
+
+import { extractFrameworkPackageName } from '..';
 import { frameworkPackages } from './get-storybook-info';
 
 const renderers = ['html', 'preact', 'react', 'server', 'svelte', 'vue', 'vue3', 'web-components'];
@@ -27,13 +28,17 @@ export function validateFrameworkName(
   }
 
   // If we know about the framework, we don't need to validate it
-  if (Object.keys(frameworkPackages).includes(frameworkName)) {
+  const normalizedFrameworkName = extractFrameworkPackageName(frameworkName);
+  if (Object.keys(frameworkPackages).includes(normalizedFrameworkName)) {
     return;
   }
 
   // If it's not a known framework, we need to validate that it's a valid package at least
   try {
-    require.resolve(join(frameworkName, 'preset'));
+    resolveModulePath(`${frameworkName}/preset`, {
+      extensions: ['.mjs', '.js', '.cjs'],
+      conditions: ['node', 'import', 'require'],
+    });
   } catch (err) {
     throw new CouldNotEvaluateFrameworkError({ frameworkName });
   }

@@ -23,6 +23,21 @@ const ignoreList = [
     ),
   (error: any) => error.message.includes('Lit is in dev mode. Not recommended for production!'),
   (error: any) => error.message.includes('error: `DialogContent` requires a `DialogTitle`'),
+  (error: any) =>
+    error.message.includes(
+      "importMetaResolve from within Storybook is being used in a Vitest test, but it shouldn't be. Please report this at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml"
+    ),
+  (error: any) =>
+    error.message.includes('<Pressable> child must forward its ref to a DOM element.'),
+  (error: any) =>
+    error.message.includes('<Focusable> child must forward its ref to a DOM element.'),
+  (error: any) => error.message.includes('Please ensure the tabIndex prop is passed through.'),
+  // Vitest only warns about this if the import comes from a file outside of `node_modules`.
+  // This only occurs locally for us and is safe to ignore.
+  // It will stop once we start importing from `vitest/browser` instead (not a Vitest 3 compatible change).
+  // TODO: can be removed in SB11 (when/if we remove Vitest 3 support)
+  (error: any) =>
+    error.message.includes('tries to load a deprecated "@vitest/browser/context" module.'),
 ];
 
 const throwMessage = (type: any, message: any) => {
@@ -34,6 +49,8 @@ const throwMessage = (type: any, message: any) => {
 };
 const throwWarning = (message: any) => throwMessage('warn: ', message);
 const throwError = (message: any) => throwMessage('error: ', message);
+
+globalThis.FEATURES ??= {};
 
 vi.spyOn(console, 'warn').mockImplementation(throwWarning);
 vi.spyOn(console, 'error').mockImplementation(throwError);
@@ -84,10 +101,22 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
       info: vi.fn(),
       trace: vi.fn(),
       debug: vi.fn(),
+      box: vi.fn(),
+      verbose: vi.fn(),
       logBox: vi.fn(),
       intro: vi.fn(),
       outro: vi.fn(),
       step: vi.fn(),
     },
+  };
+});
+
+vi.mock('./core/src/shared/utils/module.ts', async (importOriginal) => {
+  return {
+    ...(await importOriginal()),
+    resolvePackageDir: vi.fn().mockReturnValue('/mocked/package/dir'),
+    importModule: vi.fn().mockResolvedValue({
+      mocked: true,
+    }),
   };
 });

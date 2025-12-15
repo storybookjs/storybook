@@ -1,32 +1,29 @@
-// eslint-disable-next-line depend/ban-dependencies
-import { execa } from 'execa';
+import { JsPackageManagerFactory } from 'storybook/internal/common';
 
 import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 
-const $ = execa({
-  preferLocal: true,
-  stdio: 'inherit',
-  // we stream the stderr to the console
-  reject: false,
-});
-
 export default async function postinstall(options: PostinstallOptions) {
-  const command = ['storybook', 'automigrate', 'addon-a11y-addon-test'];
+  const args = ['storybook', 'automigrate', 'addon-a11y-addon-test'];
 
-  command.push('--loglevel', 'silent');
-  command.push('--skip-doctor');
+  args.push('--loglevel', 'silent');
+  args.push('--skip-doctor');
 
   if (options.yes) {
-    command.push('--yes');
+    args.push('--yes');
   }
 
   if (options.packageManager) {
-    command.push('--package-manager', options.packageManager);
+    args.push('--package-manager', options.packageManager);
   }
 
   if (options.configDir) {
-    command.push('--config-dir', options.configDir);
+    args.push('--config-dir', options.configDir);
   }
 
-  await $`${command.join(' ')}`;
+  const jsPackageManager = JsPackageManagerFactory.getPackageManager({
+    force: options.packageManager,
+    configDir: options.configDir,
+  });
+
+  await jsPackageManager.runPackageCommand({ args });
 }

@@ -1,12 +1,11 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
+import { optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
-  findConfigFile,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
@@ -24,22 +23,23 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
+import { isAbsolute, join } from 'pathe';
+import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import { resolvePackageDir } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
-import { defaultStaticDirs } from '../utils/constants';
+import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
+import { initPreviewInitializedChannel } from '../server-channel/preview-initialized-channel';
+import { initializeChecklist } from '../utils/checklist';
+import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
-
-const defaultFavicon = join(
-  dirname(require.resolve('storybook/internal/package.json')),
-  '/assets/browser/favicon.svg'
-);
 
 export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = []) => [
   ...defaultStaticDirs,
@@ -53,6 +53,7 @@ export const favicon = async (
   if (value) {
     return value;
   }
+
   const staticDirsValue = await options.presets.apply('staticDirs');
 
   const statics = staticDirsValue
@@ -143,7 +144,8 @@ export const previewHead = async (base: any, { configDir, presets }: Options) =>
 };
 
 export const env = async () => {
-  return loadEnvs({ production: true }).raw;
+  const { raw } = await loadEnvs({ production: true });
+  return raw;
 };
 
 export const previewBody = async (base: any, { configDir, presets }: Options) => {
@@ -163,22 +165,6 @@ export const typescript = () => ({
     savePropValueAsString: true,
   },
 });
-
-const optionalEnvToBoolean = (input: string | undefined): boolean | undefined => {
-  if (input === undefined) {
-    return undefined;
-  }
-  if (input.toUpperCase() === 'FALSE') {
-    return false;
-  }
-  if (input.toUpperCase() === 'TRUE') {
-    return true;
-  }
-  if (typeof input === 'string') {
-    return true;
-  }
-  return undefined;
-};
 
 /** This API is used by third-parties to access certain APIs in a Node environment */
 export const experimental_serverAPI = (extension: Record<string, Function>, options: Options) => {
@@ -266,11 +252,14 @@ export const experimental_serverChannel = async (
 ) => {
   const coreOptions = await options.presets.apply('core');
 
+  initializeChecklist();
   initializeWhatsNew(channel, options, coreOptions);
   initializeSaveStory(channel, options, coreOptions);
 
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
+  initOpenInEditorChannel(channel, options, coreOptions);
+  initPreviewInitializedChannel(channel, options, coreOptions);
 
   return channel;
 };
@@ -285,100 +274,17 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: dirname(require.resolve('react/package.json')),
-      reactDom: dirname(require.resolve('react-dom/package.json')),
+      react: resolvePackageDir('react'),
+      reactDom: resolvePackageDir('react-dom'),
     };
   } catch (e) {
     return existing;
   }
 };
 
-/** Set up `dev-only`, `docs-only`, `test-only` tags out of the box */
-export const tags = async (existing: any) => {
-  return {
-    ...existing,
-    'dev-only': { excludeFromDocsStories: true },
-    'docs-only': { excludeFromSidebar: true },
-    'test-only': { excludeFromSidebar: true, excludeFromDocsStories: true },
-  };
-};
-
 export const managerEntries = async (existing: any) => {
   return [
-    join(
-      dirname(require.resolve('storybook/internal/package.json')),
-      'dist/core-server/presets/common-manager.js'
-    ),
+    pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
   ];
-};
-
-export const viteFinal = async (
-  existing: import('vite').UserConfig,
-  options: Options
-): Promise<import('vite').UserConfig> => {
-  const previewConfigPath = findConfigFile('preview', options.configDir);
-
-  // If there's no preview file, there's nothing to mock.
-  if (!previewConfigPath) {
-    return existing;
-  }
-
-  const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
-  const { viteMockPlugin } = await import('./vitePlugins/vite-mock/plugin');
-  const coreOptions = await options.presets.apply('core');
-
-  return {
-    ...existing,
-    plugins: [
-      ...(existing.plugins ?? []),
-      ...(previewConfigPath
-        ? [
-            viteInjectMockerRuntime({ previewConfigPath }),
-            viteMockPlugin({ previewConfigPath, coreOptions, configDir: options.configDir }),
-          ]
-        : []),
-    ],
-  };
-};
-
-export const webpackFinal = async (
-  config: import('webpack').Configuration,
-  options: Options
-): Promise<import('webpack').Configuration> => {
-  const previewConfigPath = findConfigFile('preview', options.configDir);
-
-  // If there's no preview file, there's nothing to mock.
-  if (!previewConfigPath) {
-    return config;
-  }
-
-  const { WebpackMockPlugin } = await import('./webpack/plugins/webpack-mock-plugin');
-  const { WebpackInjectMockerRuntimePlugin } = await import(
-    './webpack/plugins/webpack-inject-mocker-runtime-plugin'
-  );
-
-  config.plugins = config.plugins || [];
-
-  // 1. Add the loader to normalize sb.mock(import(...)) calls.
-  config.module!.rules!.push({
-    test: /preview\.(t|j)sx?$/,
-    use: [
-      {
-        loader: require.resolve(
-          'storybook/internal/core-server/presets/webpack/loaders/storybook-mock-transform-loader'
-        ),
-      },
-    ],
-  });
-
-  // 2. Add the plugin to handle module replacement based on sb.mock() calls.
-  // This plugin scans the preview file and sets up rules to swap modules.
-  config.plugins.push(new WebpackMockPlugin({ previewConfigPath }));
-
-  // 3. Add the plugin to inject the mocker runtime script into the HTML.
-  // This ensures the `sb` object is available before any other code runs.
-  config.plugins.push(new WebpackInjectMockerRuntimePlugin());
-
-  return config;
 };

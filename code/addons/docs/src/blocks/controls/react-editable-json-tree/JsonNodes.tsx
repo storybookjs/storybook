@@ -252,9 +252,10 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     };
   }
 
-  handleAddValueAdd({ key, newValue }: any) {
+  handleAddValueAdd({ newValue }: any) {
     const { data, keyPath = [], nextDeep: deep } = this.state;
     const { beforeAddAction, logger } = this.props;
+    const key = data.length;
 
     (beforeAddAction || Promise.resolve.bind(Promise))(key, keyPath, deep, newValue)
       .then(() => {
@@ -335,7 +336,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: minus,
-        'aria-label': `remove the array '${name}'`,
+        'aria-label': `remove the array '${String(name)}'`,
       });
 
     return (
@@ -379,7 +380,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
         onClick: this.handleAddMode,
         className: 'rejt-plus-menu',
         style: plus,
-        'aria-label': `add a new item to the '${name}' array`,
+        'aria-label': `add a new item to the '${String(name)}' array`,
       });
     const removeItemButton =
       minusMenuElement &&
@@ -387,7 +388,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: minus,
-        'aria-label': `remove the array '${name}'`,
+        'aria-label': `remove the array '${String(name)}'`,
       });
 
     const onlyValue = true;
@@ -670,8 +671,8 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
           onClick: handleRemove,
           className: 'rejt-minus-menu',
           style: style.minus,
-          'aria-label': `remove the function '${name}'${
-            parentPropertyName ? ` from '${parentPropertyName}'` : ''
+          'aria-label': `remove the function '${String(name)}'${
+            String(parentPropertyName) ? ` from '${String(parentPropertyName)}'` : ''
           }`,
         });
       minusElement = resultOnlyResult ? null : minusMenuLayout;
@@ -1222,7 +1223,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: minus,
-        'aria-label': `remove the object '${name}'`,
+        'aria-label': `remove the object '${String(name)}'`,
       });
 
     return (
@@ -1268,7 +1269,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         onClick: this.handleAddMode,
         className: 'rejt-plus-menu',
         style: plus,
-        'aria-label': `add a new property to the object '${name}'`,
+        'aria-label': `add a new property to the object '${String(name)}'`,
       });
     const removeItemButton =
       minusMenuElement &&
@@ -1276,7 +1277,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: minus,
-        'aria-label': `remove the object '${name}'`,
+        'aria-label': `remove the object '${String(name)}'`,
       });
 
     const list = keyList.map((key) => (
@@ -1540,8 +1541,8 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: style.minus,
-        'aria-label': `remove the property '${name}' with value '${originalValue}'${
-          parentPropertyName ? ` from '${parentPropertyName}'` : ''
+        'aria-label': `remove the property '${String(name)}' with value '${String(originalValue)}'${
+          String(parentPropertyName) ? ` from '${String(parentPropertyName)}'` : ''
         }`,
       });
 

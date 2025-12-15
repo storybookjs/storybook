@@ -3,13 +3,11 @@ import {
   GoogleFontsLoadingError,
 } from 'storybook/internal/server-errors';
 
-import { fetchCSSFromGoogleFonts } from 'next/dist/compiled/@next/font/dist/google/fetch-css-from-google-fonts';
-import { getFontAxes } from 'next/dist/compiled/@next/font/dist/google/get-font-axes';
-import { getGoogleFontsUrl } from 'next/dist/compiled/@next/font/dist/google/get-google-fonts-url';
-import { validateGoogleFontFunctionCall } from 'next/dist/compiled/@next/font/dist/google/validate-google-font-function-call';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-import loaderUtils from 'next/dist/compiled/loader-utils3';
+import { fetchCSSFromGoogleFonts } from 'next/dist/compiled/@next/font/dist/google/fetch-css-from-google-fonts.js';
+import { getFontAxes } from 'next/dist/compiled/@next/font/dist/google/get-font-axes.js';
+import { getGoogleFontsUrl } from 'next/dist/compiled/@next/font/dist/google/get-google-fonts-url.js';
+import { validateGoogleFontFunctionCall } from 'next/dist/compiled/@next/font/dist/google/validate-google-font-function-call.js';
+import loaderUtils from 'next/dist/compiled/loader-utils3/index.js';
 
 import type { LoaderOptions } from '../types';
 

@@ -1,6 +1,4 @@
 import { S_BAR } from '@clack/prompts';
-// eslint-disable-next-line depend/ban-dependencies
-import { execaSync } from 'execa';
 import { cyan, dim, reset } from 'picocolors';
 import wrapAnsi from 'wrap-ansi';
 
@@ -32,7 +30,7 @@ function getVisibleLength(str: string): number {
 }
 
 function getEnvFromTerminal(key: string): string {
-  return execaSync('echo', [`$${key}`], { shell: true }).stdout.trim();
+  return (process.env[key] || '').trim();
 }
 
 /**
@@ -62,8 +60,8 @@ function supportsHyperlinks(): boolean {
         // Most other modern terminals support hyperlinks
         return true;
     }
-  } catch (error) {
-    // If we can't execute shell commands, fall back to conservative default
+  } catch {
+    // If we can't access environment variables, fall back to conservative default
     return false;
   }
 }
@@ -218,7 +216,13 @@ export { getTerminalWidth, supportsHyperlinks };
  * Specialized wrapper for hint text that adds stroke characters (│) to continuation lines to
  * maintain visual consistency with clack's multiselect prompts
  */
-export function wrapTextForClackHint(text: string, width?: number, label?: string): string {
+export function wrapTextForClackHint(
+  text: string,
+  width?: number,
+  label?: string,
+  // Total chars before hint text starts: "│  " + "◼ "
+  _indentSpaces = 3 + 1
+): string {
   const terminalWidth = width || getTerminalWidth();
 
   // Calculate the space taken by the label
@@ -235,7 +239,7 @@ export function wrapTextForClackHint(text: string, width?: number, label?: strin
 
   // For continuation lines, we only need to account for the indentation
   // Format: "│    continuation text..."
-  const indentSpaces = 3 + 1; // Total chars before hint text starts: "│  " + "◼ "
+  const indentSpaces = _indentSpaces;
   const continuationLineWidth = getOptimalWidth(Math.max(terminalWidth - indentSpaces, 30));
 
   // First, try wrapping with the continuation line width for optimal wrapping
@@ -288,7 +292,7 @@ export function wrapTextForClackHint(text: string, width?: number, label?: strin
     }
 
     // Use reset + cyan to counteract clack's dimming effect on the vertical line
-    const indentation = reset(cyan(S_BAR)) + ' '.repeat(indentSpaces);
+    const indentation = indentSpaces > 0 ? reset(cyan(S_BAR)) + ' '.repeat(indentSpaces) : '';
 
     // Add proper indentation to all lines except the first one
     return finalLines

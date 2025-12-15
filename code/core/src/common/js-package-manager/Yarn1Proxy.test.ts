@@ -4,8 +4,38 @@ import { prompt } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-import { JsPackageManager } from './JsPackageManager';
+import { executeCommand } from '../utils/command';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import { Yarn1Proxy } from './Yarn1Proxy';
+
+vi.mock('storybook/internal/node-logger', () => ({
+  prompt: {
+    executeTaskWithSpinner: vi.fn(),
+    getPreferredStdio: vi.fn(() => 'inherit'),
+  },
+  logger: {
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+vi.mock(import('../utils/command'), { spy: true });
+const mockedExecuteCommand = vi.mocked(executeCommand);
+
+vi.mock('node:process', async (importOriginal) => {
+  const original: any = await importOriginal();
+  return {
+    ...original,
+    default: {
+      ...original.default,
+      env: {
+        ...original.default.env,
+        CI: false,
+      },
+    },
+  };
+});
 
 describe('Yarn 1 Proxy', () => {
   let yarn1Proxy: Yarn1Proxy;
@@ -17,18 +47,18 @@ describe('Yarn 1 Proxy', () => {
   });
 
   it('type should be yarn1', () => {
-    expect(yarn1Proxy.type).toEqual('yarn1');
+    expect(yarn1Proxy.type).toEqual(PackageManagerName.YARN1);
   });
 
   describe('installDependencies', () => {
     it('should run `yarn`', async () => {
       // sort of un-mock part of the function so executeCommand (also mocked) is called
-      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn: any) => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
       });
-      const executeCommandSpy = vi
-        .spyOn(yarn1Proxy, 'executeCommand')
-        .mockReturnValue(Promise.resolve({ stdout: '' }) as any);
+      const executeCommandSpy = mockedExecuteCommand.mockReturnValue(
+        Promise.resolve({ stdout: '' }) as any
+      );
 
       await yarn1Proxy.installDependencies();
 
@@ -43,16 +73,16 @@ describe('Yarn 1 Proxy', () => {
 
   describe('runScript', () => {
     it('should execute script `yarn compodoc -- -e json -d .`', () => {
-      const executeCommandSpy = vi
-        .spyOn(yarn1Proxy, 'executeCommand')
-        .mockReturnValue(Promise.resolve({ stdout: '7.1.0' }) as any);
+      const executeCommandSpy = mockedExecuteCommand.mockReturnValue(
+        Promise.resolve({ stdout: '7.1.0' }) as any
+      );
 
-      yarn1Proxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
+      yarn1Proxy.runPackageCommand({ args: ['compodoc', '-e', 'json', '-d', '.'] });
 
       expect(executeCommandSpy).toHaveBeenLastCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['exec', 'compodoc', '-e', 'json', '-d', '.'],
+          args: ['exec', 'compodoc', '--', '-e', 'json', '-d', '.'],
         })
       );
     });
@@ -60,9 +90,9 @@ describe('Yarn 1 Proxy', () => {
 
   describe('addDependencies', () => {
     it('with devDep it should run `yarn install -D --ignore-workspace-root-check storybook`', async () => {
-      const executeCommandSpy = vi
-        .spyOn(yarn1Proxy, 'executeCommand')
-        .mockReturnValue(Promise.resolve({ stdout: '' }) as any);
+      const executeCommandSpy = mockedExecuteCommand.mockReturnValue(
+        Promise.resolve({ stdout: '' }) as any
+      );
 
       await yarn1Proxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
@@ -77,9 +107,9 @@ describe('Yarn 1 Proxy', () => {
 
   describe('removeDependencies', () => {
     it('skipInstall should only change package.json without running install', async () => {
-      const executeCommandSpy = vi
-        .spyOn(yarn1Proxy, 'executeCommand')
-        .mockReturnValue(Promise.resolve({ stdout: '7.0.0' }) as any);
+      const executeCommandSpy = mockedExecuteCommand.mockReturnValue(
+        Promise.resolve({ stdout: '7.0.0' }) as any
+      );
       const writePackageSpy = vi.spyOn(yarn1Proxy, 'writePackageJson').mockImplementation(vi.fn());
 
       vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((args) => {
@@ -109,9 +139,9 @@ describe('Yarn 1 Proxy', () => {
 
   describe('latestVersion', () => {
     it('without constraint it returns the latest version', async () => {
-      const executeCommandSpy = vi
-        .spyOn(yarn1Proxy, 'executeCommand')
-        .mockReturnValue(Promise.resolve({ stdout: '{"type":"inspect","data":"5.3.19"}' }) as any);
+      const executeCommandSpy = mockedExecuteCommand.mockReturnValue(
+        Promise.resolve({ stdout: '{"type":"inspect","data":"5.3.19"}' }) as any
+      );
 
       const version = await yarn1Proxy.latestVersion('storybook');
 
@@ -125,7 +155,7 @@ describe('Yarn 1 Proxy', () => {
     });
 
     it('with constraint it returns the latest version satisfying the constraint', async () => {
-      const executeCommandSpy = vi.spyOn(yarn1Proxy, 'executeCommand').mockReturnValue(
+      const executeCommandSpy = mockedExecuteCommand.mockReturnValue(
         Promise.resolve({
           stdout: '{"type":"inspect","data":["4.25.3","5.3.19","6.0.0-beta.23"]}',
         }) as any
@@ -143,9 +173,7 @@ describe('Yarn 1 Proxy', () => {
     });
 
     it('throws an error if command output is not a valid JSON', async () => {
-      vi.spyOn(yarn1Proxy, 'executeCommand').mockReturnValue(
-        Promise.resolve({ stdout: 'NOT A JSON' }) as any
-      );
+      mockedExecuteCommand.mockReturnValue(Promise.resolve({ stdout: 'NOT A JSON' }) as any);
 
       await expect(yarn1Proxy.latestVersion('storybook')).resolves.toBe(null);
     });
@@ -185,7 +213,7 @@ describe('Yarn 1 Proxy', () => {
   describe('mapDependencies', () => {
     it('should display duplicated dependencies based on yarn output', async () => {
       // yarn list --pattern "@storybook/*" "@storybook/react" --recursive --json
-      vi.spyOn(yarn1Proxy, 'executeCommand').mockResolvedValueOnce({
+      mockedExecuteCommand.mockResolvedValueOnce({
         stdout: `
         {
           "type": "tree",

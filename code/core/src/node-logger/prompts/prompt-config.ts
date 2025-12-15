@@ -1,15 +1,13 @@
 import type { PromptProvider } from './prompt-provider-base';
 import { ClackPromptProvider } from './prompt-provider-clack';
-import { PromptsPromptProvider } from './prompt-provider-prompts';
 
-type PromptLibrary = 'clack' | 'prompts';
+type PromptLibrary = 'clack';
 
 const PROVIDERS = {
   clack: new ClackPromptProvider(),
-  prompts: new PromptsPromptProvider(),
 } as const;
 
-let currentPromptLibrary: PromptLibrary = process.env.USE_CLACK === 'true' ? 'clack' : 'prompts';
+let currentPromptLibrary: PromptLibrary = 'clack';
 
 export const setPromptLibrary = (library: PromptLibrary): void => {
   currentPromptLibrary = library;
@@ -25,10 +23,6 @@ export const getPromptProvider = (): PromptProvider => {
 
 export const isClackEnabled = (): boolean => {
   return currentPromptLibrary === 'clack';
-};
-
-export const isPromptsEnabled = (): boolean => {
-  return currentPromptLibrary === 'prompts';
 };
 
 /**

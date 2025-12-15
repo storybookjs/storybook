@@ -71,12 +71,12 @@ npm test -- --coverage --collectCoverageFrom='["src/**/*.{js,jsx}","!src/**/stor
 
 ## How do I setup Storybook to share Webpack configuration with Next.js?
 
-You can generally reuse Webpack rules by placing them in a file that is `require()`-ed from both your `next.config.js` and your `.storybook/main.js|ts` files. For example:
+You can generally reuse Webpack rules by placing them in a file that is imported from both your `next.config.js` and your `.storybook/main.js|ts` files. For example:
 
 ```js title=".storybook/main.js|ts"
 export default {
   webpackFinal: async (baseConfig) => {
-    const nextConfig = require('/path/to/next.config.js');
+    const nextConfig = await import('/path/to/next.config.js');
 
     // merge whatever from nextConfig into the webpack config storybook will use
     return { ...baseConfig, ...nextConfig };
@@ -100,6 +100,39 @@ To fix this, you can wrap the package name inside your Storybook configuration f
 <CodeSnippets path="storybook-main-pnpm-with-module-resolution.md" />
 
 {/* prettier-ignore-end */}
+
+## Extensionless imports in Storybook main config
+
+When upgrading or running Storybook, you may see warnings about extensionless relative imports in `.storybook/main.<js|ts>` (for example: `import sharedMain from '../main'`). 
+Storybook requires explicit extensions in config imports to avoid this deprecation warning.
+
+To fix the issue, just make sure to include the extension of the file (TypeScript or Javascript) you're importing:
+
+```ts title=".storybook/main.<js|ts>"
+// Change from this 👇
+import sharedMain from '../main';
+
+// To this 👇
+import sharedMain from '../main.js'; // or .ts
+```
+
+### For TypeScript users (`.storybook/main.ts`)
+You will also need to configure TypeScript so these imports type-check without emitting JavaScript:
+
+```json title=".storybook/tsconfig.json"
+{
+  "extends": "<path-to-your-main-tsconfig>",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  }
+}
+```
+
+<Callout variant="info">
+  It is advisable to add a `.storybook/tsconfig.json` file so that you apply changes only to Storybook config files, and not your entire project.
+</Callout>
 
 ## How do I setup the new React Context Root API with Storybook?
 

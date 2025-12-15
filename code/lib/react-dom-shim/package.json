@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-dom-shim",
-  "version": "9.1.0-alpha.10",
+  "version": "10.2.0-alpha.6",
   "description": "",
   "keywords": [
     "storybook"
@@ -20,28 +20,16 @@
   },
   "license": "MIT",
   "sideEffects": false,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/react-18.d.ts",
-      "import": "./dist/react-18.mjs",
-      "require": "./dist/react-18.js",
-      "node": "./dist/react-18.js"
+      "default": "./dist/react-18.js"
     },
-    "./dist/react-16": {
-      "types": "./dist/react-16.d.ts",
-      "import": "./dist/react-16.mjs",
-      "require": "./dist/react-16.js",
-      "node": "./dist/react-16.js"
-    },
-    "./dist/preset": {
-      "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
-    },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js",
+    "./react-16": "./dist/react-16.js"
   },
-  "main": "dist/react-18.js",
-  "module": "dist/react-18.mjs",
-  "types": "dist/react-18.d.ts",
   "files": [
     "dist/**/*",
     "README.md",
@@ -49,27 +37,16 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
-  },
   "devDependencies": {
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/preset.ts",
-      "./src/react-16.tsx",
-      "./src/react-18.tsx"
-    ]
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

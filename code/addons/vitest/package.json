@@ -1,13 +1,20 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "9.1.0-alpha.10",
-  "description": "Storybook addon for testing components",
+  "version": "10.2.0-alpha.6",
+  "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
-    "storybook-addons",
-    "addon-vitest",
+    "storybook",
+    "storybook-addon",
     "vitest",
     "testing",
-    "test"
+    "test",
+    "component",
+    "components",
+    "component-testing",
+    "react",
+    "vue",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/vitest",
   "bugs": {
@@ -23,6 +30,7 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "imports": {
     "#manager-store": {
       "storybook": "./src/manager-store.mock.ts",
@@ -32,46 +40,20 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
+    "./internal/coverage-reporter": "./dist/node/coverage-reporter.js",
+    "./internal/global-setup": "./dist/vitest-plugin/global-setup.js",
+    "./internal/setup-file": "./dist/vitest-plugin/setup-file.js",
+    "./internal/test-utils": "./dist/vitest-plugin/test-utils.js",
+    "./manager": "./dist/manager.js",
+    "./package.json": "./package.json",
+    "./postinstall": "./dist/postinstall.js",
+    "./preset": "./dist/preset.js",
+    "./vitest": "./dist/node/vitest.js",
     "./vitest-plugin": {
       "types": "./dist/vitest-plugin/index.d.ts",
-      "import": "./dist/vitest-plugin/index.mjs",
-      "require": "./dist/vitest-plugin/index.js"
-    },
-    "./internal/global-setup": {
-      "types": "./dist/vitest-plugin/global-setup.d.ts",
-      "import": "./dist/vitest-plugin/global-setup.mjs",
-      "require": "./dist/vitest-plugin/global-setup.js"
-    },
-    "./internal/setup-file": {
-      "types": "./dist/vitest-plugin/setup-file.d.ts",
-      "import": "./dist/vitest-plugin/setup-file.mjs"
-    },
-    "./internal/test-utils": {
-      "types": "./dist/vitest-plugin/test-utils.d.ts",
-      "import": "./dist/vitest-plugin/test-utils.mjs",
-      "require": "./dist/vitest-plugin/test-utils.js"
-    },
-    "./internal/coverage-reporter": {
-      "types": "./dist/node/coverage-reporter.d.ts",
-      "import": "./dist/node/coverage-reporter.mjs",
-      "require": "./dist/node/coverage-reporter.js"
-    },
-    "./manager": "./dist/manager.js",
-    "./preset": "./dist/preset.js",
-    "./postinstall": "./dist/postinstall.js",
-    "./package.json": "./package.json"
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ]
+      "default": "./dist/vitest-plugin/index.js"
     }
   },
   "files": [
@@ -85,27 +67,19 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.4.0",
-    "prompts": "^2.4.0",
-    "ts-dedent": "^2.2.0"
+    "@storybook/icons": "^2.0.0"
   },
   "devDependencies": {
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.0.0",
     "@types/semver": "^7",
-    "@vitest/browser": "^3.2.4",
-    "@vitest/runner": "^3.2.4",
-    "boxen": "^8.0.1",
+    "@vitest/browser-playwright": "^4.0.14",
+    "@vitest/runner": "^4.0.14",
+    "empathic": "^2.0.0",
     "es-toolkit": "^1.36.0",
-    "execa": "^8.0.1",
-    "find-up": "^7.0.0",
     "istanbul-lib-report": "^3.0.1",
     "micromatch": "^4.0.8",
     "pathe": "^1.1.2",
@@ -119,16 +93,20 @@
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.14"
   },
   "peerDependencies": {
-    "@vitest/browser": "^3.0.0",
-    "@vitest/runner": "^3.0.0",
+    "@vitest/browser": "^3.0.0 || ^4.0.0",
+    "@vitest/browser-playwright": "^4.0.0",
+    "@vitest/runner": "^3.0.0 || ^4.0.0",
     "storybook": "workspace:^",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {
     "@vitest/browser": {
+      "optional": true
+    },
+    "@vitest/browser-playwright": {
       "optional": true
     },
     "@vitest/runner": {
@@ -140,54 +118,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bundler": {
-    "exportEntries": [
-      "./src/index.ts",
-      "./src/vitest-plugin/test-utils.ts",
-      "./src/vitest-plugin/setup-file.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.tsx"
-    ],
-    "nodeEntries": [
-      "./src/preset.ts",
-      "./src/postinstall.ts",
-      {
-        "file": "./src/dummy.ts",
-        "formats": [
-          "esm"
-        ]
-      },
-      {
-        "file": "./src/node/vitest.ts",
-        "formats": [
-          "esm",
-          "cjs"
-        ]
-      },
-      {
-        "file": "./src/node/coverage-reporter.ts",
-        "formats": [
-          "esm",
-          "cjs"
-        ]
-      },
-      {
-        "file": "./src/vitest-plugin/index.ts",
-        "formats": [
-          "cjs",
-          "esm"
-        ]
-      },
-      {
-        "file": "./src/vitest-plugin/global-setup.ts",
-        "formats": [
-          "cjs",
-          "esm"
-        ]
-      }
-    ]
   },
   "storybook": {
     "displayName": "Test",

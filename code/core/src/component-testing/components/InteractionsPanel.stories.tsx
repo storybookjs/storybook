@@ -10,7 +10,7 @@ import { isChromatic } from '../../../../.storybook/isChromatic';
 import { CallStates } from '../../instrumenter/types';
 import { getCalls, getInteractions } from '../mocks';
 import { InteractionsPanel } from './InteractionsPanel';
-import SubnavStories from './Subnav.stories';
+import ToolbarStories from './Toolbar.stories';
 
 const StyledWrapper = styled.div(({ theme }) => ({
   backgroundColor: theme.background.content,
@@ -30,6 +30,11 @@ const managerContext: any = {
   api: {
     getDocsUrl: fn().mockName('api::getDocsUrl'),
     emit: fn().mockName('api::emit'),
+    getData: fn()
+      .mockName('api::getData')
+      .mockImplementation(() => ({
+        importPath: 'core/src/component-testing/components/InteractionsPanel.stories.tsx',
+      })),
   },
 };
 
@@ -49,12 +54,11 @@ const meta = {
   args: {
     status: 'completed',
     calls: new Map(getCalls(CallStates.DONE).map((call) => [call.id, call])),
-    controls: SubnavStories.args.controls,
-    controlStates: SubnavStories.args.controlStates,
+    controls: ToolbarStories.args.controls,
+    controlStates: ToolbarStories.args.controlStates,
     interactions,
     fileName: 'addon-interactions.stories.tsx',
     hasException: false,
-    isPlaying: false,
     onScrollToEnd: () => {},
     endRef: null,
     // prop for the AddonPanel used as wrapper of Panel
@@ -71,34 +75,39 @@ export const Passing: Story = {
     browserTestStatus: CallStates.DONE,
     interactions: getInteractions(CallStates.DONE),
   },
-  play: async ({ args, canvasElement }) => {
+  play: async ({ args, canvasElement, step }) => {
     if (isChromatic()) {
       return;
     }
     const canvas = within(canvasElement);
 
-    await waitFor(async () => {
-      await userEvent.click(canvas.getByLabelText('Go to start'));
+    await step('Go to start', async () => {
+      const btn = await canvas.findByLabelText('Go to start');
+      await userEvent.click(btn);
       await expect(args.controls.start).toHaveBeenCalled();
     });
 
-    await waitFor(async () => {
-      await userEvent.click(canvas.getByLabelText('Go back'));
+    await step('Go back', async () => {
+      const btn = await canvas.findByLabelText('Go back');
+      await userEvent.click(btn);
       await expect(args.controls.back).toHaveBeenCalled();
     });
 
-    await waitFor(async () => {
-      await userEvent.click(canvas.getByLabelText('Go forward'));
+    await step('Go forward', async () => {
+      const btn = await canvas.findByLabelText('Go forward');
+      await userEvent.click(btn);
       await expect(args.controls.next).not.toHaveBeenCalled();
     });
 
-    await waitFor(async () => {
-      await userEvent.click(canvas.getByLabelText('Go to end'));
+    await step('Go to end', async () => {
+      const btn = await canvas.findByLabelText('Go to end');
+      await userEvent.click(btn);
       await expect(args.controls.end).not.toHaveBeenCalled();
     });
 
-    await waitFor(async () => {
-      await userEvent.click(canvas.getByLabelText('Rerun'));
+    await step('Rerun', async () => {
+      const btn = await canvas.findByLabelText('Rerun');
+      await userEvent.click(btn);
       await expect(args.controls.rerun).toHaveBeenCalled();
     });
   },
@@ -108,7 +117,6 @@ export const Paused: Story = {
   args: {
     status: 'playing',
     browserTestStatus: CallStates.ACTIVE,
-    isPlaying: true,
     interactions: getInteractions(CallStates.WAITING),
     controlStates: {
       detached: false,
@@ -126,7 +134,6 @@ export const Playing: Story = {
   args: {
     status: 'playing',
     browserTestStatus: CallStates.ACTIVE,
-    isPlaying: true,
     interactions: getInteractions(CallStates.ACTIVE),
   },
 };
@@ -182,5 +189,13 @@ export const RenderOnly: Story = {
 export const Empty: Story = {
   args: {
     interactions: [],
+    controlStates: {
+      detached: false,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
   },
 };

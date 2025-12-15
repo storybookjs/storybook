@@ -1,9 +1,14 @@
 {
   "name": "@storybook/vue3-vite",
-  "version": "9.1.0-alpha.10",
-  "description": "Storybook for Vue3 and Vite: Develop Vue3 components in isolation with Hot Reloading.",
+  "version": "10.2.0-alpha.6",
+  "description": "Storybook for Vue3 and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-framework",
+    "vue3",
+    "vite",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/vue3-vite",
   "bugs": {
@@ -19,33 +24,20 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./preset": {
-      "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
-    },
-    "./vite-plugin": {
-      "types": "./dist/vite-plugin.d.ts",
-      "require": "./dist/vite-plugin.js",
-      "import": "./dist/vite-plugin.mjs"
+      "default": "./dist/index.js"
     },
     "./node": {
       "types": "./dist/node/index.d.ts",
-      "node": "./dist/node/index.js",
-      "import": "./dist/node/index.mjs",
-      "require": "./dist/node/index.js"
+      "default": "./dist/node/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js",
+    "./vite-plugin": "./dist/vite-plugin.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "template/**/*",
@@ -54,43 +46,25 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
-  },
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/vue3": "workspace:*",
-    "find-package-json": "^1.2.0",
     "magic-string": "^0.30.0",
     "typescript": "^5.8.3",
     "vue-component-meta": "^2.0.0",
     "vue-docgen-api": "^4.75.1"
   },
   "devDependencies": {
-    "@types/find-package-json": "^1.2.6",
     "@types/node": "^22.0.0",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5"
+    "vite": "^7.0.4"
   },
   "peerDependencies": {
     "storybook": "workspace:^",
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/preset.ts",
-      "./src/vite-plugin.ts",
-      "./src/node/index.ts"
-    ],
-    "platform": "node"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

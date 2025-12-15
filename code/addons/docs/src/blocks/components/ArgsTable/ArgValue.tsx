@@ -1,12 +1,11 @@
 import type { FC } from 'react';
 import React, { useState } from 'react';
 
-import { SyntaxHighlighter, WithTooltipPure, codeCommon } from 'storybook/internal/components';
+import { PopoverProvider, SyntaxHighlighter, codeCommon } from 'storybook/internal/components';
 
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
-import { uniq } from 'es-toolkit/compat';
-import memoize from 'memoizerific';
+import { uniq } from 'es-toolkit/array';
 import { styled } from 'storybook/theming';
 
 import type { PropSummaryValue } from './types';
@@ -37,6 +36,27 @@ const Summary = styled.div<{ isExpanded?: boolean }>(({ isExpanded }) => ({
   minWidth: 100,
 }));
 
+const DetailsContainer = styled.details({
+  display: 'flex',
+  flexDirection: 'column',
+  summary: {
+    order: 2,
+  },
+  'summary::-webkit-details-marker': {
+    display: 'none',
+  },
+  'summary::marker': {
+    content: 'none',
+  },
+});
+
+const AlignedDetails = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+  flexWrap: 'wrap',
+  alignItems: 'flex-start',
+});
+
 const Text = styled.span<{ simple?: boolean }>(codeCommon, ({ theme, simple = false }) => ({
   flex: '0 0 auto',
   fontFamily: theme.typography.fonts.mono,
@@ -57,15 +77,18 @@ const Text = styled.span<{ simple?: boolean }>(codeCommon, ({ theme, simple = fa
   }),
 }));
 
-const ExpandButton = styled.button(({ theme }) => ({
+const ExpandButton = styled.summary(({ theme }) => ({
   fontFamily: theme.typography.fonts.mono,
   color: theme.color.secondary,
-  marginBottom: '4px',
+  cursor: 'pointer',
+  lineHeight: 'normal',
+  margin: '0 0 4px',
+  padding: '1px 6px',
   background: 'none',
   border: 'none',
 }));
 
-const Expandable = styled.div(codeCommon, ({ theme }) => ({
+const Expandable = styled.button(codeCommon, ({ theme }) => ({
   fontFamily: theme.typography.fonts.mono,
   color: theme.color.secondary,
   fontSize: theme.typography.size.s1, // overrides codeCommon
@@ -73,13 +96,21 @@ const Expandable = styled.div(codeCommon, ({ theme }) => ({
   whiteSpace: 'nowrap',
   display: 'flex',
   alignItems: 'center',
+  cursor: 'pointer',
+  '&:hover': {
+    border:
+      theme.base === 'light' ? '1px solid hsl(0 0 0 / 0.15)' : '1px solid hsl(0 0 100 / 0.15)',
+  },
+  '&:focus-visible': {
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: '2px',
+  },
 }));
 
-const Detail = styled.div<{ width: string }>(({ theme, width }) => ({
-  width,
+const Detail = styled.div(({ theme }) => ({
   minWidth: 200,
   maxWidth: 800,
-  padding: 15,
+  paddingRight: 16,
   // Don't remove the mono fontFamily here even if it seems useless, this is used by the browser to calculate the length of a "ch" unit.
   fontFamily: theme.typography.fonts.mono,
   fontSize: theme.typography.size.s1,
@@ -107,12 +138,6 @@ const ArgText: FC<ArgTextProps> = ({ text, simple }) => {
   return <Text simple={simple}>{text}</Text>;
 };
 
-const calculateDetailWidth = memoize(1000)((detail: string): string => {
-  const lines = detail.split(/\r?\n/);
-
-  return `${Math.max(...lines.map((x) => x.length))}ch`;
-});
-
 const getSummaryItems = (summary: string) => {
   if (!summary) {
     return [summary];
@@ -123,13 +148,16 @@ const getSummaryItems = (summary: string) => {
   return uniq(summaryItems);
 };
 
-const renderSummaryItems = (summaryItems: string[], isExpanded = true) => {
-  let items = summaryItems;
-  if (!isExpanded) {
-    items = summaryItems.slice(0, ITEMS_BEFORE_EXPANSION);
-  }
+const renderSummaryItems = (summaryItems: string[]) => {
+  return summaryItems
+    .slice(0, ITEMS_BEFORE_EXPANSION)
+    .map((item) => <ArgText key={item} text={item === '' ? '""' : item} />);
+};
 
-  return items.map((item) => <ArgText key={item} text={item === '' ? '""' : item} />);
+const renderExpandedItems = (summaryItems: string[]) => {
+  return summaryItems
+    .slice(ITEMS_BEFORE_EXPANSION)
+    .map((item) => <ArgText key={item} text={item === '' ? '""' : item} />);
 };
 
 const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
@@ -160,10 +188,13 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
 
     return hasManyItems ? (
       <Summary isExpanded={isExpanded}>
-        {renderSummaryItems(summaryItems, isExpanded)}
-        <ExpandButton onClick={() => setIsExpanded(!isExpanded)}>
-          {isExpanded ? 'Show less...' : `Show ${itemsCount - ITEMS_BEFORE_EXPANSION} more...`}
-        </ExpandButton>
+        {renderSummaryItems(summaryItems)}
+        <DetailsContainer open={isExpanded} onToggle={(e) => setIsExpanded(e.currentTarget.open)}>
+          <AlignedDetails>{renderExpandedItems(summaryItems)}</AlignedDetails>
+          <ExpandButton role="button">
+            {isExpanded ? 'Show less...' : `Show ${itemsCount - ITEMS_BEFORE_EXPANSION} more...`}
+          </ExpandButton>
+        </DetailsContainer>
       </Summary>
     ) : (
       <Summary>{renderSummaryItems(summaryItems)}</Summary>
@@ -171,15 +202,15 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
   }
 
   return (
-    <WithTooltipPure
-      closeOnOutsideClick
+    <PopoverProvider
       placement="bottom"
       visible={isOpen}
       onVisibleChange={(isVisible) => {
         setIsOpen(isVisible);
       }}
-      tooltip={
-        <Detail width={calculateDetailWidth(detail)}>
+      hasCloseButton
+      popover={
+        <Detail>
           <SyntaxHighlighter language="jsx" format={false}>
             {detail}
           </SyntaxHighlighter>
@@ -190,7 +221,7 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
         <span>{summaryAsString}</span>
         {isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
       </Expandable>
-    </WithTooltipPure>
+    </PopoverProvider>
   );
 };
 

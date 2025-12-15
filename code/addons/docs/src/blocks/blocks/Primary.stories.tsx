@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import * as DefaultButtonStories from '../examples/Button.stories';
+import * as ButtonNoAutodocsStories from '../examples/ButtonNoAutodocs.stories';
+import * as ButtonSomeAutodocsStories from '../examples/ButtonSomeAutodocs.stories';
 import * as StoriesParametersStories from '../examples/StoriesParameters.stories';
 import { Primary } from './Primary';
 
@@ -58,4 +60,24 @@ export const WithoutToolbarOfStringMetaAttached: Story = {
     of: 'meta',
   },
   parameters: { relativeCsfPaths: ['../examples/StoriesParameters.stories'] },
+};
+
+export const NoAutodocsExample: Story = {
+  name: 'Button (No Autodocs)',
+  args: {
+    of: ButtonNoAutodocsStories,
+  },
+  parameters: {
+    relativeCsfPaths: ['../examples/ButtonNoAutodocs.stories'],
+  },
+};
+
+export const SomeAutodocsExample: Story = {
+  name: 'Button (Some Autodocs)',
+  args: {
+    of: ButtonSomeAutodocsStories,
+  },
+  parameters: {
+    relativeCsfPaths: ['../examples/ButtonSomeAutodocs.stories'],
+  },
 };

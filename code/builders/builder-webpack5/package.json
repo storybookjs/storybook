@@ -1,9 +1,15 @@
 {
   "name": "@storybook/builder-webpack5",
-  "version": "9.1.0-alpha.10",
-  "description": "Storybook framework-agnostic API",
+  "version": "10.2.0-alpha.6",
+  "description": "A Storybook builder to dev and build with Webpack",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-builder",
+    "webpack",
+    "builder",
+    "bundler",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/builders/builder-webpack5",
   "bugs": {
@@ -19,37 +25,23 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./presets/custom-webpack-preset": {
-      "types": "./dist/presets/custom-webpack-preset.d.ts",
-      "node": "./dist/presets/custom-webpack-preset.js",
-      "require": "./dist/presets/custom-webpack-preset.js"
-    },
-    "./presets/preview-preset": {
-      "types": "./dist/presets/preview-preset.d.ts",
-      "node": "./dist/presets/preview-preset.js",
-      "require": "./dist/presets/preview-preset.js"
-    },
-    "./loaders/export-order-loader": {
-      "types": "./dist/loaders/export-order-loader.d.ts",
-      "node": "./dist/loaders/export-order-loader.js",
-      "require": "./dist/loaders/export-order-loader.js"
-    },
-    "./templates/virtualModuleModernEntry.js": "./templates/virtualModuleModernEntry.js",
+    "./loaders/export-order-loader": "./dist/loaders/export-order-loader.js",
+    "./loaders/storybook-mock-transform-loader": "./dist/loaders/storybook-mock-transform-loader.js",
+    "./loaders/webpack-automock-loader": "./dist/loaders/webpack-automock-loader.js",
+    "./package.json": "./package.json",
+    "./presets/custom-webpack-preset": "./dist/presets/custom-webpack-preset.js",
+    "./presets/preview-preset": "./dist/presets/preview-preset.js",
     "./templates/preview.ejs": "./templates/preview.ejs",
     "./templates/virtualModuleEntry.template.js": "./templates/virtualModuleEntry.template.js",
-    "./templates/virtualModuleStory.template.js": "./templates/virtualModuleStory.template.js",
-    "./package.json": "./package.json"
+    "./templates/virtualModuleModernEntry.js": "./templates/virtualModuleModernEntry.js",
+    "./templates/virtualModuleStory.template.js": "./templates/virtualModuleStory.template.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "templates/**/*",
@@ -58,21 +50,18 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
-  },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
+    "@vitest/mocker": "3.2.4",
     "case-sensitive-paths-webpack-plugin": "^2.4.0",
     "cjs-module-lexer": "^1.2.3",
-    "css-loader": "^6.7.1",
+    "css-loader": "^7.1.2",
     "es-module-lexer": "^1.5.0",
-    "fork-ts-checker-webpack-plugin": "^8.0.0",
+    "fork-ts-checker-webpack-plugin": "^9.1.0",
     "html-webpack-plugin": "^5.5.0",
     "magic-string": "^0.30.5",
-    "style-loader": "^3.3.1",
-    "terser-webpack-plugin": "^5.3.1",
+    "style-loader": "^4.0.0",
+    "terser-webpack-plugin": "^5.3.14",
     "ts-dedent": "^2.0.0",
     "webpack": "5",
     "webpack-dev-middleware": "^6.1.2",
@@ -99,14 +88,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/presets/custom-webpack-preset.ts",
-      "./src/presets/preview-preset.ts",
-      "./src/loaders/export-order-loader.ts"
-    ],
-    "platform": "node"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

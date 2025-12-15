@@ -1,25 +1,28 @@
+import { rm } from 'node:fs/promises';
+import { homedir } from 'node:os';
+
 import { expect, test } from '@playwright/test';
+import { join } from 'pathe';
 import process from 'process';
 
-import { SbPage } from './util';
+import { SbPage, hasOnboardingFeature } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
 
-const supportsOnboarding =
-  templateName.includes('react') ||
-  templateName.includes('vue3') ||
-  templateName.includes('angular') ||
-  templateName.includes('next');
-
 test.describe('addon-onboarding', () => {
   test.skip(type === 'build', `Skipping addon tests for production Storybooks`);
   test.skip(
-    !supportsOnboarding,
+    !hasOnboardingFeature(templateName),
     `Skipping ${templateName}, which does not have addon-onboarding set up.`
   );
   test('the onboarding flow', async ({ page }) => {
+    // eslint-disable-next-line playwright/no-conditional-in-test
+    if (process.env.CI) {
+      await rm(join(homedir(), '.storybook', 'settings.json'), { force: true });
+    }
+
     await page.goto(`${storybookUrl}/?path=/onboarding`);
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
@@ -41,14 +44,14 @@ test.describe('addon-onboarding', () => {
     // so we just create a random id to make it easier to run tests
     const id = Math.random().toString(36).substring(7);
     await page.getByPlaceholder('Story export name').fill('Test-' + id);
-    await page.getByRole('button', { name: 'Create' }).click();
+    await page.getByRole('button', { exact: true, name: 'Create' }).click();
 
     await expect(page.getByText('You just added your first')).toBeVisible();
     await page.getByLabel('Last').click();
 
     await page.getByRole('checkbox', { name: 'Application UI' }).check();
     await page.getByRole('checkbox', { name: 'Functional testing' }).check();
-    await page.getByRole('combobox').selectOption('Web Search');
+    await page.locator('#referrer').selectOption('Web Search');
     await page.getByRole('button', { name: 'Submit' }).click();
 
     await expect(

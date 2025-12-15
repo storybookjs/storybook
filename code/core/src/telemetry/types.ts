@@ -6,6 +6,7 @@ import type { MonorepoType } from './get-monorepo-type';
 
 export type EventType =
   | 'boot'
+  | 'add'
   | 'dev'
   | 'build'
   | 'index'
@@ -24,6 +25,7 @@ export type EventType =
   | 'save-story'
   | 'create-new-story-file'
   | 'create-new-story-file-search'
+  | 'open-in-editor'
   | 'testing-module-watch-mode'
   | 'testing-module-completed-report'
   | 'testing-module-crash-report'
@@ -31,8 +33,13 @@ export type EventType =
   | 'test-run'
   | 'addon-onboarding'
   | 'onboarding-survey'
-  | 'mocking';
-
+  | 'onboarding-checklist-muted'
+  | 'onboarding-checklist-status'
+  | 'mocking'
+  | 'automigrate'
+  | 'migrate'
+  | 'preview-first-load'
+  | 'doctor';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;
@@ -49,7 +56,7 @@ export type StorybookMetadata = {
   userSince?: number;
   language: 'typescript' | 'javascript';
   framework?: {
-    name: string;
+    name?: string;
     options?: any;
   };
   builder?: string;
@@ -88,6 +95,10 @@ export interface Payload {
   [key: string]: any;
 }
 
+export interface Context {
+  [key: string]: any;
+}
+
 export interface Options {
   retryDelay: number;
   immediate: boolean;
@@ -101,4 +112,18 @@ export interface TelemetryData {
   eventType: EventType;
   payload: Payload;
   metadata?: StorybookMetadata;
+}
+
+export interface TelemetryEvent extends TelemetryData {
+  eventId: string;
+  sessionId: string;
+  context: Context;
+}
+
+export interface InitPayload {
+  projectType: string;
+  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean };
+  newUser: boolean;
+  versionSpecifier: string | undefined;
+  cliIntegration: string | undefined;
 }

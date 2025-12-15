@@ -20,7 +20,7 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -36,15 +36,20 @@ import { runTestRunner } from './node/boot-test-runner';
 import type { CachedState, ErrorLike, StoreState } from './types';
 import type { StoreEvent } from './types';
 
-type Event = {
-  type: 'test-discrepancy';
-  payload: {
-    storyId: StoryId;
-    browserStatus: 'PASS' | 'FAIL';
-    cliStatus: 'FAIL' | 'PASS';
-    message: string;
-  };
-};
+type Event =
+  | {
+      type: 'test-discrepancy';
+      payload: {
+        storyId: StoryId;
+        browserStatus: 'PASS' | 'FAIL';
+        cliStatus: 'FAIL' | 'PASS';
+        message: string;
+      };
+    }
+  | {
+      type: 'test-run-completed';
+      payload: StoreState['currentRun'];
+    };
 
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
   const core = await options.presets.apply('core');
@@ -56,16 +61,17 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     options
   );
 
-  const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
+  const resolvedPreviewBuilder =
+    typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
   const framework = await getFrameworkName(options);
 
   // Only boot the test runner if the builder is vite, else just provide interactions functionality
-  if (!builderName?.includes('vite')) {
+  if (!resolvedPreviewBuilder?.includes('vite')) {
     if (framework.includes('nextjs')) {
       log(dedent`
         You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.
 
-        Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite')}\n
+        Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs?ref=upgrade#with-vite')}\n
       `);
     }
     return channel;
@@ -182,13 +188,15 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
 
     channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
-      telemetry('addon-test', {
-        ...event,
-        payload: {
-          ...event.payload,
-          storyId: oneWayHash(event.payload.storyId),
-        },
-      });
+      if (event.type !== 'test-run-completed') {
+        telemetry('addon-test', {
+          ...event,
+          payload: {
+            ...event.payload,
+            storyId: oneWayHash(event.payload.storyId),
+          },
+        });
+      }
     });
 
     store.subscribe('TOGGLE_WATCHING', async (event) => {

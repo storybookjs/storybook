@@ -1,17 +1,20 @@
-import { detectLanguage } from '../../../../../core/src/cli/detect';
-import { CoreBuilder, SupportedLanguage } from '../../../../../core/src/cli/project_types';
-import { baseGenerator } from '../baseGenerator';
-import type { Generator } from '../types';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedBuilder, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
 
-const generator: Generator = async (packageManager, npmOptions, options) => {
-  // Add prop-types dependency if not using TypeScript
-  const language = await detectLanguage(packageManager as any);
-  const extraPackages = language === SupportedLanguage.JAVASCRIPT ? ['prop-types'] : [];
+import { defineGeneratorModule } from '../modules/GeneratorModule';
 
-  await baseGenerator(packageManager, npmOptions, options, 'react', {
-    extraPackages,
-    webpackCompiler: ({ builder }) => (builder === CoreBuilder.Webpack5 ? 'swc' : undefined),
-  });
-};
+// Export as module
+export default defineGeneratorModule({
+  metadata: {
+    projectType: ProjectType.REACT,
+    renderer: SupportedRenderer.REACT,
+  },
+  configure: async (packageManager, { language }) => {
+    const extraPackages = language === SupportedLanguage.JAVASCRIPT ? ['prop-types'] : [];
 
-export default generator;
+    return {
+      extraPackages,
+      webpackCompiler: ({ builder }) => (builder === SupportedBuilder.WEBPACK5 ? 'swc' : undefined),
+    };
+  },
+});

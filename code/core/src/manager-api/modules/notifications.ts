@@ -1,6 +1,6 @@
 import type { API_Notification } from 'storybook/internal/types';
 
-import { partition } from 'es-toolkit';
+import { partition } from 'es-toolkit/array';
 
 import type { ModuleFn } from '../lib/types';
 
@@ -55,5 +55,8 @@ export const init: ModuleFn = ({ store }) => {
 
   const state: SubState = { notifications: [] };
 
-  return { api, state };
+  return {
+    api,
+    state,
+  };
 };

@@ -1,18 +1,31 @@
+/**
+ * This is the entrypoint for when you run:
+ *
+ * @example `nr build storybook --watch`
+ *
+ * You can pass a list of package names to build, or use the `--all` flag to build all packages.
+ *
+ * You can also pass the `--watch` flag to build in watch mode.
+ *
+ * You can also pass the `--prod` flag to build in production mode.
+ *
+ * When you pass no package names, you will be prompted to select which packages to build.
+ */
+import { join } from 'node:path';
+
+import { exec } from 'child_process';
 import { program } from 'commander';
-// eslint-disable-next-line depend/ban-dependencies
-import { execaCommand } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { readJSON } from 'fs-extra';
-import { posix, resolve, sep } from 'path';
+import { resolve } from 'path';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import windowSize from 'window-size';
 
+import { ROOT_DIRECTORY } from './utils/constants';
 import { findMostMatchText } from './utils/diff';
-import { getWorkspaces } from './utils/workspace';
+import { getCodeWorkspaces } from './utils/workspace';
 
 async function run() {
-  const packages = (await getWorkspaces()).filter(({ name }) => name !== '@storybook/root');
+  const packages = (await getCodeWorkspaces()).filter(({ name }) => name !== '@storybook/code');
   const packageTasks = packages
     .map((pkg) => {
       let suffix = pkg.name.replace('@storybook/', '');
@@ -150,40 +163,39 @@ async function run() {
   }
 
   console.log('Building selected packages...');
-  selection.forEach(async (v) => {
-    const command = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts?.prep
-      .split(posix.sep)
-      .join(sep);
+  let lastName = '';
 
-    if (!command) {
-      console.log(`No prep script found for ${v.name}`);
-      return;
-    }
+  selection.forEach(async (v) => {
+    const script = join(ROOT_DIRECTORY, 'scripts', 'build', 'build-package.ts');
+    const command = `yarn exec jiti ${script}`;
 
     const cwd = resolve(__dirname, '..', 'code', v.location);
-    const sub = execaCommand(
-      `${command}${watchMode ? ' --watch' : ''}${prodMode ? ' --optimized' : ''} --reset`,
-      {
-        cwd,
-        buffer: false,
-        shell: true,
-        cleanup: true,
-        env: {
-          NODE_ENV: 'production',
-        },
-      }
-    );
+    const sub = exec(`${command}${watchMode ? ' --watch' : ''}${prodMode ? ' --prod' : ''}`, {
+      cwd,
+      env: {
+        NODE_ENV: 'production',
+        ...process.env,
+        FORCE_COLOR: '1',
+      },
+    });
 
     sub.stdout?.on('data', (data) => {
-      process.stdout.write(`${picocolors.cyan(v.name)}:\n${data}`);
+      if (lastName !== v.name) {
+        const prefix = `${picocolors.cyan(v.name)}:\n`;
+        process.stdout.write(prefix);
+      }
+      lastName = v.name;
+      process.stdout.write(data);
     });
     sub.stderr?.on('data', (data) => {
-      process.stderr.write(`${picocolors.red(v.name)}:\n${data}`);
+      if (lastName !== v.name) {
+        const prefix = `${picocolors.cyan(v.name)}:\n`;
+        process.stdout.write(prefix);
+      }
+      lastName = v.name;
+      process.stderr.write(data);
     });
   });
 }
 
-run().catch((e) => {
-  console.log(e);
-  process.exit(1);
-});
+run();

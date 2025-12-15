@@ -1,13 +1,14 @@
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
-import type { ComponentAnnotations, ComposedStoryFn } from 'storybook/internal/types';
+import { type Meta, type Story, getStoryChildren, isStory } from 'storybook/internal/csf';
+import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';
 import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/preview-api';
 
 import { setViewport } from './viewports';
 
-declare module '@vitest/browser/context' {
+declare module 'vitest/browser' {
   interface BrowserCommands {
     getInitialGlobals: () => Promise<Record<string, any>>;
   }
@@ -32,14 +33,24 @@ export const convertToFilePath = (url: string): string => {
 
 export const testStory = (
   exportName: string,
-  story: ComposedStoryFn,
-  meta: ComponentAnnotations,
-  skipTags: string[]
+  story: ComposedStoryFn | Story<Renderer>,
+  meta: ComponentAnnotations | Meta<Renderer>,
+  skipTags: string[],
+  storyId: string,
+  testName?: string
 ) => {
   return async (context: TestContext & { story: ComposedStoryFn }) => {
     const annotations = getCsfFactoryAnnotations(story, meta);
+
+    const test =
+      isStory(story) && testName
+        ? getStoryChildren(story).find((child) => child.input.name === testName)
+        : undefined;
+
+    const storyAnnotations = test ? test.input : annotations.story;
+
     const composedStory = composeStory(
-      annotations.story,
+      storyAnnotations,
       annotations.meta!,
       { initialGlobals: (await getInitialGlobals?.()) ?? {} },
       annotations.preview ?? globalThis.globalProjectAnnotations,
@@ -55,10 +66,14 @@ export const testStory = (
     const _task = context.task as RunnerTask & {
       meta: TaskMeta & { storyId: string; reports: Report[] };
     };
-    _task.meta.storyId = composedStory.id;
+
+    // The id will always be present, calculated by CsfFile
+    // and is needed so that we can add the test to the story in Storybook's UI for the status
+    _task.meta.storyId = storyId;
 
     await setViewport(composedStory.parameters, composedStory.globals);
-    await composedStory.run();
+
+    await composedStory.run(undefined);
 
     _task.meta.reports = composedStory.reporting.reports;
   };

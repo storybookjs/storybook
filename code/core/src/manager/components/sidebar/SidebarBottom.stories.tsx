@@ -51,6 +51,7 @@ const managerContext: any = {
   api: {
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
+    once: fn().mockName('api::once'),
     updateTestProviderState: fn(),
   },
 };
@@ -84,6 +85,7 @@ const meta = {
     api: {
       on: fn(),
       off: fn(),
+      once: fn(),
       clearNotification: fn(),
       updateTestProviderState: fn(),
       emit: fn(),
@@ -132,6 +134,12 @@ export const Both: Story = {
 };
 
 export const DynamicHeight: Story = {
+  // do not test in chromatic
+  parameters: {
+    chromatic: {
+      disable: true,
+    },
+  },
   args: {
     registeredTestProviders: {
       'dynamic-height': {
@@ -142,13 +150,13 @@ export const DynamicHeight: Story = {
     },
   },
   play: async ({ canvasElement }) => {
-    const screen = await within(canvasElement);
+    const screen = within(canvasElement);
 
-    const toggleButton = await screen.getByLabelText(/Expand/);
+    const toggleButton = await screen.findByLabelText(/Expand/, {}, { timeout: 3000 });
     await fireEvent.click(toggleButton);
 
     const content = await screen.findByText('CUSTOM CONTENT WITH DYNAMIC HEIGHT');
-    const collapse = await screen.getByTestId('collapse');
+    const collapse = screen.getByTestId('collapse');
 
     await expect(content).toBeVisible();
 

@@ -1,4 +1,5 @@
 import { join, relative } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // eslint-disable-next-line depend/ban-dependencies
 import fg from 'fast-glob';
@@ -42,8 +43,6 @@ const baseConfig = {
     core: {
       entry: [
         'src/manager-api/index.mock.ts',
-        // candidates for removal:
-        'src/controls/preset/checkDocsLoaded.ts',
         'src/shared/preview/csf4.ts',
         // with srcDir → outDir in tsconfig.json we could omit all of these:
         'src/index.ts',
@@ -82,8 +81,10 @@ const baseConfig = {
 // Adds package.json#bundler.entries etc. to each workspace config `entry: []`
 // Knip maps package.json#export to source files but the entries are incomplete
 export const addBundlerEntries = async (config: KnipConfig) => {
-  const baseDir = join(__dirname, '../code');
-  const rootManifest = await import(join(baseDir, 'package.json'));
+  const baseDir = join(__dirname, '..');
+  const rootManifest = await import(pathToFileURL(join(baseDir, 'package.json')).href, {
+    with: { type: 'json' },
+  });
   const workspaceDirs = await fg(rootManifest.workspaces.packages, {
     cwd: baseDir,
     onlyDirectories: true,
@@ -92,7 +93,9 @@ export const addBundlerEntries = async (config: KnipConfig) => {
   for (const wsDir of workspaceDirectories) {
     for (const configKey of Object.keys(baseConfig.workspaces)) {
       if (match([wsDir], configKey)) {
-        const manifest = await import(join(baseDir, wsDir, 'package.json'));
+        const manifest = await import(pathToFileURL(join(baseDir, wsDir, 'package.json')).href, {
+          with: { type: 'json' },
+        });
         const configEntries = (config.workspaces[configKey].entry as string[]) ?? [];
         const bundler = manifest?.bundler;
         for (const value of Object.values(bundler ?? {})) {

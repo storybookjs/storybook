@@ -814,6 +814,13 @@ const initEmptyWindows = defineJob(
       git.checkout({ forceHttps: true }),
       node.installOnWindows(),
       workspace.attach('C:\\Users\\circleci'),
+      {
+        run: {
+          name: 'Run Install',
+          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite-default-ts`,
+          command: 'yarn install',
+        },
+      },
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {

@@ -1,3 +1,15 @@
+# v3.1.8 (Mon Dec 15 2025)
+
+#### 🐛 Bug Fix
+
+- SWC: Support mount in play functions [#82](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/82) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v3.1.7 (Fri Dec 12 2025)
 
 #### 🐛 Bug Fix

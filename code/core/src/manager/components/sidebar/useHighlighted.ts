@@ -7,11 +7,10 @@ import { global } from '@storybook/global';
 
 import { useStorybookApi } from 'storybook/manager-api';
 
-import { matchesKeyCode, matchesModifiers } from '../../keybinding';
-import { cycle, isAncestor, scrollIntoView } from '../../utils/tree';
+import { cycle, scrollIntoView } from '../../utils/tree';
 import type { Highlight, Selection } from './types';
 
-const { document, window: globalWindow } = global;
+const { document } = global;
 
 export interface HighlightedProps {
   containerRef: RefObject<HTMLElement | null>;
@@ -66,7 +65,6 @@ export const useHighlighted = ({
     [highlightedRef]
   );
 
-  // Sets the highlighted node and scrolls it into view, using DOM elements as reference
   const highlightElement = useCallback(
     (element: Element, center = false) => {
       const itemId = element.getAttribute('data-item-id');
@@ -81,16 +79,14 @@ export const useHighlighted = ({
 
       // Set DOM focus for visual feedback (important for screen readers like NVDA)
       if (element instanceof HTMLElement) {
-        element.focus({ preventScroll: true }); // preventScroll because we already scroll
+        element.focus({ preventScroll: true });
       }
     },
     [updateHighlighted]
   );
 
-  // Highlight and scroll to the selected story whenever the selection or dataset changes
   useEffect(() => {
     const highlight = fromSelection(selected);
-    // Only auto-sync if user isn't manually navigating with keyboard
     if (!isManuallyNavigatingRef.current) {
       updateHighlighted(highlight);
       if (highlight) {
@@ -100,7 +96,6 @@ export const useHighlighted = ({
         });
       }
     }
-    // Reset the flag after a short delay to allow auto-sync for future selections
     isManuallyNavigatingRef.current = false;
   }, [containerRef, selected, updateHighlighted]);
 
@@ -112,8 +107,6 @@ export const useHighlighted = ({
 
     const handleFocusIn = (event: FocusEvent) => {
       const target = event.target as Element;
-
-      // Check if the focused element is a sidebar item
       const sidebarItem = target.closest('[data-item-id][data-ref-id]');
       if (!sidebarItem) {
         return;
@@ -126,7 +119,6 @@ export const useHighlighted = ({
         isManuallyNavigatingRef.current = true;
         updateHighlighted({ itemId, refId });
 
-        // Preload component children if needed
         const nodetype = sidebarItem.getAttribute('data-nodetype');
         if (nodetype === 'component') {
           const item = api.resolveStory(itemId, refId === 'storybook_internal' ? undefined : refId);
@@ -204,7 +196,6 @@ export const useHighlighted = ({
       if (highlightable[nextIndex]) {
         highlightElement(highlightable[nextIndex], didRunAround);
 
-        // Preload component children
         if (highlightable[nextIndex].getAttribute('data-nodetype') === 'component') {
           const itemId = highlightable[nextIndex].getAttribute('data-item-id');
           const refId = highlightable[nextIndex].getAttribute('data-ref-id');
@@ -224,8 +215,7 @@ export const useHighlighted = ({
       }
     };
 
-    // Use keydown on container to catch events from focused children
-    container.addEventListener('keydown', handleKeyDown, true); // Use capture phase
+    container.addEventListener('keydown', handleKeyDown, true);
 
     return () => {
       container.removeEventListener('keydown', handleKeyDown, true);

@@ -428,7 +428,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
           isExpanded={isExpanded}
           onClick={(event) => {
             event.preventDefault();
-            // Set focus on wrapper for visual feedback, especially important for screen readers
             const wrapper = (event.currentTarget as HTMLElement).closest(
               '[data-item-id]'
             ) as HTMLElement;
@@ -506,7 +505,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
       tabIndex={0}
       onMouseEnter={contextMenu.onMouseEnter}
       onKeyDown={(event) => {
-        // Handle keyboard navigation on the focused element (works with NVDA)
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           const link = event.currentTarget.querySelector('a');
@@ -524,7 +522,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
         aria-current={isSelected ? 'page' : undefined}
         onClick={(event) => {
           event.preventDefault();
-          // Set focus for visual feedback (important for screen readers like NVDA)
           const wrapper = (event.currentTarget as HTMLElement).closest(
             '[data-item-id]'
           ) as HTMLElement;

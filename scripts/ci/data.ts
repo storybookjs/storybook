@@ -807,7 +807,7 @@ const initEmptyWindows = defineJob(
   {
     executor: {
       name: 'win/default',
-      size: 'xlarge',
+      size: 'medium',
       shell: 'bash.exe',
     },
     steps: [

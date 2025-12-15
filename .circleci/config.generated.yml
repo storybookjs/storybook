@@ -947,7 +947,7 @@ jobs:
         description: init-empty-windows
         executor:
             name: win/default
-            size: xlarge
+            size: medium
             shell: bash.exe
         steps:
             - git-shallow-clone/checkout_advanced:
@@ -965,7 +965,6 @@ jobs:
                   at: C:\Users\circleci
             - run:
                   name: Run Install
-                  working_directory: C:\Users\circleci\storybook-sandboxes\react-vite-default-ts
                   command: yarn install
             - run:
                   name: Verdaccio

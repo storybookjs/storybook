@@ -30,7 +30,7 @@ steps:
   - report-workflow-on-failure:
       template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
   - store_test_results:
-      path: storybook/test-results
+      path: test-results
   - store_artifacts: # this is where playwright puts more complex stuff
-      path: storybook/code/playwright-results/
+      path: code/playwright-results/
       destination: playwright

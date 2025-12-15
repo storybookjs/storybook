@@ -4,7 +4,12 @@ import { deprecate } from 'storybook/internal/client-logger';
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
 import { FocusScope } from '@react-aria/focus';
-import { Overlay, UNSAFE_PortalProvider, useModalOverlay } from '@react-aria/overlays';
+import {
+  Overlay,
+  UNSAFE_PortalProvider,
+  ariaHideOutside,
+  useModalOverlay,
+} from '@react-aria/overlays';
 import { mergeProps } from '@react-aria/utils';
 import { useOverlayTriggerState } from '@react-stately/overlays';
 import type { KeyboardEvent as RAKeyboardEvent } from '@react-types/shared';
@@ -168,6 +173,12 @@ function BaseModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted]);
+
+  useEffect(() => {
+    if (isMounted && (open || defaultOpen) && overlayRef.current) {
+      return ariaHideOutside([overlayRef.current], { shouldUseInert: true });
+    }
+  }, [isMounted, open, defaultOpen, overlayRef]);
 
   if (!isMounted || status === 'exited' || status === 'unmounted') {
     return null;

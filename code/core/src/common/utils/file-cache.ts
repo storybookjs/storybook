@@ -1,9 +1,11 @@
 /** This file is a modified copy from https://git.nfp.is/TheThing/fs-cache-fast */
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+import { writeFileWithRetry } from './write-file-with-retry';
 
 interface FileSystemCacheOptions {
   ns?: string;
@@ -85,8 +87,8 @@ export class FileSystemCache {
     orgOpts: CacheSetOptions | number = {}
   ): Promise<void> {
     const opts: CacheSetOptions = typeof orgOpts === 'number' ? { ttl: orgOpts } : orgOpts;
-    mkdirSync(this.cache_dir, { recursive: true });
-    await writeFile(this.generateHash(name), this.parseSetData(name, data, opts), {
+    await mkdir(this.cache_dir, { recursive: true });
+    await writeFileWithRetry(this.generateHash(name), this.parseSetData(name, data, opts), {
       encoding: opts.encoding || 'utf8',
     });
   }

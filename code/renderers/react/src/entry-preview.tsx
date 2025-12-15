@@ -33,7 +33,7 @@ export const decorators: Decorator[] = [
     // @ts-expect-error this feature flag only exists in the react frameworks
     if (context.tags?.includes('test-fn') && !global.FEATURES?.experimentalTestSyntax) {
       throw new Error(
-        'To use the experimental test function, you must enable the experimentalTestSyntax feature flag. See https://storybook.js.org/docs/10/api/main-config/main-config-features#experimentalTestSyntax'
+        'To use the experimental test function, you must enable the experimentalTestSyntax feature flag. See https://storybook.js.org/docs/api/main-config/main-config-features#experimentaltestsyntax'
       );
     }
     return story();

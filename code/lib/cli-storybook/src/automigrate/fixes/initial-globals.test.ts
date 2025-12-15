@@ -19,6 +19,7 @@ const check = async (previewContents: string) => {
     storybookVersion: '8.0',
     previewConfigPath,
     storiesPaths: [],
+    hasCsfFactoryPreview: false,
   });
 };
 

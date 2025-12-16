@@ -330,7 +330,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           names.vitest,
           {
             executor: {
-              name: 'sb_node_22_classic',
+              name: 'sb_playwright',
               class: 'medium',
             },
             steps: [

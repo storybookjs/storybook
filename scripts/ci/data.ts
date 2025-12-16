@@ -898,6 +898,48 @@ const initEmptyLinux = ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-t
     )
 );
 
+const initFeatures = defineJob(
+  'init-features',
+  {
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'medium',
+    },
+    steps: [
+      git.checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS()),
+      verdaccio.start(),
+      server.wait([...verdaccio.ports]),
+      {
+        run: {
+          name: 'Storybook init from empty directory (Linux NPM)',
+          working_directory: '/tmp',
+          command: [
+            `mkdir empty-react-vite-ts`,
+            `cd empty-react-vite-ts`,
+            `npm set registry http://localhost:6001`,
+            `npx create-storybook --yes --package-manager npm --features docs test a11y --loglevel=debug`,
+          ].join('\n'),
+          environment: {
+            IN_STORYBOOK_SANDBOX: true,
+            STORYBOOK_DISABLE_TELEMETRY: true,
+            STORYBOOK_INIT_EMPTY_TYPE: 'react-vite-ts',
+          },
+        },
+      },
+      {
+        run: {
+          name: 'Run storybook smoke test',
+          working_directory: `/tmp/empty-react-vite-ts`,
+          command: 'npx vitest',
+        },
+      },
+    ],
+  },
+  ['init-empty']
+);
+
 const jobs = {
   [linux_build.id]: linux_build.implementation,
   [windows_build.id]: windows_build.implementation,
@@ -964,6 +1006,7 @@ const jobs = {
     },
     {} as Record<string, JobImplementation>
   ),
+  [initFeatures.id]: initFeatures.implementation,
 };
 
 const orbs = {
@@ -1082,6 +1125,11 @@ const workflows = {
           requires: init.requires,
         },
       })),
+      {
+        [initFeatures.id]: {
+          requires: initFeatures.requires,
+        },
+      },
     ],
   },
 };

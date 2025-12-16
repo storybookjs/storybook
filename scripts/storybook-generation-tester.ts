@@ -11,7 +11,6 @@ import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import picocolors from 'picocolors';
-import { coerce } from 'semver';
 import dedent from 'ts-dedent';
 import type { PackageJson } from 'type-fest';
 
@@ -206,6 +205,11 @@ const defaultProjects: ProjectConfig[] = [
   //   repo: 'https://github.com/tmkx/echarts-react',
   // },
   // {
+  //   name: 'baklava',
+  //   repo: 'https://github.com/fortanix/baklava',
+  //   branch: 'master',
+  // },
+  // {
   //   name: 'Primer',
   //   repo: 'https://github.com/storybook-tmp/primer-react',
   //   projectDir: 'packages/react',
@@ -335,10 +339,10 @@ async function runProject(project: ProjectConfig): Promise<ProjectRunResult> {
       return result;
     }
 
-    const packageJson = await addStorybookResolutions(projectDir);
+    await addStorybookResolutions(projectDir);
 
     // Initialize Storybook using the dispatcher built in this monorepo
-    const initCommand = `node "${dispatcherPath}" init --disable-telemetry --yes --no-dev --features test docs a11y --loglevel=silent --type=react --logfile`;
+    const initCommand = `node "${dispatcherPath}" init --disable-telemetry --yes --no-dev --features test docs a11y --type=react --logfile`;
     const initResult = await runStep('init-storybook', initCommand, projectDir);
 
     // Check whether ./debug-storybook.log exists, if it does, check whether it contains [ERROR] and report it
@@ -372,51 +376,32 @@ async function runProject(project: ProjectConfig): Promise<ProjectRunResult> {
       return result;
     }
 
-    const shouldTakeScreenshots = false;
+    const shouldTakeScreenshots = true;
 
     if (shouldTakeScreenshots) {
-      console.log('Detected Vitest 4, modifying setup file to take screenshots');
       const vitestSetupPath = join(projectDir, '.storybook/vitest.setup.ts');
       const newContent = dedent`
       import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview'
       import { setProjectAnnotations } from '@storybook/react-vite'
       import * as projectAnnotations from './preview'
-      import { expect } from 'vitest'
 
-      // This is an important step to apply the right configuration when testing your stories.
-      // More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations
       setProjectAnnotations([
         a11yAddonAnnotations,
         projectAnnotations,
         {
-          afterEach: async ({ title, name, canvasElement, reporting }) => {
+          afterEach: async ({ title, name, canvasElement, ...rest}) => {
             if (!(globalThis as any).__vitest_browser__) {
               return;
             }
             try {
-              console.log(\`Taking screenshot for "\${name}"\`);
               const { page } = await import('@vitest/browser/context');
-
-              const base64 = await page.screenshot({
-                path: \`screenshots/\${title}/\${name}.png\`,
-                base64: true,
+              const screenshotPath = \`\${(globalThis as any).__vitest_worker__.config.root}/screenshots/\${title}/\${name}.png\`
+              await page.screenshot({
+                path: screenshotPath,
                 element: canvasElement.firstChild,
-              });
-
-              reporting.addReport({
-                type: 'screenshot',
-                version: 1,
-                result: base64,
-                status: 'passed',
               });
             } catch (error) {
               console.error('Error taking screenshot', error);
-              reporting.addReport({
-                type: 'screenshot',
-                version: 1,
-                result: error,
-                status: 'failed',
-              });
             }
           },
         },
@@ -435,8 +420,8 @@ async function runProject(project: ProjectConfig): Promise<ProjectRunResult> {
       await rm(storiesDir, { recursive: true, force: true });
     }
 
-    // Generate stories using the Storybook CLI in the target project
-    const generateStoriesCommand = `node "${dispatcherPath}" generate-stories --sample=15`;
+    // Generate stories using the Storybook CLI in the target project - can also add --sample=15 to generate 15 stories
+    const generateStoriesCommand = `node "${dispatcherPath}" generate-stories --force`;
     const generateStoriesResult = await runStep(
       'generate-stories',
       generateStoriesCommand,
@@ -467,7 +452,7 @@ async function runProject(project: ProjectConfig): Promise<ProjectRunResult> {
 
   const vitestResult = await runStep(
     'vitest-storybook',
-    `npx vitest run --project=storybook --reporter=json --outputFile="${vitestJsonPath}"`,
+    `npx vitest run --project=storybook --testTimeout=1500 --reporter=json --outputFile="${vitestJsonPath}"`,
     projectDir
   );
   steps.push(vitestResult);
@@ -931,7 +916,12 @@ async function main() {
     })`;
 
     console.log(picocolors.bold(CLI_COLORS.success(`\n➤ ${projectLabel}`)));
-    console.log(picocolors.bold(CLI_COLORS.success(`\n  → ${result.projectDir}`)));
+    if(result.workdir == result.projectDir) {
+      console.log(picocolors.bold(CLI_COLORS.success(`\n  → ${result.workdir}`)));
+    } else {
+      console.log(picocolors.bold(CLI_COLORS.success(`\n  → ${result.workdir}`)));
+      console.log(picocolors.bold(CLI_COLORS.success(`\n  → Storybook at: ${result.projectDir}`)));
+    }
 
     for (const step of result.steps) {
       const status = step.success ? (step.errorMessage ? '⛔️' : '✅') : '❌';

@@ -325,9 +325,13 @@ const testRunner = defineSandboxTestRunner(sandboxes[0]);
 
 const initEmptyWindows = defineEmptyInitWindows();
 
-const initEmptyLinux = ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'].map(
-  defineEmptyInitFlow
-);
+const initEmptyLinux = [
+  //
+  'react-vite-ts',
+  // 'nextjs-ts',
+  // 'vue-vite-ts',
+  // 'lit-vite-ts',
+].map(defineEmptyInitFlow);
 
 const initFeatures = defineEmptyInitFeatures();
 

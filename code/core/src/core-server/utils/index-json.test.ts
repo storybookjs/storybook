@@ -529,8 +529,11 @@ describe('registerIndexJsonRoute', () => {
       expect(watcher.on).toHaveBeenCalledTimes(2);
       const onChange = watcher.on.mock.calls[0][1];
 
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      // Wait for the batched events to be processed
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      });
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
     });
 
@@ -567,8 +570,11 @@ describe('registerIndexJsonRoute', () => {
       expect(watcher.on).toHaveBeenCalledTimes(2);
       const onChange = watcher.on.mock.calls[0][1];
 
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      // Wait for the batched events to be processed
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      });
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
     });
 
@@ -606,18 +612,29 @@ describe('registerIndexJsonRoute', () => {
       expect(watcher.on).toHaveBeenCalledTimes(2);
       const onChange = watcher.on.mock.calls[0][1];
 
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      // Fire multiple change events in rapid succession
+      // These get batched by watchStorySpecifiers (100ms batching window)
+      // and then debounced by maybeInvalidate (100ms debounce)
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
 
-      expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      // Wait for first batch to be processed and emit (leading edge)
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      });
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
 
-      await new Promise((r) => setTimeout(r, 2 * DEBOUNCE));
+      // Fire another change event after the first batch is processed
+      // This will trigger the trailing edge of the debounce
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
 
-      expect(mockServerChannel.emit).toHaveBeenCalledTimes(2);
+      // Wait for trailing debounce to trigger second emit
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalledTimes(2);
+      });
     });
   });
 });

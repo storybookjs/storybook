@@ -209,17 +209,21 @@ function defineSandboxFlow<K extends string>(name: K) {
   const data = allTemplates[name as keyof typeof allTemplates];
   const { skipTasks } = data;
 
+  const path = name.replace('/', '-');
+
   const names = {
     create: `${name} (create)`,
     build: `${name} (build)`,
     dev: `${name} (dev)`,
     chromatic: `${name} (chromatic)`,
+    ['test-runner']: `${name} (test-runner)`,
   };
   const ids = {
     create: `${toId(names.create)}`,
     build: `${toId(names.build)}`,
     dev: `${toId(names.dev)}`,
     chromatic: `${toId(names.chromatic)}`,
+    ['test-runner']: `${toId(names['test-runner'])}`,
   };
 
   const jobs = [
@@ -320,8 +324,42 @@ function defineSandboxFlow<K extends string>(name: K) {
           [ids.build]
         )
       : undefined,
+
+    /**
+     * Question: What is this for? Do we want to know if the test-runner works? Or do we want to
+     * know if the sandbox works?
+     *
+     * If it's the first, we actually only need to run the test-runner job once, on any sandbox. If
+     * it's the second, we need to run the test-runner job for each sandbox, but then we don't need
+     * to run it when we're already running the chromatic job.
+     */
+    !skipTasks?.includes('test-runner') && skipTasks.includes('chromatic')
+      ? defineJob(
+          names['test-runner'],
+          {
+            executor: {
+              name: 'sb_playwright',
+              class: 'medium',
+            },
+            steps: [
+              'checkout',
+              workspace.attach(),
+              cache.attach(CACHE_KEYS()),
+              {
+                run: {
+                  name: 'Running test-runner',
+                  command: `yarn task test-runner --template ${name} --no-link -s test-runner`,
+                },
+              },
+            ],
+          },
+          [ids.build]
+        )
+      : undefined,
   ].filter(Boolean);
   return {
+    name,
+    path,
     jobs,
     workflow: jobs.map((job) => {
       return {
@@ -689,6 +727,28 @@ const sandboxes = [
   // 'react-vite/default-js',
 ].map(defineSandboxFlow);
 
+const testRunner = defineJob(
+  'test-runner',
+  {
+    executor: {
+      name: 'sb_playwright',
+      class: 'medium',
+    },
+    steps: [
+      git.checkout(),
+      workspace.attach(),
+      cache.attach(CACHE_KEYS()),
+      {
+        run: {
+          name: 'Running test-runner',
+          command: `yarn task test-runner --template ${sandboxes[0].name} --no-link -s test-runner`,
+        },
+      },
+    ],
+  },
+  [sandboxes[0].jobs[1].id]
+);
+
 const windows_sandbox_build = defineJob(
   `${sandboxes[0].jobs[1].id}-windows`,
   {
@@ -712,7 +772,7 @@ const windows_sandbox_build = defineJob(
       {
         run: {
           name: 'Run Install',
-          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite-default-ts`,
+          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\${sandboxes[0].path}`,
           command: 'yarn install',
         },
       },
@@ -725,14 +785,14 @@ const windows_sandbox_build = defineJob(
       {
         run: {
           name: 'Build storybook',
-          command: `yarn task build --template react-vite/default-ts --no-link -s build`,
+          command: `yarn task build --template ${sandboxes[0].name} --no-link -s build`,
         },
       },
       {
         run: {
           name: 'Serve storybook',
           background: true,
-          command: `yarn task serve --template react-vite/default-ts --no-link -s serve`,
+          command: `yarn task serve --template ${sandboxes[0].name} --no-link -s serve`,
         },
       },
       server.wait(['8001']),
@@ -740,7 +800,7 @@ const windows_sandbox_build = defineJob(
         run: {
           name: 'Running E2E Tests',
           working_directory: 'code',
-          command: 'yarn task e2e-tests --template react-vite/default-ts --no-link -s e2e-tests',
+          command: `yarn task e2e-tests --template ${sandboxes[0].name} --no-link -s e2e-tests`,
         },
       },
     ],
@@ -771,7 +831,7 @@ const windows_sandbox_dev = defineJob(
       {
         run: {
           name: 'Run Install',
-          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite-default-ts`,
+          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\${sandboxes[0].path}`,
           command: 'yarn install',
         },
       },
@@ -785,7 +845,7 @@ const windows_sandbox_dev = defineJob(
         run: {
           name: 'Run storybook',
           background: true,
-          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\react-vite-default-ts`,
+          working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\${sandboxes[0].path}`,
           command: 'yarn storybook --port 8001',
         },
       },
@@ -794,8 +854,7 @@ const windows_sandbox_dev = defineJob(
         run: {
           name: 'Running E2E Tests',
           working_directory: 'code',
-          command:
-            'yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s e2e-tests-dev',
+          command: `yarn task e2e-tests-dev --template ${sandboxes[0].name} --no-link -s e2e-tests-dev`,
         },
       },
     ],
@@ -1007,6 +1066,7 @@ const jobs = {
     {} as Record<string, JobImplementation>
   ),
   [initFeatures.id]: initFeatures.implementation,
+  [testRunner.id]: testRunner.implementation,
 };
 
 const orbs = {
@@ -1128,6 +1188,11 @@ const workflows = {
       {
         [initFeatures.id]: {
           requires: initFeatures.requires,
+        },
+      },
+      {
+        [testRunner.id]: {
+          requires: testRunner.requires,
         },
       },
     ],

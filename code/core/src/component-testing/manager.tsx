@@ -3,11 +3,11 @@ import React from 'react';
 import { AddonPanel } from 'storybook/internal/components';
 
 import { type Combo, Consumer, addons, types } from 'storybook/manager-api';
-import type { API_StoryEntry } from 'storybook/internal/types';
 
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
-import { ADDON_ID, PANEL_ID, PARAM_KEY } from './constants';
+import { ADDON_ID, PANEL_ID } from './constants';
+import { isInteractionsDisabled } from './utils';
 
 export default addons.register(ADDON_ID, () => {
   if (globalThis?.FEATURES?.interactions) {
@@ -26,9 +26,7 @@ export default addons.register(ADDON_ID, () => {
       type: types.PANEL,
       title: () => <PanelTitle />,
       match: ({ viewMode }) => viewMode === 'story',
-      disabled: (parameters: API_StoryEntry['parameters']) => {
-        return !!parameters?.[PARAM_KEY]?.disable;
-      },
+      disabled: isInteractionsDisabled,
       render: ({ active }) => {
         return (
           <AddonPanel active={!!active}>

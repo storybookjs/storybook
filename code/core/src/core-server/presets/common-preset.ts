@@ -307,8 +307,6 @@ export const storyIndexGenerator: PresetPropertyFn<
     const workingDir = process.cwd();
     const configDir = options.configDir;
     const stories = await options.presets.apply('stories');
-    // StoryIndexGenerator depends on these normalized stories to be referentially equal
-    // So it's important that we only normalize them once here and pass the same reference around
     const normalizedStories = normalizeStories(stories, {
       configDir,
       workingDir,

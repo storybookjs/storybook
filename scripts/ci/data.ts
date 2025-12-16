@@ -870,6 +870,7 @@ const initEmptyLinux = ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-t
           {
             run: {
               name: 'Storybook init from empty directory (Linux NPM)',
+              working_directory: '/tmp',
               command: [
                 `mkdir empty-${template}`,
                 `cd empty-${template}`,

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ActionList, PopoverProvider } from 'storybook/internal/components';
 
@@ -13,7 +13,7 @@ import {
 } from '../../../viewport/useViewport';
 import { iconsMap } from '../../../viewport/viewportIcons';
 import { IFrame } from './Iframe';
-import { SizeInput } from './SizeInput';
+import { NumericInput } from './NumericInput';
 
 type DragSide = 'none' | 'both' | 'bottom' | 'right';
 
@@ -81,14 +81,20 @@ const FrameWrapper = styled.div<{
   '&:has([data-side="right"]:hover), &[data-dragging="right"]': {
     borderRightColor: theme.color.secondary,
     boxShadow: `4px 0 5px -2px ${theme.background.hoverable}`,
+    '[data-side="right"]::after': {
+      opacity: 1,
+    },
   },
   '&:has([data-side="bottom"]:hover), &[data-dragging="bottom"]': {
     borderBottomColor: theme.color.secondary,
     boxShadow: `0 4px 5px -2px ${theme.background.hoverable}`,
+    '[data-side="bottom"]::after': {
+      opacity: 1,
+    },
   },
   '&:has([data-side="both"]:hover), &[data-dragging="both"]': {
     boxShadow: `3px 3px 5px -2px ${theme.background.hoverable}`,
-    '&::after': {
+    '&::after, [data-side]::after': {
       opacity: 1,
     },
   },
@@ -114,40 +120,92 @@ const FrameWrapper = styled.div<{
       rgba(0,0,0,0) 100%)`,
   },
   iframe: {
-    borderRadius: 'inherit',
     pointerEvents: dragging === 'none' ? 'auto' : 'none',
   },
 }));
 
 const DragHandle = styled.div<{
+  isDefault: boolean;
   'data-side': DragSide;
 }>(
-  { position: 'absolute' },
-  ({ 'data-side': side }) =>
-    side === 'both' && {
-      right: -12,
-      bottom: -12,
-      width: 25,
-      height: 25,
-      cursor: 'nwse-resize',
-    },
-  ({ 'data-side': side }) =>
-    side === 'bottom' && {
-      left: 0,
-      right: 13,
-      bottom: -12,
-      height: 20,
-      cursor: 'row-resize',
-    },
-  ({ 'data-side': side }) =>
-    side === 'right' && {
-      top: 0,
-      right: -12,
-      bottom: 13,
-      width: 20,
-      cursor: 'col-resize',
+  { display: 'none' },
+  ({ theme, isDefault }) =>
+    !isDefault && {
+      display: 'block',
+      position: 'absolute',
+      fontSize: 10,
+      '&[data-side="both"]': {
+        right: -12,
+        bottom: -12,
+        width: 25,
+        height: 25,
+        cursor: 'nwse-resize',
+      },
+      '&[data-side="bottom"]': {
+        left: 0,
+        right: 13,
+        bottom: -12,
+        height: 20,
+        cursor: 'row-resize',
+        '&::after': {
+          content: 'attr(data-value)',
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          borderRadius: 4,
+          backgroundColor: theme.background.hoverable,
+          padding: '2px 4px',
+          opacity: 0,
+          transition: 'opacity 0.2s',
+        },
+      },
+      '&[data-side="right"]': {
+        top: 0,
+        right: -12,
+        bottom: 13,
+        width: 20,
+        cursor: 'col-resize',
+        '&::after': {
+          content: 'attr(data-value)',
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          borderRadius: 4,
+          backgroundColor: theme.background.hoverable,
+          padding: '2px 4px',
+          opacity: 0,
+          transition: 'opacity 0.2s',
+        },
+      },
     }
 );
+
+const ScrollEdge = styled.div<{ 'data-edge': DragSide }>({
+  position: 'absolute',
+  pointerEvents: 'none',
+  width: 0,
+  height: 0,
+  '&[data-edge="right"]': {
+    right: -40,
+    height: '100%',
+  },
+  '&[data-edge="bottom"]': {
+    bottom: -40,
+    width: '100%',
+  },
+  '&[data-edge="both"]': {
+    right: -40,
+    bottom: -40,
+  },
+});
+
+const SizeInput = styled(NumericInput)({
+  width: 85,
+  height: 28,
+  minHeight: 28,
+});
 
 export const Viewport = ({
   active,
@@ -185,12 +243,27 @@ export const Viewport = ({
   const dragStart = useRef<[number, number] | undefined>();
 
   useEffect(() => {
+    const scrollRight = targetRef.current?.querySelector('[data-edge="right"]');
+    const scrollBottom = targetRef.current?.querySelector('[data-edge="bottom"]');
+    const scrollBoth = targetRef.current?.querySelector('[data-edge="both"]');
+
     const onDrag = (e: MouseEvent) => {
       if (dragSide.current === 'both' || dragSide.current === 'right') {
         targetRef.current!.style.width = `${dragStart.current![0] + e.clientX}px`;
+        dragRefX.current!.dataset.value = `${dragStart.current![0] + e.clientX}`;
       }
       if (dragSide.current === 'both' || dragSide.current === 'bottom') {
         targetRef.current!.style.height = `${dragStart.current![1] + e.clientY}px`;
+        dragRefY.current!.dataset.value = `${dragStart.current![1] + e.clientY}`;
+      }
+      if (dragSide.current === 'both') {
+        scrollBoth?.scrollIntoView({ block: 'center', inline: 'center' });
+      }
+      if (dragSide.current === 'right') {
+        scrollRight?.scrollIntoView({ block: 'center', inline: 'center' });
+      }
+      if (dragSide.current === 'bottom') {
+        scrollBottom?.scrollIntoView({ block: 'center', inline: 'center' });
       }
     };
 
@@ -198,7 +271,9 @@ export const Viewport = ({
       window.removeEventListener('mouseup', onEnd);
       window.removeEventListener('mousemove', onDrag);
       setDragging('none');
-      resize(`${targetRef.current!.clientWidth}px`, `${targetRef.current!.clientHeight}px`);
+      const { clientWidth, clientHeight } = targetRef.current!;
+      const scale = Number(targetRef.current!.dataset.scale) || 1;
+      resize(`${Math.round(clientWidth / scale)}px`, `${Math.round(clientHeight / scale)}px`);
       dragStart.current = undefined;
     };
 
@@ -218,6 +293,20 @@ export const Viewport = ({
     handles.forEach((el) => el?.addEventListener('mousedown', onStart));
     return () => handles.forEach((el) => el?.removeEventListener('mousedown', onStart));
   }, [resize]);
+
+  const parseNumber = (value: string) => {
+    const [match, number, unit] = value.match(/^(\d+(?:\.\d+)?)(\%|[a-z]{0,4})?$/) || [];
+    return match ? { number: Number(number), unit } : undefined;
+  };
+
+  const frameStyles = useMemo(() => {
+    const { number: nx, unit: ux = 'px' } = parseNumber(width) ?? { number: 0, unit: 'px' };
+    const { number: ny, unit: uy = 'px' } = parseNumber(height) ?? { number: 0, unit: 'px' };
+    return {
+      width: `${nx * scale}${ux}`,
+      height: `${ny * scale}${uy}`,
+    };
+  }, [width, height, scale]);
 
   return (
     <ViewportWrapper key={id} active={active} isDefault={isDefault}>
@@ -259,7 +348,11 @@ export const Viewport = ({
             <SizeInput
               data-size-input="width"
               label="Viewport width:"
-              prefix="W"
+              before={
+                <ActionList.Action size="small" readOnly aria-hidden>
+                  W
+                </ActionList.Action>
+              }
               value={width}
               setValue={(value) => resize(value, height)}
             />
@@ -275,7 +368,11 @@ export const Viewport = ({
             <SizeInput
               data-size-input="height"
               label="Viewport height:"
-              prefix="H"
+              before={
+                <ActionList.Action size="small" readOnly aria-hidden>
+                  H
+                </ActionList.Action>
+              }
               value={height}
               setValue={(value) => resize(width, value)}
             />
@@ -296,21 +393,40 @@ export const Viewport = ({
       <FrameWrapper
         isDefault={isDefault}
         data-dragging={dragging}
-        style={{ width, height }}
+        data-scale={scale}
+        style={isDefault ? { height: '100%', width: '100%' } : frameStyles}
         ref={targetRef}
       >
-        <IFrame
-          active={active}
-          key={id}
-          id={id}
-          title={id}
-          src={src}
-          allowFullScreen
-          scale={scale}
+        <div
+          style={{
+            height: `${(1 / scale) * 100}%`,
+            width: `${(1 / scale) * 100}%`,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+          }}
+        >
+          <IFrame allowFullScreen active={active} key={id} id={id} title={id} src={src} scale={1} />
+          {!isDefault && (
+            <>
+              <ScrollEdge data-edge="right" />
+              <ScrollEdge data-edge="bottom" />
+              <ScrollEdge data-edge="both" />
+            </>
+          )}
+        </div>
+        <DragHandle
+          ref={dragRefX}
+          isDefault={isDefault}
+          data-side="right"
+          data-value={width.replace('px', '')}
         />
-        <DragHandle data-side="right" ref={dragRefX} />
-        <DragHandle data-side="bottom" ref={dragRefY} />
-        <DragHandle data-side="both" ref={dragRefXY} />
+        <DragHandle
+          ref={dragRefY}
+          isDefault={isDefault}
+          data-side="bottom"
+          data-value={height.replace('px', '')}
+        />
+        <DragHandle ref={dragRefXY} isDefault={isDefault} data-side="both" />
       </FrameWrapper>
     </ViewportWrapper>
   );

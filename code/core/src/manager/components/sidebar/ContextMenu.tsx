@@ -18,8 +18,8 @@ import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
-import { Shortcut } from '../../container/Menu';
 import { getMostCriticalStatusValue } from '../../utils/status';
+import { Shortcut } from '../Shortcut';
 import { UseSymbol } from './IconSymbols';
 import { StatusButton } from './StatusButton';
 import { StatusContext } from './StatusContext';

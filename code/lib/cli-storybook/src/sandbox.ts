@@ -197,7 +197,9 @@ export const sandbox = async ({
     logger.log(`📦 Downloading sandbox template (${picocolors.bold(downloadType)})...`);
     try {
       // Download the sandbox based on subfolder "after-storybook" and selected branch
-      const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${branch}`;
+      // commit hash of v9.1.15 release
+      const commitHash = '1f4e5f1b5a6c8a82700d7db8b335cda52295a856';
+      const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${commitHash}`;
       // create templateDestination first (because it errors on Windows if it doesn't exist)
       await mkdir(templateDestination, { recursive: true });
       await downloadTemplate(gitPath, {

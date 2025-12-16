@@ -27,6 +27,10 @@ export function getUsedProps(fn: (...args: unknown[]) => unknown) {
     return splitByComma(destructuredProps).map((prop) => prop.replace(/:.*|=.*/g, ''));
   }
 
+  if (!firstArg.match(/^[^a-z_]|[^0-9a-z_]$/i)) {
+    return [];
+  }
+
   const [, destructuredArg] =
     body?.trim()?.match(new RegExp(`^(?:const|let|var)\\s*{([^}]+)}\\s*=\\s*${firstArg};`)) || [];
   if (destructuredArg) {

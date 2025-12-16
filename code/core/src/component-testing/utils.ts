@@ -3,6 +3,16 @@ import { type StorybookTheme, useTheme } from 'storybook/theming';
 // eslint-disable-next-line depend/ban-dependencies
 import stripAnsi from 'strip-ansi';
 
+import type { API_StoryEntry } from 'storybook/internal/types';
+
+import { PARAM_KEY } from './constants';
+
+export function isInteractionsDisabled(
+  parameters: API_StoryEntry['parameters']
+): boolean {
+  return !!parameters?.[PARAM_KEY]?.disable;
+}
+
 export function isTestAssertionError(error: unknown) {
   return isChaiError(error) || isJestError(error);
 }

@@ -75,6 +75,7 @@ interface GenerateStoriesOptions {
   interactive?: boolean;
   configDir?: string;
   sampleComponents?: number;
+  force?: boolean;
 }
 
 interface ComponentInfo {
@@ -89,6 +90,7 @@ export const generateStories = async ({
   interactive = false,
   configDir = '.storybook',
   sampleComponents,
+  force = false,
 }: GenerateStoriesOptions) => {
   logger.debug(`Starting story generation with glob: ${globPattern}`);
   logger.debug(`Interactive mode: ${interactive}`);
@@ -175,7 +177,7 @@ export const generateStories = async ({
 
     // Generate stories for selected components
     logger.debug('Generating stories for selected components...');
-    const results = await generateStoriesForComponents(selectedComponents, options);
+    const results = await generateStoriesForComponents(selectedComponents, options, force);
 
     // Report results
     const { generated, skipped, failed } = results;
@@ -327,7 +329,8 @@ function doesAnyStoryFileExist(componentDir: string, componentName: string): boo
 
 async function generateStoriesForComponents(
   components: ComponentInfo[],
-  options: Options
+  options: Options,
+  force?: boolean
 ): Promise<{ generated: number; skipped: number; failed: number }> {
   let generated = 0;
   let skipped = 0;
@@ -339,7 +342,7 @@ async function generateStoriesForComponents(
     const componentDir = dirname(component.filePath);
 
     // Check if any story file already exists for this component
-    if (doesAnyStoryFileExist(componentDir, component.exportName)) {
+    if (doesAnyStoryFileExist(componentDir, component.exportName) && !force) {
       skipped++;
       logger.info(
         `⏭️  Skipped (story already exists for ${component.exportName}): ${component.filePath}`

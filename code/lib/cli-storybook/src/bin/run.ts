@@ -306,6 +306,7 @@ command('doctor')
 command('generate-stories [glob]')
   .description('Generate stories for components matching a glob pattern (picomatch syntax)')
   .option('-i, --interactive', 'Interactively select which components to generate stories for')
+  .option('-f, --force', 'Force generation of stories even if they already exist')
   .option(
     '-s, --sample [num]',
     'Only select a subset of N components to generate stories for (default: 10)'
@@ -329,6 +330,7 @@ command('generate-stories [glob]')
           glob: globPattern,
           interactive: options.interactive,
           configDir: options.configDir,
+          force: !!options.force,
           sampleComponents,
         });
 

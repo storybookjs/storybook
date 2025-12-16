@@ -94,7 +94,6 @@ describe('registerIndexJsonRoute', () => {
   describe('JSON endpoint', () => {
     it('scans and extracts index', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      console.time('registerIndexJsonRoute');
       registerIndexJsonRoute({
         app,
         serverChannel: mockServerChannel,
@@ -102,7 +101,6 @@ describe('registerIndexJsonRoute', () => {
         normalizedStories,
         storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
       });
-      console.timeEnd('registerIndexJsonRoute');
 
       expect(use).toHaveBeenCalledTimes(1);
       const route = use.mock.calls[0][1];

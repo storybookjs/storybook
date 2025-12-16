@@ -216,6 +216,7 @@ function defineSandboxFlow<K extends string>(name: K) {
     build: `${name} (build)`,
     dev: `${name} (dev)`,
     chromatic: `${name} (chromatic)`,
+    vitest: `${name} (vitest)`,
     ['test-runner']: `${name} (test-runner)`,
   };
   const ids = {
@@ -223,6 +224,7 @@ function defineSandboxFlow<K extends string>(name: K) {
     build: `${toId(names.build)}`,
     dev: `${toId(names.dev)}`,
     chromatic: `${toId(names.chromatic)}`,
+    vitest: `${toId(names.vitest)}`,
     ['test-runner']: `${toId(names['test-runner'])}`,
   };
 
@@ -317,6 +319,29 @@ function defineSandboxFlow<K extends string>(name: K) {
                   environment: {
                     STORYBOOK_SANDBOX_ROOT: `./sandbox`,
                   },
+                },
+              },
+            ],
+          },
+          [ids.build]
+        )
+      : undefined,
+    !skipTasks?.includes('vitest-integration')
+      ? defineJob(
+          names.vitest,
+          {
+            executor: {
+              name: 'sb_node_22_classic',
+              class: 'medium',
+            },
+            steps: [
+              git.checkout(),
+              workspace.attach(),
+              cache.attach(CACHE_KEYS()),
+              {
+                run: {
+                  name: 'Running Vitest',
+                  command: `yarn task vitest-integration --template ${name} --no-link -s vitest-integration`,
                 },
               },
             ],
@@ -728,7 +753,7 @@ const sandboxes = [
 ].map(defineSandboxFlow);
 
 const testRunner = defineJob(
-  'test-runner',
+  `${sandboxes[0].jobs[1].id}-test-runner`,
   {
     executor: {
       name: 'sb_playwright',
@@ -1208,6 +1233,8 @@ export const data = {
 
   jobs,
   workflows,
+  // jobs: Object.fromEntries(Object.entries(jobs).sort(([a], [b]) => a.localeCompare(b))),
+  // workflows: Object.fromEntries(Object.entries(workflows).sort(([a], [b]) => a.localeCompare(b))),
 };
 
 function definePortableStoryTest(directory: string) {

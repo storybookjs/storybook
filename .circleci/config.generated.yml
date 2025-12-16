@@ -753,6 +753,25 @@ jobs:
                   command: yarn task chromatic --template react-vite/default-ts --no-link -s chromatic
                   environment:
                       STORYBOOK_SANDBOX_ROOT: ./sandbox
+    react-vite-default-ts--vitest:
+        description: react-vite/default-ts (vitest)
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Running Vitest
+                  command: yarn task vitest-integration --template react-vite/default-ts --no-link -s vitest-integration
     react-vite-default-ts--dev-windows:
         description: react-vite-default-ts--dev-windows
         executor:
@@ -1208,8 +1227,8 @@ jobs:
                   name: Run storybook smoke test
                   working_directory: /tmp/empty-react-vite-ts
                   command: npx vitest
-    test-runner:
-        description: test-runner
+    react-vite-default-ts--build-test-runner:
+        description: react-vite-default-ts--build-test-runner
         executor:
             name: sb_playwright
             class: medium
@@ -1266,6 +1285,9 @@ workflows:
             - react-vite-default-ts--chromatic:
                   requires:
                       - react-vite-default-ts--build
+            - react-vite-default-ts--vitest:
+                  requires:
+                      - react-vite-default-ts--build
             - react-vite-default-ts--dev-windows:
                   requires:
                       - react-vite-default-ts--create
@@ -1308,6 +1330,6 @@ workflows:
             - init-features:
                   requires:
                       - init-empty
-            - test-runner:
+            - react-vite-default-ts--build-test-runner:
                   requires:
                       - react-vite-default-ts--build

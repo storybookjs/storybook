@@ -3,8 +3,6 @@ import { readFile, rm, writeFile } from 'node:fs/promises';
 import path, { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { CLI_COLORS } from 'storybook/internal/node-logger';
-
 import type { ComponentComplexity } from '@hipster/sb-utils/component-analyzer';
 import { getComponentComplexity } from '@hipster/sb-utils/component-analyzer';
 import * as find from 'empathic/find';
@@ -13,6 +11,19 @@ import { execaCommand } from 'execa';
 import picocolors from 'picocolors';
 import dedent from 'ts-dedent';
 import type { PackageJson } from 'type-fest';
+
+export const CLI_COLORS = {
+  success: picocolors.green,
+  error: picocolors.red,
+  warning: picocolors.yellow,
+  // Improve contrast on dark terminals by using cyan for info on all platforms
+  info: picocolors.cyan,
+  debug: picocolors.gray,
+  // Only color a link if it is the primary call to action, otherwise links shouldn't be colored
+  cta: picocolors.cyan,
+  muted: picocolors.dim,
+  storybook: (text: string) => `\x1b[38;2;255;71;133m${text}\x1b[39m`,
+};
 
 const LOCK_FILES = {
   npm: 'package-lock.json',
@@ -900,7 +911,6 @@ async function main() {
   const results: ProjectRunResult[] = [];
 
   for (const project of projectsToRun) {
-    // eslint-disable-next-line no-await-in-loop
     const result = await runProject(project);
     results.push(result);
   }
@@ -916,7 +926,7 @@ async function main() {
     })`;
 
     console.log(picocolors.bold(CLI_COLORS.success(`\n➤ ${projectLabel}`)));
-    if(result.workdir == result.projectDir) {
+    if (result.workdir == result.projectDir) {
       console.log(picocolors.bold(CLI_COLORS.success(`\n  → ${result.workdir}`)));
     } else {
       console.log(picocolors.bold(CLI_COLORS.success(`\n  → ${result.workdir}`)));

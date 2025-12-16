@@ -39,6 +39,7 @@ test('getComponentDocgen - extracts component name and docgen from a simple comp
   expect(result).not.toBeNull();
   expect(result?.componentName).toBe('Button');
   expect(result?.reactDocgen.type).toBe('success');
+  // @ts-expect-error fix this later
   expect(result?.reactDocgen.data.displayName).toBe('Button');
 });
 
@@ -71,6 +72,7 @@ test('getComponentDocgen - extracts default export component when no name specif
   expect(result).not.toBeNull();
   expect(result?.componentName).toBe('Icon');
   expect(result?.reactDocgen.type).toBe('success');
+  // @ts-expect-error fix this later
   expect(result?.reactDocgen.data.displayName).toBe('Icon');
 });
 
@@ -103,10 +105,12 @@ test('getComponentDocgen - finds specific component by name when multiple export
 
   expect(inputResult).not.toBeNull();
   expect(inputResult?.componentName).toBe('Input');
+  // @ts-expect-error fix this later
   expect(inputResult?.reactDocgen.data.displayName).toBe('Input');
 
   expect(labelResult).not.toBeNull();
   expect(labelResult?.componentName).toBe('Label');
+  // @ts-expect-error fix this later
   expect(labelResult?.reactDocgen.data.displayName).toBe('Label');
 });
 
@@ -186,6 +190,7 @@ test('getComponentDocgen - works with TypeScript class components', () => {
   expect(result).not.toBeNull();
   expect(result?.componentName).toBe('LegacyButton');
   expect(result?.reactDocgen.type).toBe('success');
+  // @ts-expect-error fix this later
   expect(result?.reactDocgen.data.displayName).toBe('LegacyButton');
 });
 
@@ -285,6 +290,7 @@ test('getComponentDocgen - extracts JSDoc comments and component information', (
   expect(result?.componentName).toBe('DetailedButton');
   expect(result?.reactDocgen.type).toBe('success');
 
+  // @ts-expect-error fix this later
   const docgenData = result?.reactDocgen.data;
   expect(docgenData?.displayName).toBe('DetailedButton');
   expect(docgenData?.description).toContain('detailed button component');

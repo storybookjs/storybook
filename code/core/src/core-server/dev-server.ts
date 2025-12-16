@@ -34,8 +34,6 @@ export async function storybookDevServer(options: Options) {
     getServerChannel(server)
   );
 
-  let indexError: Error | undefined;
-
   const workingDir = process.cwd();
   const configDir = options.configDir;
   const stories = await options.presets.apply('stories');
@@ -147,18 +145,19 @@ export async function storybookDevServer(options: Options) {
     app.listen({ port, host }, resolve);
   });
 
-  await Promise.all([storyIndexGeneratorPromise, listening]).then(async ([indexGenerator]) => {
+  try {
+    const [indexGenerator] = await Promise.all([storyIndexGeneratorPromise, listening]);
+
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
       const url = host ? networkAddress : address;
       openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url).catch(() => {
         // the browser window could not be opened, this is non-critical, we just ignore the error
       });
     }
-  });
-  if (indexError) {
+  } catch (e) {
     await managerBuilder?.bail().catch();
     await previewBuilder?.bail().catch();
-    throw indexError;
+    throw e;
   }
 
   const features = await options.presets.apply('features');

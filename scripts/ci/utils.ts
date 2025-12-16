@@ -1,4 +1,4 @@
-import { CACHE_KEYS } from './data';
+import type { executors } from './executors';
 
 export const ROOT_DIR = '/tmp';
 export const WORKING_DIR = `project`;
@@ -190,4 +190,51 @@ export const restore = {
       },
     },
   ],
+};
+export const CACHE_KEYS = (platform = 'linux') =>
+  [
+    `v5-${platform}-node_modules`,
+    '{{ checksum ".nvmrc" }}',
+    '{{ checksum ".yarnrc.yml" }}',
+    '{{ checksum "yarn.lock" }}',
+  ].map((_, index, list) => {
+    return list.slice(0, list.length - index).join('/');
+  });
+export const CACHE_PATHS = [
+  '.yarn/cache',
+  '.yarn/unplugged',
+  '.yarn/build-state.yml',
+  '.yarn/root-install-state.gz',
+  'node_modules',
+  'code/node_modules',
+  'scripts/node_modules',
+];
+export function defineJob<K extends string, I extends JobImplementation>(
+  name: K,
+  implementation: I,
+  requires = [] as string[]
+) {
+  return {
+    id: toId(name),
+    name,
+    implementation: {
+      description: name,
+      ...implementation,
+    },
+    requires,
+  };
+}
+export type JobImplementation = {
+  executor:
+    | {
+        name: keyof typeof executors;
+        class: 'small' | 'medium' | 'medium+' | 'large' | 'xlarge';
+      }
+    | {
+        name: 'win/default';
+        size: 'small' | 'medium' | 'medium+' | 'large' | 'xlarge';
+      };
+  steps: unknown[];
+  parameters?: Record<string, unknown>;
+  parallelism?: number;
 };

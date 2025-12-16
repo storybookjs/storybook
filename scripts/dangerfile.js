@@ -106,12 +106,12 @@ const checkManualTestingSection = (body) => {
 
   // Bypass check for OWNER, MEMBER roles (but never for bots e.g. Copilot)
   if (['OWNER', 'MEMBER'].includes(authorAssociation) && author.type !== 'Bot') {
-    return;
+    // return; // TODO: re-enable after debug
   }
 
   // Check if manual testing section exists
   const manualTestingMatch = body.match(/####\s*Manual testing/i);
-  if (!manualTestingMatch) {
+  if (!manualTestingMatch || manualTestingMatch.index === undefined) {
     fail(
       'PR description is missing the mandatory "#### Manual testing" section. Please add it so that reviewers know how to manually test your changes.'
     );

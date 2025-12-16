@@ -600,7 +600,7 @@ jobs:
             - attach_workspace:
                   at: C:\Users\circleci
             - run:
-                  name: Run Install
+                  name: Install dependencies
                   command: yarn install
             - run:
                   name: Verdaccio
@@ -745,7 +745,7 @@ jobs:
             class: xlarge
         steps:
             - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 500
+                  clone_options: --depth 1
             - attach_workspace:
                   at: /tmp
             - restore_cache:
@@ -1238,7 +1238,10 @@ jobs:
                       corepack enable
                       corepack prepare yarn@stable --activate
             - attach_workspace:
-                  at: C:\Users\circleci\project
+                  at: C:\Users\circleci
+            - run:
+                  name: Install dependencies
+                  command: yarn install
             - run:
                   command: yarn install
                   name: Install dependencies

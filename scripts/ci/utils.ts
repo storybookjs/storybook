@@ -1,3 +1,5 @@
+import { CACHE_KEYS } from './data';
+
 export const ROOT_DIR = '/tmp';
 export const WORKING_DIR = `project`;
 export const SANDBOX_DIR = `storybook-sandboxes`;
@@ -166,4 +168,26 @@ export const verdaccio = {
     };
   },
   ports: ['6001', '6002'],
+};
+
+export const restore = {
+  linux: () => [git.checkout(), workspace.attach(), cache.attach(CACHE_KEYS())],
+  windows: () => [
+    git.checkout({ forceHttps: true }),
+    node.installOnWindows(),
+    workspace.attach('C:\\Users\\circleci'),
+    /**
+     * I really wish this wasn't needed, but it is. I tried a lot of things to get it to not be
+     * needed, but ultimately, something kept failing. At this point I gave up:
+     * https://app.circleci.com/pipelines/github/storybookjs/storybook/110923/workflows/50076187-a5a7-4955-bff4-30bf9aec465c/jobs/976355
+     *
+     * So if you see a way to debug/solve those failing tests, please do so.
+     */
+    {
+      run: {
+        name: 'Install dependencies',
+        command: 'yarn install',
+      },
+    },
+  ],
 };

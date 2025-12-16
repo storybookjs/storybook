@@ -14,13 +14,14 @@ import {
   git,
   node,
   npm,
+  restore,
   server,
   toId,
   verdaccio,
   workspace,
 } from './utils';
 
-const CACHE_KEYS = (platform = 'linux') =>
+export const CACHE_KEYS = (platform = 'linux') =>
   [
     `v5-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
@@ -237,9 +238,7 @@ function defineSandboxFlow<K extends string>(name: K) {
           class: 'large',
         },
         steps: [
-          git.checkout(),
-          workspace.attach(),
-          cache.attach(CACHE_KEYS()),
+          ...restore.linux(),
           verdaccio.start(),
           {
             run: {
@@ -302,7 +301,7 @@ function defineSandboxFlow<K extends string>(name: K) {
               class: 'medium',
             },
             steps: [
-              'checkout',
+              'checkout', // we need the full git history for chromatic
               workspace.attach(),
               cache.attach(CACHE_KEYS()),
               {
@@ -335,9 +334,7 @@ function defineSandboxFlow<K extends string>(name: K) {
               class: 'medium',
             },
             steps: [
-              git.checkout(),
-              workspace.attach(),
-              cache.attach(CACHE_KEYS()),
+              ...restore.linux(),
               {
                 run: {
                   name: 'Running Vitest',
@@ -502,9 +499,7 @@ const uiTests = defineJob(
       class: 'medium+',
     },
     steps: [
-      git.checkout(),
-      workspace.attach(),
-      cache.attach(CACHE_KEYS()),
+      ...restore.linux(),
       {
         run: {
           name: 'Build internal storybook',
@@ -538,9 +533,7 @@ const check = defineJob(
       class: 'xlarge',
     },
     steps: [
-      git.checkout(),
-      workspace.attach(),
-      cache.attach(CACHE_KEYS()),
+      ...restore.linux(),
       {
         run: {
           name: 'TypeCheck code',
@@ -570,9 +563,7 @@ const knip = defineJob(
       class: 'xlarge',
     },
     steps: [
-      git.checkout(),
-      workspace.attach(),
-      cache.attach(CACHE_KEYS()),
+      ...restore.linux(),
       {
         run: {
           name: 'Run Knip',
@@ -593,9 +584,7 @@ const linux_unitTests = defineJob(
       class: 'xlarge',
     },
     steps: [
-      git.checkout(),
-      workspace.attach(),
-      cache.attach(CACHE_KEYS()),
+      ...restore.linux(),
       {
         run: {
           name: 'Run tests',
@@ -625,17 +614,7 @@ const windows_unitTests = defineJob(
       shell: 'bash.exe',
     },
     steps: [
-      git.checkout({ forceHttps: true }),
-      node.installOnWindows(),
-      workspace.attach('C:\\Users\\circleci\\project'),
-      // cache.attach(CACHE_KEYS('windows')),
-      /**
-       * I really wish this wasn't needed, but it is. I tried a lot of things to get it to not be
-       * needed, but ultimately, something kept failing. At this point I gave up:
-       * https://app.circleci.com/pipelines/github/storybookjs/storybook/110923/workflows/50076187-a5a7-4955-bff4-30bf9aec465c/jobs/976355
-       *
-       * So if you see a way to debug/solve those failing tests, please do so.
-       */
+      ...restore.windows(),
       {
         run: {
           command: 'yarn install',
@@ -662,9 +641,7 @@ const packageBenchmarks = defineJob(
       class: 'xlarge',
     },
     steps: [
-      git.checkout(),
-      workspace.attach(),
-      cache.attach(CACHE_KEYS()),
+      ...restore.linux(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {
@@ -689,9 +666,7 @@ const testStorybooksPortableVitest3 = defineJob(
       class: 'medium',
     },
     steps: [
-      git.checkout(),
-      workspace.attach(),
-      cache.attach(CACHE_KEYS()),
+      ...restore.linux(),
       {
         run: {
           name: 'Install dependencies',
@@ -721,9 +696,7 @@ const testStorybooksPNP = defineJob(
       class: 'medium',
     },
     steps: [
-      git.checkout(),
-      workspace.attach(),
-      cache.attach(CACHE_KEYS()),
+      ...restore.linux(),
       {
         run: {
           name: 'Install dependencies',
@@ -760,9 +733,7 @@ const testRunner = defineJob(
       class: 'medium',
     },
     steps: [
-      git.checkout(),
-      workspace.attach(),
-      cache.attach(CACHE_KEYS()),
+      ...restore.linux(),
       {
         run: {
           name: 'Running test-runner',
@@ -783,15 +754,7 @@ const windows_sandbox_build = defineJob(
       shell: 'bash.exe',
     },
     steps: [
-      git.checkout({ forceHttps: true }),
-      node.installOnWindows(),
-      workspace.attach('C:\\Users\\circleci'),
-      {
-        run: {
-          name: 'Install dependencies',
-          command: 'yarn install',
-        },
-      },
+      ...restore.windows(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {
@@ -842,15 +805,7 @@ const windows_sandbox_dev = defineJob(
       shell: 'bash.exe',
     },
     steps: [
-      git.checkout({ forceHttps: true }),
-      node.installOnWindows(),
-      workspace.attach('C:\\Users\\circleci'),
-      {
-        run: {
-          name: 'Install dependencies',
-          command: 'yarn install',
-        },
-      },
+      ...restore.windows(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {
@@ -896,15 +851,7 @@ const initEmptyWindows = defineJob(
       shell: 'bash.exe',
     },
     steps: [
-      git.checkout({ forceHttps: true }),
-      node.installOnWindows(),
-      workspace.attach('C:\\Users\\circleci'),
-      {
-        run: {
-          name: 'Run Install',
-          command: 'yarn install',
-        },
-      },
+      ...restore.windows(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {
@@ -946,9 +893,7 @@ const initEmptyLinux = ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-t
           class: 'medium',
         },
         steps: [
-          git.checkout(),
-          workspace.attach(),
-          cache.attach(CACHE_KEYS()),
+          ...restore.linux(),
           verdaccio.start(),
           server.wait([...verdaccio.ports]),
           {
@@ -1354,9 +1299,7 @@ function defineSandboxJob_build({
     {
       executor,
       steps: [
-        git.checkout({ shallow: false }),
-        workspace.attach(),
-        cache.attach(CACHE_KEYS()),
+        ...restore.linux(),
         {
           run: {
             name: 'Build storybook',
@@ -1420,9 +1363,7 @@ function defineSandboxJob_dev({
     {
       executor,
       steps: [
-        git.checkout(),
-        workspace.attach(),
-        cache.attach(CACHE_KEYS()),
+        ...restore.linux(),
         ...(options.e2e
           ? [
               {

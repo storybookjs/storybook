@@ -302,7 +302,7 @@ export const Viewport = ({
         isDefault={isDefault}
         data-dragging={dragging}
         data-scale={scale}
-        style={frameStyles}
+        style={isDefault ? { height: '100%', width: '100%' } : frameStyles}
         ref={targetRef}
       >
         <div
@@ -314,9 +314,13 @@ export const Viewport = ({
           }}
         >
           <IFrame allowFullScreen active={active} key={id} id={id} title={id} src={src} scale={1} />
-          <ScrollEdge data-edge="right" />
-          <ScrollEdge data-edge="bottom" />
-          <ScrollEdge data-edge="both" />
+          {!isDefault && (
+            <>
+              <ScrollEdge data-edge="right" />
+              <ScrollEdge data-edge="bottom" />
+              <ScrollEdge data-edge="both" />
+            </>
+          )}
         </div>
         <DragHandle isDefault={isDefault} data-side="right" ref={dragRefX} />
         <DragHandle isDefault={isDefault} data-side="bottom" ref={dragRefY} />

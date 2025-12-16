@@ -224,6 +224,33 @@ const statusOrder: StatusValue[] = [
   'status-value:unknown',
 ];
 
+const calculateVisualDepth = (item: Item, collapsedData: Record<string, API_HashEntry>) => {
+  let depth = 0;
+  let currentId = 'parent' in item ? item.parent : undefined;
+
+  while (currentId) {
+    const parent = collapsedData[currentId];
+
+    if (!parent) {
+      break;
+    }
+
+    if (parent.type === 'root') {
+      currentId =
+        'parent' in parent && typeof parent.parent === 'string' ? parent.parent : undefined;
+      continue;
+    }
+
+    if ('children' in parent && Array.isArray(parent.children) && parent.children.length > 0) {
+      depth++;
+    }
+
+    currentId = 'parent' in parent && typeof parent.parent === 'string' ? parent.parent : undefined;
+  }
+
+  return depth;
+};
+
 const Node = React.memo<NodeProps>(function Node(props) {
   const {
     item,
@@ -240,6 +267,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     setExpanded,
     onSelectStoryId,
     api,
+    collapsedData,
   } = props;
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
   const { counts, statusesByValue } = useStatusSummary(item);
@@ -247,6 +275,9 @@ const Node = React.memo<NodeProps>(function Node(props) {
   if (!isDisplayed) {
     return null;
   }
+
+  const visualDepth = calculateVisualDepth(item, collapsedData);
+  const nodeDepth = visualDepth;
 
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
@@ -384,6 +415,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         key={id}
         className="sidebar-item"
         role="treeitem"
+        aria-level={nodeDepth + 1}
         aria-selected={isSelected}
         data-selected={isSelected}
         data-ref-id={refId}
@@ -423,7 +455,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           style={color && !isSelected ? { color } : {}}
           aria-controls={children.join(' ')}
           aria-expanded={isExpanded}
-          depth={isOrphan ? item.depth : item.depth - 1}
+          depth={nodeDepth}
           isExpandable={children.length > 0}
           isExpanded={isExpanded}
           onClick={(event) => {
@@ -495,6 +527,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
       key={id}
       className="sidebar-item"
       role="treeitem"
+      aria-level={nodeDepth + 1}
       aria-selected={isSelected}
       data-selected={isSelected}
       data-ref-id={refId}
@@ -518,7 +551,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         style={itemColor && !isSelected ? { color: itemColor } : {}}
         href={getLink(item, refId)}
         id={id}
-        depth={isOrphan ? item.depth : item.depth - 1}
+        depth={nodeDepth}
         aria-current={isSelected ? 'page' : undefined}
         onClick={(event) => {
           event.preventDefault();

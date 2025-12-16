@@ -4,12 +4,15 @@ import React, { Component, createContext, memo, useCallback, useEffect, useRef }
 import { ActionList, Button, PopoverProvider } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
+import { UndoIcon, ZoomIcon } from '@storybook/icons';
+
 import { types, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { Shortcut } from '../../Shortcut';
+import { NumericInput } from '../NumericInput';
 
-const BASE_ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4] as const;
 const INITIAL_ZOOM_LEVEL = 1;
 
 const ZoomButton = styled(Button)({
@@ -17,6 +20,12 @@ const ZoomButton = styled(Button)({
 });
 
 const Context = createContext({ value: INITIAL_ZOOM_LEVEL, set: (v: number) => {} });
+
+const ZoomInput = styled(NumericInput)({
+  input: {
+    width: 100,
+  },
+});
 
 export const ZoomConsumer = Context.Consumer;
 
@@ -59,41 +68,84 @@ export const Zoom = memo<{
         }
       }}
       popover={
-        <div style={{ minWidth: 200 }}>
+        <>
           <ActionList>
             <ActionList.Item>
-              <ActionList.Action onClick={zoomIn} ariaLabel={false}>
+              <ZoomInput
+                ref={inputRef}
+                unit="%"
+                before={
+                  <ActionList.Button size="small" padding="small" readOnly>
+                    <ZoomIcon />
+                  </ActionList.Button>
+                }
+                after={
+                  <ActionList.Button
+                    size="small"
+                    padding="small"
+                    onClick={() => zoomTo(1)}
+                    ariaLabel="Reset zoom"
+                  >
+                    <UndoIcon />
+                  </ActionList.Button>
+                }
+                value={`${Math.round(value * 100)}%`}
+                setValue={(value: string) => {
+                  const zoomLevel = parseInt(value, 10) / 100;
+                  if (!Number.isNaN(zoomLevel)) {
+                    zoomTo(zoomLevel);
+                  }
+                }}
+              />
+            </ActionList.Item>
+          </ActionList>
+          <ActionList>
+            <ActionList.Item>
+              <ActionList.Action
+                onClick={zoomIn}
+                ariaLabel="Zoom in"
+                disabled={value >= ZOOM_LEVELS.at(-1)!}
+              >
                 <ActionList.Text>Zoom in</ActionList.Text>
                 <Shortcut keys={['alt', '+']} />
               </ActionList.Action>
             </ActionList.Item>
             <ActionList.Item>
-              <ActionList.Action onClick={zoomOut} ariaLabel={false}>
+              <ActionList.Action
+                onClick={zoomOut}
+                ariaLabel="Zoom out"
+                disabled={value <= ZOOM_LEVELS.at(0)!}
+              >
                 <ActionList.Text>Zoom out</ActionList.Text>
                 <Shortcut keys={['alt', '-']} />
               </ActionList.Action>
             </ActionList.Item>
             <ActionList.Item>
-              <ActionList.Action onClick={() => zoomTo(0.5)} ariaLabel={false}>
-                <ActionList.Text>Zoom to 50%</ActionList.Text>
+              <ActionList.Action onClick={() => zoomTo(0.5)} ariaLabel="Zoom to 50%">
+                <ActionList.Text>50%</ActionList.Text>
               </ActionList.Action>
             </ActionList.Item>
             <ActionList.Item>
-              <ActionList.Action onClick={() => zoomTo(1)} ariaLabel={false}>
-                <ActionList.Text>Reset to 100%</ActionList.Text>
+              <ActionList.Action onClick={() => zoomTo(1)} ariaLabel="Zoom to 100%">
+                <ActionList.Text>100%</ActionList.Text>
                 <Shortcut keys={['alt', '0']} />
               </ActionList.Action>
             </ActionList.Item>
             <ActionList.Item>
-              <ActionList.Action onClick={() => zoomTo(2)} ariaLabel={false}>
-                Zoom to 200%
+              <ActionList.Action onClick={() => zoomTo(2)} ariaLabel="Zoom to 200%">
+                200%
               </ActionList.Action>
             </ActionList.Item>
           </ActionList>
-        </div>
+        </>
       }
     >
-      <ZoomButton padding="small" variant="ghost" ariaLabel="Change zoom level">
+      <ZoomButton
+        padding="small"
+        variant="ghost"
+        ariaLabel="Change zoom level"
+        active={value !== INITIAL_ZOOM_LEVEL}
+      >
         {Math.round(value * 100)}%
       </ZoomButton>
     </PopoverProvider>
@@ -107,14 +159,14 @@ const ZoomWrapper = memo<{
   const api = useStorybookApi();
 
   const zoomIn = useCallback(() => {
-    const higherZoomLevel = BASE_ZOOM_LEVELS.find((level) => level > value);
+    const higherZoomLevel = ZOOM_LEVELS.find((level) => level > value);
     if (higherZoomLevel) {
       set(higherZoomLevel);
     }
   }, [set, value]);
 
   const zoomOut = useCallback(() => {
-    const lowerZoomLevel = BASE_ZOOM_LEVELS.findLast((level) => level < value);
+    const lowerZoomLevel = ZOOM_LEVELS.findLast((level) => level < value);
     if (lowerZoomLevel) {
       set(lowerZoomLevel);
     }

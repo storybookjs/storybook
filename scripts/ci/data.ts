@@ -1231,8 +1231,6 @@ export const data = {
   executors,
   parameters,
 
-  // jobs,
-  // workflows,
   jobs: Object.fromEntries(Object.entries(jobs).sort(([a], [b]) => a.localeCompare(b))),
   workflows: {
     generated: {

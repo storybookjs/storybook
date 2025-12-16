@@ -131,7 +131,6 @@ export function generateMockProps(docgenData: DocObj): {
 function generateMockValue(tsType: any): any {
   const { name, elements, key } = tsType;
   const propName = (key || name || '').toLowerCase();
-  console.log('stuff', JSON.stringify(tsType, null, 2));
   switch (name) {
     case 'boolean':
       return true;

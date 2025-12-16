@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import { JsPackageManagerFactory } from 'storybook/internal/common';
 import { experimental_loadStorybook, generateStoryFile } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { prompt } from 'storybook/internal/node-logger';
@@ -101,6 +102,9 @@ export const generateStories = async ({
     logger.debug('Loading Storybook configuration...');
     const options = await experimental_loadStorybook({
       configDir,
+      packageJson: JsPackageManagerFactory.getPackageManager({
+        configDir,
+      }).primaryPackageJson,
     });
 
     logger.debug('Storybook configuration loaded successfully');

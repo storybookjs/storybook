@@ -23,6 +23,7 @@ import { openInBrowser } from './utils/open-browser/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
 import { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
+import { useSitemap } from './utils/stories-json';
 import { summarizeIndex } from './utils/summarizeIndex';
 
 export async function storybookDevServer(options: Options) {
@@ -144,6 +145,9 @@ export async function storybookDevServer(options: Options) {
     await previewBuilder?.bail().catch();
     throw indexError;
   }
+
+  // StoryIndexGenerator should now be guaranteed to be defined as `indexError` if not set.
+  useSitemap(app, initializedStoryIndexGenerator as Promise<StoryIndexGenerator>, options);
 
   const features = await options.presets.apply('features');
   if (features?.experimentalComponentsManifest) {

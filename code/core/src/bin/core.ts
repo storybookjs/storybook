@@ -157,6 +157,10 @@ command('build')
   .option('--docs', 'Build a documentation-only site using addon-docs')
   .option('--test', 'Build stories optimized for testing purposes.')
   .option('--preview-only', 'Use the preview without the manager UI')
+  .option(
+    '--site-url <string>',
+    'The URL where the built site will be deployed, for sitemap generation'
+  )
   .action(async (options) => {
     const { env } = process;
     env.NODE_ENV = env.NODE_ENV || 'production';
@@ -173,6 +177,19 @@ command('build')
       staticDir: 'SBCONFIG_STATIC_DIR',
       outputDir: 'SBCONFIG_OUTPUT_DIR',
       configDir: 'SBCONFIG_CONFIG_DIR',
+      siteUrl: [
+        // Our own environment variable naming convention
+        'SBCONFIG_SITE_URL',
+        // Netlify: https://docs.netlify.com/build/configure-builds/environment-variables/
+        'URL',
+        // Vercel: https://vercel.com/docs/environment-variables/system-environment-variables
+        'VERCEL_PROJECT_PRODUCTION_URL',
+        // Cloudflare Pages: https://developers.cloudflare.com/pages/configuration/build-configuration/
+        'CF_PAGES_URL',
+        // Render: https://render.com/docs/environment-variables
+        'RENDER_EXTERNAL_URL',
+        // GH Pages, AWS Amplify, Azure Static Web Apps, Heroku do not expose an env var.
+      ],
     });
 
     await build({

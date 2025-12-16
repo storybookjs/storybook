@@ -852,6 +852,51 @@ const initEmptyWindows = defineJob(
   ['init-empty']
 );
 
+const initEmptyLinux = ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'].map(
+  (template) =>
+    defineJob(
+      `init-empty-${template}`,
+      {
+        executor: {
+          name: 'sb_node_22_classic',
+          class: 'medium',
+        },
+        steps: [
+          git.checkout(),
+          workspace.attach(),
+          cache.attach(CACHE_KEYS()),
+          verdaccio.start(),
+          server.wait([...verdaccio.ports]),
+          {
+            run: {
+              name: 'Storybook init from empty directory (Linux NPM)',
+              command: [
+                `mkdir empty-${template}`,
+                `cd empty-${template}`,
+                `npm set registry http://localhost:6001`,
+                `npx storybook init --yes --package-manager npm`,
+              ].join('\n'),
+              environment: {
+                IN_STORYBOOK_SANDBOX: true,
+                STORYBOOK_DISABLE_TELEMETRY: true,
+                STORYBOOK_INIT_EMPTY_TYPE: template,
+              },
+            },
+          },
+          {
+            run: {
+              name: 'Run storybook smoke test',
+              working_directory: `empty-${template}`,
+              command: 'npm run storybook -- --smoke-test',
+            },
+          },
+        ],
+      },
+
+      ['init-empty']
+    )
+);
+
 const jobs = {
   [linux_build.id]: linux_build.implementation,
   [windows_build.id]: windows_build.implementation,
@@ -911,6 +956,13 @@ const jobs = {
     type: 'no-op',
   },
   [initEmptyWindows.id]: initEmptyWindows.implementation,
+  ...initEmptyLinux.reduce(
+    (acc, init) => {
+      acc[init.id] = init.implementation;
+      return acc;
+    },
+    {} as Record<string, JobImplementation>
+  ),
 };
 
 const orbs = {
@@ -1024,10 +1076,12 @@ const workflows = {
           requires: initEmptyWindows.requires,
         },
       },
+      ...initEmptyLinux.map((init) => ({
+        [init.id]: {
+          requires: init.requires,
+        },
+      })),
     ],
-    when: {
-      equal: ['docs', '<< pipeline.parameters.workflow >>'],
-    },
   },
 };
 

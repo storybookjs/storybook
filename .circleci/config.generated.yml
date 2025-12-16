@@ -993,6 +993,174 @@ jobs:
                   name: Run storybook smoke test
                   working_directory: C:\Users\circleci\empty-react-vite-ts
                   command: npm run storybook -- --smoke-test
+    init-empty-react-vite-ts:
+        description: init-empty-react-vite-ts
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Storybook init from empty directory (Linux NPM)
+                  command: |-
+                      mkdir empty-react-vite-ts
+                      cd empty-react-vite-ts
+                      npm set registry http://localhost:6001
+                      npx storybook init --yes --package-manager npm
+                  environment:
+                      IN_STORYBOOK_SANDBOX: true
+                      STORYBOOK_DISABLE_TELEMETRY: true
+                      STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
+            - run:
+                  name: Run storybook smoke test
+                  working_directory: empty-react-vite-ts
+                  command: npm run storybook -- --smoke-test
+    init-empty-nextjs-ts:
+        description: init-empty-nextjs-ts
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Storybook init from empty directory (Linux NPM)
+                  command: |-
+                      mkdir empty-nextjs-ts
+                      cd empty-nextjs-ts
+                      npm set registry http://localhost:6001
+                      npx storybook init --yes --package-manager npm
+                  environment:
+                      IN_STORYBOOK_SANDBOX: true
+                      STORYBOOK_DISABLE_TELEMETRY: true
+                      STORYBOOK_INIT_EMPTY_TYPE: nextjs-ts
+            - run:
+                  name: Run storybook smoke test
+                  working_directory: empty-nextjs-ts
+                  command: npm run storybook -- --smoke-test
+    init-empty-vue-vite-ts:
+        description: init-empty-vue-vite-ts
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Storybook init from empty directory (Linux NPM)
+                  command: |-
+                      mkdir empty-vue-vite-ts
+                      cd empty-vue-vite-ts
+                      npm set registry http://localhost:6001
+                      npx storybook init --yes --package-manager npm
+                  environment:
+                      IN_STORYBOOK_SANDBOX: true
+                      STORYBOOK_DISABLE_TELEMETRY: true
+                      STORYBOOK_INIT_EMPTY_TYPE: vue-vite-ts
+            - run:
+                  name: Run storybook smoke test
+                  working_directory: empty-vue-vite-ts
+                  command: npm run storybook -- --smoke-test
+    init-empty-lit-vite-ts:
+        description: init-empty-lit-vite-ts
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Storybook init from empty directory (Linux NPM)
+                  command: |-
+                      mkdir empty-lit-vite-ts
+                      cd empty-lit-vite-ts
+                      npm set registry http://localhost:6001
+                      npx storybook init --yes --package-manager npm
+                  environment:
+                      IN_STORYBOOK_SANDBOX: true
+                      STORYBOOK_DISABLE_TELEMETRY: true
+                      STORYBOOK_INIT_EMPTY_TYPE: lit-vite-ts
+            - run:
+                  name: Run storybook smoke test
+                  working_directory: empty-lit-vite-ts
+                  command: npm run storybook -- --smoke-test
 workflows:
     generated:
         jobs:
@@ -1059,7 +1227,15 @@ workflows:
             - init-empty-windows:
                   requires:
                       - init-empty
-        when:
-            equal:
-                - docs
-                - << pipeline.parameters.workflow >>
+            - init-empty-react-vite-ts:
+                  requires:
+                      - init-empty
+            - init-empty-nextjs-ts:
+                  requires:
+                      - init-empty
+            - init-empty-vue-vite-ts:
+                  requires:
+                      - init-empty
+            - init-empty-lit-vite-ts:
+                  requires:
+                      - init-empty

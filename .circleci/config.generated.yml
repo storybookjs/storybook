@@ -405,6 +405,273 @@ jobs:
                   command: yarn check
             - report-workflow-on-failure
             - cancel-workflow-on-failure
+    init-empty:
+        type: no-op
+    init-empty-lit-vite-ts:
+        description: init-empty-lit-vite-ts
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Storybook init from empty directory (Linux NPM)
+                  working_directory: /tmp
+                  command: |-
+                      mkdir empty-lit-vite-ts
+                      cd empty-lit-vite-ts
+                      npm set registry http://localhost:6001
+                      npx storybook init --yes --package-manager npm
+                  environment:
+                      IN_STORYBOOK_SANDBOX: true
+                      STORYBOOK_DISABLE_TELEMETRY: true
+                      STORYBOOK_INIT_EMPTY_TYPE: lit-vite-ts
+            - run:
+                  name: Run storybook smoke test
+                  working_directory: /tmp/empty-lit-vite-ts
+                  command: npm run storybook -- --smoke-test
+    init-empty-nextjs-ts:
+        description: init-empty-nextjs-ts
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Storybook init from empty directory (Linux NPM)
+                  working_directory: /tmp
+                  command: |-
+                      mkdir empty-nextjs-ts
+                      cd empty-nextjs-ts
+                      npm set registry http://localhost:6001
+                      npx storybook init --yes --package-manager npm
+                  environment:
+                      IN_STORYBOOK_SANDBOX: true
+                      STORYBOOK_DISABLE_TELEMETRY: true
+                      STORYBOOK_INIT_EMPTY_TYPE: nextjs-ts
+            - run:
+                  name: Run storybook smoke test
+                  working_directory: /tmp/empty-nextjs-ts
+                  command: npm run storybook -- --smoke-test
+    init-empty-react-vite-ts:
+        description: init-empty-react-vite-ts
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Storybook init from empty directory (Linux NPM)
+                  working_directory: /tmp
+                  command: |-
+                      mkdir empty-react-vite-ts
+                      cd empty-react-vite-ts
+                      npm set registry http://localhost:6001
+                      npx storybook init --yes --package-manager npm
+                  environment:
+                      IN_STORYBOOK_SANDBOX: true
+                      STORYBOOK_DISABLE_TELEMETRY: true
+                      STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
+            - run:
+                  name: Run storybook smoke test
+                  working_directory: /tmp/empty-react-vite-ts
+                  command: npm run storybook -- --smoke-test
+    init-empty-vue-vite-ts:
+        description: init-empty-vue-vite-ts
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Storybook init from empty directory (Linux NPM)
+                  working_directory: /tmp
+                  command: |-
+                      mkdir empty-vue-vite-ts
+                      cd empty-vue-vite-ts
+                      npm set registry http://localhost:6001
+                      npx storybook init --yes --package-manager npm
+                  environment:
+                      IN_STORYBOOK_SANDBOX: true
+                      STORYBOOK_DISABLE_TELEMETRY: true
+                      STORYBOOK_INIT_EMPTY_TYPE: vue-vite-ts
+            - run:
+                  name: Run storybook smoke test
+                  working_directory: /tmp/empty-vue-vite-ts
+                  command: npm run storybook -- --smoke-test
+    init-empty-windows:
+        description: init-empty-windows
+        executor:
+            name: win/default
+            size: medium
+            shell: bash.exe
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
+            - run:
+                  name: Install Node + Yarn
+                  shell: powershell.exe
+                  command: |-
+                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
+                      nvm install $nodeVersion
+                      nvm use $nodeVersion
+                      corepack enable
+                      corepack prepare yarn@stable --activate
+            - attach_workspace:
+                  at: C:\Users\circleci
+            - run:
+                  name: Run Install
+                  command: yarn install
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Storybook init from empty directory (Windows NPM)
+                  working_directory: C:\Users\circleci
+                  command: |-
+                      mkdir empty-react-vite-ts
+                      cd empty-react-vite-ts
+                      npm set registry http://localhost:6001
+                      npx storybook init --yes --package-manager npm
+                  environment:
+                      IN_STORYBOOK_SANDBOX: true
+                      STORYBOOK_DISABLE_TELEMETRY: true
+                      STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
+            - run:
+                  name: Run storybook smoke test
+                  working_directory: C:\Users\circleci\empty-react-vite-ts
+                  command: npm run storybook -- --smoke-test
+    init-features:
+        description: init-features
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Storybook init from empty directory (Linux NPM)
+                  working_directory: /tmp
+                  command: |-
+                      mkdir empty-react-vite-ts
+                      cd empty-react-vite-ts
+                      npm set registry http://localhost:6001
+                      npx create-storybook --yes --package-manager npm --features docs test a11y --loglevel=debug
+                  environment:
+                      IN_STORYBOOK_SANDBOX: true
+                      STORYBOOK_DISABLE_TELEMETRY: true
+                      STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
+            - run:
+                  name: Run storybook smoke test
+                  working_directory: /tmp/empty-react-vite-ts
+                  command: npx vitest
     knip:
         description: knip
         executor:
@@ -425,6 +692,477 @@ jobs:
                   name: Run Knip
                   working_directory: code
                   command: yarn knip --no-exit-code
+    package-benchmarks:
+        description: package-benchmarks
+        executor:
+            name: sb_node_22_classic
+            class: xlarge
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Benchmarking packages against base branch
+                  command: yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
+                  working_directory: scripts
+    pretty-docs:
+        executor:
+            name: sb_node_22_classic
+            class: medium+
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - node/install-packages:
+                  app-dir: .
+                  pkg-manager: yarn
+                  cache-only-lockfile: true
+            - run:
+                  name: Prettier
+                  working_directory: scripts
+                  command: yarn docs:prettier:check
+    react-vite-default-ts--build:
+        description: react-vite/default-ts (build)
+        executor:
+            name: sb_playwright
+            class: xlarge
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 500
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Build storybook
+                  command: yarn task build --template react-vite/default-ts --no-link -s build
+            - persist_to_workspace:
+                  paths:
+                      - storybook-sandboxes/react-vite-default-ts/storybook-static
+                  root: /tmp
+            - run:
+                  name: Serve storybook
+                  background: true
+                  command: yarn task serve --template react-vite/default-ts --no-link -s serve
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: yarn wait-on tcp:127.0.0.1:8001
+            - run:
+                  name: Running E2E Tests
+                  command: |-
+                      TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
+                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s e2e-tests" --verbose --index=0 --total=1
+    react-vite-default-ts--build-test-runner:
+        description: react-vite-default-ts--build-test-runner
+        executor:
+            name: sb_playwright
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Running test-runner
+                  command: yarn task test-runner --template react-vite/default-ts --no-link -s test-runner
+    react-vite-default-ts--build-windows:
+        description: react-vite-default-ts--build-windows
+        executor:
+            name: win/default
+            size: xlarge
+            shell: bash.exe
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
+            - run:
+                  name: Install Node + Yarn
+                  shell: powershell.exe
+                  command: |-
+                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
+                      nvm install $nodeVersion
+                      nvm use $nodeVersion
+                      corepack enable
+                      corepack prepare yarn@stable --activate
+            - attach_workspace:
+                  at: C:\Users\circleci
+            - run:
+                  name: Install dependencies
+                  command: yarn install
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Run Install
+                  working_directory: C:\Users\circleci\storybook-sandboxes\react-vite-default-ts
+                  command: yarn install
+            - run:
+                  name: Install playwright
+                  command: yarn playwright install chromium --with-deps
+            - run:
+                  name: Build storybook
+                  command: yarn task build --template react-vite/default-ts --no-link -s build
+            - run:
+                  name: Serve storybook
+                  background: true
+                  command: yarn task serve --template react-vite/default-ts --no-link -s serve
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: yarn wait-on tcp:127.0.0.1:8001
+            - run:
+                  name: Running E2E Tests
+                  working_directory: code
+                  command: yarn task e2e-tests --template react-vite/default-ts --no-link -s e2e-tests
+    react-vite-default-ts--chromatic:
+        description: react-vite/default-ts (chromatic)
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - checkout
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Copy sandbox to working directory
+                  command: cp /tmp/storybook-sandboxes /tmp/project/sandbox -r --remove-destination
+            - run:
+                  name: Running Chromatic
+                  command: yarn task chromatic --template react-vite/default-ts --no-link -s chromatic
+                  environment:
+                      STORYBOOK_SANDBOX_ROOT: ./sandbox
+    react-vite-default-ts--create:
+        description: react-vite/default-ts (create)
+        executor:
+            name: sb_node_22_browsers
+            class: large
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Start Event Collector
+                  working_directory: scripts
+                  background: true
+                  command: yarn jiti ./event-log-collector.ts
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+                      yarn wait-on tcp:127.0.0.1:6007
+            - run:
+                  name: Setup Corepack
+                  command: |-
+                      sudo corepack enable
+                      which yarn
+                      yarn --version
+            - run:
+                  name: Create Sandboxes
+                  command: yarn task sandbox --template react-vite/default-ts --no-link -s sandbox --debug
+                  environment:
+                      STORYBOOK_TELEMETRY_DEBUG: 1
+                      STORYBOOK_TELEMETRY_URL: http://127.0.0.1:6007/event-log
+            - store_artifacts:
+                  path: /tmp/storybook-sandboxes/react-vite-default-ts/debug-storybook.log
+                  destination: logs
+            - persist_to_workspace:
+                  paths:
+                      - storybook-sandboxes/react-vite-default-ts
+                  root: /tmp
+    react-vite-default-ts--dev:
+        description: react-vite/default-ts (dev)
+        executor:
+            name: sb_playwright
+            class: xlarge
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Run storybook
+                  working_directory: code
+                  background: true
+                  command: yarn task dev --template react-vite/default-ts --no-link -s dev
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: yarn wait-on tcp:127.0.0.1:6006
+            - run:
+                  name: Running E2E Tests
+                  command: |-
+                      TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
+                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s e2e-tests-dev" --verbose --index=0 --total=1
+    react-vite-default-ts--dev-windows:
+        description: react-vite-default-ts--dev-windows
+        executor:
+            name: win/default
+            size: xlarge
+            shell: bash.exe
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
+            - run:
+                  name: Install Node + Yarn
+                  shell: powershell.exe
+                  command: |-
+                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
+                      nvm install $nodeVersion
+                      nvm use $nodeVersion
+                      corepack enable
+                      corepack prepare yarn@stable --activate
+            - attach_workspace:
+                  at: C:\Users\circleci
+            - run:
+                  name: Install dependencies
+                  command: yarn install
+            - run:
+                  name: Verdaccio
+                  working_directory: code
+                  background: true
+                  command: yarn local-registry --open
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: |-
+                      yarn wait-on tcp:127.0.0.1:6001
+                      yarn wait-on tcp:127.0.0.1:6002
+            - run:
+                  name: Run Install
+                  working_directory: C:\Users\circleci\storybook-sandboxes\react-vite-default-ts
+                  command: yarn install
+            - run:
+                  name: Install playwright
+                  command: yarn playwright install chromium --with-deps
+            - run:
+                  name: Run storybook
+                  background: true
+                  working_directory: C:\Users\circleci\storybook-sandboxes\react-vite-default-ts
+                  command: yarn storybook --port 8001
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: yarn wait-on tcp:127.0.0.1:8001
+            - run:
+                  name: Running E2E Tests
+                  working_directory: code
+                  command: yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s e2e-tests-dev
+    react-vite-default-ts--vitest:
+        description: react-vite/default-ts (vitest)
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Running Vitest
+                  command: yarn task vitest-integration --template react-vite/default-ts --no-link -s vitest-integration
+    sandboxes:
+        type: no-op
+    test-storybooks:
+        type: no-op
+    test-storybooks-pnp:
+        description: test-storybooks-pnp
+        executor:
+            name: sb_node_22_classic
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Install dependencies
+                  working_directory: test-storybooks/yarn-pnp
+                  command: yarn install --no-immutable
+                  environment:
+                      YARN_ENABLE_IMMUTABLE_INSTALLS: false
+            - run:
+                  name: Run Storybook smoke test
+                  working_directory: test-storybooks/yarn-pnp
+                  command: yarn storybook --smoke-test
+    test-storybooks-portable-react:
+        description: test-storybooks-portable-react
+        executor:
+            name: sb_playwright
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Install dependencies
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
+                  command: yarn install --no-immutable
+                  environment:
+                      YARN_ENABLE_IMMUTABLE_INSTALLS: false
+            - run:
+                  name: Run Jest tests
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
+                  command: yarn jest
+            - run:
+                  name: Run Vitest tests
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
+                  command: yarn vitest
+            - run:
+                  name: Run Playwright CT tests
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
+                  command: yarn playwright-ct
+            - run:
+                  name: Run Playwright E2E tests
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
+                  command: yarn playwright-e2e
+            - run:
+                  name: Run Cypress CT tests
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
+                  command: yarn cypress
+    test-storybooks-portable-vitest3:
+        description: test-storybooks-portable-vitest3
+        executor:
+            name: sb_playwright
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Install dependencies
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/react-vitest-3
+                  command: yarn install --no-immutable
+                  environment:
+                      YARN_ENABLE_IMMUTABLE_INSTALLS: false
+            - run:
+                  name: Run Playwright E2E tests
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/react-vitest-3
+                  command: yarn playwright-e2e
+    test-storybooks-portable-vue3:
+        description: test-storybooks-portable-vue3
+        executor:
+            name: sb_playwright
+            class: medium
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Install dependencies
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/vue3
+                  command: yarn install --no-immutable
+                  environment:
+                      YARN_ENABLE_IMMUTABLE_INSTALLS: false
+            - run:
+                  name: Run Jest tests
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/vue3
+                  command: yarn jest
+            - run:
+                  name: Run Vitest tests
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/vue3
+                  command: yarn vitest
+            - run:
+                  name: Run Playwright CT tests
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/vue3
+                  command: yarn playwright-ct
+            - run:
+                  name: Run Cypress CT tests
+                  working_directory: test-storybooks/portable-stories-kitchen-sink/vue3
+                  command: yarn cypress
     ui:
         description: ui
         executor:
@@ -508,792 +1246,69 @@ jobs:
                   command: yarn test
                   name: Run unit tests
                   working_directory: code
-    package-benchmarks:
-        description: package-benchmarks
-        executor:
-            name: sb_node_22_classic
-            class: xlarge
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-            - run:
-                  name: Benchmarking packages against base branch
-                  command: yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
-                  working_directory: scripts
-    react-vite-default-ts--build-windows:
-        description: react-vite-default-ts--build-windows
-        executor:
-            name: win/default
-            size: xlarge
-            shell: bash.exe
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
-            - run:
-                  name: Install Node + Yarn
-                  shell: powershell.exe
-                  command: |-
-                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
-                      nvm install $nodeVersion
-                      nvm use $nodeVersion
-                      corepack enable
-                      corepack prepare yarn@stable --activate
-            - attach_workspace:
-                  at: C:\Users\circleci
-            - run:
-                  name: Install dependencies
-                  command: yarn install
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-            - run:
-                  name: Run Install
-                  working_directory: C:\Users\circleci\storybook-sandboxes\react-vite-default-ts
-                  command: yarn install
-            - run:
-                  name: Install playwright
-                  command: yarn playwright install chromium --with-deps
-            - run:
-                  name: Build storybook
-                  command: yarn task build --template react-vite/default-ts --no-link -s build
-            - run:
-                  name: Serve storybook
-                  background: true
-                  command: yarn task serve --template react-vite/default-ts --no-link -s serve
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: yarn wait-on tcp:127.0.0.1:8001
-            - run:
-                  name: Running E2E Tests
-                  working_directory: code
-                  command: yarn task e2e-tests --template react-vite/default-ts --no-link -s e2e-tests
-    pretty-docs:
-        executor:
-            name: sb_node_22_classic
-            class: medium+
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - node/install-packages:
-                  app-dir: .
-                  pkg-manager: yarn
-                  cache-only-lockfile: true
-            - run:
-                  name: Prettier
-                  working_directory: scripts
-                  command: yarn docs:prettier:check
-    sandboxes:
-        type: no-op
-    react-vite-default-ts--create:
-        description: react-vite/default-ts (create)
-        executor:
-            name: sb_node_22_browsers
-            class: large
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Start Event Collector
-                  working_directory: scripts
-                  background: true
-                  command: yarn jiti ./event-log-collector.ts
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-                      yarn wait-on tcp:127.0.0.1:6007
-            - run:
-                  name: Setup Corepack
-                  command: |-
-                      sudo corepack enable
-                      which yarn
-                      yarn --version
-            - run:
-                  name: Create Sandboxes
-                  command: yarn task sandbox --template react-vite/default-ts --no-link -s sandbox --debug
-                  environment:
-                      STORYBOOK_TELEMETRY_DEBUG: 1
-                      STORYBOOK_TELEMETRY_URL: http://127.0.0.1:6007/event-log
-            - store_artifacts:
-                  path: /tmp/storybook-sandboxes/react-vite-default-ts/debug-storybook.log
-                  destination: logs
-            - persist_to_workspace:
-                  paths:
-                      - storybook-sandboxes/react-vite-default-ts
-                  root: /tmp
-    react-vite-default-ts--build:
-        description: react-vite/default-ts (build)
-        executor:
-            name: sb_playwright
-            class: xlarge
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 500
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Build storybook
-                  command: yarn task build --template react-vite/default-ts --no-link -s build
-            - persist_to_workspace:
-                  paths:
-                      - storybook-sandboxes/react-vite-default-ts/storybook-static
-                  root: /tmp
-            - run:
-                  name: Serve storybook
-                  background: true
-                  command: yarn task serve --template react-vite/default-ts --no-link -s serve
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: yarn wait-on tcp:127.0.0.1:8001
-            - run:
-                  name: Running E2E Tests
-                  command: |-
-                      TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
-                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s e2e-tests" --verbose --index=0 --total=1
-    react-vite-default-ts--dev:
-        description: react-vite/default-ts (dev)
-        executor:
-            name: sb_playwright
-            class: xlarge
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Run storybook
-                  working_directory: code
-                  background: true
-                  command: yarn task dev --template react-vite/default-ts --no-link -s dev
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: yarn wait-on tcp:127.0.0.1:6006
-            - run:
-                  name: Running E2E Tests
-                  command: |-
-                      TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
-                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s e2e-tests-dev" --verbose --index=0 --total=1
-    react-vite-default-ts--chromatic:
-        description: react-vite/default-ts (chromatic)
-        executor:
-            name: sb_node_22_classic
-            class: medium
-        steps:
-            - checkout
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Copy sandbox to working directory
-                  command: cp /tmp/storybook-sandboxes /tmp/project/sandbox -r --remove-destination
-            - run:
-                  name: Running Chromatic
-                  command: yarn task chromatic --template react-vite/default-ts --no-link -s chromatic
-                  environment:
-                      STORYBOOK_SANDBOX_ROOT: ./sandbox
-    react-vite-default-ts--vitest:
-        description: react-vite/default-ts (vitest)
-        executor:
-            name: sb_node_22_classic
-            class: medium
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Running Vitest
-                  command: yarn task vitest-integration --template react-vite/default-ts --no-link -s vitest-integration
-    react-vite-default-ts--dev-windows:
-        description: react-vite-default-ts--dev-windows
-        executor:
-            name: win/default
-            size: xlarge
-            shell: bash.exe
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
-            - run:
-                  name: Install Node + Yarn
-                  shell: powershell.exe
-                  command: |-
-                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
-                      nvm install $nodeVersion
-                      nvm use $nodeVersion
-                      corepack enable
-                      corepack prepare yarn@stable --activate
-            - attach_workspace:
-                  at: C:\Users\circleci
-            - run:
-                  name: Install dependencies
-                  command: yarn install
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-            - run:
-                  name: Run Install
-                  working_directory: C:\Users\circleci\storybook-sandboxes\react-vite-default-ts
-                  command: yarn install
-            - run:
-                  name: Install playwright
-                  command: yarn playwright install chromium --with-deps
-            - run:
-                  name: Run storybook
-                  background: true
-                  working_directory: C:\Users\circleci\storybook-sandboxes\react-vite-default-ts
-                  command: yarn storybook --port 8001
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: yarn wait-on tcp:127.0.0.1:8001
-            - run:
-                  name: Running E2E Tests
-                  working_directory: code
-                  command: yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s e2e-tests-dev
-    test-storybooks:
-        type: no-op
-    test-storybooks-pnp:
-        description: test-storybooks-pnp
-        executor:
-            name: sb_node_22_classic
-            class: medium
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Install dependencies
-                  working_directory: test-storybooks/yarn-pnp
-                  command: yarn install --no-immutable
-                  environment:
-                      YARN_ENABLE_IMMUTABLE_INSTALLS: false
-            - run:
-                  name: Run Storybook smoke test
-                  working_directory: test-storybooks/yarn-pnp
-                  command: yarn storybook --smoke-test
-    test-storybooks-portable-react:
-        description: test-storybooks-portable-react
-        executor:
-            name: sb_playwright
-            class: medium
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Install dependencies
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
-                  command: yarn install --no-immutable
-                  environment:
-                      YARN_ENABLE_IMMUTABLE_INSTALLS: false
-            - run:
-                  name: Run Jest tests
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
-                  command: yarn jest
-            - run:
-                  name: Run Vitest tests
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
-                  command: yarn vitest
-            - run:
-                  name: Run Playwright CT tests
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
-                  command: yarn playwright-ct
-            - run:
-                  name: Run Playwright E2E tests
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
-                  command: yarn playwright-e2e
-            - run:
-                  name: Run Cypress CT tests
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/react
-                  command: yarn cypress
-    test-storybooks-portable-vue3:
-        description: test-storybooks-portable-vue3
-        executor:
-            name: sb_playwright
-            class: medium
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Install dependencies
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/vue3
-                  command: yarn install --no-immutable
-                  environment:
-                      YARN_ENABLE_IMMUTABLE_INSTALLS: false
-            - run:
-                  name: Run Jest tests
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/vue3
-                  command: yarn jest
-            - run:
-                  name: Run Vitest tests
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/vue3
-                  command: yarn vitest
-            - run:
-                  name: Run Playwright CT tests
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/vue3
-                  command: yarn playwright-ct
-            - run:
-                  name: Run Cypress CT tests
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/vue3
-                  command: yarn cypress
-    test-storybooks-portable-vitest3:
-        description: test-storybooks-portable-vitest3
-        executor:
-            name: sb_playwright
-            class: medium
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Install dependencies
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/react-vitest-3
-                  command: yarn install --no-immutable
-                  environment:
-                      YARN_ENABLE_IMMUTABLE_INSTALLS: false
-            - run:
-                  name: Run Playwright E2E tests
-                  working_directory: test-storybooks/portable-stories-kitchen-sink/react-vitest-3
-                  command: yarn playwright-e2e
-    init-empty:
-        type: no-op
-    init-empty-windows:
-        description: init-empty-windows
-        executor:
-            name: win/default
-            size: medium
-            shell: bash.exe
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: '--depth 1 --config url."https://github.com/".insteadOf=ssh://git@github.com/ --config url."https://github.com/".insteadOf=git@github.com:'
-            - run:
-                  name: Install Node + Yarn
-                  shell: powershell.exe
-                  command: |-
-                      $nodeVersion = Get-Content .nvmrc | Select-Object -First 1
-                      nvm install $nodeVersion
-                      nvm use $nodeVersion
-                      corepack enable
-                      corepack prepare yarn@stable --activate
-            - attach_workspace:
-                  at: C:\Users\circleci
-            - run:
-                  name: Run Install
-                  command: yarn install
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-            - run:
-                  name: Storybook init from empty directory (Windows NPM)
-                  working_directory: C:\Users\circleci
-                  command: |-
-                      mkdir empty-react-vite-ts
-                      cd empty-react-vite-ts
-                      npm set registry http://localhost:6001
-                      npx storybook init --yes --package-manager npm
-                  environment:
-                      IN_STORYBOOK_SANDBOX: true
-                      STORYBOOK_DISABLE_TELEMETRY: true
-                      STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
-            - run:
-                  name: Run storybook smoke test
-                  working_directory: C:\Users\circleci\empty-react-vite-ts
-                  command: npm run storybook -- --smoke-test
-    init-empty-react-vite-ts:
-        description: init-empty-react-vite-ts
-        executor:
-            name: sb_node_22_classic
-            class: medium
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-            - run:
-                  name: Storybook init from empty directory (Linux NPM)
-                  working_directory: /tmp
-                  command: |-
-                      mkdir empty-react-vite-ts
-                      cd empty-react-vite-ts
-                      npm set registry http://localhost:6001
-                      npx storybook init --yes --package-manager npm
-                  environment:
-                      IN_STORYBOOK_SANDBOX: true
-                      STORYBOOK_DISABLE_TELEMETRY: true
-                      STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
-            - run:
-                  name: Run storybook smoke test
-                  working_directory: /tmp/empty-react-vite-ts
-                  command: npm run storybook -- --smoke-test
-    init-empty-nextjs-ts:
-        description: init-empty-nextjs-ts
-        executor:
-            name: sb_node_22_classic
-            class: medium
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-            - run:
-                  name: Storybook init from empty directory (Linux NPM)
-                  working_directory: /tmp
-                  command: |-
-                      mkdir empty-nextjs-ts
-                      cd empty-nextjs-ts
-                      npm set registry http://localhost:6001
-                      npx storybook init --yes --package-manager npm
-                  environment:
-                      IN_STORYBOOK_SANDBOX: true
-                      STORYBOOK_DISABLE_TELEMETRY: true
-                      STORYBOOK_INIT_EMPTY_TYPE: nextjs-ts
-            - run:
-                  name: Run storybook smoke test
-                  working_directory: /tmp/empty-nextjs-ts
-                  command: npm run storybook -- --smoke-test
-    init-empty-vue-vite-ts:
-        description: init-empty-vue-vite-ts
-        executor:
-            name: sb_node_22_classic
-            class: medium
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-            - run:
-                  name: Storybook init from empty directory (Linux NPM)
-                  working_directory: /tmp
-                  command: |-
-                      mkdir empty-vue-vite-ts
-                      cd empty-vue-vite-ts
-                      npm set registry http://localhost:6001
-                      npx storybook init --yes --package-manager npm
-                  environment:
-                      IN_STORYBOOK_SANDBOX: true
-                      STORYBOOK_DISABLE_TELEMETRY: true
-                      STORYBOOK_INIT_EMPTY_TYPE: vue-vite-ts
-            - run:
-                  name: Run storybook smoke test
-                  working_directory: /tmp/empty-vue-vite-ts
-                  command: npm run storybook -- --smoke-test
-    init-empty-lit-vite-ts:
-        description: init-empty-lit-vite-ts
-        executor:
-            name: sb_node_22_classic
-            class: medium
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-            - run:
-                  name: Storybook init from empty directory (Linux NPM)
-                  working_directory: /tmp
-                  command: |-
-                      mkdir empty-lit-vite-ts
-                      cd empty-lit-vite-ts
-                      npm set registry http://localhost:6001
-                      npx storybook init --yes --package-manager npm
-                  environment:
-                      IN_STORYBOOK_SANDBOX: true
-                      STORYBOOK_DISABLE_TELEMETRY: true
-                      STORYBOOK_INIT_EMPTY_TYPE: lit-vite-ts
-            - run:
-                  name: Run storybook smoke test
-                  working_directory: /tmp/empty-lit-vite-ts
-                  command: npm run storybook -- --smoke-test
-    init-features:
-        description: init-features
-        executor:
-            name: sb_node_22_classic
-            class: medium
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Verdaccio
-                  working_directory: code
-                  background: true
-                  command: yarn local-registry --open
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: |-
-                      yarn wait-on tcp:127.0.0.1:6001
-                      yarn wait-on tcp:127.0.0.1:6002
-            - run:
-                  name: Storybook init from empty directory (Linux NPM)
-                  working_directory: /tmp
-                  command: |-
-                      mkdir empty-react-vite-ts
-                      cd empty-react-vite-ts
-                      npm set registry http://localhost:6001
-                      npx create-storybook --yes --package-manager npm --features docs test a11y --loglevel=debug
-                  environment:
-                      IN_STORYBOOK_SANDBOX: true
-                      STORYBOOK_DISABLE_TELEMETRY: true
-                      STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
-            - run:
-                  name: Run storybook smoke test
-                  working_directory: /tmp/empty-react-vite-ts
-                  command: npx vitest
-    react-vite-default-ts--build-test-runner:
-        description: react-vite-default-ts--build-test-runner
-        executor:
-            name: sb_playwright
-            class: medium
-        steps:
-            - git-shallow-clone/checkout_advanced:
-                  clone_options: --depth 1
-            - attach_workspace:
-                  at: /tmp
-            - restore_cache:
-                  keys:
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
-                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
-                      - v5-linux-node_modules
-            - run:
-                  name: Running test-runner
-                  command: yarn task test-runner --template react-vite/default-ts --no-link -s test-runner
 workflows:
     generated:
         jobs:
-            - pretty-docs
             - build-linux
             - build-windows
+            - pretty-docs
             - check:
                   requires:
                       - build-linux
+            - init-empty:
+                  requires:
+                      - build-linux
+            - init-empty-lit-vite-ts:
+                  requires:
+                      - init-empty
+            - init-empty-nextjs-ts:
+                  requires:
+                      - init-empty
+            - init-empty-react-vite-ts:
+                  requires:
+                      - init-empty
+            - init-empty-vue-vite-ts:
+                  requires:
+                      - init-empty
+            - init-empty-windows:
+                  requires:
+                      - init-empty
+            - init-features:
+                  requires:
+                      - init-empty
             - knip:
                   requires:
                       - build-linux
             - package-benchmarks:
                   requires:
                       - build-linux
-            - unit-tests-linux:
-                  requires:
-                      - build-linux
-            - unit-tests-windows:
-                  requires:
-                      - build-windows
-            - ui:
-                  requires:
-                      - build-linux
-            - sandboxes:
-                  requires:
-                      - build-linux
-            - react-vite-default-ts--create:
-                  requires:
-                      - sandboxes
             - react-vite-default-ts--build:
                   requires:
                       - react-vite-default-ts--create
-            - react-vite-default-ts--dev:
+            - react-vite-default-ts--build-test-runner:
+                  requires:
+                      - react-vite-default-ts--build
+            - react-vite-default-ts--build-windows:
                   requires:
                       - react-vite-default-ts--create
             - react-vite-default-ts--chromatic:
                   requires:
                       - react-vite-default-ts--build
-            - react-vite-default-ts--vitest:
+            - react-vite-default-ts--create:
                   requires:
-                      - react-vite-default-ts--build
+                      - sandboxes
+            - react-vite-default-ts--dev:
+                  requires:
+                      - react-vite-default-ts--create
             - react-vite-default-ts--dev-windows:
                   requires:
                       - react-vite-default-ts--create
-            - react-vite-default-ts--build-windows:
+            - react-vite-default-ts--vitest:
                   requires:
-                      - react-vite-default-ts--create
+                      - react-vite-default-ts--build
+            - sandboxes:
+                  requires:
+                      - build-linux
             - test-storybooks:
                   requires:
                       - build-linux
@@ -1303,33 +1318,18 @@ workflows:
             - test-storybooks-portable-react:
                   requires:
                       - test-storybooks
-            - test-storybooks-portable-vue3:
-                  requires:
-                      - test-storybooks
             - test-storybooks-portable-vitest3:
                   requires:
                       - test-storybooks
-            - init-empty:
+            - test-storybooks-portable-vue3:
+                  requires:
+                      - test-storybooks
+            - ui:
                   requires:
                       - build-linux
-            - init-empty-windows:
+            - unit-tests-linux:
                   requires:
-                      - init-empty
-            - init-empty-react-vite-ts:
+                      - build-linux
+            - unit-tests-windows:
                   requires:
-                      - init-empty
-            - init-empty-nextjs-ts:
-                  requires:
-                      - init-empty
-            - init-empty-vue-vite-ts:
-                  requires:
-                      - init-empty
-            - init-empty-lit-vite-ts:
-                  requires:
-                      - init-empty
-            - init-features:
-                  requires:
-                      - init-empty
-            - react-vite-default-ts--build-test-runner:
-                  requires:
-                      - react-vite-default-ts--build
+                      - build-windows

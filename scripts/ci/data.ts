@@ -1231,10 +1231,25 @@ export const data = {
   executors,
   parameters,
 
-  jobs,
-  workflows,
-  // jobs: Object.fromEntries(Object.entries(jobs).sort(([a], [b]) => a.localeCompare(b))),
-  // workflows: Object.fromEntries(Object.entries(workflows).sort(([a], [b]) => a.localeCompare(b))),
+  // jobs,
+  // workflows,
+  jobs: Object.fromEntries(Object.entries(jobs).sort(([a], [b]) => a.localeCompare(b))),
+  workflows: {
+    generated: {
+      jobs: workflows.generated.jobs.sort((a, b) => {
+        if (typeof a == 'string' && typeof b == 'string') {
+          return a.localeCompare(b);
+        }
+        if (typeof a == 'string') {
+          return -1;
+        }
+        if (typeof b == 'string') {
+          return 1;
+        }
+        return Object.keys(a)[0].localeCompare(Object.keys(b)[0]);
+      }),
+    },
+  },
 };
 
 function definePortableStoryTest(directory: string) {

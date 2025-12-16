@@ -273,9 +273,11 @@ import preview from '../.storybook/preview';
 
 import { Page } from './Page';
 
+type PagePropsAndCustomArgs = React.ComponentProps<typeof Page> & { footer?: string }
+
 const meta = preview.meta({
   component: Page,
-  render: ({ footer, ...args }) => (
+  render: ({ footer, ...args }: PagePropsAndCustomArgs) => (
     <Page {...args}>
       <footer>{footer}</footer>
     </Page>

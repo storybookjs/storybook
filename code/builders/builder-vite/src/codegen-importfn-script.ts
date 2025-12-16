@@ -14,25 +14,27 @@ import { getUniqueImportPaths } from './utils/unique-import-paths';
  * Storybook to fetch a story dynamically when needed.
  */
 export function generateImportFnScriptCode(index: StoryIndex): string {
-  const objectEntries: [string, string][] = getUniqueImportPaths(index).map((importPath) => {
-    if (importPath.startsWith('virtual:')) {
-      return [importPath, genDynamicImport(importPath)];
+  const objectEntries: [path: string, importStatement: string][] = getUniqueImportPaths(index).map(
+    (importPath) => {
+      if (importPath.startsWith('virtual:')) {
+        return [importPath, genDynamicImport(importPath)];
+      }
+
+      /**
+       * Relative paths get passed either with no leading './' - e.g. 'src/Foo.stories.js', or with
+       * a leading '../', e.g. '../src/Foo.stories.js'. We want to deal in importPaths relative to
+       * the working dir, so we normalize
+       */
+      const relativePath = normalize(relative(process.cwd(), importPath));
+      const normalizedRelativePath = relativePath.startsWith('../')
+        ? relativePath
+        : `./${relativePath}`;
+
+      const absolutePath = normalize(join(process.cwd(), importPath));
+
+      return [normalizedRelativePath, genDynamicImport(absolutePath)];
     }
-
-    /**
-     * Relative paths get passed either with no leading './' - e.g. 'src/Foo.stories.js', or with a
-     * leading '../', e.g. '../src/Foo.stories.js'. We want to deal in importPaths relative to the
-     * working dir, so we normalize
-     */
-    const relativePath = normalize(relative(process.cwd(), importPath));
-    const normalizedRelativePath = relativePath.startsWith('../')
-      ? relativePath
-      : `./${relativePath}`;
-
-    const absolutePath = normalize(join(process.cwd(), importPath));
-
-    return [normalizedRelativePath, genDynamicImport(absolutePath)];
-  });
+  );
 
   return dedent`
     const importers = ${genObjectFromRawEntries(objectEntries)};

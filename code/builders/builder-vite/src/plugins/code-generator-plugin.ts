@@ -11,7 +11,11 @@ import { generateImportFnScriptCode } from '../codegen-importfn-script';
 import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script';
 import { generateAddonSetupCode } from '../codegen-set-addon-channel';
 import { transformIframeHtml } from '../transform-iframe-html';
-import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from '../virtual-file-names';
+import {
+  SB_VIRTUAL_FILES,
+  SB_VIRTUAL_FILE_IDS,
+  getResolvedVirtualModuleId,
+} from '../virtual-file-names';
 
 export function codeGeneratorPlugin(options: Options): Plugin {
   const iframePath = fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html'));
@@ -53,7 +57,7 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       iframeId = `${config.root}/iframe.html`;
     },
     resolveId(source) {
-      if (Object.values(SB_VIRTUAL_FILES).includes(source)) {
+      if (SB_VIRTUAL_FILE_IDS.includes(source)) {
         return getResolvedVirtualModuleId(source);
       }
       if (source === iframePath) {
@@ -66,7 +70,7 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       switch (id) {
         case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE):
           const storyIndexGenerator = await storyIndexGeneratorPromise;
-          const index = (await storyIndexGenerator?.getIndex()) ?? { v: 5, entries: {} };
+          const index = await storyIndexGenerator?.getIndex();
           return generateImportFnScriptCode(index);
 
         case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE):

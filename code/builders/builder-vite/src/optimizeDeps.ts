@@ -21,10 +21,7 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator'),
   ]);
 
-  const index: StoryIndex = (await storyIndexGenerator.getIndex()) ?? {
-    v: 5,
-    entries: {},
-  };
+  const index: StoryIndex = await storyIndexGenerator.getIndex();
 
   // TODO: check if resolveConfig takes a lot of time, possible optimizations here
   const resolvedConfig = await resolveConfig(config, 'serve', 'development');

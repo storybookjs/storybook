@@ -4,6 +4,8 @@ export const SB_VIRTUAL_FILES = {
   VIRTUAL_ADDON_SETUP_FILE: 'virtual:/@storybook/builder-vite/setup-addons.js',
 };
 
+export const SB_VIRTUAL_FILE_IDS = Object.values(SB_VIRTUAL_FILES);
+
 export function getResolvedVirtualModuleId(virtualModuleId: string) {
   return `\0${virtualModuleId}`;
 }

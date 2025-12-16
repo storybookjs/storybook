@@ -4,7 +4,14 @@ import { join } from 'node:path';
 import glob from 'fast-glob';
 
 import { commands } from './commands';
+import {
+  defineEmptyInitFeatures,
+  defineEmptyInitFlow,
+  defineEmptyInitWindows,
+} from './defineEmptyInitFlow';
 import { executors } from './executors';
+import { orbs } from './orbs';
+import { parameters } from './parameters';
 // import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import {
   defineSandboxFlow,
@@ -12,7 +19,11 @@ import {
   defineWindowsSandboxBuild,
   defineWindowsSandboxDev,
 } from './sandboxes';
-import { definePortableStoryTest } from './test-storybooks';
+import {
+  definePortableStoryTest,
+  definePortableStoryTestPNP,
+  definePortableStoryTestVitest3,
+} from './test-storybooks';
 import {
   CACHE_KEYS,
   CACHE_PATHS,
@@ -297,66 +308,8 @@ const packageBenchmarks = defineJob(
 );
 
 const testStorybooksPortables = ['react', 'vue3'].map(definePortableStoryTest);
-const testStorybooksPortableVitest3 = defineJob(
-  'test-storybooks-portable-vitest3',
-  {
-    executor: {
-      name: 'sb_playwright',
-      class: 'medium',
-    },
-    steps: [
-      ...restore.linux(),
-      {
-        run: {
-          name: 'Install dependencies',
-          working_directory: 'test-storybooks/portable-stories-kitchen-sink/react-vitest-3',
-          command: 'yarn install --no-immutable',
-          environment: {
-            YARN_ENABLE_IMMUTABLE_INSTALLS: false,
-          },
-        },
-      },
-      {
-        run: {
-          name: 'Run Playwright E2E tests',
-          working_directory: 'test-storybooks/portable-stories-kitchen-sink/react-vitest-3',
-          command: 'yarn playwright-e2e',
-        },
-      },
-    ],
-  },
-  ['test-storybooks']
-);
-const testStorybooksPNP = defineJob(
-  'test-storybooks-pnp',
-  {
-    executor: {
-      name: 'sb_node_22_classic',
-      class: 'medium',
-    },
-    steps: [
-      ...restore.linux(),
-      {
-        run: {
-          name: 'Install dependencies',
-          working_directory: 'test-storybooks/yarn-pnp',
-          command: 'yarn install --no-immutable',
-          environment: {
-            YARN_ENABLE_IMMUTABLE_INSTALLS: false,
-          },
-        },
-      },
-      {
-        run: {
-          name: 'Run Storybook smoke test',
-          working_directory: 'test-storybooks/yarn-pnp',
-          command: 'yarn storybook --smoke-test',
-        },
-      },
-    ],
-  },
-  ['test-storybooks']
-);
+const testStorybooksPortableVitest3 = definePortableStoryTestVitest3();
+const testStorybooksPNP = definePortableStoryTestPNP();
 
 const sandboxes = [
   //
@@ -370,133 +323,13 @@ const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
 
 const testRunner = defineSandboxTestRunner(sandboxes[0]);
 
-const initEmptyWindows = defineJob(
-  'init-empty-windows',
-  {
-    executor: {
-      name: 'win/default',
-      size: 'medium',
-      shell: 'bash.exe',
-    },
-    steps: [
-      ...restore.windows(),
-      verdaccio.start(),
-      server.wait([...verdaccio.ports]),
-      {
-        run: {
-          name: 'Storybook init from empty directory (Windows NPM)',
-          working_directory: 'C:\\Users\\circleci',
-          command: [
-            `mkdir empty-react-vite-ts`,
-            `cd empty-react-vite-ts`,
-            `npm set registry http://localhost:6001`,
-            `npx storybook init --yes --package-manager npm`,
-          ].join('\n'),
-          environment: {
-            IN_STORYBOOK_SANDBOX: true,
-            STORYBOOK_DISABLE_TELEMETRY: true,
-            STORYBOOK_INIT_EMPTY_TYPE: 'react-vite-ts',
-          },
-        },
-      },
-      {
-        run: {
-          name: 'Run storybook smoke test',
-          working_directory: 'C:\\Users\\circleci\\empty-react-vite-ts',
-          command: 'npm run storybook -- --smoke-test',
-        },
-      },
-    ],
-  },
-  ['init-empty']
-);
+const initEmptyWindows = defineEmptyInitWindows();
 
-const defineEmptyInitFlow = (template: string) =>
-  defineJob(
-    `init-empty-${template}`,
-    {
-      executor: {
-        name: 'sb_node_22_classic',
-        class: 'medium',
-      },
-      steps: [
-        ...restore.linux(),
-        verdaccio.start(),
-        server.wait([...verdaccio.ports]),
-        {
-          run: {
-            name: 'Storybook init from empty directory (Linux NPM)',
-            working_directory: '/tmp',
-            command: [
-              `mkdir empty-${template}`,
-              `cd empty-${template}`,
-              `npm set registry http://localhost:6001`,
-              `npx storybook init --yes --package-manager npm`,
-            ].join('\n'),
-            environment: {
-              IN_STORYBOOK_SANDBOX: true,
-              STORYBOOK_DISABLE_TELEMETRY: true,
-              STORYBOOK_INIT_EMPTY_TYPE: template,
-            },
-          },
-        },
-        {
-          run: {
-            name: 'Run storybook smoke test',
-            working_directory: `/tmp/empty-${template}`,
-            command: 'npm run storybook -- --smoke-test',
-          },
-        },
-      ],
-    },
-
-    ['init-empty']
-  );
 const initEmptyLinux = ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'].map(
   defineEmptyInitFlow
 );
 
-const initFeatures = defineJob(
-  'init-features',
-  {
-    executor: {
-      name: 'sb_node_22_classic',
-      class: 'medium',
-    },
-    steps: [
-      git.checkout(),
-      workspace.attach(),
-      cache.attach(CACHE_KEYS()),
-      verdaccio.start(),
-      server.wait([...verdaccio.ports]),
-      {
-        run: {
-          name: 'Storybook init from empty directory (Linux NPM)',
-          working_directory: '/tmp',
-          command: [
-            `mkdir empty-react-vite-ts`,
-            `cd empty-react-vite-ts`,
-            `npm set registry http://localhost:6001`,
-            `npx create-storybook --yes --package-manager npm --features docs test a11y --loglevel=debug`,
-          ].join('\n'),
-          environment: {
-            IN_STORYBOOK_SANDBOX: true,
-            STORYBOOK_DISABLE_TELEMETRY: true,
-            STORYBOOK_INIT_EMPTY_TYPE: 'react-vite-ts',
-          },
-        },
-      },
-      {
-        run: {
-          name: 'Run storybook smoke test',
-          working_directory: `/tmp/empty-react-vite-ts`,
-          command: 'npx vitest',
-        },
-      },
-    ],
-  },
-  ['init-empty']
-);
+const initFeatures = defineEmptyInitFeatures();
 
 const jobs = {
   [linux_build.id]: linux_build.implementation,
@@ -566,35 +399,6 @@ const jobs = {
   ),
   [initFeatures.id]: initFeatures.implementation,
   [testRunner.id]: testRunner.implementation,
-};
-
-const orbs = {
-  'browser-tools': 'circleci/browser-tools@2.3.2',
-  codecov: 'codecov/codecov@5.4.3',
-  discord: 'antonioned/discord@0.1.0',
-  'git-shallow-clone': 'guitarrapc/git-shallow-clone@2.8.0',
-  node: 'circleci/node@7.2.1',
-  nx: 'nrwl/nx@1.7.0',
-  win: 'circleci/windows@5.1.1',
-};
-
-const parameters = {
-  ghBaseBranch: {
-    default: 'next',
-    description: 'The name of the base branch (the target of the PR)',
-    type: 'string',
-  },
-  ghPrNumber: {
-    default: '',
-    description: 'The PR number',
-    type: 'string',
-  },
-  workflow: {
-    default: 'skipped',
-    description: 'Which workflow to run',
-    enum: ['normal', 'merged', 'daily', 'skipped', 'docs'],
-    type: 'enum',
-  },
 };
 
 const workflows = {
@@ -704,7 +508,6 @@ export const data = {
   commands,
   executors,
   parameters,
-
   jobs: Object.fromEntries(Object.entries(jobs).sort(([a], [b]) => a.localeCompare(b))),
   workflows: {
     generated: {

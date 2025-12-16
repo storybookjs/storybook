@@ -808,9 +808,9 @@ export class StoryIndexGenerator {
 
   invalidate(importPath: Path, removed: boolean) {
     const absolutePath = slash(resolve(this.options.workingDir, importPath));
-    const specifier = this.specifierToCache
-      .keys()
-      .find((ns) => ns.importPathMatcher.exec(importPath));
+    const specifier = Array.from(this.specifierToCache.keys()).find((ns) =>
+      ns.importPathMatcher.exec(importPath)
+    );
     if (!specifier) {
       // not a story file
       return;

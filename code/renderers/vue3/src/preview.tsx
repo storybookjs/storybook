@@ -17,10 +17,10 @@ import type {
 } from 'storybook/internal/types';
 
 import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
-import { ComponentProps } from 'vue-component-type-helpers';
 
 import * as vueAnnotations from './entry-preview';
 import * as vueDocsAnnotations from './entry-preview-docs';
+import { type Args, ComponentPropsAndSlots } from './public-types';
 import { VueTypes } from './types';
 
 export function __definePreview<Addons extends PreviewAddon<never>[]>(
@@ -34,29 +34,49 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   return preview;
 }
 
-/** @ts-expect-error We cannot implement the meta faithfully here, but that is okay. */
+type InferArgs<C, T, Decorators> = Simplify<
+  ComponentPropsAndSlots<C> &
+    Simplify<RemoveIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
+>;
+
 export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> {
   meta<
     C,
     Decorators extends DecoratorFunction<VueTypes & T, any>,
     // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<ComponentProps<C>>,
+    TMetaArgs extends Partial<ComponentPropsAndSlots<C>>,
   >(
     meta: {
-      render?: ArgsStoryFn<VueTypes & T, ComponentProps<C>>;
       component?: C;
-      decorators?: Decorators | Decorators[];
       args?: TMetaArgs;
+      decorators?: Decorators | Decorators[];
     } & Omit<
-      ComponentAnnotations<VueTypes & T, ComponentProps<C>>,
-      'decorators' | 'component' | 'args' | 'render'
+      ComponentAnnotations<VueTypes & T, ComponentPropsAndSlots<C>>,
+      'decorators' | 'component' | 'args'
     >
+  ): VueMeta<
+    VueTypes & T & { args: InferArgs<C, T, Decorators> },
+    Omit<ComponentAnnotations<VueTypes & T & { args: InferArgs<C, T, Decorators> }>, 'args'> & {
+      args: {} extends TMetaArgs ? {} : TMetaArgs;
+    }
+  >;
+
+  meta<
+    TArgs extends Args,
+    Decorators extends DecoratorFunction<VueTypes & T, any>,
+    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
+    TMetaArgs extends Partial<TArgs>,
+  >(
+    meta: {
+      render?: ArgsStoryFn<VueTypes & T, TArgs>;
+      args?: TMetaArgs;
+      decorators?: Decorators | Decorators[];
+    } & Omit<ComponentAnnotations<VueTypes & T, TArgs>, 'decorators' | 'args' | 'render'>
   ): VueMeta<
     VueTypes &
       T & {
         args: Simplify<
-          ComponentProps<C> &
-            Simplify<RemoveIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
+          TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
         >;
       },
     Omit<
@@ -64,14 +84,13 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
         VueTypes &
           T & {
             args: Simplify<
-              ComponentProps<C> &
-                Simplify<RemoveIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
+              TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
             >;
           }
       >,
       'args'
     > & {
-      args: Partial<ComponentProps<C>> extends TMetaArgs ? {} : TMetaArgs;
+      args: {} extends TMetaArgs ? {} : TMetaArgs;
     }
   >;
 }

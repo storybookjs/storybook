@@ -139,7 +139,7 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
 
     logger.step('Migration completed successfully!');
     logger.log(
-      `For more information, see: https://storybook.js.org/docs/nextjs/get-started/nextjs-vite`
+      `For more information, see: https://storybook.js.org/docs/get-started/frameworks/nextjs-vite`
     );
   },
 };

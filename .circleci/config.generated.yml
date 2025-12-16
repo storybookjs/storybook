@@ -741,8 +741,8 @@ jobs:
     react-vite-default-ts--build:
         description: react-vite/default-ts (build)
         executor:
-            name: sb_playwright
-            class: xlarge
+            name: sb_node_22_classic
+            class: large
         steps:
             - git-shallow-clone/checkout_advanced:
                   clone_options: --depth 1
@@ -761,19 +761,6 @@ jobs:
                   paths:
                       - storybook-sandboxes/react-vite-default-ts/storybook-static
                   root: /tmp
-            - run:
-                  name: Serve storybook
-                  background: true
-                  command: yarn task serve --template react-vite/default-ts --no-link -s serve
-            - run:
-                  name: Wait on servers
-                  working_directory: code
-                  command: yarn wait-on tcp:127.0.0.1:8001
-            - run:
-                  name: Running E2E Tests
-                  command: |-
-                      TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
-                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s e2e-tests" --verbose --index=0 --total=1
     react-vite-default-ts--build-test-runner:
         description: react-vite-default-ts--build-test-runner
         executor:
@@ -1008,6 +995,35 @@ jobs:
                   name: Running E2E Tests
                   working_directory: code
                   command: yarn task e2e-tests-dev --template react-vite/default-ts --no-link -s e2e-tests-dev
+    react-vite-default-ts--e2e:
+        description: react-vite/default-ts (e2e)
+        executor:
+            name: sb_playwright
+            class: xlarge
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                  clone_options: --depth 1
+            - attach_workspace:
+                  at: /tmp
+            - restore_cache:
+                  keys:
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}
+                      - v5-linux-node_modules/{{ checksum ".nvmrc" }}
+                      - v5-linux-node_modules
+            - run:
+                  name: Serve storybook
+                  background: true
+                  command: yarn task serve --template react-vite/default-ts --no-link -s serve
+            - run:
+                  name: Wait on servers
+                  working_directory: code
+                  command: yarn wait-on tcp:127.0.0.1:8001
+            - run:
+                  name: Running E2E Tests
+                  command: |-
+                      TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
+                      echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template react-vite/default-ts --no-link -s e2e-tests" --verbose --index=0 --total=1
     react-vite-default-ts--vitest:
         description: react-vite/default-ts (vitest)
         executor:
@@ -1238,7 +1254,7 @@ jobs:
                       corepack enable
                       corepack prepare yarn@stable --activate
             - attach_workspace:
-                  at: C:\Users\circleci
+                  at: C:\Users\circleci\project
             - run:
                   name: Install dependencies
                   command: yarn install
@@ -1306,6 +1322,9 @@ workflows:
             - react-vite-default-ts--dev-windows:
                   requires:
                       - react-vite-default-ts--create
+            - react-vite-default-ts--e2e:
+                  requires:
+                      - react-vite-default-ts--build
             - react-vite-default-ts--vitest:
                   requires:
                       - react-vite-default-ts--build

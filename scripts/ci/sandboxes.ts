@@ -22,26 +22,16 @@ function defineSandboxJob_build({
   name,
   template,
   needs,
-  options,
 }: {
   directory: string;
   name: string;
   needs: string[];
   template: string;
-  options: {
-    e2e: boolean;
-    chromatic: boolean;
-  };
 }) {
-  const executor: JobImplementation['executor'] = options.e2e
-    ? {
-        name: 'sb_playwright',
-        class: 'xlarge',
-      }
-    : {
-        name: 'sb_node_22_classic',
-        class: 'large',
-      };
+  const executor: JobImplementation['executor'] = {
+    name: 'sb_node_22_classic',
+    class: 'large',
+  };
 
   return defineJob(
     name,
@@ -55,30 +45,7 @@ function defineSandboxJob_build({
             command: `yarn task build --template ${template} --no-link -s build`,
           },
         },
-        ...(options.chromatic
-          ? [workspace.persist([`${SANDBOX_DIR}/${directory}/storybook-static`])]
-          : []),
-        ...(options.e2e
-          ? [
-              {
-                run: {
-                  name: 'Serve storybook',
-                  background: true,
-                  command: `yarn task serve --template ${template} --no-link -s serve`,
-                },
-              },
-              server.wait(['8001']),
-              {
-                run: {
-                  name: 'Running E2E Tests',
-                  command: [
-                    `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${template} --no-link -s e2e-tests" --verbose --index=0 --total=1`,
-                  ].join('\n'),
-                },
-              },
-            ]
-          : []),
+        workspace.persist([`${SANDBOX_DIR}/${directory}/storybook-static`]),
       ],
     },
     needs
@@ -161,6 +128,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
     create: `${name} (create)`,
     build: `${name} (build)`,
     dev: `${name} (dev)`,
+    e2e: `${name} (e2e)`,
     chromatic: `${name} (chromatic)`,
     vitest: `${name} (vitest)`,
     ['test-runner']: `${name} (test-runner)`,
@@ -169,6 +137,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
     create: `${toId(names.create)}`,
     build: `${toId(names.build)}`,
     dev: `${toId(names.dev)}`,
+    e2e: `${toId(names.e2e)}`,
     chromatic: `${toId(names.chromatic)}`,
     vitest: `${toId(names.vitest)}`,
     ['test-runner']: `${toId(names['test-runner'])}`,
@@ -226,10 +195,6 @@ export function defineSandboxFlow<K extends string>(name: K) {
       name: names.build,
       template: name,
       needs: [ids.create],
-      options: {
-        e2e: !skipTasks?.includes('e2e-tests'),
-        chromatic: !skipTasks?.includes('chromatic'),
-      },
     }),
     defineSandboxJob_dev({
       name: names.dev,
@@ -284,6 +249,39 @@ export function defineSandboxFlow<K extends string>(name: K) {
                 run: {
                   name: 'Running Vitest',
                   command: `yarn task vitest-integration --template ${name} --no-link -s vitest-integration`,
+                },
+              },
+            ],
+          },
+          [ids.build]
+        )
+      : undefined,
+
+    !skipTasks?.includes('e2e-tests')
+      ? defineJob(
+          names.e2e,
+          {
+            executor: {
+              name: 'sb_playwright',
+              class: 'xlarge',
+            },
+            steps: [
+              ...restore.linux(),
+              {
+                run: {
+                  name: 'Serve storybook',
+                  background: true,
+                  command: `yarn task serve --template ${name} --no-link -s serve`,
+                },
+              },
+              server.wait(['8001']),
+              {
+                run: {
+                  name: 'Running E2E Tests',
+                  command: [
+                    `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${name} --no-link -s e2e-tests" --verbose --index=0 --total=1`,
+                  ].join('\n'),
                 },
               },
             ],

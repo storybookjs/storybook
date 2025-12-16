@@ -264,7 +264,7 @@ const windows_unitTests = defineJob(
       shell: 'bash.exe',
     },
     steps: [
-      ...restore.windows(),
+      ...restore.windows('C:\\Users\\circleci\\project'),
       {
         run: {
           command: 'yarn install',

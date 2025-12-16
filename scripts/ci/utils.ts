@@ -171,11 +171,16 @@ export const verdaccio = {
 };
 
 export const restore = {
-  linux: () => [git.checkout(), workspace.attach(), cache.attach(CACHE_KEYS())],
-  windows: () => [
+  linux: () => [
+    //
+    git.checkout(),
+    workspace.attach(),
+    cache.attach(CACHE_KEYS()),
+  ],
+  windows: (at = 'C:\\Users\\circleci') => [
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
-    workspace.attach('C:\\Users\\circleci'),
+    workspace.attach(at),
     /**
      * I really wish this wasn't needed, but it is. I tried a lot of things to get it to not be
      * needed, but ultimately, something kept failing. At this point I gave up:
@@ -200,6 +205,7 @@ export const CACHE_KEYS = (platform = 'linux') =>
   ].map((_, index, list) => {
     return list.slice(0, list.length - index).join('/');
   });
+
 export const CACHE_PATHS = [
   '.yarn/cache',
   '.yarn/unplugged',
@@ -209,6 +215,7 @@ export const CACHE_PATHS = [
   'code/node_modules',
   'scripts/node_modules',
 ];
+
 export function defineJob<K extends string, I extends JobImplementation>(
   name: K,
   implementation: I,
@@ -224,6 +231,7 @@ export function defineJob<K extends string, I extends JobImplementation>(
     requires,
   };
 }
+
 export type JobImplementation = {
   executor:
     | {

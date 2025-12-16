@@ -68,22 +68,24 @@ export function codeGeneratorPlugin(options: Options): Plugin {
     },
     async load(id) {
       switch (id) {
-        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE):
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE): {
           const storyIndexGenerator = await storyIndexGeneratorPromise;
           const index = await storyIndexGenerator?.getIndex();
           return generateImportFnScriptCode(index);
+        }
 
-        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE):
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE): {
           return generateAddonSetupCode();
-
-        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE):
+        }
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE): {
           return generateModernIframeScriptCode(options, projectRoot);
-
-        case iframeId:
+        }
+        case iframeId: {
           return readFileSync(
             fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html')),
             'utf-8'
           );
+        }
       }
     },
     async transformIndexHtml(html, ctx) {

@@ -887,7 +887,7 @@ const initEmptyLinux = ['react-vite-ts', 'nextjs-ts', 'vue-vite-ts', 'lit-vite-t
           {
             run: {
               name: 'Run storybook smoke test',
-              working_directory: `empty-${template}`,
+              working_directory: `/tmp/empty-${template}`,
               command: 'npm run storybook -- --smoke-test',
             },
           },

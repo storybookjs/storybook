@@ -1034,7 +1034,7 @@ jobs:
                       STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
             - run:
                   name: Run storybook smoke test
-                  working_directory: empty-react-vite-ts
+                  working_directory: /tmp/empty-react-vite-ts
                   command: npm run storybook -- --smoke-test
     init-empty-nextjs-ts:
         description: init-empty-nextjs-ts
@@ -1077,7 +1077,7 @@ jobs:
                       STORYBOOK_INIT_EMPTY_TYPE: nextjs-ts
             - run:
                   name: Run storybook smoke test
-                  working_directory: empty-nextjs-ts
+                  working_directory: /tmp/empty-nextjs-ts
                   command: npm run storybook -- --smoke-test
     init-empty-vue-vite-ts:
         description: init-empty-vue-vite-ts
@@ -1120,7 +1120,7 @@ jobs:
                       STORYBOOK_INIT_EMPTY_TYPE: vue-vite-ts
             - run:
                   name: Run storybook smoke test
-                  working_directory: empty-vue-vite-ts
+                  working_directory: /tmp/empty-vue-vite-ts
                   command: npm run storybook -- --smoke-test
     init-empty-lit-vite-ts:
         description: init-empty-lit-vite-ts
@@ -1163,7 +1163,7 @@ jobs:
                       STORYBOOK_INIT_EMPTY_TYPE: lit-vite-ts
             - run:
                   name: Run storybook smoke test
-                  working_directory: empty-lit-vite-ts
+                  working_directory: /tmp/empty-lit-vite-ts
                   command: npm run storybook -- --smoke-test
 workflows:
     generated:

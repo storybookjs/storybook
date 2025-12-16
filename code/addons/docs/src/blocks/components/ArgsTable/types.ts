@@ -22,7 +22,7 @@ export interface JsDocTags {
 
 export interface PropSummaryValue {
   summary: string;
-  detail?: string;
+  detail?: string | undefined;
   required?: boolean;
 }
 

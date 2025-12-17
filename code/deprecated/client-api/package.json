@@ -1,6 +1,6 @@
 {
   "name": "@storybook/client-api",
-  "version": "7.6.20",
+  "version": "7.6.21",
   "description": "Storybook Client API",
   "keywords": [
     "storybook"

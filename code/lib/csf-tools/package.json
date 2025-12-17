@@ -1,6 +1,6 @@
 {
   "name": "@storybook/csf-tools",
-  "version": "7.6.20",
+  "version": "7.6.21",
   "description": "Parse and manipulate CSF and Storybook config files",
   "keywords": [
     "storybook"

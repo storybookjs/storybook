@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-html-webpack",
-  "version": "7.6.20",
+  "version": "7.6.21",
   "description": "Storybook for HTML: View HTML snippets in isolation with Hot Reloading.",
   "keywords": [
     "storybook"

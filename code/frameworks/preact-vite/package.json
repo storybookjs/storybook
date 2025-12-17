@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preact-vite",
-  "version": "7.6.20",
+  "version": "7.6.21",
   "description": "Storybook for Preact and Vite: Develop Preact components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"

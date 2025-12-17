@@ -1,6 +1,6 @@
 {
   "name": "@storybook/api",
-  "version": "7.6.20",
+  "version": "7.6.21",
   "description": "Storybook Manager API (facade)",
   "keywords": [
     "storybook"

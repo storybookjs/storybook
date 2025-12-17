@@ -1,6 +1,6 @@
 {
   "name": "@storybook/types",
-  "version": "7.6.20",
+  "version": "7.6.21",
   "description": "Core Storybook TS Types",
   "keywords": [
     "storybook"

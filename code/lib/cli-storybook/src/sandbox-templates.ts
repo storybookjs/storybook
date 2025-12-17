@@ -880,7 +880,7 @@ export const merged: TemplateKey[] = [
 
 export const daily: TemplateKey[] = [
   ...merged,
-  'angular-cli/prerelease',
+  // 'angular-cli/prerelease',
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-js',
   'react-vite/default-js',

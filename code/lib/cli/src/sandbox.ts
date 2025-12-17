@@ -197,7 +197,9 @@ export const sandbox = async (
 
     try {
       // Download the sandbox based on subfolder "after-storybook" and selected branch
-      const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${branch}`;
+      // commit hash of v7.6.17 release
+      const commitHash = 'e0ace18fff6842af7e348116d139ef795901ab3c';
+      const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${commitHash}`;
       await downloadTemplate(gitPath, {
         force: true,
         dir: templateDestination,

@@ -27,12 +27,13 @@ export function getUsedProps(fn: (...args: unknown[]) => unknown) {
     return splitByComma(destructuredProps).map((prop) => prop.replace(/:.*|=.*/g, ''));
   }
 
-  if (!firstArg.match(/^[^a-z_]|[^0-9a-z_]$/i)) {
+  if (!firstArg.match(/^[a-z_$][0-9a-z_$]*$/i)) {
     return [];
   }
 
+  const escapedArg = firstArg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const [, destructuredArg] =
-    body?.trim()?.match(new RegExp(`^(?:const|let|var)\\s*{([^}]+)}\\s*=\\s*${firstArg};`)) || [];
+    body?.trim()?.match(new RegExp(`^(?:const|let|var)\\s*{([^}]+)}\\s*=\\s*${escapedArg};`)) || [];
   if (destructuredArg) {
     return splitByComma(destructuredArg).map((prop) => prop.replace(/:.*|=.*/g, ''));
   }

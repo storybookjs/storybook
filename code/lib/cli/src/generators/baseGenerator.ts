@@ -282,11 +282,11 @@ export async function baseGenerator(
 
   if (!installedDependencies.has('react')) {
     // we add these here because they are required by addon-essentials > addon-docs
-    addonPackages.push('react');
+    addonPackages.push('react@^18.2.0');
   }
   if (!installedDependencies.has('react-dom')) {
     // we add these here because they are required by addon-essentials > addon-docs
-    addonPackages.push('react-dom');
+    addonPackages.push('react-dom@^18.2.0');
   }
 
   // TODO: We need to start supporting this at some point

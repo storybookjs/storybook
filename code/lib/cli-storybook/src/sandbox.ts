@@ -202,7 +202,9 @@ export const sandbox = async ({
     logger.log(`📦 Downloading sandbox template (${picocolors.bold(downloadType)})...`);
     try {
       // Download the sandbox based on subfolder "after-storybook" and selected branch
-      const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${branch}`;
+      // commit hash of v8.6.14 release
+      const commitHash = '84d592c7d7c08a16507cf42b46c54c2715672b02';
+      const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${commitHash}`;
       await downloadTemplate(gitPath, {
         force: true,
         dir: templateDestination,

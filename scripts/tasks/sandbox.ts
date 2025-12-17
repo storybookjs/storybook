@@ -80,7 +80,7 @@ export const sandbox: Task = {
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
 
     if (shouldAddVitestIntegration) {
-      extraDeps.push('happy-dom', 'vitest', 'playwright', '@vitest/browser');
+      extraDeps.push('happy-dom');
 
       if (details.template.expected.framework.includes('nextjs')) {
         extraDeps.push('@storybook/experimental-nextjs-vite', 'jsdom');

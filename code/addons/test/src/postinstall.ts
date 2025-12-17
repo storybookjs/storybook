@@ -61,7 +61,7 @@ export default async function postInstall(options: PostinstallOptions) {
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
   const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
   // if Vitest is installed, we use the same version to keep consistency across Vitest packages
-  const vitestVersionToInstall = vitestVersionSpecifier ?? 'latest';
+  const vitestVersionToInstall = vitestVersionSpecifier ?? '^3.0.0';
 
   const mainJsPath = serverResolve(resolve(options.configDir, 'main')) as string;
   const config = await readConfig(mainJsPath);
@@ -280,7 +280,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const versionedDependencies = dependencies.map((p) => {
     if (p.includes('vitest')) {
-      return `${p}@${vitestVersionToInstall ?? 'latest'}`;
+      return `${p}@${vitestVersionToInstall}`;
     }
 
     return p;

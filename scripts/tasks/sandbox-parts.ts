@@ -129,7 +129,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
 };
 
 export const init: Task['run'] = async (
-  { sandboxDir, template },
+  { sandboxDir, template, key },
   { dryRun, debug, addon: addons, skipTemplateStories }
 ) => {
   const cwd = sandboxDir;
@@ -157,6 +157,25 @@ export const init: Task['run'] = async (
     '--preserve-symlinks',
     '--preserve-symlinks-main',
   ].filter(Boolean);
+
+  // If the sandbox is angular-cli/prerelease, mutate the package json and remove version range specifiers for all packages, but use exact versions instead
+  if (key === 'angular-cli/prerelease') {
+    const packageJsonPath = join(cwd, 'package.json');
+    const packageJson = await readJson(packageJsonPath);
+    packageJson.dependencies = Object.fromEntries(
+      Object.entries(packageJson.dependencies as Record<string, string>).map(([key, value]) => [
+        key,
+        key.includes('angular') ? value.replace('^', '') : value,
+      ])
+    );
+    packageJson.devDependencies = Object.fromEntries(
+      Object.entries(packageJson.devDependencies as Record<string, string>).map(([key, value]) => [
+        key,
+        key.includes('angular') ? value.replace('^', '') : value,
+      ])
+    );
+    await writeJson(packageJsonPath, packageJson, { spaces: 2 });
+  }
 
   const pnp = await pathExists(join(cwd, '.pnp.cjs')).catch(() => {});
   if (pnp && !nodeOptions.find((s) => s.includes('--require'))) {
@@ -623,7 +642,7 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  const extraDevDeps = ['@storybook/test-runner@latest'];
+  const extraDevDeps = ['@storybook/test-runner@~0.23.0'];
 
   if (debug) {
     logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);

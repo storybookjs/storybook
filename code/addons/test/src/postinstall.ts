@@ -57,7 +57,9 @@ export default async function postInstall(options: PostinstallOptions) {
   const info = await getStorybookInfo(options);
   const allDeps = await packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
-  const dependencies = ['vitest', '@vitest/browser', 'playwright'].filter((p) => !allDeps[p]);
+  const dependencies = ['vitest@^3.0.0', '@vitest/browser@^3.0.0', 'playwright'].filter(
+    (p) => !allDeps[p]
+  );
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
   const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
   // if Vitest is installed, we use the same version to keep consistency across Vitest packages
@@ -275,7 +277,7 @@ export default async function postInstall(options: PostinstallOptions) {
         Read more about Vitest coverage providers at ${picocolors.cyan(`https://vitest.dev/guide/coverage.html#coverage-providers`)}
       `
     );
-    dependencies.push(`@vitest/coverage-v8`); // Version specifier is added below
+    dependencies.push(`@vitest/coverage-v8@^3.0.0`); // Version specifier is added below
   }
 
   const versionedDependencies = dependencies.map((p) => {

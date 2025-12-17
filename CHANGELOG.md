@@ -297,6 +297,10 @@ It also includes features to level up your UI development, documentation, and te
 
 </details>
 
+## 9.1.17
+
+- Core: Fix .env-file parsing, thanks @jreinhold!
+
 ## 9.1.16
 
 - CLI: Fix Nextjs project creation in empty directories - [#32828](https://github.com/storybookjs/storybook/pull/32828), thanks @yannbf!
@@ -841,6 +845,10 @@ Total contributions: 240
 Unique contributors: 29
 
 </details>
+
+## 8.6.15
+
+- Core: Fix .env-file parsing, thanks @jreinhold!
 
 ## 8.6.14
 
@@ -1818,6 +1826,10 @@ It brings major improvements to Storybook's feature set for testing and document
 - 🙅‍♀️ No more React requirement in non-React projects
 
 Please checkout our [Migration Guide](https://storybook.js.org/docs/8.0/migration-guide) to upgrade from earlier versions of Storybook. To see a comprehensive list of changes that went into 8.0, you can refer to the [8.0 prerelease changelogs](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.prerelease.md).
+
+## 7.6.21
+
+- Core: Fix .env-file parsing, thanks @jreinhold!
 
 ## 7.6.17
 

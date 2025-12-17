@@ -273,8 +273,16 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
             return;
           }
 
+          // Update lastRenderId. When we switch stories, this value might decrease if our
+          // users have mocked Date.now() via addons or manually in their code, so we must
+          // reset lastRenderId.
+          if (lastStoryId.current === event.storyId) {
+            lastRenderId.current = Math.max(lastRenderId.current, event.renderId || 0);
+          } else {
+            lastRenderId.current = event.renderId || 0;
+          }
+
           lastStoryId.current = event.storyId;
-          lastRenderId.current = Math.max(lastRenderId.current, event.renderId || 0);
           if (lastRenderId.current !== event.renderId) {
             return;
           }

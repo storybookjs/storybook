@@ -1,6 +1,6 @@
 {
   "name": "@storybook/telemetry",
-  "version": "8.6.14",
+  "version": "8.6.15",
   "description": "Telemetry logging for crash reports and usage statistics",
   "keywords": [
     "storybook"

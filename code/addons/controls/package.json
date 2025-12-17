@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-controls",
-  "version": "8.6.14",
+  "version": "8.6.15",
   "description": "Interact with component inputs dynamically in the Storybook UI",
   "keywords": [
     "addon",

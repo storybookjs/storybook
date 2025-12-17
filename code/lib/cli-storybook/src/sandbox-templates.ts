@@ -715,7 +715,7 @@ const internalTemplates = {
       useCsfFactory: true,
       extraDependencies: ['@storybook/addon-webpack5-compiler-babel@^3.0.0', 'prop-types'],
       editAddons: (addons) =>
-        [...addons, '@storybook/addon-webpack5-compiler-babel@^3.0.0'].filter(
+        [...addons, '@storybook/addon-webpack5-compiler-babel'].filter(
           (a) => !a.includes('@storybook/addon-webpack5-compiler-swc')
         ),
     },

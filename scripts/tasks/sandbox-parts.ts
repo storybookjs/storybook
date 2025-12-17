@@ -95,7 +95,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
     // We need to add package resolutions to ensure that we only ever install the latest version
     // of any storybook packages as verdaccio is not able to both proxy to npm and publish over
     // the top. In theory this could mask issues where different versions cause problems.
-    await addPackageResolutions({ cwd, dryRun, debug });
+    await addPackageResolutions({ cwd, dryRun, debug, key });
     await configureYarn2ForVerdaccio({ cwd, dryRun, debug, key });
 
     // Add vite plugin workarounds for frameworks that need it

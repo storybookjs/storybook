@@ -17,7 +17,11 @@ export type YarnOptions = {
 
 const logger = console;
 
-export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
+export const addPackageResolutions = async ({
+  cwd,
+  dryRun,
+  key,
+}: YarnOptions & { key: TemplateKey }) => {
   logger.info(`🔢 Adding package resolutions:`);
 
   if (dryRun) {
@@ -35,6 +39,14 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     'playwright-core': '1.48.1',
     '@playwright/test': '1.48.1',
   };
+
+  if (key.includes('nextjs')) {
+    packageJson.resolutions = {
+      ...packageJson.resolutions,
+      webpack: '5.98.0',
+    };
+  }
+
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };
 

@@ -1,3 +1,9 @@
+## 10.1.10
+
+- Core: Fix `.env`-file parsing - [#33383](https://github.com/storybookjs/storybook/pull/33383), thanks @JReinhold!
+- Next.js: Handle v14 compatibility for draftMode import - [#33341](https://github.com/storybookjs/storybook/pull/33341), thanks @tanujbhaud!
+- React: Fix several CSF factory bugs  - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!
+
 ## 10.1.9
 
 - Telemetry: Remove instance of check for sub-error handling - [#33356](https://github.com/storybookjs/storybook/pull/33356), thanks @valentinpalkovic!

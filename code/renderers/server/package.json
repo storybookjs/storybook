@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server",
-  "version": "10.1.9",
+  "version": "10.1.10",
   "description": "Storybook Server renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

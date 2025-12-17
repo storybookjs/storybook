@@ -15,7 +15,7 @@ export type YarnOptions = {
 
 const logger = console;
 
-export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
+export const addPackageResolutions = async ({ cwd, dryRun, key }: YarnOptions & { key: TemplateKey }) => {
   logger.info(`🔢 Adding package resolutions:`);
   if (dryRun) return;
 
@@ -29,6 +29,13 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     'playwright-core': '1.36.0',
     '@playwright/test': '1.36.0',
   };
+
+  if(key.includes('preact-vite')) {
+    packageJson.resolutions = {
+      ...packageJson.resolutions,
+      '@preact/preset-vite': '2.8.1',
+    };
+  }
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };
 

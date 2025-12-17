@@ -616,22 +616,22 @@ workflows:
           requires:
             - build
       - create-sandboxes:
-          parallelism: 32
+          parallelism: 31
           requires:
             - build
       # - smoke-test-sandboxes: # disabled for now
       #     requires:
       #       - create-sandboxes
       - build-sandboxes:
-          parallelism: 32
+          parallelism: 31
           requires:
             - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 29
+          parallelism: 28
           requires:
             - build-sandboxes
       - e2e-production:
-          parallelism: 27
+          parallelism: 26
           requires:
             - build-sandboxes
       - e2e-dev:
@@ -639,7 +639,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 27
+          parallelism: 26
           requires:
             - build-sandboxes
       # TODO: reenable once we find out the source of flakyness

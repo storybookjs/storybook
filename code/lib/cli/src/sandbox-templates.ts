@@ -570,7 +570,7 @@ export const daily: TemplateKey[] = [
   'cra/default-js',
   'react-vite/default-js',
   'vue3-vite/default-js',
-  'vue2-vite/2.7-js',
+  // 'vue2-vite/2.7-js',
   'vue-cli/default-js',
   'lit-vite/default-js',
   'svelte-kit/skeleton-js',

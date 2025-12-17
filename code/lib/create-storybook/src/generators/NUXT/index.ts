@@ -11,7 +11,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     'vue3',
     {
       extraPackages: async () => {
-        return ['@nuxtjs/storybook'];
+        return ['@nuxtjs/storybook@8.3.5'];
       },
       installFrameworkPackages: false,
       componentsDestinationPath: './components',

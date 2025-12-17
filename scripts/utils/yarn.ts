@@ -36,6 +36,12 @@ export const addPackageResolutions = async ({ cwd, dryRun, key }: YarnOptions & 
       '@preact/preset-vite': '2.8.1',
     };
   }
+  if(key === 'angular-cli/default-ts') {
+    packageJson.resolutions = {
+      ...packageJson.resolutions,
+      'cheerio': '1.0.0',
+    };
+  }
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };
 

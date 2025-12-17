@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { isInteractionsDisabled } from './utils';
-import type { InteractionsParameters } from './types';
 import { PARAM_KEY } from './constants';
+import type { InteractionsParameters } from './types';
+import { isInteractionsDisabled } from './utils';
 
 describe('Interactions Panel Disable Parameter', () => {
   it('should return true when interactions.disable is true', () => {

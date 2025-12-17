@@ -163,14 +163,20 @@ export const init: Task['run'] = async (
     const packageJsonPath = join(cwd, 'package.json');
     const packageJson = await readJson(packageJsonPath);
     packageJson.dependencies = Object.fromEntries(
-      Object.entries(packageJson.dependencies as Record<string, string>).map(([key, value]) => [key, value.replace('^', '')])
+      Object.entries(packageJson.dependencies as Record<string, string>).map(([key, value]) => [
+        key,
+        key.includes('angular') ? value.replace('^', '') : value,
+      ])
     );
     packageJson.devDependencies = Object.fromEntries(
-      Object.entries(packageJson.devDependencies as Record<string, string>).map(([key, value]) => [key, value.replace('^', '')])
+      Object.entries(packageJson.devDependencies as Record<string, string>).map(([key, value]) => [
+        key,
+        key.includes('angular') ? value.replace('^', '') : value,
+      ])
     );
     await writeJson(packageJsonPath, packageJson, { spaces: 2 });
   }
-  
+
   const pnp = await pathExists(join(cwd, '.pnp.cjs')).catch(() => {});
   if (pnp && !nodeOptions.find((s) => s.includes('--require'))) {
     nodeOptions.push('--require ./.pnp.cjs');

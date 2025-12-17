@@ -135,15 +135,15 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
 
-  let initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
+  let storyIndexGeneratorPromise: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);
   if (!options.ignorePreview) {
-    initializedStoryIndexGenerator = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+    storyIndexGeneratorPromise = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
     effects.push(
       writeIndexJson(
         join(options.outputDir, 'index.json'),
-        initializedStoryIndexGenerator as Promise<StoryIndexGenerator>
+        storyIndexGeneratorPromise as Promise<StoryIndexGenerator>
       )
     );
 
@@ -151,7 +151,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       const componentManifestGenerator = await presets.apply(
         'experimental_componentManifestGenerator'
       );
-      const indexGenerator = await initializedStoryIndexGenerator;
+      const indexGenerator = await storyIndexGeneratorPromise;
       if (componentManifestGenerator && indexGenerator) {
         try {
           const manifests = await componentManifestGenerator(
@@ -222,7 +222,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible.
   if (!core?.disableTelemetry && !options.test) {
     try {
-      const generator = await initializedStoryIndexGenerator;
+      const generator = await storyIndexGeneratorPromise;
       const storyIndex = await generator?.getIndex();
       const payload: any = {
         precedingUpgrade: await getPrecedingUpgrade(),

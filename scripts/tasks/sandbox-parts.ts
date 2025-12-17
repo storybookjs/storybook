@@ -406,7 +406,7 @@ export async function addExtraDependencies({
   const extraDeps = [
     '@storybook/jest@next',
     '@storybook/testing-library@next',
-    '@storybook/test-runner@next',
+    '@storybook/test-runner@0.16.0',
   ];
   if (debug) logger.log('🎁 Adding extra deps', extraDeps);
   if (!dryRun) {

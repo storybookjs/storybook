@@ -991,18 +991,18 @@ workflows:
           requires:
             - build
       - create-sandboxes:
-          parallelism: 36
+          parallelism: 35
           requires:
             - build
       # - smoke-test-sandboxes: # disabled for now
       #     requires:
       #       - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 33
+          parallelism: 32
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 31
+          parallelism: 30
           requires:
             - create-sandboxes
       - e2e-dev:
@@ -1010,7 +1010,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 21
+          parallelism: 20
           requires:
             - create-sandboxes
       - vitest-integration:

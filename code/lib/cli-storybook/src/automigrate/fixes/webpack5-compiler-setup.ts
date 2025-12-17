@@ -179,7 +179,7 @@ export const webpack5CompilerSetup = {
         ([, coreCompiler]) => coreCompiler === compiler
       )![0];
 
-      await add(compilerPackageName, {
+      await add(`${compilerPackageName}@^3.0.0`, {
         packageManager: packageManager.type,
         skipPostinstall: !!skipInstall,
       });

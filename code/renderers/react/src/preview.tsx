@@ -53,6 +53,12 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   return preview;
 }
 
+type InferArgs<
+  TArgs extends Args,
+  T extends AddonTypes,
+  Decorators extends DecoratorFunction<ReactTypes & T, any>,
+> = Simplify<TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>>;
+
 /** @ts-expect-error We cannot implement the meta faithfully here, but that is okay. */
 export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes & T> {
   meta<
@@ -71,21 +77,9 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
       'decorators' | 'component' | 'args' | 'render'
     >
   ): ReactMeta<
-    ReactTypes &
-      T & {
-        args: Simplify<
-          TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
-        >;
-      },
+    ReactTypes & T & { args: InferArgs<TArgs, T, Decorators> },
     Omit<
-      ComponentAnnotations<
-        ReactTypes &
-          T & {
-            args: Simplify<
-              TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
-            >;
-          }
-      >,
+      ComponentAnnotations<ReactTypes & T & { args: InferArgs<TArgs, T, Decorators> }>,
       'args'
     > & {
       args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs;
@@ -125,6 +119,7 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
     /** @ts-expect-error hard */
   ): ReactStory<T, TInput>;
 
+  // This overload matches meta.story(), but only when all args are optional
   story(
     ..._args: Partial<T['args']> extends SetOptional<
       T['args'],

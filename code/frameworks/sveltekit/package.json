@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "9.1.16",
+  "version": "9.1.17",
   "description": "Storybook for SvelteKit: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

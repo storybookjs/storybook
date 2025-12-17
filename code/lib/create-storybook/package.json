@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "9.1.16",
+  "version": "9.1.17",
   "description": "Storybook installer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

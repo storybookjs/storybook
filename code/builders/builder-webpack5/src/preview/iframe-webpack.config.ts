@@ -205,7 +205,7 @@ export default async (
         },
       }),
       new DefinePlugin({
-        'process.env': JSON.stringify(envs),
+        'process.env': `(${JSON.stringify(envs)})`,
         ...stringifyProcessEnvs(envs),
         NODE_ENV: JSON.stringify(process.env.NODE_ENV),
       }),

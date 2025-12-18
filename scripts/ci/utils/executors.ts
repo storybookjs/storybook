@@ -1,4 +1,4 @@
-import { ROOT_DIR, WORKING_DIR } from './utils';
+import { ROOT_DIR, WORKING_DIR } from './helpers';
 
 export const executors = {
   sb_node_18_browsers: {

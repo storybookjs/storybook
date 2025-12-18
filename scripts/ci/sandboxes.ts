@@ -1,8 +1,6 @@
 import { join } from 'path';
 
 import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { defineHub, defineJob } from './utils';
-import type { JobImplementation } from './utils';
 import {
   CACHE_KEYS,
   ROOT_DIR,
@@ -15,7 +13,9 @@ import {
   toId,
   verdaccio,
   workspace,
-} from './utils';
+} from './utils/helpers';
+import { defineHub, defineJob } from './utils/types';
+import type { JobImplementation } from './utils/types';
 
 function defineSandboxJob_build({
   directory,
@@ -457,3 +457,22 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
 }
 
 export const sandboxesHub = defineHub('sandboxes', ['build-linux']);
+
+export function getSandboxes(workflow: string) {
+  const sandboxes = [
+    //
+    'react-vite/default-ts',
+    // 'react-vite/default-js',
+  ].map(defineSandboxFlow);
+
+  const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
+  const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
+  const testRunner = defineSandboxTestRunner(sandboxes[0]);
+
+  return [
+    ...sandboxes.flatMap((sandbox) => sandbox.jobs),
+    windows_sandbox_build,
+    windows_sandbox_dev,
+    testRunner,
+  ];
+}

@@ -1,4 +1,4 @@
-import { git } from './utils';
+import { git } from './helpers';
 
 export const commands = {
   'cancel-workflow-on-failure': {

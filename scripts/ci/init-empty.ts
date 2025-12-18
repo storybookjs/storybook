@@ -1,14 +1,5 @@
-import {
-  CACHE_KEYS,
-  cache,
-  defineHub,
-  defineJob,
-  git,
-  restore,
-  server,
-  verdaccio,
-  workspace,
-} from './utils';
+import { CACHE_KEYS, cache, git, restore, server, verdaccio, workspace } from './utils/helpers';
+import { defineHub, defineJob } from './utils/types';
 
 export const defineEmptyInitFlow = (template: string) =>
   defineJob(
@@ -137,3 +128,17 @@ export function defineEmptyInitWindows() {
   );
 }
 export const initEmptyHub = defineHub('init-empty', ['build-linux']);
+export function getInitEmpty(workflow: string) {
+  const initEmptyWindows = defineEmptyInitWindows();
+
+  const initEmptyLinux = [
+    //
+    'react-vite-ts',
+    // 'nextjs-ts',
+    // 'vue-vite-ts',
+    // 'lit-vite-ts',
+  ].map(defineEmptyInitFlow);
+
+  const initFeatures = defineEmptyInitFeatures();
+  return [initEmptyWindows, initFeatures, ...initEmptyLinux];
+}

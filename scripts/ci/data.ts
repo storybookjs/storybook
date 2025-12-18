@@ -3,38 +3,17 @@ import { join } from 'node:path';
 // eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';
 
-import { commands } from './commands';
-import {
-  defineEmptyInitFeatures,
-  defineEmptyInitFlow,
-  defineEmptyInitWindows,
-  initEmptyHub,
-} from './empty-init';
-import { executors } from './executors';
-import { orbs } from './orbs';
-import { parameters } from './parameters';
-// import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import {
-  defineSandboxFlow,
-  defineSandboxTestRunner,
-  defineWindowsSandboxBuild,
-  defineWindowsSandboxDev,
-  sandboxesHub,
-} from './sandboxes';
-import {
-  definePortableStoryTest,
-  definePortableStoryTestPNP,
-  definePortableStoryTestVitest3,
-  testStorybooksHub,
-} from './test-storybooks';
+import { getInitEmpty, initEmptyHub } from './init-empty';
+import { getSandboxes, sandboxesHub } from './sandboxes';
+import { getTestStorybooks, testStorybooksHub } from './test-storybooks';
+import { commands } from './utils/commands';
+import { executors } from './utils/executors';
 import {
   CACHE_KEYS,
   CACHE_PATHS,
-  type JobImplementation,
   WORKING_DIR,
   artifact,
   cache,
-  defineJob,
   git,
   node,
   npm,
@@ -42,7 +21,10 @@ import {
   server,
   verdaccio,
   workspace,
-} from './utils';
+} from './utils/helpers';
+import { orbs } from './utils/orbs';
+import { parameters } from './utils/parameters';
+import { type JobImplementation, defineJob } from './utils/types';
 
 const dirname = import.meta.dirname;
 
@@ -328,43 +310,10 @@ const packageBenchmarks = defineJob(
   [linux_build.id]
 );
 
-const testStorybooksPortables = ['react', 'vue3'].map(definePortableStoryTest);
-const testStorybooksPortableVitest3 = definePortableStoryTestVitest3();
-const testStorybooksPNP = definePortableStoryTestPNP();
-
-const initEmptyWindows = defineEmptyInitWindows();
-
-const initEmptyLinux = [
-  //
-  'react-vite-ts',
-  // 'nextjs-ts',
-  // 'vue-vite-ts',
-  // 'lit-vite-ts',
-].map(defineEmptyInitFlow);
-
-const initFeatures = defineEmptyInitFeatures();
-
-function getSandboxes(workflow: string) {
-  const sandboxes = [
-    //
-    'react-vite/default-ts',
-    // 'react-vite/default-js',
-  ].map(defineSandboxFlow);
-
-  const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
-  const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
-  const testRunner = defineSandboxTestRunner(sandboxes[0]);
-
-  return [
-    ...sandboxes.flatMap((sandbox) => sandbox.jobs),
-    windows_sandbox_build,
-    windows_sandbox_dev,
-    testRunner,
-  ];
-}
-
 export default function generateConfig(workflow: string) {
   const sandboxes = getSandboxes(workflow);
+  const testStorybooks = getTestStorybooks(workflow);
+  const initEmpty = getInitEmpty(workflow);
 
   const todos = [
     linux_build,
@@ -381,14 +330,10 @@ export default function generateConfig(workflow: string) {
     ...sandboxes,
 
     testStorybooksHub,
-    ...testStorybooksPortables,
-    testStorybooksPNP,
-    testStorybooksPortableVitest3,
+    ...testStorybooks,
 
     initEmptyHub,
-    initEmptyWindows,
-    initFeatures,
-    ...initEmptyLinux,
+    ...initEmpty,
   ];
 
   const jobs = todos.reduce(

@@ -595,6 +595,7 @@ jobs:
                   command: yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
                   working_directory: scripts
     pretty-docs:
+        description: pretty-docs
         executor:
             name: sb_node_22_classic
             class: medium+

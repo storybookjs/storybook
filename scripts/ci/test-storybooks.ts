@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path/posix';
 
-import { CACHE_KEYS, cache, defineJob, git, restore, workspace } from './utils';
+import { CACHE_KEYS, cache, defineHub, defineJob, git, restore, workspace } from './utils';
 
 export function definePortableStoryTest(directory: string) {
   const working_directory = `test-storybooks/portable-stories-kitchen-sink/${directory}`;
@@ -139,3 +139,4 @@ export function definePortableStoryTestVitest3() {
     ['test-storybooks']
   );
 }
+export const testStorybooksHub = defineHub('test-storybooks', ['build-linux']);

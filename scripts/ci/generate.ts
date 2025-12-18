@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { program } from 'commander';
 import yml from 'yaml';
 
-import { data } from './data';
+import generateConfig from './data';
 
 console.log('Generating CircleCI config...');
 console.log('--------------------------------');
@@ -18,5 +18,8 @@ program
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),
-  yml.stringify(data, null, { lineWidth: 1200, indent: 4 })
+  yml.stringify(generateConfig(program.opts().workflow), null, {
+    lineWidth: 1200,
+    indent: 4,
+  })
 );

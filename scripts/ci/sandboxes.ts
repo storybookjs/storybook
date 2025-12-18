@@ -1,7 +1,7 @@
 import { join } from 'path';
 
 import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { defineJob } from './utils';
+import { defineHub, defineJob } from './utils';
 import type { JobImplementation } from './utils';
 import {
   CACHE_KEYS,
@@ -326,13 +326,13 @@ export function defineSandboxFlow<K extends string>(name: K) {
     name,
     path,
     jobs,
-    workflow: jobs.map((job) => {
-      return {
-        [job.id]: {
-          requires: job.requires,
-        },
-      };
-    }),
+    // workflow: jobs.map((job) => {
+    //   return {
+    //     [job.id]: {
+    //       requires: job.requires,
+    //     },
+    //   };
+    // }),
   };
 }
 export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandboxFlow>) {
@@ -455,3 +455,5 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
     [sandbox.jobs[0].id]
   );
 }
+
+export const sandboxesHub = defineHub('sandboxes', ['build-linux']);

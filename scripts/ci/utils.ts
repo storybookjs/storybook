@@ -223,11 +223,11 @@ export function defineJob<K extends string, I extends JobImplementation>(
 ) {
   return {
     id: toId(name),
-    name,
+    name: name as string,
     implementation: {
       description: name,
       ...implementation,
-    },
+    } as JobImplementation,
     requires,
   };
 }
@@ -246,3 +246,14 @@ export type JobImplementation = {
   parameters?: Record<string, unknown>;
   parallelism?: number;
 };
+
+export function defineHub(name: string, requires = [] as string[]) {
+  return {
+    id: toId(name),
+    name,
+    implementation: {
+      type: 'no-op',
+    } as const,
+    requires,
+  };
+}

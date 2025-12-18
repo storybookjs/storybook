@@ -8,7 +8,8 @@ import {
   defineEmptyInitFeatures,
   defineEmptyInitFlow,
   defineEmptyInitWindows,
-} from './defineEmptyInitFlow';
+  initEmptyHub,
+} from './empty-init';
 import { executors } from './executors';
 import { orbs } from './orbs';
 import { parameters } from './parameters';
@@ -18,11 +19,13 @@ import {
   defineSandboxTestRunner,
   defineWindowsSandboxBuild,
   defineWindowsSandboxDev,
+  sandboxesHub,
 } from './sandboxes';
 import {
   definePortableStoryTest,
   definePortableStoryTestPNP,
   definePortableStoryTestVitest3,
+  testStorybooksHub,
 } from './test-storybooks';
 import {
   CACHE_KEYS,
@@ -83,6 +86,24 @@ const linux_build = defineJob('build-linux', {
       `${WORKING_DIR}/.verdaccio-cache`,
       `${WORKING_DIR}/code/bench`,
     ]),
+  ],
+});
+
+const prettyDocs = defineJob('pretty-docs', {
+  executor: {
+    name: 'sb_node_22_classic',
+    class: 'medium+',
+  },
+  steps: [
+    git.checkout(),
+    npm.install('.'),
+    {
+      run: {
+        name: 'Prettier',
+        working_directory: `scripts`,
+        command: 'yarn docs:prettier:check',
+      },
+    },
   ],
 });
 
@@ -311,18 +332,6 @@ const testStorybooksPortables = ['react', 'vue3'].map(definePortableStoryTest);
 const testStorybooksPortableVitest3 = definePortableStoryTestVitest3();
 const testStorybooksPNP = definePortableStoryTestPNP();
 
-const sandboxes = [
-  //
-  'react-vite/default-ts',
-  // 'react-vite/default-js',
-].map(defineSandboxFlow);
-
-const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
-
-const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
-
-const testRunner = defineSandboxTestRunner(sandboxes[0]);
-
 const initEmptyWindows = defineEmptyInitWindows();
 
 const initEmptyLinux = [
@@ -335,198 +344,90 @@ const initEmptyLinux = [
 
 const initFeatures = defineEmptyInitFeatures();
 
-const jobs = {
-  [linux_build.id]: linux_build.implementation,
-  [windows_build.id]: windows_build.implementation,
-  [check.id]: check.implementation,
-  [knip.id]: knip.implementation,
-  [uiTests.id]: uiTests.implementation,
-  [linux_unitTests.id]: linux_unitTests.implementation,
-  [windows_unitTests.id]: windows_unitTests.implementation,
-  [packageBenchmarks.id]: packageBenchmarks.implementation,
-  [windows_sandbox_build.id]: windows_sandbox_build.implementation,
-  'pretty-docs': {
-    executor: {
-      name: 'sb_node_22_classic',
-      class: 'medium+',
-    },
-    steps: [
-      git.checkout(),
-      npm.install('.'),
-      {
-        run: {
-          name: 'Prettier',
-          working_directory: `scripts`,
-          command: 'yarn docs:prettier:check',
-        },
-      },
-    ],
-  },
-  sandboxes: {
-    type: 'no-op',
-  },
-  ...sandboxes.reduce(
-    (acc, sandbox) => {
-      for (const job of sandbox.jobs) {
-        acc[job.id] = job.implementation;
-      }
+function getSandboxes(workflow: string) {
+  const sandboxes = [
+    //
+    'react-vite/default-ts',
+    // 'react-vite/default-js',
+  ].map(defineSandboxFlow);
 
+  const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
+  const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
+  const testRunner = defineSandboxTestRunner(sandboxes[0]);
+
+  return [
+    ...sandboxes.flatMap((sandbox) => sandbox.jobs),
+    windows_sandbox_build,
+    windows_sandbox_dev,
+    testRunner,
+  ];
+}
+
+export default function generateConfig(workflow: string) {
+  const sandboxes = getSandboxes(workflow);
+
+  const todos = [
+    linux_build,
+    windows_build,
+    check,
+    knip,
+    prettyDocs,
+    uiTests,
+    linux_unitTests,
+    windows_unitTests,
+    packageBenchmarks,
+
+    sandboxesHub,
+    ...sandboxes,
+
+    testStorybooksHub,
+    ...testStorybooksPortables,
+    testStorybooksPNP,
+    testStorybooksPortableVitest3,
+
+    initEmptyHub,
+    initEmptyWindows,
+    initFeatures,
+    ...initEmptyLinux,
+  ];
+
+  const jobs = todos.reduce(
+    (acc, job) => {
+      acc[job.id] = job.implementation;
       return acc;
     },
-    {} as Record<string, JobImplementation>
-  ),
-  [windows_sandbox_dev.id]: windows_sandbox_dev.implementation,
-  [windows_sandbox_build.id]: windows_sandbox_build.implementation,
+    {} as Record<string, JobImplementation | { type: 'no-op' }>
+  );
 
-  ['test-storybooks']: {
-    type: 'no-op',
-  },
-  [testStorybooksPNP.id]: testStorybooksPNP.implementation,
-  ...testStorybooksPortables.reduce(
-    (acc, test) => {
-      acc[test.id] = test.implementation;
-      return acc;
-    },
-    {} as Record<string, JobImplementation>
-  ),
-  [testStorybooksPortableVitest3.id]: testStorybooksPortableVitest3.implementation,
-  ['init-empty']: {
-    type: 'no-op',
-  },
-  [initEmptyWindows.id]: initEmptyWindows.implementation,
-  ...initEmptyLinux.reduce(
-    (acc, init) => {
-      acc[init.id] = init.implementation;
-      return acc;
-    },
-    {} as Record<string, JobImplementation>
-  ),
-  [initFeatures.id]: initFeatures.implementation,
-  [testRunner.id]: testRunner.implementation,
-};
-
-const workflows = {
-  generated: {
-    jobs: [
-      'pretty-docs',
-      linux_build.id,
-      windows_build.id,
-      {
-        [check.id]: {
-          requires: check.requires,
-        },
-      },
-      {
-        [knip.id]: {
-          requires: knip.requires,
-        },
-      },
-      {
-        [packageBenchmarks.id]: {
-          requires: packageBenchmarks.requires,
-        },
-      },
-      {
-        [linux_unitTests.id]: {
-          requires: linux_unitTests.requires,
-        },
-      },
-      {
-        [windows_unitTests.id]: {
-          requires: windows_unitTests.requires,
-        },
-      },
-      {
-        [uiTests.id]: {
-          requires: uiTests.requires,
-        },
-      },
-      {
-        sandboxes: {
-          requires: [linux_build.id],
-        },
-      },
-      ...sandboxes.flatMap((sandbox) => sandbox.workflow),
-      {
-        [windows_sandbox_dev.id]: {
-          requires: windows_sandbox_dev.requires,
-        },
-      },
-      {
-        [windows_sandbox_build.id]: {
-          requires: windows_sandbox_build.requires,
-        },
-      },
-      {
-        ['test-storybooks']: {
-          requires: [linux_build.id],
-        },
-      },
-      {
-        [testStorybooksPNP.id]: {
-          requires: testStorybooksPNP.requires,
-        },
-      },
-      ...testStorybooksPortables.map((test) => ({
-        [test.id]: {
-          requires: test.requires,
-        },
-      })),
-      {
-        [testStorybooksPortableVitest3.id]: {
-          requires: testStorybooksPortableVitest3.requires,
-        },
-      },
-      {
-        ['init-empty']: {
-          requires: [linux_build.id],
-        },
-      },
-      {
-        [initEmptyWindows.id]: {
-          requires: initEmptyWindows.requires,
-        },
-      },
-      ...initEmptyLinux.map((init) => ({
-        [init.id]: {
-          requires: init.requires,
-        },
-      })),
-      {
-        [initFeatures.id]: {
-          requires: initFeatures.requires,
-        },
-      },
-      {
-        [testRunner.id]: {
-          requires: testRunner.requires,
-        },
-      },
-    ],
-  },
-};
-
-export const data = {
-  version: 2.1,
-  orbs,
-  commands,
-  executors,
-  parameters,
-  jobs: Object.fromEntries(Object.entries(jobs).sort(([a], [b]) => a.localeCompare(b))),
-  workflows: {
+  const workflows = {
     generated: {
-      jobs: workflows.generated.jobs.sort((a, b) => {
-        if (typeof a == 'string' && typeof b == 'string') {
-          return a.localeCompare(b);
-        }
-        if (typeof a == 'string') {
-          return -1;
-        }
-        if (typeof b == 'string') {
-          return 1;
-        }
-        return Object.keys(a)[0].localeCompare(Object.keys(b)[0]);
-      }),
+      jobs: todos
+        .map((t) =>
+          t.requires && t.requires.length > 0 ? { [t.id]: { requires: t.requires } } : t.id
+        )
+        .sort((a, b) => {
+          if (typeof a == 'string' && typeof b == 'string') {
+            return a.localeCompare(b);
+          }
+          if (typeof a == 'string') {
+            return -1;
+          }
+          if (typeof b == 'string') {
+            return 1;
+          }
+          return Object.keys(a)[0].localeCompare(Object.keys(b)[0]);
+        }),
     },
-  },
-};
+  };
+
+  return {
+    version: 2.1,
+    orbs,
+    commands,
+    executors,
+    parameters,
+
+    jobs: Object.fromEntries(Object.entries(jobs).sort(([a], [b]) => a.localeCompare(b))),
+    workflows,
+  };
+}

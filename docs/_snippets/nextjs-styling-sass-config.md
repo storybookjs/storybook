@@ -10,8 +10,9 @@ export default {
 ```
 
 ```ts filename="next.config.ts" language="ts" renderer="react"
-import * as path from 'path';
 import type { NextConfig } from 'next';
+
+import * as path from 'node:path';
 
 const config: NextConfig = {
   // Any options here are included in Sass compilation for your stories

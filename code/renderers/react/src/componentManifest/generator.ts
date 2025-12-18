@@ -4,10 +4,9 @@ import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import {
   type ComponentManifest,
-  ComponentsManifest,
   type PresetPropertyFn,
-  StoryIndex,
-  StorybookConfigRaw,
+  type StoryIndex,
+  type StorybookConfigRaw,
 } from 'storybook/internal/types';
 
 import path from 'pathe';

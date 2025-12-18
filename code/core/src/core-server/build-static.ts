@@ -10,12 +10,7 @@ import {
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
-import type {
-  BuilderOptions,
-  CLIOptions,
-  LoadOptions,
-  Options,
-} from 'storybook/internal/types';
+import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -24,11 +19,11 @@ import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../shared/utils/module';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
-import { writeManifests } from './utils/manifests/manifests';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
 import { getBuilders } from './utils/get-builders';
 import { writeIndexJson } from './utils/index-json';
+import { writeManifests } from './utils/manifests/manifests';
 import { extractStorybookMetadata } from './utils/metadata';
 import { outputStats } from './utils/output-stats';
 import { summarizeIndex } from './utils/summarizeIndex';

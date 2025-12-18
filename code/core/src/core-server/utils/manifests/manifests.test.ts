@@ -224,9 +224,8 @@ describe('manifests', () => {
       it('should handle non-Error objects in error handler', async () => {
         const errorString = 'Something went wrong';
         vi.mocked(mockPresets.apply).mockRejectedValue(errorString);
-        
 
-        registerManifests({ app: mockApp,  presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[0][1];
         const req = { params: { name: 'custom' } } as any as Request;
@@ -368,9 +367,8 @@ describe('manifests', () => {
       it('should handle non-Error objects in error handler', async () => {
         const errorString = 'Something went wrong';
         vi.mocked(mockPresets.apply).mockRejectedValue(errorString);
-        
 
-        registerManifests({ app: mockApp,  presets: mockPresets });
+        registerManifests({ app: mockApp, presets: mockPresets });
 
         const handler = mockGet.mock.calls[1][1];
         const req = {};

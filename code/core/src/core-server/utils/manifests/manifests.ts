@@ -1,12 +1,11 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 
-import invariant from 'tiny-invariant';
-
 import { logger } from 'storybook/internal/node-logger';
 import type { ComponentsManifest, Manifests, Presets } from 'storybook/internal/types';
 
 import { join } from 'pathe';
 import type { Polka } from 'polka';
+import invariant from 'tiny-invariant';
 
 import { renderComponentsManifest } from './render-components-manifest';
 

@@ -1,18 +1,21 @@
 import { join } from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { getProjectRoot } from 'storybook/internal/common';
+
+import { generateMockPropsFromDocgen } from './get-mocked-props-for-args';
 import { getNewStoryFile } from './get-new-story-file';
 
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/common')>();
-  return {
-    ...actual,
-    getProjectRoot: () => require('path').join(__dirname),
-  };
-});
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('./get-mocked-props-for-args', { spy: true });
 
 describe('get-new-story-file', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getProjectRoot).mockReturnValue(join(__dirname));
+  });
+
   it('should create a new story file (TypeScript)', async () => {
     const { exportedStoryName, storyFileContent, storyFilePath } = await getNewStoryFile(
       {
@@ -121,5 +124,73 @@ describe('get-new-story-file', () => {
       export const Default = {};"
     `);
     expect(storyFilePath).toBe(join(__dirname, 'src', 'components', 'Page.stories.jsx'));
+  });
+
+  it('replaces __function__ and __react_node__ placeholders via AST and adds fn import', async () => {
+    vi.mocked(generateMockPropsFromDocgen).mockReturnValue({
+      required: {
+        onClick: '__function__',
+        children: '__react_node__',
+      },
+    } as any);
+
+    const { storyFileContent } = await getNewStoryFile(
+      {
+        componentFilePath: 'src/components/Page.tsx',
+        componentExportName: 'Page',
+        componentIsDefaultExport: false,
+        componentExportCount: 1,
+      },
+      {
+        presets: {
+          apply: (val: string) => {
+            if (val === 'framework') {
+              return Promise.resolve('@storybook/nextjs');
+            }
+            if (val === 'getDocgenData') {
+              return Promise.resolve({} as any);
+            }
+          },
+        },
+      } as any
+    );
+
+    expect(storyFileContent).toContain("import { fn } from 'storybook/test';");
+    expect(storyFileContent).toContain('fn()');
+    expect(storyFileContent).toContain('<div>Hello world</div>');
+    expect(storyFileContent).not.toContain('__function__');
+    expect(storyFileContent).not.toContain('__react_node__');
+  });
+
+  it('replaces __react_node__ without adding fn import', async () => {
+    vi.mocked(generateMockPropsFromDocgen).mockReturnValue({
+      required: {
+        children: '__react_node__',
+      },
+    } as any);
+
+    const { storyFileContent } = await getNewStoryFile(
+      {
+        componentFilePath: 'src/components/Page.tsx',
+        componentExportName: 'Page',
+        componentIsDefaultExport: false,
+        componentExportCount: 1,
+      },
+      {
+        presets: {
+          apply: (val: string) => {
+            if (val === 'framework') {
+              return Promise.resolve('@storybook/nextjs');
+            }
+            if (val === 'getDocgenData') {
+              return Promise.resolve({} as any);
+            }
+          },
+        },
+      } as any
+    );
+
+    expect(storyFileContent).toContain('<div>Hello world</div>');
+    expect(storyFileContent).not.toContain("import { fn } from 'storybook/test';");
   });
 });

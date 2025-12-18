@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, relative } from 'node:path';
 
+import { babelParse, babelPrint, types as t, traverse } from 'storybook/internal/babel';
 import {
   extractFrameworkPackageName,
   findConfigFile,
@@ -9,13 +10,13 @@ import {
   getProjectRoot,
 } from 'storybook/internal/common';
 import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
-import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
+import { CsfFile, isCsfFactoryPreview } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
 
-import { loadConfig } from '../../csf-tools';
+import { loadConfig, loadCsf, printConfig } from '../../csf-tools';
 import type { ComponentDocgenData } from './get-mocked-props-for-args';
 import { generateMockPropsFromDocgen } from './get-mocked-props-for-args';
 import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
@@ -124,31 +125,7 @@ export async function getNewStoryFile(
           });
   }
 
-  // Add fn import and replace __function__ with fn() if needed
-  if (storyFileContent.includes('"__function__"')) {
-    // Add the fn import
-    const fnImport = "import { fn } from 'storybook/test';\n";
-    const lines = storyFileContent.split('\n');
-    let insertIndex = 0;
-
-    // Find the first import statement or the first non-empty line
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (line.startsWith('import') || (line !== '' && !line.startsWith('//'))) {
-        insertIndex = i;
-        break;
-      }
-    }
-
-    lines.splice(insertIndex, 0, fnImport.trim());
-    storyFileContent = lines.join('\n');
-
-    // Replace "__function__" with fn()
-    storyFileContent = storyFileContent.replace(/"__function__"/g, 'fn()');
-
-    // Replace "__react_node__" with <div>Hello world</div>
-    storyFileContent = storyFileContent.replace(/"__react_node__"/g, '<div>Hello world</div>');
-  }
+  storyFileContent = replaceArgsPlaceholders(storyFileContent);
 
   const storyFilePath =
     doesStoryFileExist(join(projectRoot, relativeDir), storyFileName) && componentExportCount > 1
@@ -197,4 +174,34 @@ async function checkForImportsMap(configDir: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Replaces non-primitive args placeholders like `__function__` where it needs more involved changes
+ * like adding imports, etc.
+ */
+function replaceArgsPlaceholders(storyFileContent: string) {
+  // Avoid parsing unless we actually have placeholders to replace.
+  if (!storyFileContent.includes('__function__')) {
+    return storyFileContent;
+  }
+
+  const storyFile = loadConfig(storyFileContent).parse();
+
+  let needsFnImport = false;
+
+  traverse(storyFile._ast, {
+    StringLiteral(path) {
+      if (path.node.value === '__function__') {
+        needsFnImport = true;
+        path.replaceWith(t.callExpression(t.identifier('fn'), []));
+      }
+    },
+  });
+
+  if (needsFnImport) {
+    storyFile.setImport(['fn'], 'storybook/test');
+  }
+
+  return printConfig(storyFile).code;
 }

@@ -373,9 +373,13 @@ export interface ComponentsManifest {
   components: Record<string, ComponentManifest>;
 }
 
-export type ComponentManifestGenerator = (
-  storyIndexGenerator: StoryIndexGenerator
-) => Promise<ComponentsManifest>;
+type ManifestName = string;
+
+export type Manifests = { components?: ComponentsManifest } & Record<
+  ManifestName,
+  // TODO: type this so it can only be JSON-serializable data
+  any
+>;
 
 export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
 
@@ -392,7 +396,7 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
-  experimental_componentManifestGenerator?: ComponentManifestGenerator;
+  experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;

@@ -6,7 +6,7 @@ import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
 import { fsMocks, indexJson } from './fixtures';
-import { componentManifestGenerator } from './generator';
+import { manifests } from './generator';
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
@@ -14,7 +14,7 @@ beforeEach(() => {
 });
 
 test('componentManifestGenerator generates correct id, name, description and examples ', async () => {
-  const generator = await componentManifestGenerator(undefined, { configDir: '.storybook' } as any);
+  const generator = await manifest(undefined, { configDir: '.storybook' } as any);
   const manifest = await generator?.({
     getIndex: async () => indexJson,
   } as unknown as StoryIndexGenerator);
@@ -265,7 +265,7 @@ async function getManifestForStory(code: string) {
     '/app'
   );
 
-  const generator = await componentManifestGenerator(undefined, { configDir: '.storybook' } as any);
+  const generator = await manifest(undefined, { configDir: '.storybook' } as any);
   const indexJson = {
     v: 5,
     entries: {

@@ -42,6 +42,10 @@ const config: BuildEntries = {
         entryPoint: './src/preset.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./componentManifest'],
+        entryPoint: './src/componentManifest/index.ts',
+      },
     ],
   },
 };

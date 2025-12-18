@@ -137,6 +137,7 @@
     "knip": "^5.70.2",
     "lint-staged": "^16.2.7",
     "mock-require": "^3.0.3",
+    "prettier": "^3.7.1",
     "process": "^0.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

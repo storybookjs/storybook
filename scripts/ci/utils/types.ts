@@ -56,5 +56,7 @@ export function isWorkflowOrAbove(current: Workflow, minimum: Workflow): boolean
       return minimum === 'normal' || minimum === 'merged' || minimum === 'daily';
     case 'docs':
       return minimum === 'docs';
+    default:
+      return false;
   }
 }

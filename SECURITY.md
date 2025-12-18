@@ -8,12 +8,18 @@ In the event of a high-risk vulnerability, we may backport the security fixes to
 
 ## Reporting a Vulnerability
 
-To report a vulnerability, you can reach out to the maintainers directly on [X](https://x.com/storybookjs) or [Bluesky](https://bsky.app/profile/storybook.js.org).
+To report a vulnerability, you can reach out to the maintainers directly on [X](https://x.com/storybookjs) or [Bluesky](https://bsky.app/profile/storybook.js.org), or file a security advisory.
 
-When we fix a security issue, we will post a security advisory on GitHub and/or npm, describe the change in the [release notes](https://github.com/storybookjs/storybook/releases), and also announce notify the community on [our Discord](https://discord.gg/storybook).
+When we fix a critical security issue, we will post a security advisory on GitHub and/or npm, describe the change in the [release notes](https://github.com/storybookjs/storybook/releases), and also notify the community through appropriate means.
 
 ## Security advisories
 
-GitHub provides the option for you to privately report a vulnerability through a [security advisory](https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/about-repository-security-advisories). These provide a secure and private channel between the reporter and the Storybook core team to discuss and address a security vulnerability. However, as a general rule, you should get in touch with us through other channels before creating a security advisory.
+GitHub provides the option for you to privately report a vulnerability through a [security advisory](https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/about-repository-security-advisories). These provide a secure and private channel between the reporter and the Storybook core team to discuss and address a security vulnerability.
 
-Please do not use security advisories to report dependencies with known vulnerabilities unless it poses a significant threat to Storybook users. There are many packages we depend on, either directly or indirectly. A security issue in one of these packages does not necessarily mean the vulnerability can be exploited through Storybook, or that the exploit can be used with malicious intent. For example, a weak random hash generator is not a problem if Storybook only uses it to generate unique identifiers for HTML elements. We expect a security advisory to include information on how to exploit the vulnerability through Storybook, specifically. If there is a security patch available for a downstream dependency, please open a bug report or a pull request to address it.
+### Dependency related advisories
+
+Please do not open security advisories solely to report vulnerabilities in downstream dependencies unless they pose a realistic security risk to Storybook users.
+
+Storybook depends on many packages, both directly and indirectly. A vulnerability in one of these dependencies does not automatically imply that Storybook is vulnerable, exploitable, or usable for malicious purposes. Security reports should clearly explain how the vulnerability can be exploited through Storybook itself. Reports that only cite a dependency advisory, without demonstrating impact in Storybook, are unlikely to be actionable. For example, a weak random hash generator is not a security issue if Storybook only uses it to generate non sensitive HTML element identifiers.
+
+If a security patch is available for a downstream dependency and upgrading it meaningfully improves Storybook’s security posture, please open a bug report or pull request instead of a security advisory.

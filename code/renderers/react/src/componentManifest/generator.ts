@@ -9,16 +9,92 @@ import {
   type StorybookConfigRaw,
 } from 'storybook/internal/types';
 
+import { uniqBy } from 'es-toolkit';
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
 import { getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj } from './reactDocgen';
-import { cachedFindUp, cachedReadFileSync, groupBy, invalidateCache, invariant } from './utils';
+import { cachedFindUp, cachedReadFileSync, invalidateCache, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
+}
+
+function findMatchingComponent(
+  components: ReturnType<typeof getComponents>,
+  componentName: string | undefined,
+  trimmedTitle: string
+) {
+  return components.find((it) =>
+    componentName
+      ? [it.componentName, it.localImportName, it.importName].includes(componentName)
+      : trimmedTitle.includes(it.componentName) ||
+        (it.localImportName && trimmedTitle.includes(it.localImportName)) ||
+        (it.importName && trimmedTitle.includes(it.importName))
+  );
+}
+
+function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {
+  const nearestPkg = cachedFindUp('package.json', {
+    cwd: path.dirname(componentPath ?? fallbackPath),
+  });
+
+  try {
+    return nearestPkg
+      ? JSON.parse(cachedReadFileSync(nearestPkg, 'utf-8') as string).name
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function extractStories(
+  csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
+  componentName: string | undefined
+) {
+  return Object.keys(csf._stories)
+    .filter((storyName) =>
+      combineTags(
+        'manifest',
+        ...(csf.meta.tags ?? []),
+        ...(csf._stories[storyName].tags ?? [])
+      ).includes('manifest')
+    )
+    .map((storyName) => {
+      try {
+        const jsdocComment = extractDescription(csf._storyStatements[storyName]);
+        const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
+        const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
+
+        return {
+          name: storyName,
+          snippet: recast.print(getCodeSnippet(csf, storyName, componentName)).code,
+          description: finalDescription?.trim(),
+          summary: tags.summary?.[0],
+        };
+      } catch (e) {
+        invariant(e instanceof Error);
+        return {
+          name: storyName,
+          error: { name: e.name, message: e.message },
+        };
+      }
+    });
+}
+
+function extractComponentDescription(
+  csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
+  docgen: DocObj | undefined
+) {
+  const jsdocComment = extractDescription(csf._metaStatement) || docgen?.description;
+  const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
+  return {
+    description: ((tags?.describe?.[0] || tags?.desc?.[0]) ?? description)?.trim(),
+    summary: tags.summary?.[0],
+    jsDocTags: tags,
+  };
 }
 
 export const manifests: PresetPropertyFn<
@@ -30,145 +106,93 @@ export const manifests: PresetPropertyFn<
 
   const startPerformance = performance.now();
 
-  const groupByComponentId = groupBy(
-    Object.values(index.entries)
-      .filter((entry) => entry.type === 'story')
-      .filter((entry) => entry.subtype === 'story'),
-    (it) => it.id.split('--')[0]
+  const entriesByUniqueComponent = uniqBy(
+    Object.values(index.entries).filter(
+      (entry) => entry.type === 'story' && entry.subtype === 'story'
+    ),
+    (entry) => entry.id.split('--')[0]
   );
-  const singleEntryPerComponent = Object.values(groupByComponentId).flatMap((group) =>
-    group && group?.length > 0 ? [group[0]] : []
-  );
-  const components = singleEntryPerComponent.map((entry): ReactComponentManifest | undefined => {
-    const absoluteImportPath = path.join(process.cwd(), entry.importPath);
-    const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
-    const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
 
-    const manifestEnabled = csf.stories
-      .map((it) => combineTags('manifest', ...(csf.meta.tags ?? []), ...(it.tags ?? [])))
-      .some((it) => it.includes('manifest'));
+  const components = entriesByUniqueComponent
+    .map((entry): ReactComponentManifest | undefined => {
+      const absoluteImportPath = path.join(process.cwd(), entry.importPath);
+      const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
+      const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
 
-    if (!manifestEnabled) {
-      return;
-    }
-    const componentName = csf._meta?.component;
+      const hasManifestTag = csf.stories
+        .map((it) => combineTags('manifest', ...(csf.meta.tags ?? []), ...(it.tags ?? [])))
+        .some((it) => it.includes('manifest'));
 
-    const id = entry.id.split('--')[0];
-    const importPath = entry.importPath;
+      if (!hasManifestTag) {
+        return;
+      }
 
-    const components = getComponents({ csf, storyFilePath: absoluteImportPath });
+      const componentName = csf._meta?.component;
+      const id = entry.id.split('--')[0];
+      const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-    const trimmedTitle = entry.title.replace(/\s+/g, '');
+      const allComponents = getComponents({ csf, storyFilePath: absoluteImportPath });
+      const component = findMatchingComponent(
+        allComponents,
+        componentName,
+        entry.title.replace(/\s+/g, '')
+      );
 
-    const component = components.find((it) => {
-      return componentName
-        ? [it.componentName, it.localImportName, it.importName].includes(componentName)
-        : trimmedTitle.includes(it.componentName) ||
-            (it.localImportName && trimmedTitle.includes(it.localImportName)) ||
-            (it.importName && trimmedTitle.includes(it.importName));
-    });
+      const packageName = getPackageInfo(component?.path, absoluteImportPath);
+      const fallbackImport =
+        packageName && componentName ? `import { ${componentName} } from "${packageName}";` : '';
+      const imports =
+        getImports({ components: allComponents, packageName }).join('\n').trim() || fallbackImport;
 
-    const stories = Object.keys(csf._stories)
-      .map((storyName) => {
-        const story = csf._stories[storyName];
+      const stories = extractStories(csf, component?.componentName);
 
-        const manifestEnabled = combineTags(
-          'manifest',
-          ...(csf.meta.tags ?? []),
-          ...(story.tags ?? [])
-        ).includes('manifest');
+      const base = {
+        id,
+        name: componentName ?? title,
+        path: entry.importPath,
+        stories,
+        import: imports,
+        jsDocTags: {},
+      } satisfies Partial<ComponentManifest>;
 
-        if (!manifestEnabled) {
-          return;
-        }
-        try {
-          const jsdocComment = extractDescription(csf._storyStatements[storyName]);
-          const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
-          const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
+      if (!component?.reactDocgen) {
+        const error = !csf._meta?.component
+          ? {
+              name: 'No component found',
+              message:
+                'We could not detect the component from your story file. Specify meta.component.',
+            }
+          : {
+              name: 'No component import found',
+              message: `No component file found for the "${csf.meta.component}" component.`,
+            };
 
-          return {
-            name: storyName,
-            snippet: recast.print(getCodeSnippet(csf, storyName, component?.componentName)).code,
-            description: finalDescription?.trim(),
-            summary: tags.summary?.[0],
-          };
-        } catch (e) {
-          invariant(e instanceof Error);
-          return {
-            name: storyName,
-            error: { name: e.name, message: e.message },
-          };
-        }
-      })
-      .filter((it) => it != null);
-
-    const nearestPkg = cachedFindUp('package.json', {
-      cwd: path.dirname(component?.path ?? absoluteImportPath),
-    });
-
-    let packageName;
-    try {
-      packageName = nearestPkg
-        ? JSON.parse(cachedReadFileSync(nearestPkg, 'utf-8') as string).name
-        : undefined;
-    } catch {}
-
-    const fallbackImport =
-      packageName && componentName ? `import { ${componentName} } from "${packageName}";` : '';
-
-    const imports = getImports({ components, packageName }).join('\n').trim() || fallbackImport;
-
-    const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
-
-    const base = {
-      id,
-      name: componentName ?? title,
-      path: importPath,
-      stories,
-      import: imports,
-      jsDocTags: {},
-    } satisfies Partial<ComponentManifest>;
-
-    if (!component?.reactDocgen) {
-      const error = !csf._meta?.component
-        ? {
-            name: 'No component found',
+        return {
+          ...base,
+          error: {
+            name: error.name,
             message:
-              'We could not detect the component from your story file. Specify meta.component.',
-          }
-        : {
-            name: 'No component import found',
-            message: `No component file found for the "${csf.meta.component}" component.`,
-          };
+              (csf._metaStatementPath?.buildCodeFrameError(error.message).message ??
+                error.message) + `\n\n${entry.importPath}:\n${storyFile}`,
+          },
+        };
+      }
+
+      const docgenResult = component.reactDocgen;
+      const docgen = docgenResult.type === 'success' ? docgenResult.data : undefined;
+      const { description, summary, jsDocTags } = extractComponentDescription(csf, docgen);
+
       return {
         ...base,
-        error: {
-          name: error.name,
-          message:
-            (csf._metaStatementPath?.buildCodeFrameError(error.message).message ?? error.message) +
-            `\n\n${entry.importPath}:\n${storyFile}`,
-        },
+        description,
+        summary,
+        import: imports,
+        reactDocgen: docgen,
+        jsDocTags,
+        error: docgenResult.type === 'error' ? docgenResult.error : undefined,
       };
-    }
-
-    const docgenResult = component.reactDocgen;
-
-    const docgen = docgenResult.type === 'success' ? docgenResult.data : undefined;
-    const error = docgenResult.type === 'error' ? docgenResult.error : undefined;
-
-    const jsdocComment = extractDescription(csf._metaStatement) || docgen?.description;
-    const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
-
-    return {
-      ...base,
-      description: ((tags?.describe?.[0] || tags?.desc?.[0]) ?? description)?.trim(),
-      summary: tags.summary?.[0],
-      import: imports,
-      reactDocgen: docgen,
-      jsDocTags: tags,
-      error,
-    };
-  });
+    })
+    .filter((component) => component !== undefined);
 
   logger.verbose(`Component manifest generation took ${performance.now() - startPerformance}ms`);
 
@@ -176,11 +200,7 @@ export const manifests: PresetPropertyFn<
     ...existingManifests,
     components: {
       v: 0,
-      components: Object.fromEntries(
-        components
-          .filter((component) => component != null)
-          .map((component) => [component.id, component])
-      ),
+      components: Object.fromEntries(components.map((component) => [component.id, component])),
     },
   };
 };

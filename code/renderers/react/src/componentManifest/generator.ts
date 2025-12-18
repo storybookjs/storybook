@@ -28,9 +28,6 @@ export const manifests: PresetPropertyFn<
 > = async (existingManifests = {}, { index }) => {
   invalidateCache();
 
-  const startIndex = performance.now();
-  logger.verbose(`Story index generation took ${performance.now() - startIndex}ms`);
-
   const startPerformance = performance.now();
 
   const groupByComponentId = groupBy(

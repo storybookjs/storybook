@@ -33,7 +33,6 @@ describe('manifests', () => {
           default:
             return Promise.resolve(undefined);
         }
-        return Promise.resolve(undefined);
       }),
     } as any as Presets;
   };

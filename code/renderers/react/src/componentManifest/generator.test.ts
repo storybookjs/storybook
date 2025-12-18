@@ -1,7 +1,5 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
-import { type StoryIndexGenerator } from 'storybook/internal/core-server';
-
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
@@ -13,7 +11,7 @@ beforeEach(() => {
   vol.fromJSON(fsMocks, '/app');
 });
 
-test('componentManifestGenerator generates correct id, name, description and examples ', async () => {
+test('manifests generates correct id, name, description and examples ', async () => {
   const result = await manifests(undefined, { index: indexJson } as any);
 
   expect(result?.components).toMatchInlineSnapshot(`

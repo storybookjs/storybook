@@ -24,7 +24,13 @@ import {
 } from './utils/helpers';
 import { orbs } from './utils/orbs';
 import { parameters } from './utils/parameters';
-import { type JobImplementation, defineJob } from './utils/types';
+import {
+  type JobImplementation,
+  type Workflow,
+  type defineHub,
+  defineJob,
+  isWorkflowOrAbove,
+} from './utils/types';
 
 const dirname = import.meta.dirname;
 
@@ -78,7 +84,7 @@ const prettyDocs = defineJob('pretty-docs', {
   },
   steps: [
     git.checkout(),
-    npm.install('.'),
+    npm.installScripts(),
     {
       run: {
         name: 'Prettier',
@@ -208,6 +214,36 @@ const check = defineJob(
   [linux_build.id]
 );
 
+const lint = defineJob(
+  'lint',
+  {
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'xlarge',
+    },
+    steps: [
+      ...restore.linux(),
+      {
+        run: {
+          name: 'Lint code',
+          working_directory: `code`,
+          command: 'yarn lint',
+        },
+      },
+      {
+        run: {
+          name: 'Lint scripts',
+          working_directory: `scripts`,
+          command: 'yarn lint',
+        },
+      },
+      'report-workflow-on-failure',
+      'cancel-workflow-on-failure',
+    ],
+  },
+  [linux_build.id]
+);
+
 const knip = defineJob(
   'knip',
   {
@@ -258,6 +294,7 @@ const linux_unitTests = defineJob(
   },
   [linux_build.id]
 );
+
 const windows_unitTests = defineJob(
   'unit-tests-windows',
   {
@@ -310,60 +347,51 @@ const packageBenchmarks = defineJob(
   [linux_build.id]
 );
 
-export default function generateConfig(workflow: string) {
-  const sandboxes = getSandboxes(workflow);
-  const testStorybooks = getTestStorybooks(workflow);
-  const initEmpty = getInitEmpty(workflow);
+export default function generateConfig(workflow: Workflow) {
+  const todos: (ReturnType<typeof defineJob> | ReturnType<typeof defineHub>)[] = [];
+  if (isWorkflowOrAbove(workflow, 'docs')) {
+    todos.push(prettyDocs);
+  } else {
+    const sandboxes = getSandboxes(workflow);
+    const testStorybooks = getTestStorybooks(workflow);
+    const initEmpty = getInitEmpty(workflow);
 
-  const todos = [
-    linux_build,
-    windows_build,
-    check,
-    knip,
-    prettyDocs,
-    uiTests,
-    linux_unitTests,
-    windows_unitTests,
-    packageBenchmarks,
+    if (isWorkflowOrAbove(workflow, 'merged')) {
+      todos.push(windows_build, windows_unitTests);
+    }
 
-    sandboxesHub,
-    ...sandboxes,
+    todos.push(
+      linux_build,
+      lint,
+      check,
+      knip,
+      uiTests,
+      linux_unitTests,
+      packageBenchmarks,
 
-    testStorybooksHub,
-    ...testStorybooks,
+      sandboxesHub,
+      ...sandboxes,
 
-    initEmptyHub,
-    ...initEmpty,
-  ];
+      testStorybooksHub,
+      ...testStorybooks,
 
-  const jobs = todos.reduce(
-    (acc, job) => {
-      acc[job.id] = job.implementation;
-      return acc;
-    },
-    {} as Record<string, JobImplementation | { type: 'no-op' }>
-  );
+      initEmptyHub,
+      ...initEmpty
+    );
+  }
 
-  const workflows = {
-    generated: {
-      jobs: todos
-        .map((t) =>
-          t.requires && t.requires.length > 0 ? { [t.id]: { requires: t.requires } } : t.id
-        )
-        .sort((a, b) => {
-          if (typeof a == 'string' && typeof b == 'string') {
-            return a.localeCompare(b);
-          }
-          if (typeof a == 'string') {
-            return -1;
-          }
-          if (typeof b == 'string') {
-            return 1;
-          }
-          return Object.keys(a)[0].localeCompare(Object.keys(b)[0]);
-        }),
-    },
-  };
+  const sorted = todos.sort((a, b) => {
+    if (a.requires.length && b.requires.length) {
+      return a.requires.length - b.requires.length;
+    }
+    if (a.requires.length) {
+      return 1;
+    }
+    if (b.requires.length) {
+      return -1;
+    }
+    return a.id.localeCompare(b.id);
+  });
 
   return {
     version: 2.1,
@@ -372,7 +400,19 @@ export default function generateConfig(workflow: string) {
     executors,
     parameters,
 
-    jobs: Object.fromEntries(Object.entries(jobs).sort(([a], [b]) => a.localeCompare(b))),
-    workflows,
+    jobs: sorted.reduce(
+      (acc, job) => {
+        acc[job.id] = job.implementation;
+        return acc;
+      },
+      {} as Record<string, JobImplementation | { type: 'no-op' }>
+    ),
+    workflows: {
+      generated: {
+        jobs: sorted.map((t) =>
+          t.requires && t.requires.length > 0 ? { [t.id]: { requires: t.requires } } : t.id
+        ),
+      },
+    },
   };
 }

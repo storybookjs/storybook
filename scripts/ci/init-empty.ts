@@ -1,5 +1,5 @@
 import { CACHE_KEYS, cache, git, restore, server, verdaccio, workspace } from './utils/helpers';
-import { defineHub, defineJob } from './utils/types';
+import { type Workflow, defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
 
 export const defineEmptyInitFlow = (template: string) =>
   defineJob(
@@ -127,18 +127,21 @@ export function defineEmptyInitWindows() {
     ['init-empty']
   );
 }
+
 export const initEmptyHub = defineHub('init-empty', ['build-linux']);
-export function getInitEmpty(workflow: string) {
-  const initEmptyWindows = defineEmptyInitWindows();
 
-  const initEmptyLinux = [
-    //
-    'react-vite-ts',
-    // 'nextjs-ts',
-    // 'vue-vite-ts',
-    // 'lit-vite-ts',
-  ].map(defineEmptyInitFlow);
+export function getInitEmpty(workflow: Workflow) {
+  const initEmpty = ['react-vite-ts'].map(defineEmptyInitFlow);
 
-  const initFeatures = defineEmptyInitFeatures();
-  return [initEmptyWindows, initFeatures, ...initEmptyLinux];
+  if (isWorkflowOrAbove(workflow, 'merged')) {
+    initEmpty.push(...['nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'].map(defineEmptyInitFlow));
+
+    initEmpty.push(defineEmptyInitWindows());
+  }
+
+  if (isWorkflowOrAbove(workflow, 'normal')) {
+    initEmpty.push(defineEmptyInitFeatures());
+  }
+
+  return initEmpty;
 }

@@ -1,5 +1,6 @@
 import type { executors } from './executors';
 import { toId } from './helpers';
+import type { parameters } from './parameters';
 
 export function defineJob<K extends string, I extends JobImplementation>(
   name: K,
@@ -41,4 +42,19 @@ export function defineHub(name: string, requires = [] as string[]) {
     } as const,
     requires,
   };
+}
+
+export type Workflow = (typeof parameters.workflow.enum)[number];
+
+export function isWorkflowOrAbove(current: Workflow, minimum: Workflow): boolean {
+  switch (current) {
+    case 'normal':
+      return minimum === 'normal';
+    case 'merged':
+      return minimum === 'normal' || minimum === 'merged';
+    case 'daily':
+      return minimum === 'normal' || minimum === 'merged' || minimum === 'daily';
+    case 'docs':
+      return minimum === 'docs';
+  }
 }

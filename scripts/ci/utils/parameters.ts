@@ -12,7 +12,7 @@ export const parameters = {
   workflow: {
     default: 'skipped',
     description: 'Which workflow to run',
-    enum: ['normal', 'merged', 'daily', 'skipped', 'docs'],
+    enum: ['normal', 'merged', 'daily', 'skipped', 'docs'] as const,
     type: 'enum',
   },
 };

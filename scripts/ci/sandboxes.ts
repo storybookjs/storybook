@@ -1,6 +1,6 @@
 import { join } from 'path';
 
-import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates';
 import {
   CACHE_KEYS,
   ROOT_DIR,
@@ -14,8 +14,8 @@ import {
   verdaccio,
   workspace,
 } from './utils/helpers';
-import { defineHub, defineJob } from './utils/types';
-import type { JobImplementation } from './utils/types';
+import { defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
+import type { JobImplementation, Workflow } from './utils/types';
 
 function defineSandboxJob_build({
   directory,
@@ -119,8 +119,11 @@ function defineSandboxJob_dev({
 
 export function defineSandboxFlow<K extends string>(name: K) {
   const id = toId(name);
-  const data = allTemplates[name as keyof typeof allTemplates];
-  const { skipTasks } = data;
+  const data = sandboxTemplates.allTemplates[name as keyof typeof sandboxTemplates.allTemplates];
+  if (!data) {
+    throw new Error(`Sandbox template ${name} not found`);
+  }
+  const { skipTasks = [] } = data;
 
   const path = name.replace('/', '-');
 
@@ -326,13 +329,6 @@ export function defineSandboxFlow<K extends string>(name: K) {
     name,
     path,
     jobs,
-    // workflow: jobs.map((job) => {
-    //   return {
-    //     [job.id]: {
-    //       requires: job.requires,
-    //     },
-    //   };
-    // }),
   };
 }
 export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandboxFlow>) {
@@ -458,21 +454,31 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
 
 export const sandboxesHub = defineHub('sandboxes', ['build-linux']);
 
-export function getSandboxes(workflow: string) {
-  const sandboxes = [
-    //
-    'react-vite/default-ts',
-    // 'react-vite/default-js',
-  ].map(defineSandboxFlow);
+const getListOfSandboxes = (workflow: Workflow) => {
+  switch (workflow) {
+    case 'normal':
+      return sandboxTemplates.normal;
+    case 'merged':
+      return sandboxTemplates.merged;
+    case 'daily':
+      return sandboxTemplates.daily;
+    default:
+      return [];
+  }
+};
 
-  const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
-  const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
-  const testRunner = defineSandboxTestRunner(sandboxes[0]);
+export function getSandboxes(workflow: Workflow) {
+  const sandboxes = getListOfSandboxes(workflow).map(defineSandboxFlow);
 
-  return [
-    ...sandboxes.flatMap((sandbox) => sandbox.jobs),
-    windows_sandbox_build,
-    windows_sandbox_dev,
-    testRunner,
-  ];
+  const list = sandboxes.flatMap((sandbox) => sandbox.jobs);
+
+  if (isWorkflowOrAbove(workflow, 'merged')) {
+    const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
+    const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
+    const testRunner = defineSandboxTestRunner(sandboxes[0]);
+
+    list.push(windows_sandbox_build, windows_sandbox_dev, testRunner);
+  }
+
+  return list;
 }

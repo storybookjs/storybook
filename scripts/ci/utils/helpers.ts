@@ -105,6 +105,14 @@ export const node = {
 };
 
 export const npm = {
+  installScripts: () => {
+    return {
+      run: {
+        name: 'Install scripts',
+        command: 'yarn workspaces focus @storybook/scripts',
+      },
+    };
+  },
   install: (appDir: string, pkgManager: string = 'yarn') => {
     return {
       'node/install-packages': {

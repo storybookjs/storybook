@@ -25,10 +25,6 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./componentManifest": {
-      "types": "./dist/componentManifest/index.d.ts",
-      "default": "./dist/componentManifest/index.js"
-    },
     "./entry-preview": "./dist/entry-preview.js",
     "./entry-preview-argtypes": "./dist/entry-preview-argtypes.js",
     "./entry-preview-docs": "./dist/entry-preview-docs.js",

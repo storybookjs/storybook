@@ -16,6 +16,8 @@ import type { Options } from 'storybook/internal/types';
 import * as walk from 'empathic/walk';
 
 import { loadConfig } from '../../csf-tools';
+import type { ComponentDocgenData } from './get-mocked-props-for-args';
+import { generateMockPropsFromDocgen } from './get-mocked-props-for-args';
 import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
 import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
 import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
@@ -59,22 +61,16 @@ export async function getNewStoryFile(
   let args: Record<string, unknown> | undefined;
 
   try {
-    // Try to generate mocked args for the component
-    try {
-      // Try to dynamically import the generateMockProps function from the react renderer
-      const { getMockedProps } = await import(
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore - Dynamic import from source for development
-        '@storybook/react/componentManifest'
-      );
+    const docgenData = (await options.presets.apply('getDocgenData', null, {
+      ...options,
+      componentFilePath,
+      componentExportName,
+    })) as ComponentDocgenData | null;
 
-      // Get component docgen data
-      const { required } = getMockedProps(componentFilePath, componentExportName) ?? {};
+    const { required } = generateMockPropsFromDocgen(docgenData);
+    if (Object.keys(required).length > 0) {
       args = required;
       logger.debug(`Generated mocked props for ${componentExportName}: ${JSON.stringify(args)}`);
-    } catch (error) {
-      // If anything fails with the mock generation, just proceed without args
-      logger.debug(`Could not generate mocked props for ${componentExportName}: ${error}`);
     }
   } catch (error) {
     // If anything fails with the mock generation, just proceed without args

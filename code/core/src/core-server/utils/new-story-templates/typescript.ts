@@ -23,10 +23,15 @@ export async function getTypeScriptTemplateForNewStoryFile(data: TypeScriptTempl
     ? `import ${importName} from './${data.basenameWithoutExtension}'`
     : `import { ${importName} } from './${data.basenameWithoutExtension}'`;
 
-  const argsString =
-    data.args && Object.keys(data.args).length > 0
-      ? `args: ${JSON.stringify(data.args, null, 2)},`
-      : '';
+  const hasArgs = Boolean(data.args && Object.keys(data.args).length > 0);
+  const argsString = hasArgs ? `args: ${JSON.stringify(data.args, null, 2)},` : '';
+  const storyExport = hasArgs
+    ? dedent`
+      export const ${data.exportedStoryName}: Story = {
+        ${argsString}
+      };
+      `
+    : `export const ${data.exportedStoryName}: Story = {};`;
 
   return dedent`
   import type { Meta, StoryObj } from '${data.frameworkPackage}';
@@ -41,8 +46,6 @@ export async function getTypeScriptTemplateForNewStoryFile(data: TypeScriptTempl
 
   type Story = StoryObj<typeof meta>;
 
-  export const ${data.exportedStoryName}: Story = {
-    ${argsString}
-  };
+  ${storyExport}
   `;
 }

@@ -21,10 +21,15 @@ export async function getJavaScriptTemplateForNewStoryFile(data: JavaScriptTempl
     ? `import ${importName} from './${data.basenameWithoutExtension}';`
     : `import { ${importName} } from './${data.basenameWithoutExtension}';`;
 
-  const argsString =
-    data.args && Object.keys(data.args).length > 0
-      ? `args: ${JSON.stringify(data.args, null, 2)},`
-      : '';
+  const hasArgs = Boolean(data.args && Object.keys(data.args).length > 0);
+  const argsString = hasArgs ? `args: ${JSON.stringify(data.args, null, 2)},` : '';
+  const storyExport = hasArgs
+    ? dedent`
+      export const ${data.exportedStoryName} = {
+        ${argsString}
+      };
+      `
+    : `export const ${data.exportedStoryName} = {};`;
 
   return dedent`
   ${importStatement}
@@ -35,8 +40,6 @@ export async function getJavaScriptTemplateForNewStoryFile(data: JavaScriptTempl
 
   export default meta;
 
-  export const ${data.exportedStoryName} = {
-    ${argsString}
-  };
+  ${storyExport}
   `;
 }

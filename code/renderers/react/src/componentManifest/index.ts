@@ -1,1 +1,0 @@
-export { getMockedProps } from './getComponentProps';

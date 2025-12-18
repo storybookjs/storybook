@@ -14,12 +14,9 @@ beforeEach(() => {
 });
 
 test('componentManifestGenerator generates correct id, name, description and examples ', async () => {
-  const generator = await manifest(undefined, { configDir: '.storybook' } as any);
-  const manifest = await generator?.({
-    getIndex: async () => indexJson,
-  } as unknown as StoryIndexGenerator);
+  const result = await manifests(undefined, { index: indexJson } as any);
 
-  expect(manifest).toMatchInlineSnapshot(`
+  expect(result?.components).toMatchInlineSnapshot(`
   {
     "components": {
       "example-button": {
@@ -265,7 +262,6 @@ async function getManifestForStory(code: string) {
     '/app'
   );
 
-  const generator = await manifest(undefined, { configDir: '.storybook' } as any);
   const indexJson = {
     v: 5,
     entries: {
@@ -283,11 +279,9 @@ async function getManifestForStory(code: string) {
     },
   };
 
-  const manifest = await generator?.({
-    getIndex: async () => indexJson,
-  } as unknown as StoryIndexGenerator);
+  const result = await manifests(undefined, { index: indexJson } as any);
 
-  return manifest?.components?.['example-button'];
+  return result?.components?.components?.['example-button'];
 }
 
 function withCSF3(body: string) {

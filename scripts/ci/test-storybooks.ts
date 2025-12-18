@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path/posix';
 
-import { CACHE_KEYS, cache, git, restore, workspace } from './utils/helpers';
+import { CACHE_KEYS, artifact, cache, git, restore, workspace } from './utils/helpers';
 import { type Workflow, defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
 
 export function definePortableStoryTest(directory: string) {
@@ -62,6 +62,7 @@ export function definePortableStoryTest(directory: string) {
                   command: 'yarn playwright-e2e',
                 },
               },
+              artifact.persist(join(working_directory, 'test-results'), 'playwright'),
             ]
           : []),
         {

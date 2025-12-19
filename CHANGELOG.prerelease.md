@@ -1,3 +1,7 @@
+## 10.2.0-alpha.8
+
+- React: Fix several CSF factory bugs  - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!
+
 ## 10.2.0-alpha.7
 
 - Automigrate: Fix missing await - [#33333](https://github.com/storybookjs/storybook/pull/33333), thanks @valentinpalkovic!

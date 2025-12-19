@@ -40,7 +40,7 @@ export const defineEmptyInitFlow = (template: string) =>
       ],
     },
 
-    ['init-empty']
+    [initEmptyHub.id]
   );
 export function defineEmptyInitFeatures() {
   return defineJob(
@@ -82,7 +82,7 @@ export function defineEmptyInitFeatures() {
         },
       ],
     },
-    ['init-empty']
+    [initEmptyHub.id]
   );
 }
 export function defineEmptyInitWindows() {
@@ -124,7 +124,7 @@ export function defineEmptyInitWindows() {
         },
       ],
     },
-    ['init-empty']
+    [initEmptyHub.id]
   );
 }
 

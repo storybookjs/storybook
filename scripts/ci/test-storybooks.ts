@@ -74,7 +74,7 @@ export function definePortableStoryTest(directory: string) {
         },
       ],
     },
-    ['test-storybooks']
+    [testStorybooksHub.id]
   );
 }
 export function definePortableStoryTestPNP() {
@@ -106,7 +106,7 @@ export function definePortableStoryTestPNP() {
         },
       ],
     },
-    ['test-storybooks']
+    [testStorybooksHub.id]
   );
 }
 export function definePortableStoryTestVitest3() {
@@ -138,7 +138,7 @@ export function definePortableStoryTestVitest3() {
         },
       ],
     },
-    ['test-storybooks']
+    [testStorybooksHub.id]
   );
 }
 export const testStorybooksHub = defineHub('test-storybooks', ['build-linux']);

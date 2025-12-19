@@ -126,9 +126,6 @@ function defineSandboxJob_dev({
 export function defineSandboxFlow<K extends string>(name: K) {
   const id = toId(name);
   const data = sandboxTemplates.allTemplates[name as keyof typeof sandboxTemplates.allTemplates];
-  if (!data) {
-    throw new Error(`Sandbox template ${name} not found`);
-  }
   const { skipTasks = [] } = data;
 
   const path = name.replace('/', '-');
@@ -183,6 +180,16 @@ export function defineSandboxFlow<K extends string>(name: K) {
               ].join('\n'),
             },
           },
+          ...(id.includes('svelte-kit')
+            ? [
+                {
+                  run: {
+                    name: 'Run prepare',
+                    command: `yarn prepare`,
+                  },
+                },
+              ]
+            : []),
           {
             run: {
               name: 'Create Sandboxes',

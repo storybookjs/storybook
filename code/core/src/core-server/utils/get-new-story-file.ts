@@ -2,21 +2,22 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, relative } from 'node:path';
 
-import { babelParse, babelPrint, types as t, traverse } from 'storybook/internal/babel';
+import { types as t, traverse } from 'storybook/internal/babel';
 import {
   extractFrameworkPackageName,
   findConfigFile,
+  formatFileContent,
   getFrameworkName,
   getProjectRoot,
 } from 'storybook/internal/common';
 import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
-import { CsfFile, isCsfFactoryPreview } from 'storybook/internal/csf-tools';
+import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
 
-import { loadConfig, loadCsf, printConfig } from '../../csf-tools';
+import { loadConfig, printConfig } from '../../csf-tools';
 import type { ComponentDocgenData } from './get-mocked-props-for-args';
 import { generateMockPropsFromDocgen } from './get-mocked-props-for-args';
 import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
@@ -67,6 +68,7 @@ export async function getNewStoryFile(
       componentFilePath,
       componentExportName,
     })) as ComponentDocgenData | null;
+    logger.debug(`Extracted docgen data for ${componentExportName}: ${JSON.stringify(docgenData)}`);
 
     const { required } = generateMockPropsFromDocgen(docgenData);
     if (Object.keys(required).length > 0) {
@@ -128,7 +130,9 @@ export async function getNewStoryFile(
       ? join(getProjectRoot(), dir, alternativeStoryFileNameWithExtension)
       : join(getProjectRoot(), dir, storyFileNameWithExtension);
 
-  return { storyFilePath, exportedStoryName, storyFileContent, dirname };
+  const formattedStoryFileContent = await formatFileContent(storyFilePath, storyFileContent);
+
+  return { storyFilePath, exportedStoryName, storyFileContent: formattedStoryFileContent, dirname };
 }
 
 export const getStoryMetadata = (componentFilePath: string) => {

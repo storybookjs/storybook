@@ -1,34 +1,49 @@
-/**
- * Representation of prop types to unify the data coming from different docgen tools. Currently we
- * only use react-docgen, but by having a common mapping we can eventually support tools like Volar
- * and others.
- */
-export type ComponentDocgenPropType =
-  | { kind: 'boolean' }
-  | { kind: 'string' }
-  | { kind: 'number' }
-  | { kind: 'date' }
-  | { kind: 'node'; renderer: 'react' } // TODO: this would be extended to support other renderers
-  | { kind: 'function' }
-  | { kind: 'null' }
-  | { kind: 'void' }
-  | { kind: 'literal'; value: unknown }
-  | { kind: 'union'; elements: ComponentDocgenPropType[] }
-  | { kind: 'array'; element: ComponentDocgenPropType }
-  | { kind: 'tuple'; elements: ComponentDocgenPropType[] }
-  | { kind: 'object'; properties: Record<string, ComponentDocgenPropType> }
-  | { kind: 'any' }
-  | { kind: 'unknown' }
-  | { kind: 'other'; name?: string };
+import type { ArgTypes, SBType } from 'storybook/internal/csf';
 
-export type ComponentDocgenPropInfo = {
+export type ComponentArgTypesInfo = {
   required: boolean;
-  type: ComponentDocgenPropType;
+  type: SBType;
 };
 
-export type ComponentDocgenData = {
-  props?: Record<string, ComponentDocgenPropInfo>;
+export type ComponentArgTypesData = {
+  props?: Record<string, ComponentArgTypesInfo>;
 };
+
+/**
+ * Generate mock props using ArgTypes instead of ComponentArgTypesData This provides more accurate
+ * mock generation by leveraging ArgTypes structure
+ */
+export function generateMockPropsFromArgTypes(argTypes: ArgTypes) {
+  const required: Record<string, unknown> = {};
+  const optional: Record<string, unknown> = {};
+
+  for (const [propName, argType] of Object.entries(argTypes)) {
+    // Determine if prop is required
+    const isRequired = argType.type && typeof argType.type === 'object' && argType.type.required;
+
+    // Generate mock value directly from SBType
+    let mockValue: unknown;
+    if (typeof argType.type === 'string') {
+      // Handle scalar type strings - convert to SBType
+      const sbType: SBType = { name: argType.type };
+      mockValue = generateMockValueFromSBType(sbType, propName);
+    } else if (argType.type && typeof argType.type === 'object') {
+      // Handle SBType objects directly
+      mockValue = generateMockValueFromSBType(argType.type, propName);
+    } else {
+      // Fallback as we don't know what the type is
+      mockValue = undefined;
+    }
+
+    if (isRequired) {
+      required[propName] = mockValue;
+    } else {
+      optional[propName] = mockValue;
+    }
+  }
+
+  return { required, optional };
+}
 
 // Tokenize prop names so we can use them to determine the most likely type of the prop e.g. image, url, etc.
 function tokenize(name: string): string[] {
@@ -122,11 +137,8 @@ function normalizeStringLiteral(value: unknown) {
   return value;
 }
 
-export function generateMockValueFromDocgenType(
-  type: ComponentDocgenPropType,
-  propName?: string
-): unknown {
-  switch (type.kind) {
+export function generateMockValueFromSBType(sbType: SBType, propName?: string): unknown {
+  switch (sbType.name) {
     case 'boolean':
       return true;
 
@@ -167,84 +179,97 @@ export function generateMockValueFromDocgenType(
       return new Date('2025-01-01');
 
     case 'node':
-      if (type.renderer === 'react') {
-        return propName ?? 'Hello world';
-      }
-      return 'node';
+      return propName ?? 'Hello world';
 
     case 'function':
       return '__function__';
 
+    case 'literal':
+      return normalizeStringLiteral(sbType.value);
+
     case 'object': {
       const result: Record<string, unknown> = {};
 
-      for (const [key, valueType] of Object.entries(type.properties ?? {})) {
-        result[key] = generateMockValueFromDocgenType(valueType, key);
+      for (const [key, valueType] of Object.entries(sbType.value)) {
+        result[key] = generateMockValueFromSBType(valueType, key);
       }
 
       return result;
     }
 
     case 'union': {
-      if (!type.elements?.length) {
+      if (!sbType.value?.length) {
         return '';
       }
 
-      const literal = type.elements.find((el) => el.kind === 'literal');
-      if (literal?.kind === 'literal') {
-        return normalizeStringLiteral(literal.value);
+      // Look for literal types in the union
+      const literalType = sbType.value.find((t) => t.name === 'literal');
+      if (literalType?.name === 'literal') {
+        return normalizeStringLiteral(literalType.value);
       }
 
-      return generateMockValueFromDocgenType(type.elements[0], propName);
+      return generateMockValueFromSBType(sbType.value[0], propName);
     }
 
     case 'array': {
-      if (type.element.kind === 'other') {
+      // If we don't know what the element is, be conservative and return empty.
+      if (sbType.value.name === 'other') {
         return [];
       }
-      return [generateMockValueFromDocgenType(type.element, propName)];
+      return [generateMockValueFromSBType(sbType.value, propName)];
     }
 
     case 'tuple':
-      return (type.elements ?? []).map((el) => generateMockValueFromDocgenType(el));
+      return sbType.value.map((el) => generateMockValueFromSBType(el));
 
-    case 'literal':
-      return normalizeStringLiteral(type.value ?? 'mock literal');
+    case 'enum':
+      return sbType.value[0] ?? propName;
 
-    case 'null':
-      return null;
-
-    case 'void':
-      return undefined;
-
-    case 'any':
-    case 'unknown':
-      return type.kind;
+    case 'intersection':
+      // For intersections, combine all object types
+      const objectTypes = sbType.value.filter((t) => t.name === 'object');
+      if (objectTypes.length > 0) {
+        const result: Record<string, unknown> = {};
+        objectTypes.forEach((objType) => {
+          if (objType.name === 'object') {
+            Object.entries(objType.value).forEach(([key, type]) => {
+              result[key] = generateMockValueFromSBType(type, key);
+            });
+          }
+        });
+        return result;
+      }
+      return {};
 
     case 'other': {
-      if (
-        type.name?.startsWith('React') ||
-        type.name?.includes('Event') ||
-        type.name?.includes('Element')
-      ) {
+      const value = sbType.value;
+      if (value?.startsWith('React') || value?.includes('Event') || value?.includes('Element')) {
         return '__function__';
       }
 
-      return type.name ?? null;
+      if (value === 'null') {
+        return null;
+      }
+
+      if (value === 'void' || value === 'undefined') {
+        return undefined;
+      }
+
+      return value ?? propName;
     }
   }
 }
 
-export function generateMockPropsFromDocgen(docgenData: ComponentDocgenData | null) {
+export function generateMockPropsFromDocgen(argTypesData: ComponentArgTypesData | null) {
   const required: Record<string, unknown> = {};
   const optional: Record<string, unknown> = {};
 
-  if (!docgenData?.props) {
+  if (!argTypesData?.props) {
     return { required, optional };
   }
 
-  for (const [propName, propInfo] of Object.entries(docgenData.props)) {
-    const mockValue = generateMockValueFromDocgenType(propInfo.type, propName);
+  for (const [propName, propInfo] of Object.entries(argTypesData.props)) {
+    const mockValue = generateMockValueFromSBType(propInfo.type, propName);
 
     if (propInfo.required) {
       required[propName] = mockValue;

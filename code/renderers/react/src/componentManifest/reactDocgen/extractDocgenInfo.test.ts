@@ -291,11 +291,11 @@ test('getComponentDocgen - extracts JSDoc comments and component information', (
   expect(result?.reactDocgen.type).toBe('success');
 
   // @ts-expect-error fix this later
-  const docgenData = result?.reactDocgen.data;
-  expect(docgenData?.displayName).toBe('DetailedButton');
-  expect(docgenData?.description).toContain('detailed button component');
+  const argTypesData = result?.reactDocgen.data;
+  expect(argTypesData?.displayName).toBe('DetailedButton');
+  expect(argTypesData?.description).toContain('detailed button component');
   // Note: react-docgen may not always extract detailed prop types depending on configuration
-  expect(docgenData?.props).toMatchInlineSnapshot(`
+  expect(argTypesData?.props).toMatchInlineSnapshot(`
     {
       "children": {
         "description": "",

@@ -1,4 +1,5 @@
-import type { ComponentDocgenData, ComponentDocgenPropType } from 'storybook/internal/core-server';
+import type { ComponentArgTypesData } from 'storybook/internal/core-server';
+import type { SBType } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 
 import type {
@@ -13,7 +14,7 @@ import type {
 import { type getReactDocgen, parseWithReactDocgen } from '../reactDocgen';
 import { cachedReadFileSync } from '../utils';
 
-export type GetDocgenDataOptions = {
+export type GetArgTypesDataOptions = {
   componentFilePath: string;
   componentExportName?: string;
 };
@@ -35,18 +36,18 @@ function isLiteralType(value: ReactDocgenTsType): value is ReactDocgenLiteralTyp
   return value.name === 'literal';
 }
 
-export function mapReactDocgenType(docgenType: ReactDocgenTsType): ComponentDocgenPropType {
+export function mapReactDocgenToArgType(docgenType: ReactDocgenTsType): SBType {
   const name = docgenType.name;
 
   switch (name) {
     case 'boolean':
-      return { kind: 'boolean' };
+      return { name: 'boolean' };
     case 'string':
-      return { kind: 'string' };
+      return { name: 'string' };
     case 'number':
-      return { kind: 'number' };
+      return { name: 'number' };
     case 'Date':
-      return { kind: 'date' };
+      return { name: 'date' };
     case 'JSX.Element':
     case 'ComponentType':
     case 'ReactComponentType':
@@ -56,33 +57,33 @@ export function mapReactDocgenType(docgenType: ReactDocgenTsType): ComponentDocg
     case 'ReactElementType':
     case 'ReactNode':
     case 'ReactReactNode':
-      return { kind: 'node', renderer: 'react' };
+      return { name: 'node', type: 'react' };
     case 'signature': {
       // Object-signature: `{ foo: string }`
       if (isObjectSignatureType(docgenType)) {
-        const properties: Record<string, ComponentDocgenPropType> = {};
+        const properties: Record<string, SBType> = {};
         for (const prop of docgenType.signature.properties) {
           const key = typeof prop.key === 'string' ? prop.key : prop.key.name;
-          properties[key] = mapReactDocgenType(prop.value);
+          properties[key] = mapReactDocgenToArgType(prop.value);
         }
-        return { kind: 'object', properties };
+        return { name: 'object', value: properties };
       }
 
       // Function signature
-      return { kind: 'function' };
+      return { name: 'function' };
     }
     case 'union': {
       const elements = isElementsType(docgenType) ? docgenType.elements : [];
-      return { kind: 'union', elements: elements.map(mapReactDocgenType) };
+      return { name: 'union', value: elements.map(mapReactDocgenToArgType) };
     }
     case 'Array': {
       const element = isElementsType(docgenType) ? docgenType.elements[0] : undefined;
 
       if (!element) {
-        return { kind: 'array', element: { kind: 'any' } };
+        return { name: 'array', value: { name: 'other', value: 'any' } };
       }
 
-      const mapped = mapReactDocgenType(element);
+      const mapped = mapReactDocgenToArgType(element);
       // If it looks like an unresolved custom type, map as 'other' so core can be conservative.
       if (
         element.name &&
@@ -104,26 +105,26 @@ export function mapReactDocgenType(docgenType: ReactDocgenTsType): ComponentDocg
           'unknown',
         ].includes(element.name)
       ) {
-        return { kind: 'array', element: { kind: 'other', name: element.name } };
+        return { name: 'array', value: { name: 'other', value: element.name } };
       }
-      return { kind: 'array', element: mapped };
+      return { name: 'array', value: mapped };
     }
     case 'tuple': {
       const elements = isElementsType(docgenType) ? docgenType.elements : [];
-      return { kind: 'tuple', elements: elements.map(mapReactDocgenType) };
+      return { name: 'tuple', value: elements.map(mapReactDocgenToArgType) };
     }
     case 'literal':
-      return { kind: 'literal', value: isLiteralType(docgenType) ? docgenType.value : undefined };
+      return { name: 'literal', value: isLiteralType(docgenType) ? docgenType.value : undefined };
     case 'null':
-      return { kind: 'null' };
+      return { name: 'other', value: 'null' };
     case 'void':
-      return { kind: 'void' };
+      return { name: 'other', value: 'void' };
     case 'any':
-      return { kind: 'any' };
+      return { name: 'other', value: 'any' };
     case 'unknown':
-      return { kind: 'unknown' };
+      return { name: 'other', value: 'unknown' };
     default:
-      return { kind: 'other', name };
+      return { name: 'other', value: name };
   }
 }
 
@@ -186,10 +187,10 @@ export function getComponentDocgen(
   }
 }
 
-export const extractDocgenData = ({
+export const extractArgTypesFromDocgen = ({
   componentFilePath,
   componentExportName,
-}: GetDocgenDataOptions) => {
+}: GetArgTypesDataOptions) => {
   const docgen = getComponentDocgen(componentFilePath, componentExportName);
 
   if (!docgen || docgen.reactDocgen.type !== 'success') {
@@ -197,7 +198,7 @@ export const extractDocgenData = ({
   }
 
   const props = docgen.reactDocgen.data.props ?? {};
-  const mapped: ComponentDocgenData = { props: {} };
+  const mapped: ComponentArgTypesData = { props: {} };
 
   for (const [propName, propInfo] of Object.entries(props)) {
     const tsType = (propInfo as ReactDocgenPropDescriptor).tsType as ReactDocgenTsType | undefined;
@@ -206,7 +207,7 @@ export const extractDocgenData = ({
     }
     mapped.props![propName] = {
       required: Boolean((propInfo as ReactDocgenPropDescriptor).required),
-      type: mapReactDocgenType(tsType),
+      type: mapReactDocgenToArgType(tsType),
     };
   }
 

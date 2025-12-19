@@ -77,6 +77,7 @@ describe('createNewStoryChannel', () => {
       mockChannel.emit(CREATE_NEW_STORYFILE_REQUEST, {
         id: 'components-page--default',
         payload: {
+          alreadyContainsArgs: false,
           componentFilePath: 'src/components/Page.jsx',
           componentExportName: 'Page',
           componentIsDefaultExport: true,
@@ -91,6 +92,7 @@ describe('createNewStoryChannel', () => {
         error: null,
         id: 'components-page--default',
         payload: {
+          alreadyContainsArgs: false,
           storyId: 'components-page--default',
           storyFilePath: join('src', 'components', 'Page.stories.jsx'),
           exportedStoryName: 'Default',
@@ -128,6 +130,7 @@ describe('createNewStoryChannel', () => {
       mockChannel.emit(CREATE_NEW_STORYFILE_REQUEST, {
         id: 'components-page--default',
         payload: {
+          alreadyContainsArgs: false,
           componentFilePath: 'src/components/Page.jsx',
           componentExportName: 'Page',
           componentIsDefaultExport: true,

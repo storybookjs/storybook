@@ -17,9 +17,9 @@ import type { Options } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
 
+import type { ArgTypes } from '../../csf';
 import { loadConfig, printConfig } from '../../csf-tools';
-import type { ComponentDocgenData } from './get-mocked-props-for-args';
-import { generateMockPropsFromDocgen } from './get-mocked-props-for-args';
+import { generateMockPropsFromArgTypes } from './get-mocked-props-for-args';
 import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
 import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
 import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
@@ -63,17 +63,21 @@ export async function getNewStoryFile(
   let args: Record<string, unknown> | undefined = undefined;
 
   try {
-    const docgenData = (await options.presets.apply('getDocgenData', null, {
+    const argTypes = (await options.presets.apply('getArgTypesData', null, {
       ...options,
       componentFilePath,
       componentExportName,
-    })) as ComponentDocgenData | null;
-    logger.debug(`Extracted docgen data for ${componentExportName}: ${JSON.stringify(docgenData)}`);
+    })) as ArgTypes | null;
+    logger.debug(`Extracted argTypes for ${componentExportName}: ${JSON.stringify(argTypes)}`);
 
-    const { required } = generateMockPropsFromDocgen(docgenData);
-    if (Object.keys(required).length > 0) {
-      args = required;
-      logger.debug(`Generated mocked props for ${componentExportName}: ${JSON.stringify(args)}`);
+    if (argTypes) {
+      const { required } = generateMockPropsFromArgTypes(argTypes);
+      if (Object.keys(required).length > 0) {
+        args = required;
+        logger.debug(
+          `Generated mocked props using ArgTypes for ${componentExportName}: ${JSON.stringify(args)}`
+        );
+      }
     }
   } catch (error) {
     // If anything fails with the mock generation, just proceed without args

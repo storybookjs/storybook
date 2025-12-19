@@ -1,13 +1,12 @@
 import { fileURLToPath } from 'node:url';
 
-import type { ComponentDocgenData } from 'storybook/internal/core-server';
+import type { ArgTypes } from 'storybook/internal/csf';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 import {
-  type GetDocgenDataOptions,
-  extractDocgenData,
-  getComponentDocgen,
+  type GetArgTypesDataOptions,
+  extractArgTypesFromDocgen,
 } from './componentManifest/reactDocgen/extractDocgenInfo';
 
 export const addons: PresetProperty<'addons'> = [
@@ -72,15 +71,28 @@ export const resolvedReact = async (existing: any) => {
   }
 };
 
-export async function getDocgenData(
+export async function getArgTypesData(
   _input: unknown,
-  options: GetDocgenDataOptions
-): Promise<ComponentDocgenData | null> {
-  const { componentFilePath, componentExportName } = (options ?? {}) as GetDocgenDataOptions;
+  options: GetArgTypesDataOptions
+): Promise<ArgTypes | null> {
+  const { componentFilePath, componentExportName } = (options ?? {}) as GetArgTypesDataOptions;
 
   if (!componentFilePath) {
     return null;
   }
 
-  return extractDocgenData({ componentFilePath, componentExportName });
+  const argTypesData = extractArgTypesFromDocgen({ componentFilePath, componentExportName });
+  if (!argTypesData?.props) {
+    return null;
+  }
+
+  const argTypes: ArgTypes = {};
+  for (const [propName, propInfo] of Object.entries(argTypesData.props)) {
+    argTypes[propName] = {
+      name: propName,
+      type: propInfo.required ? { ...propInfo.type, required: true } : propInfo.type,
+    };
+  }
+
+  return argTypes;
 }

@@ -9,12 +9,22 @@ import invariant from 'tiny-invariant';
 
 import { renderComponentsManifest } from './render-components-manifest';
 
+async function getManifests(presets: Presets) {
+  const generator = await presets.apply('storyIndexGenerator');
+  invariant(generator, 'storyIndexGenerator must be configured');
+  const index = await generator.getIndex();
+  const manifestEntries = Object.values(index.entries).filter(
+    (entry) => entry.tags?.includes('manifest') ?? false
+  );
+
+  return await presets.apply<Manifests>('experimental_manifests', undefined, {
+    manifestEntries,
+  });
+}
+
 export async function writeManifests(outputDir: string, presets: Presets) {
   try {
-    const generator = await presets.apply('storyIndexGenerator');
-    invariant(generator, 'storyIndexGenerator must be configured');
-    const index = await generator.getIndex();
-    const manifests = await presets.apply('experimental_manifests', {}, { index });
+    const manifests = await getManifests(presets);
     if (Object.keys(manifests).length === 0) {
       return;
     }
@@ -37,18 +47,10 @@ export async function writeManifests(outputDir: string, presets: Presets) {
 }
 
 export function registerManifests({ app, presets }: { app: Polka; presets: Presets }) {
-  async function getManifest(manifestName: string) {
-    const generator = await presets.apply('storyIndexGenerator');
-    invariant(generator, 'storyIndexGenerator must be configured');
-    const index = await generator.getIndex();
-    const manifests = ((await presets.apply('experimental_manifests', {}, { index })) ??
-      {}) as Manifests;
-    return manifests[manifestName];
-  }
-
   app.get('/manifests/:name.json', async (req, res) => {
     try {
-      const manifest = await getManifest(req.params.name);
+      const manifests = await getManifests(presets);
+      const manifest = manifests[req.params.name];
 
       if (manifest) {
         res.setHeader('Content-Type', 'application/json');
@@ -66,7 +68,8 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
 
   app.get('/manifests/components.html', async (req, res) => {
     try {
-      const manifest = (await getManifest('components')) as ComponentsManifest | undefined;
+      const manifests = await getManifests(presets);
+      const manifest = manifests.components;
 
       if (!manifest) {
         res.statusCode = 404;

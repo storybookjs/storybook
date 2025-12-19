@@ -9,7 +9,7 @@ import {
   type StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { uniqBy } from 'es-toolkit';
+import { uniqBy } from 'es-toolkit/array';
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';

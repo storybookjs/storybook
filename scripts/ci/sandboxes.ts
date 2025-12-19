@@ -180,16 +180,6 @@ export function defineSandboxFlow<K extends string>(name: K) {
               ].join('\n'),
             },
           },
-          ...(id.includes('svelte-kit')
-            ? [
-                {
-                  run: {
-                    name: 'Run prepare',
-                    command: `yarn prepare`,
-                  },
-                },
-              ]
-            : []),
           {
             run: {
               name: 'Create Sandboxes',
@@ -200,11 +190,22 @@ export function defineSandboxFlow<K extends string>(name: K) {
               },
             },
           },
+          ...(id.includes('svelte-kit')
+            ? [
+                {
+                  run: {
+                    name: 'Run prepare',
+                    working_directory: `${SANDBOX_DIR}/${id}`,
+                    command: `yarn prepare`,
+                  },
+                },
+              ]
+            : []),
           artifact.persist(`${ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
           workspace.persist([`${SANDBOX_DIR}/${id}`]),
         ],
       },
-      ['sandboxes']
+      [sandboxesHub.id]
     ),
     defineSandboxJob_build({
       directory: id,
@@ -346,6 +347,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
     jobs,
   };
 }
+
 export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
     `${sandbox.jobs[1].id}-test-runner`,
@@ -367,6 +369,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
     [sandbox.jobs[1].id]
   );
 }
+
 export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
     `${sandbox.jobs[2].id}-windows`,
@@ -414,6 +417,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
     [sandbox.jobs[0].id]
   );
 }
+
 export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
     `${sandbox.jobs[1].id}-windows`,

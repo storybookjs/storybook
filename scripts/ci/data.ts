@@ -28,7 +28,7 @@ import { parameters } from './utils/parameters';
 import {
   type JobImplementation,
   type Workflow,
-  type defineHub,
+  defineHub,
   defineJob,
   isWorkflowOrAbove,
 } from './utils/types';
@@ -151,8 +151,10 @@ const windows_build = defineJob('build-windows', {
   ],
 });
 
-const uiTests = defineJob(
-  'ui',
+const codeHub = defineHub('code', [linux_build.id]);
+
+const storybookChromatic = defineJob(
+  'storybook-chromatic',
   {
     executor: {
       name: 'sb_node_22_classic',
@@ -176,7 +178,7 @@ const uiTests = defineJob(
       },
     ],
   },
-  [linux_build.id]
+  [codeHub.id]
 );
 
 const check = defineJob(
@@ -206,7 +208,7 @@ const check = defineJob(
       'cancel-workflow-on-failure',
     ],
   },
-  [linux_build.id]
+  [codeHub.id]
 );
 
 const lint = defineJob(
@@ -234,7 +236,7 @@ const lint = defineJob(
       },
     ],
   },
-  [linux_build.id]
+  [codeHub.id]
 );
 
 const knip = defineJob(
@@ -255,11 +257,11 @@ const knip = defineJob(
       },
     ],
   },
-  [linux_build.id]
+  [codeHub.id]
 );
 
 const linux_unitTests = defineJob(
-  'unit-tests-linux',
+  'tests-unit-linux',
   {
     executor: {
       name: 'sb_node_22_classic',
@@ -282,11 +284,11 @@ const linux_unitTests = defineJob(
       'cancel-workflow-on-failure',
     ],
   },
-  [linux_build.id]
+  [codeHub.id]
 );
 
 const linux_storiesTests = defineJob(
-  'stories-tests-linux',
+  'tests-stories-linux',
   {
     executor: {
       name: 'sb_playwright',
@@ -309,7 +311,7 @@ const linux_storiesTests = defineJob(
       'cancel-workflow-on-failure',
     ],
   },
-  [linux_build.id]
+  [codeHub.id]
 );
 
 const windows_unitTests = defineJob(
@@ -382,11 +384,12 @@ export default function generateConfig(workflow: Workflow) {
       linux_unitTests,
       linux_storiesTests,
 
+      codeHub,
       lint,
       check,
       knip,
 
-      uiTests,
+      storybookChromatic,
       packageBenchmarks,
 
       sandboxesHub,

@@ -1,1 +1,1 @@
-{"version":"10.2.0-alpha.1","info":{"plain":"- Core: Improve globbing using dynamic CWD (REVERT) - [#33201](https://github.com/storybookjs/storybook/pull/33201), thanks @ndelangen!"}}
+{"version":"10.2.0-alpha.8","info":{"plain":"- React: Fix several CSF factory bugs  - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!"}}

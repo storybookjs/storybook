@@ -22,9 +22,15 @@ const isVitestStandaloneRun = getIsVitestStandaloneRun();
 // TODO: Not run when executed via Storybook
 const checkStorybookRunning = async (storybookUrl: string): Promise<boolean> => {
   try {
-    const response = await fetch(`${storybookUrl}/iframe.html`, { method: 'HEAD' });
+    const response = await fetch(`${storybookUrl}/iframe.html`, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000),
+    });
     return response.ok;
-  } catch {
+  } catch (error) {
+    logger.verbose(
+      `Failed to get response from ${storybookUrl}: ${error instanceof Error ? error.message : String(error)}`
+    );
     return false;
   }
 };

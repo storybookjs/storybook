@@ -19,14 +19,16 @@ const configureImageDefaults = (baseConfig: WebpackConfig): void => {
   resolve.alias = {
     ...resolve.alias,
     'sb-original/next/image': fileURLToPath(import.meta.resolve('next/image')),
-    'next/image': '@storybook/nextjs/images/next-image',
+    'next/image': fileURLToPath(import.meta.resolve('@storybook/nextjs/images/next-image')),
   };
 
   if (semver.satisfies(version, '>=13.0.0')) {
     resolve.alias = {
       ...resolve.alias,
       'sb-original/next/legacy/image': fileURLToPath(import.meta.resolve('next/legacy/image')),
-      'next/legacy/image': '@storybook/nextjs/images/next-legacy-image',
+      'next/legacy/image': fileURLToPath(
+        import.meta.resolve('@storybook/nextjs/images/next-legacy-image')
+      ),
     };
   }
 };

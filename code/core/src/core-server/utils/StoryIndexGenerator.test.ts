@@ -2118,7 +2118,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(readCsfMock).toHaveBeenCalledTimes(12);
 
-        generator.invalidate(specifier, './src/B.stories.ts', false);
+        generator.invalidate('./src/B.stories.ts', false);
 
         readCsfMock.mockClear();
         await generator.getIndex();
@@ -2140,7 +2140,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(toId).toHaveBeenCalledTimes(7);
 
-        generator.invalidate(docsSpecifier, './src/docs2/Title.mdx', false);
+        generator.invalidate('./src/docs2/Title.mdx', false);
 
         toIdMock.mockClear();
         await generator.getIndex();
@@ -2162,7 +2162,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(toId).toHaveBeenCalledTimes(7);
 
-        generator.invalidate(storiesSpecifier, './src/A.stories.js', false);
+        generator.invalidate('./src/A.stories.js', false);
 
         toIdMock.mockClear();
         await generator.getIndex();
@@ -2182,7 +2182,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
 
-        generator.invalidate(specifier, './src/B.stories.ts', false);
+        generator.invalidate('./src/B.stories.ts', false);
 
         sortFn.mockClear();
         await generator.getIndex();
@@ -2203,7 +2203,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(readCsfMock).toHaveBeenCalledTimes(12);
 
-        generator.invalidate(specifier, './src/B.stories.ts', true);
+        generator.invalidate('./src/B.stories.ts', true);
 
         readCsfMock.mockClear();
         await generator.getIndex();
@@ -2223,7 +2223,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
 
-        generator.invalidate(specifier, './src/B.stories.ts', true);
+        generator.invalidate('./src/B.stories.ts', true);
 
         sortFn.mockClear();
         await generator.getIndex();
@@ -2242,7 +2242,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(readCsfMock).toHaveBeenCalledTimes(12);
 
-        generator.invalidate(specifier, './src/B.stories.ts', true);
+        generator.invalidate('./src/B.stories.ts', true);
 
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('b--story-one');
       });
@@ -2264,7 +2264,7 @@ describe('StoryIndexGenerator', () => {
 
         expect(Object.keys((await generator.getIndex()).entries)).toContain('notitle--docs');
 
-        generator.invalidate(docsSpecifier, './src/docs2/NoTitle.mdx', true);
+        generator.invalidate('./src/docs2/NoTitle.mdx', true);
 
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('notitle--docs');
       });
@@ -2286,12 +2286,12 @@ describe('StoryIndexGenerator', () => {
 
         expect(Object.keys((await generator.getIndex()).entries)).toContain('a--metaof');
 
-        generator.invalidate(docsSpecifier, './src/docs2/MetaOf.mdx', true);
+        generator.invalidate('./src/docs2/MetaOf.mdx', true);
 
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('a--metaof');
 
         // this will throw if MetaOf is not removed from A's dependents
-        generator.invalidate(storiesSpecifier, './src/A.stories.js', false);
+        generator.invalidate('./src/A.stories.js', false);
       });
     });
   });

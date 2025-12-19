@@ -32,12 +32,12 @@ vi.mock('@storybook/global', () => {
   ];
   // global.location value after all edgecaseLocations are returned
   const lastLocation = { origin: 'https://storybook.js.org', pathname: '/storybook/' };
-  Object.defineProperties(globalMock, {
-    location: {
-      get: edgecaseLocations
-        .reduce((mockFn, location) => mockFn.mockReturnValueOnce(location), vi.fn())
-        .mockReturnValue(lastLocation),
-    },
+  const locationMock = vi.fn();
+  edgecaseLocations.forEach((location) => locationMock.mockReturnValueOnce(location));
+  locationMock.mockReturnValue(lastLocation);
+
+  Object.defineProperty(globalMock, 'location', {
+    get: locationMock,
   });
   return { global: globalMock };
 });

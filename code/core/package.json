@@ -223,6 +223,7 @@
     "@emotion/styled": "^11.14.0",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
     "@happy-dom/global-registrator": "^18.0.1",
+    "@hipster/sb-utils": "0.0.8-canary.15.285ba09.0",
     "@ngard/tiny-isequal": "^1.1.0",
     "@polka/compression": "^1.0.0-next.28",
     "@radix-ui/react-scroll-area": "1.2.0-rc.7",

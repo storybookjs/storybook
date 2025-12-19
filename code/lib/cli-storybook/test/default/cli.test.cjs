@@ -54,5 +54,8 @@ test('help command', () => {
     'Check Storybook for known problems and provide suggestions or fixes'
   );
 
+  expect(stdoutString).toContain('generate-stories');
+  expect(stdoutString).toContain('Generate stories for components matching a glob pattern');
+
   expect(status).toBe(0);
 });

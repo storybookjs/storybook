@@ -1,3 +1,4 @@
+/** These are parameters that the CircleCI API is called with. */
 export const parameters = {
   ghBaseBranch: {
     default: 'next',

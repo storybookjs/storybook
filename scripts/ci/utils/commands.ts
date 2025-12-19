@@ -1,5 +1,10 @@
 import { git } from './helpers';
 
+/**
+ * TODO: I think we should long-term remove all these The shorthands are not useful within the
+ * dynamic config generation context. I propose these get changed to be helpers inside the
+ * `scripts/ci/utils/helpers.ts` file.
+ */
 export const commands = {
   'cancel-workflow-on-failure': {
     description: 'Cancels the entire workflow in case the previous step has failed',

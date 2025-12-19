@@ -1,6 +1,4 @@
-export const ROOT_DIR = '/tmp';
-export const WORKING_DIR = `project`;
-export const SANDBOX_DIR = `storybook-sandboxes`;
+import { ROOT_DIR } from './constants';
 
 export const workspace = {
   attach: (at = ROOT_DIR) => {

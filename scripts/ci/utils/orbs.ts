@@ -1,3 +1,4 @@
+/** @see https://circleci.com/developer/orbs */
 export const orbs = {
   'browser-tools': 'circleci/browser-tools@2.3.2',
   codecov: 'codecov/codecov@5.4.3',

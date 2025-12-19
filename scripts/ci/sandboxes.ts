@@ -1,11 +1,9 @@
 import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates';
+import { ROOT_DIR, SANDBOX_DIR, WORKING_DIR } from './utils/constants';
 import {
   CACHE_KEYS,
-  ROOT_DIR,
-  SANDBOX_DIR,
-  WORKING_DIR,
   artifact,
   cache,
   restore,
@@ -123,12 +121,12 @@ function defineSandboxJob_dev({
   );
 }
 
-export function defineSandboxFlow<K extends string>(name: K) {
-  const id = toId(name);
-  const data = sandboxTemplates.allTemplates[name as keyof typeof sandboxTemplates.allTemplates];
-  const { skipTasks = [] } = data;
+export function defineSandboxFlow<Key extends string>(key: Key) {
+  const id = toId(key);
+  const data = sandboxTemplates.allTemplates[key as keyof typeof sandboxTemplates.allTemplates];
+  const { skipTasks = [], name } = data;
 
-  const path = name.replace('/', '-');
+  const path = key.replace('/', '-');
 
   const names = {
     create: `${name} (create)`,
@@ -137,16 +135,16 @@ export function defineSandboxFlow<K extends string>(name: K) {
     e2e: `${name} (e2e)`,
     chromatic: `${name} (chromatic)`,
     vitest: `${name} (vitest)`,
-    ['test-runner']: `${name} (test-runner)`,
+    testRunner: `${name} (test-runner)`,
   };
   const ids = {
-    create: `${toId(names.create)}`,
-    build: `${toId(names.build)}`,
-    dev: `${toId(names.dev)}`,
-    e2e: `${toId(names.e2e)}`,
-    chromatic: `${toId(names.chromatic)}`,
-    vitest: `${toId(names.vitest)}`,
-    ['test-runner']: `${toId(names['test-runner'])}`,
+    create: `${id}-create`,
+    build: `${id}-build`,
+    dev: `${id}-dev`,
+    e2e: `${id}-e2e`,
+    chromatic: `${id}-chromatic`,
+    vitest: `${id}-vitest`,
+    testRunner: `${id}-test-runner`,
   };
 
   const jobs = [
@@ -183,7 +181,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
           {
             run: {
               name: 'Create Sandboxes',
-              command: `yarn task sandbox --template ${name} --no-link -s sandbox --debug`,
+              command: `yarn task sandbox --template ${key} --no-link -s sandbox --debug`,
               environment: {
                 STORYBOOK_TELEMETRY_DEBUG: 1,
                 STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
@@ -210,13 +208,13 @@ export function defineSandboxFlow<K extends string>(name: K) {
     defineSandboxJob_build({
       directory: id,
       name: names.build,
-      template: name,
+      template: key,
       needs: [ids.create],
     }),
     defineSandboxJob_dev({
       name: names.dev,
       directory: id,
-      template: name,
+      template: key,
       needs: [ids.create],
       options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
     }),
@@ -242,7 +240,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
               {
                 run: {
                   name: 'Running Chromatic',
-                  command: `yarn task chromatic --template ${name} --no-link -s chromatic`,
+                  command: `yarn task chromatic --template ${key} --no-link -s chromatic`,
                   environment: {
                     STORYBOOK_SANDBOX_ROOT: `./sandbox`,
                   },
@@ -266,7 +264,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
               {
                 run: {
                   name: 'Running Vitest',
-                  command: `yarn task vitest-integration --template ${name} --no-link -s vitest-integration`,
+                  command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration`,
                 },
               },
             ],
@@ -289,7 +287,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
                 run: {
                   name: 'Serve storybook',
                   background: true,
-                  command: `yarn task serve --template ${name} --no-link -s serve`,
+                  command: `yarn task serve --template ${key} --no-link -s serve`,
                 },
               },
               server.wait(['8001']),
@@ -298,7 +296,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
                   name: 'Running E2E Tests',
                   command: [
                     `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${name} --no-link -s e2e-tests" --verbose --index=0 --total=1`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests" --verbose --index=0 --total=1`,
                   ].join('\n'),
                 },
               },
@@ -319,7 +317,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
      */
     !skipTasks?.includes('test-runner') && skipTasks.includes('chromatic')
       ? defineJob(
-          names['test-runner'],
+          names.testRunner,
           {
             executor: {
               name: 'sb_playwright',
@@ -332,7 +330,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
               {
                 run: {
                   name: 'Running test-runner',
-                  command: `yarn task test-runner --template ${name} --no-link -s test-runner`,
+                  command: `yarn task test-runner --template ${key} --no-link -s test-runner`,
                 },
               },
             ],
@@ -342,7 +340,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
       : undefined,
   ].filter(Boolean);
   return {
-    name,
+    name: key,
     path,
     jobs,
   };

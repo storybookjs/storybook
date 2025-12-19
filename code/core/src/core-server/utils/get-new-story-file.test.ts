@@ -10,7 +10,6 @@ import type { Options } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
 
-import { generateMockPropsFromDocgen } from './get-mocked-props-for-args';
 import { getNewStoryFile } from './get-new-story-file';
 
 vi.mock('storybook/internal/common', { spy: true });
@@ -18,7 +17,6 @@ vi.mock('storybook/internal/csf-tools', { spy: true });
 vi.mock('node:fs', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('empathic/walk', { spy: true });
-vi.mock('./get-mocked-props-for-args', { spy: true });
 
 describe('get-new-story-file', () => {
   beforeEach(() => {
@@ -28,8 +26,6 @@ describe('get-new-story-file', () => {
       undefined as unknown as ReturnType<typeof findConfigFile>
     );
     vi.mocked(existsSync).mockReturnValue(false);
-    // Ensure each test starts without auto-generated required args.
-    vi.mocked(generateMockPropsFromDocgen).mockReturnValue({ required: {}, optional: {} });
   });
 
   it('should create a new story file (TypeScript)', async () => {
@@ -146,13 +142,6 @@ describe('get-new-story-file', () => {
   });
 
   it('replaces __function__ placeholder via AST and adds fn import', async () => {
-    vi.mocked(generateMockPropsFromDocgen).mockReturnValue({
-      required: {
-        onClick: '__function__',
-      },
-      optional: {},
-    });
-
     const { storyFileContent } = await getNewStoryFile(
       {
         componentFilePath: 'src/components/Page.tsx',
@@ -166,8 +155,10 @@ describe('get-new-story-file', () => {
             if (val === 'framework') {
               return Promise.resolve('@storybook/nextjs');
             }
-            if (val === 'getDocgenData') {
-              return Promise.resolve(null);
+            if (val === 'getArgTypesData') {
+              return Promise.resolve({
+                onClick: { name: 'onClick', type: { name: 'function', required: true } },
+              });
             }
           },
         },
@@ -182,15 +173,6 @@ describe('get-new-story-file', () => {
   it('should create a new story file (CSF factory)', async () => {
     const configDir = join(__dirname, '.storybook');
     const previewConfigPath = join(configDir, 'preview.ts');
-
-    vi.mocked(generateMockPropsFromDocgen).mockReturnValue({
-      required: {
-        label: 'Hello',
-        answer: 42,
-        onClick: '__function__',
-      },
-      optional: {},
-    });
 
     vi.mocked(findConfigFile).mockReturnValue(
       previewConfigPath as unknown as ReturnType<typeof findConfigFile>
@@ -225,6 +207,13 @@ describe('get-new-story-file', () => {
             if (val === 'framework') {
               return Promise.resolve('@storybook/nextjs');
             }
+            if (val === 'getArgTypesData') {
+              return Promise.resolve({
+                label: { name: 'label', type: { name: 'string', required: true } },
+                answer: { name: 'answer', type: { name: 'number', required: true } },
+                onClick: { name: 'onClick', type: { name: 'function', required: true } },
+              });
+            }
           },
         },
       } as unknown as Options
@@ -243,7 +232,7 @@ describe('get-new-story-file', () => {
 
       export const Default = meta.story({
         args: {
-          label: 'Hello',
+          label: 'label',
           answer: 42,
           onClick: fn(),
         },

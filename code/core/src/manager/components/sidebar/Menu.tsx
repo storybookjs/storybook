@@ -94,14 +94,25 @@ const SidebarMenuList: FC<{
           {links.map((link) => (
             <ActionList.Item key={link.id} active={link.active}>
               <ActionList.Action
-                {...(link.href && { as: 'a', href: link.href, target: '_blank' })}
+                {...(link.href && {
+                  as: 'a',
+                  href: link.href,
+                  target: link.internal ? undefined : '_blank',
+                  rel: link.internal ? 'canonical' : undefined,
+                })}
                 ariaLabel={false}
                 id={`list-item-${link.id}`}
                 disabled={link.disabled}
                 onClick={(e) => {
+                  // Prevent interaction with disabled links
                   if (link.disabled) {
                     e.preventDefault();
                     return;
+                  }
+                  // Prevent browser navigation for internal links, where we'll use our
+                  // router API instead, but want to show an `href` for UX/SEO purposes.
+                  if (link.href && link.internal) {
+                    e.preventDefault();
                   }
                   link.onClick?.(e, {
                     id: link.id,

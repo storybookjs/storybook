@@ -23,6 +23,7 @@ import { useChecklist } from '../components/sidebar/useChecklist';
 
 export type MenuItem = NormalLink & {
   closeOnClick?: boolean;
+  internal?: boolean;
 };
 
 const Key = styled.span(({ theme }) => ({
@@ -82,6 +83,8 @@ export const useMenu = ({
       id: 'about',
       title: 'About your Storybook',
       onClick: () => api.changeSettingsTab('about'),
+      href: './?path=/settings/about',
+      internal: true,
       closeOnClick: true,
       icon: <InfoIcon />,
     }),
@@ -93,6 +96,8 @@ export const useMenu = ({
       id: 'guide',
       title: 'Onboarding guide',
       onClick: () => api.changeSettingsTab('guide'),
+      href: './?path=/settings/guide',
+      internal: true,
       closeOnClick: true,
       icon: <ListUnorderedIcon />,
       right: progress < 100 && (
@@ -110,6 +115,8 @@ export const useMenu = ({
       id: 'shortcuts',
       title: 'Keyboard shortcuts',
       onClick: () => api.changeSettingsTab('shortcuts'),
+      href: './?path=/settings/shortcuts',
+      internal: true,
       closeOnClick: true,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.shortcutsPage} /> : null,
       icon: <CommandIcon />,
@@ -159,6 +166,8 @@ export const useMenu = ({
       id: 'up',
       title: 'Previous component',
       onClick: () => api.jumpToComponent(-1),
+      href: api.getSiblingComponentHref(-1) || undefined,
+      internal: true,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.prevComponent} /> : null,
       icon: <></>,
     }),
@@ -170,6 +179,8 @@ export const useMenu = ({
       id: 'down',
       title: 'Next component',
       onClick: () => api.jumpToComponent(1),
+      href: api.getSiblingComponentHref(1) || undefined,
+      internal: true,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.nextComponent} /> : null,
       icon: <></>,
     }),
@@ -181,6 +192,8 @@ export const useMenu = ({
       id: 'prev',
       title: 'Previous story',
       onClick: () => api.jumpToStory(-1),
+      href: api.getSiblingStoryHref(-1) || undefined,
+      internal: true,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.prevStory} /> : null,
       icon: <></>,
     }),
@@ -192,6 +205,8 @@ export const useMenu = ({
       id: 'next',
       title: 'Next story',
       onClick: () => api.jumpToStory(1),
+      href: api.getSiblingStoryHref(1) || undefined,
+      internal: true,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.nextStory} /> : null,
       icon: <></>,
     }),

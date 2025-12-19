@@ -47,7 +47,15 @@ import { useContextMenu } from './ContextMenu';
 import { IconSymbols, UseSymbol } from './IconSymbols';
 import { StatusButton } from './StatusButton';
 import { StatusContext } from './StatusContext';
-import { ComponentNode, DocumentNode, GroupNode, RootNode, StoryNode, TestNode } from './TreeNode';
+import {
+  ComponentNode,
+  DocumentNode,
+  GroupNode,
+  RootNode,
+  StoryBranchNode,
+  StoryLeafNode,
+  TestNode,
+} from './TreeNode';
 import { CollapseIcon } from './components/CollapseIcon';
 import type { Highlight, Item } from './types';
 import type { ExpandAction, ExpandedState } from './useExpanded';
@@ -254,7 +262,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
       (!('subtype' in item) || item.subtype !== 'test')) ||
     item.type === 'docs'
   ) {
-    const LeafNode = item.type === 'docs' ? DocumentNode : StoryNode;
+    const LeafNode = item.type === 'docs' ? DocumentNode : StoryLeafNode;
 
     const statusValue = getMostCriticalStatusValue(
       Object.values(statuses || {}).map((s) => s.value)
@@ -378,7 +386,9 @@ const Node = React.memo<NodeProps>(function Node(props) {
     (item.type === 'story' && 'children' in item && item.children)
   ) {
     const { children = [] } = item;
-    const BranchNode = { component: ComponentNode, group: GroupNode, story: StoryNode }[item.type];
+    const BranchNode = { component: ComponentNode, group: GroupNode, story: StoryBranchNode }[
+      item.type
+    ];
     const status = getMostCriticalStatusValue([itemStatus, groupStatus?.[item.id]]);
     const color = status ? getStatus(theme, status)[1] : null;
     const showBranchStatus = status === 'status-value:error' || status === 'status-value:warning';
@@ -457,7 +467,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
   }
 
   const isTest = item.type === 'story' && item.subtype === 'test';
-  const LeafNode = isTest ? TestNode : { docs: DocumentNode, story: StoryNode }[item.type];
+  const LeafNode = isTest ? TestNode : { docs: DocumentNode, story: StoryLeafNode }[item.type];
   const nodeType = isTest ? 'test' : { docs: 'document', story: 'story' }[item.type];
 
   return (

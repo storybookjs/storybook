@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 import React, { useEffect } from 'react';
 
+import Events from 'storybook/internal/core-events';
 import type { Addon_PageType } from 'storybook/internal/types';
 
 import { addons } from 'storybook/manager-api';
@@ -23,10 +24,41 @@ type Props = {
 export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }: Props) => {
   const { setMobileAboutOpen } = useLayout();
 
+  /**
+   * Lets us tell the UI whether or not keyboard shortcuts are enabled, in places where it's not
+   * convenient to load the addons singleton to figure it out.
+   */
   const { enableShortcuts = true } = addons.getConfig();
   useEffect(() => {
     document.body.setAttribute('data-shortcuts-enabled', enableShortcuts ? 'true' : 'false');
   }, [enableShortcuts]);
+
+  /**
+   * Detects when our component library has enabled a focus trap. By convention, react-aria sets the
+   * document root to `inert` when a focus trap is enabled. We observe that attribute and inform the
+   * preview iframe when to respect the focus trap, via a channel event. This is necessary because
+   * inert is no longer propagated into iframes as per https://github.com/whatwg/html/issues/7605,
+   * and the replacement permission policy is not yet widely available
+   * (https://github.com/w3c/webappsec-permissions-policy/issues/273).
+   */
+  useEffect(() => {
+    const rootElement = document.getElementById('root');
+    if (!rootElement) {
+      return;
+    }
+
+    const observer = new MutationObserver(() => {
+      const hasInert = rootElement.hasAttribute('inert');
+      addons.getChannel().emit(Events.MANAGER_INERT_ATTRIBUTE_CHANGED, hasInert);
+    });
+
+    observer.observe(rootElement, {
+      attributes: true,
+      attributeFilter: ['inert'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <>

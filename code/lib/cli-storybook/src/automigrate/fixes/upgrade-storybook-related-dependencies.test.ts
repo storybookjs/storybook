@@ -32,6 +32,7 @@ const check = async ({
     mainConfig: mainConfig as any,
     storybookVersion,
     storiesPaths: [],
+    hasCsfFactoryPreview: false,
   });
 };
 

@@ -19,6 +19,7 @@ import {
   npm,
   restore,
   server,
+  testResults,
   verdaccio,
   workspace,
 } from './utils/helpers';
@@ -173,12 +174,6 @@ const uiTests = defineJob(
           working_directory: 'code',
         },
       },
-      'report-workflow-on-failure',
-      {
-        store_test_results: {
-          path: `test-results`,
-        },
-      },
     ],
   },
   [linux_build.id]
@@ -237,8 +232,6 @@ const lint = defineJob(
           command: 'yarn lint',
         },
       },
-      'report-workflow-on-failure',
-      'cancel-workflow-on-failure',
     ],
   },
   [linux_build.id]
@@ -279,14 +272,38 @@ const linux_unitTests = defineJob(
           name: 'Run tests',
           working_directory: `code`,
           command:
-            'TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")\necho "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose',
+            'TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")\necho "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose',
         },
       },
+      testResults.persist(`test-results`),
+
+      git.check(),
+      'report-workflow-on-failure',
+      'cancel-workflow-on-failure',
+    ],
+  },
+  [linux_build.id]
+);
+
+const linux_storiesTests = defineJob(
+  'stories-tests-linux',
+  {
+    executor: {
+      name: 'sb_playwright',
+      class: 'xlarge',
+    },
+    steps: [
+      ...restore.linux(),
       {
-        store_test_results: {
-          path: `${WORKING_DIR}/test-results`,
+        run: {
+          name: 'Run stories tests',
+          working_directory: `code`,
+          command:
+            'TEST_FILES=$(circleci tests glob "**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")\necho "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose',
         },
       },
+      testResults.persist(`test-results`),
+
       git.check(),
       'report-workflow-on-failure',
       'cancel-workflow-on-failure',
@@ -362,11 +379,14 @@ export default function generateConfig(workflow: Workflow) {
 
     todos.push(
       linux_build,
+      linux_unitTests,
+      linux_storiesTests,
+
       lint,
       check,
       knip,
+
       uiTests,
-      linux_unitTests,
       packageBenchmarks,
 
       sandboxesHub,

@@ -222,3 +222,13 @@ export const CACHE_PATHS = [
   'code/node_modules',
   'scripts/node_modules',
 ];
+
+export const testResults = {
+  persist: (path: string) => {
+    return {
+      store_test_results: {
+        path,
+      },
+    };
+  },
+};

@@ -53,11 +53,13 @@ function defineSandboxJob_build({
 }
 function defineSandboxJob_dev({
   name,
+  directory,
   template,
   needs,
   options,
 }: {
   name: string;
+  directory: string;
   needs: string[];
   template: string;
   options: {
@@ -100,6 +102,10 @@ function defineSandboxJob_dev({
                   ].join('\n'),
                 },
               },
+              artifact.persist(
+                join(ROOT_DIR, SANDBOX_DIR, directory, 'test-results'),
+                'test-results'
+              ),
             ]
           : [
               {
@@ -201,6 +207,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
     }),
     defineSandboxJob_dev({
       name: names.dev,
+      directory: id,
       template: name,
       needs: [ids.create],
       options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
@@ -287,6 +294,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
                   ].join('\n'),
                 },
               },
+              artifact.persist(join(ROOT_DIR, SANDBOX_DIR, id, 'test-results'), 'test-results'),
             ],
           },
           [ids.build]

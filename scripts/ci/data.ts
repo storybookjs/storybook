@@ -363,7 +363,7 @@ const packageBenchmarks = defineJob(
       },
     ],
   },
-  [linux_build.id]
+  [codeHub.id]
 );
 
 export default function generateConfig(workflow: Workflow) {

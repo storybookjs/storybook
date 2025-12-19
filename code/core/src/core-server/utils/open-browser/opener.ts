@@ -19,38 +19,58 @@ import { StorybookError } from '../../../storybook-error';
 // https://github.com/sindresorhus/open#app
 const OSX_CHROME = 'google chrome';
 
-const Actions = Object.freeze({
-  NONE: 0,
-  BROWSER: 1,
-  SCRIPT: 2,
-  SHELL_SCRIPT: 3,
-});
+enum Actions {
+  NONE = 0,
+  BROWSER = 1,
+  SCRIPT = 2,
+  SHELL_SCRIPT = 3,
+}
 
-function getBrowserEnv() {
+function getBrowserEnv():
+  | {
+      action: Actions.SCRIPT | Actions.SHELL_SCRIPT;
+      value: string;
+      args: string[];
+    }
+  | {
+      action: Actions.BROWSER;
+      value?: string;
+      args: string[];
+    }
+  | {
+      action: Actions.NONE;
+      value?: undefined;
+      args?: undefined;
+    } {
   // Attempt to honor this environment variable.
   // It is specific to the operating system.
   // See https://github.com/sindresorhus/open#app for documentation.
   const value = process.env.BROWSER;
   const args = process.env.BROWSER_ARGS ? process.env.BROWSER_ARGS.split(' ') : [];
-  let action;
+
+  // Default.
   if (!value) {
-    // Default.
-    action = Actions.BROWSER;
-  } else if (value.toLowerCase() === 'none') {
-    action = Actions.NONE;
-  } else if (
+    return { action: Actions.BROWSER, args };
+  }
+
+  if (value.toLowerCase() === 'none') {
+    return { action: Actions.NONE };
+  }
+
+  if (
     value.toLowerCase().endsWith('.js') ||
     value.toLowerCase().endsWith('.mjs') ||
     value.toLowerCase().endsWith('.cjs') ||
     value.toLowerCase().endsWith('.ts')
   ) {
-    action = Actions.SCRIPT;
-  } else if (value.toLowerCase().endsWith('.sh')) {
-    action = Actions.SHELL_SCRIPT;
-  } else {
-    action = Actions.BROWSER;
+    return { action: Actions.SCRIPT, value, args };
   }
-  return { action, value, args };
+
+  if (value.toLowerCase().endsWith('.sh')) {
+    return { action: Actions.SHELL_SCRIPT, value, args };
+  }
+
+  return { action: Actions.BROWSER, value, args };
 }
 
 class BrowserEnvError extends StorybookError {
@@ -189,6 +209,7 @@ function startBrowserProcess(
  */
 export function openBrowser(url: string) {
   const { action, value, args } = getBrowserEnv();
+  // Returns win32 on PowerShell and Linux on WSL. Matches conditions when `sh` can be invoked.
   const canRunShell = process.platform !== 'win32';
   const browserTarget = value as unknown as App | readonly App[] | undefined;
 
@@ -198,19 +219,15 @@ export function openBrowser(url: string) {
       return false;
     }
     case Actions.SCRIPT: {
-      if (!value) {
-        throw new BrowserEnvError('BROWSER environment variable is not set.');
-      }
       return executeNodeScript(value, url);
     }
     case Actions.SHELL_SCRIPT: {
-      if (!value) {
-        throw new BrowserEnvError('BROWSER environment variable is not set.');
-      }
       if (canRunShell) {
         return executeShellScript(value, url);
       }
-      return startBrowserProcess(browserTarget, url, args);
+      throw new BrowserEnvError(
+        'Shell scripts are not supported on Windows PowerShell. Use WSL instead.'
+      );
     }
     case Actions.BROWSER: {
       return startBrowserProcess(browserTarget, url, args);

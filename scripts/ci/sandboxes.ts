@@ -195,7 +195,7 @@ export function defineSandboxFlow<K extends string>(name: K) {
                 {
                   run: {
                     name: 'Run prepare',
-                    working_directory: `${SANDBOX_DIR}/${id}`,
+                    working_directory: `${WORKING_DIR}/${SANDBOX_DIR}/${id}`,
                     command: `yarn prepare`,
                   },
                 },

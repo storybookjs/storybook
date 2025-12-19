@@ -1,5 +1,5 @@
 // eslint-disable-next-line depend/ban-dependencies
-import { type ResultPromise, type Options, execa } from 'execa';
+import { type Options, type ResultPromise, execa } from 'execa';
 import picocolors from 'picocolors';
 
 const logger = console;

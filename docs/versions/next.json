@@ -1,1 +1,1 @@
-{"version":"10.2.0-alpha.8","info":{"plain":"- React: Fix several CSF factory bugs  - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!"}}
+{"version":"10.2.0-alpha.9","info":{"plain":"- Core and Vite: Use story index as source of truth for Vite paths - [#30612](https://github.com/storybookjs/storybook/pull/30612), thanks @JReinhold!"}}

@@ -1,3 +1,24 @@
+## 10.1.10
+
+- Core: Fix `.env`-file parsing - [#33383](https://github.com/storybookjs/storybook/pull/33383), thanks @JReinhold!
+- Next.js: Handle v14 compatibility for draftMode import - [#33341](https://github.com/storybookjs/storybook/pull/33341), thanks @tanujbhaud!
+
+## 10.1.9
+
+- Telemetry: Remove instance of check for sub-error handling - [#33356](https://github.com/storybookjs/storybook/pull/33356), thanks @valentinpalkovic!
+
+## 10.1.8
+
+- React-Vite: Update @joshwooding/vite-plugin-react-docgen-typescript - [#33349](https://github.com/storybookjs/storybook/pull/33349), thanks @valentinpalkovic!
+
+## 10.1.7
+
+- Automigrate: Fix missing await - [#33333](https://github.com/storybookjs/storybook/pull/33333), thanks @valentinpalkovic!
+- CLI: Remove REACT_PROJECT projectType - [#33334](https://github.com/storybookjs/storybook/pull/33334), thanks @valentinpalkovic!
+- Core: Exclude open from pre-bundling to make local xdg-open reachable - [#33325](https://github.com/storybookjs/storybook/pull/33325), thanks @Sidnioulz!
+- Nextjs-Vite: Install `vite` during migration if not installed yet - [#33316](https://github.com/storybookjs/storybook/pull/33316), thanks @ghengeveld!
+- Telemetry: Fix race condition in telemetry cache causing malformed JSON - [#33323](https://github.com/storybookjs/storybook/pull/33323), thanks @valentinpalkovic!
+
 ## 10.1.6
 
 - Manager: Do not display non-existing shortcuts in the settings page - [#32711](https://github.com/storybookjs/storybook/pull/32711), thanks @DKER2!
@@ -275,6 +296,10 @@ It also includes features to level up your UI development, documentation, and te
 - Vite: Optimize @storybook/addon-docs/blocks dependency - [#32798](https://github.com/storybookjs/storybook/pull/32798), thanks @mrginglymus!
 
 </details>
+
+## 9.1.17
+
+- Core: Fix .env-file parsing, thanks @jreinhold!
 
 ## 9.1.16
 
@@ -820,6 +845,10 @@ Total contributions: 240
 Unique contributors: 29
 
 </details>
+
+## 8.6.15
+
+- Core: Fix .env-file parsing, thanks @jreinhold!
 
 ## 8.6.14
 
@@ -1797,6 +1826,10 @@ It brings major improvements to Storybook's feature set for testing and document
 - 🙅‍♀️ No more React requirement in non-React projects
 
 Please checkout our [Migration Guide](https://storybook.js.org/docs/8.0/migration-guide) to upgrade from earlier versions of Storybook. To see a comprehensive list of changes that went into 8.0, you can refer to the [8.0 prerelease changelogs](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.prerelease.md).
+
+## 7.6.21
+
+- Core: Fix .env-file parsing, thanks @jreinhold!
 
 ## 7.6.17
 

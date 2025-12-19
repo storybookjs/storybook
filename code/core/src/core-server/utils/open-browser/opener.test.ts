@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import spawn from 'cross-spawn';
 import open from 'open';
 
-import { openBrowser } from './opener';
+import { BrowserEnvError, openBrowser } from './opener';
 
 vi.mock('open', { spy: true });
 vi.mock('cross-spawn', { spy: true });
@@ -77,14 +77,7 @@ describe('openBrowser BROWSER script handling', () => {
     process.env.BROWSER = '/tmp/customBrowser.sh';
     platformSpy.mockReturnValue('win32');
 
-    openBrowser('http://localhost:6006/');
-
-    expect(vi.mocked(spawn)).not.toHaveBeenCalled();
-    expect(vi.mocked(open)).toHaveBeenCalledWith('http://localhost:6006/', {
-      app: '/tmp/customBrowser.sh',
-      wait: false,
-      url: true,
-    });
+    expect(() => openBrowser('http://localhost:6006/')).toThrow(BrowserEnvError);
   });
 
   it('executes a shell script on Linux when BROWSER is a shell script', () => {
@@ -94,7 +87,7 @@ describe('openBrowser BROWSER script handling', () => {
     openBrowser('http://localhost:6006/');
 
     expect(vi.mocked(spawn)).toHaveBeenCalledWith(
-      '/bin/sh',
+      'sh',
       ['/tmp/findAHandler.sh', 'http://localhost:6006/'],
       { stdio: 'inherit' }
     );

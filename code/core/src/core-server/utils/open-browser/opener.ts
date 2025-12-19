@@ -73,7 +73,7 @@ function getBrowserEnv():
   return { action: Actions.BROWSER, value, args };
 }
 
-class BrowserEnvError extends StorybookError {
+export class BrowserEnvError extends StorybookError {
   constructor(message: string) {
     super({
       category: 'CORE_SERVER',

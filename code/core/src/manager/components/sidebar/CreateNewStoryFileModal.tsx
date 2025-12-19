@@ -158,8 +158,8 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
 
         await trySelectNewStory(api.selectStory, storyId);
 
-        // For react, we handle args generation through docgen instead
-        if (globalThis.STORYBOOK_RENDERER !== 'react') {
+        // Some renderers already handle args generation through docgen, otherwise we generate through artgypes
+        if (!createNewStoryResult.alreadyContainsArgs) {
           try {
             const argTypesInfoResult = await experimental_requestResponse<
               ArgTypesRequestPayload,

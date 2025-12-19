@@ -60,7 +60,7 @@ export async function getNewStoryFile(
     // TODO: improve this later on, for now while CSF factories are experimental, just fallback to CSF3
   }
 
-  let args: Record<string, unknown> | undefined;
+  let args: Record<string, unknown> | undefined = undefined;
 
   try {
     const docgenData = (await options.presets.apply('getDocgenData', null, {
@@ -132,7 +132,13 @@ export async function getNewStoryFile(
 
   const formattedStoryFileContent = await formatFileContent(storyFilePath, storyFileContent);
 
-  return { storyFilePath, exportedStoryName, storyFileContent: formattedStoryFileContent, dirname };
+  return {
+    storyFilePath,
+    exportedStoryName,
+    storyFileContent: formattedStoryFileContent,
+    dirname,
+    alreadyContainsArgs: !!args,
+  };
 }
 
 export const getStoryMetadata = (componentFilePath: string) => {

@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { relative } from 'node:path';
 
-import { formatFileContent, getStoryId } from 'storybook/internal/common';
+import { getStoryId } from 'storybook/internal/common';
 import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
 import type { Options } from 'storybook/internal/types';
 
@@ -14,6 +14,7 @@ export interface GenerateStoryResult {
   kind?: string;
   storyFilePath?: string;
   exportedStoryName?: string;
+  alreadyContainsArgs?: boolean;
   error?: string;
   errorType?: 'STORY_FILE_EXISTS' | 'UNKNOWN';
 }
@@ -69,10 +70,8 @@ export async function generateStoryFile(
   const { checkFileExists = true } = generateOptions;
 
   try {
-    const { storyFilePath, exportedStoryName, storyFileContent } = await getNewStoryFile(
-      payload,
-      options
-    );
+    const { storyFilePath, exportedStoryName, storyFileContent, alreadyContainsArgs } =
+      await getNewStoryFile(payload, options);
 
     const relativeStoryFilePath = relative(process.cwd(), storyFilePath);
 
@@ -96,6 +95,7 @@ export async function generateStoryFile(
       kind,
       storyFilePath: relativeStoryFilePath,
       exportedStoryName,
+      alreadyContainsArgs,
     };
   } catch (e: any) {
     return {

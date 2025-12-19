@@ -1,3 +1,9 @@
+import fs from 'node:fs/promises';
+import { join } from 'node:path';
+
+import { program } from 'commander';
+import yml from 'yaml';
+
 import {
   benchmarkPackages,
   build_linux,
@@ -22,9 +28,9 @@ import { parameters } from './utils/parameters';
 import type { defineHub, defineJob } from './utils/types';
 import { type JobImplementation, type Workflow, isWorkflowOrAbove } from './utils/types';
 
-export const dirname = import.meta.dirname;
+const dirname = import.meta.dirname;
 
-export default function generateConfig(workflow: Workflow) {
+function generateConfig(workflow: Workflow) {
   const todos: (ReturnType<typeof defineJob> | ReturnType<typeof defineHub>)[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {
     todos.push(prettyDocs);
@@ -97,3 +103,19 @@ export default function generateConfig(workflow: Workflow) {
     },
   };
 }
+
+console.log('Generating CircleCI config...');
+console.log('--------------------------------');
+
+program
+  .description('Generate CircleCI config')
+  .requiredOption('-w, --workflow <string>', 'Workflow to generate config for')
+  .parse(process.argv);
+
+await fs.writeFile(
+  join(dirname, '../../.circleci/config.generated.yml'),
+  yml.stringify(generateConfig(program.opts().workflow), null, {
+    lineWidth: 1200,
+    indent: 4,
+  })
+);

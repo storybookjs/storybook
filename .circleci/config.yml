@@ -44,7 +44,7 @@ jobs:
       - run:
           name: Generate config
           command: |
-            yarn dlx jiti ./scripts/ci/generate.js --workflow=<< pipeline.parameters.workflow >>
+            yarn dlx jiti ./scripts/ci/main.ts --workflow=<< pipeline.parameters.workflow >>
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
 workflows:

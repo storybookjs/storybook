@@ -250,7 +250,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     }, []);
 
     const lastStoryId = useRef<string>(undefined);
-    const lastRenderId = useRef<number>(0);
+    const latestRenderId = useRef<number>(0);
     const emit = useChannel(
       {
         [EVENTS.CALL]: setCall,
@@ -273,17 +273,18 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
             return;
           }
 
-          // Update lastRenderId. When we switch stories, this value might decrease if our
-          // users have mocked Date.now() via addons or manually in their code, so we must
-          // reset lastRenderId.
+          // Update lastRenderId and lastStoryId. When we switch stories, lastRenderId's
+          // value might decrease if our users have mocked Date.now() via addons or
+          // manually in their code, so we must reset it.
           if (lastStoryId.current === event.storyId) {
-            lastRenderId.current = Math.max(lastRenderId.current, event.renderId || 0);
+            latestRenderId.current = Math.max(latestRenderId.current, event.renderId || 0);
           } else {
-            lastRenderId.current = event.renderId || 0;
+            latestRenderId.current = event.renderId || 0;
+            lastStoryId.current = event.storyId;
           }
 
-          lastStoryId.current = event.storyId;
-          if (lastRenderId.current !== event.renderId) {
+          // Bail out if concurrent renders are ongoing for the same story (only keep the latest one).
+          if (latestRenderId.current !== event.renderId) {
             return;
           }
 

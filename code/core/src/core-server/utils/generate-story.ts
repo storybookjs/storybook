@@ -88,8 +88,7 @@ export async function generateStoryFile(
       };
     }
 
-    const formattedContent = await formatFileContent(storyFilePath, storyFileContent);
-    await writeFile(storyFilePath, formattedContent, 'utf-8');
+    await writeFile(storyFilePath, storyFileContent, 'utf-8');
 
     return {
       success: true,

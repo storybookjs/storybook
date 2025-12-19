@@ -158,29 +158,32 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
 
         await trySelectNewStory(api.selectStory, storyId);
 
-        try {
-          const argTypesInfoResult = await experimental_requestResponse<
-            ArgTypesRequestPayload,
-            ArgTypesResponsePayload
-          >(channel, ARGTYPES_INFO_REQUEST, ARGTYPES_INFO_RESPONSE, {
-            storyId,
-          });
+        // For react, we handle args generation through docgen instead
+        if (globalThis.STORYBOOK_RENDERER !== 'react') {
+          try {
+            const argTypesInfoResult = await experimental_requestResponse<
+              ArgTypesRequestPayload,
+              ArgTypesResponsePayload
+            >(channel, ARGTYPES_INFO_REQUEST, ARGTYPES_INFO_RESPONSE, {
+              storyId,
+            });
 
-          const argTypes = argTypesInfoResult.argTypes;
+            const argTypes = argTypesInfoResult.argTypes;
 
-          const requiredArgs = extractSeededRequiredArgs(argTypes);
+            const requiredArgs = extractSeededRequiredArgs(argTypes);
 
-          await experimental_requestResponse<SaveStoryRequestPayload, SaveStoryResponsePayload>(
-            channel,
-            SAVE_STORY_REQUEST,
-            SAVE_STORY_RESPONSE,
-            {
-              args: stringifyArgs(requiredArgs),
-              importPath: createNewStoryResult.storyFilePath,
-              csfId: storyId,
-            }
-          );
-        } catch (e) {}
+            await experimental_requestResponse<SaveStoryRequestPayload, SaveStoryResponsePayload>(
+              channel,
+              SAVE_STORY_REQUEST,
+              SAVE_STORY_RESPONSE,
+              {
+                args: stringifyArgs(requiredArgs),
+                importPath: createNewStoryResult.storyFilePath,
+                csfId: storyId,
+              }
+            );
+          } catch (e) {}
+        }
 
         handleSuccessfullyCreatedStory(componentExportName);
         handleFileSearch();

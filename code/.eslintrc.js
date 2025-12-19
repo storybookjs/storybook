@@ -34,11 +34,6 @@ module.exports = {
       {
         paths: [
           {
-            name: 'vite',
-            message: 'Please dynamically import from vite instead, to force the use of ESM',
-            allowTypeImports: true,
-          },
-          {
             name: 'react-aria',
             message:
               "Don't import from react-aria directly, please use the specific submodule like @react-aria/overlays instead",

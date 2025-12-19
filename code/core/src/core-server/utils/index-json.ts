@@ -2,7 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
-import type { NormalizedStoriesSpecifier, StoryIndex } from 'storybook/internal/types';
+import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
 import { debounce } from 'es-toolkit/function';
 import type { Polka } from 'polka';
@@ -14,26 +14,25 @@ import { watchConfig } from './watchConfig';
 
 export const DEBOUNCE = 100;
 
-export async function extractStoriesJson(
+export async function writeIndexJson(
   outputFile: string,
-  initializedStoryIndexGenerator: Promise<StoryIndexGenerator>,
-  transform?: (index: StoryIndex) => any
+  initializedStoryIndexGenerator: Promise<StoryIndexGenerator>
 ) {
   const generator = await initializedStoryIndexGenerator;
   const storyIndex = await generator.getIndex();
-  await writeFile(outputFile, JSON.stringify(transform ? transform(storyIndex) : storyIndex));
+  await writeFile(outputFile, JSON.stringify(storyIndex));
 }
 
-export function useStoriesJson({
+export function registerIndexJsonRoute({
   app,
-  initializedStoryIndexGenerator,
+  storyIndexGeneratorPromise,
   workingDir = process.cwd(),
   configDir,
   serverChannel,
   normalizedStories,
 }: {
   app: Polka;
-  initializedStoryIndexGenerator: Promise<StoryIndexGenerator>;
+  storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
   serverChannel: ServerChannel;
   workingDir?: string;
   configDir?: string;
@@ -42,16 +41,14 @@ export function useStoriesJson({
   const maybeInvalidate = debounce(() => serverChannel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
     edges: ['leading', 'trailing'],
   });
-  watchStorySpecifiers(normalizedStories, { workingDir }, async (specifier, path, removed) => {
-    const generator = await initializedStoryIndexGenerator;
-    generator.invalidate(specifier, path, removed);
+  watchStorySpecifiers(normalizedStories, { workingDir }, async (path, removed) => {
+    (await storyIndexGeneratorPromise).invalidate(path, removed);
     maybeInvalidate();
   });
   if (configDir) {
     watchConfig(configDir, async (filePath) => {
       if (basename(filePath).startsWith('preview')) {
-        const generator = await initializedStoryIndexGenerator;
-        generator.invalidateAll();
+        (await storyIndexGeneratorPromise).invalidateAll();
         maybeInvalidate();
       }
     });
@@ -59,8 +56,7 @@ export function useStoriesJson({
 
   app.use('/index.json', async (req, res) => {
     try {
-      const generator = await initializedStoryIndexGenerator;
-      const index = await generator.getIndex();
+      const index = await (await storyIndexGeneratorPromise).getIndex();
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify(index));
     } catch (err) {

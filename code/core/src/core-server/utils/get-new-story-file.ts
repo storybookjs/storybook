@@ -63,7 +63,7 @@ export async function getNewStoryFile(
   let args: Record<string, unknown> | undefined = undefined;
 
   try {
-    const argTypes = (await options.presets.apply('getArgTypesData', null, {
+    const argTypes = (await options.presets.apply('experimental_getArgTypesData', null, {
       ...options,
       componentFilePath,
       componentExportName,

@@ -71,7 +71,7 @@ export const resolvedReact = async (existing: any) => {
   }
 };
 
-export async function getArgTypesData(
+export async function experimental_getArgTypesData(
   _input: unknown,
   options: GetArgTypesDataOptions
 ): Promise<ArgTypes | null> {

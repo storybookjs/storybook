@@ -155,7 +155,7 @@ describe('get-new-story-file', () => {
             if (val === 'framework') {
               return Promise.resolve('@storybook/nextjs');
             }
-            if (val === 'getArgTypesData') {
+            if (val === 'experimental_getArgTypesData') {
               return Promise.resolve({
                 onClick: { name: 'onClick', type: { name: 'function', required: true } },
               });
@@ -207,7 +207,7 @@ describe('get-new-story-file', () => {
             if (val === 'framework') {
               return Promise.resolve('@storybook/nextjs');
             }
-            if (val === 'getArgTypesData') {
+            if (val === 'experimental_getArgTypesData') {
               return Promise.resolve({
                 label: { name: 'label', type: { name: 'string', required: true } },
                 answer: { name: 'answer', type: { name: 'number', required: true } },

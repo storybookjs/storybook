@@ -1,0 +1,276 @@
+---
+title: 'Globals'
+sidebar:
+  order: 5
+  title: Globals
+---
+
+Globals are dynamic, user-controlled values that persist across stories in Storybook. Unlike [parameters](./parameters.mdx), which are static metadata, globals can be changed interactively through the Storybook UI (typically via toolbar menus) and affect how stories are rendered.
+
+## Globals vs Parameters
+
+While both globals and parameters are used to configure Storybook, they serve different purposes:
+
+| Feature | Globals | Parameters |
+|---------|---------|------------|
+| **Mutability** | Dynamic, can be changed by users | Static, defined at build time |
+| **Scope** | Storybook-wide, persist across navigation | Story-specific, can be overridden per story |
+| **Use case** | User preferences (themes, locales, viewports) | Configuration metadata (addon settings, layout) |
+| **Access** | Via `context.globals` or `useGlobals()` hook | Via `context.parameters` or `useParameter()` hook |
+| **Definition** | `globalTypes` in preview config | `parameters` in preview, meta, or story |
+
+<Callout variant="info">
+  Use **globals** when you want users to interactively control values that affect story rendering (e.g., switching themes). Use **parameters** for static configuration that doesn't change during a session (e.g., addon settings).
+</Callout>
+
+## Defining globals
+
+Globals are defined using `globalTypes` in your `.storybook/preview.js|ts` file. Each global must have a unique key and can optionally include a toolbar configuration to make it interactive.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="preview-globaltypes-definition.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+  As globals are *global*, you can *only* define `globalTypes` and `initialGlobals` in [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering). They cannot be defined at the story or component level.
+</Callout>
+
+### Global type configuration
+
+Each global type can include the following properties:
+
+#### `description`
+
+Type: `string`
+
+A description of what this global controls. Used for documentation and accessibility.
+
+#### `toolbar`
+
+Type: `object`
+
+Configuration for displaying this global in the Storybook toolbar. If omitted, the global will not appear in the toolbar but can still be accessed programmatically.
+
+##### `toolbar.title`
+
+Type: `string`
+
+The label displayed in the toolbar menu.
+
+##### `toolbar.icon`
+
+Type: `string`
+
+An icon identifier from `@storybook/icons` to display in the toolbar. See the [available icons](../faq.mdx#what-icons-are-available-for-my-toolbar-or-my-addon) for options.
+
+##### `toolbar.items`
+
+Type: `string[] | MenuItem[]`
+
+An array of values that can be selected. Can be plain strings or `MenuItem` objects with additional configuration:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="globals-toolbar-menuitem-type.md" />
+
+{/* prettier-ignore-end */}
+
+##### `toolbar.dynamicTitle`
+
+Type: `boolean`
+
+Default: `false`
+
+When `true`, the toolbar button title changes to reflect the currently selected value.
+
+### Initial globals
+
+You can set default values for globals using `initialGlobals`:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="preview-initial-globals.md" />
+
+{/* prettier-ignore-end */}
+
+## Reading globals in Preview
+
+In the preview context (decorators, render functions, stories), you can access globals via the `context` object or using the `useGlobals` hook from `@storybook/preview-api`.
+
+### Using context.globals
+
+The simplest way to access globals is through the `context` parameter passed to render functions and decorators:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="my-component-story-use-globaltype.md" />
+
+{/* prettier-ignore-end */}
+
+### Using useGlobals hook
+
+For more complex scenarios, such as in decorators that need to react to global changes, use the `useGlobals` hook:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-use-global.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="warning">
+  The `useGlobals` hook from `@storybook/preview-api` can only be used within React components (e.g., decorators). It cannot be used directly in story render functions or non-React contexts.
+</Callout>
+
+## Reading and updating globals in Manager
+
+In the manager context (addons, panels, toolbars), use `useGlobals` from `@storybook/manager-api` to both read and update globals.
+
+### Reading globals
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="addon-consume-globaltype.md" />
+
+{/* prettier-ignore-end */}
+
+### Updating globals
+
+The `useGlobals` hook returns a tuple where the second element is an `updateGlobals` function:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="addon-consume-and-update-globaltype.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+  When updating globals from the manager, the preview will automatically re-render affected stories. If you need to force a re-render explicitly, you can emit the `FORCE_RE_RENDER` event via the addons channel.
+</Callout>
+
+## Working with globals in MDX
+
+MDX files have some limitations when working with globals due to their rendering context.
+
+### Limitations
+
+1. **Hooks are not always available**: The `useGlobals` hook from `@storybook/preview-api` cannot be used directly in MDX files because MDX renders in a React context that doesn't have access to the preview API.
+
+2. **Context access**: You cannot directly access `context.globals` in MDX files since they don't receive a context parameter.
+
+3. **Reactive updates**: MDX files don't automatically re-render when globals change, unlike stories.
+
+### Recommended patterns
+
+#### Pattern 1: Use Doc Blocks
+
+The recommended approach is to use Storybook's Doc Blocks, which handle globals automatically:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="globals-in-mdx-with-doc-blocks.md" />
+
+{/* prettier-ignore-end */}
+
+#### Pattern 2: Create a wrapper component
+
+If you need direct access to globals in MDX, create a React component that uses the hook and import it:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="globals-in-mdx-with-wrapper.md" />
+
+{/* prettier-ignore-end */}
+
+#### Pattern 3: Reference stories that use globals
+
+Instead of accessing globals directly in MDX, reference stories that already consume globals:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="globals-in-mdx-via-stories.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="warning">
+  Avoid trying to use `useGlobals` directly in MDX files. It will not work and may cause runtime errors. Always use one of the recommended patterns above.
+</Callout>
+
+## Setting globals on stories
+
+While globals are typically controlled via the toolbar, you can override them for specific stories using the `globals` property:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="addon-backgrounds-define-globals.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+  When you set `globals` on a story or component, the toolbar control for that global will be disabled for those stories, preventing users from changing the value interactively. Use this sparingly, as it reduces the explorability of your Storybook.
+</Callout>
+
+## Common pitfalls
+
+### Pitfall 1: Defining globalTypes in stories
+
+**Problem**: Trying to define `globalTypes` in a story file or component meta.
+
+**Solution**: `globalTypes` can only be defined in `.storybook/preview.js|ts`. If you need story-specific behavior, use the `globals` property on the story instead.
+
+### Pitfall 2: Using manager-api hooks in preview
+
+**Problem**: Importing `useGlobals` from `@storybook/manager-api` in preview code (decorators, stories).
+
+**Solution**: Use `useGlobals` from `@storybook/preview-api` in preview code, and `@storybook/manager-api` only in manager code (addons).
+
+### Pitfall 3: Expecting globals to update MDX
+
+**Problem**: Expecting MDX documentation to automatically update when globals change.
+
+**Solution**: MDX files don't reactively update. Use Doc Blocks or reference stories that consume globals instead.
+
+### Pitfall 4: Mutating globals directly
+
+**Problem**: Trying to mutate the globals object directly instead of using `updateGlobals`.
+
+**Solution**: Always use the `updateGlobals` function returned by `useGlobals`. Direct mutation won't trigger re-renders.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="globals-mutation-example.md" />
+
+{/* prettier-ignore-end */}
+
+## Best practices
+
+1. **Use globals for user preferences**: Globals are ideal for values that users should control, such as themes, locales, or viewport sizes.
+
+2. **Use parameters for configuration**: Use parameters for static configuration that doesn't change during a session, such as addon settings or layout preferences.
+
+3. **Define globalTypes once**: Define all `globalTypes` in your preview configuration file. Don't scatter them across multiple files.
+
+4. **Provide sensible defaults**: Always set `initialGlobals` to provide a good default experience.
+
+5. **Document your globals**: Use the `description` property to document what each global controls.
+
+6. **Use decorators for global effects**: When globals need to affect rendering (e.g., applying themes), use decorators rather than accessing globals in every story.
+
+7. **Avoid story-level globals**: Use story-level `globals` sparingly. Prefer letting users control globals via the toolbar for better explorability.
+
+8. **Type your globals**: In TypeScript projects, consider creating a type for your globals to ensure type safety:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="globals-typescript-typing.md" />
+
+{/* prettier-ignore-end */}
+
+## Related APIs
+
+- [Parameters](./parameters.mdx) - Static metadata for stories and addons
+- [Args](../writing-stories/args.mdx) - Dynamic story inputs
+- [Decorators](../writing-stories/decorators.mdx) - Wrapper functions for stories
+- [Toolbars & Globals](../essentials/toolbars-and-globals.mdx) - User guide for working with globals
+

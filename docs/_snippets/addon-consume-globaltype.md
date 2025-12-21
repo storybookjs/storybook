@@ -1,7 +1,7 @@
 ```js filename="your-addon-register-file.js" renderer="common" language="js"
 import React from 'react';
 
-import { useGlobals } from 'storybook/manager-api';
+import { useGlobals } from '@storybook/manager-api';
 
 import {
   AddonPanel,

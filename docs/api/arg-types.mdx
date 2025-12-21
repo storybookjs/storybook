@@ -75,7 +75,7 @@ Type:
       defaultValue?: { summary: string; detail?: string };
       disable?: boolean;
       subcategory?: string;
-      type?: { summary?: string; detail?: string };
+      type?: { summary?: string | undefined; detail?: string | undefined};
     },
     type?: SBType | SBScalarType['name'];
   }

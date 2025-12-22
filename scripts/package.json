@@ -102,7 +102,7 @@
     "ejs": "^3.1.10",
     "ejs-lint": "^2.0.1",
     "empathic": "^2.0.0",
-    "es-toolkit": "^1.42.0",
+    "es-toolkit": "^1.43.0",
     "esbuild": "^0.27.0",
     "eslint": "^8.57.1",
     "eslint-config-airbnb-typescript": "^18.0.0",

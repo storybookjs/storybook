@@ -7667,7 +7667,7 @@ __metadata:
     "@types/color-convert": "npm:^2.0.0"
     "@types/react": "npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
     color-convert: "npm:^2.0.1"
-    es-toolkit: "npm:^1.42.0"
+    es-toolkit: "npm:^1.43.0"
     github-slugger: "npm:^2.0.0"
     markdown-to-jsx: "npm:^7.7.2"
     memoizerific: "npm:^1.11.3"
@@ -7744,7 +7744,7 @@ __metadata:
     "@vitest/browser-playwright": "npm:^4.0.14"
     "@vitest/runner": "npm:^4.0.14"
     empathic: "npm:^2.0.0"
-    es-toolkit: "npm:^1.42.0"
+    es-toolkit: "npm:^1.43.0"
     istanbul-lib-report: "npm:^3.0.1"
     micromatch: "npm:^4.0.8"
     pathe: "npm:^1.1.2"
@@ -7975,7 +7975,8 @@ __metadata:
     chromatic: "npm:^13.3.4"
     create-storybook: "workspace:*"
     cross-env: "npm:^7.0.3"
-    es-toolkit: "npm:^1.42.0"
+    danger: "npm:^13.0.4"
+    es-toolkit: "npm:^1.43.0"
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0"
     esbuild-loader: "npm:^4.3.0"
     eslint: "npm:^8.57.1"
@@ -8028,7 +8029,7 @@ __metadata:
     "@types/jscodeshift": "npm:^0.11.10"
     ansi-regex: "npm:^6.0.1"
     cross-spawn: "npm:^7.0.6"
-    es-toolkit: "npm:^1.42.0"
+    es-toolkit: "npm:^1.43.0"
     jscodeshift: "npm:^0.15.1"
     prettier: "npm:^3.7.1"
     storybook: "workspace:*"
@@ -8434,7 +8435,7 @@ __metadata:
     babel-plugin-react-docgen: "npm:^4.2.1"
     comment-parser: "npm:^1.4.1"
     empathic: "npm:^2.0.0"
-    es-toolkit: "npm:^1.42.0"
+    es-toolkit: "npm:^1.43.0"
     escodegen: "npm:^2.1.0"
     expect-type: "npm:^0.15.0"
     html-tags: "npm:^3.1.0"
@@ -8520,7 +8521,7 @@ __metadata:
     ejs: "npm:^3.1.10"
     ejs-lint: "npm:^2.0.1"
     empathic: "npm:^2.0.0"
-    es-toolkit: "npm:^1.42.0"
+    es-toolkit: "npm:^1.43.0"
     esbuild: "npm:^0.27.0"
     eslint: "npm:^8.57.1"
     eslint-config-airbnb-typescript: "npm:^18.0.0"
@@ -14419,7 +14420,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"danger@npm:^13.0.5":
+"danger@npm:^13.0.4, danger@npm:^13.0.5":
   version: 13.0.5
   resolution: "danger@npm:13.0.5"
   dependencies:
@@ -15908,15 +15909,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-toolkit@npm:^1.42.0":
-  version: 1.42.0
-  resolution: "es-toolkit@npm:1.42.0"
+"es-toolkit@npm:^1.43.0":
+  version: 1.43.0
+  resolution: "es-toolkit@npm:1.43.0"
   dependenciesMeta:
     "@trivago/prettier-plugin-sort-imports@4.3.0":
       unplugged: true
     prettier-plugin-sort-re-exports@0.0.1:
       unplugged: true
-  checksum: 10c0/ee577b23336296116be423a5d01a6af827c80a10971507ae26cdb146b60ce0a930bf7bdb719ac0dc4f962ec74542a2423b934e24eb47efe1bc911862b12da109
+  checksum: 10c0/bbff0b591fd01be9f37a34dad7964b590e4952fc594c1230140771687f05136caa6ab21962a6e9cde7c4b529a149171ed5179d6379d4a8e656dbf7e8d126999c
   languageName: node
   linkType: hard
 
@@ -28509,7 +28510,7 @@ __metadata:
     downshift: "npm:^9.0.4"
     ejs: "npm:^3.1.10"
     empathic: "npm:^2.0.0"
-    es-toolkit: "npm:^1.42.0"
+    es-toolkit: "npm:^1.43.0"
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0"
     execa: "npm:^9.6.0"
     exsolve: "npm:^1.0.7"

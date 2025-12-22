@@ -1,4 +1,4 @@
-import { cp, mkdir, writeFile } from 'node:fs/promises';
+import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
 
 import {
@@ -18,12 +18,12 @@ import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../shared/utils/module';
-import { renderManifestComponentsPage } from './manifest';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
 import { getBuilders } from './utils/get-builders';
 import { writeIndexJson } from './utils/index-json';
+import { writeManifests } from './utils/manifests/manifests';
 import { extractStorybookMetadata } from './utils/metadata';
 import { outputStats } from './utils/output-stats';
 import { summarizeIndex } from './utils/summarizeIndex';
@@ -147,29 +147,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     );
 
     if (features?.experimentalComponentsManifest) {
-      const componentManifestGenerator = await presets.apply(
-        'experimental_componentManifestGenerator'
-      );
-      const indexGenerator = await storyIndexGeneratorPromise;
-      if (componentManifestGenerator && indexGenerator) {
-        try {
-          const manifests = await componentManifestGenerator(
-            indexGenerator as unknown as import('storybook/internal/core-server').StoryIndexGenerator
-          );
-          await mkdir(join(options.outputDir, 'manifests'), { recursive: true });
-          await writeFile(
-            join(options.outputDir, 'manifests', 'components.json'),
-            JSON.stringify(manifests)
-          );
-          await writeFile(
-            join(options.outputDir, 'manifests', 'components.html'),
-            renderManifestComponentsPage(manifests)
-          );
-        } catch (e) {
-          logger.error('Failed to generate manifests/components.json');
-          logger.error(e instanceof Error ? e : String(e));
-        }
-      }
+      effects.push(writeManifests(options.outputDir, presets));
     }
   }
 

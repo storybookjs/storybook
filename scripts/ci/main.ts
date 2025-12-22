@@ -95,7 +95,7 @@ function generateConfig(workflow: Workflow) {
       {} as Record<string, JobImplementation | { type: 'no-op' }>
     ),
     workflows: {
-      generated: {
+      [workflow]: {
         jobs: sorted.map((t) =>
           t.requires && t.requires.length > 0 ? { [t.id]: { requires: t.requires } } : t.id
         ),

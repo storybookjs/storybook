@@ -193,7 +193,7 @@ jobs:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench)
     build:
         executor:
-            class: large
+            class: xlarge
             name: sb_node_22_classic
         steps:
             - git-shallow-clone/checkout_advanced:

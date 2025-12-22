@@ -9,11 +9,13 @@ export type ComponentArgTypesData = {
   props?: Record<string, ComponentArgTypesInfo>;
 };
 
+export const STORYBOOK_FN_PLACEHOLDER = '[[STORYBOOK_FN_PLACEHOLDER]]';
+
 /**
- * Generate mock props using ArgTypes instead of ComponentArgTypesData This provides more accurate
- * mock generation by leveraging ArgTypes structure
+ * Generate dummy props using ArgTypes instead of ComponentArgTypesData This provides more accurate
+ * dummy generation by leveraging ArgTypes structure
  */
-export function generateMockPropsFromArgTypes(argTypes: ArgTypes) {
+export function generateDummyPropsFromArgTypes(argTypes: ArgTypes) {
   const required: Record<string, unknown> = {};
   const optional: Record<string, unknown> = {};
 
@@ -21,24 +23,24 @@ export function generateMockPropsFromArgTypes(argTypes: ArgTypes) {
     // Determine if prop is required
     const isRequired = argType.type && typeof argType.type === 'object' && argType.type.required;
 
-    // Generate mock value directly from SBType
-    let mockValue: unknown;
+    // Generate dummy value directly from SBType
+    let dummyValue: unknown;
     if (typeof argType.type === 'string') {
       // Handle scalar type strings - convert to SBType
       const sbType: SBType = { name: argType.type };
-      mockValue = generateMockValueFromSBType(sbType, propName);
+      dummyValue = generateDummyValueFromSBType(sbType, propName);
     } else if (argType.type && typeof argType.type === 'object') {
       // Handle SBType objects directly
-      mockValue = generateMockValueFromSBType(argType.type, propName);
+      dummyValue = generateDummyValueFromSBType(argType.type, propName);
     } else {
       // Fallback as we don't know what the type is
-      mockValue = undefined;
+      dummyValue = undefined;
     }
 
     if (isRequired) {
-      required[propName] = mockValue;
+      required[propName] = dummyValue;
     } else {
-      optional[propName] = mockValue;
+      optional[propName] = dummyValue;
     }
   }
 
@@ -137,7 +139,7 @@ function normalizeStringLiteral(value: unknown) {
   return value;
 }
 
-export function generateMockValueFromSBType(sbType: SBType, propName?: string): unknown {
+export function generateDummyValueFromSBType(sbType: SBType, propName?: string): unknown {
   switch (sbType.name) {
     case 'boolean':
       return true;
@@ -170,9 +172,10 @@ export function generateMockValueFromSBType(sbType: SBType, propName?: string): 
 
         case 'phone':
           return '1234567890';
-      }
 
-      return name || 'Hello world';
+        default:
+          return name ?? 'Hello world';
+      }
     }
 
     case 'date':
@@ -182,7 +185,7 @@ export function generateMockValueFromSBType(sbType: SBType, propName?: string): 
       return propName ?? 'Hello world';
 
     case 'function':
-      return '__function__';
+      return STORYBOOK_FN_PLACEHOLDER;
 
     case 'literal':
       return normalizeStringLiteral(sbType.value);
@@ -191,7 +194,7 @@ export function generateMockValueFromSBType(sbType: SBType, propName?: string): 
       const result: Record<string, unknown> = {};
 
       for (const [key, valueType] of Object.entries(sbType.value)) {
-        result[key] = generateMockValueFromSBType(valueType, key);
+        result[key] = generateDummyValueFromSBType(valueType, key);
       }
 
       return result;
@@ -208,7 +211,7 @@ export function generateMockValueFromSBType(sbType: SBType, propName?: string): 
         return normalizeStringLiteral(literalType.value);
       }
 
-      return generateMockValueFromSBType(sbType.value[0], propName);
+      return generateDummyValueFromSBType(sbType.value[0], propName);
     }
 
     case 'array': {
@@ -216,16 +219,16 @@ export function generateMockValueFromSBType(sbType: SBType, propName?: string): 
       if (sbType.value.name === 'other') {
         return [];
       }
-      return [generateMockValueFromSBType(sbType.value, propName)];
+      return [generateDummyValueFromSBType(sbType.value, propName)];
     }
 
     case 'tuple':
-      return sbType.value.map((el) => generateMockValueFromSBType(el));
+      return sbType.value.map((el) => generateDummyValueFromSBType(el));
 
     case 'enum':
       return sbType.value[0] ?? propName;
 
-    case 'intersection':
+    case 'intersection': {
       // For intersections, combine all object types
       const objectTypes = sbType.value.filter((t) => t.name === 'object');
       if (objectTypes.length > 0) {
@@ -233,18 +236,19 @@ export function generateMockValueFromSBType(sbType: SBType, propName?: string): 
         objectTypes.forEach((objType) => {
           if (objType.name === 'object') {
             Object.entries(objType.value).forEach(([key, type]) => {
-              result[key] = generateMockValueFromSBType(type, key);
+              result[key] = generateDummyValueFromSBType(type, key);
             });
           }
         });
         return result;
       }
       return {};
+    }
 
     case 'other': {
       const value = sbType.value;
       if (value?.startsWith('React') || value?.includes('Event') || value?.includes('Element')) {
-        return '__function__';
+        return STORYBOOK_FN_PLACEHOLDER;
       }
 
       if (value === 'null') {
@@ -260,7 +264,7 @@ export function generateMockValueFromSBType(sbType: SBType, propName?: string): 
   }
 }
 
-export function generateMockPropsFromDocgen(argTypesData: ComponentArgTypesData | null) {
+export function generateDummyPropsFromDocgen(argTypesData: ComponentArgTypesData | null) {
   const required: Record<string, unknown> = {};
   const optional: Record<string, unknown> = {};
 
@@ -269,12 +273,12 @@ export function generateMockPropsFromDocgen(argTypesData: ComponentArgTypesData 
   }
 
   for (const [propName, propInfo] of Object.entries(argTypesData.props)) {
-    const mockValue = generateMockValueFromSBType(propInfo.type, propName);
+    const dummyValue = generateDummyValueFromSBType(propInfo.type, propName);
 
     if (propInfo.required) {
-      required[propName] = mockValue;
+      required[propName] = dummyValue;
     } else {
-      optional[propName] = mockValue;
+      optional[propName] = dummyValue;
     }
   }
 

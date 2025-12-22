@@ -19,7 +19,10 @@ import * as walk from 'empathic/walk';
 
 import type { ArgTypes } from '../../csf';
 import { loadConfig, printConfig } from '../../csf-tools';
-import { generateMockPropsFromArgTypes } from './get-mocked-props-for-args';
+import {
+  STORYBOOK_FN_PLACEHOLDER,
+  generateDummyPropsFromArgTypes,
+} from './get-dummy-props-for-args';
 import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
 import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
 import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
@@ -71,7 +74,7 @@ export async function getNewStoryFile(
     logger.debug(`Extracted argTypes for ${componentExportName}: ${JSON.stringify(argTypes)}`);
 
     if (argTypes) {
-      const { required } = generateMockPropsFromArgTypes(argTypes);
+      const { required } = generateDummyPropsFromArgTypes(argTypes);
       if (Object.keys(required).length > 0) {
         args = required;
         logger.debug(
@@ -140,7 +143,7 @@ export async function getNewStoryFile(
     storyFilePath,
     exportedStoryName,
     storyFileContent: formattedStoryFileContent,
-    dirname,
+    dirname: dir,
     alreadyContainsArgs: !!args,
   };
 }
@@ -192,7 +195,7 @@ async function checkForImportsMap(configDir: string): Promise<boolean> {
  */
 function replaceArgsPlaceholders(storyFileContent: string) {
   // Avoid parsing unless we actually have placeholders to replace.
-  if (!storyFileContent.includes('__function__')) {
+  if (!storyFileContent.includes(STORYBOOK_FN_PLACEHOLDER)) {
     return storyFileContent;
   }
 
@@ -202,7 +205,7 @@ function replaceArgsPlaceholders(storyFileContent: string) {
 
   traverse(storyFile._ast, {
     StringLiteral(path) {
-      if (path.node.value === '__function__') {
+      if (path.node.value === STORYBOOK_FN_PLACEHOLDER) {
         needsFnImport = true;
         path.replaceWith(t.callExpression(t.identifier('fn'), []));
       }

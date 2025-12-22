@@ -11,7 +11,7 @@ export { mapStaticDir } from './utils/server-statics';
 export { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 export { generateStoryFile } from './utils/generate-story';
 export type { GenerateStoryResult, GenerateStoryOptions } from './utils/generate-story';
-export type { ComponentArgTypesData } from './utils/get-mocked-props-for-args';
+export type { ComponentArgTypesData } from './utils/get-dummy-props-for-args';
 
 export { loadStorybook as experimental_loadStorybook } from './load';
 

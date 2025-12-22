@@ -317,9 +317,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               class: 'medium',
             },
             steps: [
-              'checkout',
-              workspace.attach(),
-              cache.attach(CACHE_KEYS()),
+              ...restore.linux(),
               {
                 run: {
                   name: 'Running test-runner',

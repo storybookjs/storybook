@@ -1,5 +1,5 @@
 import { build_linux } from './code';
-import { CACHE_KEYS, cache, git, restore, server, verdaccio, workspace } from './utils/helpers';
+import { restore, server, verdaccio } from './utils/helpers';
 import { type Workflow, defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
 
 export const defineEmptyInitFlow = (template: string) =>
@@ -53,9 +53,7 @@ export function defineEmptyInitFeatures() {
         class: 'medium',
       },
       steps: [
-        git.checkout(),
-        workspace.attach(),
-        cache.attach(CACHE_KEYS()),
+        ...restore.linux(),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {

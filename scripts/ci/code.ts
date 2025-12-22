@@ -63,6 +63,7 @@ export const build_linux = defineJob('Build (linux)', {
     ]),
   ],
 });
+
 export const prettyDocs = defineJob('Prettify docs', {
   executor: {
     name: 'sb_node_22_classic',
@@ -80,6 +81,7 @@ export const prettyDocs = defineJob('Prettify docs', {
     },
   ],
 });
+
 export const build_windows = defineJob('Build (windows)', {
   executor: {
     name: 'win/default',
@@ -122,7 +124,9 @@ export const build_windows = defineJob('Build (windows)', {
     ),
   ],
 });
+
 export const codeHub = defineHub('code', [build_linux.id]);
+
 export const storybookChromatic = defineJob(
   'Local storybook & chromatic',
   {
@@ -150,6 +154,7 @@ export const storybookChromatic = defineJob(
   },
   [codeHub.id]
 );
+
 export const check = defineJob(
   'TypeScript validation',
   {
@@ -179,6 +184,7 @@ export const check = defineJob(
   },
   [codeHub.id]
 );
+
 export const lint = defineJob(
   'EsLint & Prettier validation',
   {
@@ -206,6 +212,7 @@ export const lint = defineJob(
   },
   [codeHub.id]
 );
+
 export const knip = defineJob(
   'Knip validation',
   {
@@ -226,6 +233,7 @@ export const knip = defineJob(
   },
   [codeHub.id]
 );
+
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
   {
@@ -252,6 +260,7 @@ export const testsUnit_linux = defineJob(
   },
   [codeHub.id]
 );
+
 export const testsStories_linux = defineJob(
   'Tests stories (linux)',
   {
@@ -278,6 +287,7 @@ export const testsStories_linux = defineJob(
   },
   [codeHub.id]
 );
+
 export const testUnit_windows = defineJob(
   'Tests unit (windows)',
   {
@@ -305,6 +315,7 @@ export const testUnit_windows = defineJob(
   },
   [build_windows.id]
 );
+
 export const benchmarkPackages = defineJob(
   'Benchmark packages',
   {

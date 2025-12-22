@@ -17,6 +17,16 @@ export type JobImplementation = {
   parallelism?: number;
 };
 
+/**
+ * This function ensures the jobs adhere to the expected interface and that the job's ID is valid.
+ * (i.e. no special characters, no spaces, etc.) Thus the ID can be referenced by other jobs in the
+ * `requires` field.
+ *
+ * @param name - The name of the job
+ * @param implementation - The implementation of the job
+ * @param requires - The jobs that this job depends on
+ * @returns The job's id, name, implementation, requires
+ */
 export function defineJob<K extends string, I extends JobImplementation>(
   name: K,
   implementation: I,
@@ -36,6 +46,9 @@ export function defineJob<K extends string, I extends JobImplementation>(
 /**
  * A hub is a special type of job that is used to group other jobs together. It cannot contain any
  * steps/implementation.
+ *
+ * @param name - The name of the hub
+ * @param requires - The jobs that this hub depends on
  */
 export function defineHub(name: string, requires = [] as string[]) {
   return {

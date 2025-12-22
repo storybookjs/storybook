@@ -375,11 +375,7 @@ export interface ComponentsManifest {
 
 type ManifestName = string;
 
-export type Manifests = { components?: ComponentsManifest } & Record<
-  ManifestName,
-  // TODO: type this so it can only be JSON-serializable data
-  any
->;
+export type Manifests = { components?: ComponentsManifest } & Record<ManifestName, unknown>;
 
 export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
 

@@ -93,7 +93,7 @@
     "@types/color-convert": "^2.0.0",
     "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "color-convert": "^2.0.1",
-    "es-toolkit": "^1.36.0",
+    "es-toolkit": "^1.43.0",
     "github-slugger": "^2.0.0",
     "markdown-to-jsx": "^7.7.2",
     "memoizerific": "^1.11.3",

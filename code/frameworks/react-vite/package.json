@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-vite",
-  "version": "10.2.0-alpha.1",
+  "version": "10.2.0-alpha.9",
   "description": "Storybook for React and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -49,7 +49,7 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@joshwooding/vite-plugin-react-docgen-typescript": "0.6.1",
+    "@joshwooding/vite-plugin-react-docgen-typescript": "^0.6.3",
     "@rollup/pluginutils": "^5.0.2",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",

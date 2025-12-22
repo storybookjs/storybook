@@ -300,6 +300,10 @@ jobs:
             - attach_workspace:
                 at: /tmp
             - run:
+                command: yarn storybook:ui:build
+                name: Build Storybook
+                working_directory: code
+            - run:
                 command: yarn storybook:ui:chromatic
                 name: Running Chromatic
                 working_directory: code

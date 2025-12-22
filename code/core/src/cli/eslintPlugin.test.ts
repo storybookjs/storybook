@@ -479,6 +479,51 @@ describe('configureEslintPlugin', () => {
       `);
     });
 
+    it('should configure ESLint plugin correctly with direct export default defineConfig', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`import { defineConfig, globalIgnores } from "eslint/config";
+        import nextVitals from "eslint-config-next/core-web-vitals";
+        import nextTs from "eslint-config-next/typescript";
+
+        export default defineConfig([
+          ...nextVitals,
+          ...nextTs,
+          globalIgnores([
+            ".next/**",
+            "out/**",
+            "build/**",
+            "next-env.d.ts",
+          ]),
+        ]);`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.mjs',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from "eslint-plugin-storybook";
+
+        import { defineConfig, globalIgnores } from "eslint/config";
+        import nextVitals from "eslint-config-next/core-web-vitals";
+        import nextTs from "eslint-config-next/typescript";
+
+        export default defineConfig([...nextVitals, ...nextTs, globalIgnores([
+          ".next/**",
+          "out/**",
+          "build/**",
+          "next-env.d.ts",
+        ]), ...storybook.configs["flat/recommended"]]);"
+      `);
+    });
+
     it('should just add an import if config uses defineConfig from non-eslint/config source', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),

@@ -11,9 +11,6 @@
     "storybook": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" storybook dev -p 6006",
     "vitest": "SKIP_FAIL_ON_PURPOSE=true vitest run"
   },
-  "nx": {
-    "includedScripts": []
-  },
   "resolutions": {
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
@@ -21,16 +18,14 @@
     "@storybook/addon-jest": "file:../../../code/addons/jest",
     "@storybook/addon-links": "file:../../../code/addons/links",
     "@storybook/addon-themes": "file:../../../code/addons/themes",
+    "@storybook/addon-vitest": "file:../../../code/addons/vitest",
     "@storybook/angular": "file:../../../code/frameworks/angular",
     "@storybook/builder-vite": "file:../../../code/builders/builder-vite",
     "@storybook/builder-webpack5": "file:../../../code/builders/builder-webpack5",
     "@storybook/codemod": "file:../../../code/lib/codemod",
-    "eslint-plugin-storybook": "file:../../../code/lib/eslint-plugin",
-    "storybook": "portal:../../../code/core",
     "@storybook/core-webpack": "portal:../../../code/lib/core-webpack",
     "@storybook/csf-plugin": "portal:../../../code/lib/csf-plugin",
     "@storybook/ember": "portal:../../../code/frameworks/ember",
-    "@storybook/addon-vitest": "file:../../../code/addons/vitest",
     "@storybook/html": "file:../../../code/renderers/html",
     "@storybook/nextjs": "file:../../../code/frameworks/nextjs",
     "@storybook/preact": "file:../../../code/renderers/preact",
@@ -51,7 +46,9 @@
     "@storybook/vue3-vite": "file:../../../code/frameworks/vue3-vite",
     "@storybook/web-components": "file:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
-    "playwright": "1.52.0"
+    "eslint-plugin-storybook": "file:../../../code/lib/eslint-plugin",
+    "playwright": "1.52.0",
+    "storybook": "portal:../../../code/core"
   },
   "dependencies": {
     "react": "^18.0.0",
@@ -83,5 +80,8 @@
     "typescript": "^5.8.3",
     "vite": "^5.1.1",
     "vitest": "^3.2.4"
+  },
+  "nx": {
+    "includedScripts": []
   }
 }

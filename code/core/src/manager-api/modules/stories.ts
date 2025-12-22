@@ -371,7 +371,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       return undefined;
     }
 
-    const hash = story.refId ? refs[story.refId].filteredIndex : filteredIndex;
+    const hash = refId ? refs[refId].filteredIndex : filteredIndex;
 
     if (!hash) {
       return undefined;
@@ -475,9 +475,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return null;
       }
 
-      const { filteredIndex, refs, refId, storyId } = store.getState();
-      const story = api.getData(storyId, refId);
-      const hash = story.refId ? refs[story.refId].filteredIndex : filteredIndex;
+      const { filteredIndex, refs, refId } = store.getState();
+      const hash = refId ? refs[refId].filteredIndex : filteredIndex;
       const entry = hash?.[result];
       if (!entry || (entry.type !== 'docs' && entry.type !== 'story')) {
         return null;

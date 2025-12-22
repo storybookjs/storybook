@@ -219,3 +219,4 @@ const optimizeViteDeps = [
 ];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };
+export { experimental_manifests } from './manifest';

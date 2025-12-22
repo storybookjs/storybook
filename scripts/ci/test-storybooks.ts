@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path/posix';
 
+import { build_linux } from './code';
 import { CACHE_KEYS, artifact, cache, git, restore, workspace } from './utils/helpers';
 import { type Workflow, defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
 
@@ -109,6 +110,7 @@ export function definePortableStoryTestPNP() {
     [testStorybooksHub.id]
   );
 }
+
 export function definePortableStoryTestVitest3() {
   return defineJob(
     'test-storybooks-portable-vitest3',
@@ -141,7 +143,9 @@ export function definePortableStoryTestVitest3() {
     [testStorybooksHub.id]
   );
 }
-export const testStorybooksHub = defineHub('test-storybooks', ['build-linux']);
+
+export const testStorybooksHub = defineHub('test-storybooks', [build_linux.id]);
+
 export function getTestStorybooks(workflow: Workflow) {
   const testStorybooks = ['react', 'vue3'].map(definePortableStoryTest);
 

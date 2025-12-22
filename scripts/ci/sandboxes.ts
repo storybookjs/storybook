@@ -1,6 +1,7 @@
 import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates';
+import { build_linux } from './code';
 import { ROOT_DIR, SANDBOX_DIR, WORKING_DIR } from './utils/constants';
 import {
   CACHE_KEYS,
@@ -469,7 +470,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
   );
 }
 
-export const sandboxesHub = defineHub('sandboxes', ['build-linux']);
+export const sandboxesHub = defineHub('sandboxes', [build_linux.id]);
 
 const getListOfSandboxes = (workflow: Workflow) => {
   switch (workflow) {

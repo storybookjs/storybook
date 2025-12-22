@@ -1,3 +1,4 @@
+import { build_linux } from './code';
 import { CACHE_KEYS, cache, git, restore, server, verdaccio, workspace } from './utils/helpers';
 import { type Workflow, defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
 
@@ -130,7 +131,7 @@ export function defineEmptyInitWindows() {
   );
 }
 
-export const initEmptyHub = defineHub('init-empty', ['build-linux']);
+export const initEmptyHub = defineHub('init-empty', [build_linux.id]);
 
 export function getInitEmpty(workflow: Workflow) {
   const initEmpty = ['react-vite-ts'].map(defineEmptyInitFlow);

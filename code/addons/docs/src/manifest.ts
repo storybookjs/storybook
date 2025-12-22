@@ -24,9 +24,8 @@ interface MdxManifest {
 }
 
 /**
- * Generates a manifest of MDX documentation files.
- * This extends the existing manifest system to include MDX files with the
- * 'attached-mdx' or 'unattached-mdx' tags.
+ * Generates a manifest of MDX documentation files. This extends the existing manifest system to
+ * include MDX files with the 'attached-mdx' or 'unattached-mdx' tags.
  */
 export const experimental_manifests: PresetPropertyFn<
   'experimental_manifests',

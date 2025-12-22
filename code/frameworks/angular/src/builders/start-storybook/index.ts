@@ -4,7 +4,7 @@ import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/commo
 import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, logTracker } from 'storybook/internal/node-logger';
 
 import type {
   BuilderContext,
@@ -24,6 +24,7 @@ import type {
   StyleElement,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
 import type { JsonObject } from '@angular-devkit/core';
+import { Observable } from 'rxjs';
 import * as find from 'empathic/find';
 import * as pkg from 'empathic/package';
 
@@ -64,6 +65,7 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'open'
     | 'docs'
     | 'debugWebpack'
+    | 'logfile'
     | 'webpackStatsJson'
     | 'statsJson'
     | 'loglevel'
@@ -72,110 +74,141 @@ export type StorybookBuilderOptions = JsonObject & {
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
 
-const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
+const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
   options,
   context
-): Promise<BuilderOutput> => {
-  logger.intro('Starting Storybook');
+): Observable<BuilderOutput> => {
+  return new Observable<BuilderOutput>((observer) => {
+    (async () => {
+      try {
+        // Apply logger configuration from builder options
+        if (options.loglevel) {
+          logger.setLogLevel(options.loglevel);
+        }
+        if (options.logfile) {
+          logTracker.enableLogWriting();
+        }
 
-  const { tsConfig } = await setup(options, context);
+        logger.intro('Starting Storybook');
 
-  const docTSConfig = find.up('tsconfig.doc.json', {
-    cwd: options.configDir,
-    last: getProjectRoot(),
+        const { tsConfig } = await setup(options, context);
+
+        const docTSConfig = find.up('tsconfig.doc.json', {
+          cwd: options.configDir,
+          last: getProjectRoot(),
+        });
+
+        if (options.compodoc) {
+          await runCompodoc(
+            {
+              compodocArgs: [...options.compodocArgs, ...(options.quiet ? ['--silent'] : [])],
+              tsconfig: docTSConfig ?? tsConfig,
+            },
+            context
+          );
+        }
+
+        getEnvConfig(options, {
+          port: 'SBCONFIG_PORT',
+          host: 'SBCONFIG_HOSTNAME',
+          staticDir: 'SBCONFIG_STATIC_DIR',
+          configDir: 'SBCONFIG_CONFIG_DIR',
+          ci: 'CI',
+        });
+
+        options.port = parseInt(`${options.port}`, 10);
+
+        const {
+          browserTarget,
+          stylePreprocessorOptions,
+          styles,
+          ci,
+          configDir,
+          docs,
+          host,
+          https,
+          port,
+          quiet,
+          enableProdMode = false,
+          smokeTest,
+          sslCa,
+          sslCert,
+          sslKey,
+          disableTelemetry,
+          assets,
+          initialPath,
+          open,
+          debugWebpack,
+          loglevel,
+          webpackStatsJson,
+          statsJson,
+          previewUrl,
+          sourceMap = false,
+          preserveSymlinks = false,
+          experimentalZoneless = !!(VERSION.major && Number(VERSION.major) >= 21),
+        } = options;
+
+        const packageJsonPath = pkg.up({ cwd: __dirname });
+        const packageJson =
+          packageJsonPath != null ? JSON.parse(readFileSync(packageJsonPath, 'utf8')) : null;
+
+        const standaloneOptions: StandaloneOptions = {
+          packageJson,
+          ci,
+          configDir,
+          ...(docs ? { docs } : {}),
+          host,
+          https,
+          port,
+          quiet,
+          enableProdMode,
+          smokeTest,
+          sslCa,
+          sslCert,
+          sslKey,
+          disableTelemetry,
+          angularBrowserTarget: browserTarget,
+          angularBuilderContext: context,
+          angularBuilderOptions: {
+            ...(stylePreprocessorOptions ? { stylePreprocessorOptions } : {}),
+            ...(styles ? { styles } : {}),
+            ...(assets ? { assets } : {}),
+            preserveSymlinks,
+            sourceMap,
+            experimentalZoneless,
+          },
+          tsConfig,
+          initialPath,
+          open,
+          debugWebpack,
+          webpackStatsJson,
+          statsJson,
+          loglevel,
+          previewUrl,
+        };
+
+        const startedPort = await runInstance(standaloneOptions);
+
+        // Emit success output - the dev server is now running
+        observer.next({ success: true, info: { port: startedPort } } as BuilderOutput);
+
+        // Don't call observer.complete() - this keeps the Observable alive
+        // so the dev server continues running. Architect will keep subscribing
+        // until the Observable completes, which allows watch mode to work.
+      } catch (error) {
+        // Write logs to file on failure when enabled
+        try {
+          if (logTracker.shouldWriteLogsToFile) {
+            try {
+              const logFile = await logTracker.writeToFile(options.logfile as any);
+              logger.outro(`Debug logs are written to: ${logFile}`);
+            } catch {}
+          }
+        } catch {}
+        observer.error(error);
+      }
+    })();
   });
-
-  if (options.compodoc) {
-    await runCompodoc(
-      {
-        compodocArgs: [...options.compodocArgs, ...(options.quiet ? ['--silent'] : [])],
-        tsconfig: docTSConfig ?? tsConfig,
-      },
-      context
-    );
-  }
-
-  getEnvConfig(options, {
-    port: 'SBCONFIG_PORT',
-    host: 'SBCONFIG_HOSTNAME',
-    staticDir: 'SBCONFIG_STATIC_DIR',
-    configDir: 'SBCONFIG_CONFIG_DIR',
-    ci: 'CI',
-  });
-
-  options.port = parseInt(`${options.port}`, 10);
-
-  const {
-    browserTarget,
-    stylePreprocessorOptions,
-    styles,
-    ci,
-    configDir,
-    docs,
-    host,
-    https,
-    port,
-    quiet,
-    enableProdMode = false,
-    smokeTest,
-    sslCa,
-    sslCert,
-    sslKey,
-    disableTelemetry,
-    assets,
-    initialPath,
-    open,
-    debugWebpack,
-    loglevel,
-    webpackStatsJson,
-    statsJson,
-    previewUrl,
-    sourceMap = false,
-    preserveSymlinks = false,
-    experimentalZoneless = !!(VERSION.major && Number(VERSION.major) >= 21),
-  } = options;
-
-  const packageJsonPath = pkg.up({ cwd: __dirname });
-  const packageJson =
-    packageJsonPath != null ? JSON.parse(readFileSync(packageJsonPath, 'utf8')) : null;
-
-  const standaloneOptions: StandaloneOptions = {
-    packageJson,
-    ci,
-    configDir,
-    ...(docs ? { docs } : {}),
-    host,
-    https,
-    port,
-    quiet,
-    enableProdMode,
-    smokeTest,
-    sslCa,
-    sslCert,
-    sslKey,
-    disableTelemetry,
-    angularBrowserTarget: browserTarget,
-    angularBuilderContext: context,
-    angularBuilderOptions: {
-      ...(stylePreprocessorOptions ? { stylePreprocessorOptions } : {}),
-      ...(styles ? { styles } : {}),
-      ...(assets ? { assets } : {}),
-      preserveSymlinks,
-      sourceMap,
-      experimentalZoneless,
-    },
-    tsConfig,
-    initialPath,
-    open,
-    debugWebpack,
-    webpackStatsJson,
-    statsJson,
-    loglevel,
-    previewUrl,
-  };
-
-  const startedPort = await runInstance(standaloneOptions);
-  return { success: true, info: { port: startedPort } } as BuilderOutput;
 };
 
 export default createBuilder(commandBuilder) as DevkitBuilder<StorybookBuilderOptions & JsonObject>;

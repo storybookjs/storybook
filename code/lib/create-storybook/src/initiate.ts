@@ -1,5 +1,9 @@
 import { ProjectType } from 'storybook/internal/cli';
-import { type JsPackageManager, executeCommand } from 'storybook/internal/common';
+import {
+  type JsPackageManager,
+  PackageManagerName,
+  executeCommand,
+} from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
@@ -113,7 +117,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       !!options.dev &&
       !options.skipInstall &&
       shouldRunDev !== false &&
-      ErrorCollector.getErrors().length === 0,
+      dependencyInstallationResult.status === 'success',
     shouldOnboard: newUser,
     projectType,
     packageManager,
@@ -181,7 +185,11 @@ async function runStorybookDev(result: {
 
     // npm needs extra -- to pass flags to the command
     // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`
-    if (packageManager.type === 'npm' && projectType !== ProjectType.ANGULAR) {
+    const doesNeedExtraDash =
+      packageManager.type === PackageManagerName.NPM ||
+      packageManager.type === PackageManagerName.BUN;
+
+    if (doesNeedExtraDash && projectType !== ProjectType.ANGULAR) {
       flags.push('--');
     }
 

@@ -134,6 +134,6 @@ const StyledTabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid })
 
 export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
   deprecate('The `TabButton` component is deprecated. Use `TabList` instead.');
-  return <StyledTabButton ref={ref} {...props} />;
+  return <StyledTabButton data-deprecated="TabButton" ref={ref} {...props} />;
 });
 TabButton.displayName = 'TabButton';

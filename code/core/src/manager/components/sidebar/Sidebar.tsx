@@ -193,14 +193,7 @@ export const Sidebar = React.memo(function Sidebar({
               )
             }
             searchFieldContent={
-              indexJson && (
-                <TagsFilter
-                  api={api}
-                  indexJson={indexJson}
-                  isDevelopment={isDevelopment}
-                  tagPresets={tagPresets}
-                />
-              )
+              indexJson && <TagsFilter api={api} indexJson={indexJson} tagPresets={tagPresets} />
             }
             {...lastViewedProps}
           >

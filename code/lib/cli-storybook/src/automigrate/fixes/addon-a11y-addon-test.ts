@@ -44,7 +44,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
 
   promptType: 'auto',
 
-  async check({ mainConfig, configDir }) {
+  async check({ mainConfig, configDir, hasCsfFactoryPreview }) {
     const addons = getAddonNames(mainConfig);
 
     const frameworkPackageName = getFrameworkPackageName(mainConfig);
@@ -72,15 +72,15 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
         .map((ext) => path.join(configDir, `preview${ext}`))
         .find((filePath) => existsSync(filePath)) ?? null;
 
-    let skipVitestSetupTransformation = false;
+    let skipVitestSetupTransformation = hasCsfFactoryPreview;
     let skipPreviewTransformation = false;
 
     if (vitestSetupFile && previewFile) {
       const vitestSetupSource = readFileSync(vitestSetupFile, 'utf8');
       const previewSetupSource = readFileSync(previewFile, 'utf8');
 
-      skipVitestSetupTransformation = vitestSetupSource.includes('@storybook/addon-a11y');
-      skipPreviewTransformation = !shouldPreviewFileBeTransformed(previewSetupSource);
+      skipVitestSetupTransformation ||= vitestSetupSource.includes('@storybook/addon-a11y');
+      skipPreviewTransformation ||= !shouldPreviewFileBeTransformed(previewSetupSource);
 
       if (skipVitestSetupTransformation && skipPreviewTransformation) {
         return null;

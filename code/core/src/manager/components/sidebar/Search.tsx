@@ -418,6 +418,7 @@ export const Search = React.memo<SearchProps>(function Search({
                       onClick={() => {
                         reset({ inputValue: '' });
                         closeMenu();
+                        inputRef.current?.focus();
                       }}
                     >
                       <CloseIcon />

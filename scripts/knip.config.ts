@@ -81,7 +81,7 @@ const baseConfig = {
 // Adds package.json#bundler.entries etc. to each workspace config `entry: []`
 // Knip maps package.json#export to source files but the entries are incomplete
 export const addBundlerEntries = async (config: KnipConfig) => {
-  const baseDir = join(__dirname, '../code');
+  const baseDir = join(__dirname, '..');
   const rootManifest = await import(pathToFileURL(join(baseDir, 'package.json')).href, {
     with: { type: 'json' },
   });

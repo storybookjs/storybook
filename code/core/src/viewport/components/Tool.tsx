@@ -121,7 +121,7 @@ const Pure = React.memo(function PureTool(props: PureProps) {
         tooltip={isLocked ? 'Viewport size set by story parameters' : 'Resize viewport'}
         defaultOptions={viewportName}
         options={options}
-        onSelect={(selected) => update({ value: selected, isRotated: false })}
+        onSelect={(selected) => update({ value: selected as string, isRotated: false })}
         icon={<GrowIcon />}
       >
         {item !== responsiveViewport ? (

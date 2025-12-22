@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="react-native-web" language="js"
+```js filename=".storybook/main.js" renderer="react" language="js"
 export default {
   addons: [
     '@storybook/addon-react-native-web', // 👈 Remove the addon
@@ -8,7 +8,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="react-native-web" language="ts"
+```ts filename=".storybook/main.ts" renderer="react" language="ts"
 import type { StorybookConfig } from '@storybook/react-native-web-vite';
 
 const config: StorybookConfig = {

@@ -12,12 +12,13 @@ steps:
   - git-shallow-clone/checkout_advanced:
       clone_options: '--depth 1 --verbose'
   - attach_workspace:
-      at: .
+      at: /tmp
   - run:
       name: Install sandbox dependencies
       command: |
+        corepack enable
         TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
-        cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+        cd $(yarn get-sandbox-dir --template $TEMPLATE) && yarn
   - run:
       name: Running E2E Tests
       # TEST_FILES should include all relevant test files, in this case we use the default playwright pattern

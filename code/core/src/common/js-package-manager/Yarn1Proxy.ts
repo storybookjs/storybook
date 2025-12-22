@@ -50,6 +50,11 @@ export class Yarn1Proxy extends JsPackageManager {
     return `yarn ${command}`;
   }
 
+  getPackageCommand(args: string[]): string {
+    const [command, ...rest] = args;
+    return `yarn exec ${command} -- ${rest.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     ...options

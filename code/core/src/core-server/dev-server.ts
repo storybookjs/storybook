@@ -1,4 +1,4 @@
-import { logConfig } from 'storybook/internal/common';
+import { logConfig, normalizeStories } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { ComponentsManifest, Options } from 'storybook/internal/types';
@@ -16,7 +16,8 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
 import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
-import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
+import { registerIndexJsonRoute } from './utils/index-json';
+import { useStorybookMetadata } from './utils/metadata';
 import { getMiddleware } from './utils/middleware';
 import { openInBrowser } from './utils/open-browser/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
@@ -33,13 +34,27 @@ export async function storybookDevServer(options: Options) {
     getServerChannel(server)
   );
 
-  let indexError: Error | undefined;
-  // try get index generator, if failed, send telemetry without storyCount, then rethrow the error
-  const initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
-    getStoryIndexGenerator(app, options, serverChannel).catch((err) => {
-      indexError = err;
-      return undefined;
-    });
+  const workingDir = process.cwd();
+  const configDir = options.configDir;
+  const stories = await options.presets.apply('stories');
+  // StoryIndexGenerator depends on these normalized stories to be referentially equal
+  // So it's important that we only normalize them once here and pass the same reference around
+  const normalizedStories = normalizeStories(stories, {
+    configDir,
+    workingDir,
+  });
+
+  const storyIndexGeneratorPromise =
+    options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+  registerIndexJsonRoute({
+    app,
+    storyIndexGeneratorPromise,
+    normalizedStories,
+    serverChannel,
+    workingDir,
+    configDir,
+  });
 
   app.use(compression({ level: 1 }));
 
@@ -78,6 +93,12 @@ export async function storybookDevServer(options: Options) {
 
   if (options.debugWebpack) {
     logConfig('Preview webpack config', await previewBuilder.getConfig(options));
+  }
+
+  // Boot up the `/project.json` route handler early to avoid Vite Dev Server
+  // serving a NX monorepo `project.json` file instead.
+  if (!core?.disableProjectJson) {
+    useStorybookMetadata(app, options.configDir);
   }
 
   const managerResult = options.previewOnly
@@ -124,18 +145,19 @@ export async function storybookDevServer(options: Options) {
     app.listen({ port, host }, resolve);
   });
 
-  await Promise.all([initializedStoryIndexGenerator, listening]).then(async ([indexGenerator]) => {
+  try {
+    const [indexGenerator] = await Promise.all([storyIndexGeneratorPromise, listening]);
+
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
       const url = host ? networkAddress : address;
       openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url).catch(() => {
         // the browser window could not be opened, this is non-critical, we just ignore the error
       });
     }
-  });
-  if (indexError) {
+  } catch (e) {
     await managerBuilder?.bail().catch();
     await previewBuilder?.bail().catch();
-    throw indexError;
+    throw e;
   }
 
   const features = await options.presets.apply('features');
@@ -145,7 +167,7 @@ export async function storybookDevServer(options: Options) {
         const componentManifestGenerator = await options.presets.apply(
           'experimental_componentManifestGenerator'
         );
-        const indexGenerator = await initializedStoryIndexGenerator;
+        const indexGenerator = await storyIndexGeneratorPromise;
         if (componentManifestGenerator && indexGenerator) {
           const manifest = await componentManifestGenerator(
             indexGenerator as unknown as import('storybook/internal/core-server').StoryIndexGenerator
@@ -170,7 +192,7 @@ export async function storybookDevServer(options: Options) {
         const componentManifestGenerator = await options.presets.apply(
           'experimental_componentManifestGenerator'
         );
-        const indexGenerator = await initializedStoryIndexGenerator;
+        const indexGenerator = await storyIndexGeneratorPromise;
 
         if (!componentManifestGenerator || !indexGenerator) {
           res.statusCode = 400;
@@ -195,12 +217,12 @@ export async function storybookDevServer(options: Options) {
     });
   }
   // Now the preview has successfully started, we can count this as a 'dev' event.
-  doTelemetry(app, core, initializedStoryIndexGenerator as Promise<StoryIndexGenerator>, options);
+  doTelemetry(app, core, storyIndexGeneratorPromise, options);
 
   async function cancelTelemetry() {
     const payload = { eventType: 'dev' };
     try {
-      const generator = await initializedStoryIndexGenerator;
+      const generator = await storyIndexGeneratorPromise;
       const indexAndStats = await generator?.getIndexAndStats();
       // compute stats so we can get more accurate story counts
       if (indexAndStats) {

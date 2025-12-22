@@ -18,7 +18,9 @@ export const render: ArgsStoryFn<VueRenderer> = (props, context) => {
   return () => h(Component, props, getSlots(props, context));
 };
 
-export const setup = (fn: (app: App, storyContext?: StoryContext<VueRenderer>) => unknown) => {
+export const setup = <AppHostElement = any>(
+  fn: (app: App<AppHostElement>, storyContext?: StoryContext<VueRenderer>) => unknown
+) => {
   globalThis.PLUGINS_SETUP_FUNCTIONS ??= new Set();
   globalThis.PLUGINS_SETUP_FUNCTIONS.add(fn);
 };

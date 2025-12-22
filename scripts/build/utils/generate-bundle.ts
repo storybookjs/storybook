@@ -77,6 +77,7 @@ export async function generateBundle({
   const { entries, postbuild } = entry;
 
   const sharedOptions = {
+    absWorkingDir: DIR_CWD,
     format: 'esm',
     bundle: true,
     legalComments: 'none',

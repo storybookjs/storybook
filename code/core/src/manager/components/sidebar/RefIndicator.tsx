@@ -33,7 +33,7 @@ export interface CurrentVersionProps {
   versions: RefType['versions'];
 }
 
-const IndicatorPlacement = styled.aside(({ theme }) => ({
+const IndicatorPlacement = styled.div(({ theme }) => ({
   height: 16,
 
   display: 'flex',
@@ -131,7 +131,7 @@ const SubtleSelect = styled(Select)(({ theme }) => ({
 }));
 
 export const RefIndicator = React.memo(
-  forwardRef<HTMLElement, RefType & { state: ReturnType<typeof getStateType> }>(
+  forwardRef<HTMLDivElement, RefType & { state: ReturnType<typeof getStateType> }>(
     ({ state, ...ref }, forwardedRef) => {
       const api = useStorybookApi();
       const { isMobile } = useLayout();
@@ -199,7 +199,8 @@ export const RefIndicator = React.memo(
                 tooltip="Choose version"
                 defaultOptions={currentVersion}
                 onSelect={(item) => {
-                  const href = ref.versions?.[item];
+                  // We only pass strings as version ids, so item is always a string
+                  const href = ref.versions?.[item as string];
                   if (href) {
                     api.changeRefVersion(ref.id, href);
                   }

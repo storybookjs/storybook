@@ -45,7 +45,7 @@ type StorybookConfigFramework = {
     /**
      * Enable the experimental `.test` function in CSF Next
      *
-     * @see https://storybook.js.org/docs/10/api/main-config/main-config-features#experimentalTestSyntax
+     * @see https://storybook.js.org/docs/api/main-config/main-config-features#experimentaltestsyntax
      */
     experimentalTestSyntax?: boolean;
   };

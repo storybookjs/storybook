@@ -77,7 +77,7 @@ export const PopoverProvider = ({
     },
     [onVisibleChange]
   );
-  const onHide = useCallback(() => setIsOpen(false), []);
+  const onHide = useCallback(() => onOpenChange(false), [onOpenChange]);
 
   return (
     <DialogTrigger
@@ -87,11 +87,7 @@ export const PopoverProvider = ({
       {...props}
     >
       <Pressable>{children}</Pressable>
-      <PopoverUpstream
-        placement={placement}
-        offset={offset}
-        style={{ outlineColor: 'transparent' }}
-      >
+      <PopoverUpstream placement={placement} offset={offset} style={{ outline: 'none' }}>
         <Popover
           hasChrome={hasChrome}
           hideLabel={closeLabel}

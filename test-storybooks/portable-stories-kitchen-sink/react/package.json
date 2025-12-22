@@ -15,6 +15,9 @@
     "storybook": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" storybook dev -p 6006",
     "vitest": "SKIP_FAIL_ON_PURPOSE=true vitest run"
   },
+  "nx": {
+    "includedScripts": []
+  },
   "resolutions": {
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",

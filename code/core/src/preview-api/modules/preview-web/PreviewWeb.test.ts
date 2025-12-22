@@ -3905,8 +3905,8 @@ describe('PreviewWeb', () => {
                 },
               },
               "docs": {
-                "container": [MockFunction spy],
-                "page": [MockFunction spy],
+                "container": [MockFunction],
+                "page": [MockFunction],
                 "renderer": [Function],
               },
               "fileName": "./src/ComponentOne.stories.js",
@@ -3979,8 +3979,8 @@ describe('PreviewWeb', () => {
                 },
               },
               "docs": {
-                "container": [MockFunction spy],
-                "page": [MockFunction spy],
+                "container": [MockFunction],
+                "page": [MockFunction],
                 "renderer": [Function],
               },
               "fileName": "./src/ComponentOne.stories.js",
@@ -4031,7 +4031,7 @@ describe('PreviewWeb', () => {
                 },
               },
               "docs": {
-                "page": [MockFunction spy],
+                "page": [MockFunction],
                 "renderer": [Function],
               },
               "fileName": "./src/ExtraComponentOne.stories.js",

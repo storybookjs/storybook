@@ -57,10 +57,9 @@ export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
     const resetItem = items.find((item) => item.type === 'reset');
     const resetLabel = resetItem?.title;
     const options = items
-      .filter((item) => item.type === 'item')
-      .filter((item): item is ToolbarItem & { value: string } => item.value !== undefined)
+      .filter((item): item is ToolbarItem => item.type === 'item')
       .map((item) => {
-        const itemTitle = item.title ?? item.value;
+        const itemTitle = item.title ?? item.value ?? 'Untitled';
         const iconComponent =
           !item.hideIcon && item.icon ? (
             <Icons icon={item.icon} __suppressDeprecationWarning={true} />
@@ -93,13 +92,13 @@ export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
 
     return (
       <Select
-        defaultOptions={currentValue}
+        defaultOptions={[currentValue]}
         options={options}
         disabled={isOverridden}
         ariaLabel={ariaLabel}
         tooltip={ariaLabel}
         resetLabel={resetLabel}
-        onReset={() => updateGlobals({ [id]: '_reset' })}
+        onReset={resetItem ? () => updateGlobals({ [id]: resetItem?.value }) : undefined}
         onSelect={(selected) => updateGlobals({ [id]: selected })}
         icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
       >

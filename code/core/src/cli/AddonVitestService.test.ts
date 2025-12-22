@@ -28,6 +28,7 @@ describe('AddonVitestService', () => {
       getAllDependencies: vi.fn(),
       getInstalledVersion: vi.fn(),
       runPackageCommand: vi.fn(),
+      getPackageCommand: vi.fn(),
     } as Partial<JsPackageManager> as JsPackageManager;
 
     service = new AddonVitestService(mockPackageManager);
@@ -366,6 +367,10 @@ describe('AddonVitestService', () => {
       // Mock the logger methods used in installPlaywright
       vi.mocked(logger.log).mockImplementation(() => {});
       vi.mocked(logger.warn).mockImplementation(() => {});
+      // Mock getPackageCommand to return a string
+      vi.mocked(mockPackageManager.getPackageCommand).mockReturnValue(
+        'npx playwright install chromium --with-deps'
+      );
     });
 
     it('should install Playwright successfully', async () => {
@@ -381,7 +386,7 @@ describe('AddonVitestService', () => {
       });
       expect(prompt.executeTaskWithSpinner).toHaveBeenCalledWith(expect.any(Function), {
         id: 'playwright-installation',
-        intro: 'Installing Playwright browser binaries (Press "c" to abort)',
+        intro: 'Installing Playwright browser binaries (press "c" to abort)',
         error: expect.stringContaining('An error occurred'),
         success: 'Playwright browser binaries installed successfully',
         abortable: true,

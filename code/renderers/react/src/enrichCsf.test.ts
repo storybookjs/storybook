@@ -50,7 +50,7 @@ test('should enrich csf with code parameters', async () => {
       docs: {
         ...Primary.input.parameters?.docs,
         source: {
-          code: "const Primary = () => <Button primary label=\\"Button\\"></Button>;\\n",
+          code: "const Primary = () => <Button primary label=\\"Button\\" />;\\n",
           ...Primary.input.parameters?.docs?.source
         }
       }
@@ -60,7 +60,7 @@ test('should enrich csf with code parameters', async () => {
       docs: {
         ...Secondary.input.parameters?.docs,
         source: {
-          code: "const Secondary = () => <Button label=\\"Button\\"></Button>;\\n",
+          code: "const Secondary = () => <Button label=\\"Button\\" />;\\n",
           ...Secondary.input.parameters?.docs?.source
         }
       }

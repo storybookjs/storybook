@@ -240,7 +240,7 @@ export default {
 
 export const Text = {
   render: ({ label, onClick }) =>
-    html`<custom-button label="${label}" @click=${onClick}></custom-button>`,
+    html`<custom-button label=${label} @click=${onClick}></custom-button>`,
   args: {
     label: 'Hello',
     onClick: action('clicked'),
@@ -264,7 +264,7 @@ type Story = StoryObj;
 
 export const Text: Story = {
   render: ({ label, onClick }) =>
-    html`<custom-button label="${label}" @click=${onClick}></custom-button>`,
+    html`<custom-button label=${label} @click=${onClick}></custom-button>`,
   args: {
     label: 'Hello',
     onClick: action('clicked'),

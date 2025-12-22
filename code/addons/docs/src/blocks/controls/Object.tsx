@@ -207,6 +207,11 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     }
   }, [forceVisible]);
 
+  // Use string value as key to force re-render on Arg value reset.
+  const jsonString = useMemo(() => {
+    return JSON.stringify(data ?? '', null, 2);
+  }, [data]);
+
   if (!hasData) {
     return (
       <Button
@@ -226,7 +231,8 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
       id={getControlId(name)}
       minRows={3}
       name={name}
-      defaultValue={value === null ? '' : JSON.stringify(value, null, 2)}
+      key={jsonString}
+      defaultValue={jsonString}
       onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
       placeholder="Edit JSON string..."
       autoFocus={forceVisible}

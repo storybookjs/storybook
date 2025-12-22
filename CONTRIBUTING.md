@@ -93,8 +93,7 @@ Here's a highlight of notable directories and files:
 │   ├── vitest-setup.ts
 │   ├── vitest.config.ts
 │   ├── vitest.helpers.ts
-│   ├── vitest.workspace.ts
-│   └── yarn.lock
+│   └── vitest.workspace.ts
 ├── codecov.yml
 ├── dependabot.yml
 ├── docs                         # Documentation
@@ -117,7 +116,7 @@ Here's a highlight of notable directories and files:
 │   ├── writing-stories
 │   └── writing-tests
 ├── node_modules
-├── package.json                      # Root package.json for Storybook
+├── package.json                      # Root of the yarn monorepo
 ├── prettier.config.mjs
 ├── scripts                           # Build and Helper Scripts
 ├── test-storybooks
@@ -149,11 +148,11 @@ If you're interested in contributing to Storybook's codebase, you can run it loc
 # Navigate to the root directory of the Storybook repository 
 cd path/to/your/storybook/fork 
 
-# Install the required dependencies and start the development environment 
+# Install the required dependencies
+yarn
+# start the development environment 
 yarn start
 ```
-
-You don't need to install the dependencies manually to get the project running. The `yarn start` command will install the required dependencies for you.
 
 ### Making code changes 
 
@@ -161,7 +160,7 @@ If you want to make code changes to Storybook packages while running a sandbox, 
 
 1. In a second terminal, run `yarn build --watch <package-1> <package-2>` in the `code/` directory.
 
-For example, if you want to build the `@storybook/react`, `@storybook/core-server`, `@storybook/api`, and `@storybook/addon-docs` packages, you would run: 
+For example, to build the `@storybook/react`, `storybook` itself, `@storybook/builder-vite`, and `@storybook/addon-docs` packages, you would run: 
 
 ```shell 
 # Navigate to the code directory 
@@ -172,10 +171,11 @@ yarn build --watch react core-server api addon-docs
 
 Most package names can be found after `@storybook/` in the published package.
 
-For instance, to build the `@storybook/react @storybook/core-server @storybook/api @storybook/addon-docs` packages at the same time in watch mode:
+For instance, to build the `@storybook/react storybook @storybook/builder-vite @storybook/addon-docs` packages at the same time in watch mode:
 
 ```shell 
-cd code yarn build --watch react core-server api addon-docs 
+cd code
+yarn build --watch react storybook builder-vite addon-docs 
 ```
 
 2. If you are running the sandbox in ["linked"](https://yarnpkg.com/cli/link) mode (the default), you should see the changes reflected on a refresh (you may need to restart it if changing server packages) 
@@ -199,7 +199,7 @@ yarn task --prod
 
 ```shell
 # Builds the specified packages in production mode
-yarn build --prod --watch angular core addon-docs
+yarn build --prod --watch angular storybook addon-docs
 ```
 
 ### Running against different sandbox templates 

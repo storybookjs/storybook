@@ -3,6 +3,9 @@
   "version": "7.0.0-alpha.16",
   "private": true,
   "type": "module",
+  "nx": {
+    "includedScripts": []
+  },
   "scripts": {
     "bench-packages": "jiti ./bench/bench-packages.ts",
     "build-package": "jiti ./build-package.ts",
@@ -15,7 +18,7 @@
     "get-report-message": "jiti ./get-report-message.ts",
     "get-sandbox-dir": "jiti ./get-sandbox-dir.ts",
     "get-template": "jiti ./get-template.ts",
-    "lint": "yarn lint:js && yarn lint:md",
+    "lint": "yarn lint:js",
     "lint:js": "yarn lint:js:cmd .  --quiet",
     "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
     "lint:package": "sort-package-json",
@@ -37,6 +40,7 @@
     "release:write-changelog": "jiti ./release/write-changelog.ts",
     "strict-ts": "jiti ./strict-ts.ts",
     "task": "jiti ./task.ts",
+    "prepare-sandbox": "jiti ./prepare-sandbox.ts",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",
     "upgrade": "jiti ./task.ts",
@@ -54,12 +58,6 @@
     "package.json": [
       "yarn lint:package"
     ]
-  },
-  "resolutions": {
-    "esbuild": "^0.27.0",
-    "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19",
-    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
@@ -93,9 +91,9 @@
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "@typescript-eslint/experimental-utils": "^5.62.0",
     "@typescript-eslint/parser": "^8.31.0",
-    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/coverage-v8": "^4.0.14",
     "ansi-regex": "^6.0.1",
-    "chromatic": "^11.28.2",
+    "chromatic": "^13.3.4",
     "codecov": "^3.8.1",
     "commander": "^12.1.0",
     "cross-env": "^7.0.3",
@@ -177,7 +175,7 @@
     "type-fest": "~2.19",
     "typescript": "^5.9.3",
     "uuid": "^9.0.1",
-    "vitest": "^3.2.4",
+    "vitest": "^4.0.14",
     "wait-on": "^8.0.3",
     "window-size": "^1.1.1",
     "yaml": "^2.7.0",

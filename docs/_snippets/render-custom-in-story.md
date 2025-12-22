@@ -143,7 +143,7 @@ export const PrimaryInAlert = {
   render: (args) => html`
     <demo-alert>
       Alert text
-      <demo-button ?primary="${args.primary}" label="${args.label}"></demo-button>
+      <demo-button ?primary=${args.primary} label=${args.label}></demo-button>
     </demo-alert>
   `,
 };
@@ -168,7 +168,7 @@ export const PrimaryInAlert: Story = {
   render: (args) => html`
     <demo-alert>
       Alert text
-      <demo-button ?primary="${args.primary}" label="${args.label}"></demo-button>
+      <demo-button ?primary=${args.primary} label=${args.label}></demo-button>
     </demo-alert>
   `,
 };

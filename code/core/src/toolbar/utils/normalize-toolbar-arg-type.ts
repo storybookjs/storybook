@@ -22,6 +22,7 @@ export const normalizeArgType = (
       if (item.type === 'reset' && argType.toolbar.icon) {
         item.icon = argType.toolbar.icon;
         item.hideIcon = true;
+        item.value = undefined;
       }
 
       return { ...defaultItemValues, ...item };

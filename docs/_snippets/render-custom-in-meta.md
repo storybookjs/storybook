@@ -166,7 +166,7 @@ export default {
   render: (args) => html`
     <demo-alert>
       Alert text
-      <demo-button ?primary="${args.primary}" label="${args.label}"></demo-button>
+      <demo-button ?primary=${args.primary} label=${args.label}></demo-button>
     </demo-alert>
   `,
 };
@@ -194,7 +194,7 @@ const meta: Meta = {
   render: (args) => html`
     <demo-alert>
       Alert text
-      <demo-button ?primary="${args.primary}" label="${args.label}"></demo-button>
+      <demo-button ?primary=${args.primary} label=${args.label}></demo-button>
     </demo-alert>
   `,
 };

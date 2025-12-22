@@ -6,102 +6,31 @@ sidebar:
   title: Angular
 ---
 
-Storybook for Angular is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Angular](https://angular.io/) applications. It includes:
+Storybook for Angular is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Angular](https://angular.io/) applications. It uses Angular builders and integrates with [Compodoc](https://compodoc.app/) to provide automatic documentation generation.
 
-* 🧱 Uses Angular builders
-* 🎛️ Compodoc integration
-* 💫 and more!
+## Install
 
-## Requirements
+To install Storybook in an existing Angular project, run this command in your project's root directory:
 
-* Angular ≥ 18.0 \< 21.0
-* Webpack ≥ 5.0
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
-## Getting started
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
-### In a project without Storybook
+### Requirements
 
-Follow the prompts after running this command in your Angular project's root directory:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="create-command.md" />
-
-{/* prettier-ignore-end */}
-
-[More on getting started with Storybook.](../install.mdx)
-
-### In a project with Storybook
-
-This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-upgrade.md" />
-
-{/* prettier-ignore-end */}
-
-#### Automatic migration
-
-When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/angular`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
-
-#### Manual migration
-
-First, install the framework:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="angular-install.md" />
-
-{/* prettier-ignore-end */}
-
-Then, update your `.storybook/main.js|ts` to change the framework property:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="angular-add-framework.md" />
-
-{/* prettier-ignore-end */}
-
-Finally, update your `angular.json` to include the Storybook builder:
-
-```jsonc title="angular.json"
-{
-  "projects": {
-    "your-project": {
-      "architect": {
-        "storybook": {
-          "builder": "@storybook/angular:start-storybook",
-          "options": {
-            // The path to the storybook config directory
-            "configDir": ".storybook",
-            // The build target of your project
-            "browserTarget": "your-project:build",
-            // The port you want to start Storybook on
-            "port": 6006
-            // More options available, documented here:
-            // https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular/src/builders/start-storybook/schema.json
-          }
-        },
-        "build-storybook": {
-          "builder": "@storybook/angular:build-storybook",
-          "options": {
-            "configDir": ".storybook",
-            "browserTarget": "your-project:build",
-            "outputDir": "dist/storybook/your-project"
-            // More options available, documented here:
-            // https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular/src/builders/build-storybook/schema.json
-          }
-        }
-      }
-    }
-  }
-}
-```
+<GetStartedVersions versions={[{
+  name: 'Angular',
+  range: '≥ 18.0 < 21.0',
+  icon: '/images/logos/renderers/logo-angular.svg'
+}, {
+  name: 'Webpack',
+  range: '5',
+  icon: '/images/logos/builders/webpack.svg'
+}]} />
 
 ## Run Storybook
 
-To run Storybook for a particular project, please run the following:
+To run Storybook for a particular project, run the following:
 
 ```sh
 ng run <your-project>:storybook
@@ -115,15 +44,19 @@ ng run <your-project>:build-storybook
 
 You will find the output in the configured `outputDir` (default is `dist/storybook/<your-project>`).
 
-## Setup Compodoc
+## Configure
+
+To make the most out of Storybook in your Angular project, you can set up Compodoc integration and Storybook [decorators](../../writing-stories/decorators.mdx) based on your project needs.
+
+### Compodoc
 
 You can include JSDoc comments above components, directives, and other parts of your Angular code to include documentation for those elements. Compodoc uses these comments to [generate documentation](../../writing-docs/autodocs.mdx) for your application. In Storybook, it is useful to add explanatory comments above `@Inputs` and `@Outputs`, since these are the main elements that Storybook displays in its user interface. The `@Inputs` and `@Outputs` are elements you can interact with in Storybook, such as [controls](../../essentials/controls.mdx).
 
-### Automatic setup
+#### Automatic setup
 
 When installing Storybook via `npx storybook@latest init`, you can set up Compodoc automatically.
 
-### Manual setup
+#### Manual setup
 
 If you have already installed Storybook, you can set up Compodoc manually.
 
@@ -187,9 +120,9 @@ const preview: Preview = {};
 export default preview;
 ```
 
-## `applicationConfig` decorator
+### Application-wide providers
 
-If your component relies on application-wide providers, like the ones defined by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any other modules that use the forRoot pattern to provide a [`ModuleWithProviders`](https://angular.dev/api/core/ModuleWithProviders), you can apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to all stories for that component. This will provide them with the [bootstrapApplication function](https://angular.io/guide/standalone-components#configuring-dependency-injection), used to bootstrap the component in Storybook.
+If your component relies on application-wide providers, like the ones defined by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any other modules that use the forRoot pattern to provide a [`ModuleWithProviders`](https://angular.dev/api/core/ModuleWithProviders), you can apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to all stories for that component. This will provide them with the [bootstrapApplication function](https://angular.dev/api/platform-browser/bootstrapApplication), used to bootstrap the component in Storybook.
 
 ```ts title="ChipsModule.stories.ts"
 import { Meta, applicationConfig, StoryObj } from '@storybook/angular';
@@ -230,7 +163,7 @@ export const WithCustomApplicationProvider: Story = {
 }
 ```
 
-## `moduleMetadata` decorator
+### Angular dependencies
 
 If your component has dependencies on other Angular directives and modules, these can be supplied using the `moduleMetadata` [decorator](../../writing-stories/decorators.mdx) either for all stories of a component or for individual stories.
 
@@ -272,64 +205,101 @@ export const WithCustomProvider: Story = {
 
 ## FAQ
 
+### How do I manually install the Angular framework?
+
+The easiest way to install the Angular framework is to run the upgrade command, but you can also set it up manually. First, install the framework:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="angular-install.md" />
+
+{/* prettier-ignore-end */}
+
+Then, update your `.storybook/main.js|ts` to change the framework property:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="angular-add-framework.md" />
+
+{/* prettier-ignore-end */}
+
+Finally, update your `angular.json` to include the Storybook builder:
+
+```jsonc title="angular.json"
+{
+  "projects": {
+    "your-project": {
+      "architect": {
+        "storybook": {
+          "builder": "@storybook/angular:start-storybook",
+          "options": {
+            // The path to the storybook config directory
+            "configDir": ".storybook",
+            // The build target of your project
+            "browserTarget": "your-project:build",
+            // The port you want to start Storybook on
+            "port": 6006
+            // More options available, documented here:
+            // https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular/src/builders/start-storybook/schema.json
+          }
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular:build-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "browserTarget": "your-project:build",
+            "outputDir": "dist/storybook/your-project"
+            // More options available, documented here:
+            // https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular/src/builders/build-storybook/schema.json
+          }
+        }
+      }
+    }
+  }
+}
+```
+
 ### How do I migrate to an Angular Storybook builder?
 
 The Storybook [Angular builder](https://angular.io/guide/glossary#builder) is a way to run Storybook in an Angular workspace. It is a drop-in replacement for running `storybook dev` and `storybook build` directly.
 
-You can run `npx storybook@latest automigrate` to try letting Storybook detect and automatically fix your configuration. Otherwise, you can follow the next steps to adjust your configuration manually.
+You can run `npx storybook@latest automigrate` to let Storybook detect and automatically fix your configuration. Otherwise, you can follow the next steps to adjust your configuration manually.
 
-#### Do you have only one Angular project in your workspace?
+#### With a single project in your Angular workspace
 
-First, go to your `angular.json` and add `storybook` and `build-storybook` entries in your project's `architect` section, as shown [above](#manual-setup).
+Go to your `angular.json` and add `storybook` and `build-storybook` entries in your project's `architect` section, as shown [above](#manual-setup).
 
-Second, adjust your `package.json` script section. Usually, it will look like this:
+Then, adjust your `package.json` script section, to replace the existing Storybook scripts with the Angular CLI commands:
 
-```jsonc title="package.json"
+```diff title="package.json"
 {
   "scripts": {
-    "storybook": "start-storybook -p 6006", // or `storybook dev -p 6006`
-    "build-storybook": "build-storybook" // or `storybook build`
+-    "storybook": "start-storybook -p 6006", // or `storybook dev -p 6006`
+-    "build-storybook": "build-storybook" // or `storybook build`
++    "storybook": "ng run <project-name:storybook",
++    "storybook": "ng run <project-name:storybook",
   }
 }
 ```
 
-Now, you can run Storybook with `ng run <your-project>:storybook` and build it with `ng run <your-project>:build-storybook`. Adjust the scripts in your `package.json` accordingly.
+Note that `compodoc` is now built into `@storybook/angular`; you don't have to call it explicitly. If you were running `compodoc` in your `package.json` scripts, you can remove the related script:
 
-```json title="package.json"
+```diff title="package.json"
 {
   "scripts": {
-    "storybook": "ng run <project-name>:storybook",
-    "build-storybook": "ng run <project-name>:build-storybook"
+-    "docs:json": "compodoc -p tsconfig.json -e json -d ./documentation",
+-    "storybook": "npm run docs:json && start-storybook -p 6006",
+-    "build-storybook": "npm run docs:json && build-storybook"
++    "storybook": "ng run <project-name:storybook",
++    "storybook": "ng run <project-name:storybook",
   }
 }
 ```
 
-  Also, `compodoc` is now built into `@storybook/angular`; you don't have to call it explicitly. If we're running `compodoc` in your `package.json` scripts like this:
 
-```json title="package.json"
-{
-  "scripts": {
-    "docs:json": "compodoc -p tsconfig.json -e json -d ./documentation",
-    "storybook": "npm run docs:json && start-storybook -p 6006",
-    "build-storybook": "npm run docs:json && build-storybook"
-  }
-}
-```
+#### With multiple projects in your Angular workspace
 
-Change it to:
-
-```json title="package.json"
-{
-  "scripts": {
-    "storybook": "ng run <project-name>:storybook",
-    "build-storybook": "ng run <project-name>:build-storybook"
-  }
-}
-```
-
-#### I have multiple projects in my Angular workspace
-
-In this case, you have to adjust your `angular.json` and `package.json` as described above for each project you want to use Storybook. Please note that each project should have a dedicated `.storybook` folder placed at the project's root.
+In case you have multiple projects, you will have to adjust your `angular.json` and `package.json` as described above for each project you want to use Storybook with. Please note that each project should have a dedicated `.storybook` folder placed at the project's root directory.
 
 You can run `npx storybook@latest init` sequentially for each project to set up Storybook for each of them to automatically create the `.storybook` folder and create the necessary configuration in your `angular.json`.
 

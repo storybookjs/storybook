@@ -30,6 +30,7 @@ import {
 import { SUPPORTED_FRAMEWORKS } from '../../cli/AddonVitestService.constants';
 import { ADDON_ID as ADDON_DOCS_ID } from '../../docs-tools/shared';
 import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
+import { LocationMonitor } from '../../manager/hooks/useLocation';
 import type { initialState } from './checklistData.state';
 
 const CodeWrapper = styled.div(({ theme }) => ({
@@ -194,7 +195,7 @@ export const checklistData = {
         },
         {
           id: 'renderComponent',
-          label: 'Render a component',
+          label: 'Render your first component',
           criteria: 'A story finished rendering successfully',
           subscribe: ({ api, done }) =>
             api.on(
@@ -280,7 +281,6 @@ export const Primary: Story = {
         },
         {
           id: 'moreComponents',
-          after: ['renderComponent'],
           label: 'Add 5 components',
           content: ({ api }) => (
             <>
@@ -322,7 +322,6 @@ export const Primary: Story = {
         },
         {
           id: 'moreStories',
-          after: ['renderComponent'],
           label: 'Add 20 stories',
           content: ({ api }) => (
             <>
@@ -365,11 +364,10 @@ export const Primary: Story = {
           criteria: "What's New page is opened",
           action: {
             label: 'Go',
-            onClick: ({ api, accept }) => {
-              api.navigate('/settings/whats-new');
-              accept();
-            },
+            onClick: ({ api }) => api.navigate('/settings/whats-new'),
           },
+          subscribe: ({ accept }) =>
+            LocationMonitor.subscribe((l) => l.search.endsWith('/settings/whats-new') && accept()),
         },
       ],
     },
@@ -380,7 +378,6 @@ export const Primary: Story = {
       items: [
         {
           id: 'controls',
-          after: ['renderComponent'],
           label: 'Change a story with Controls',
           available: () => !!globalThis?.FEATURES?.controls,
           criteria: 'Story args are updated',
@@ -423,7 +420,6 @@ export const Primary: Story = {
         },
         {
           id: 'viewports',
-          after: ['renderComponent'],
           label: 'Check responsiveness with Viewports',
           available: () => !!globalThis?.FEATURES?.viewport,
           criteria: 'Viewport global is updated',
@@ -468,7 +464,6 @@ export const Primary: Story = {
         },
         {
           id: 'organizeStories',
-          after: ['renderComponent'],
           label: 'Group your components',
           criteria: 'A root node exists in the index',
           subscribe: subscribeToIndex((entries) =>
@@ -672,7 +667,6 @@ export default {
         },
         {
           id: 'writeInteractions',
-          after: ['renderComponent'],
           label: 'Test functionality with interactions',
           available: () => !!globalThis?.FEATURES?.interactions,
           criteria: 'At least one story with a play or test function',

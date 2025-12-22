@@ -123,7 +123,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-storybook": "workspace:*",
-    "execa": "^9.6.0",
+    "execa": "^9.6.1",
     "fast-folder-size": "^2.2.0",
     "fast-glob": "^3.3.2",
     "github-release-from-changelog": "^2.1.1",

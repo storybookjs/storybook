@@ -7622,7 +7622,7 @@ __metadata:
     "@storybook/icons": "npm:^2.0.1"
     "@testing-library/react": "npm:^14.0.0"
     axe-core: "npm:^4.2.0"
-    execa: "npm:^9.6.0"
+    execa: "npm:^9.6.1"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     react-resize-detector: "npm:^7.1.2"
@@ -8542,7 +8542,7 @@ __metadata:
     eslint-plugin-react: "npm:^7.37.5"
     eslint-plugin-react-hooks: "npm:^4.6.2"
     eslint-plugin-storybook: "workspace:*"
-    execa: "npm:^9.6.0"
+    execa: "npm:^9.6.1"
     fast-folder-size: "npm:^2.2.0"
     fast-glob: "npm:^3.3.2"
     github-release-from-changelog: "npm:^2.1.1"
@@ -16905,9 +16905,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"execa@npm:^9.6.0":
-  version: 9.6.0
-  resolution: "execa@npm:9.6.0"
+"execa@npm:^9.6.1":
+  version: 9.6.1
+  resolution: "execa@npm:9.6.1"
   dependencies:
     "@sindresorhus/merge-streams": "npm:^4.0.0"
     cross-spawn: "npm:^7.0.6"
@@ -16921,7 +16921,7 @@ __metadata:
     signal-exit: "npm:^4.1.0"
     strip-final-newline: "npm:^4.0.0"
     yoctocolors: "npm:^2.1.1"
-  checksum: 10c0/2c44a33142f77d3a6a590a3b769b49b27029a76768593bac1f26fed4dd1330e9c189ee61eba6a8c990fb77e37286c68c7445472ebf24c22b31e9ff320e73d7ac
+  checksum: 10c0/636b36585306a3c8bc3a9d7b25d2d915fb06d8c9b9b02a804280d62562de3b34535affc1b7702b039320e0953daa6545a073f3c4b63fe974c1fe11336c56b467
   languageName: node
   linkType: hard
 
@@ -28507,7 +28507,7 @@ __metadata:
     empathic: "npm:^2.0.0"
     es-toolkit: "npm:^1.43.0"
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0"
-    execa: "npm:^9.6.0"
+    execa: "npm:^9.6.1"
     exsolve: "npm:^1.0.7"
     fetch-retry: "npm:^6.0.0"
     flush-promises: "npm:^1.0.2"

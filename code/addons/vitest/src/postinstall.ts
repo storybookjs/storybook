@@ -164,7 +164,7 @@ export default async function postInstall(options: PostinstallOptions) {
     Found an existing Vitest setup file:
     ${vitestSetupFile}
     Please refer to the documentation to complete the setup manually:
-    https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
+    https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
   `;
     logger.line();
     logger.error(`${errorMessage}\n`);
@@ -256,7 +256,7 @@ export default async function postInstall(options: PostinstallOptions) {
           your existing workspace file automatically, you must do it yourself.
 
           Please refer to the documentation to complete the setup manually:
-          https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
+          https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
         `
       );
       errors.push(
@@ -304,7 +304,7 @@ export default async function postInstall(options: PostinstallOptions) {
         We were unable to update your existing ${vitestConfigFile ? 'Vitest' : 'Vite'} config file.
 
         Please refer to the documentation to complete the setup manually:
-        https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup
+        https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced
       `);
       errors.push(new AddonVitestPostinstallConfigUpdateError({ filePath: rootConfig }));
     }
@@ -365,7 +365,7 @@ export default async function postInstall(options: PostinstallOptions) {
       logger.error(dedent`
         Could not automatically set up ${addonA11yName} for @storybook/addon-vitest.
         Please refer to the documentation to complete the setup manually:
-        https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration
+        https://storybook.js.org/docs/writing-tests/accessibility-testing#integration-with-vitest-addon
       `);
       errors.push(new AddonVitestPostinstallFailedAddonA11yError({ error: e }));
     }
@@ -390,7 +390,7 @@ export default async function postInstall(options: PostinstallOptions) {
       dedent`
         Done, but with errors!
         @storybook/addon-vitest was installed successfully, but there were some errors during the setup process. Please refer to the documentation to complete the setup manually and check the errors above:
-        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
+        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
       `
     );
     throw new AddonVitestPostinstallError({ errors });

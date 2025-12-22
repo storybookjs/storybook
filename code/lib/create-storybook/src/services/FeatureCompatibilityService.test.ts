@@ -6,23 +6,26 @@ import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 
 import { FeatureCompatibilityService } from './FeatureCompatibilityService';
 
-vi.mock('storybook/internal/cli', async () => {
-  const actual = await vi.importActual('storybook/internal/cli');
-  return {
-    ...actual,
-    AddonVitestService: vi.fn().mockImplementation(() => ({
-      validateCompatibility: vi.fn(),
-    })),
-  };
-});
+vi.mock('storybook/internal/cli', { spy: true });
 
 describe('FeatureCompatibilityService', () => {
   let service: FeatureCompatibilityService;
+  const mockPackageManager = {
+    getInstalledVersion: vi.fn(),
+  } as Partial<JsPackageManager> as JsPackageManager;
   let mockAddonVitestService: AddonVitestService;
 
   beforeEach(() => {
-    mockAddonVitestService = new AddonVitestService();
-    service = new FeatureCompatibilityService(mockAddonVitestService);
+    // Mock AddonVitestService constructor and methods
+    const mockValidateCompatibility = vi.fn().mockResolvedValue({ compatible: true });
+    vi.mocked(AddonVitestService).mockImplementation(function (this: any) {
+      return {
+        validateCompatibility: mockValidateCompatibility,
+      };
+    });
+
+    mockAddonVitestService = new AddonVitestService(mockPackageManager);
+    service = new FeatureCompatibilityService(mockPackageManager, mockAddonVitestService);
   });
 
   describe('supportsOnboarding', () => {
@@ -42,14 +45,9 @@ describe('FeatureCompatibilityService', () => {
   });
 
   describe('validateTestFeatureCompatibility', () => {
-    let mockPackageManager: JsPackageManager;
     let mockValidateCompatibility: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      mockPackageManager = {
-        getInstalledVersion: vi.fn(),
-      } as Partial<JsPackageManager> as JsPackageManager;
-
       // Get the mocked validateCompatibility method
       mockValidateCompatibility = vi.mocked(mockAddonVitestService.validateCompatibility);
     });
@@ -58,7 +56,6 @@ describe('FeatureCompatibilityService', () => {
       mockValidateCompatibility.mockResolvedValue({ compatible: true });
 
       const result = await service.validateTestFeatureCompatibility(
-        mockPackageManager,
         SupportedFramework.REACT_VITE,
         SupportedBuilder.VITE,
         '/test'
@@ -66,7 +63,6 @@ describe('FeatureCompatibilityService', () => {
 
       expect(result.compatible).toBe(true);
       expect(mockValidateCompatibility).toHaveBeenCalledWith({
-        packageManager: mockPackageManager,
         framework: 'react-vite',
         builder: SupportedBuilder.VITE,
         projectRoot: '/test',
@@ -80,7 +76,6 @@ describe('FeatureCompatibilityService', () => {
       });
 
       const result = await service.validateTestFeatureCompatibility(
-        mockPackageManager,
         SupportedFramework.REACT_VITE,
         SupportedBuilder.VITE,
         '/test'

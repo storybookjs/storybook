@@ -18,7 +18,7 @@ describe('convert', () => {
     expect(result).toMatchObject({
       color: expect.objectContaining({
         ancillary: '#22a699',
-        border: 'hsla(212, 50%, 30%, 0.15)',
+        border: 'hsl(212 50% 30% / 0.15)',
         critical: '#FFFFFF',
         dark: '#5C6570',
         darker: '#454C54',
@@ -68,7 +68,7 @@ describe('convert', () => {
     expect(result).toMatchObject({
       color: expect.objectContaining({
         ancillary: '#22a699',
-        border: 'hsla(212, 50%, 30%, 0.15)',
+        border: 'hsl(212 50% 30% / 0.15)',
         critical: '#FFFFFF',
         dark: '#5C6570',
         darker: '#454C54',

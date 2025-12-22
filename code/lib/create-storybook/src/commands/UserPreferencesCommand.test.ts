@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ProjectType, globalSettings } from 'storybook/internal/cli';
+import { AddonVitestService, ProjectType, globalSettings } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { PackageManagerName, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -8,20 +8,15 @@ import type { SupportedBuilder } from 'storybook/internal/types';
 import { Feature } from 'storybook/internal/types';
 
 import type { CommandOptions } from '../generators/types';
+import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
+import { TelemetryService } from '../services/TelemetryService';
 import { UserPreferencesCommand } from './UserPreferencesCommand';
 
-vi.mock('storybook/internal/cli', async () => {
-  const actual = await vi.importActual('storybook/internal/cli');
-  return {
-    ...actual,
-    AddonVitestService: vi.fn().mockImplementation(() => ({
-      validateCompatibility: vi.fn(),
-    })),
-    globalSettings: vi.fn(),
-  };
-});
+vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('../services/FeatureCompatibilityService', { spy: true });
+vi.mock('../services/TelemetryService', { spy: true });
 
 interface CommandWithPrivates {
   telemetryService: {
@@ -33,7 +28,7 @@ interface CommandWithPrivates {
 
 describe('UserPreferencesCommand', () => {
   let command: UserPreferencesCommand;
-  let mockPackageManager: JsPackageManager;
+  const mockPackageManager = {} as Partial<JsPackageManager> as JsPackageManager;
 
   beforeEach(() => {
     // Provide required CommandOptions to avoid undefined access
@@ -42,8 +37,28 @@ describe('UserPreferencesCommand', () => {
       disableTelemetry: true,
     };
 
-    command = new UserPreferencesCommand(commandOptions);
-    mockPackageManager = {} as Partial<JsPackageManager> as JsPackageManager;
+    command = new UserPreferencesCommand(commandOptions, mockPackageManager);
+
+    // Mock AddonVitestService
+    const mockAddonVitestService = vi.fn().mockImplementation(() => ({
+      validateCompatibility: vi.fn().mockResolvedValue({ compatible: true }),
+    }));
+    vi.mocked(AddonVitestService).mockImplementation(mockAddonVitestService);
+
+    // Mock FeatureCompatibilityService
+    vi.mocked(FeatureCompatibilityService).mockImplementation(function () {
+      return {
+        validateTestFeatureCompatibility: vi.fn().mockResolvedValue({ compatible: true }),
+      };
+    });
+
+    // Mock TelemetryService
+    vi.mocked(TelemetryService).mockImplementation(function () {
+      return {
+        trackNewUserCheck: vi.fn(),
+        trackInstallType: vi.fn(),
+      };
+    });
 
     // Mock globalSettings
     const mockSettings = {
@@ -62,7 +77,7 @@ describe('UserPreferencesCommand', () => {
     };
 
     const mockFeatureService = {
-      validateTestFeatureCompatibility: vi.fn(),
+      validateTestFeatureCompatibility: vi.fn().mockResolvedValue({ compatible: true }),
     };
 
     // Inject mocked services
@@ -76,18 +91,12 @@ describe('UserPreferencesCommand', () => {
     vi.mocked(logger.log).mockImplementation(() => {});
     vi.mocked(isCI).mockReturnValue(false);
 
-    // Default feature validation (compatible)
-    const featureService = (command as unknown as CommandWithPrivates).featureService;
-    vi.mocked(featureService.validateTestFeatureCompatibility).mockResolvedValue({
-      compatible: true,
-    });
-
     vi.clearAllMocks();
   });
 
   describe('execute', () => {
     it('should return recommended config for new users in non-interactive mode', async () => {
-      const result = await command.execute(mockPackageManager, {
+      const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
@@ -105,7 +114,7 @@ describe('UserPreferencesCommand', () => {
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
 
-      const result = await command.execute(mockPackageManager, {
+      const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
@@ -128,7 +137,7 @@ describe('UserPreferencesCommand', () => {
         .mockResolvedValueOnce(false) // not new user
         .mockResolvedValueOnce('light'); // minimal install
 
-      const result = await command.execute(mockPackageManager, {
+      const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
@@ -147,7 +156,7 @@ describe('UserPreferencesCommand', () => {
         .mockResolvedValueOnce(false) // not new user
         .mockResolvedValueOnce('light'); // minimal install
 
-      const result = await command.execute(mockPackageManager, {
+      const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
@@ -167,14 +176,13 @@ describe('UserPreferencesCommand', () => {
         compatible: true,
       });
 
-      await command.execute(mockPackageManager, {
+      await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
       });
 
       expect(featureService.validateTestFeatureCompatibility).toHaveBeenCalledWith(
-        mockPackageManager,
         null,
         'vite',
         process.cwd()
@@ -192,7 +200,7 @@ describe('UserPreferencesCommand', () => {
       });
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // continue without test
 
-      const result = await command.execute(mockPackageManager, {
+      const result = await command.execute({
         framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,

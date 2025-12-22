@@ -102,9 +102,11 @@ const createStorybookProgram = program
       logTracker.enableLogWriting();
     }
   })
-  .hook('postAction', async ({ getOptionValue }) => {
+  .hook('postAction', async (command) => {
     if (logTracker.shouldWriteLogsToFile) {
-      await logTracker.writeToFile(getOptionValue('logfile'));
+      try {
+        await logTracker.writeToFile(command.getOptionValue('logfile'));
+      } catch {}
     }
   });
 

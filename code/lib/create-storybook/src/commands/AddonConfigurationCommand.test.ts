@@ -1,25 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import { type JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import { TelemetryService } from '../services/TelemetryService';
+import { VersionService } from '../services/VersionService';
 import { AddonConfigurationCommand } from './AddonConfigurationCommand';
 
+vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
-
-vi.mock('storybook/internal/cli', () => ({
-  AddonVitestService: vi.fn().mockImplementation(() => ({
-    installPlaywright: vi.fn().mockResolvedValue([]),
-  })),
-}));
-
-vi.mock('../../../cli-storybook/src/postinstallAddon', () => ({
-  postinstallAddon: vi.fn(),
-}));
+vi.mock('../../../cli-storybook/src/postinstallAddon', { spy: true });
+vi.mock('../services/TelemetryService', { spy: true });
+vi.mock('../services/VersionService', { spy: true });
 
 describe('AddonConfigurationCommand', () => {
   let command: AddonConfigurationCommand;
-  let mockPackageManager: JsPackageManager;
+  const mockPackageManager = {
+    type: 'npm',
+    getVersionedPackages: vi.fn(),
+    executeCommand: vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 }),
+  } as Partial<JsPackageManager> as JsPackageManager;
   let mockTask: {
     success: ReturnType<typeof vi.fn>;
     error: ReturnType<typeof vi.fn>;
@@ -38,17 +38,35 @@ describe('AddonConfigurationCommand', () => {
     const { AddonVitestService } = await import('storybook/internal/cli');
     mockAddonVitestService = vi.mocked(AddonVitestService);
     const mockInstance = {
-      installPlaywright: vi.fn().mockResolvedValue([]),
+      installPlaywright: vi.fn().mockResolvedValue({ errors: [] }),
     };
-    mockAddonVitestService.mockImplementation(() => mockInstance);
+    mockAddonVitestService.mockImplementation(() => mockInstance as any);
 
-    command = new AddonConfigurationCommand();
+    vi.mocked(VersionService).mockImplementation(() => ({}));
 
-    mockPackageManager = {
-      type: 'npm',
-      getVersionedPackages: vi.fn(),
-      executeCommand: vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 }),
-    } as Partial<JsPackageManager> as JsPackageManager;
+    vi.mocked(TelemetryService).mockImplementation((disableTelemetry: boolean = false) => {
+      return {
+        disableTelemetry,
+        versionService: new VersionService(),
+      };
+    });
+
+    const mockAddonVitestServiceInstance = {
+      installPlaywright: vi.fn().mockResolvedValue({ errors: [] }),
+    };
+    const mockTelemetryServiceInstance = {
+      trackPlaywrightPromptDecision: vi.fn(),
+    };
+
+    command = new AddonConfigurationCommand(
+      mockPackageManager,
+      {
+        yes: true,
+        disableTelemetry: true,
+      } as any,
+      mockAddonVitestServiceInstance as any,
+      mockTelemetryServiceInstance as any
+    );
 
     mockTask = {
       success: vi.fn(),
@@ -57,7 +75,7 @@ describe('AddonConfigurationCommand', () => {
       group: vi.fn(),
     };
 
-    vi.mocked(prompt.taskLog).mockReturnValue(mockTask);
+    vi.mocked(prompt.taskLog).mockReturnValue(mockTask as any);
     vi.mocked(logger.log).mockImplementation(() => {});
 
     vi.clearAllMocks();
@@ -66,17 +84,11 @@ describe('AddonConfigurationCommand', () => {
   describe('execute', () => {
     it('should skip configuration when no addons are provided', async () => {
       const addons: string[] = [];
-      const options = {
-        packageManager: PackageManagerName.NPM,
-        features: [],
-      };
 
       const result = await command.execute({
-        packageManager: mockPackageManager,
         dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
-        options,
       });
 
       expect(result.status).toBe('success');
@@ -86,18 +98,11 @@ describe('AddonConfigurationCommand', () => {
 
     it('should configure test addons when test feature is enabled', async () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
-      const options = {
-        packageManager: PackageManagerName.NPM,
-        features: [],
-        yes: true,
-      };
 
       const result = await command.execute({
-        packageManager: mockPackageManager,
         dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
-        options,
       });
 
       expect(result.status).toBe('success');
@@ -109,20 +114,14 @@ describe('AddonConfigurationCommand', () => {
 
     it('should handle configuration errors gracefully', async () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
-      const options = {
-        packageManager: PackageManagerName.NPM,
-        features: [],
-      };
       const error = new Error('Configuration failed');
 
       mockPostinstallAddon.mockRejectedValue(error);
 
       const result = await command.execute({
-        packageManager: mockPackageManager,
         dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
-        options,
       });
 
       expect(result.status).toBe('failed');
@@ -133,18 +132,11 @@ describe('AddonConfigurationCommand', () => {
 
     it('should complete successfully with valid configuration', async () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
-      const options = {
-        packageManager: PackageManagerName.NPM,
-        features: [],
-        yes: true,
-      };
 
       const result = await command.execute({
-        packageManager: mockPackageManager,
         dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
-        options,
       });
 
       expect(result.status).toBe('success');

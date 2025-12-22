@@ -8,6 +8,7 @@ export const fsMocks = {
         import { Button } from './Button';
         
         const meta = {
+          title: 'Example/Button',
           component: Button,
           args: { onClick: fn() },
         } satisfies Meta<typeof Button>;
@@ -31,7 +32,7 @@ export const fsMocks = {
         
         /** 
          * Primary UI component for user interaction
-         * @import import { Button } from '@design-system/components/Button';
+         * @import import { Button } from '@design-system/components/override';
          */
         export const Button = ({
           primary = false,
@@ -60,9 +61,9 @@ export const fsMocks = {
         /** 
           * Description from meta and very long.
           * @summary Component summary
-          * @import import { Header } from '@design-system/components/Header';
           */
         const meta = {
+          title: 'Example/Header',
           component: Header,
           args: {
             onLogin: fn(),
@@ -85,9 +86,6 @@ export const fsMocks = {
           onCreateAccount?: () => void;
         }
         
-        /**
-         * @import import { Header } from '@design-system/components/Header';
-         */
         export default ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps) => (
           <header>
             <div className="storybook-header">
@@ -122,7 +120,7 @@ export const indexJson = {
       title: 'Example/Button',
       importPath: './src/stories/Button.stories.ts',
       componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: ['dev', 'test', 'vitest', 'autodocs', 'manifest'],
       exportName: 'Primary',
     },
     'example-button--secondary': {
@@ -133,7 +131,7 @@ export const indexJson = {
       title: 'Example/Button',
       importPath: './src/stories/Button.stories.ts',
       componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: ['dev', 'test', 'vitest', 'autodocs', 'manifest'],
       exportName: 'Secondary',
     },
     'example-button--large': {
@@ -144,7 +142,7 @@ export const indexJson = {
       title: 'Example/Button',
       importPath: './src/stories/Button.stories.ts',
       componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: ['dev', 'test', 'vitest', 'autodocs', 'manifest'],
       exportName: 'Large',
     },
     'example-button--small': {
@@ -155,7 +153,7 @@ export const indexJson = {
       title: 'Example/Button',
       importPath: './src/stories/Button.stories.ts',
       componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: ['dev', 'test', 'vitest', 'autodocs', 'manifest'],
       exportName: 'Small',
     },
     'example-header--docs': {
@@ -175,7 +173,7 @@ export const indexJson = {
       title: 'Example/Header',
       importPath: './src/stories/Header.stories.ts',
       componentPath: './src/stories/Header.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: ['dev', 'test', 'vitest', 'autodocs', 'manifest'],
       exportName: 'LoggedIn',
     },
     'example-header--logged-out': {
@@ -186,7 +184,7 @@ export const indexJson = {
       title: 'Example/Header',
       importPath: './src/stories/Header.stories.ts',
       componentPath: './src/stories/Header.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
+      tags: ['dev', 'test', 'vitest', 'autodocs', 'manifest'],
       exportName: 'LoggedOut',
     },
   },

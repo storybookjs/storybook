@@ -11,9 +11,14 @@ import {
   getStorybookInfo,
 } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
+import type { StorybookError } from 'storybook/internal/server-errors';
 import {
+  AddonVitestPostinstallConfigUpdateError,
   AddonVitestPostinstallError,
+  AddonVitestPostinstallExistingSetupFileError,
+  AddonVitestPostinstallFailedAddonA11yError,
   AddonVitestPostinstallPrerequisiteCheckError,
+  AddonVitestPostinstallWorkspaceUpdateError,
 } from 'storybook/internal/server-errors';
 import { SupportedFramework } from 'storybook/internal/types';
 
@@ -32,7 +37,7 @@ const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'
 const addonA11yName = '@storybook/addon-a11y';
 
 export default async function postInstall(options: PostinstallOptions) {
-  const errors: string[] = [];
+  const errors: InstanceType<typeof StorybookError>[] = [];
   const { logger, prompt } = options;
 
   const packageManager = JsPackageManagerFactory.getPackageManager({
@@ -58,11 +63,10 @@ export default async function postInstall(options: PostinstallOptions) {
   const allDeps = packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
 
-  const addonVitestService = new AddonVitestService();
+  const addonVitestService = new AddonVitestService(packageManager);
 
   // Use AddonVitestService for compatibility validation
   const compatibilityResult = await addonVitestService.validateCompatibility({
-    packageManager,
     framework: info.framework,
     builder: info.builder,
   });
@@ -97,7 +101,7 @@ export default async function postInstall(options: PostinstallOptions) {
   // Skip all dependency management when flag is set (called from init command)
   if (!options.skipDependencyManagement) {
     // Use AddonVitestService for dependency collection
-    const versionedDependencies = await addonVitestService.collectDependencies(packageManager);
+    const versionedDependencies = await addonVitestService.collectDependencies();
 
     // Print informational messages for Next.js
     if (info.framework === SupportedFramework.NEXTJS) {
@@ -139,13 +143,9 @@ export default async function postInstall(options: PostinstallOptions) {
   // Install Playwright browser binaries using AddonVitestService
   if (!options.skipDependencyManagement) {
     if (!options.skipInstall) {
-      const { errors: playwrightErrors } = await addonVitestService.installPlaywright(
-        packageManager,
-        {
-          yes: options.yes,
-        }
-      );
-      errors.push(...playwrightErrors);
+      await addonVitestService.installPlaywright({
+        yes: options.yes,
+      });
     } else {
       logger.warn(dedent`
         Playwright browser binaries installation skipped. Please run the following command manually later:
@@ -164,11 +164,11 @@ export default async function postInstall(options: PostinstallOptions) {
     Found an existing Vitest setup file:
     ${vitestSetupFile}
     Please refer to the documentation to complete the setup manually:
-    https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
+    https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
   `;
     logger.line();
     logger.error(`${errorMessage}\n`);
-    errors.push('Found existing Vitest setup file');
+    errors.push(new AddonVitestPostinstallExistingSetupFileError({ filePath: vitestSetupFile }));
   } else {
     logger.step(`Creating a Vitest setup file for Storybook:`);
     logger.log(`${vitestSetupFile}\n`);
@@ -256,10 +256,12 @@ export default async function postInstall(options: PostinstallOptions) {
           your existing workspace file automatically, you must do it yourself.
 
           Please refer to the documentation to complete the setup manually:
-          https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
+          https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
         `
       );
-      errors.push('Unable to update existing Vitest workspace file');
+      errors.push(
+        new AddonVitestPostinstallWorkspaceUpdateError({ filePath: vitestWorkspaceFile })
+      );
     }
   }
   // If there's an existing Vite/Vitest config with workspaces, we update it to include the Storybook Addon Vitest plugin.
@@ -302,9 +304,9 @@ export default async function postInstall(options: PostinstallOptions) {
         We were unable to update your existing ${vitestConfigFile ? 'Vitest' : 'Vite'} config file.
 
         Please refer to the documentation to complete the setup manually:
-        https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup
+        https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced
       `);
-      errors.push('Unable to update existing Vitest config file');
+      errors.push(new AddonVitestPostinstallConfigUpdateError({ filePath: rootConfig }));
     }
   }
   // If there's no existing Vitest/Vite config, we create a new Vitest config file.
@@ -363,12 +365,9 @@ export default async function postInstall(options: PostinstallOptions) {
       logger.error(dedent`
         Could not automatically set up ${addonA11yName} for @storybook/addon-vitest.
         Please refer to the documentation to complete the setup manually:
-        https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration
+        https://storybook.js.org/docs/writing-tests/accessibility-testing#integration-with-vitest-addon
       `);
-      errors.push(
-        "The @storybook/addon-a11y couldn't be set up for the Vitest addon" +
-          (e instanceof Error ? e.stack : String(e))
-      );
+      errors.push(new AddonVitestPostinstallFailedAddonA11yError({ error: e }));
     }
   }
 
@@ -391,7 +390,7 @@ export default async function postInstall(options: PostinstallOptions) {
       dedent`
         Done, but with errors!
         @storybook/addon-vitest was installed successfully, but there were some errors during the setup process. Please refer to the documentation to complete the setup manually and check the errors above:
-        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
+        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
       `
     );
     throw new AddonVitestPostinstallError({ errors });

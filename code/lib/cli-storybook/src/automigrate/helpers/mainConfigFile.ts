@@ -8,9 +8,13 @@ import {
   getStorybookInfo,
 } from 'storybook/internal/common';
 import type { PackageManagerName } from 'storybook/internal/common';
-import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
+import { frameworkToRenderer } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
+import {
+  isCsfFactoryPreview,
+  readConfig,
+  writeConfig as writeConfigFile,
+} from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -101,11 +105,9 @@ export const getFrameworkOptions = (
 
 export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
-  cwd,
   packageManagerName,
 }: {
   configDir?: string;
-  cwd?: string;
   packageManagerName?: PackageManagerName;
   cache?: boolean;
 }) => {
@@ -115,7 +117,11 @@ export const getStorybookData = async ({
     mainConfigPath: mainConfigPath,
     configDir: configDirFromScript,
     previewConfigPath,
-  } = await getStorybookInfo(userDefinedConfigDir, cwd);
+    versionSpecifier,
+  } = await getStorybookInfo(
+    userDefinedConfigDir,
+    userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined
+  );
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
@@ -123,7 +129,7 @@ export const getStorybookData = async ({
 
   const workingDir = isAbsolute(configDir)
     ? dirname(configDir)
-    : dirname(join(cwd ?? process.cwd(), configDir));
+    : dirname(join(process.cwd(), configDir));
 
   logger.debug('Getting stories paths...');
   const storiesPaths = await getStoriesPathsFromConfig({
@@ -140,16 +146,25 @@ export const getStorybookData = async ({
   });
 
   logger.debug('Getting Storybook version...');
-  const storybookVersion = await getCoercedStorybookVersion(packageManager);
+  const versionInstalled = (await packageManager.getModulePackageJSON('storybook'))?.version;
+
+  logger.debug('Detecting CSF factory usage...');
+  const hasCsfFactoryPreview = previewConfigPath
+    ? isCsfFactoryPreview(await readConfig(previewConfigPath))
+    : false;
 
   return {
     configDir,
     mainConfig,
-    storybookVersion,
+    /** The version specifier of Storybook from the user's package.json */
+    versionSpecifier,
+    /** The version of Storybook installed in the user's project */
+    versionInstalled,
     mainConfigPath,
     previewConfigPath,
     packageManager,
     storiesPaths,
+    hasCsfFactoryPreview,
   };
 };
 export type GetStorybookData = typeof getStorybookData;

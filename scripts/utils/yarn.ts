@@ -41,7 +41,6 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     playwright: '1.52.0',
     'playwright-core': '1.52.0',
     '@playwright/test': '1.52.0',
-    rollup: '4.44.2',
   };
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
@@ -72,8 +71,8 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
     {
       dryRun,
       debug,
-      startMessage: `🧶 Installing Yarn 2`,
-      errorMessage: `🚨 Installing Yarn 2 failed`,
+      startMessage: `🧶 Installing Yarn`,
+      errorMessage: `🚨 Installing Yarn failed`,
     }
   );
 };
@@ -93,7 +92,11 @@ export const addWorkaroundResolutions = async ({
   const content = await readFile(packageJsonPath, 'utf-8');
   const packageJson = JSON.parse(content);
 
-  const additionalReact19Resolutions = ['nextjs/default-ts', 'nextjs/prerelease'].includes(key)
+  const additionalReact19Resolutions = [
+    'nextjs/default-ts',
+    'nextjs/prerelease',
+    'react-native-web-vite/expo-ts',
+  ].includes(key)
     ? {
         react: '^19.0.0',
         'react-dom': '^19.0.0',
@@ -115,7 +118,6 @@ export const addWorkaroundResolutions = async ({
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
-    rollup: '4.44.2',
   };
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
@@ -130,6 +132,7 @@ export const configureYarn2ForVerdaccio = async ({
   const command = [
     // We don't want to use the cache or we might get older copies of our built packages
     // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed
+    // TODO publish unique versions instead
     `yarn config set enableGlobalCache false`,
     `yarn config set enableMirror false`,
     // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)

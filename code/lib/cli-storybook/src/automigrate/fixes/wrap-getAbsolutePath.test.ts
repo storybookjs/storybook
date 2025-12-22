@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import * as detect from 'storybook/internal/cli';
 
-import type { RunOptions } from '../types';
+import type { CheckOptions, RunOptions } from '../types';
 import { type WrapGetAbsolutePathRunOptions, wrapGetAbsolutePath } from './wrap-getAbsolutePath';
 
 vi.mock('storybook/internal/cli', async (importOriginal) => ({
@@ -27,7 +27,7 @@ describe('wrapGetAbsolutePath', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-      } as RunOptions<WrapGetAbsolutePathRunOptions>);
+      } as CheckOptions);
 
       await expect(check).resolves.toBeNull();
     });
@@ -41,7 +41,7 @@ describe('wrapGetAbsolutePath', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-      } as RunOptions<WrapGetAbsolutePathRunOptions>);
+      } as CheckOptions);
 
       await expect(check).resolves.toEqual({
         isConfigTypescript: false,
@@ -60,7 +60,7 @@ describe('wrapGetAbsolutePath', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-      } as RunOptions<WrapGetAbsolutePathRunOptions>);
+      } as CheckOptions);
 
       await expect(check).resolves.toEqual({
         isConfigTypescript: false,
@@ -79,7 +79,7 @@ describe('wrapGetAbsolutePath', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-with-wrappers.js'),
-      } as RunOptions<WrapGetAbsolutePathRunOptions>);
+      } as CheckOptions);
 
       await expect(check).resolves.toBeNull();
     });

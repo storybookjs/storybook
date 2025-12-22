@@ -46,6 +46,7 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly latestCLIVersionOnNPM: string;
   readonly autoblockerCheckResults: AutoblockerResult<unknown>[] | null;
   readonly storiesPaths: string[];
+  readonly hasCsfFactoryPreview: boolean;
 }
 
 /** Result when project collection fails */
@@ -290,15 +291,16 @@ const processProject = async ({
       packageManager,
       previewConfigPath,
       storiesPaths,
-      storybookVersion: beforeVersion,
+      versionInstalled,
+      hasCsfFactoryPreview,
     } = await getStorybookData({ configDir });
 
     // Validate version and upgrade compatibility
-    logger.debug(`${name} - Validating before version... ${beforeVersion}`);
-    validateVersion(beforeVersion);
-    const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(beforeVersion);
+    logger.debug(`${name} - Validating before version... ${versionInstalled}`);
+    validateVersion(versionInstalled);
+    const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(versionInstalled);
     logger.debug(`${name} - Validating upgrade compatibility...`);
-    validateUpgradeCompatibility(currentCLIVersion, beforeVersion, isCanary);
+    validateUpgradeCompatibility(currentCLIVersion, versionInstalled, isCanary);
 
     // Get version information from NPM
     logger.debug(`${name} - Fetching NPM version information...`);
@@ -312,7 +314,7 @@ const processProject = async ({
     const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
     const isCLIPrerelease = prerelease(currentCLIVersion) !== null;
     const isCLIExactPrerelease = currentCLIVersion === latestPrereleaseCLIVersionOnNPM;
-    const isUpgrade = lt(beforeVersion, currentCLIVersion);
+    const isUpgrade = lt(versionInstalled, currentCLIVersion);
 
     // Check for blockers
     let autoblockerCheckResults: AutoblockerResult<unknown>[] | null = null;
@@ -341,13 +343,14 @@ const processProject = async ({
       isCLIPrerelease,
       isCLIExactLatest,
       isUpgrade,
-      beforeVersion,
+      beforeVersion: versionInstalled,
       currentCLIVersion,
       latestCLIVersionOnNPM: latestCLIVersionOnNPM!,
       isCLIExactPrerelease,
       autoblockerCheckResults,
       previewConfigPath,
       storiesPaths,
+      hasCsfFactoryPreview,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
     logger.debug(String(error));

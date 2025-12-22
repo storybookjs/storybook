@@ -1,6 +1,6 @@
 {
   "name": "@storybook/codemod",
-  "version": "10.1.0-alpha.13",
+  "version": "10.2.0-alpha.9",
   "description": "A collection of codemod scripts written with JSCodeshift",
   "keywords": [
     "storybook"
@@ -39,14 +39,10 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@types/cross-spawn": "^6.0.6",
     "cross-spawn": "^7.0.6",
-    "es-toolkit": "^1.36.0",
+    "es-toolkit": "^1.43.0",
     "jscodeshift": "^0.15.1",
     "prettier": "^3.5.3",
     "storybook": "workspace:*",

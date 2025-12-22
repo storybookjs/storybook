@@ -63,11 +63,15 @@ export class FinalizationCommand {
   }
 
   private async printFailureMessage(storybookCommand?: string | null): Promise<void> {
-    logger.warn('Storybook setup completed, but some non-blocking errors occurred.');
+    logger.warn(
+      'Storybook setup completed, but some non-blocking errors occurred. Please check the log file below for details.'
+    );
     this.printNextSteps(storybookCommand);
 
-    const logFile = await logTracker.writeToFile(this.logfile);
-    logger.warn(`Storybook debug logs can be found at: ${logFile}`);
+    try {
+      const logFile = await logTracker.writeToFile(this.logfile);
+      logger.warn(`Debug logs are written to: ${logFile}`);
+    } catch {}
   }
 
   /** Print success message with feature summary */

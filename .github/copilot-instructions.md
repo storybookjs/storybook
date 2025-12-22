@@ -49,7 +49,7 @@ yarn                              # Install all dependencies (~2.5 min)
 **Using yarn task (custom task runner):**
 
 ```bash
-yarn task --task compile          # Compile all packages (~3 min)
+yarn task compile                 # Compile all packages (~3 min)
 ```
 
 **Using NX (recommended for better caching):**
@@ -68,7 +68,7 @@ yarn lint                         # Run all linting checks (~4 min)
 ### Type Checking
 
 ```bash
-yarn task --task check            # TypeScript type checking
+yarn task check                   # TypeScript type checking
 # OR with NX:
 yarn nx run-many -t check -c production
 ```
@@ -92,10 +92,10 @@ cd code && yarn test:watch        # Watch mode
 cd code && yarn storybook:vitest  # Storybook UI specific tests
 
 # Task-based testing (with template sandboxes)
-yarn task --task e2e-tests-dev --template react-vite/default-ts
-yarn task --task e2e-tests-build --template react-vite/default-ts
-yarn task --task test-runner-dev --template react-vite/default-ts
-yarn task --task test-runner-build --template react-vite/default-ts
+yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto
+yarn task e2e-tests-build --template react-vite/default-ts --start-from auto
+yarn task test-runner-dev --template react-vite/default-ts --start-from auto
+yarn task test-runner-build --template react-vite/default-ts --start-from auto
 ```
 
 ## NX Task Runner (Recommended)
@@ -106,15 +106,15 @@ The repository uses NX for task orchestration with better caching and dependency
 
 ```bash
 # Compilation
-yarn task --task compile --no-link
+yarn task compile --no-link
 yarn nx run-many -t compile -c production
 
 # E2E tests on specific template
-yarn task --task e2e-tests-dev --template react-vite/default-ts --no-link
+yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto --no-link
 yarn nx e2e-tests-dev react-vite/default-ts -c production
 
 # Skip task dependencies (start from a specific step)
-yarn task --task e2e-tests-dev -s e2e-tests --template react-vite/default-ts --no-link
+yarn task e2e-tests-dev --start-from e2e-tests --template react-vite/default-ts --no-link
 yarn nx e2e-tests-dev -c production --exclude-task-dependencies
 ```
 
@@ -129,7 +129,7 @@ yarn nx e2e-tests-dev -c production --exclude-task-dependencies
 
 ### Commands to Avoid
 
-- **DO NOT RUN**: `yarn task --task dev` - This starts a permanent development server that runs indefinitely
+- **DO NOT RUN**: `yarn task dev` - This starts a permanent development server that runs indefinitely
 - **DO NOT RUN**: `yarn start` - Also starts a long-running development server
 
 ### Sandbox Location Change
@@ -169,7 +169,7 @@ The repository includes task scripts in `scripts/tasks/`:
 
 ### For Testing UI Changes
 
-1. Generate a sandbox: `yarn task --task sandbox --template react-vite/default-ts`
+1. Generate a sandbox: `yarn task sandbox --template react-vite/default-ts --start-from auto`
    - Sandboxes are created at `../storybook-sandboxes/` by default
 2. If sandbox generation fails, use Storybook UI: `cd code && yarn storybook:ui`
 3. Access at http://localhost:6006/
@@ -213,7 +213,7 @@ Sandboxes are test environments that allow you to test Storybook changes with di
 
 ```bash
 # Generate a new sandbox (run from repository root)
-yarn task --task sandbox --template react-vite/default-ts
+yarn task sandbox --template react-vite/default-ts --start-from auto
 # Creates: ../storybook-sandboxes/react-vite-default-ts/
 
 # Using NX (with -c production flag required)
@@ -298,9 +298,9 @@ cd code && yarn test
 ### End-to-End Testing
 
 - Playwright tests available (version 1.52.0 configured)
-- E2E test tasks: `yarn task --task e2e-tests-build` or `yarn task --task e2e-tests-dev`
-- Test runner scenarios: `yarn task --task test-runner-build` or `yarn task --task test-runner-dev`
-- Smoke tests: `yarn task --task smoke-test`
+- E2E test tasks: `yarn task e2e-tests-build --start-from auto` or `yarn task e2e-tests-dev --start-from auto`
+- Test runner scenarios: `yarn task test-runner-build --start-from auto` or `yarn task test-runner-dev --start-from auto`
+- Smoke tests: `yarn task smoke-test --start-from auto`
 
 ### Watch Mode Commands
 

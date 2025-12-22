@@ -15,7 +15,8 @@ interface DocsManifestEntry {
   name: string;
   path: Path;
   title: string;
-  content: string;
+  content?: string;
+  error?: { name: string; message: string };
 }
 
 interface DocsManifest {
@@ -43,16 +44,29 @@ export const manifests: PresetPropertyFn<
   }
 
   const entriesWithContent = await Promise.all(
-    docsEntries.map(async (entry) => {
+    docsEntries.map(async (entry): Promise<DocsManifestEntry> => {
       const absolutePath = path.join(process.cwd(), entry.importPath);
-      const content = await fs.readFile(absolutePath, 'utf-8');
-      return {
-        id: entry.id,
-        name: entry.name,
-        path: entry.importPath,
-        title: entry.title,
-        content,
-      };
+      try {
+        const content = await fs.readFile(absolutePath, 'utf-8');
+        return {
+          id: entry.id,
+          name: entry.name,
+          path: entry.importPath,
+          title: entry.title,
+          content,
+        };
+      } catch (err) {
+        return {
+          id: entry.id,
+          name: entry.name,
+          path: entry.importPath,
+          title: entry.title,
+          error: {
+            name: err instanceof Error ? err.name : 'Error',
+            message: err instanceof Error ? err.message : String(err),
+          },
+        };
+      }
     })
   );
 

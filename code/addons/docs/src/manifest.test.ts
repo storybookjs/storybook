@@ -27,7 +27,8 @@ interface DocsManifestEntry {
   name: string;
   path: string;
   title: string;
-  content: string;
+  content?: string;
+  error?: { name: string; message: string };
 }
 
 interface DocsManifest {
@@ -205,5 +206,75 @@ describe('experimental_manifests', () => {
     expect(result).toHaveProperty('components');
     expect(result).toHaveProperty('docs');
     expect(result.components).toEqual(existingManifests.components);
+  });
+
+  it('should include error when file cannot be read', async () => {
+    const manifestEntries: IndexEntry[] = [
+      {
+        id: 'missing--docs',
+        name: 'docs',
+        title: 'Missing',
+        type: 'docs',
+        importPath: './NonExistent.mdx',
+        tags: ['manifest'],
+        storiesImports: [],
+      } satisfies DocsIndexEntry,
+    ];
+
+    const result = (await manifests(undefined, { manifestEntries } as any)) as ManifestResult;
+
+    expect(result).toHaveProperty('docs');
+    expect(result.docs?.docs['missing--docs']).toEqual({
+      id: 'missing--docs',
+      name: 'docs',
+      path: './NonExistent.mdx',
+      title: 'Missing',
+      error: {
+        name: 'Error',
+        message: expect.stringContaining('ENOENT'),
+      },
+    });
+    expect(result.docs?.docs['missing--docs'].content).toBeUndefined();
+  });
+
+  it('should handle mixed success and error entries', async () => {
+    const manifestEntries: IndexEntry[] = [
+      {
+        id: 'example--docs',
+        name: 'docs',
+        title: 'Example',
+        type: 'docs',
+        importPath: './Example.mdx',
+        tags: ['manifest'],
+        storiesImports: ['./Example.stories.tsx'],
+      } satisfies DocsIndexEntry,
+      {
+        id: 'missing--docs',
+        name: 'docs',
+        title: 'Missing',
+        type: 'docs',
+        importPath: './NonExistent.mdx',
+        tags: ['manifest'],
+        storiesImports: [],
+      } satisfies DocsIndexEntry,
+    ];
+
+    const result = (await manifests(undefined, { manifestEntries } as any)) as ManifestResult;
+
+    expect(result).toHaveProperty('docs');
+    expect(Object.keys(result.docs?.docs ?? {})).toHaveLength(2);
+
+    // Successful entry
+    expect(result.docs?.docs['example--docs'].content).toBe(
+      '# Example\n\nThis is example documentation.'
+    );
+    expect(result.docs?.docs['example--docs'].error).toBeUndefined();
+
+    // Failed entry
+    expect(result.docs?.docs['missing--docs'].content).toBeUndefined();
+    expect(result.docs?.docs['missing--docs'].error).toEqual({
+      name: 'Error',
+      message: expect.stringContaining('ENOENT'),
+    });
   });
 });

@@ -54,10 +54,11 @@ function extractStories(
   componentName: string | undefined,
   manifestEntries: IndexEntry[]
 ) {
+  const manifestEntryIds = new Set(manifestEntries.map((entry) => entry.id));
   return Object.entries(csf._stories)
     .filter(([, story]) =>
       // Only include stories that are in the list of entries already filtered for the 'manifest' tag
-      manifestEntries.some((entry) => entry.id === story.id)
+      manifestEntryIds.has(story.id)
     )
     .map(([storyName]) => {
       try {

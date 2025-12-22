@@ -7,7 +7,7 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import type { ExecaChildProcess } from 'execa';
+import type { ResultPromise } from 'execa';
 
 import type { ExecuteCommandOptions } from '../utils/command';
 import { executeCommand } from '../utils/command';
@@ -58,7 +58,7 @@ export class Yarn1Proxy extends JsPackageManager {
   public runPackageCommand({
     args,
     ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ResultPromise {
     const [command, ...rest] = args;
     return executeCommand({
       command: `yarn`,
@@ -100,7 +100,7 @@ export class Yarn1Proxy extends JsPackageManager {
       command: 'yarn',
       args: ['config', 'get', 'registry'],
     });
-    const url = (childProcess.stdout ?? '').trim();
+    const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
@@ -121,7 +121,7 @@ export class Yarn1Proxy extends JsPackageManager {
         cwd: this.instanceDir,
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       return this.mapDependencies(parsedOutput, pattern);
@@ -174,7 +174,7 @@ export class Yarn1Proxy extends JsPackageManager {
         args: ['info', packageName, ...args],
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       if (parsedOutput.type === 'inspect') {

@@ -7,7 +7,7 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import type { ExecaChildProcess } from 'execa';
+import type { ResultPromise } from 'execa';
 
 import type { ExecuteCommandOptions } from '../utils/command';
 import { executeCommand } from '../utils/command';
@@ -59,7 +59,7 @@ export class PNPMProxy extends JsPackageManager {
       command: 'pnpm',
       args: ['--version'],
     });
-    return result.stdout ?? null;
+    return typeof result.stdout === 'string' ? result.stdout : '';
   }
 
   getInstallArgs(): string[] {
@@ -80,7 +80,7 @@ export class PNPMProxy extends JsPackageManager {
   public runPackageCommand({
     args,
     ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ResultPromise {
     return executeCommand({
       command: 'pnpm',
       args: ['exec', ...args],
@@ -107,7 +107,7 @@ export class PNPMProxy extends JsPackageManager {
       command: 'pnpm',
       args: ['config', 'get', 'registry'],
     });
-    const url = (childProcess.stdout ?? '').trim();
+    const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
@@ -121,7 +121,7 @@ export class PNPMProxy extends JsPackageManager {
         },
         cwd: this.instanceDir,
       });
-      const commandResult = childProcess.stdout ?? '';
+      const commandResult = typeof childProcess.stdout === 'string' ? childProcess.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       return this.mapDependencies(parsedOutput, pattern);
@@ -221,7 +221,7 @@ export class PNPMProxy extends JsPackageManager {
         args: ['info', packageName, ...args],
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 

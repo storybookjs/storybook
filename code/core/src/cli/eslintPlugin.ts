@@ -114,6 +114,23 @@ export const configureFlatConfig = async (code: string) => {
         eslintConfigExpression.arguments.push(storybookConfig);
       }
 
+      // Case 2b: export default defineConfig([...]) from "eslint/config"
+      if (
+        t.isCallExpression(eslintConfigExpression) &&
+        t.isIdentifier(eslintConfigExpression.callee) &&
+        eslintDefineConfigLocalName &&
+        eslintConfigExpression.callee.name === eslintDefineConfigLocalName &&
+        eslintConfigExpression.arguments.length > 0
+      ) {
+        const firstArg = eslintConfigExpression.arguments[0];
+        if (t.isExpression(firstArg)) {
+          const unwrappedArg = unwrapTSExpression(firstArg);
+          if (unwrappedArg && t.isArrayExpression(unwrappedArg)) {
+            unwrappedArg.elements.push(t.spreadElement(storybookConfig));
+          }
+        }
+      }
+
       // Case 3: export default config (resolve to array or call expression with array)
       if (t.isIdentifier(eslintConfigExpression)) {
         const binding = path.scope.getBinding(eslintConfigExpression.name);

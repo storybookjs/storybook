@@ -1,3 +1,6 @@
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
 import type {
   DocsIndexEntry,
@@ -7,71 +10,65 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-const ATTACHED_MDX_TAG = 'attached-mdx';
-const UNATTACHED_MDX_TAG = 'unattached-mdx';
-
-interface MdxManifestEntry {
+interface DocsManifestEntry {
   id: string;
   name: string;
   path: Path;
   title: string;
-  tags: string[];
-  storiesImports: Path[];
+  content: string;
 }
 
-interface MdxManifest {
+interface DocsManifest {
   v: number;
-  entries: Record<string, MdxManifestEntry>;
+  docs: Record<string, DocsManifestEntry>;
 }
 
 /**
- * Generates a manifest of MDX documentation files. This extends the existing manifest system to
- * include MDX files with the 'attached-mdx' or 'unattached-mdx' tags.
+ * Generates a manifest of docs entries. This extends the existing manifest system to include docs
+ * entries.
  */
-export const experimental_manifests: PresetPropertyFn<
+export const manifests: PresetPropertyFn<
   'experimental_manifests',
   StorybookConfigRaw,
   { manifestEntries: IndexEntry[] }
 > = async (existingManifests = {}, { manifestEntries }) => {
   const startPerformance = performance.now();
 
-  // Filter for MDX docs entries that have the manifest tag
-  const mdxEntries = manifestEntries.filter(
-    (entry): entry is DocsIndexEntry =>
-      entry.type === 'docs' &&
-      entry.tags?.includes('manifest') === true &&
-      (entry.tags?.includes(ATTACHED_MDX_TAG) === true ||
-        entry.tags?.includes(UNATTACHED_MDX_TAG) === true)
+  const docsEntries = manifestEntries.filter(
+    (entry): entry is DocsIndexEntry => entry.type === 'docs'
   );
 
-  if (mdxEntries.length === 0) {
-    logger.verbose('No MDX entries found with manifest tag for documentation manifest');
+  if (docsEntries.length === 0) {
     return existingManifests;
   }
 
-  // Convert MDX entries to manifest format
-  const entries: Record<string, MdxManifestEntry> = {};
+  const entriesWithContent = await Promise.all(
+    docsEntries.map(async (entry) => {
+      const absolutePath = path.join(process.cwd(), entry.importPath);
+      const content = await fs.readFile(absolutePath, 'utf-8');
+      return {
+        id: entry.id,
+        name: entry.name,
+        path: entry.importPath,
+        title: entry.title,
+        content,
+      };
+    })
+  );
 
-  for (const entry of mdxEntries) {
-    entries[entry.id] = {
-      id: entry.id,
-      name: entry.name,
-      path: entry.importPath,
-      title: entry.title,
-      tags: entry.tags || [],
-      storiesImports: entry.storiesImports,
-    };
-  }
+  const docsManifests: Record<string, DocsManifestEntry> = Object.fromEntries(
+    entriesWithContent.map((entry) => [entry.id, entry])
+  );
 
   logger.verbose(
-    `MDX manifest generation took ${performance.now() - startPerformance}ms for ${mdxEntries.length} entries`
+    `Docs manifest generation took ${performance.now() - startPerformance}ms for ${docsEntries.length} entries`
   );
 
   return {
     ...existingManifests,
-    mdx: {
+    docs: {
       v: 0,
-      entries,
-    } satisfies MdxManifest,
+      docs: docsManifests,
+    } satisfies DocsManifest,
   };
 };

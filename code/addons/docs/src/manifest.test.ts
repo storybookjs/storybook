@@ -1,12 +1,61 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 
-import { experimental_manifests } from './manifest';
+import { vol } from 'memfs';
+
+import { manifests } from './manifest';
+
+vi.mock('node:fs/promises', async () => {
+  const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+  return memfs.fs.promises;
+});
+
+beforeEach(() => {
+  vi.spyOn(process, 'cwd').mockReturnValue('/app');
+  vol.fromJSON(
+    {
+      './Example.mdx': '# Example\n\nThis is example documentation.',
+      './Standalone.mdx': '# Standalone\n\nThis is standalone documentation.',
+    },
+    '/app'
+  );
+});
+
+interface DocsManifestEntry {
+  id: string;
+  name: string;
+  path: string;
+  title: string;
+  content: string;
+}
+
+interface DocsManifest {
+  v: number;
+  docs: Record<string, DocsManifestEntry>;
+}
+
+interface ManifestResult {
+  docs?: DocsManifest;
+  components?: unknown;
+}
 
 describe('experimental_manifests', () => {
-  it('should return existing manifests when no MDX entries are found', async () => {
-    const existingManifests = { components: { v: 0, components: {} } };
+  it('should return existing manifests when no docs entries are found', async () => {
+    const existingManifests = {
+      components: {
+        v: 0,
+        components: {
+          'example-component': {
+            id: 'example-component',
+            path: './Example.stories.tsx',
+            name: 'Example',
+            stories: [],
+            jsDocTags: {},
+          },
+        },
+      },
+    };
     const manifestEntries: IndexEntry[] = [
       {
         id: 'example--story',
@@ -19,13 +68,14 @@ describe('experimental_manifests', () => {
       },
     ];
 
-    const result = await experimental_manifests(existingManifests, { manifestEntries });
+    const result = (await manifests(existingManifests, {
+      manifestEntries,
+    } as any)) as ManifestResult;
 
     expect(result).toEqual(existingManifests);
   });
 
-  it('should generate MDX manifest for attached-mdx entries', async () => {
-    const existingManifests = {};
+  it('should generate docs manifest for attached docs entries', async () => {
     const manifestEntries: IndexEntry[] = [
       {
         id: 'example--docs',
@@ -33,31 +83,29 @@ describe('experimental_manifests', () => {
         title: 'Example',
         type: 'docs',
         importPath: './Example.mdx',
-        tags: ['manifest', 'attached-mdx'],
+        tags: ['manifest'],
         storiesImports: ['./Example.stories.tsx'],
       } satisfies DocsIndexEntry,
     ];
 
-    const result = await experimental_manifests(existingManifests, { manifestEntries });
+    const result = (await manifests(undefined, { manifestEntries } as any)) as ManifestResult;
 
-    expect(result).toHaveProperty('mdx');
-    expect(result.mdx).toEqual({
+    expect(result).toHaveProperty('docs');
+    expect(result.docs).toEqual({
       v: 0,
-      entries: {
+      docs: {
         'example--docs': {
           id: 'example--docs',
           name: 'docs',
           path: './Example.mdx',
           title: 'Example',
-          tags: ['manifest', 'attached-mdx'],
-          storiesImports: ['./Example.stories.tsx'],
+          content: '# Example\n\nThis is example documentation.',
         },
       },
     });
   });
 
-  it('should generate MDX manifest for unattached-mdx entries', async () => {
-    const existingManifests = {};
+  it('should generate docs manifest for unattached-mdx entries', async () => {
     const manifestEntries: IndexEntry[] = [
       {
         id: 'standalone--docs',
@@ -70,26 +118,24 @@ describe('experimental_manifests', () => {
       } satisfies DocsIndexEntry,
     ];
 
-    const result = await experimental_manifests(existingManifests, { manifestEntries });
+    const result = (await manifests(undefined, { manifestEntries } as any)) as ManifestResult;
 
-    expect(result).toHaveProperty('mdx');
-    expect(result.mdx).toEqual({
+    expect(result).toHaveProperty('docs');
+    expect(result.docs).toEqual({
       v: 0,
-      entries: {
+      docs: {
         'standalone--docs': {
           id: 'standalone--docs',
           name: 'docs',
           path: './Standalone.mdx',
           title: 'Standalone',
-          tags: ['manifest', 'unattached-mdx'],
-          storiesImports: [],
+          content: '# Standalone\n\nThis is standalone documentation.',
         },
       },
     });
   });
 
-  it('should include multiple MDX entries in the manifest', async () => {
-    const existingManifests = {};
+  it('should include multiple docs entries in the manifest', async () => {
     const manifestEntries: IndexEntry[] = [
       {
         id: 'example--docs',
@@ -97,7 +143,7 @@ describe('experimental_manifests', () => {
         title: 'Example',
         type: 'docs',
         importPath: './Example.mdx',
-        tags: ['manifest', 'attached-mdx'],
+        tags: ['manifest'],
         storiesImports: ['./Example.stories.tsx'],
       } satisfies DocsIndexEntry,
       {
@@ -111,55 +157,34 @@ describe('experimental_manifests', () => {
       } satisfies DocsIndexEntry,
     ];
 
-    const result = await experimental_manifests(existingManifests, { manifestEntries });
+    const result = (await manifests(undefined, { manifestEntries } as any)) as ManifestResult;
 
-    expect(result).toHaveProperty('mdx');
-    expect(result.mdx.entries).toHaveProperty('example--docs');
-    expect(result.mdx.entries).toHaveProperty('standalone--docs');
-    expect(Object.keys(result.mdx.entries)).toHaveLength(2);
-  });
-
-  it('should exclude MDX entries without manifest tag', async () => {
-    const existingManifests = {};
-    const manifestEntries: IndexEntry[] = [
-      {
-        id: 'example--docs',
-        name: 'docs',
-        title: 'Example',
-        type: 'docs',
-        importPath: './Example.mdx',
-        tags: ['attached-mdx'], // No 'manifest' tag
-        storiesImports: ['./Example.stories.tsx'],
-      } satisfies DocsIndexEntry,
-    ];
-
-    const result = await experimental_manifests(existingManifests, { manifestEntries });
-
-    expect(result).toEqual(existingManifests);
-  });
-
-  it('should exclude docs entries without attached-mdx or unattached-mdx tags', async () => {
-    const existingManifests = {};
-    const manifestEntries: IndexEntry[] = [
-      {
-        id: 'example--docs',
-        name: 'docs',
-        title: 'Example',
-        type: 'docs',
-        importPath: './Example.mdx',
-        tags: ['manifest', 'autodocs'], // Has manifest but not attached/unattached-mdx
-        storiesImports: ['./Example.stories.tsx'],
-      } satisfies DocsIndexEntry,
-    ];
-
-    const result = await experimental_manifests(existingManifests, { manifestEntries });
-
-    expect(result).toEqual(existingManifests);
+    expect(result).toHaveProperty('docs');
+    expect(result.docs?.docs).toHaveProperty('example--docs');
+    expect(result.docs?.docs).toHaveProperty('standalone--docs');
+    expect(Object.keys(result.docs?.docs ?? {})).toHaveLength(2);
+    expect(result.docs?.docs['example--docs'].content).toBe(
+      '# Example\n\nThis is example documentation.'
+    );
+    expect(result.docs?.docs['standalone--docs'].content).toBe(
+      '# Standalone\n\nThis is standalone documentation.'
+    );
   });
 
   it('should preserve existing manifests', async () => {
     const existingManifests = {
-      components: { v: 0, components: { 'example-component': { id: 'example-component' } } },
+      components: {
+        v: 0,
+        components: {
+          'example-component': {
+            id: 'example-component',
+            path: './Example.stories.tsx',
+            name: 'Example',
+            stories: [],
+            jsDocTags: {},
+          },
+        },
+      },
     };
     const manifestEntries: IndexEntry[] = [
       {
@@ -168,57 +193,17 @@ describe('experimental_manifests', () => {
         title: 'Example',
         type: 'docs',
         importPath: './Example.mdx',
-        tags: ['manifest', 'attached-mdx'],
+        tags: ['manifest'],
         storiesImports: ['./Example.stories.tsx'],
       } satisfies DocsIndexEntry,
     ];
 
-    const result = await experimental_manifests(existingManifests, { manifestEntries });
+    const result = (await manifests(existingManifests, {
+      manifestEntries,
+    } as any)) as ManifestResult;
 
     expect(result).toHaveProperty('components');
-    expect(result).toHaveProperty('mdx');
+    expect(result).toHaveProperty('docs');
     expect(result.components).toEqual(existingManifests.components);
-  });
-
-  it('should handle entries with all tag variations', async () => {
-    const existingManifests = {};
-    const manifestEntries: IndexEntry[] = [
-      {
-        id: 'example--docs',
-        name: 'docs',
-        title: 'Example',
-        type: 'docs',
-        importPath: './Example.mdx',
-        tags: ['dev', 'test', 'manifest', 'attached-mdx'],
-        storiesImports: ['./Example.stories.tsx'],
-      } satisfies DocsIndexEntry,
-    ];
-
-    const result = await experimental_manifests(existingManifests, { manifestEntries });
-
-    expect(result.mdx.entries['example--docs'].tags).toEqual([
-      'dev',
-      'test',
-      'manifest',
-      'attached-mdx',
-    ]);
-  });
-
-  it('should handle entries without tags array', async () => {
-    const existingManifests = {};
-    const manifestEntries: IndexEntry[] = [
-      {
-        id: 'example--docs',
-        name: 'docs',
-        title: 'Example',
-        type: 'docs',
-        importPath: './Example.mdx',
-        storiesImports: ['./Example.stories.tsx'],
-      } satisfies DocsIndexEntry,
-    ];
-
-    const result = await experimental_manifests(existingManifests, { manifestEntries });
-
-    expect(result).toEqual(existingManifests);
   });
 });

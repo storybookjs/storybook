@@ -1,25 +1,20 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
-import { type StoryIndexGenerator } from 'storybook/internal/core-server';
-
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
 import { fsMocks, indexJson } from './fixtures';
-import { componentManifestGenerator } from './generator';
+import { manifests } from './generator';
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   vol.fromJSON(fsMocks, '/app');
 });
 
-test('componentManifestGenerator generates correct id, name, description and examples ', async () => {
-  const generator = await componentManifestGenerator(undefined, { configDir: '.storybook' } as any);
-  const manifest = await generator?.({
-    getIndex: async () => indexJson,
-  } as unknown as StoryIndexGenerator);
+test('manifests generates correct id, name, description and examples ', async () => {
+  const result = await manifests(undefined, { index: indexJson } as any);
 
-  expect(manifest).toMatchInlineSnapshot(`
+  expect(result?.components).toMatchInlineSnapshot(`
   {
     "components": {
       "example-button": {
@@ -265,7 +260,6 @@ async function getManifestForStory(code: string) {
     '/app'
   );
 
-  const generator = await componentManifestGenerator(undefined, { configDir: '.storybook' } as any);
   const indexJson = {
     v: 5,
     entries: {
@@ -283,11 +277,9 @@ async function getManifestForStory(code: string) {
     },
   };
 
-  const manifest = await generator?.({
-    getIndex: async () => indexJson,
-  } as unknown as StoryIndexGenerator);
+  const result = await manifests(undefined, { index: indexJson } as any);
 
-  return manifest?.components?.['example-button'];
+  return result?.components?.components?.['example-button'];
 }
 
 function withCSF3(body: string) {

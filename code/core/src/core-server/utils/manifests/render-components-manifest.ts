@@ -2,11 +2,11 @@ import path from 'node:path';
 
 import { groupBy } from 'storybook/internal/common';
 
-import type { ComponentManifest, ComponentsManifest } from '../types';
+import type { ComponentManifest, ComponentsManifest } from '../../../types';
 
 // AI generated manifests/components.html page
 // Only HTML/CSS no JS
-export function renderManifestComponentsPage(manifest: ComponentsManifest) {
+export function renderComponentsManifest(manifest: ComponentsManifest) {
   const entries = Object.entries(manifest?.components ?? {}).sort((a, b) =>
     (a[1].name || a[0]).localeCompare(b[1].name || b[0])
   );
@@ -825,7 +825,7 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
 </article>`;
 }
 
-export type ParsedDocgen = {
+type ParsedDocgen = {
   props: Record<
     string,
     {
@@ -837,7 +837,7 @@ export type ParsedDocgen = {
   >;
 };
 
-export const parseReactDocgen = (reactDocgen: any): ParsedDocgen => {
+const parseReactDocgen = (reactDocgen: any): ParsedDocgen => {
   const props: Record<string, any> = (reactDocgen as any)?.props ?? {};
   return {
     props: Object.fromEntries(

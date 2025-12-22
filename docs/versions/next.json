@@ -1,1 +1,1 @@
-{"version":"10.2.0-alpha.1","info":{"plain":"- Core: Improve globbing using dynamic CWD (REVERT) - [#33201](https://github.com/storybookjs/storybook/pull/33201), thanks @ndelangen!"}}
+{"version":"10.2.0-alpha.9","info":{"plain":"- Core and Vite: Use story index as source of truth for Vite paths - [#30612](https://github.com/storybookjs/storybook/pull/30612), thanks @JReinhold!"}}

@@ -120,7 +120,7 @@ const SingleSelect: FC<SelectProps> = ({ name, value, options, onChange, argType
         {name}
       </label>
       <OptionsSelect disabled={readonly} id={controlId} value={selection} onChange={handleChange}>
-        <option key="no-selection" disabled>
+        <option disabled={selection === NO_SELECTION} key="no-selection">
           {NO_SELECTION}
         </option>
         {Object.keys(options).map((key) => (

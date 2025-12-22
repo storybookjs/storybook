@@ -36,8 +36,10 @@ const handleCommandFailure =
       logger.error(String(error));
     }
 
-    const logFile = await logTracker.writeToFile(logFilePath);
-    logger.log(`Debug logs are written to: ${logFile}`);
+    try {
+      const logFile = await logTracker.writeToFile(logFilePath);
+      logger.log(`Debug logs are written to: ${logFile}`);
+    } catch {}
     logger.outro('');
     process.exit(1);
   };
@@ -79,8 +81,10 @@ const command = (name: string) =>
     })
     .hook('postAction', async (command) => {
       if (logTracker.shouldWriteLogsToFile) {
-        const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
-        logger.log(`Debug logs are written to: ${logFile}`);
+        try {
+          const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
+          logger.log(`Debug logs are written to: ${logFile}`);
+        } catch {}
         logger.outro(CLI_COLORS.success('Done!'));
       }
     });

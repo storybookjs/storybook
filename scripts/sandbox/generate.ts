@@ -196,6 +196,8 @@ const runGenerators = async (
       limit(async () => {
         const baseDir = join(REPROS_DIRECTORY, dirName);
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
+        let createBaseDir: string | undefined;
+
         try {
           let flags: string[] = ['--no-dev'];
 
@@ -208,7 +210,7 @@ const runGenerators = async (
           await emptyDir(baseDir);
 
           // We do the creation inside a temp dir to avoid yarn container problems
-          const createBaseDir = await temporaryDirectory();
+          createBaseDir = await temporaryDirectory();
           if (!script.includes('pnp')) {
             try {
               await setupYarn({ cwd: createBaseDir });
@@ -306,6 +308,11 @@ const runGenerators = async (
               recursive: true,
               force: true,
             });
+          }
+
+          // Clean up the temporary base directory
+          if (createBaseDir) {
+            await rm(createBaseDir, { recursive: true, force: true });
           }
         }
       })

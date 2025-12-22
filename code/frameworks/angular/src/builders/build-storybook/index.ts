@@ -4,7 +4,7 @@ import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/commo
 import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, logTracker } from 'storybook/internal/node-logger';
 
 import type {
   BuilderContext,
@@ -60,6 +60,7 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'statsJson'
     | 'disableTelemetry'
     | 'debugWebpack'
+    | 'logfile'
     | 'previewUrl'
   >;
 
@@ -71,6 +72,14 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
   options,
   context
 ): Promise<BuilderOutput> => {
+  // Apply logger configuration from builder options
+  if (options.loglevel) {
+    logger.setLogLevel(options.loglevel);
+  }
+  if (options.logfile) {
+    logTracker.enableLogWriting();
+  }
+
   logger.intro('Building Storybook');
 
   const { tsConfig } = await setup(options, context);
@@ -147,6 +156,10 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
   };
 
   await runInstance({ ...standaloneOptions, mode: 'static' });
+  if (logTracker.shouldWriteLogsToFile) {
+    const logFile = await logTracker.writeToFile(options.logfile as any);
+    logger.info(`Debug logs are written to: ${logFile}`);
+  }
   logger.outro('Storybook build completed successfully');
   return { success: true } as BuilderOutput;
 };

@@ -255,10 +255,6 @@ jobs:
             - run:
                 command: |
                     yarn
-                    yarn task --task compile --start-from=auto --no-link --debug
-                name: Compile
-            - run:
-                command: |
                     yarn task --task check --start-from=auto --no-link --debug
                 name: Check
             - run:
@@ -416,10 +412,10 @@ jobs:
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
             - store_test_results:
-                path: storybook/test-results
+                path: test-results
             - store_artifacts:
                 destination: playwright
-                path: storybook/code/playwright-results/
+                path: code/playwright-results/
     e2e-production:
         executor:
             class: medium
@@ -447,10 +443,10 @@ jobs:
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
             - store_test_results:
-                path: storybook/test-results
+                path: test-results
             - store_artifacts:
                 destination: playwright
-                path: storybook/code/playwright-results/
+                path: code/playwright-results/
     e2e-ui:
         executor:
             class: medium

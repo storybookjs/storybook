@@ -71,6 +71,26 @@ export abstract class StorybookError extends Error {
     this._name = name;
   }
 
+  /**
+   * A collection of sub errors which relate to a parent error.
+   *
+   * Sub-errors are used to represent multiple related errors that occurred together. When a
+   * StorybookError with sub-errors is sent to telemetry, both the parent error and each sub-error
+   * are sent as separate telemetry events. This allows for better error tracking and debugging.
+   *
+   * @example
+   *
+   * ```ts
+   * const error1 = new SomeError();
+   * const error2 = new AnotherError();
+   * const parentError = new ParentError({
+   *   // ... other props
+   *   subErrors: [error1, error2],
+   * });
+   * ```
+   */
+  subErrors: StorybookError[] = [];
+
   constructor(props: {
     category: string;
     code: number;
@@ -78,6 +98,11 @@ export abstract class StorybookError extends Error {
     documentation?: boolean | string | string[];
     isHandledError?: boolean;
     name: string;
+    /**
+     * Optional array of sub-errors that are related to this error. When this error is sent to
+     * telemetry, each sub-error will be sent as a separate event.
+     */
+    subErrors?: StorybookError[];
   }) {
     super(StorybookError.getFullMessage(props));
     this.category = props.category;
@@ -85,6 +110,7 @@ export abstract class StorybookError extends Error {
     this.code = props.code;
     this.isHandledError = props.isHandledError ?? false;
     this.name = props.name;
+    this.subErrors = props.subErrors ?? [];
   }
 
   /** Generates the error message along with additional documentation link (if applicable). */

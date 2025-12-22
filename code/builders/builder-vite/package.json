@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "10.2.0-alpha.1",
+  "version": "10.2.0-alpha.9",
   "description": "A Storybook builder to dev and build with Vite",
   "keywords": [
     "storybook",

@@ -17,9 +17,11 @@ async function getManifests(presets: Presets) {
     (entry) => entry.tags?.includes('manifest') ?? false
   );
 
-  return await presets.apply<Manifests>('experimental_manifests', undefined, {
-    manifestEntries,
-  });
+  return (
+    (await presets.apply<Manifests>('experimental_manifests', undefined, {
+      manifestEntries,
+    })) ?? {}
+  );
 }
 
 export async function writeManifests(outputDir: string, presets: Presets) {

@@ -84,6 +84,7 @@ export async function waitForAnimations(signal?: AbortSignal) {
                   await a.finished;
                 } catch (err) {
                   // Ignore AbortError from canceled animations, treat as "finished"
+                  // Those errors occur exclusively on CRA with React.StrictMode enabled.
                   if (!(err instanceof Error && err.name === 'AbortError')) {
                     throw err;
                   }

@@ -51,6 +51,12 @@ module.exports = {
               "Don't import from react-aria-components root, but use the react-aria-components/patched-dist/ComponentX entrypoints which are optimised for tree-shaking. Might require addition patching of the package if using new, unpatched components. See https://github.com/storybookjs/storybook/pull/32594",
             allowTypeImports: true,
           },
+          {
+            name: 'es-toolkit',
+            message:
+              "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
+            allowTypeImports: true,
+          },
         ],
       },
     ],

@@ -2,6 +2,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type {
   DocsIndexEntry,
   IndexEntry,
+  Path,
   PresetPropertyFn,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
@@ -12,10 +13,10 @@ const UNATTACHED_MDX_TAG = 'unattached-mdx';
 interface MdxManifestEntry {
   id: string;
   name: string;
-  path: string;
+  path: Path;
   title: string;
   tags: string[];
-  storiesImports?: string[];
+  storiesImports: Path[];
 }
 
 interface MdxManifest {
@@ -58,7 +59,7 @@ export const experimental_manifests: PresetPropertyFn<
       path: entry.importPath,
       title: entry.title,
       tags: entry.tags || [],
-      storiesImports: entry.storiesImports || [],
+      storiesImports: entry.storiesImports,
     };
   }
 

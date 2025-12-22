@@ -7,7 +7,7 @@ import {
   CACHE_KEYS,
   artifact,
   cache,
-  restore,
+  workflow,
   server,
   toId,
   verdaccio,
@@ -37,7 +37,7 @@ function defineSandboxJob_build({
     {
       executor,
       steps: [
-        ...restore.linux(),
+        ...workflow.restore_linux(),
         {
           run: {
             name: 'Build storybook',
@@ -80,7 +80,7 @@ function defineSandboxJob_dev({
     {
       executor,
       steps: [
-        ...restore.linux(),
+        ...workflow.restore_linux(),
         ...(options.e2e
           ? [
               {
@@ -149,7 +149,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           class: 'large',
         },
         steps: [
-          ...restore.linux(),
+          ...workflow.restore_linux(),
           verdaccio.start(),
           {
             run: {
@@ -253,7 +253,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               class: 'medium',
             },
             steps: [
-              ...restore.linux(),
+              ...workflow.restore_linux(),
               {
                 run: {
                   name: 'Running Vitest',
@@ -275,7 +275,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               class: 'xlarge',
             },
             steps: [
-              ...restore.linux(),
+              ...workflow.restore_linux(),
               {
                 run: {
                   name: 'Serve storybook',
@@ -317,7 +317,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               class: 'medium',
             },
             steps: [
-              ...restore.linux(),
+              ...workflow.restore_linux(),
               {
                 run: {
                   name: 'Running test-runner',
@@ -346,7 +346,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
         class: 'medium',
       },
       steps: [
-        ...restore.linux(),
+        ...workflow.restore_linux(),
         {
           run: {
             name: 'Running test-runner',
@@ -369,7 +369,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
         shell: 'bash.exe',
       },
       steps: [
-        ...restore.windows(),
+        ...workflow.restore_windows(),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {
@@ -417,7 +417,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
         shell: 'bash.exe',
       },
       steps: [
-        ...restore.windows(),
+        ...workflow.restore_windows(),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {

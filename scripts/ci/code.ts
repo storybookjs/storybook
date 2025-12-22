@@ -11,10 +11,10 @@ import {
   git,
   node,
   npm,
-  restore,
   server,
   testResults,
   verdaccio,
+  workflow,
   workspace,
 } from './utils/helpers';
 import { defineHub, defineJob } from './utils/types';
@@ -46,7 +46,7 @@ export const build_linux = defineJob('Build (linux)', {
         working_directory: `code`,
       },
     },
-    'report-workflow-on-failure',
+    ...workflow.report_on_failure(),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.persist([
       ...glob
@@ -135,7 +135,7 @@ export const storybookChromatic = defineJob(
       class: 'medium+',
     },
     steps: [
-      ...restore.linux(),
+      ...workflow.restore_linux(),
       {
         run: {
           name: 'Build internal storybook',
@@ -163,7 +163,7 @@ export const check = defineJob(
       class: 'xlarge',
     },
     steps: [
-      ...restore.linux(),
+      ...workflow.restore_linux(),
       {
         run: {
           name: 'TypeCheck code',
@@ -178,8 +178,8 @@ export const check = defineJob(
           command: 'yarn check',
         },
       },
-      'report-workflow-on-failure',
-      'cancel-workflow-on-failure',
+      ...workflow.report_on_failure(),
+      ...workflow.cancel_on_failure(),
     ],
   },
   [codeHub.id]
@@ -193,7 +193,7 @@ export const lint = defineJob(
       class: 'xlarge',
     },
     steps: [
-      ...restore.linux(),
+      ...workflow.restore_linux(),
       {
         run: {
           name: 'Lint code',
@@ -221,7 +221,7 @@ export const knip = defineJob(
       class: 'xlarge',
     },
     steps: [
-      ...restore.linux(),
+      ...workflow.restore_linux(),
       {
         run: {
           name: 'Run Knip',
@@ -242,7 +242,7 @@ export const testsUnit_linux = defineJob(
       class: 'xlarge',
     },
     steps: [
-      ...restore.linux(),
+      ...workflow.restore_linux(),
       {
         run: {
           name: 'Run tests',
@@ -254,8 +254,8 @@ export const testsUnit_linux = defineJob(
       testResults.persist(`test-results`),
 
       git.check(),
-      'report-workflow-on-failure',
-      'cancel-workflow-on-failure',
+      ...workflow.report_on_failure(),
+      ...workflow.cancel_on_failure(),
     ],
   },
   [codeHub.id]
@@ -269,7 +269,7 @@ export const testsStories_linux = defineJob(
       class: 'xlarge',
     },
     steps: [
-      ...restore.linux(),
+      ...workflow.restore_linux(),
       {
         run: {
           name: 'Run stories tests',
@@ -281,8 +281,8 @@ export const testsStories_linux = defineJob(
       testResults.persist(`test-results`),
 
       git.check(),
-      'report-workflow-on-failure',
-      'cancel-workflow-on-failure',
+      ...workflow.report_on_failure(),
+      ...workflow.cancel_on_failure(),
     ],
   },
   [codeHub.id]
@@ -297,7 +297,7 @@ export const testUnit_windows = defineJob(
       shell: 'bash.exe',
     },
     steps: [
-      ...restore.windows('C:\\Users\\circleci\\project'),
+      ...workflow.restore_windows('C:\\Users\\circleci\\project'),
       {
         run: {
           command: 'yarn install',
@@ -324,7 +324,7 @@ export const benchmarkPackages = defineJob(
       class: 'xlarge',
     },
     steps: [
-      ...restore.linux(),
+      ...workflow.restore_linux(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {

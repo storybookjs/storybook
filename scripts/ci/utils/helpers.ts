@@ -74,14 +74,6 @@ export const git = {
       },
     };
   },
-  unshallow: () => {
-    return {
-      run: {
-        command: 'git fetch --unshallow',
-        when: 'on_fail',
-      },
-    };
-  },
 };
 
 export const node = {
@@ -174,14 +166,14 @@ export const verdaccio = {
   ports: ['6001', '6002'],
 };
 
-export const restore = {
-  linux: () => [
+export const workflow = {
+  restore_linux: () => [
     //
     git.checkout(),
     workspace.attach(),
     cache.attach(CACHE_KEYS()),
   ],
-  windows: (at = 'C:\\Users\\circleci') => [
+  restore_windows: (at = 'C:\\Users\\circleci') => [
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
     workspace.attach(at),
@@ -199,6 +191,36 @@ export const restore = {
       },
     },
   ],
+  cancel_on_failure: () => {
+    return [
+      {
+        run: {
+          name: 'Cancel current workflow',
+          when: 'on_fail',
+          command:
+            'curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"',
+        },
+      },
+    ];
+  },
+  report_on_failure: () => {
+    return [
+      {
+        run: {
+          name: 'Un-shallow git',
+          when: 'on_fail',
+          command: 'git fetch --unshallow',
+        },
+      },
+      {
+        run: {
+          name: 'Report failure',
+          when: 'on_fail',
+          command: 'echo "Workflow failed"',
+        },
+      },
+    ];
+  },
 };
 
 export const CACHE_KEYS = (platform = 'linux') =>

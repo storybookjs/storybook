@@ -21,7 +21,6 @@ import {
 import { getInitEmpty, initEmptyHub } from './init-empty';
 import { getSandboxes, sandboxesHub } from './sandboxes';
 import { getTestStorybooks, testStorybooksHub } from './test-storybooks';
-import { commands } from './utils/commands';
 import { executors } from './utils/executors';
 import { orbs } from './utils/orbs';
 import { parameters } from './utils/parameters';
@@ -83,7 +82,6 @@ function generateConfig(workflow: Workflow) {
   return {
     version: 2.1,
     orbs,
-    commands,
     executors,
     parameters,
 

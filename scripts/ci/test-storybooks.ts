@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path/posix';
 
 import { build_linux } from './code';
-import { artifact, restore } from './utils/helpers';
+import { artifact, workflow } from './utils/helpers';
 import { type Workflow, defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
 
 export function definePortableStoryTest(directory: string) {
@@ -20,7 +20,7 @@ export function definePortableStoryTest(directory: string) {
         class: 'medium',
       },
       steps: [
-        ...restore.linux(),
+        ...workflow.restore_linux(),
         {
           run: {
             name: 'Install dependencies',
@@ -86,7 +86,7 @@ export function definePortableStoryTestPNP() {
         class: 'medium',
       },
       steps: [
-        ...restore.linux(),
+        ...workflow.restore_linux(),
         {
           run: {
             name: 'Install dependencies',
@@ -119,7 +119,7 @@ export function definePortableStoryTestVitest3() {
         class: 'medium',
       },
       steps: [
-        ...restore.linux(),
+        ...workflow.restore_linux(),
         {
           run: {
             name: 'Install dependencies',

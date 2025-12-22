@@ -1,5 +1,5 @@
 import { build_linux } from './code';
-import { restore, server, verdaccio } from './utils/helpers';
+import { workflow, server, verdaccio } from './utils/helpers';
 import { type Workflow, defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
 
 export const defineEmptyInitFlow = (template: string) =>
@@ -11,7 +11,7 @@ export const defineEmptyInitFlow = (template: string) =>
         class: 'medium',
       },
       steps: [
-        ...restore.linux(),
+        ...workflow.restore_linux(),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {
@@ -53,7 +53,7 @@ export function defineEmptyInitFeatures() {
         class: 'medium',
       },
       steps: [
-        ...restore.linux(),
+        ...workflow.restore_linux(),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {
@@ -96,7 +96,7 @@ export function defineEmptyInitWindows() {
         shell: 'bash.exe',
       },
       steps: [
-        ...restore.windows(),
+        ...workflow.restore_windows(),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {

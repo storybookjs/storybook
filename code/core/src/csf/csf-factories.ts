@@ -108,7 +108,7 @@ function defineMeta<
 >(input: TInput, preview: Preview<TRenderer>): Meta<TRenderer, TInput> {
   return {
     _tag: 'Meta',
-    input,
+    input: { ...input, parameters: { ...input.parameters, csfFactory: true } },
     preview,
     // @ts-expect-error hard
     story(

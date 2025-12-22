@@ -138,15 +138,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     vitest: `${name} (vitest)`,
     testRunner: `${name} (test-runner)`,
   };
-  const ids = {
-    create: `${id}-create`,
-    build: `${id}-build`,
-    dev: `${id}-dev`,
-    e2e: `${id}-e2e`,
-    chromatic: `${id}-chromatic`,
-    vitest: `${id}-vitest`,
-    testRunner: `${id}-test-runner`,
-  };
+  const ids = Object.fromEntries(Object.entries(names).map(([key, value]) => [key, toId(value)]));
 
   const jobs = [
     defineJob(

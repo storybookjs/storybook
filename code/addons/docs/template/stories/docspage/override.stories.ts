@@ -16,7 +16,7 @@ export default {
   tags: ['autodocs'],
   args: { label: 'Click Me!' },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
     docs: { page: Override },
   },
 };

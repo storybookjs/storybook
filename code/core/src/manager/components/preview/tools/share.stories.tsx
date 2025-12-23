@@ -13,11 +13,16 @@ const managerContext = {
   state: {
     storyId: 'manager-preview-tools-share--default',
     refId: undefined,
-    refs: {},
-    customQueryParams: {},
   },
   api: {
-    getShortcutKeys: () => ({ copyStoryLink: ['alt', 'shift', 'k'] }),
+    getShortcutKeys: () => ({
+      copyStoryLink: ['alt', 'shift', 'k'],
+      openInIsolation: ['alt', 'shift', 'i'],
+    }),
+    getStoryHrefs: () => ({
+      manager: '/?path=/story/manager-preview-tools-share--default',
+      preview: '/iframe.html?id=manager-preview-tools-share--default&viewMode=story',
+    }),
   },
 } as any;
 

@@ -1,6 +1,7 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
+import { groupBy } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type {
   ComponentManifest,
@@ -12,6 +13,7 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
+const ATTACHED_MDX_TAG = 'attached-mdx';
 const UNATTACHED_MDX_TAG = 'unattached-mdx';
 
 export interface DocsManifestEntry {
@@ -69,22 +71,25 @@ export async function createDocsManifestEntry(entry: DocsIndexEntry): Promise<Do
 }
 
 /**
- * Processes unattached MDX entries (standalone docs not attached to any component). These are added
+ * Extracts unattached MDX entries (standalone docs not attached to any component). These are added
  * to a separate `docs` manifest.
  */
-export async function processUnattachedDocsEntries(
+export async function extractUnattachedDocsEntries(
   entries: DocsIndexEntry[]
 ): Promise<Record<string, DocsManifestEntry>> {
+  if (entries.length === 0) {
+    return {};
+  }
   const entriesWithContent = await Promise.all(entries.map(createDocsManifestEntry));
   return Object.fromEntries(entriesWithContent.map((entry) => [entry.id, entry]));
 }
 
 /**
- * Processes attached docs entries by adding them to their corresponding component manifests.
+ * Extracts attached docs entries by adding them to their corresponding component manifests.
  *
  * Returns the updated components manifest with docs added to each component.
  */
-export async function processAttachedDocsEntries(
+export async function extractAttachedDocsEntries(
   entries: DocsIndexEntry[],
   existingComponents: ComponentsManifestWithDocs | undefined
 ): Promise<ComponentsManifestWithDocs | undefined> {
@@ -94,20 +99,12 @@ export async function processAttachedDocsEntries(
 
   const entriesWithContent = await Promise.all(entries.map(createDocsManifestEntry));
 
-  // Create a copy of the components manifest to modify
-  const updatedComponents: Record<string, ComponentManifestWithDocs> = {};
-
-  for (const [componentId, component] of Object.entries(existingComponents.components)) {
-    updatedComponents[componentId] = { ...component };
-  }
-
   // Add docs to their corresponding components based on the entry id prefix
   for (const docsEntry of entriesWithContent) {
-    // Extract the component id from the docs entry id (e.g., "example--docs" -> "example")
     const componentId = docsEntry.id.split('--')[0];
 
-    if (updatedComponents[componentId]) {
-      const component = updatedComponents[componentId];
+    const component = existingComponents.components[componentId];
+    if (component) {
       if (!component.docs) {
         component.docs = {};
       }
@@ -115,10 +112,7 @@ export async function processAttachedDocsEntries(
     }
   }
 
-  return {
-    ...existingComponents,
-    components: updatedComponents,
-  };
+  return existingComponents;
 }
 
 /**
@@ -126,8 +120,9 @@ export async function processAttachedDocsEntries(
  * entries.
  *
  * - Unattached MDX entries (with 'unattached-mdx' tag) are added to a separate `docs` manifest.
- * - Attached docs entries are added to their corresponding component manifests under a `docs`
- *   property.
+ * - Attached MDX entries (with 'attached-mdx' tag) are added to their corresponding component
+ *   manifests under a `docs` property.
+ * - Docs entries without either tag are ignored.
  */
 export const manifests: PresetPropertyFn<
   'experimental_manifests',
@@ -144,30 +139,41 @@ export const manifests: PresetPropertyFn<
     return existingManifests;
   }
 
-  // Split entries into unattached (standalone) and attached (component-related)
-  const unattachedEntries = docsEntries.filter((entry) => entry.tags?.includes(UNATTACHED_MDX_TAG));
-  const attachedEntries = docsEntries.filter((entry) => !entry.tags?.includes(UNATTACHED_MDX_TAG));
+  const { attachedEntries = [], unattachedEntries = [] } = groupBy(docsEntries, (entry) => {
+    switch (true) {
+      case entry.tags?.includes(UNATTACHED_MDX_TAG):
+        return 'unattachedEntries';
+      case entry.tags?.includes(ATTACHED_MDX_TAG):
+        return 'attachedEntries';
+      default:
+        return 'ignored';
+    }
+  });
 
-  const currentManifests = existingManifests as ManifestsWithDocs;
+  if (unattachedEntries.length === 0 && attachedEntries.length === 0) {
+    return existingManifests;
+  }
 
-  // Process both types of entries
+  const existingManifestsWithDocs = existingManifests as ManifestsWithDocs;
+
   const [unattachedDocs, updatedComponents] = await Promise.all([
-    processUnattachedDocsEntries(unattachedEntries),
-    processAttachedDocsEntries(attachedEntries, currentManifests.components),
+    extractUnattachedDocsEntries(unattachedEntries),
+    extractAttachedDocsEntries(attachedEntries, existingManifestsWithDocs.components),
   ]);
 
+  const processedCount = unattachedEntries.length + attachedEntries.length;
   logger.verbose(
-    `Docs manifest generation took ${performance.now() - startPerformance}ms for ${docsEntries.length} entries (${unattachedEntries.length} unattached, ${attachedEntries.length} attached)`
+    `Docs manifest generation took ${performance.now() - startPerformance}ms for ${processedCount} entries (${unattachedEntries.length} unattached, ${attachedEntries.length} attached)`
   );
 
-  const result: ManifestsWithDocs = { ...currentManifests };
+  const result = { ...existingManifestsWithDocs };
 
   // Add unattached docs to the docs manifest
   if (Object.keys(unattachedDocs).length > 0) {
     result.docs = {
       v: 0,
       docs: unattachedDocs,
-    } satisfies DocsManifest;
+    };
   }
 
   // Update the components manifest with attached docs

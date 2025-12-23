@@ -82,6 +82,42 @@ describe('experimental_manifests', () => {
     expect(result).toEqual(existingManifests);
   });
 
+  it('should drop docs entries without attached-mdx or unattached-mdx tags', async () => {
+    const existingManifests = {
+      components: {
+        v: 0,
+        components: {
+          example: {
+            id: 'example',
+            path: './Example.stories.tsx',
+            name: 'Example',
+            stories: [],
+            jsDocTags: {},
+          },
+        },
+      },
+    };
+    const manifestEntries: IndexEntry[] = [
+      {
+        id: 'example--docs',
+        name: 'docs',
+        title: 'Example',
+        type: 'docs',
+        importPath: './Example.mdx',
+        tags: ['manifest', 'autodocs'], // No attached-mdx or unattached-mdx tag
+        storiesImports: ['./Example.stories.tsx'],
+      } satisfies DocsIndexEntry,
+    ];
+
+    const result = (await manifests(existingManifests, {
+      manifestEntries,
+    } as any)) as ManifestResult;
+
+    // Should return existing manifests unchanged since docs entry was dropped
+    expect(result).toEqual(existingManifests);
+    expect(result.components?.components.example.docs).toBeUndefined();
+  });
+
   it('should add attached docs entries to component manifests', async () => {
     const existingManifests = {
       components: {
@@ -104,7 +140,7 @@ describe('experimental_manifests', () => {
         title: 'Example',
         type: 'docs',
         importPath: './Example.mdx',
-        tags: ['manifest'],
+        tags: ['manifest', 'attached-mdx'],
         storiesImports: ['./Example.stories.tsx'],
       } satisfies DocsIndexEntry,
     ];
@@ -178,7 +214,7 @@ describe('experimental_manifests', () => {
         title: 'Example',
         type: 'docs',
         importPath: './Example.mdx',
-        tags: ['manifest'],
+        tags: ['manifest', 'attached-mdx'],
         storiesImports: ['./Example.stories.tsx'],
       } satisfies DocsIndexEntry,
       {

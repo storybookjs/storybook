@@ -240,7 +240,7 @@ jobs:
                 root: /tmp
     check:
         executor:
-            class: large
+            class: xlarge
             name: sb_node_22_classic
         steps:
             - git-shallow-clone/checkout_advanced:

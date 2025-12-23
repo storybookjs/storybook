@@ -1,8 +1,6 @@
-import { useCallback } from 'react';
-
 import type { DecoratorFunction } from 'storybook/internal/types';
 
-import { useEffect } from 'storybook/preview-api';
+import { useCallback, useEffect } from 'storybook/preview-api';
 
 import { filterDefs, filters } from './visionSimulatorFilters';
 

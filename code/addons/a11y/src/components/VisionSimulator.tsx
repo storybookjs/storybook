@@ -10,11 +10,6 @@ import { styled } from 'storybook/theming';
 import { VISION_GLOBAL_KEY } from '../constants';
 import { filterDefs, filters } from '../visionSimulatorFilters';
 
-interface Option {
-  name: string;
-  percentage?: number;
-}
-
 const Hidden = styled.div({
   '&, & svg': {
     position: 'absolute',

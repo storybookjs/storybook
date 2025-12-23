@@ -9,7 +9,6 @@ import { Global, styled } from 'storybook/theming';
 import type { CSSObject } from 'storybook/theming';
 
 import { IFrame } from './Iframe';
-import { stringifyQueryParams } from './utils/stringifyQueryParams';
 import type { FramesRendererProps } from './utils/types';
 
 const getActive = (refId: FramesRendererProps['refId'], refs: FramesRendererProps['refs']) => {
@@ -62,10 +61,6 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
   storyId = '*',
 }) => {
   const version = refs[refId]?.version;
-  const stringifiedQueryParams = stringifyQueryParams({
-    ...queryParams,
-    ...(version && { version }),
-  });
   const active = getActive(refId, refs);
   const { current: frames } = useRef<Record<string, string>>({});
 
@@ -78,15 +73,17 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
       queryParams: { ...queryParams, ...(version && { version }) },
       refId,
       viewMode,
-    }).preview;
+    }).previewHref;
   }
 
   refsToLoad.forEach((ref) => {
     const id = `storybook-ref-${ref.id}`;
-    const existingUrl = frames[id]?.split('/iframe.html')[0];
-    if (!existingUrl || ref.url !== existingUrl) {
-      const newUrl = `${ref.url}/iframe.html?id=${storyId}&viewMode=${viewMode}&refId=${ref.id}${stringifiedQueryParams}`;
-      frames[id] = newUrl;
+    if (!frames[id]?.startsWith(ref.url)) {
+      frames[id] = api.getStoryHrefs(storyId, {
+        queryParams: { ...queryParams, ...(version && { version }) },
+        refId: ref.id,
+        viewMode,
+      }).previewHref;
     }
   });
 

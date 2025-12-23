@@ -20,8 +20,8 @@ const managerContext = {
       openInIsolation: ['alt', 'shift', 'i'],
     }),
     getStoryHrefs: () => ({
-      manager: '/?path=/story/manager-preview-tools-share--default',
-      preview: '/iframe.html?id=manager-preview-tools-share--default&viewMode=story',
+      managerHref: '/?path=/story/manager-preview-tools-share--default',
+      previewHref: '/iframe.html?id=manager-preview-tools-share--default&viewMode=story',
     }),
   },
 } as any;

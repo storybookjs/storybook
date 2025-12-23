@@ -144,7 +144,7 @@ export class NPMProxy extends JsPackageManager {
       const parsedOutput = JSON.parse(commandResult);
 
       return this.mapDependencies(parsedOutput, pattern);
-    } catch (e) {
+    } catch {
       // when --depth is higher than 0, npm can return a non-zero exit code
       // in case the user's project has peer dependency issues. So we try again with no depth
       try {
@@ -153,10 +153,8 @@ export class NPMProxy extends JsPackageManager {
         const parsedOutput = JSON.parse(commandResult);
 
         return this.mapDependencies(parsedOutput, pattern);
-      } catch (err) {
-        logger.debug(
-          `An issue occurred while trying to find dependencies metadata using npm: ${err}`
-        );
+      } catch (e) {
+        logger.debug(`Error finding installations for ${pattern.join(', ')}: ${String(e)}`);
         return undefined;
       }
     }

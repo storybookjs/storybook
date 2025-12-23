@@ -120,7 +120,7 @@ See https://github.com/storybookjs/storybook/issues/18090
 const Code = styled.div(({ theme }) => ({
   flex: 1,
   paddingLeft: 2, // TODO: To match theming/global.ts for now
-  paddingRight: theme.layoutMargin,
+  paddingRight: 85,
   opacity: 1,
   fontFamily: theme.typography.fonts.mono,
 }));

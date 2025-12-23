@@ -1,14 +1,13 @@
-const baseUrl = globalThis.PREVIEW_URL || 'iframe.html';
-const [url, paramsStr] = baseUrl.split('?');
-
 export const getStoryHref = (storyId: string, additionalParams: Record<string, string> = {}) => {
+  const baseUrl = globalThis.PREVIEW_URL || 'iframe.html';
+  const [url, paramsStr] = baseUrl.split('?');
   const params = {
     ...(paramsStr ? parseQuery(paramsStr) : {}),
     ...additionalParams,
     id: storyId,
   };
   return `${url}?${Object.entries(params)
-    .map((item) => `${item[0]}=${item[1]}`)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
     .join('&')}`;
 };
 

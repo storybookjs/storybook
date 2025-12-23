@@ -401,8 +401,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           break;
         }
         case 'openInIsolation': {
-          const { previewHref } = fullAPI.getStoryHrefs(storyId, { refId });
-          window.open(previewHref, '_blank', 'noopener,noreferrer');
+          if (storyId) {
+            const { previewHref } = fullAPI.getStoryHrefs(storyId, { refId });
+            window.open(previewHref, '_blank', 'noopener,noreferrer');
+          }
           break;
         }
         // TODO: bring this back once we want to add shortcuts for this

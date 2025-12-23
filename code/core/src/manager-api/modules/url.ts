@@ -239,12 +239,16 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         viewMode = 'story',
       } = options;
 
+      if (refId && !refs[refId]) {
+        throw new Error(`Invalid refId: ${refId}`);
+      }
+
       const originAddress = global.window.location.origin + location.pathname;
       const networkAddress = global.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
       const managerBase =
         base === 'origin' ? originAddress : base === 'network' ? networkAddress : location.pathname;
       const previewBase = refId
-        ? refs[refId]?.url + '/iframe.html'
+        ? refs[refId].url + '/iframe.html'
         : global.PREVIEW_URL || `${managerBase}iframe.html`;
 
       const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';

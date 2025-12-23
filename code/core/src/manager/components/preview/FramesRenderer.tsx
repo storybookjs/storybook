@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { Fragment, useRef } from 'react';
 
-import { Button, getStoryHref } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 
 import type { Combo } from 'storybook/manager-api';
 import { Consumer } from 'storybook/manager-api';
@@ -53,12 +53,12 @@ const styles: CSSObject = {
 };
 
 export const FramesRenderer: FC<FramesRendererProps> = ({
+  api,
   refs,
   scale,
   viewMode = 'story',
   refId,
   queryParams = {},
-  baseUrl,
   storyId = '*',
 }) => {
   const version = refs[refId]?.version;
@@ -74,11 +74,11 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
   }, {});
 
   if (!frames['storybook-preview-iframe']) {
-    frames['storybook-preview-iframe'] = getStoryHref(baseUrl, storyId, {
-      ...queryParams,
-      ...(version && { version }),
+    frames['storybook-preview-iframe'] = api.getStoryHrefs(storyId, {
+      queryParams: { ...queryParams, ...(version && { version }) },
+      refId,
       viewMode,
-    });
+    }).preview;
   }
 
   refsToLoad.forEach((ref) => {

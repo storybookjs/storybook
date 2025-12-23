@@ -6,11 +6,25 @@ import {
   UPDATE_QUERY_PARAMS,
 } from 'storybook/internal/core-events';
 
+import { global } from '@storybook/global';
+
 import EventEmitter from 'events';
 
 import { init as initURL } from '../modules/url';
 
 vi.mock('storybook/internal/client-logger');
+vi.mock('@storybook/global', () => ({
+  global: {
+    window: {
+      location: {
+        hash: '',
+        href: 'http://localhost:6006',
+        origin: 'http://localhost:6006',
+      },
+    },
+    STORYBOOK_NETWORK_ADDRESS: 'http://192.168.1.1:6006/',
+  },
+}));
 
 const storyState = (storyId) => ({
   path: `/story/${storyId}`,
@@ -19,8 +33,6 @@ const storyState = (storyId) => ({
 });
 
 describe('initial state', () => {
-  const viewMode = 'story';
-
   describe('config query parameters', () => {
     it('handles full parameter', () => {
       const navigate = vi.fn();
@@ -234,5 +246,163 @@ describe('initModule', () => {
       '/story/test--story&args=a:1&full=1&globals=g:2',
       expect.objectContaining({ replace: true })
     );
+  });
+});
+
+describe('getStoryHrefs', () => {
+  let state = {};
+  const store = {
+    setState: (change) => {
+      state = { ...state, ...change };
+    },
+    getState: () => state,
+  };
+
+  it('returns manager and preview URLs for a story', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/?path=/story/test--story');
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('retains args and globals from the URL', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1&globals=b:2' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toContain('&args=a:1&globals=b:2');
+    expect(previewHref).toContain('&args=a:1&globals=b:2');
+  });
+
+  it('drops args but retains globals when changing stories', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1&globals=b:2' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--another-story');
+    expect(managerHref).toEqual('/?path=/story/test--another-story&globals=b:2');
+    expect(previewHref).toEqual('/iframe.html?id=test--another-story&viewMode=story&globals=b:2');
+  });
+
+  it('supports disabling inheritance of args and globals', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1&globals=b:2' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
+      inheritArgs: false,
+      inheritGlobals: false,
+    });
+    expect(managerHref).toEqual('/?path=/story/test--story');
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('supports extra args and globals with merging', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1;b:2&globals=c:3;d:4' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
+      queryParams: { args: 'a:2;c:3', globals: 'd:5' },
+    });
+    expect(managerHref).toContain('&args=a:2;b:2;c:3&globals=c:3;d:5');
+    expect(previewHref).toContain('&args=a:2;b:2;c:3&globals=c:3;d:5');
+  });
+
+  it('supports additional query params', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1&globals=b:2' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
+      queryParams: { foo: 'bar' },
+    });
+    expect(managerHref).toContain('&args=a:1&globals=b:2&foo=bar');
+    expect(previewHref).toContain('&args=a:1&globals=b:2&foo=bar');
+  });
+
+  it('supports returning absolute URLs using the base option', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const origin = api.getStoryHrefs('test--story', { base: 'origin' });
+    expect(origin.managerHref).toContain('http://localhost:6006/?path=');
+    expect(origin.previewHref).toContain('http://localhost:6006/iframe.html');
+
+    const network = api.getStoryHrefs('test--story', { base: 'network' });
+    expect(network.managerHref).toContain('http://192.168.1.1:6006/?path=');
+    expect(network.previewHref).toContain('http://192.168.1.1:6006/iframe.html');
+  });
+
+  it('supports linking to a ref, dropping globals in preview', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1&globals=b:2' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    store.setState({ refs: { external: { url: 'https://sb.example.com' } } });
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', { refId: 'external' });
+    expect(managerHref).toEqual('/?path=/story/external_test--story&globals=b:2');
+    expect(previewHref).toEqual('https://sb.example.com/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('supports PREVIEW_URL override', () => {
+    global.PREVIEW_URL = 'https://custom.preview.url/';
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/?path=/story/test--story');
+    expect(previewHref).toEqual('https://custom.preview.url/?id=test--story&viewMode=story');
   });
 });

@@ -4,35 +4,37 @@ import { useCallback, useEffect } from 'storybook/preview-api';
 
 import { filterDefs, filters } from './visionSimulatorFilters';
 
-const knownFilters: string[] = Object.values(filters).map((f) => f.filter);
+const knownFilters = Object.values(filters).map((f) => f.filter);
+const knownFiltersRegExp = new RegExp(`\\b(${knownFilters.join('|')})\\b`, 'g');
 
 export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals }) => {
   const { vision } = globals;
 
   const applyVisionFilter = useCallback(() => {
-    const existingFilters = document.body.style.filter.split(' ').filter((filter) => {
-      return filter && filter !== 'none' && !knownFilters.includes(filter);
-    });
+    const existingFilters = document.body.style.filter.replaceAll(knownFiltersRegExp, '').trim();
 
     const visionFilter = filters[vision as keyof typeof filters]?.filter;
     if (visionFilter && document.body.classList.contains('sb-show-main')) {
-      document.body.style.filter = [...existingFilters, visionFilter].join(' ');
+      if (!existingFilters || existingFilters === 'none') {
+        document.body.style.filter = visionFilter;
+      } else {
+        document.body.style.filter = `${existingFilters} ${visionFilter}`;
+      }
     } else {
-      document.body.style.filter = existingFilters.join(' ');
+      document.body.style.filter = existingFilters || 'none';
     }
 
-    return () => {
-      document.body.style.filter = existingFilters.join(' ');
-    };
+    return () => (document.body.style.filter = existingFilters || 'none');
   }, [vision]);
 
-  useEffect(applyVisionFilter, [vision]);
-
   useEffect(() => {
+    const cleanup = applyVisionFilter();
+
     const observer = new MutationObserver(() => applyVisionFilter());
     observer.observe(document.body, { attributeFilter: ['class'] });
 
     return () => {
+      cleanup();
       observer.disconnect();
     };
   }, [applyVisionFilter]);

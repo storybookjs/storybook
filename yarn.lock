@@ -2908,13 +2908,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@happy-dom/global-registrator@npm:^18.0.1":
-  version: 18.0.1
-  resolution: "@happy-dom/global-registrator@npm:18.0.1"
+"@happy-dom/global-registrator@npm:^20.0.11":
+  version: 20.0.11
+  resolution: "@happy-dom/global-registrator@npm:20.0.11"
   dependencies:
     "@types/node": "npm:^20.0.0"
-    happy-dom: "npm:^18.0.1"
-  checksum: 10c0/db97936215b8148ae966f2619533188fc006a66af7c122664eee9263bd2ffc2172c08de4221ded0f6f3af089d3a727ff98f70e1278395979a3c6e9dd55acf032
+    happy-dom: "npm:^20.0.11"
+  checksum: 10c0/c45d0adac56cd65f54da273102d6dfb27905360df294b88fea71d1ac1cfa88593a90298053eb7ff225db86e9c9f5e1c2c27d4c88cad4a1eee5ab6c69fec5df67
   languageName: node
   linkType: hard
 
@@ -18507,14 +18507,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"happy-dom@npm:^18.0.1":
-  version: 18.0.1
-  resolution: "happy-dom@npm:18.0.1"
+"happy-dom@npm:^20.0.11":
+  version: 20.0.11
+  resolution: "happy-dom@npm:20.0.11"
   dependencies:
     "@types/node": "npm:^20.0.0"
     "@types/whatwg-mimetype": "npm:^3.0.2"
     whatwg-mimetype: "npm:^3.0.0"
-  checksum: 10c0/10f2115f5001fdaf1aedcbda89c15248a1c2e43a25d7e774cb641a35bf6763cef9097b438ef3c2248ab59a0ef33b3e88cb94da096f2bb0fc109ba3f43f7c66d4
+  checksum: 10c0/818c44630fdb73258d12932646ab966190953820e5d8d032bc6ef51d00d6400097a91d28e212483216898c87d645e1728ae577951256ad989f75da6f9c1f8792
   languageName: node
   linkType: hard
 
@@ -28410,7 +28410,7 @@ __metadata:
     "@emotion/react": "npm:^11.14.0"
     "@emotion/styled": "npm:^11.14.0"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
-    "@happy-dom/global-registrator": "npm:^18.0.1"
+    "@happy-dom/global-registrator": "npm:^20.0.11"
     "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"
     "@radix-ui/react-scroll-area": "npm:1.2.0-rc.7"

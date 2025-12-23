@@ -28530,7 +28530,7 @@ __metadata:
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
     use-sync-external-store: "npm:^1.5.0"
-    watchpack: "npm:^2.2.0"
+    watchpack: "npm:^2.5.0"
     wrap-ansi: "npm:^9.0.2"
     ws: "npm:^8.18.0"
     zod: "npm:^3.25.76"
@@ -31180,13 +31180,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"watchpack@npm:^2.2.0, watchpack@npm:^2.4.1, watchpack@npm:^2.4.4":
-  version: 2.4.4
-  resolution: "watchpack@npm:2.4.4"
+"watchpack@npm:^2.4.1, watchpack@npm:^2.4.4, watchpack@npm:^2.5.0":
+  version: 2.5.0
+  resolution: "watchpack@npm:2.5.0"
   dependencies:
     glob-to-regexp: "npm:^0.4.1"
     graceful-fs: "npm:^4.1.2"
-  checksum: 10c0/6c0901f75ce245d33991225af915eea1c5ae4ba087f3aee2b70dd377d4cacb34bef02a48daf109da9d59b2d31ec6463d924a0d72f8618ae1643dd07b95de5275
+  checksum: 10c0/19944a2c05f8905b4b76dbbb317ae0efb18defa3eb7d3281caf1bb128c01302d00875a2fa0e48ec0242645d2e7e5c62c4efe8c60f9d30f176517f97dad1455f9
   languageName: node
   linkType: hard
 

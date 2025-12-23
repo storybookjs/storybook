@@ -338,7 +338,7 @@ describe('getStoryHrefs', () => {
     expect(previewHref).toContain('&args=a:2;b:2;c:3&globals=c:3;d:5');
   });
 
-  it('supports additional query params', () => {
+  it('supports additional query params, including nested objects', () => {
     const { api, state } = initURL({
       store,
       provider: { channel: new EventEmitter() },
@@ -349,10 +349,10 @@ describe('getStoryHrefs', () => {
     store.setState(state);
 
     const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
-      queryParams: { foo: 'bar' },
+      queryParams: { one: 1, foo: { bar: 'baz' } },
     });
-    expect(managerHref).toContain('&args=a:1&globals=b:2&foo=bar');
-    expect(previewHref).toContain('&args=a:1&globals=b:2&foo=bar');
+    expect(managerHref).toContain('&args=a:1&globals=b:2&one=1&foo.bar=baz');
+    expect(previewHref).toContain('&args=a:1&globals=b:2&one=1&foo.bar=baz');
   });
 
   it('supports returning absolute URLs using the base option', () => {
@@ -387,7 +387,9 @@ describe('getStoryHrefs', () => {
 
     const { managerHref, previewHref } = api.getStoryHrefs('test--story', { refId: 'external' });
     expect(managerHref).toEqual('/?path=/story/external_test--story&globals=b:2');
-    expect(previewHref).toEqual('https://sb.example.com/iframe.html?id=test--story&viewMode=story');
+    expect(previewHref).toEqual(
+      'https://sb.example.com/iframe.html?id=test--story&viewMode=story&refId=external'
+    );
   });
 
   it('supports PREVIEW_URL override', () => {

@@ -12,6 +12,7 @@ import type { API_Layout, API_UI, API_ViewMode, Args } from 'storybook/internal/
 import { global } from '@storybook/global';
 
 import { dequal as deepEqual } from 'dequal';
+import { stringify } from 'picoquery';
 
 import type { ModuleArgs, ModuleFn } from '../lib/types';
 import { defaultLayoutState } from './layout';
@@ -246,28 +247,23 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         ? refs[refId]?.url + '/iframe.html'
         : global.PREVIEW_URL || `${managerBase}iframe.html`;
 
-      let { args = '', globals = '' } = queryParams;
-      if (inheritArgs) {
-        const currentArgs = customQueryParams?.args;
-        args = mergeSerializedParams(currentArgs ?? '', args);
-      }
-      if (inheritGlobals) {
-        const currentGlobals = customQueryParams?.globals;
-        globals = mergeSerializedParams(currentGlobals ?? '', globals);
-      }
+      const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';
+      const { args = '', globals = '', ...otherParams } = queryParams;
+      let argsParam = inheritArgs
+        ? mergeSerializedParams(customQueryParams?.args ?? '', args)
+        : args;
+      let globalsParam = inheritGlobals
+        ? mergeSerializedParams(customQueryParams?.globals ?? '', globals)
+        : globals;
+      let customParams = stringify(otherParams);
 
-      // Args and globals are serialized and therefore should not be URL encoded.
-      // Custom query params on the other hand _should_ be URL encoded.
-      const argsParam = args ? `&args=${args}` : '';
-      const globalsParam = globals ? `&globals=${globals}` : '';
-      const customParams = Object.entries(queryParams)
-        .filter(([key, value]) => key !== 'args' && key !== 'globals' && value !== undefined)
-        .map(([key, value]) => `&${key}=${encodeURIComponent(value!)}`)
-        .join('');
+      argsParam = argsParam && `&args=${argsParam}`;
+      globalsParam = globalsParam && `&globals=${globalsParam}`;
+      customParams = customParams && `&${customParams}`;
 
       return {
         managerHref: `${managerBase}?path=/${viewMode}/${refId ? `${refId}_` : ''}${storyId}${argsParam}${globalsParam}${customParams}`,
-        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${argsParam}${refId ? '' : globalsParam}${customParams}`,
+        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customParams}`,
       };
     },
     getQueryParam(key) {

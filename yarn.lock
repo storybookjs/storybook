@@ -13194,10 +13194,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"camelcase@npm:^8.0.0":
-  version: 8.0.0
-  resolution: "camelcase@npm:8.0.0"
-  checksum: 10c0/56c5fe072f0523c9908cdaac21d4a3b3fb0f608fb2e9ba90a60e792b95dd3bb3d1f3523873ab17d86d146e94171305f73ef619e2f538bd759675bc4a14b4bff3
+"camelcase@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "camelcase@npm:9.0.0"
+  checksum: 10c0/7171e1540b9b227cab9d59b7afa05174d14c10268171c18bdf2240eb1485ad6851592f1253ddc291f7ae34caad42c18206d339538965c67fb17fc995c0bb509b
   languageName: node
   linkType: hard
 
@@ -14957,10 +14957,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"diff@npm:^5.2.0":
-  version: 5.2.0
-  resolution: "diff@npm:5.2.0"
-  checksum: 10c0/aed0941f206fe261ecb258dc8d0ceea8abbde3ace5827518ff8d302f0fc9cc81ce116c4d8f379151171336caf0516b79e01abdc1ed1201b6440d895a66689eb4
+"diff@npm:^8.0.2":
+  version: 8.0.2
+  resolution: "diff@npm:8.0.2"
+  checksum: 10c0/abfb387f033e089df3ec3be960205d17b54df8abf0924d982a7ced3a94c557a4e6cbff2e78b121f216b85f466b3d8d041673a386177c311aaea41459286cc9bc
   languageName: node
   linkType: hard
 
@@ -28454,7 +28454,7 @@ __metadata:
     ansi-to-html: "npm:^0.7.2"
     browser-dtector: "npm:^3.4.0"
     bundle-require: "npm:^5.1.0"
-    camelcase: "npm:^8.0.0"
+    camelcase: "npm:^9.0.0"
     chai: "npm:^5.1.1"
     commander: "npm:^14.0.2"
     comment-parser: "npm:^1.4.1"
@@ -28464,7 +28464,7 @@ __metadata:
     dequal: "npm:^2.0.2"
     detect-indent: "npm:^7.0.1"
     detect-port: "npm:^1.6.1"
-    diff: "npm:^5.2.0"
+    diff: "npm:^8.0.2"
     downshift: "npm:^9.0.4"
     ejs: "npm:^3.1.10"
     empathic: "npm:^2.0.0"

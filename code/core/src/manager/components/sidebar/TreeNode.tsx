@@ -60,6 +60,7 @@ const commonNodeStyles: FunctionInterpolation<{ depth?: number; isExpandable?: b
   paddingLeft: `${(isExpandable ? 8 : 22) + depth * 18}px`,
   paddingTop: 5,
   paddingBottom: 4,
+  paddingRight: 6,
   overflowWrap: 'break-word',
   wordWrap: 'break-word',
   wordBreak: 'break-word',

@@ -50,7 +50,14 @@ export default async function postInstall(options: PostinstallOptions) {
       { last: getProjectRoot(), cwd: options.configDir }
     );
 
-  const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+  const allDeps = packageManager.getAllDependencies();
+
+  // Determine Vitest version/range from installed or declared dependency to avoid pulling
+  // incompatible majors by default.
+  let vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+  if (!vitestVersionSpecifier && allDeps['vitest']) {
+    vitestVersionSpecifier = allDeps['vitest'];
+  }
   logger.debug(`Vitest version specifier: ${vitestVersionSpecifier}`);
   const isVitest3_2To4 = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=3.2.0 <4.0.0')
@@ -60,7 +67,6 @@ export default async function postInstall(options: PostinstallOptions) {
     : true;
 
   const info = await getStorybookInfo(options.configDir);
-  const allDeps = packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
 
   const addonVitestService = new AddonVitestService(packageManager);

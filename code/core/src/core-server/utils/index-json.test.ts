@@ -13,7 +13,7 @@ import { csfIndexer } from '../presets/common-preset';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
 import { StoryIndexGenerator } from './StoryIndexGenerator';
 import type { ServerChannel } from './get-server-channel';
-import { DEBOUNCE, useStoriesJson } from './stories-json';
+import { DEBOUNCE, registerIndexJsonRoute } from './index-json';
 
 vi.mock('watchpack');
 vi.mock('es-toolkit/function', { spy: true });
@@ -46,7 +46,7 @@ const normalizedStories = [
   ),
 ];
 
-const getInitializedStoryIndexGenerator = async (
+const getStoryIndexGeneratorPromise = async (
   overrides: any = {},
   inputNormalizedStories = normalizedStories
 ) => {
@@ -62,7 +62,7 @@ const getInitializedStoryIndexGenerator = async (
   return generator;
 };
 
-describe('useStoriesJson', () => {
+describe('registerIndexJsonRoute', () => {
   const use = vi.fn();
   const app: Polka = { use } as any;
   const end = vi.fn();
@@ -94,15 +94,13 @@ describe('useStoriesJson', () => {
   describe('JSON endpoint', () => {
     it('scans and extracts index', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      console.time('useStoriesJson');
-      useStoriesJson({
+      registerIndexJsonRoute({
         app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
-        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
       });
-      console.timeEnd('useStoriesJson');
 
       expect(use).toHaveBeenCalledTimes(1);
       const route = use.mock.calls[0][1];
@@ -125,6 +123,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "component-tag",
                 "story-tag",
                 "attached-mdx",
@@ -142,6 +141,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "component-tag",
                 "story-tag",
                 "attached-mdx",
@@ -158,6 +158,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "component-tag",
                 "story-tag",
               ],
@@ -172,6 +173,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "B",
@@ -186,6 +188,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "B",
@@ -201,6 +204,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "componentPath/extension",
               "type": "story",
@@ -215,6 +219,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "componentPath/noExtension",
               "type": "story",
@@ -229,6 +234,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "componentPath/package",
               "type": "story",
@@ -241,6 +247,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "D",
@@ -255,6 +262,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "D",
@@ -268,6 +276,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "unattached-mdx",
               ],
               "title": "docs2/ComponentReference",
@@ -281,6 +290,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "unattached-mdx",
               ],
               "title": "docs2/NoTitle",
@@ -294,6 +304,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "foo",
                 "bar",
                 "unattached-mdx",
@@ -309,6 +320,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "unattached-mdx",
               ],
               "title": "docs2/Yabbadabbadooo",
@@ -323,6 +335,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "foobar",
               ],
               "title": "Example/Button",
@@ -337,6 +350,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "first-nested/deeply/F",
               "type": "story",
@@ -350,6 +364,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "first-nested/deeply/Features",
               "type": "story",
@@ -363,6 +378,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "play-fn",
               ],
               "title": "first-nested/deeply/Features",
@@ -377,6 +393,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "first-nested/deeply/Features",
               "type": "story",
@@ -390,6 +407,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "first-nested/deeply/Features",
               "type": "story",
@@ -403,6 +421,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "play-fn",
               ],
               "title": "first-nested/deeply/Features",
@@ -416,6 +435,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "H",
@@ -430,6 +450,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "H",
@@ -444,6 +465,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "component-tag",
               ],
               "title": "nested/Button",
@@ -458,6 +480,7 @@ describe('useStoriesJson', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "second-nested/G",
               "type": "story",
@@ -471,12 +494,12 @@ describe('useStoriesJson', () => {
     it('can handle simultaneous access', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
 
-      useStoriesJson({
+      registerIndexJsonRoute({
         app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
-        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
       });
 
       expect(use).toHaveBeenCalledTimes(1);
@@ -487,7 +510,6 @@ describe('useStoriesJson', () => {
       const secondPromise = route(request, secondResponse);
 
       await Promise.all([firstPromise, secondPromise]);
-
       expect(end).toHaveBeenCalledTimes(1);
       expect(response.statusCode).not.toEqual(500);
       expect(secondResponse.end).toHaveBeenCalledTimes(1);
@@ -503,12 +525,12 @@ describe('useStoriesJson', () => {
 
     it('sends invalidate events', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      useStoriesJson({
+      registerIndexJsonRoute({
         app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
-        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
       });
 
       expect(use).toHaveBeenCalledTimes(1);
@@ -530,19 +552,22 @@ describe('useStoriesJson', () => {
       expect(watcher.on).toHaveBeenCalledTimes(2);
       const onChange = watcher.on.mock.calls[0][1];
 
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      // Wait for the batched events to be processed
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      });
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
     });
 
     it('only sends one invalidation when multiple event listeners are listening', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      useStoriesJson({
+      registerIndexJsonRoute({
         app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
-        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
       });
 
       expect(use).toHaveBeenCalledTimes(1);
@@ -568,8 +593,11 @@ describe('useStoriesJson', () => {
       expect(watcher.on).toHaveBeenCalledTimes(2);
       const onChange = watcher.on.mock.calls[0][1];
 
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      // Wait for the batched events to be processed
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      });
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
     });
 
@@ -580,12 +608,12 @@ describe('useStoriesJson', () => {
       );
 
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      useStoriesJson({
+      registerIndexJsonRoute({
         app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
-        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
       });
 
       expect(use).toHaveBeenCalledTimes(1);
@@ -607,18 +635,29 @@ describe('useStoriesJson', () => {
       expect(watcher.on).toHaveBeenCalledTimes(2);
       const onChange = watcher.on.mock.calls[0][1];
 
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      // Fire multiple change events in rapid succession
+      // These get batched by watchStorySpecifiers (100ms batching window)
+      // and then debounced by maybeInvalidate (100ms debounce)
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
 
-      expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      // Wait for first batch to be processed and emit (leading edge)
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      });
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
 
-      await new Promise((r) => setTimeout(r, 2 * DEBOUNCE));
+      // Fire another change event after the first batch is processed
+      // This will trigger the trailing edge of the debounce
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
 
-      expect(mockServerChannel.emit).toHaveBeenCalledTimes(2);
+      // Wait for trailing debounce to trigger second emit
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalledTimes(2);
+      });
     });
   });
 });

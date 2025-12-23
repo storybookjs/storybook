@@ -1,3 +1,25 @@
+## 10.2.0-alpha.9
+
+- Core and Vite: Use story index as source of truth for Vite paths - [#30612](https://github.com/storybookjs/storybook/pull/30612), thanks @JReinhold!
+
+## 10.2.0-alpha.8
+
+- React: Fix several CSF factory bugs  - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!
+
+## 10.2.0-alpha.7
+
+- Automigrate: Fix missing await - [#33333](https://github.com/storybookjs/storybook/pull/33333), thanks @valentinpalkovic!
+- CLI: Remove REACT_PROJECT projectType - [#33334](https://github.com/storybookjs/storybook/pull/33334), thanks @valentinpalkovic!
+- Core: Exclude open from pre-bundling to make local xdg-open reachable - [#33325](https://github.com/storybookjs/storybook/pull/33325), thanks @Sidnioulz!
+- Core: Fix `.env`-file parsing - [#33383](https://github.com/storybookjs/storybook/pull/33383), thanks @JReinhold!
+- Next.js: Handle v14 compatibility for draftMode import - [#33341](https://github.com/storybookjs/storybook/pull/33341), thanks @tanujbhaud!
+- Nextjs-Vite: Update vite-plugin-storybook-nextjs to v3.1.7 - [#33351](https://github.com/storybookjs/storybook/pull/33351), thanks @valentinpalkovic!
+- React-Vite: Update @joshwooding/vite-plugin-react-docgen-typescript - [#33349](https://github.com/storybookjs/storybook/pull/33349), thanks @valentinpalkovic!
+- React: Use self-closing tag for code snippets - [#33342](https://github.com/storybookjs/storybook/pull/33342), thanks @valentinpalkovic!
+- Sidebar: Prevent updating non-existent stories - [#33037](https://github.com/storybookjs/storybook/pull/33037), thanks @ia319!
+- Telemetry: Fix race condition in telemetry cache causing malformed JSON - [#33323](https://github.com/storybookjs/storybook/pull/33323), thanks @valentinpalkovic!
+- Telemetry: Remove instance of check for sub-error handling - [#33356](https://github.com/storybookjs/storybook/pull/33356), thanks @valentinpalkovic!
+
 ## 10.2.0-alpha.6
 
 - Controls: Fix displaying as object instead of select for optional union types - [#33200](https://github.com/storybookjs/storybook/pull/33200), thanks @tanujbhaud!

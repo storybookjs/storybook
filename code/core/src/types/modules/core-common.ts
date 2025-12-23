@@ -373,9 +373,9 @@ export interface ComponentsManifest {
   components: Record<string, ComponentManifest>;
 }
 
-export type ComponentManifestGenerator = (
-  storyIndexGenerator: StoryIndexGenerator
-) => Promise<ComponentsManifest>;
+type ManifestName = string;
+
+export type Manifests = { components?: ComponentsManifest } & Record<ManifestName, unknown>;
 
 export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
 
@@ -392,7 +392,7 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
-  experimental_componentManifestGenerator?: ComponentManifestGenerator;
+  experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
@@ -531,6 +531,8 @@ export interface StorybookConfigRaw {
   previewAnnotations?: Entry[];
 
   experimental_indexers?: Indexer[];
+
+  storyIndexGenerator?: StoryIndexGenerator;
 
   experimental_devServer?: ServerApp;
 

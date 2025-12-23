@@ -1,46 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { Select } from 'storybook/internal/components';
 
 import { AccessibilityIcon } from '@storybook/icons';
 
-import { Global, styled } from 'storybook/theming';
+import { useGlobals } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
-import { Filters } from './ColorFilters';
-
-const iframeId = 'storybook-preview-iframe';
+import { VISION_GLOBAL_KEY } from '../constants';
+import { filterDefs, filters } from '../visionSimulatorFilters';
 
 interface Option {
   name: string;
   percentage?: number;
 }
-
-export const baseList = [
-  { name: 'blurred vision', percentage: 22.9 },
-  { name: 'deuteranomaly', percentage: 2.7 },
-  { name: 'deuteranopia', percentage: 0.56 },
-  { name: 'protanomaly', percentage: 0.66 },
-  { name: 'protanopia', percentage: 0.59 },
-  { name: 'tritanomaly', percentage: 0.01 },
-  { name: 'tritanopia', percentage: 0.016 },
-  { name: 'achromatopsia', percentage: 0.0001 },
-  { name: 'grayscale' },
-] as Option[];
-
-type Filter = Option | null;
-
-const getFilter = (filterName: string) => {
-  if (!filterName) {
-    return 'none';
-  }
-  if (filterName === 'blurred vision') {
-    return 'blur(2px)';
-  }
-  if (filterName === 'grayscale') {
-    return 'grayscale(100%)';
-  }
-  return `url('#${filterName}')`;
-};
 
 const Hidden = styled.div({
   '&, & svg': {
@@ -59,7 +32,7 @@ const ColorIcon = styled.span<{ $filter: string }>(
     width: '1rem',
   },
   ({ $filter }) => ({
-    filter: getFilter($filter),
+    filter: filters[$filter as keyof typeof filters].filter || 'none',
   }),
   ({ theme }) => ({
     boxShadow: `${theme.appBorderColor} 0 0 0 1px inset`,
@@ -67,41 +40,28 @@ const ColorIcon = styled.span<{ $filter: string }>(
 );
 
 export const VisionSimulator = () => {
-  const [filter, setFilter] = useState<Filter>(null);
+  const [globals, updateGlobals] = useGlobals();
+  const value = globals[VISION_GLOBAL_KEY];
 
-  const options = baseList.map(({ name, percentage }) => {
-    const description = percentage !== undefined ? `${percentage}% of users` : undefined;
-    return {
-      title: name,
-      description,
-      icon: <ColorIcon $filter={name} />,
-      value: name,
-    };
-  });
+  const options = Object.entries(filters).map(([key, { label, percentage }]) => ({
+    title: label,
+    description: percentage ? `${percentage}% of users` : undefined,
+    icon: <ColorIcon $filter={key} />,
+    value: key,
+  }));
 
   return (
     <>
-      {filter && (
-        <Global
-          styles={{
-            [`#${iframeId}`]: {
-              filter: getFilter(filter.name),
-            },
-          }}
-        />
-      )}
       <Select
         resetLabel="Reset color filter"
-        onReset={() => setFilter(null)}
+        onReset={() => updateGlobals({ [VISION_GLOBAL_KEY]: undefined })}
         icon={<AccessibilityIcon />}
         ariaLabel="Vision simulator"
-        defaultOptions={filter?.name}
+        defaultOptions={value}
         options={options}
-        onSelect={(selected) => setFilter(() => ({ name: selected }))}
+        onSelect={(selected) => updateGlobals({ [VISION_GLOBAL_KEY]: selected })}
       />
-      <Hidden>
-        <Filters />
-      </Hidden>
+      <Hidden dangerouslySetInnerHTML={{ __html: filterDefs }} />
     </>
   );
 };

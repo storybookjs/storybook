@@ -1,7 +1,7 @@
-import type { PlayFunction } from 'storybook/internal/types';
+import type { PlayFunction, PlayFunctionContext } from 'storybook/internal/types';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { fn } from 'storybook/test';
+import { expect, fn, screen } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview';
 import { VisionSimulator } from './VisionSimulator';
@@ -42,5 +42,16 @@ export const WithFilter = meta.story({
   play: openMenu,
   globals: {
     vision: 'achromatopsia',
+  },
+});
+
+export const Selection = meta.story({
+  play: async (context) => {
+    await openMenu(context);
+    await context.userEvent.click(await screen.findByText('Blurred vision'));
+    await expect(managerContext.api.updateGlobals).toHaveBeenCalledWith({ vision: 'blurred' });
+    await expect(
+      context.canvas.getByRole('button', { name: 'Vision simulator Blurred vision' })
+    ).toBeVisible();
   },
 });

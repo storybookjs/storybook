@@ -2,226 +2,25 @@ storage: .verdaccio-cache
 
 max_body_size: 60mb
 
+# no auth needed, this is just for e2e testing
 auth:
-  auth-memory:
-    users:
-      foo:
-        name: foo
-        password: s3cret
-      bar:
-        name: bar
-        password: s3cret
-
-uplinks:
-  npmjs:
-    url: https://registry.npmjs.org/
-    cache: true
 
 packages:
-  # storybook's 'legacy' packages
-  '@storybook/react-simple-di':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/react-stubber':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/builder-manager':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/channels':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/client-logger':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/components':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/core-common':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/core-events':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/core-server':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/csf-tools':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/docs-tools':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/manager-api':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/manager':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/node-logger':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/preview-api':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/preview':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/router':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/telemetry':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/theming':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/types':
-    access: $all
-    publish: $all
-    proxy: npmjs
-
-  # storybook's packages never hosted in this monorepo
-  '@storybook/csf':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/global':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/design-system':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/preset-ie11':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/preset-scss':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/bench':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/addon-coverage':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/addon-bench':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/addon-styling':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/addon-svelte-csf':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/create-svelte-with-args':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/react-docgen-typescript-plugin':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/testing-library':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/test-runner':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/expect':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/docs-mdx':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/semver':
-    # TODO: remove this when new versions of all dependents have been published and updated. It is not used anymore but still referenced in the latest packages
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/icons':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/ember-cli-storybook':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/addon-webpack5-compiler-swc':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/addon-webpack5-compiler-babel':
-    access: $all
-    publish: $all
-    proxy: npmjs
-
-  # storybook packages are NOT proxied to global registry
-  # allowing us to republish any version during tests
-  '@storybook/*':
-    access: $all
-    publish: $all
-
-  'sb':
-    access: $all
-    publish: $all
-
-  'create-storybook':
-    access: $all
-    publish: $all
-
-  'storybook':
-    access: $all
-    publish: $all
-
-  'storybook-addon-pseudo-states':
-    access: $all
-    publish: $all
-
-  'eslint-plugin-storybook':
-    access: $all
-    publish: $all
-
   '@*/*':
     access: $all
     publish: $all
-    proxy: npmjs
+    unpublish: $all
 
   '**':
     access: $all
     publish: $all
-    proxy: npmjs
+    unpublish: $all
 
-logs:
-  - { type: stdout, format: pretty, level: warn }
+log:
+  type: stdout
+  format: pretty
+  level: debug
+
+publish:
+  # no npm connection needed
+  allow_offline: true

@@ -74,9 +74,13 @@ async function run() {
     // the package couldn't be imported, use npx to install and run it instead
   }
 
+  const { default: packageJson } = await import(`storybook/package.json`, {
+    with: { type: 'json' },
+  });
+
   const child = executeCommand({
     command: 'npx',
-    args: ['--yes', `${targetCli.pkg}@${versions[targetCli.pkg]}`, ...targetCli.args],
+    args: ['--yes', `${targetCli.pkg}@${packageJson.version}`, ...targetCli.args],
     stdio: 'inherit',
   });
   child.on('exit', (code) => {

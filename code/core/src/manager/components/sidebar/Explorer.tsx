@@ -23,6 +23,7 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
   isLoading,
   isBrowsing,
   isHidden,
+  isDevelopment,
   dataset,
   selected,
   ...restProps

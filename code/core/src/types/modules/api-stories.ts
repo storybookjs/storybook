@@ -1,7 +1,7 @@
+import type { API_SidebarOptions, StatusByTypeId } from 'storybook/internal/types';
 import type { DocsOptions } from './core-common.ts';
 import type { ArgTypes, Args, ComponentTitle, Parameters, Path, StoryId, Tag } from './csf.ts';
 import type { IndexEntry } from './indexer.ts';
-import type { StatusByTypeId } from './status.ts';
 
 export interface API_BaseEntry {
   id: StoryId;
@@ -9,7 +9,8 @@ export interface API_BaseEntry {
   name: string;
   tags: Tag[];
   refId?: string;
-  renderLabel?: (item: API_HashEntry, api: any) => any;
+  renderAriaLabel?: API_SidebarOptions['renderAriaLabel'];
+  renderLabel?: API_SidebarOptions['renderLabel'];
 }
 
 export interface API_RootEntry extends API_BaseEntry {

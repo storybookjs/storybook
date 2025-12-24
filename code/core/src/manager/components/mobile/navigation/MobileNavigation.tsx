@@ -46,27 +46,32 @@ const useFullStoryName = () => {
   const currentStory = api.getCurrentStoryData();
 
   if (!currentStory) {
-    return '';
+    return { fullStoryAriaLabel: '', fullStoryName: '' };
   }
   const combinedIndex = combineIndexes(index, refs || {});
-  const storyLabel = currentStory.renderLabel?.(currentStory, api);
-  let fullStoryName = typeof storyLabel === 'string' ? storyLabel : currentStory.name;
+  let fullStoryName =
+    currentStory.renderLabel?.(currentStory, api, { isMobile: true, location: 'bottom-bar' }) ||
+    currentStory.name;
+  let fullStoryAriaLabel =
+    currentStory.renderAriaLabel?.(currentStory, api, { isMobile: true, location: 'bottom-bar' }) ||
+    fullStoryName;
 
   let node = combinedIndex[currentStory.id];
 
-  while (
-    node &&
-    'parent' in node &&
-    node.parent &&
-    combinedIndex[node.parent] &&
-    fullStoryName.length < 24
-  ) {
+  while (node && 'parent' in node && node.parent && combinedIndex[node.parent]) {
     node = combinedIndex[node.parent];
-    const parentLabel = node.renderLabel?.(node, api);
-    const parentName = typeof parentLabel === 'string' ? parentLabel : node.name;
-    fullStoryName = `${parentName}/${fullStoryName}`;
+    const parentName =
+      node.renderLabel?.(node, api, { isMobile: true, location: 'bottom-bar' }) || node.name;
+    const parentAriaLabel =
+      node.renderAriaLabel?.(node, api, { isMobile: true, location: 'bottom-bar' }) || parentName;
+
+    // Limit length of name shown in UI due to layout constraints.
+    if (fullStoryName.length > 24) {
+      fullStoryName = `${parentName}/${fullStoryName}`;
+    }
+    fullStoryAriaLabel = `${parentAriaLabel}/${fullStoryAriaLabel}`;
   }
-  return fullStoryName;
+  return { fullStoryAriaLabel, fullStoryName };
 };
 
 export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof Container>> = ({
@@ -77,7 +82,7 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
 }) => {
   const { isMobileMenuOpen, isMobilePanelOpen, setMobileMenuOpen, setMobilePanelOpen } =
     useLayout();
-  const fullStoryName = useFullStoryName();
+  const { fullStoryAriaLabel, fullStoryName } = useFullStoryName();
   const headingId = useId();
 
   const sectionRef = useRef<HTMLElement>(null);
@@ -121,7 +126,7 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
             <Text>{fullStoryName}</Text>
           </BottomBarButton>
           <span className="sb-sr-only" aria-current="page">
-            {fullStoryName}
+            Current page: {fullStoryAriaLabel}
           </span>
           {showPanel && (
             <BottomBarButton

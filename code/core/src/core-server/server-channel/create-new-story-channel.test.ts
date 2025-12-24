@@ -17,6 +17,12 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
   return {
     ...actual,
     getProjectRoot: () => process.cwd(),
+    extractFrameworkPackageName: (name: string) => name?.replace('@storybook/', '') || '',
+    normalizeStories: actual.normalizeStories || ((stories) => stories),
+    getStoryId: async () => ({
+      storyId: 'components-page--default',
+      kind: 'components-page',
+    }),
   };
 });
 
@@ -71,6 +77,7 @@ describe('createNewStoryChannel', () => {
       mockChannel.emit(CREATE_NEW_STORYFILE_REQUEST, {
         id: 'components-page--default',
         payload: {
+          alreadyContainsArgs: false,
           componentFilePath: 'src/components/Page.jsx',
           componentExportName: 'Page',
           componentIsDefaultExport: true,
@@ -85,6 +92,7 @@ describe('createNewStoryChannel', () => {
         error: null,
         id: 'components-page--default',
         payload: {
+          alreadyContainsArgs: false,
           storyId: 'components-page--default',
           storyFilePath: join('src', 'components', 'Page.stories.jsx'),
           exportedStoryName: 'Default',
@@ -122,6 +130,7 @@ describe('createNewStoryChannel', () => {
       mockChannel.emit(CREATE_NEW_STORYFILE_REQUEST, {
         id: 'components-page--default',
         payload: {
+          alreadyContainsArgs: false,
           componentFilePath: 'src/components/Page.jsx',
           componentExportName: 'Page',
           componentIsDefaultExport: true,

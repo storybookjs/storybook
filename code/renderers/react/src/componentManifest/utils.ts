@@ -90,4 +90,4 @@ export const cachedReadFileSync = cached(readFileSync, { name: 'cachedReadFile' 
 
 export const cachedFindUp = cached(find.up, { name: 'findUp' });
 
-export const cachedResolveImport = cached(resolveImport, { name: 'resolveImport' });
+export const cachedResolveImport: any = cached(resolveImport, { name: 'resolveImport' });

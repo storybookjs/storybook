@@ -1,9 +1,13 @@
 import * as clack from '@clack/prompts';
+import { buildFileSystemTree, treeSelect } from 'clack-tree-select';
+import type { TreeItem } from 'clack-tree-select';
+import picomatch from 'picomatch';
 
 import { logTracker } from '../logger/log-tracker';
 import { wrapTextForClackHint } from '../wrap-utils';
 import type {
   ConfirmPromptOptions,
+  FileSystemTreeSelectPromptOptions,
   MultiSelectPromptOptions,
   PromptOptions,
   SelectPromptOptions,
@@ -14,6 +18,43 @@ import type {
   TextPromptOptions,
 } from './prompt-provider-base';
 import { PromptProvider } from './prompt-provider-base';
+
+// Filter a file system tree so that only the directories that contain files matching the globs are shown
+function filterTreeByGlob(
+  tree: TreeItem<string>[],
+  glob: string | string[],
+  root: string
+): TreeItem<string>[] {
+  const globMatchers = Array.isArray(glob)
+    ? glob.map((g) => picomatch(g, { cwd: root }))
+    : [picomatch(glob, { cwd: root })];
+
+  function filterItem(item: TreeItem<string>): TreeItem<string> | null {
+    // For files (items without children), check if they match any of the glob patterns
+    if (!item.children || item.children.length === 0) {
+      // Convert absolute path to relative path for matching
+      const relativePath = item.value.startsWith(root)
+        ? item.value.slice(root.length).replace(/^\/+/, '')
+        : item.value;
+      return globMatchers.some((matcher) => matcher(relativePath)) ? item : null;
+    }
+
+    // For directories, recursively filter children
+    const filteredChildren = filterTreeByGlob(item.children as TreeItem<string>[], glob, root);
+
+    // Keep the directory only if it has any children after filtering
+    if (filteredChildren.length > 0) {
+      return {
+        ...item,
+        children: filteredChildren,
+      };
+    }
+
+    return null;
+  }
+
+  return tree.map(filterItem).filter((item): item is TreeItem<string> => item !== null);
+}
 
 export const getCurrentTaskLog = (): ReturnType<typeof clack.taskLog> | null => {
   if (globalThis.STORYBOOK_CURRENT_TASK_LOG) {
@@ -86,6 +127,39 @@ export class ClackPromptProvider extends PromptProvider {
     this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
     return result as T[];
+  }
+
+  async fileSystemTreeSelect(
+    options: FileSystemTreeSelectPromptOptions,
+    promptOptions?: PromptOptions
+  ): Promise<string | string[]> {
+    const filter =
+      options.filter ??
+      ((path: string) => {
+        const excludedDirs = ['node_modules', '.git', 'dist'];
+        return excludedDirs.every((dir) => !path.includes(dir));
+      });
+
+    let fileTree = buildFileSystemTree(options.root || process.cwd(), {
+      includeFiles: options.includeFiles ?? true,
+      includeHidden: options.includeHidden ?? false,
+      maxDepth: options.maxDepth,
+      filter,
+    });
+
+    if (options.glob) {
+      // Filter the tree to only include directories that contain files matching the glob
+      fileTree = filterTreeByGlob(fileTree, options.glob, options.root || process.cwd());
+    }
+
+    const result = await treeSelect({
+      message: wrapTextForClackHint(options.message, undefined, undefined, 2),
+      tree: fileTree,
+      multiple: options.multiple ?? true,
+    });
+    this.handleCancel(result, promptOptions);
+    logTracker.addLog('prompt', options.message, { choice: result });
+    return result as string | string[];
   }
 
   spinner(options: SpinnerOptions): SpinnerInstance {

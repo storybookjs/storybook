@@ -4,6 +4,7 @@ import { getPromptProvider } from './prompt-config';
 import type {
   BasePromptOptions,
   ConfirmPromptOptions,
+  FileSystemTreeSelectPromptOptions,
   MultiSelectPromptOptions,
   Option,
   PromptOptions,
@@ -23,6 +24,7 @@ export type {
   ConfirmPromptOptions,
   SelectPromptOptions,
   MultiSelectPromptOptions,
+  FileSystemTreeSelectPromptOptions,
   PromptOptions,
   SpinnerInstance,
   TaskLogInstance,
@@ -106,6 +108,13 @@ export const multiselect = async <T>(
     },
     promptOptions
   );
+};
+
+export const fileSystemTreeSelect = async (
+  options: FileSystemTreeSelectPromptOptions,
+  promptOptions?: PromptOptions
+): Promise<string | string[]> => {
+  return getPromptProvider().fileSystemTreeSelect(options, promptOptions);
 };
 
 export const spinner = (options: SpinnerOptions): SpinnerInstance => {

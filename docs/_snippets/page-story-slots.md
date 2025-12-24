@@ -273,7 +273,7 @@ import preview from '../.storybook/preview';
 
 import { Page } from './Page';
 
-type PagePropsAndCustomArgs = React.ComponentProps<typeof Page> & { footer?: string }
+type PagePropsAndCustomArgs = React.ComponentProps<typeof Page> & { footer?: string };
 
 const meta = preview.meta({
   component: Page,

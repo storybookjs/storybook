@@ -1,4 +1,4 @@
-// eslint-disable import/extensions
+// eslint-disable import-x/extensions
 import EmberRouter from '@ember/routing/router';
 import config from './config/environment';
 

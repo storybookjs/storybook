@@ -1,43 +1,55 @@
-import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
+import { fileURLToPath } from 'node:url';
+
 import type { PresetProperty } from 'storybook/internal/types';
 
-import { getVirtualModules } from '@storybook/builder-webpack5';
+import { type StorybookConfigVite, withoutVitePlugins } from '@storybook/builder-vite';
 
+import type { UserConfig } from 'vite';
+
+import { emberIndexer } from './node/indexer';
 import type { StorybookConfig } from './types';
 
-export const addons: PresetProperty<'addons'> = [
-  import.meta.resolve('@storybook/ember/server/framework-preset-babel-ember'),
-];
+export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
+  entries = [],
+  options
+) => {
+  const config = fileURLToPath(import.meta.resolve('@storybook/ember/client/config'));
+  const annotations = [...entries, config];
 
-export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, options) => {
-  const { virtualModules } = await getVirtualModules(options);
+  const docsConfig = await options.presets.apply('docs', {}, options);
+  const docsEnabled = Object.keys(docsConfig).length > 0;
+  if (docsEnabled) {
+    const docsConfigPath = fileURLToPath(
+      import.meta.resolve('@storybook/ember/client/docs/config')
+    );
+    annotations.push(docsConfigPath);
+  }
 
-  const babelOptions = await options.presets.apply('babel', {}, options);
-  const typescriptOptions = await options.presets.apply('typescript', {}, options);
+  return annotations;
+};
 
-  return {
-    ...baseConfig,
-    module: {
-      ...baseConfig.module,
-      rules: [
-        ...(baseConfig.module?.rules ?? []),
-        {
-          test: typescriptOptions.skipCompiler ? /\.((c|m)?jsx?)$/ : /\.((c|m)?(j|t)sx?)$/,
-          use: [
-            {
-              loader: import.meta.resolve('babel-loader'),
-              options: {
-                cacheDirectory: resolvePathInStorybookCache('babel'),
-                ...babelOptions,
-              },
-            },
-          ],
-          include: [getProjectRoot()],
-          exclude: [/node_modules/, ...Object.keys(virtualModules)],
-        },
-      ],
+export const viteFinal: StorybookConfigVite['viteFinal'] = async (config: UserConfig) => {
+  const { mergeConfig } = await import('vite');
+
+  config.plugins = await withoutVitePlugins(config.plugins, ['embroider-content-for']);
+
+  return mergeConfig(config, {
+    optimizeDeps: {
+      // esbuild doesn't handle disabling modules when using plugins.
+      // `object-inspect` gets pulled in by `qs` which is automatically
+      // optimized by Storybook, and qs is a default dependency by ember-cli.
+      // `object-inspect` isn't going to work in Ember with Vite, so it's
+      // safe to exclude it.
+      exclude: ['object-inspect'],
     },
-  };
+    resolve: {
+      dedupe: ['ember-source'],
+    },
+  });
+};
+
+export const experimental_indexers: StorybookConfig['experimental_indexers'] = (indexers) => {
+  return [emberIndexer, ...(indexers || [])];
 };
 
 export const core: PresetProperty<'core'> = async (config, options) => {
@@ -46,7 +58,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: import.meta.resolve('@storybook/builder-webpack5'),
+      name: import.meta.resolve('@storybook/builder-vite'),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
   };

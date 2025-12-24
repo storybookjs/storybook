@@ -1,5 +1,12 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": {},
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "storybook/internal/*": ["../../lib/cli/core/*"]
+    },
+    "rootDir": "./src",
+    "types": ["ember-source/types"]
+  },
   "include": ["src/**/*"]
 }

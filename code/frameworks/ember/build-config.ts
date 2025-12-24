@@ -7,6 +7,18 @@ const config: BuildEntries = {
         exportEntries: ['.'],
         entryPoint: './src/index.ts',
       },
+      {
+        exportEntries: ['./client'],
+        entryPoint: './src/client/index.ts',
+      },
+      {
+        exportEntries: ['./client/config'],
+        entryPoint: './src/client/config.ts',
+      },
+      {
+        exportEntries: ['./client/docs/config'],
+        entryPoint: './src/client/docs/config.ts',
+      },
     ],
     node: [
       {
@@ -14,14 +26,8 @@ const config: BuildEntries = {
         entryPoint: './src/node/index.ts',
       },
       {
-        exportEntries: ['./server/framework-preset-babel-ember'],
-        entryPoint: './src/server/framework-preset-babel-ember.ts',
-        dts: false,
-      },
-      {
         exportEntries: ['./preset'],
         entryPoint: './src/preset.ts',
-        dts: false,
       },
     ],
   },

@@ -651,6 +651,7 @@ export abstract class JsPackageManager {
       logger.debug(`Getting installed version for ${packageName}...`);
       const installations = await this.findInstallations([packageName]);
       if (!installations) {
+        logger.debug(`No installations found for ${packageName}`);
         // Cache the null result
         JsPackageManager.installedVersionCache.set(cacheKey, null);
         return null;
@@ -666,6 +667,7 @@ export abstract class JsPackageManager {
 
       return coercedVersion;
     } catch (e) {
+      logger.error(`Error getting installed version for ${packageName}: ${String(e)}`);
       JsPackageManager.installedVersionCache.set(cacheKey, null);
       return null;
     }

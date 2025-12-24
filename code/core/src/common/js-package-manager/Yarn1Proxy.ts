@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
@@ -115,6 +115,7 @@ export class Yarn1Proxy extends JsPackageManager {
       const process = executeCommand({
         command: 'yarn',
         args: yarnArgs.concat(pattern),
+        shell: true,
         env: {
           FORCE_COLOR: 'false',
         },
@@ -126,6 +127,7 @@ export class Yarn1Proxy extends JsPackageManager {
       const parsedOutput = JSON.parse(commandResult);
       return this.mapDependencies(parsedOutput, pattern);
     } catch (e) {
+      logger.debug(`Error finding installations for ${pattern.join(', ')}: ${String(e)}`);
       return undefined;
     }
   }

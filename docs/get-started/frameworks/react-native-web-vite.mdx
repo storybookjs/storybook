@@ -12,18 +12,13 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
   In addition to React Native Web, Storybook supports on-device [React Native](https://github.com/storybookjs/react-native) development. If you're unsure what's right for you, read our [comparison](#react-native-vs-react-native-web).
 </Callout>
 
-
-
-
-
 ## Install
 
 To install Storybook in an existing React Native project, run this command in your project's root directory:
 
-<CodeSnippets path="create-command.md" variant="new-users" />
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
-You can then get started [writing stories](/docs/get-started/whats-a-story/), [running tests](/docs/writing-tests/) and [documenting your components](/docs/writing-docs/). For more control over the installation process, refer to the [installation guide](/docs/install/).
-
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
 ### Requirements
 
@@ -41,7 +36,6 @@ You can then get started [writing stories](/docs/get-started/whats-a-story/), [r
   icon: '/images/logos/builders/vite.svg'
 }]} />
 
-
 ## Run Storybook
 
 To run Storybook for a particular project, run the following:
@@ -53,8 +47,6 @@ To build Storybook, run:
 <CodeSnippets path="build-storybook-production-mode.md" />
 
 You will find the output in the configured `outputDir` (default is `storybook-static`).
-
-
 
 ## React Native vs React Native Web
 
@@ -87,7 +79,6 @@ So, which option is right for you?
 
 **Both.** It’s also possible to use both options together. This increases Storybook’s install footprint but is a good option if you want native fidelity in addition to all of the web features. Learn more below.
 
-
 ### Using both React Native and React Native Web
 
 The easiest way to use React Native and React Native Web is to select the **"Both"** option when installing Storybook. This will install and create configurations for both environments, allowing you to run Storybook for both in the same project.
@@ -102,7 +93,6 @@ After installation, you'll see instructions for both environments:
 - React Native Web Storybook can be started immediately using the `storybook` command
 
 However, you can install them separately if one version is installed. You can add a React Native Web Storybook alongside an existing React Native Storybook by running the install command and selecting "React Native Web" in the setup wizard, and vice versa.
-
 
 ## FAQ
 
@@ -139,7 +129,6 @@ Update your `.storybook/main.js|ts` to change the framework property and remove 
 {/* prettier-ignore-end */}
 
 Finally, remove the addon and similar packages (i.e., `@storybook/react-webpack5` and `@storybook/addon-react-native-web`) from your project.
-
 
 ## API
 
@@ -180,7 +169,7 @@ export default config;
 #### Example configuration for reanimated
 
 ```ts title=".storybook/main.ts"
-const main: StorybookConfig = {
+const config: StorybookConfig = {
   // ... rest of config
 
   framework: {
@@ -205,7 +194,7 @@ const main: StorybookConfig = {
 
 ```ts title=".storybook/main.ts"
 
-const main: StorybookConfig = {
+const config: StorybookConfig = {
   // ... rest of config
 
   framework: {
@@ -225,7 +214,7 @@ Let's say you need to transpile a library called `my-library` that is not transp
 You can add it to the `modulesToTranspile` option.
 
 ```ts title=".storybook/main.ts"
-const main: StorybookConfig = {
+const config: StorybookConfig = {
   // ... rest of config
 
   framework: {

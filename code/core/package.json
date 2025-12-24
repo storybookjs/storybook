@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.2.0-alpha.3",
+  "version": "10.2.0-alpha.9",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -201,6 +201,7 @@
     "@vitest/expect": "3.2.4",
     "@vitest/spy": "3.2.4",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
+    "open": "^10.2.0",
     "recast": "^0.23.5",
     "semver": "^7.6.2",
     "use-sync-external-store": "^1.5.0",
@@ -273,7 +274,7 @@
     "downshift": "^9.0.4",
     "ejs": "^3.1.10",
     "empathic": "^2.0.0",
-    "es-toolkit": "^1.36.0",
+    "es-toolkit": "^1.43.0",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
     "execa": "^8.0.1",
     "exsolve": "^1.0.7",
@@ -294,7 +295,6 @@
     "modern-tar": "^0.5.5",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
-    "open": "^10.2.0",
     "p-limit": "^6.2.0",
     "package-manager-detector": "^1.1.0",
     "picocolors": "^1.1.0",

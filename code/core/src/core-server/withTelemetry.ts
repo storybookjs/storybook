@@ -90,7 +90,8 @@ export async function sendTelemetryError(
   _error: unknown,
   eventType: EventType,
   options: TelemetryOptions,
-  blocking = true
+  blocking = true,
+  parent?: StorybookError
 ) {
   try {
     let errorLevel = 'error';
@@ -125,6 +126,8 @@ export async function sendTelemetryError(
           errorHash,
           // if we ever end up sending a non-error instance, we'd like to know
           isErrorInstance: error instanceof Error,
+          // Include parent error information if this is a sub-error
+          ...(parent ? { parent: parent.fullErrorCode } : {}),
         },
         {
           immediate: true,
@@ -132,6 +135,13 @@ export async function sendTelemetryError(
           enableCrashReports: errorLevel === 'full',
         }
       );
+
+      // If this is a StorybookError with sub-errors, send telemetry for each sub-error separately
+      if (error && 'subErrors' in error && error.subErrors.length > 0) {
+        for (const subError of error.subErrors) {
+          await sendTelemetryError(subError, eventType, options, blocking, error as StorybookError);
+        }
+      }
     }
   } catch (err) {
     // if this throws an error, we just move on

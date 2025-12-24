@@ -8,14 +8,13 @@ sidebar:
 
 Storybook for Svelte & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for applications using [Svelte](https://svelte.dev/) built with [Vite](https://vitejs.dev/).
 
-
 ## Install
 
 To install Storybook in an existing Svelte project, run this command in your project's root directory:
 
-<CodeSnippets path="create-command.md" variant="new-users" />
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
-You can then get started [writing stories](/docs/get-started/whats-a-story/), [running tests](/docs/writing-tests/) and [documenting your components](/docs/writing-docs/). For more control over the installation process, refer to the [installation guide](/docs/install/).
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
 ### Requirements
 
@@ -29,7 +28,6 @@ You can then get started [writing stories](/docs/get-started/whats-a-story/), [r
   icon: '/images/logos/builders/vite.svg'
 }]} />
 
-
 ## Run Storybook
 
 To run Storybook for a particular project, run the following:
@@ -41,7 +39,6 @@ To build Storybook, run:
 <CodeSnippets path="build-storybook-production-mode.md" />
 
 You will find the output in the configured `outputDir` (default is `storybook-static`).
-
 
 ## Writing native Svelte stories
 
@@ -65,7 +62,7 @@ Run the following command to install the addon.
 
 <Callout variant="info">
 
-  The CLI's [`add`](../../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../addons/install-addons.mdx#manual-installation) on how to install addons.
+  The CLI's [`add`](../../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../../addons/install-addons.mdx#manual-installation) on how to install addons.
 
 </Callout>
 
@@ -159,7 +156,6 @@ If you enabled automatic documentation generation with the `autodocs` story prop
 
 {/* prettier-ignore-end */}
 
-
 ## FAQ 
 ### How do I manually install the Svelte framework?
 
@@ -178,7 +174,6 @@ Then, update your `.storybook/main.js|ts` to change the framework property:
 <CodeSnippets path="svelte-vite-add-framework.md" />
 
 {/* prettier-ignore-end */}
-
 
 ## API
 

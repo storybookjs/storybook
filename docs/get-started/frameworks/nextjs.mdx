@@ -8,7 +8,6 @@ sidebar:
 
 Storybook for Next.js (Webpack) is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Next.js](https://nextjs.org/) applications using [Webpack 5](https://webpack.js.org/).
 
-
 <Callout variant="info">
 
 **We recommend using [`@storybook/nextjs-vite`](./nextjs-vite.mdx)** for most Next.js projects. The Vite-based framework is faster, more modern, and offers better support for testing features.
@@ -23,12 +22,11 @@ Use this Webpack-based framework (`@storybook/nextjs`) only if:
 
 To install Storybook in an existing Next.js project, run this command in your project's root directory:
 
-<CodeSnippets path="create-command.md" variant="new-users" />
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
 The command will prompt you to choose between this framework and [`@storybook/nextjs-vite`](./nextjs-vite.mdx). We recommend the Vite-based framework ([learn why](./nextjs-vite.mdx#choose-between-vite-and-webpack)).
 
-You can then get started [writing stories](/docs/get-started/whats-a-story/), [running tests](/docs/writing-tests/) and [documenting your components](/docs/writing-docs/). For more control over the installation process, refer to the [installation guide](/docs/install/).
-
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
 ### Requirements
 
@@ -54,9 +52,6 @@ To build Storybook, run:
 
 You will find the output in the configured `outputDir` (default is `storybook-static`).
 
-
-
-
 ## Configure
 
 Storybook for Next.js with Vite supports many Next.js features including:
@@ -69,16 +64,6 @@ Storybook for Next.js with Vite supports many Next.js features including:
 * 🎨 [Styling](#styling)
 * 🎭 [Module mocking](#mocking-modules)
 * ☁️ [React Server Component (experimental)](#react-server-components-rsc)
-
-
-
-
-
-
-
-
-
-
 
 ### Next.js's Image component
 
@@ -416,86 +401,47 @@ const preview: Preview = {
 
 [`next/head`](https://nextjs.org/docs/pages/api-reference/components/head) is supported out of the box. You can use it in your stories like you would in your Next.js application. Please keep in mind, that the Head `children` are placed into the head element of the iframe that Storybook uses to render your stories.
 
-### Styling
+## Next.js styling
 
-#### Sass/Scss
+### Sass/Scss
 
-[Global Sass/Scss stylesheets](https://nextjs.org/docs/pages/building-your-application/styling/sass) are supported without any additional configuration as well. Just import them into [`.storybook/preview.js|ts`](../../configure/index.mdx#configure-story-rendering)
+[Global Sass/SCSS stylesheets](https://nextjs.org/docs/pages/building-your-application/styling/sass) are also supported without any additional configuration. Just import them into [the preview config file](../../configure/index.mdx#configure-story-rendering).
 
-```js title=".storybook/preview.js|ts"
-import '../styles/globals.scss';
-```
+{/* prettier-ignore-start */}
 
-This will automatically include any of your [custom Sass configurations](https://nextjs.org/docs/pages/building-your-application/styling/sass#customizing-sass-options) in your `next.config.js` file.
+<CodeSnippets path="nextjs-styling-sass-preview.md" />
 
-```js title="next.config.js"
-import * as path from 'path';
+{/* prettier-ignore-end */}
 
-export default {
-  // Any options here are included in Sass compilation for your stories
-  sassOptions: {
-    includePaths: [path.join(process.cwd(), 'styles')],
-  },
-};
-```
+This will automatically include any of your [custom Sass configurations](https://nextjs.org/docs/pages/building-your-application/styling/sass#customizing-sass-options) in your Next.js config file.
 
-#### CSS/Sass/Scss Modules
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="nextjs-styling-sass-config.md" />
+
+{/* prettier-ignore-end */}
+
+### CSS/Sass/Scss Modules
 
 [CSS modules](https://nextjs.org/docs/pages/building-your-application/styling/css-modules) work as expected.
 
-```jsx title="src/components/Button.jsx"
-// This import will work in Storybook
-import styles from './Button.module.css';
-// Sass/Scss is also supported
-// import styles from './Button.module.scss'
-// import styles from './Button.module.sass'
+{/* prettier-ignore-start */}
 
-export function Button() {
-  return (
-    <button type="button" className={styles.error}>
-      Destroy
-    </button>
-  );
-}
-```
+<CodeSnippets path="nextjs-styling-css-modules.md" />
 
-#### Styled JSX
+{/* prettier-ignore-end */}
 
-The built in CSS-in-JS solution for Next.js is [styled-jsx](https://nextjs.org/docs/pages/building-your-application/styling/css-in-js), and this framework supports that out of the box too, zero config.
+### Styled JSX
 
-```jsx title="src/components/HelloWorld.jsx"
-// This will work in Storybook
-function HelloWorld() {
-  return (
-    <div>
-      Hello world
-      <p>scoped!</p>
-      <style jsx>{`
-        p {
-          color: blue;
-        }
-        div {
-          background: red;
-        }
-        @media (max-width: 600px) {
-          div {
-            background: blue;
-          }
-        }
-      `}</style>
-      <style global jsx>{`
-        body {
-          background: black;
-        }
-      `}</style>
-    </div>
-  );
-}
+The built-in CSS-in-JS solution for Next.js is [styled-jsx](https://nextjs.org/docs/pages/building-your-application/styling/css-in-js), and this framework supports that out of the box, too, with zero config.
 
-export default HelloWorld;
-```
+{/* prettier-ignore-start */}
 
-You can use your own babel config too. This is an example of how you can customize styled-jsx.
+<CodeSnippets path="nextjs-styling-styled-jsx-component.md" />
+
+{/* prettier-ignore-end */}
+
+You can use your own Babel config, too. This is an example of how you can customize styled-jsx.
 
 ```jsonc
 // .babelrc (or whatever config file you use)
@@ -513,11 +459,19 @@ You can use your own babel config too. This is an example of how you can customi
 }
 ```
 
-#### PostCSS
+### Tailwind
+
+Tailwind in Next.js [is supported via PostCSS](https://nextjs.org/docs/app/getting-started/css#tailwind-css). Storybook will automatically handle the PostCSS config for you, including any custom PostCSS configuration, so that you can import your global CSS directly into [the preview config file](../../configure/index.mdx#configure-story-rendering):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="nextjs-styling-tailwind.md" />
+
+{/* prettier-ignore-end */}
+
+### PostCSS
 
 Next.js lets you [customize PostCSS config](https://nextjs.org/docs/pages/building-your-application/configuring/post-css). Thus this framework will automatically handle your PostCSS config for you.
-
-This allows for cool things like zero-config Tailwind! (See [Next.js' example](https://github.com/vercel/next.js/tree/canary/packages/create-next-app/templates/default-tw))
 
 ### Imports
 #### Absolute imports
@@ -704,7 +658,7 @@ To enable this set the `experimentalRSC` feature flag in your `.storybook/main.j
 
 Setting this flag automatically wraps your story in a [Suspense](https://react.dev/reference/react/Suspense) wrapper, which is able to render asynchronous components in NextJS's version of React.
 
-If this wrapper causes problems in any of your existing stories, you can selectively disable it using the `react.rsc` [parameter](https://storybook.js.org/docs/writing-stories/parameters) at the global/component/story level:
+If this wrapper causes problems in any of your existing stories, you can selectively disable it using the `react.rsc` [parameter](../../writing-stories/parameters.mdx) at the global/component/story level:
 
 {/* prettier-ignore-start */}
 

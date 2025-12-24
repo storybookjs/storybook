@@ -52,7 +52,9 @@ async function findEasyToStorybookComponents(files: string[], sampleComponents: 
       }
 
       logger.debug(`Found easy to Storybook component: ${file}`);
-      logger.debug(`Factors: ${analysis.factors.join(', ')}`);
+      if (analysis.factors.length > 0) {
+        logger.debug(`Factors: ${analysis.factors.join(', ')}`);
+      }
 
       // If we got here, it's a great candidate!
       candidates.push({
@@ -122,7 +124,7 @@ export const generateStories = async ({
       logger.debug(`User selected ${files.length} files`);
     } else {
       // Find files matching the glob pattern
-      logger.debug('Finding files matching glob pattern...');
+      logger.debug(`Finding files matching glob pattern: "${globPattern}"`);
       files = await glob(globPattern, {
         cwd: process.cwd(),
         absolute: true,
@@ -134,6 +136,8 @@ export const generateStories = async ({
           '**/storybook-static/**',
           '**/*.stories.*',
           '**/*.test.*',
+          '**/*.d.*',
+          '**/*.config.*',
           '**/*.spec.*',
         ],
       });

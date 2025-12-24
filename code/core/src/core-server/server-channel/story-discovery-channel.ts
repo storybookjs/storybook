@@ -3,11 +3,15 @@ import type {
   GeneratedStoryInfo,
   RequestData,
   ResponseData,
+  RunStoryTestsRequestPayload,
+  RunStoryTestsResponsePayload,
   StoryDiscoveryProgressPayload,
   StoryDiscoveryRequestPayload,
   StoryDiscoveryResponsePayload,
 } from 'storybook/internal/core-events';
 import {
+  RUN_STORY_TESTS_REQUEST,
+  RUN_STORY_TESTS_RESPONSE,
   STORY_DISCOVERY_PROGRESS,
   STORY_DISCOVERY_REQUEST,
   STORY_DISCOVERY_RESPONSE,
@@ -43,7 +47,6 @@ export function initStoryDiscoveryChannel(
         } satisfies ResponseData<StoryDiscoveryResponsePayload>);
 
         if (!coreOptions.disableTelemetry) {
-          // TODO: Add story-discovery telemetry event
           telemetry('story-discovery', {
             success: false,
             error: generationResult.error,
@@ -61,103 +64,61 @@ export function initStoryDiscoveryChannel(
         },
       } satisfies StoryDiscoveryProgressPayload);
 
-      // Phase 2: Run tests on generated stories (mock results when Vitest is not available)
+      // Phase 2: Run tests on generated stories using Vitest
       const storyIds = generationResult.generatedStories.map(
         (story: GeneratedStoryInfo) => story.storyId
       );
       console.log('Running tests on stories:', storyIds);
 
-      // Mock test execution with realistic timing and progress updates
-      const totalTests = storyIds.length;
-      let completedTests = 0;
-      let passedTests = 0;
-      let failedTests = 0;
+      const testRunResult = await new Promise<RunStoryTestsResponsePayload>((resolve, reject) => {
+        const requestId = `story-discovery-${Date.now()}`;
 
-      // Track which stories pass (for deterministic results, make Button.tsx always pass)
-      const passingStories = new Set<string>();
-
-      // Simulate test execution over ~2 seconds
-      const testBatches = Math.max(1, Math.ceil(totalTests / 3)); // Process tests in batches
-      const batchDelay = 2000 / testBatches; // Spread over 2 seconds
-
-      for (let batch = 0; batch < testBatches; batch++) {
-        // Wait for the batch delay
-        await new Promise((resolve) => setTimeout(resolve, batchDelay));
-
-        // Calculate how many tests to complete in this batch
-        const remainingTests = totalTests - completedTests;
-        const testsInThisBatch = Math.min(
-          remainingTests,
-          Math.max(1, Math.floor(totalTests / testBatches))
-        );
-
-        // Simulate some tests failing occasionally (but mostly passing)
-        for (let i = 0; i < testsInThisBatch; i++) {
-          const storyIndex = completedTests;
-          const story = generationResult.generatedStories[storyIndex];
-          completedTests++;
-
-          // Make Button.tsx always pass, others have 90% pass rate
-          const shouldPass =
-            story?.componentFilePath?.includes('Button.tsx') || Math.random() < 0.9;
-
-          if (shouldPass) {
-            passedTests++;
-            if (story) {
-              passingStories.add(story.componentFilePath);
+        const handleResponse = (response: ResponseData<RunStoryTestsResponsePayload>) => {
+          if (response.id === requestId) {
+            channel.off(RUN_STORY_TESTS_RESPONSE, handleResponse);
+            if (response.success) {
+              resolve(response.payload);
+            } else {
+              reject(new Error(response.error || 'Failed to run story tests'));
             }
-          } else {
-            failedTests++;
           }
-        }
+        };
 
-        // Emit progress update for testing phase
-        channel.emit(STORY_DISCOVERY_PROGRESS, {
-          phase: 'testing',
-          progress: {
-            testSummary: {
-              total: totalTests,
-              passed: passedTests,
-              failed: failedTests,
-              pending: totalTests - completedTests,
-            },
+        channel.on(RUN_STORY_TESTS_RESPONSE, handleResponse);
+
+        // Emit the test run request
+        channel.emit(RUN_STORY_TESTS_REQUEST, {
+          id: requestId,
+          payload: {
+            storyIds,
           },
-        } satisfies StoryDiscoveryProgressPayload);
+        } satisfies RequestData<RunStoryTestsRequestPayload>);
+      });
+
+      if (!testRunResult.success) {
+        throw new Error(testRunResult.error || 'Failed to run story tests');
       }
 
-      // Final test results with component file paths
-      const generatedTestResults = generationResult.generatedStories.map(
-        (story: GeneratedStoryInfo) => ({
-          storyId: story.storyId,
-          status: passingStories.has(story.componentFilePath)
-            ? ('PASS' as const)
-            : ('FAIL' as const),
-          componentFilePath: story.componentFilePath,
-        })
-      );
-
-      // Add src/stories/Button.tsx as a guaranteed passing example
-      const buttonStory = {
-        storyId: 'button-story-example',
-        storyFilePath: 'src/stories/Button.stories.tsx',
-        componentName: 'Button',
-        componentFilePath: 'src/stories/Button.tsx',
+      // Emit progress updates during testing (we'll get updates from the test runner)
+      const testSummaryWithPending = {
+        ...testRunResult.testSummary,
+        pending: 0, // Tests are complete, so no pending tests
       };
 
-      const buttonTestResult = {
-        storyId: 'button-story-example',
-        status: 'PASS' as const,
-        componentFilePath: 'src/stories/Button.tsx',
-      };
+      channel.emit(STORY_DISCOVERY_PROGRESS, {
+        phase: 'testing',
+        progress: {
+          testSummary: testSummaryWithPending,
+        },
+      } satisfies StoryDiscoveryProgressPayload);
 
       const testResults = {
-        results: [...generatedTestResults, buttonTestResult],
-        summary: { total: totalTests + 1, passed: passedTests + 1, failed: failedTests },
+        results: testRunResult.testResults,
+        summary: testSummaryWithPending,
       };
 
-      // Add button story to generated stories
-      const allGeneratedStories = [...generationResult.generatedStories, buttonStory];
-      console.log('Test results (mock):', testResults);
+      const allGeneratedStories = generationResult.generatedStories;
+      console.log('Test results:', testResults);
       // Emit final response
       channel.emit(STORY_DISCOVERY_RESPONSE, {
         success: true,
@@ -172,7 +133,6 @@ export function initStoryDiscoveryChannel(
       } satisfies ResponseData<StoryDiscoveryResponsePayload>);
 
       if (!coreOptions.disableTelemetry) {
-        // TODO: Add story-discovery telemetry event
         telemetry('story-discovery', {
           success: true,
           generatedCount: allGeneratedStories.length,
@@ -191,7 +151,6 @@ export function initStoryDiscoveryChannel(
       } satisfies ResponseData<StoryDiscoveryResponsePayload>);
 
       if (!coreOptions.disableTelemetry) {
-        // TODO: Add story-discovery telemetry event
         telemetry('story-discovery', {
           success: false,
           error: errorMessage,

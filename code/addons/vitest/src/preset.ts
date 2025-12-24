@@ -8,6 +8,7 @@ import {
   loadPreviewOrConfigFile,
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
+import { RUN_STORY_TESTS_REQUEST, RUN_STORY_TESTS_RESPONSE } from 'storybook/internal/core-events';
 import {
   experimental_UniversalStore,
   experimental_getTestProviderStore,
@@ -237,6 +238,107 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   channel.on('test-case-result', (result) => {
     channel.emit('vitest-test-case-result', result);
   });
+
+  // Handle story discovery test requests
+  channel.on(RUN_STORY_TESTS_REQUEST, async (data: any) => {
+    try {
+      const storyIds = data.payload.storyIds || [];
+      const requestId = data.id;
+
+      console.log('Running real tests for story discovery:', storyIds);
+
+      // Track story discovery runs to match completion events
+      const storyDiscoveryRuns = new Map<
+        string,
+        { resolve: Function; reject: Function; storyIds: string[] }
+      >();
+
+      // Create a promise that will resolve when the test run completes
+      const testRunPromise = new Promise<any>((resolve, reject) => {
+        storyDiscoveryRuns.set(requestId, { resolve, reject, storyIds });
+
+        // Set a timeout for the entire operation
+        const timeout = setTimeout(() => {
+          storyDiscoveryRuns.delete(requestId);
+          reject(new Error('Story discovery test run timed out after 60 seconds'));
+        }, 60000);
+
+        // Listen for test run completion events
+        const handleTestRunCompleted = (event: any) => {
+          const runData = storyDiscoveryRuns.get(requestId);
+          if (runData && event.storyIds && arraysEqual(event.storyIds, runData.storyIds)) {
+            clearTimeout(timeout);
+            storyDiscoveryRuns.delete(requestId);
+            channel.off('vitest-test-run-completed', handleTestRunCompleted);
+
+            // Transform the real test results
+            const testResults = (event.testResults || []).map((result: any) => ({
+              storyId: result.storyId,
+              status:
+                result.testResult?.state === 'pass'
+                  ? 'PASS'
+                  : result.testResult?.state === 'fail'
+                    ? 'FAIL'
+                    : 'PENDING',
+              componentFilePath: result.componentPath || '', // From test metadata
+            }));
+
+            resolve({
+              testResults,
+              testSummary: {
+                total: event.totalTestCount || 0,
+                passed: event.passedTestCount || 0,
+                failed: event.failedTestCount || 0,
+              },
+            });
+          }
+        };
+
+        channel.on('vitest-test-run-completed', handleTestRunCompleted);
+
+        // Trigger the test run using the existing TRIGGER_RUN mechanism
+        // This will go through the normal TestManager flow
+        store.send({
+          type: 'TRIGGER_RUN',
+          payload: {
+            storyIds,
+            triggeredBy: 'story-discovery',
+          },
+        });
+      });
+
+      const testRunResult = await testRunPromise;
+
+      console.log('Real test results:', testRunResult.testResults);
+      console.log('Test summary:', testRunResult.testSummary);
+
+      channel.emit(RUN_STORY_TESTS_RESPONSE, {
+        success: true,
+        id: requestId,
+        payload: {
+          success: true,
+          testResults: testRunResult.testResults,
+          testSummary: testRunResult.testSummary,
+        },
+        error: null,
+      } satisfies any);
+    } catch (error: any) {
+      console.error('Error in story discovery test execution:', error);
+      channel.emit(RUN_STORY_TESTS_RESPONSE, {
+        success: false,
+        id: data.id,
+        error: error.message || 'Failed to run story tests',
+      } satisfies any);
+    }
+  });
+
+  // Helper function to compare arrays
+  function arraysEqual(a: any[], b: any[]): boolean {
+    if (a.length !== b.length) {
+      return false;
+    }
+    return a.every((val, index) => val === b[index]);
+  }
 
   return channel;
 };

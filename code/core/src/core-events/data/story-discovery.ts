@@ -60,3 +60,18 @@ export interface StoryDiscoveryResponsePayload {
   // Error message if the operation failed
   error?: string;
 }
+
+export interface RunStoryTestsRequestPayload {
+  storyIds: string[];
+}
+
+export interface RunStoryTestsResponsePayload {
+  success: boolean;
+  testResults: StoryTestResult[];
+  testSummary: {
+    total: number;
+    passed: number;
+    failed: number;
+  };
+  error?: string;
+}

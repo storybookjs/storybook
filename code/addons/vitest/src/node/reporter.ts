@@ -18,14 +18,15 @@ export class StorybookReporter implements Reporter {
   }
 
   onTestCaseResult(testCase: TestCase) {
-    const { storyId, reports } = testCase.meta() as TaskMeta &
-      Partial<{ storyId: string; reports: Report[] }>;
+    const { storyId, reports, componentPath } = testCase.meta() as TaskMeta &
+      Partial<{ storyId: string; reports: Report[]; componentPath: string }>;
 
     const testResult = testCase.result();
     this.testManager.onTestCaseResult({
       storyId,
       testResult,
       reports,
+      componentPath,
     });
   }
 

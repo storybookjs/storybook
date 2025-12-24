@@ -28,6 +28,7 @@ export type TestManagerOptions = {
     storyId?: string;
     testResult: TestResult;
     reports?: Report[];
+    componentPath?: string;
   }) => void;
 };
 
@@ -58,6 +59,7 @@ export class TestManager {
     storyId: string;
     testResult: TestResult;
     reports?: Report[];
+    componentPath?: string;
   }[] = [];
 
   constructor(options: TestManagerOptions) {
@@ -90,7 +92,7 @@ export class TestManager {
       callback: async () => {
         try {
           await this.vitestManager.vitestRestartPromise;
-          await this.vitestManager.runTests(event.payload);
+          await this.vitestManager.runTests(event.payload, event.payload.triggeredBy);
         } catch (err) {
           this.reportFatalError('Failed to run tests', err);
           throw err;
@@ -144,11 +146,21 @@ export class TestManager {
 
     await this.testProviderStore.runWithState(async () => {
       await callback();
+
+      const currentRun = this.store.getState().currentRun;
+
+      // For story discovery runs, include the collected test results
+      const payload =
+        triggeredBy === 'story-discovery'
+          ? { ...currentRun, testResults: this.batchedTestCaseResults.slice() }
+          : currentRun;
+
       this.store.send({
         type: 'TEST_RUN_COMPLETED',
-        payload: this.store.getState().currentRun,
+        payload,
       });
-      if (this.store.getState().currentRun.unhandledErrors.length > 0) {
+
+      if (currentRun.unhandledErrors.length > 0) {
         throw new Error('Tests completed but there are unhandled errors');
       }
     });
@@ -164,13 +176,18 @@ export class TestManager {
     }));
   }
 
-  onTestCaseResult(result: { storyId?: string; testResult: TestResult; reports?: Report[] }) {
-    const { storyId, testResult, reports } = result;
+  onTestCaseResult(result: {
+    storyId?: string;
+    testResult: TestResult;
+    reports?: Report[];
+    componentPath?: string;
+  }) {
+    const { storyId, testResult, reports, componentPath } = result;
     if (!storyId) {
       return;
     }
 
-    this.batchedTestCaseResults.push({ storyId, testResult, reports });
+    this.batchedTestCaseResults.push({ storyId, testResult, reports, componentPath });
     this.throttledFlushTestCaseResults();
 
     // Emit individual test case result

@@ -20,7 +20,12 @@ export type ErrorLike = {
   cause?: ErrorLike;
 };
 
-export type RunTrigger = 'run-all' | 'global' | 'watch' | Extract<API_HashEntry['type'], string>;
+export type RunTrigger =
+  | 'run-all'
+  | 'global'
+  | 'watch'
+  | 'story-discovery'
+  | Extract<API_HashEntry['type'], string>;
 
 export type StoreState = {
   config: {

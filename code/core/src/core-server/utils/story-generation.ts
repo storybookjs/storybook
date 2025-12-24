@@ -35,9 +35,19 @@ async function findEasyToStorybookComponents(
 
   for (const file of files) {
     try {
+      logger.debug(`Analyzing component complexity: ${file}`);
       const analysis = await getComponentComplexity(file);
       const { low, high } = analysis.features;
+      logger.debug(`Level: ${analysis.level}, Factors: ${analysis.factors}`);
 
+      // TODO: Undo this and rethink the filtering logic
+      if (analysis.level === 'simple') {
+        candidates.push({
+          file,
+          score: analysis.score,
+        });
+        continue;
+      }
       // 2. APPLY FILTERS
       // We want components that are "Pure" and isolated.
 
@@ -319,11 +329,14 @@ export async function generateSampledStories({
         '**/storybook-static/**',
         '**/*.stories.*',
         '**/*.test.*',
+        '**/*.d.*',
+        '**/*.config.*',
         '**/*.spec.*',
       ],
     });
 
     logger.debug(`Found ${files.length} files matching glob pattern`);
+    logger.debug(files.join('\n'));
 
     // Filter out barrel files
     files = await filterOutBarrelFiles(files);

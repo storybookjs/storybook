@@ -92,6 +92,9 @@ enum events {
   STORY_DISCOVERY_REQUEST = 'storyDiscoveryRequest',
   STORY_DISCOVERY_RESPONSE = 'storyDiscoveryResponse',
   STORY_DISCOVERY_PROGRESS = 'storyDiscoveryProgress',
+  // Run tests for specific stories
+  RUN_STORY_TESTS_REQUEST = 'runStoryTestsRequest',
+  RUN_STORY_TESTS_RESPONSE = 'runStoryTestsResponse',
   // Open a file in the code editor
   OPEN_IN_EDITOR_REQUEST = 'openInEditorRequest',
   OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
@@ -166,6 +169,8 @@ export const {
   STORY_DISCOVERY_REQUEST,
   STORY_DISCOVERY_RESPONSE,
   STORY_DISCOVERY_PROGRESS,
+  RUN_STORY_TESTS_REQUEST,
+  RUN_STORY_TESTS_RESPONSE,
   OPEN_IN_EDITOR_REQUEST,
   OPEN_IN_EDITOR_RESPONSE,
   MANAGER_INERT_ATTRIBUTE_CHANGED,

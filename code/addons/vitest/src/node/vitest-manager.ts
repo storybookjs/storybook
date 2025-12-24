@@ -51,7 +51,7 @@ export class VitestManager {
 
   constructor(private testManager: TestManager) {}
 
-  async startVitest({ coverage }: { coverage: boolean }) {
+  async startVitest({ coverage, watch }: { coverage: boolean; watch?: boolean }) {
     const { createVitest } = await import('vitest/node');
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
@@ -87,7 +87,7 @@ export class VitestManager {
     try {
       this.vitest = await createVitest('test', {
         root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
-        watch: true,
+        watch: watch ?? true,
         passWithNoTests: false,
         project: [projectName],
         // TODO:
@@ -143,13 +143,13 @@ export class VitestManager {
     await this.setupWatchers();
   }
 
-  async restartVitest({ coverage }: { coverage: boolean }) {
+  async restartVitest({ coverage, watch }: { coverage: boolean; watch?: boolean }) {
     await this.vitestRestartPromise;
     this.vitestRestartPromise = new Promise(async (resolve, reject) => {
       try {
         await this.runningPromise;
         await this.vitest?.close();
-        await this.startVitest({ coverage });
+        await this.startVitest({ coverage, watch });
         resolve();
       } catch (e) {
         reject(e);
@@ -259,17 +259,37 @@ export class VitestManager {
     return { filteredTestSpecifications, filteredStoryIds };
   }
 
-  async runTests(runPayload: TriggerRunEvent['payload']) {
+  async runTests(runPayload: TriggerRunEvent['payload'], triggeredBy?: string) {
     const { watching, config } = this.testManager.store.getState();
     const coverageShouldBeEnabled =
       config.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
     const currentCoverage = this.vitest?.config.coverage?.enabled;
+    const isStoryDiscovery = triggeredBy === 'story-discovery';
+    const shouldWatch = watching && !isStoryDiscovery;
+
+    console.log({
+      shouldWatch,
+      isStoryDiscovery,
+      triggeredBy,
+      currentVitestWatch: this.vitest?.config.watch,
+    });
 
     if (!this.vitest) {
-      await this.startVitest({ coverage: coverageShouldBeEnabled });
-    } else if (currentCoverage !== coverageShouldBeEnabled) {
-      await this.restartVitest({ coverage: coverageShouldBeEnabled });
+      console.log('Starting Vitest with watch:', shouldWatch);
+      await this.startVitest({ coverage: coverageShouldBeEnabled, watch: shouldWatch });
+    } else if (
+      currentCoverage !== coverageShouldBeEnabled ||
+      this.vitest.config.watch !== shouldWatch
+    ) {
+      console.log(
+        'Restarting Vitest with watch:',
+        shouldWatch,
+        'current:',
+        this.vitest.config.watch
+      );
+      await this.restartVitest({ coverage: coverageShouldBeEnabled, watch: shouldWatch });
     } else {
+      console.log('Using existing Vitest with watch:', this.vitest.config.watch);
       await this.vitestRestartPromise;
     }
 
@@ -493,7 +513,7 @@ export class VitestManager {
       if (isConfig) {
         log('Restarting Vitest due to config change');
         const { watching, config } = this.testManager.store.getState();
-        await this.restartVitest({ coverage: config.coverage && !watching });
+        await this.restartVitest({ coverage: config.coverage && !watching, watch: watching });
       }
     });
   }

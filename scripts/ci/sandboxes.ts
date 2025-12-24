@@ -7,10 +7,10 @@ import {
   CACHE_KEYS,
   artifact,
   cache,
-  workflow,
   server,
   toId,
   verdaccio,
+  workflow,
   workspace,
 } from './utils/helpers';
 import { defineHub, defineJob, isWorkflowOrAbove } from './utils/types';

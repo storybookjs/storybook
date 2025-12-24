@@ -8,7 +8,7 @@ export default {
     label: 'Click Me!',
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 

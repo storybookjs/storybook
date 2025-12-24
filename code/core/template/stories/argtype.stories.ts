@@ -9,7 +9,7 @@ export default {
     onClick: {},
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
     actions: { argTypesRegex: '^on.*' },
   },
 };

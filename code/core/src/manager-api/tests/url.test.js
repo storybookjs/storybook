@@ -288,6 +288,21 @@ describe('getStoryHrefs', () => {
     expect(previewHref).toContain('&args=a:1&globals=b:2');
   });
 
+  it('retains args with special values', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:!null;b:!hex(f00);c:!undefined' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toContain('&args=a:!null;b:!hex(f00);c:!undefined');
+    expect(previewHref).toContain('&args=a:!null;b:!hex(f00);c:!undefined');
+  });
+
   it('drops args but retains globals when changing stories', () => {
     const { api, state } = initURL({
       store,
@@ -353,6 +368,38 @@ describe('getStoryHrefs', () => {
     });
     expect(managerHref).toContain('&args=a:1&globals=b:2&one=1&foo.bar=baz');
     expect(previewHref).toContain('&args=a:1&globals=b:2&one=1&foo.bar=baz');
+  });
+
+  it('correctly preserves args and globals encoding', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=equal:g%3Dh&globals=ampersand:c%26d' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toContain('&args=equal:g%3Dh&globals=ampersand:c%26d');
+    expect(previewHref).toContain('&args=equal:g%3Dh&globals=ampersand:c%26d');
+  });
+
+  it('correctly encodes query params', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
+      queryParams: { equal: 'a=b', ampersand: 'c&d' },
+    });
+    expect(managerHref).toContain('&equal=a%3Db&ampersand=c%26d');
+    expect(previewHref).toContain('&equal=a%3Db&ampersand=c%26d');
   });
 
   it('supports returning absolute URLs using the base option', () => {

@@ -212,6 +212,7 @@ export const Sidebar = React.memo(function Sidebar({
                     isLoading={isLoading}
                     isBrowsing={isNavVisible}
                     isHidden={!isNavReachable}
+                    isDevelopment={isDevelopment}
                     hasEntries={hasEntries}
                   />
                 }

@@ -12,6 +12,7 @@ export interface ExplorerProps {
   isLoading: boolean;
   isBrowsing: boolean;
   isHidden: boolean;
+  isDevelopment: boolean;
   hasEntries: boolean;
   dataset: CombinedDataset;
   selected: Selection;
@@ -63,6 +64,7 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
           key={refId}
           isLoading={isLoading}
           isBrowsing={isBrowsing}
+          isDevelopment={isDevelopment}
           hasEntries={hasEntries}
           selectedStoryId={selected?.refId === ref.id ? selected.storyId : null}
           highlightedRef={highlightedRef}

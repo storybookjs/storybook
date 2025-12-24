@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.2.0-alpha.5",
+  "version": "10.2.0-alpha.9",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -64,7 +64,7 @@
     "babel-plugin-react-docgen": "^4.2.1",
     "comment-parser": "^1.4.1",
     "empathic": "^2.0.0",
-    "es-toolkit": "^1.36.0",
+    "es-toolkit": "^1.43.0",
     "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
     "html-tags": "^3.1.0",

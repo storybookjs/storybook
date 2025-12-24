@@ -1,5 +1,4 @@
 /// <reference path="../typings.d.ts" />
-/// <reference path="./emotionAugmentation.d.ts" />
 import type { FunctionInterpolation, Interpolation } from '@emotion/react';
 
 import type { StorybookTheme } from './types';
@@ -30,7 +29,6 @@ export type {
 
 export * from './base';
 export * from './types';
-// export * from './emotionAugmentation.d.ts';
 
 export { default as createCache } from '@emotion/cache';
 export { default as isPropValid } from '@emotion/is-prop-valid';
@@ -44,3 +42,9 @@ export { lightenColor as lighten, darkenColor as darken, getPreferredColorScheme
 
 export const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';
+
+// Re-export Theme from @emotion/react and self-augment with StorybookTheme
+declare module '.' {
+  interface Theme extends StorybookTheme {}
+}
+export type { Theme } from '@emotion/react';

@@ -121,6 +121,8 @@ export class StoryIndexGenerator {
   // Same as the above but for the error case
   private lastError?: Error | null;
 
+  private invalidationListeners: Set<() => void> = new Set();
+
   constructor(
     public readonly specifiers: NormalizedStoriesSpecifier[],
     public readonly options: StoryIndexGeneratorOptions
@@ -433,8 +435,18 @@ export class StoryIndexGenerator {
       ]);
     }
 
-    const storyEntries: (StoryIndexEntryWithExtra & { tags: Tag[] })[] = indexInputs.map(
-      (input) => {
+    const toImportPath = (path: string | undefined) => {
+      if (!path) {
+        return importPath;
+      }
+      if (path.startsWith('virtual:')) {
+        return path;
+      }
+      return slash(normalizeStoryPath(relative(this.options.workingDir, path)));
+    };
+
+    const storyEntries: ((StoryIndexEntryWithExtra | DocsCacheEntry) & { tags: Tag[] })[] =
+      indexInputs.map((input) => {
         const name = input.name ?? storyNameFromExport(input.exportName);
         const componentPath =
           input.rawComponentPath &&
@@ -455,7 +467,7 @@ export class StoryIndexGenerator {
           },
           name,
           title,
-          importPath,
+          importPath: toImportPath(input.importPath),
           componentPath,
           tags,
         };
@@ -469,8 +481,7 @@ export class StoryIndexGenerator {
         }
 
         return entry;
-      }
-    );
+      });
 
     // We need a docs entry attached to the CSF file if either:
     //  a) autodocs is globally enabled
@@ -482,15 +493,15 @@ export class StoryIndexGenerator {
       const docsName = this.options.docs?.defaultName ?? 'Docs';
       const name = docsName;
       const { metaId } = indexInputs[0];
-      const { title } = storyEntries[0];
-      const id = toId(metaId ?? title, name);
+      const entry = storyEntries[0];
+      const id = toId(metaId ?? entry.title, name);
       const tags = combineTags(...projectTags, ...(indexInputs[0].tags ?? []));
 
       const docsEntry: DocsCacheEntry & { tags: Tag[] } = {
         id,
-        title,
+        title: entry.title,
         name,
-        importPath,
+        importPath: entry.importPath,
         type: 'docs',
         tags,
         storiesImports: [],
@@ -617,7 +628,7 @@ export class StoryIndexGenerator {
       if (err && (err as { source: any }).source?.match(/mdast-util-mdx-jsx/g)) {
         logger.warn(
           `💡 This seems to be an MDX2 syntax error. Please refer to the MDX section in the following resource for assistance on how to fix this: ${picocolors.yellow(
-            'https://storybook.js.org/docs/7/migration-guide?ref=error'
+            'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#mdx2-upgrade'
           )}`
         );
       }
@@ -792,10 +803,18 @@ export class StoryIndexGenerator {
     });
     this.lastIndex = null;
     this.lastError = null;
+    this.invalidationListeners.forEach((listener) => listener());
   }
 
-  invalidate(specifier: NormalizedStoriesSpecifier, importPath: Path, removed: boolean) {
+  invalidate(importPath: Path, removed: boolean) {
     const absolutePath = slash(resolve(this.options.workingDir, importPath));
+    const specifier = Array.from(this.specifierToCache.keys()).find((ns) =>
+      ns.importPathMatcher.exec(importPath)
+    );
+    if (!specifier) {
+      // not a story file
+      return;
+    }
     const cache = this.specifierToCache.get(specifier);
     invariant(
       cache,
@@ -836,6 +855,14 @@ export class StoryIndexGenerator {
     }
     this.lastIndex = null;
     this.lastError = null;
+    this.invalidationListeners.forEach((listener) => listener());
+  }
+
+  onInvalidated(listener: () => void) {
+    this.invalidationListeners.add(listener);
+    return () => {
+      this.invalidationListeners.delete(listener);
+    };
   }
 
   async getPreviewCode() {
@@ -848,7 +875,7 @@ export class StoryIndexGenerator {
 
   getProjectTags(previewCode?: string) {
     let projectTags = [] as Tag[];
-    const defaultTags = ['dev', 'test'];
+    const defaultTags = ['dev', 'test', 'manifest'];
     if (previewCode) {
       try {
         const projectAnnotations = loadConfig(previewCode).parse();

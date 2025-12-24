@@ -1,19 +1,41 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { toImportFn } from './codegen-importfn-script';
+import type { StoryIndex } from 'storybook/internal/types';
 
-describe('toImportFn', () => {
-  it('should correctly map story paths to import functions for absolute paths on Linux', async () => {
+import { generateImportFnScriptCode } from './codegen-importfn-script';
+
+describe('generateImportFnScriptCode', () => {
+  it('should correctly map story paths to import functions for POSIX paths', async () => {
     vi.spyOn(process, 'cwd').mockReturnValue('/absolute/path');
 
-    const stories = ['/absolute/path/to/story1.js', '/absolute/path/to/story2.js'];
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'path-to-story': {
+          id: 'path-to-story',
+          title: 'Path to Story',
+          name: 'Default',
+          importPath: './to/abs-story.js',
+          type: 'story',
+          subtype: 'story',
+        },
+        'virtual-story': {
+          id: 'virtual-story',
+          title: 'Virtual Story',
+          name: 'Default',
+          importPath: 'virtual:story.js',
+          type: 'story',
+          subtype: 'story',
+        },
+      },
+    };
 
-    const result = await toImportFn(stories);
+    const result = generateImportFnScriptCode(index);
 
     expect(result).toMatchInlineSnapshot(`
       "const importers = {
-        "./to/story1.js": () => import("/absolute/path/to/story1.js"),
-        "./to/story2.js": () => import("/absolute/path/to/story2.js")
+        "./to/abs-story.js": () => import("/absolute/path/to/abs-story.js"),
+        "virtual:story.js": () => import("virtual:story.js")
       };
 
       export async function importFn(path) {
@@ -22,16 +44,37 @@ describe('toImportFn', () => {
     `);
   });
 
-  it('should correctly map story paths to import functions for absolute paths on Windows', async () => {
+  it('should correctly map story paths to import functions for Windows paths', async () => {
     vi.spyOn(process, 'cwd').mockReturnValue('C:\\absolute\\path');
-    const stories = ['C:\\absolute\\path\\to\\story1.js', 'C:\\absolute\\path\\to\\story2.js'];
 
-    const result = await toImportFn(stories);
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'abs-path-to-story': {
+          id: 'abs-path-to-story',
+          title: 'Absolute Path to Story',
+          name: 'Default',
+          importPath: 'to\\abs-story.js',
+          type: 'story',
+          subtype: 'story',
+        },
+        'virtual-story': {
+          id: 'virtual-story',
+          title: 'Virtual Story',
+          name: 'Default',
+          importPath: 'virtual:story.js',
+          type: 'story',
+          subtype: 'story',
+        },
+      },
+    };
+
+    const result = generateImportFnScriptCode(index);
 
     expect(result).toMatchInlineSnapshot(`
       "const importers = {
-        "./to/story1.js": () => import("C:/absolute/path/to/story1.js"),
-        "./to/story2.js": () => import("C:/absolute/path/to/story2.js")
+        "./to/abs-story.js": () => import("C:/absolute/path/to/abs-story.js"),
+        "virtual:story.js": () => import("virtual:story.js")
       };
 
       export async function importFn(path) {
@@ -40,11 +83,8 @@ describe('toImportFn', () => {
     `);
   });
 
-  it('should handle an empty array of stories', async () => {
-    const root = '/absolute/path';
-    const stories: string[] = [];
-
-    const result = await toImportFn(stories);
+  it('should handle an empty index', async () => {
+    const result = generateImportFnScriptCode({ v: 5, entries: {} });
 
     expect(result).toMatchInlineSnapshot(`
       "const importers = {};

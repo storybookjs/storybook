@@ -44,7 +44,7 @@ export async function warnWhenUsingArgTypesRegex(
             )} and assigning explicit action with the ${picocolors.cyan(
               'fn'
             )} function from ${picocolors.cyan('storybook/test')} instead:
-            https://storybook.js.org/docs/essentials/actions#via-storybooktest-fn-spy-function
+            https://storybook.js.org/docs/essentials/actions#via-storybooktest-fn-spies
             
             The build used by the addon for snapshot testing doesn't take the regex into account, which can cause hard to debug problems when a snapshot depends on the presence of action props.
           `;

@@ -67,11 +67,17 @@ const Section = styled.section({
   flexDirection: 'column',
 });
 
+// Ensures we don't cause difficult-to-debug hooks violations
+// whether addon authors pass a React component ctor or anonymous function.
+function renderChild(RenderProp: Addon_BaseType['render']) {
+  return <RenderProp active={true} />;
+}
+
 // Avoids crashes due to rules of hooks.
 const PreRenderAddons = ({ panels }: { panels: Record<string, Addon_BaseType> }) => {
   return Object.entries(panels).map(([k, v]) => (
     <StatelessTabPanel key={k} name={k} hasScrollbar={false}>
-      <TabErrorBoundary key={k}>{v.render({ active: true })}</TabErrorBoundary>
+      <TabErrorBoundary key={k}>{renderChild(v.render)}</TabErrorBoundary>
     </StatelessTabPanel>
   ));
 };

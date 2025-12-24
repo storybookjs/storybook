@@ -78,19 +78,8 @@ export async function waitForAnimations(signal?: AbortSignal) {
             .flatMap((el) => el?.getAnimations?.() || [])
             .filter((a) => a.playState === 'running' && !isInfiniteAnimation(a));
           if (runningAnimations.length > 0) {
-            await Promise.all(
-              runningAnimations.map(async (a) => {
-                try {
-                  await a.finished;
-                } catch (err) {
-                  // Ignore AbortError from canceled animations, treat as "finished"
-                  // Those errors occur exclusively on CRA with React.StrictMode enabled.
-                  if (!(err instanceof Error && err.name === 'AbortError')) {
-                    throw err;
-                  }
-                }
-              })
-            );
+            // Treat any errors (e.g. AbortError) from `finished` as also finished, even though not successfully so
+            await Promise.allSettled(runningAnimations.map(async (a) => a.finished));
             await checkAnimationsFinished();
           }
         };

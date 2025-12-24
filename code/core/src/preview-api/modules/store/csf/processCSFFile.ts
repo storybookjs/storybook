@@ -49,16 +49,16 @@ export function processCSFFile<TRenderer extends Renderer>(
 ): CSFFile<TRenderer> {
   const { default: defaultExport, __namedExportsOrder, ...namedExports } = moduleExports;
 
-  const firstStory = Object.values(namedExports)[0];
-  if (isStory<TRenderer>(firstStory)) {
+  const factoryStory = Object.values(namedExports).find((it) => isStory<TRenderer>(it));
+  if (factoryStory) {
     const meta: NormalizedComponentAnnotations<TRenderer> =
-      normalizeComponentAnnotations<TRenderer>(firstStory.meta.input, title, importPath);
+      normalizeComponentAnnotations<TRenderer>(factoryStory.meta.input, title, importPath);
     checkDisallowedParameters(meta.parameters);
 
     const csfFile: CSFFile<TRenderer> = { meta, stories: {}, moduleExports };
 
     Object.keys(namedExports).forEach((key) => {
-      if (isExportStory(key, meta)) {
+      if (isExportStory(key, meta) && isStory<TRenderer>(namedExports[key])) {
         const story: Story<TRenderer> = namedExports[key];
 
         const storyMeta = normalizeStory(key, story.input as any, meta);
@@ -82,7 +82,7 @@ export function processCSFFile<TRenderer extends Renderer>(
       }
     });
 
-    csfFile.projectAnnotations = firstStory.meta.preview.composed;
+    csfFile.projectAnnotations = factoryStory.meta.preview.composed;
 
     return csfFile;
   }

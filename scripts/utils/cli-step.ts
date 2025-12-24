@@ -21,7 +21,7 @@ export type CLIStep<TOptions extends OptionSpecifier> = {
 
 export const steps = {
   repro: {
-    command: 'sandbox',
+    command: 'repro',
     description: 'Bootstrapping Template',
     icon: '👷',
     hasArgument: true,
@@ -122,8 +122,6 @@ export async function executeCLIStep<TOptions extends OptionSpecifier>(
     cliStep.options,
     options.optionValues || {}
   );
-
-  console.log({ command, options });
 
   await exec(
     command,

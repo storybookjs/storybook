@@ -47,17 +47,16 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   await rm(join(cwd, '.yarnrc.yml'), { force: true }).catch(() => {});
 
-  const [pnpApiExists] = await Promise.all([
-    // TODO: Remove in SB11
-    pathExists(join(cwd, '.pnp.cjs')),
-    mkdir(cwd, { recursive: true }).then(() =>
-      Promise.all([
-        //
-        writeFile(join(cwd, 'yarn.lock'), ''),
-        writeFile(join(cwd, '.yarnrc.yml'), ''),
-      ])
-    ),
-  ]);
+  // TODO: Remove in SB11
+  const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
+
+  await mkdir(cwd, { recursive: true }).then(() =>
+    Promise.all([
+      //
+      writeFile(join(cwd, 'yarn.lock'), ''),
+      writeFile(join(cwd, '.yarnrc.yml'), ''),
+    ])
+  );
 
   const command = [
     `yarn set version berry`,

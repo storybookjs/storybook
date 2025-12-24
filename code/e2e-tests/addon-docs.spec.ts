@@ -29,9 +29,8 @@ test.describe('addon-docs', () => {
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
     const root = sbPage.previewRoot();
 
-    const basicStories = root.locator('#anchor--addons-docs-docspage-basic--basic');
-    const secondBasicStory = (await basicStories.all())[1];
-    await expect(secondBasicStory).toContainText('A basic button');
+    const basicStory = root.locator('#anchor--addons-docs-docspage-basic--basic');
+    await expect(basicStory).toContainText('A basic button');
 
     const anotherStory = root.locator('#anchor--addons-docs-docspage-basic--another');
     await expect(anotherStory).toContainText('Another button, just to show multiple stories');

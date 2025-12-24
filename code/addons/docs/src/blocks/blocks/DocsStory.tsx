@@ -21,7 +21,7 @@ export const DocsStory: FC<DocsStoryProps> = ({
   const withToolbar = story.parameters.docs?.canvas?.withToolbar ?? withToolbarProp;
 
   return (
-    <Anchor storyId={story.id}>
+    <Anchor storyId={__primary ? `primary--${story.id}` : story.id}>
       {expanded && (
         <>
           <Subheading>{story.name}</Subheading>

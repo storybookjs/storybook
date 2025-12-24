@@ -10,7 +10,7 @@ import { TelemetryService } from '../services';
 
 const ADDON_INSTALLATION_INSTRUCTIONS = {
   '@storybook/addon-vitest':
-    'https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup',
+    'https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced',
 } as { [key: string]: string };
 
 type ExecuteAddonConfigurationParams = {

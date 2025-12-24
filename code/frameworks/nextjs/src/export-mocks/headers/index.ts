@@ -1,4 +1,3 @@
-import { draftMode as originalDraftMode } from 'next/dist/server/request/draft-mode';
 import * as headers from 'next/dist/server/request/headers';
 import { fn } from 'storybook/test';
 
@@ -10,5 +9,18 @@ export { headers } from './headers';
 export { cookies } from './cookies';
 
 // passthrough mocks - keep original implementation but allow for spying
-const draftMode = fn(originalDraftMode ?? (headers as any).draftMode).mockName('draftMode');
+// In Next.js 14, draftMode is exported from 'next/dist/client/components/headers'
+// In Next.js 15+, draftMode is exported from 'next/dist/server/request/draft-mode'
+// The webpack alias handles this, but we need to avoid the top-level import
+// to prevent build errors when the module doesn't exist
+let originalDraftMode: any;
+try {
+  // This will be resolved by webpack alias to the correct location based on Next.js version
+  originalDraftMode = require('next/dist/server/request/draft-mode').draftMode;
+} catch {
+  // Fallback to the location in the headers module (Next.js 14)
+  originalDraftMode = (headers as any).draftMode;
+}
+
+const draftMode = fn(originalDraftMode).mockName('draftMode');
 export { draftMode };

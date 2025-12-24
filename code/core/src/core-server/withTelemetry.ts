@@ -137,11 +137,9 @@ export async function sendTelemetryError(
       );
 
       // If this is a StorybookError with sub-errors, send telemetry for each sub-error separately
-      if (error instanceof StorybookError && error.subErrors.length > 0) {
+      if (error && 'subErrors' in error && error.subErrors.length > 0) {
         for (const subError of error.subErrors) {
-          if (subError instanceof StorybookError) {
-            await sendTelemetryError(subError, eventType, options, blocking, error);
-          }
+          await sendTelemetryError(subError, eventType, options, blocking, error as StorybookError);
         }
       }
     }

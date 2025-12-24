@@ -92,6 +92,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -141,6 +142,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "F",
@@ -156,6 +158,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "F",
@@ -189,6 +192,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "stories",
@@ -204,6 +208,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "stories",
@@ -239,6 +244,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/extension",
                 "type": "story",
@@ -253,6 +259,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/noExtension",
                 "type": "story",
@@ -267,6 +274,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/package",
                 "type": "story",
@@ -281,6 +289,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                 ],
                 "title": "nested/Button",
@@ -296,6 +305,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "second-nested/G",
                 "type": "story",
@@ -330,6 +340,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -344,6 +355,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -359,6 +371,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -374,6 +387,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/extension",
                 "type": "story",
@@ -388,6 +402,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/noExtension",
                 "type": "story",
@@ -402,6 +417,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/package",
                 "type": "story",
@@ -414,6 +430,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "D",
@@ -429,6 +446,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "D",
@@ -444,6 +462,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "foobar",
                 ],
                 "title": "Example/Button",
@@ -459,6 +478,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/F",
                 "type": "story",
@@ -473,6 +493,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
@@ -487,6 +508,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "play-fn",
                 ],
                 "title": "first-nested/deeply/Features",
@@ -502,6 +524,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
@@ -516,6 +539,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
@@ -530,6 +554,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "play-fn",
                 ],
                 "title": "first-nested/deeply/Features",
@@ -543,6 +568,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "H",
@@ -558,6 +584,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "H",
@@ -573,6 +600,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                 ],
                 "title": "nested/Button",
@@ -588,6 +616,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "second-nested/G",
                 "type": "story",
@@ -642,6 +671,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -656,6 +686,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -671,6 +702,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -686,6 +718,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/extension",
                 "type": "story",
@@ -700,6 +733,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/noExtension",
                 "type": "story",
@@ -714,6 +748,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "componentPath/package",
                 "type": "story",
@@ -726,6 +761,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "D",
@@ -741,6 +777,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "D",
@@ -756,6 +793,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "foobar",
                 ],
                 "title": "Example/Button",
@@ -771,6 +809,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/F",
                 "type": "story",
@@ -785,6 +824,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
@@ -799,6 +839,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "play-fn",
                 ],
                 "title": "first-nested/deeply/Features",
@@ -814,6 +855,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
@@ -828,6 +870,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "first-nested/deeply/Features",
                 "type": "story",
@@ -842,6 +885,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "play-fn",
                 ],
                 "title": "first-nested/deeply/Features",
@@ -855,6 +899,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "H",
@@ -870,6 +915,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "H",
@@ -885,6 +931,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                 ],
                 "title": "nested/Button",
@@ -900,6 +947,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "second-nested/G",
                 "type": "story",
@@ -1090,6 +1138,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1105,6 +1154,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                   "attached-mdx",
                 ],
@@ -1121,6 +1171,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1157,6 +1208,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1172,6 +1224,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                   "attached-mdx",
                 ],
@@ -1188,6 +1241,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1230,6 +1284,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                   "attached-mdx",
@@ -1247,6 +1302,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -1342,6 +1398,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "duplicate/A",
@@ -1357,6 +1414,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "duplicate/A",
@@ -1372,6 +1430,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "duplicate/A",
@@ -1423,6 +1482,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "A",
@@ -1438,6 +1498,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "A",
@@ -1469,6 +1530,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                   "attached-mdx",
@@ -1486,6 +1548,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                   "attached-mdx",
@@ -1503,6 +1566,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -1517,6 +1581,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "ComponentReference",
@@ -1530,6 +1595,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "docs2/Yabbadabbadooo",
@@ -1543,6 +1609,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "NoTitle",
@@ -1556,6 +1623,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "foo",
                   "bar",
                   "unattached-mdx",
@@ -1622,6 +1690,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                   "attached-mdx",
@@ -1639,6 +1708,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                   "attached-mdx",
@@ -1656,6 +1726,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -1670,6 +1741,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "ComponentReference",
@@ -1683,6 +1755,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "docs2/Yabbadabbadooo",
@@ -1696,6 +1769,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "unattached-mdx",
                 ],
                 "title": "NoTitle",
@@ -1709,6 +1783,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "foo",
                   "bar",
                   "unattached-mdx",
@@ -1746,6 +1821,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "component-tag",
                   "story-tag",
                 ],
@@ -1760,6 +1836,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1775,6 +1852,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                 ],
                 "title": "B",
@@ -1791,6 +1869,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "autodocs",
                   "attached-mdx",
                 ],
@@ -1831,6 +1910,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                   "attached-mdx",
                 ],
                 "title": "B",
@@ -1846,6 +1926,7 @@ describe('StoryIndexGenerator', () => {
                 "tags": [
                   "dev",
                   "test",
+                  "manifest",
                 ],
                 "title": "B",
                 "type": "story",
@@ -2118,7 +2199,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(readCsfMock).toHaveBeenCalledTimes(12);
 
-        generator.invalidate(specifier, './src/B.stories.ts', false);
+        generator.invalidate('./src/B.stories.ts', false);
 
         readCsfMock.mockClear();
         await generator.getIndex();
@@ -2140,7 +2221,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(toId).toHaveBeenCalledTimes(7);
 
-        generator.invalidate(docsSpecifier, './src/docs2/Title.mdx', false);
+        generator.invalidate('./src/docs2/Title.mdx', false);
 
         toIdMock.mockClear();
         await generator.getIndex();
@@ -2162,7 +2243,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(toId).toHaveBeenCalledTimes(7);
 
-        generator.invalidate(storiesSpecifier, './src/A.stories.js', false);
+        generator.invalidate('./src/A.stories.js', false);
 
         toIdMock.mockClear();
         await generator.getIndex();
@@ -2182,7 +2263,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
 
-        generator.invalidate(specifier, './src/B.stories.ts', false);
+        generator.invalidate('./src/B.stories.ts', false);
 
         sortFn.mockClear();
         await generator.getIndex();
@@ -2203,7 +2284,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(readCsfMock).toHaveBeenCalledTimes(12);
 
-        generator.invalidate(specifier, './src/B.stories.ts', true);
+        generator.invalidate('./src/B.stories.ts', true);
 
         readCsfMock.mockClear();
         await generator.getIndex();
@@ -2223,7 +2304,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
 
-        generator.invalidate(specifier, './src/B.stories.ts', true);
+        generator.invalidate('./src/B.stories.ts', true);
 
         sortFn.mockClear();
         await generator.getIndex();
@@ -2242,7 +2323,7 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(readCsfMock).toHaveBeenCalledTimes(12);
 
-        generator.invalidate(specifier, './src/B.stories.ts', true);
+        generator.invalidate('./src/B.stories.ts', true);
 
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('b--story-one');
       });
@@ -2264,7 +2345,7 @@ describe('StoryIndexGenerator', () => {
 
         expect(Object.keys((await generator.getIndex()).entries)).toContain('notitle--docs');
 
-        generator.invalidate(docsSpecifier, './src/docs2/NoTitle.mdx', true);
+        generator.invalidate('./src/docs2/NoTitle.mdx', true);
 
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('notitle--docs');
       });
@@ -2286,12 +2367,12 @@ describe('StoryIndexGenerator', () => {
 
         expect(Object.keys((await generator.getIndex()).entries)).toContain('a--metaof');
 
-        generator.invalidate(docsSpecifier, './src/docs2/MetaOf.mdx', true);
+        generator.invalidate('./src/docs2/MetaOf.mdx', true);
 
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('a--metaof');
 
         // this will throw if MetaOf is not removed from A's dependents
-        generator.invalidate(storiesSpecifier, './src/A.stories.js', false);
+        generator.invalidate('./src/A.stories.js', false);
       });
     });
   });

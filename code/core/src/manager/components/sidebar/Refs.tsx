@@ -15,6 +15,7 @@ import type { Highlight, RefType } from './types';
 export interface RefProps {
   isLoading: boolean;
   isBrowsing: boolean;
+  isDevelopment: boolean;
   hasEntries: boolean;
   selectedStoryId: string | null;
   highlightedRef: MutableRefObject<Highlight>;
@@ -81,6 +82,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
     title = refId,
     isLoading: isLoadingMain,
     isBrowsing,
+    isDevelopment,
     hasEntries,
     selectedStoryId,
     highlightedRef,
@@ -151,6 +153,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
             <Tree
               allStatuses={allStatuses}
               isBrowsing={isBrowsing}
+              isDevelopment={isDevelopment}
               isMain={isMain}
               refId={refId}
               // @ts-expect-error (non strict)

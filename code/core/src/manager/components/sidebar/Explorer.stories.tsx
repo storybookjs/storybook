@@ -81,6 +81,7 @@ export const Simple = () => (
       storyId: 'root-1-child-a2--grandchild-a1-1:test1',
     }}
     isLoading={false}
+    isDevelopment={true}
     isBrowsing
     hasEntries={true}
   />
@@ -94,6 +95,7 @@ export const WithRefs = () => (
       storyId: 'root-1-child-a2--grandchild-a1-1',
     }}
     isLoading={false}
+    isDevelopment={true}
     isBrowsing
     hasEntries={true}
   />

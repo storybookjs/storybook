@@ -143,6 +143,7 @@ interface NodeProps {
   item: Item;
   refId: string;
   docsMode: boolean;
+  isDevelopment: boolean;
   isOrphan: boolean;
   isDisplayed: boolean;
   isSelected: boolean;
@@ -197,6 +198,11 @@ const statusOrder: StatusValue[] = [
   'status-value:unknown',
 ];
 
+const SpacerDiv = styled.div({
+  width: 28,
+  height: 28,
+});
+
 const Node = React.memo<NodeProps>(function Node(props) {
   const {
     item,
@@ -204,6 +210,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     groupStatus,
     refId,
     docsMode,
+    isDevelopment,
     isOrphan,
     isDisplayed,
     isSelected,
@@ -449,9 +456,9 @@ const Node = React.memo<NodeProps>(function Node(props) {
               <UseSymbol type="dot" />
             </svg>
           </StatusButton>
-        ) : (
-          itemStatusButton
-        )}
+        ) : itemStatusButton || isDevelopment ? (
+          <SpacerDiv />
+        ) : null}
       </LeafNodeStyleWrapper>
     );
   }
@@ -522,6 +529,7 @@ const Root = React.memo<NodeProps & { expandableDescendants: string[] }>(functio
 
 export const Tree = React.memo<{
   isBrowsing: boolean;
+  isDevelopment: boolean;
   isMain: boolean;
   allStatuses?: StatusesByStoryIdAndTypeId;
   refId: string;
@@ -533,6 +541,7 @@ export const Tree = React.memo<{
   onSelectStoryId: (storyId: string) => void;
 }>(function Tree({
   isBrowsing,
+  isDevelopment,
   refId,
   data,
   allStatuses,
@@ -714,6 +723,7 @@ export const Tree = React.memo<{
           groupStatus={groupStatus}
           refId={refId}
           docsMode={docsMode}
+          isDevelopment={isDevelopment}
           isOrphan={orphanIds.some((oid) => itemId === oid || itemId.startsWith(`${oid}-`))}
           isDisplayed={isDisplayed}
           isSelected={selectedStoryId === itemId}
@@ -729,6 +739,7 @@ export const Tree = React.memo<{
     collapsedData,
     collapsedItems,
     docsMode,
+    isDevelopment,
     expandableDescendants,
     expanded,
     groupStatus,

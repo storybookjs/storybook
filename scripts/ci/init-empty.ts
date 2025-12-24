@@ -1,5 +1,5 @@
 import { build_linux } from './code';
-import { workflow, server, verdaccio } from './utils/helpers';
+import { server, verdaccio, workflow } from './utils/helpers';
 import { type Workflow, defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
 
 export const defineEmptyInitFlow = (template: string) =>

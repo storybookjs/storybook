@@ -16,7 +16,7 @@ const managerContext = {
   },
   api: {
     getShortcutKeys: () => ({
-      copyStoryLink: ['alt', 'shift', 'k'],
+      copyStoryLink: ['alt', 'shift', 'l'],
       openInIsolation: ['alt', 'shift', 'i'],
     }),
     getStoryHrefs: () => ({

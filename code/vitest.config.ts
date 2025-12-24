@@ -23,7 +23,7 @@ const projects = [
 ];
 
 /**
- * On CI, we run ouw own unit tests, but for performance reasons, we don't install playwright, thus
+ * On CI, we run our own unit tests, but for performance reasons, we don't install playwright, thus
  * these tests, that need browser-mode cannot be run/added
  */
 if (shouldRunStorybookTests) {

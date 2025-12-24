@@ -259,7 +259,10 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       let globalsParam = inheritGlobals
         ? mergeSerializedParams(customQueryParams?.globals ?? '', globals)
         : globals;
-      let customParams = stringify(otherParams);
+      let customParams = stringify(otherParams, {
+        nesting: true,
+        nestingSyntax: 'js',
+      });
 
       argsParam = argsParam && `&args=${argsParam}`;
       globalsParam = globalsParam && `&globals=${globalsParam}`;

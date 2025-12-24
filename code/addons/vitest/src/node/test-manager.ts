@@ -24,6 +24,11 @@ export type TestManagerOptions = {
   testProviderStore: TestProviderStoreById;
   onError?: (message: string, error: Error) => void;
   onReady?: () => void;
+  onTestCaseResult?: (result: {
+    storyId?: string;
+    testResult: TestResult;
+    reports?: Report[];
+  }) => void;
 };
 
 const testStateToStatusValueMap: Record<TestState | 'warning', StatusValue> = {
@@ -167,6 +172,9 @@ export class TestManager {
 
     this.batchedTestCaseResults.push({ storyId, testResult, reports });
     this.throttledFlushTestCaseResults();
+
+    // Emit individual test case result
+    this.options.onTestCaseResult?.(result);
   }
 
   /**

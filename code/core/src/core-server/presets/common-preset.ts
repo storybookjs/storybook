@@ -34,6 +34,7 @@ import { initCreateNewStoryChannel } from '../server-channel/create-new-story-ch
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
 import { initPreviewInitializedChannel } from '../server-channel/preview-initialized-channel';
+import { initStoryDiscoveryChannel } from '../server-channel/story-discovery-channel';
 import { initializeChecklist } from '../utils/checklist';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
@@ -260,6 +261,7 @@ export const experimental_serverChannel = async (
 
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
+  initStoryDiscoveryChannel(channel, options, coreOptions);
   initOpenInEditorChannel(channel, options, coreOptions);
   initPreviewInitializedChannel(channel, options, coreOptions);
 

@@ -113,6 +113,16 @@ const ModalErrorCloseIcon = styled(CloseAltIcon)({
   cursor: 'pointer',
 });
 
+const FlowStatusIndicator = styled('div')(({ theme }) => ({
+  background: theme.base === 'dark' ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.05)',
+  color: theme.color.defaultText,
+  padding: '8px 16px',
+  borderRadius: '4px',
+  fontSize: '14px',
+  marginBottom: '16px',
+  textAlign: 'center',
+}));
+
 type Error = { selectedItemId?: number | string; error: string } | null;
 
 interface FileSearchModalProps {
@@ -126,6 +136,11 @@ interface FileSearchModalProps {
   searchResults: SearchResult[] | null;
   onCreateNewStory: (payload: NewStoryPayload) => void;
   setError: (error: Error) => void;
+  flowResults: {
+    generatedCount: number;
+    testResults: { passed: number; failed: number; total: number; pending: number };
+  } | null;
+  flowStatus: 'idle' | 'generating' | 'testing' | 'complete';
 }
 
 export const FileSearchModal = ({
@@ -138,6 +153,8 @@ export const FileSearchModal = ({
   searchResults,
   onCreateNewStory,
   setError,
+  flowResults,
+  flowStatus,
 }: FileSearchModalProps) => {
   const [modalContentRef, modalContentDimensions] = useMeasure<HTMLDivElement>();
   // @ts-expect-error (non strict)
@@ -170,6 +187,20 @@ export const FileSearchModal = ({
             <Modal.Title>Add a new story</Modal.Title>
             <Modal.Description>We will create a new story for your component</Modal.Description>
           </Modal.Header>
+
+          {/* Flow status indicator */}
+          {flowStatus !== 'idle' && (
+            <FlowStatusIndicator>
+              {flowStatus === 'generating' && '🔄 Generating stories...'}
+              {flowStatus === 'testing' && '🧪 Running tests...'}
+              {flowStatus === 'testing' &&
+                flowResults &&
+                `🧪 Running tests: ${flowResults.testResults.passed + flowResults.testResults.failed}/${flowResults.testResults.total} completed`}
+              {flowStatus === 'complete' &&
+                flowResults &&
+                `✅ Generated ${flowResults.generatedCount} stories • ${flowResults.testResults.passed}/${flowResults.testResults.total} tests passed`}
+            </FlowStatusIndicator>
+          )}
           <SearchField>
             <SearchIconWrapper>
               <SearchIcon />
@@ -200,6 +231,8 @@ export const FileSearchModal = ({
               isLoading={isLoading}
               searchResults={searchResults}
               onNewStory={onCreateNewStory}
+              flowResults={flowResults}
+              flowStatus={flowStatus}
             />
           }
         </ModalContent>

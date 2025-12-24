@@ -206,6 +206,10 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     });
     store.subscribe('TEST_RUN_COMPLETED', async (event) => {
       const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
+
+      // Forward the event to the channel for bulk story test operations
+      channel.emit('vitest-test-run-completed', event.payload);
+
       await telemetry('addon-test', {
         ...currentRun,
         duration: (finishedAt ?? 0) - (startedAt ?? 0),
@@ -228,6 +232,11 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       });
     }
   }
+
+  // Forward test case results from the test runner process to the channel
+  channel.on('test-case-result', (result) => {
+    channel.emit('vitest-test-case-result', result);
+  });
 
   return channel;
 };

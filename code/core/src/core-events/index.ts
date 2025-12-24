@@ -88,6 +88,10 @@ enum events {
   ARGTYPES_INFO_RESPONSE = 'argtypesInfoResponse',
   CREATE_NEW_STORYFILE_REQUEST = 'createNewStoryfileRequest',
   CREATE_NEW_STORYFILE_RESPONSE = 'createNewStoryfileResponse',
+  // Story discovery and testing flow
+  STORY_DISCOVERY_REQUEST = 'storyDiscoveryRequest',
+  STORY_DISCOVERY_RESPONSE = 'storyDiscoveryResponse',
+  STORY_DISCOVERY_PROGRESS = 'storyDiscoveryProgress',
   // Open a file in the code editor
   OPEN_IN_EDITOR_REQUEST = 'openInEditorRequest',
   OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
@@ -159,6 +163,9 @@ export const {
   SAVE_STORY_RESPONSE,
   ARGTYPES_INFO_REQUEST,
   ARGTYPES_INFO_RESPONSE,
+  STORY_DISCOVERY_REQUEST,
+  STORY_DISCOVERY_RESPONSE,
+  STORY_DISCOVERY_PROGRESS,
   OPEN_IN_EDITOR_REQUEST,
   OPEN_IN_EDITOR_RESPONSE,
   MANAGER_INERT_ATTRIBUTE_CHANGED,
@@ -169,6 +176,7 @@ export * from './data/file-component-search';
 export * from './data/argtypes-info';
 export * from './data/request-response';
 export * from './data/save-story';
+export * from './data/story-discovery';
 export * from './data/whats-new';
 export * from './data/phases';
 export * from './data/open-in-editor';

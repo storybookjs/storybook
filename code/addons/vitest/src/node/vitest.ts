@@ -45,6 +45,14 @@ new TestManager({
   onReady: () => {
     process.send?.({ type: 'ready' });
   },
+  onTestCaseResult: (result) => {
+    // Send individual test case results back to the parent process
+    process.send?.({
+      type: 'test-case-result',
+      args: [result],
+      from: 'server',
+    });
+  },
   storybookOptions: {
     configDir: process.env.STORYBOOK_CONFIG_DIR || '',
   } as any,

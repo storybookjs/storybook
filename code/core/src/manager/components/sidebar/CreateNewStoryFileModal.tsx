@@ -9,6 +9,9 @@ import {
   FILE_COMPONENT_SEARCH_RESPONSE,
   SAVE_STORY_REQUEST,
   SAVE_STORY_RESPONSE,
+  STORY_DISCOVERY_PROGRESS,
+  STORY_DISCOVERY_REQUEST,
+  STORY_DISCOVERY_RESPONSE,
 } from 'storybook/internal/core-events';
 import type {
   ArgTypesRequestPayload,
@@ -22,6 +25,9 @@ import type {
   ResponseData,
   SaveStoryRequestPayload,
   SaveStoryResponsePayload,
+  StoryDiscoveryProgressPayload,
+  StoryDiscoveryRequestPayload,
+  StoryDiscoveryResponsePayload,
 } from 'storybook/internal/core-events';
 
 import { CheckIcon } from '@storybook/icons';
@@ -47,7 +53,6 @@ const stringifyArgs = (args: Record<string, any>) =>
     return value;
   });
 
-// TODO: Remove this comment. This will be modified throughout the project.
 export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFileModalProps) => {
   const [isLoading, setLoading] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
@@ -58,6 +63,26 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
     null
   );
   const api = useStorybookApi();
+
+  // Flow state for the one-time story generation and testing
+  const [flowStatus, setFlowStatus] = useState<'idle' | 'generating' | 'testing' | 'complete'>(
+    'idle'
+  );
+  const [flowResults, setFlowResults] = useState<{
+    generatedCount: number;
+    testResults: {
+      passed: number;
+      failed: number;
+      total: number;
+      pending: number;
+      results?: Array<{
+        storyId: string;
+        status: 'PASS' | 'FAIL' | 'PENDING';
+        componentFilePath?: string;
+      }>;
+    };
+  } | null>(null);
+  const hasRunFlow = useRef(false);
 
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
 
@@ -191,9 +216,10 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
         switch (e?.payload?.type as CreateNewStoryErrorPayload['type']) {
           case 'STORY_FILE_EXISTS':
             const err = e as RequestResponseError<CreateNewStoryErrorPayload>;
-            // @ts-expect-error (non strict)
-            await trySelectNewStory(api.selectStory, err.payload.kind);
-            handleStoryAlreadyExists();
+            if (err.payload) {
+              await trySelectNewStory(api.selectStory, err.payload.kind);
+              handleStoryAlreadyExists();
+            }
             break;
           default:
             setError({ selectedItemId: selectedItemId, error: (e as any)?.message });
@@ -212,6 +238,75 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
     return handleFileSearch();
   }, [handleFileSearch]);
 
+  // Trigger the one-time flow when modal opens
+  useEffect(() => {
+    if (open && !hasRunFlow.current && flowStatus === 'idle') {
+      hasRunFlow.current = true;
+      executeStoryGenerationFlow();
+    }
+  }, [open, flowStatus]);
+
+  const executeStoryGenerationFlow = async () => {
+    try {
+      setFlowStatus('generating');
+
+      // Listen for progress events
+      const channel = addons.getChannel();
+      const handleProgress = (event: StoryDiscoveryProgressPayload) => {
+        if (event.phase === 'generating') {
+          setFlowResults({
+            generatedCount: event.progress.generatedCount || 0,
+            testResults: { passed: 0, failed: 0, total: 0, pending: 0 },
+          });
+        } else if (event.phase === 'testing') {
+          setFlowStatus('testing');
+          setFlowResults((prev) => ({
+            generatedCount: prev?.generatedCount || 0,
+            testResults: {
+              passed: event.progress.testSummary?.passed || 0,
+              failed: event.progress.testSummary?.failed || 0,
+              total: event.progress.testSummary?.total || 0,
+              pending: event.progress.testSummary?.pending || 0,
+            },
+          }));
+        }
+      };
+
+      channel.on(STORY_DISCOVERY_PROGRESS, handleProgress);
+
+      // Start the discovery and testing flow
+      const result = await experimental_requestResponse<
+        StoryDiscoveryRequestPayload,
+        StoryDiscoveryResponsePayload
+      >(channel, STORY_DISCOVERY_REQUEST, STORY_DISCOVERY_RESPONSE, {
+        sampleSize: 20,
+      });
+
+      // Clean up progress listener
+      channel.off(STORY_DISCOVERY_PROGRESS, handleProgress);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Story discovery and testing failed');
+      }
+
+      // Update UI with final results
+      setFlowResults({
+        generatedCount: result.generatedStories.length,
+        testResults: {
+          ...result.testSummary,
+          pending: 0, // No pending tests when complete
+          results: result.testResults,
+        },
+      });
+      setFlowStatus('complete');
+    } catch (error: any) {
+      console.error('Story discovery flow failed:', error);
+      setFlowStatus('idle');
+
+      // Don't show error to user - the flow is optional and shouldn't block modal functionality
+    }
+  };
+
   return (
     <FileSearchModal
       error={error}
@@ -224,6 +319,8 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
       searchResults={searchResults}
       setError={setError}
       setFileSearchQuery={setFileSearchQuery}
+      flowResults={flowResults}
+      flowStatus={flowStatus}
     />
   );
 };

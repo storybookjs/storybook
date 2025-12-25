@@ -134,8 +134,9 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
             s.replace('export default ', 'const _sfc_main = ');
             s.append('\nexport default _sfc_main;');
           }
-
-          s.append(`\n;${name}.__docgenInfo = ${JSON.stringify(meta)}`);
+          s.append(`\n;${name}.__docgenInfo = Object.assign(${JSON.stringify(meta)}, {
+            displayName: ${name}.name || ${name}.__name || ${JSON.stringify(meta.displayName)}
+          })`);
         });
 
         return {

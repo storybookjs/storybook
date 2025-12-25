@@ -9,7 +9,7 @@ import type { ModuleExports } from 'storybook/internal/types';
 import { filterArgTypes } from 'storybook/preview-api';
 import type { PropDescriptor } from 'storybook/preview-api';
 
-import type { SortType } from '../components';
+import type { SortCustom, SortType } from '../components';
 import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
 import { DocsContext } from './DocsContext';
 import { useArgs } from './useArgs';
@@ -20,7 +20,7 @@ import { getComponentName } from './utils';
 type ControlsParameters = {
   include?: PropDescriptor;
   exclude?: PropDescriptor;
-  sort?: SortType;
+  sort?: SortType | SortCustom;
 };
 
 type ControlsProps = ControlsParameters & {
@@ -50,7 +50,8 @@ export const Controls: FC<ControlsProps> = (props) => {
   }
 
   const { parameters, argTypes, component, subcomponents } = story;
-  const controlsParameters = parameters.docs?.controls || ({} as ControlsParameters);
+  const controlsParameters =
+    parameters.docs?.controls || parameters.controls || ({} as ControlsParameters);
 
   const include = props.include ?? controlsParameters.include;
   const exclude = props.exclude ?? controlsParameters.exclude;

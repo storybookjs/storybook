@@ -9,7 +9,7 @@ export default {
       storyFn({ args: { object: { ...context.args } } }),
   ],
   argTypes: {
-    x: { type: { required: true } },
+    x: { type: { required: true }, table: { category: 'bar' } },
     y: { type: { required: true }, table: { category: 'foo' } },
     z: {},
     a: { type: { required: true } },
@@ -32,3 +32,17 @@ export const None = { parameters: { controls: { sort: 'none' } } };
 export const Alpha = { parameters: { controls: { sort: 'alpha' } } };
 
 export const RequiredFirst = { parameters: { controls: { sort: 'requiredFirst' } } };
+
+export const Pinned = { parameters: { controls: { sort: { pinned: ['z', 'a', 'style'] } } } };
+
+export const PinnedWithFallback = {
+  parameters: { controls: { sort: { pinned: ['z', 'a'], fallback: 'alpha' } } },
+};
+
+export const GroupSort = {
+  parameters: { controls: { sort: { group: 'alpha' } } },
+};
+
+export const GroupSortPinned = {
+  parameters: { controls: { sort: { group: { pinned: ['foo', 'bar'] } } } },
+};

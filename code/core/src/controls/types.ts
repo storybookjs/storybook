@@ -48,7 +48,21 @@ export interface ControlsParameters {
     presetColors?: Array<string | { color: string; title?: string }>;
 
     /** Controls sorting order */
-    sort?: 'none' | 'alpha' | 'requiredFirst';
+    sort?:
+      | 'none'
+      | 'alpha'
+      | 'requiredFirst'
+      | {
+          pinned: string[];
+          fallback?: 'none' | 'alpha' | 'requiredFirst';
+          group?:
+            | 'none'
+            | 'alpha'
+            | {
+                pinned: string[];
+                fallback?: 'none' | 'alpha';
+              };
+        };
   };
 }
 

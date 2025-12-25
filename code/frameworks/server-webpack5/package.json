@@ -49,8 +49,8 @@
     "@storybook/server": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.8.3"
+    "@types/node": "^22.19.1",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

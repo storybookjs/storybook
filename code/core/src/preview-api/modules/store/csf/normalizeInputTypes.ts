@@ -1,9 +1,7 @@
 import type {
   ArgTypes,
-  GlobalTypes,
   InputType,
   StrictArgTypes,
-  StrictGlobalTypes,
   StrictInputType,
 } from 'storybook/internal/types';
 
@@ -34,6 +32,5 @@ export const normalizeInputType = (inputType: InputType, key: string): StrictInp
   return normalized;
 };
 
-export const normalizeInputTypes = (
-  inputTypes: ArgTypes | GlobalTypes
-): StrictArgTypes | StrictGlobalTypes => mapValues(inputTypes, normalizeInputType);
+export const normalizeInputTypes = (inputTypes: ArgTypes): StrictArgTypes =>
+  mapValues(inputTypes, normalizeInputType);

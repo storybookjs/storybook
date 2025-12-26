@@ -61,8 +61,9 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
   return preview;
 }
 
-export interface PreviewAddon<in TExtraContext extends AddonTypes = AddonTypes>
-  extends ProjectAnnotations<Renderer> {}
+export interface PreviewAddon<
+  in TExtraContext extends AddonTypes = AddonTypes,
+> extends ProjectAnnotations<Renderer> {}
 
 export function definePreviewAddon<TExtraContext extends AddonTypes = AddonTypes>(
   preview: ProjectAnnotations<Renderer>
@@ -204,7 +205,9 @@ function defineStory<
 
       const play =
         mountDestructured(this.play) || mountDestructured(testFunction)
-          ? async ({ context }: StoryContext<TRenderer>) => {
+          ? // mount needs to be explicitly destructured
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            async ({ mount, context }: StoryContext<TRenderer>) => {
               await this.play?.(context);
               await testFunction(context);
             }

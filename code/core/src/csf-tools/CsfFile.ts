@@ -255,11 +255,10 @@ export class BadMetaError extends Error {
   }
 }
 
-export interface StaticMeta
-  extends Pick<
-    ComponentAnnotations,
-    'id' | 'title' | 'includeStories' | 'excludeStories' | 'tags'
-  > {
+export interface StaticMeta extends Pick<
+  ComponentAnnotations,
+  'id' | 'title' | 'includeStories' | 'excludeStories' | 'tags'
+> {
   component?: string;
 }
 
@@ -992,7 +991,6 @@ export class CsfFile {
       // don't remove any duplicates or negations -- tags will be combined in the index
       const tags = [...(this._meta?.tags ?? []), ...(story.tags ?? [])];
       const storyInput = {
-        importPath: fileName,
         rawComponentPath: this._rawComponentPath,
         exportName,
         title: this.meta?.title,

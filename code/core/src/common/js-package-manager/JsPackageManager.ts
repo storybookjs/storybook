@@ -3,9 +3,10 @@ import { dirname, isAbsolute, join, normalize, resolve } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import detectIndent from 'detect-indent';
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import { type ExecaChildProcess } from 'execa';
+import { type ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
@@ -28,6 +29,12 @@ export enum PackageManagerName {
 }
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
+
+const indentSymbol = Symbol('indent');
+
+type PackageJsonWithIndent = PackageJsonWithDepsAndDevDeps & {
+  [indentSymbol]?: any;
+};
 
 /**
  * Extract package name and version from input
@@ -85,7 +92,7 @@ export abstract class JsPackageManager {
   static readonly installedVersionCache = new Map<string, string | null>();
 
   /** Cache for package.json files to avoid repeated file system calls. */
-  static readonly packageJsonCache = new Map<string, PackageJsonWithDepsAndDevDeps>();
+  static readonly packageJsonCache = new Map<string, PackageJsonWithIndent>();
 
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
@@ -164,7 +171,7 @@ export abstract class JsPackageManager {
   }
 
   /** Read the `package.json` file available in the provided directory */
-  static getPackageJson(packageJsonPath: string): PackageJsonWithDepsAndDevDeps {
+  static getPackageJson(packageJsonPath: string): PackageJsonWithIndent {
     // Normalize path to absolute for consistent cache keys
     // Always use resolve() to ensure consistent format on Windows
     // (handles drive letter casing and path separator differences)
@@ -181,8 +188,10 @@ export abstract class JsPackageManager {
     // Read from disk if not in cache
     const jsonContent = readFileSync(absolutePath, 'utf8');
     const packageJSON = JSON.parse(jsonContent);
+    // Symbol key keeps this metadata non-enumerable so JSON.stringify omits it
+    packageJSON[indentSymbol] = detectIndent(jsonContent).indent ?? 2;
 
-    const result: PackageJsonWithDepsAndDevDeps = {
+    const result: PackageJsonWithIndent = {
       ...packageJSON,
       dependencies: { ...(packageJSON.dependencies || {}) },
       devDependencies: { ...(packageJSON.devDependencies || {}) },
@@ -195,6 +204,15 @@ export abstract class JsPackageManager {
     return result;
   }
 
+  #getIndent(filePath: string): string | number {
+    try {
+      const packageJson = JsPackageManager.getPackageJson(filePath);
+      return packageJson[indentSymbol];
+    } catch (e) {
+      return 2;
+    }
+  }
+
   writePackageJson(packageJson: PackageJson, directory = this.cwd) {
     const packageJsonToWrite = { ...packageJson };
     const dependencyTypes = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
@@ -205,19 +223,21 @@ export abstract class JsPackageManager {
         delete packageJsonToWrite[type];
       }
     });
-
+    const filePath = join(directory, 'package.json');
+    const indent = this.#getIndent(filePath);
     const packageJsonPath = normalize(resolve(directory, 'package.json'));
-    const content = `${JSON.stringify(packageJsonToWrite, null, 2)}\n`;
+    const content = `${JSON.stringify(packageJsonToWrite, null, indent)}\n`;
     writeFileSync(packageJsonPath, content, 'utf8');
 
     // Update cache with the written content
     // Ensure dependencies and devDependencies exist (even if empty) to match PackageJsonWithDepsAndDevDeps type
-    const cachedPackageJson: PackageJsonWithDepsAndDevDeps = {
+    const cachedPackageJson: PackageJsonWithIndent = {
       ...packageJsonToWrite,
       dependencies: { ...(packageJsonToWrite.dependencies || {}) },
       devDependencies: { ...(packageJsonToWrite.devDependencies || {}) },
       peerDependencies: { ...(packageJsonToWrite.peerDependencies || {}) },
     };
+    cachedPackageJson[indentSymbol] = indent;
     JsPackageManager.packageJsonCache.set(packageJsonPath, cachedPackageJson);
   }
 
@@ -269,7 +289,7 @@ export abstract class JsPackageManager {
           packageJsonInfo?: PackageJsonInfo;
         },
     dependencies: string[]
-  ): Promise<void | ExecaChildProcess> {
+  ): Promise<void | ResultPromise> {
     const {
       skipInstall,
       writeOutputToFile = true,
@@ -570,13 +590,13 @@ export abstract class JsPackageManager {
     const resolutions = this.getResolutions(packageJson, versions);
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
-  protected abstract runInstall(options?: { force?: boolean }): ExecaChildProcess;
+  protected abstract runInstall(options?: { force?: boolean }): ResultPromise;
 
   protected abstract runAddDeps(
     dependencies: string[],
     installAsDevDependencies: boolean,
     writeOutputToFile?: boolean
-  ): ExecaChildProcess;
+  ): ResultPromise;
 
   protected abstract getResolutions(
     packageJson: PackageJson,
@@ -602,10 +622,10 @@ export abstract class JsPackageManager {
     args: string[],
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
-  ): ExecaChildProcess;
+  ): ResultPromise;
   public abstract runPackageCommand(
     options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
-  ): ExecaChildProcess;
+  ): ResultPromise;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
   public abstract findInstallations(
     pattern?: string[],
@@ -631,6 +651,7 @@ export abstract class JsPackageManager {
       logger.debug(`Getting installed version for ${packageName}...`);
       const installations = await this.findInstallations([packageName]);
       if (!installations) {
+        logger.debug(`No installations found for ${packageName}`);
         // Cache the null result
         JsPackageManager.installedVersionCache.set(cacheKey, null);
         return null;
@@ -646,6 +667,7 @@ export abstract class JsPackageManager {
 
       return coercedVersion;
     } catch (e) {
+      logger.error(`Error getting installed version for ${packageName}: ${String(e)}`);
       JsPackageManager.installedVersionCache.set(cacheKey, null);
       return null;
     }

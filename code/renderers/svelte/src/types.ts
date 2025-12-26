@@ -8,8 +8,9 @@ import type { Component, ComponentProps } from 'svelte';
 
 export type StoryContext = StoryContextBase<SvelteRenderer>;
 
-export interface SvelteRenderer<C extends Component<any, any, any> = Component<any, any, any>>
-  extends WebRenderer {
+export interface SvelteRenderer<
+  C extends Component<any, any, any> = Component<any, any, any>,
+> extends WebRenderer {
   component: Component<this['T'] extends Record<string, any> ? this['T'] : any>;
   storyResult: this['T'] extends Record<string, any>
     ? SvelteStoryResult<this['T']>

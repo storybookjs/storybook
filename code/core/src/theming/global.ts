@@ -99,9 +99,12 @@ export const createGlobal = memoize(1)(({
     ...resetStyles,
     body: {
       ...resetStyles.body,
+      position: 'fixed',
+      width: '100vw',
+      height: '100vh',
+      overflow: 'hidden',
       color: color.defaultText,
       background: background.app,
-      overflow: 'hidden',
     },
 
     hr: {

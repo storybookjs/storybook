@@ -65,6 +65,7 @@ export type {
   StrictGlobalTypes,
   StrictInputType,
   Tag,
+  ToolbarArgType,
 } from 'storybook/internal/csf';
 
 type OrString<T extends string> = T | (string & {});

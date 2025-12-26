@@ -133,6 +133,7 @@ const shortcutLabels = {
   expandAll: 'Expand all items on sidebar',
   remount: 'Reload story',
   openInEditor: 'Open story in editor',
+  openInIsolation: 'Open story in isolation',
   copyStoryLink: 'Copy story link to clipboard',
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: 'Copy story name to clipboard',

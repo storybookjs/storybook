@@ -92,7 +92,7 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
 >;
 
 export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
-/** @ts-expect-error hard */
+  /** @ts-expect-error hard */
   extends Meta<T, MetaInput> {
   // Required args don't need to be provided when the user uses an empty render
   story<
@@ -130,7 +130,9 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
   ): ReactStory<T, {}>;
 }
 
-export interface ReactStory<T extends ReactTypes, TInput extends StoryAnnotations<T, T['args']>>
-  extends Story<T, TInput> {
+export interface ReactStory<
+  T extends ReactTypes,
+  TInput extends StoryAnnotations<T, T['args']>,
+> extends Story<T, TInput> {
   Component: ComponentType<Partial<T['args']>>;
 }

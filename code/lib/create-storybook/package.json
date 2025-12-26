@@ -38,13 +38,13 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "semver": "^7.6.2",
+    "semver": "^7.7.3",
     "storybook": "workspace:*"
   },
   "devDependencies": {
     "@types/prompts": "^2.0.9",
-    "@types/semver": "^7.3.4",
-    "commander": "^14.0.1",
+    "@types/semver": "^7.7.1",
+    "commander": "^14.0.2",
     "empathic": "^2.0.0",
     "picocolors": "^1.1.0",
     "process-ancestry": "^0.0.2",

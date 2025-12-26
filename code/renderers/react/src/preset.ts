@@ -8,7 +8,7 @@ export const addons: PresetProperty<'addons'> = [
   import.meta.resolve('@storybook/react-dom-shim/preset'),
 ];
 
-export { componentManifestGenerator as experimental_componentManifestGenerator } from './componentManifest/generator';
+export { manifests as experimental_manifests } from './componentManifest/generator';
 
 export { enrichCsf as experimental_enrichCsf } from './enrichCsf';
 

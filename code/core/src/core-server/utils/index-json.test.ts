@@ -123,6 +123,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "component-tag",
                 "story-tag",
                 "attached-mdx",
@@ -140,6 +141,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "component-tag",
                 "story-tag",
                 "attached-mdx",
@@ -156,6 +158,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "component-tag",
                 "story-tag",
               ],
@@ -170,6 +173,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "B",
@@ -184,6 +188,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "B",
@@ -199,6 +204,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "componentPath/extension",
               "type": "story",
@@ -213,6 +219,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "componentPath/noExtension",
               "type": "story",
@@ -227,6 +234,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "componentPath/package",
               "type": "story",
@@ -239,6 +247,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "D",
@@ -253,6 +262,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "D",
@@ -266,6 +276,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "unattached-mdx",
               ],
               "title": "docs2/ComponentReference",
@@ -279,6 +290,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "unattached-mdx",
               ],
               "title": "docs2/NoTitle",
@@ -292,6 +304,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "foo",
                 "bar",
                 "unattached-mdx",
@@ -307,6 +320,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "unattached-mdx",
               ],
               "title": "docs2/Yabbadabbadooo",
@@ -321,6 +335,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "foobar",
               ],
               "title": "Example/Button",
@@ -335,6 +350,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "first-nested/deeply/F",
               "type": "story",
@@ -348,6 +364,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "first-nested/deeply/Features",
               "type": "story",
@@ -361,6 +378,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "play-fn",
               ],
               "title": "first-nested/deeply/Features",
@@ -375,6 +393,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "first-nested/deeply/Features",
               "type": "story",
@@ -388,6 +407,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "first-nested/deeply/Features",
               "type": "story",
@@ -401,6 +421,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "play-fn",
               ],
               "title": "first-nested/deeply/Features",
@@ -414,6 +435,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "H",
@@ -428,6 +450,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "autodocs",
               ],
               "title": "H",
@@ -442,6 +465,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
                 "component-tag",
               ],
               "title": "nested/Button",
@@ -456,6 +480,7 @@ describe('registerIndexJsonRoute', () => {
               "tags": [
                 "dev",
                 "test",
+                "manifest",
               ],
               "title": "second-nested/G",
               "type": "story",

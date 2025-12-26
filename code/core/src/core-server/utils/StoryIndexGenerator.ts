@@ -875,7 +875,7 @@ export class StoryIndexGenerator {
 
   getProjectTags(previewCode?: string) {
     let projectTags = [] as Tag[];
-    const defaultTags = ['dev', 'test'];
+    const defaultTags = ['dev', 'test', 'manifest'];
     if (previewCode) {
       try {
         const projectAnnotations = loadConfig(previewCode).parse();

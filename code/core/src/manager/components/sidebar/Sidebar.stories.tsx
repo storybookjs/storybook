@@ -208,6 +208,19 @@ export const SimpleInProduction: Story = {
   },
 };
 
+export const SimpleNoChecklist: Story = {
+  args: {
+    showCreateStoryButton: false,
+  },
+  beforeEach: () => {
+    const features = global.FEATURES;
+    global.FEATURES = { ...features, checklistWidget: false };
+    return () => {
+      global.FEATURES = features;
+    };
+  },
+};
+
 export const Mobile: Story = {
   decorators: [mobileLayoutDecorator],
   globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },

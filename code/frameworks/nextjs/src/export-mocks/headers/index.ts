@@ -1,8 +1,8 @@
-import * as headers from 'next/dist/server/request/headers';
+import * as headers from 'next/dist/server/request/headers.js';
 import { fn } from 'storybook/test';
 
 // re-exports of the actual module
-export * from 'next/dist/server/request/headers';
+export * from 'next/dist/server/request/headers.js';
 
 // mock utilities/overrides (as of Next v14.2.0)
 export { headers } from './headers';

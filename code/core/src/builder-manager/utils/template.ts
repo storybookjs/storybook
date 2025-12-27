@@ -34,7 +34,8 @@ export const renderHTML = async (
   docsOptions: Promise<DocsOptions>,
   tagsOptions: Promise<TagsOptions>,
   { versionCheck, previewUrl, configType, ignorePreview }: Options,
-  globals: Record<string, any>
+  globals: Record<string, any>,
+  base: string = './'
 ) => {
   const titleRef = await title;
   const templateRef = await template;
@@ -47,6 +48,7 @@ export const renderHTML = async (
     title: titleRef ? `${titleRef} - Storybook` : 'Storybook',
     files: { js: jsFiles, css: cssFiles },
     favicon: await favicon,
+    base,
     globals: {
       FEATURES: JSON.stringify(await features, null, 2),
       REFS: JSON.stringify(await refs, null, 2),

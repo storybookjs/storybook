@@ -454,6 +454,13 @@ export interface StorybookConfigRaw {
     actions?: boolean;
 
     /**
+     * Enable the onboarding checklist sidebar widget
+     *
+     * @default true
+     */
+    checklistWidget?: boolean;
+
+    /**
      * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
      *
      * Filter args with a "target" on the type from the render function (EXPERIMENTAL)

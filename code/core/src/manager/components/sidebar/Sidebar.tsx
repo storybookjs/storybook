@@ -166,7 +166,9 @@ export const Sidebar = React.memo(function Sidebar({
               isLoading={isLoading}
               onMenuClick={onMenuClick}
             />
-            {!isLoading && global.CONFIG_TYPE === 'DEVELOPMENT' && <ChecklistWidget />}
+            {!isLoading &&
+              global.CONFIG_TYPE === 'DEVELOPMENT' &&
+              global.FEATURES?.checklistWidget && <ChecklistWidget />}
           </div>
           <Search
             dataset={dataset}

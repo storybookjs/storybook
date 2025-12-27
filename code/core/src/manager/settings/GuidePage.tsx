@@ -2,6 +2,8 @@ import React from 'react';
 
 import { Link } from 'storybook/internal/components';
 
+import { global } from '@storybook/global';
+
 import { styled } from 'storybook/theming';
 
 import { useChecklist } from '../components/sidebar/useChecklist';
@@ -47,20 +49,24 @@ export const GuidePage = () => {
         </p>
       </Intro>
       <Checklist {...checklist} />
-      {checklist.openItems.length === 0 ? (
-        <center>Your work here is done!</center>
-      ) : checklist.widget.disable || checklist.openItems.every((item) => item.isMuted) ? (
-        <center>
-          Want to see this in the sidebar?{' '}
-          <Link onClick={() => checklist.disable(false)}>Show in sidebar</Link>
-        </center>
-      ) : (
-        <center>
-          Don&apos;t want to see this in the sidebar?{' '}
-          <Link onClick={() => checklist.mute(checklist.allItems.map(({ id }) => id))}>
-            Remove from sidebar
-          </Link>
-        </center>
+      {global.FEATURES?.checklistWidget && (
+        <>
+          {checklist.openItems.length === 0 ? (
+            <center>Your work here is done!</center>
+          ) : checklist.widget.disable || checklist.openItems.every((item) => item.isMuted) ? (
+            <center>
+              Want to see this in the sidebar?{' '}
+              <Link onClick={() => checklist.disable(false)}>Show in sidebar</Link>
+            </center>
+          ) : (
+            <center>
+              Don&apos;t want to see this in the sidebar?{' '}
+              <Link onClick={() => checklist.mute(checklist.allItems.map(({ id }) => id))}>
+                Remove from sidebar
+              </Link>
+            </center>
+          )}
+        </>
       )}
     </Container>
   );

@@ -19,11 +19,3 @@ export const getSelectedIcon = ({ currentValue, items }: GetSelectedItemProps) =
   }
   return undefined;
 };
-
-export const getSelectedTitle = ({ currentValue, items }: GetSelectedItemProps) => {
-  const selectedItem = getSelectedItem({ currentValue, items });
-  if (selectedItem) {
-    return selectedItem.title;
-  }
-  return undefined;
-};

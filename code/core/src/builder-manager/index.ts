@@ -154,6 +154,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     logLevel,
     docsOptions,
     tagsOptions,
+    base,
   } = await getData(options);
 
   yield;
@@ -188,7 +189,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     })
   );
 
-  const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
+  const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles, base);
 
   if (compilation.metafile && options.outputDir) {
     await writeFile(
@@ -215,7 +216,8 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     docsOptions,
     tagsOptions,
     options,
-    globals
+    globals,
+    base
   );
 
   yield;
@@ -269,6 +271,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     logLevel,
     docsOptions,
     tagsOptions,
+    base,
   } = await getData(options);
   yield;
 
@@ -293,7 +296,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     },
     recursive: true,
   });
-  const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
+  const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles, base);
 
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);
@@ -313,7 +316,8 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     docsOptions,
     tagsOptions,
     options,
-    globals
+    globals,
+    base
   );
 
   await Promise.all([writeFile(join(options.outputDir, 'index.html'), html), managerFiles]);

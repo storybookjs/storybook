@@ -13,6 +13,10 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        exportEntries: ['./preview'],
+        entryPoint: './src/preview.ts',
+      },
+      {
         exportEntries: ['./internal/setup-file'],
         entryPoint: './src/vitest-plugin/setup-file.ts',
         dts: false,

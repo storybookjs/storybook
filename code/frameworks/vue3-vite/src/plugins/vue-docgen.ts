@@ -18,7 +18,9 @@ export async function vueDocgen(): Promise<Plugin> {
       const metaData = await parse(id);
 
       const s = new MagicString(src);
-      s.append(`;_sfc_main.__docgenInfo = ${JSON.stringify(metaData)}`);
+      s.append(`;_sfc_main.__docgenInfo = Object.assign(${JSON.stringify(metaData)}, {
+        displayName: _sfc_main.name ?? _sfc_main.__name ?? ${JSON.stringify(metaData.displayName)}
+      });`);
 
       return {
         code: s.toString(),

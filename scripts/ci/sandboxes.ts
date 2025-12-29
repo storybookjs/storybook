@@ -8,6 +8,7 @@ import {
   artifact,
   cache,
   server,
+  testResults,
   toId,
   verdaccio,
   workflow,
@@ -97,7 +98,7 @@ function defineSandboxJob_dev({
                   name: 'Running E2E Tests',
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev" --verbose --index=0 --total=1`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
                   ].join('\n'),
                 },
               },
@@ -105,6 +106,7 @@ function defineSandboxJob_dev({
                 join(ROOT_DIR, SANDBOX_DIR, directory, 'test-results'),
                 'test-results'
               ),
+              testResults.persist(join(ROOT_DIR, SANDBOX_DIR, directory, 'test-results')),
             ]
           : [
               {
@@ -257,7 +259,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               {
                 run: {
                   name: 'Running Vitest',
-                  command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration`,
+                  command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
                 },
               },
             ],
@@ -289,10 +291,11 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
                   name: 'Running E2E Tests',
                   command: [
                     `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests" --verbose --index=0 --total=1`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
                   ].join('\n'),
                 },
               },
+              testResults.persist(join(ROOT_DIR, SANDBOX_DIR, id, 'test-results')),
               artifact.persist(join(ROOT_DIR, SANDBOX_DIR, id, 'test-results'), 'test-results'),
             ],
           },
@@ -321,9 +324,10 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               {
                 run: {
                   name: 'Running test-runner',
-                  command: `yarn task test-runner --template ${key} --no-link -s test-runner`,
+                  command: `yarn task test-runner --template ${key} --no-link -s test-runner --junit`,
                 },
               },
+              testResults.persist(join(ROOT_DIR, SANDBOX_DIR, id, 'test-results')),
             ],
           },
           [ids.build]
@@ -350,9 +354,10 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
         {
           run: {
             name: 'Running test-runner',
-            command: `yarn task test-runner --template ${sandbox.name} --no-link -s test-runner`,
+            command: `yarn task test-runner --template ${sandbox.name} --no-link -s test-runner --junit`,
           },
         },
+        testResults.persist(join(ROOT_DIR, SANDBOX_DIR, sandbox.path, 'test-results')),
       ],
     },
     [sandbox.jobs[1].id]
@@ -398,9 +403,10 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
           run: {
             name: 'Running E2E Tests',
             working_directory: 'code',
-            command: `yarn task e2e-tests-dev --template ${sandbox.name} --no-link -s e2e-tests-dev`,
+            command: `yarn task e2e-tests-dev --template ${sandbox.name} --no-link -s e2e-tests-dev --junit`,
           },
         },
+        testResults.persist(join(ROOT_DIR, SANDBOX_DIR, sandbox.path, 'test-results')),
       ],
     },
     [sandbox.jobs[0].id]

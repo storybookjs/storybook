@@ -247,8 +247,10 @@ export const testsUnit_linux = defineJob(
         run: {
           name: 'Run tests',
           working_directory: `code`,
-          command:
-            'TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")\necho "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose',
+          command: [
+            'TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")',
+            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
+          ].join('\n'),
         },
       },
       testResults.persist(`test-results`),
@@ -274,8 +276,10 @@ export const testsStories_linux = defineJob(
         run: {
           name: 'Run stories tests',
           working_directory: `code`,
-          command:
-            'TEST_FILES=$(circleci tests glob "**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")\necho "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose',
+          command: [
+            'TEST_FILES=$(circleci tests glob "**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")',
+            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
+          ].join('\n'),
         },
       },
       testResults.persist(`test-results`),
@@ -306,11 +310,13 @@ export const testUnit_windows = defineJob(
       },
       {
         run: {
-          command: 'yarn test',
+          command:
+            'yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml',
           name: 'Run unit tests',
           working_directory: `code`,
         },
       },
+      testResults.persist(`test-results`),
     ],
   },
   [build_windows.id]

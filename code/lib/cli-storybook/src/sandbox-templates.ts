@@ -18,6 +18,7 @@ export type TemplateKey =
   | keyof typeof baseTemplates
   | keyof typeof internalTemplates
   | keyof typeof benchTemplates;
+
 export type Cadence = keyof typeof templatesByCadence;
 
 // Some properties e.g. experimentalTestSyntax are only available in framework specific types for StorybookConfig, therefore we loosen the type here otherwise it would always fail
@@ -27,7 +28,7 @@ type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
     | undefined;
 };
 
-export type Template = {
+export type AbstractTemplate = {
   /**
    * Readable name for the template, which will be used for feedback and the status page Follows the
    * naming scheme when it makes sense: <framework> <"v"version|"Latest"|"Prerelease">
@@ -105,7 +106,7 @@ export type Template = {
   isInternal?: boolean;
 };
 
-type BaseTemplates = Template & {
+type BaseTemplates = AbstractTemplate & {
   name: `${string} ${`v${number}` | 'Latest' | 'Prerelease'} (${'Webpack' | 'Vite' | 'RsBuild'} | ${
     | 'JavaScript'
     | 'TypeScript'})`;
@@ -880,7 +881,7 @@ const internalTemplates = {
       type: ProjectType.SERVER,
     },
   },
-} satisfies Record<`internal/${string}`, Template & { isInternal: true }>;
+} satisfies Record<`internal/${string}`, AbstractTemplate & { isInternal: true }>;
 
 const benchTemplates = {
   'bench/react-vite-default-ts': {
@@ -972,9 +973,9 @@ const benchTemplates = {
       'vitest-integration',
     ],
   },
-} satisfies Record<string, Template & { isInternal: true }>;
+} satisfies Record<string, AbstractTemplate & { isInternal: true }>;
 
-export const allTemplates: Record<TemplateKey, Template> = {
+export const allTemplates: Record<TemplateKey, AbstractTemplate> = {
   ...baseTemplates,
   ...internalTemplates,
   ...benchTemplates,
@@ -1039,3 +1040,6 @@ export const daily: TemplateKey[] = [
 ];
 
 export const templatesByCadence = { normal, merged, daily };
+export type TemplateType = Pick<AbstractTemplate, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
+export type AllTemplatesKey = keyof typeof allTemplates;
+export type AllTemplatesType = Record<AllTemplatesKey, TemplateType>;

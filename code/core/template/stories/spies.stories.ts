@@ -14,7 +14,7 @@ export default meta;
 
 export const ShowSpyOnInActions = {
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
   beforeEach() {
     console.log('second');

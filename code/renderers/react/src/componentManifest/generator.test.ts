@@ -1,25 +1,23 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
-import { type StoryIndexGenerator } from 'storybook/internal/core-server';
-
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
 import { fsMocks, indexJson } from './fixtures';
-import { componentManifestGenerator } from './generator';
+import { manifests } from './generator';
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   vol.fromJSON(fsMocks, '/app');
 });
 
-test('componentManifestGenerator generates correct id, name, description and examples ', async () => {
-  const generator = await componentManifestGenerator(undefined, { configDir: '.storybook' } as any);
-  const manifest = await generator?.({
-    getIndex: async () => indexJson,
-  } as unknown as StoryIndexGenerator);
+test('manifests generates correct id, name, description and examples ', async () => {
+  const manifestEntries = Object.values(indexJson.entries).filter(
+    (entry) => entry.tags?.includes('manifest') ?? false
+  );
+  const result = await manifests(undefined, { manifestEntries } as any);
 
-  expect(manifest).toMatchInlineSnapshot(`
+  expect(result?.components).toMatchInlineSnapshot(`
   {
     "components": {
       "example-button": {
@@ -265,29 +263,23 @@ async function getManifestForStory(code: string) {
     '/app'
   );
 
-  const generator = await componentManifestGenerator(undefined, { configDir: '.storybook' } as any);
-  const indexJson = {
-    v: 5,
-    entries: {
-      'example-button--primary': {
-        type: 'story',
-        subtype: 'story',
-        id: 'example-button--primary',
-        name: 'Primary',
-        title: 'Example/Button',
-        importPath: './src/stories/Button.stories.ts',
-        componentPath: './src/stories/Button.tsx',
-        tags: ['dev', 'test', 'vitest', 'autodocs'],
-        exportName: 'Primary',
-      },
+  const manifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'example-button--primary',
+      name: 'Primary',
+      title: 'Example/Button',
+      importPath: './src/stories/Button.stories.ts',
+      componentPath: './src/stories/Button.tsx',
+      tags: ['dev', 'test', 'vitest', 'autodocs', 'manifest'],
+      exportName: 'Primary',
     },
-  };
+  ];
 
-  const manifest = await generator?.({
-    getIndex: async () => indexJson,
-  } as unknown as StoryIndexGenerator);
+  const result = await manifests(undefined, { manifestEntries } as any);
 
-  return manifest?.components?.['example-button'];
+  return result?.components?.components?.['example-button'];
 }
 
 function withCSF3(body: string) {
@@ -296,6 +288,7 @@ function withCSF3(body: string) {
     import { Button } from './Button';
 
     const meta = {
+      title: 'Example/Button',
       component: Button,
       args: { onClick: fn() },
     } satisfies Meta<typeof Button>;
@@ -311,7 +304,9 @@ test('fall back to index title when no component name', async () => {
     import { Button } from './Button';
 
     export default {
+      title: 'Example/Button',
       args: { onClick: fn() },
+      tags: ['manifest'],
     };
     
     export const Primary = () => <Button csf1="story" />;
@@ -321,7 +316,7 @@ test('fall back to index title when no component name', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": "import { Button } from \"some-package\";",
+      "import": "import { Button } from "some-package";",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -397,9 +392,9 @@ test('component exported from other file', async () => {
         {
           "error": {
             "message": "Expected story to be a function or variable declaration
-       8 | export default meta;
-       9 |
-    > 10 | export { Primary } from './other-file';
+       9 | export default meta;
+      10 |
+    > 11 | export { Primary } from './other-file';
          | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
             "name": "SyntaxError",
           },
@@ -449,9 +444,9 @@ test('unknown expressions', async () => {
         {
           "error": {
             "message": "Expected story to be csf factory, function or an object expression
-       8 | export default meta;
-       9 |
-    > 10 | export const Primary = someWeirdExpression;
+       9 | export default meta;
+      10 |
+    > 11 | export const Primary = someWeirdExpression;
          |                        ^^^^^^^^^^^^^^^^^^^",
             "name": "SyntaxError",
           },

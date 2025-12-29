@@ -14,14 +14,14 @@ module.exports = {
     project: ['./tsconfig.json'],
   },
   rules: {
-    'import/no-extraneous-dependencies': 'off',
+    'import-x/no-extraneous-dependencies': 'off',
     'react/react-in-jsx-scope': 'off',
-    'import/no-unresolved': 'off', // covered by typescript
+    'import-x/no-unresolved': 'off', // covered by typescript
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
     'eslint-comments/no-unused-disable': 'error',
     'react-hooks/rules-of-hooks': 'off',
     'jsx-a11y/no-autofocus': 'warn',
-    'import/extensions': 'off', // for mjs, we sometimes need extensions
+    'import-x/extensions': 'off', // for mjs, we sometimes need extensions
     'jsx-a11y/control-has-associated-label': 'off',
     '@typescript-eslint/dot-notation': [
       'error',
@@ -49,6 +49,12 @@ module.exports = {
             name: 'react-aria-components',
             message:
               "Don't import from react-aria-components root, but use the react-aria-components/patched-dist/ComponentX entrypoints which are optimised for tree-shaking. Might require addition patching of the package if using new, unpatched components. See https://github.com/storybookjs/storybook/pull/32594",
+            allowTypeImports: true,
+          },
+          {
+            name: 'es-toolkit',
+            message:
+              "Don't import from es-toolkit root, but use the sub-exports like es-toolkit/array entrypoints instead which are optimised for tree-shaking.",
             allowTypeImports: true,
           },
         ],
@@ -150,14 +156,14 @@ module.exports = {
         'no-dupe-class-members': 'off', // this is called overloads in typescript
         'react/no-unused-prop-types': 'off', // we should use types
         'react/default-props-match-prop-types': 'off', // we should use types
-        'import/no-named-as-default': 'warn',
-        'import/no-named-as-default-member': 'warn',
+        'import-x/no-named-as-default': 'warn',
+        'import-x/no-named-as-default-member': 'warn',
         'react/destructuring-assignment': 'warn',
 
         // This warns about importing interfaces and types in a normal import, it's arguably better to import with the `type` prefix separate from the runtime imports,
         // I leave this as a warning right now because we haven't really decided yet, and the codebase is riddled with errors if I set to 'error'.
         // It IS set to 'error' for JS files.
-        'import/named': 'warn',
+        'import-x/named': 'warn',
       },
     },
     {

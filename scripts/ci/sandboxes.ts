@@ -106,7 +106,7 @@ function defineSandboxJob_dev({
                 join(ROOT_DIR, SANDBOX_DIR, directory, 'test-results'),
                 'test-results'
               ),
-              testResults.persist(join(ROOT_DIR, SANDBOX_DIR, directory, 'test-results')),
+              testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
             ]
           : [
               {
@@ -262,6 +262,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
                   command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
                 },
               },
+              testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
             ],
           },
           [ids.build]
@@ -295,8 +296,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
                   ].join('\n'),
                 },
               },
-              testResults.persist(join(ROOT_DIR, SANDBOX_DIR, id, 'test-results')),
-              artifact.persist(join(ROOT_DIR, SANDBOX_DIR, id, 'test-results'), 'test-results'),
+              testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
             ],
           },
           [ids.build]
@@ -327,7 +327,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
                   command: `yarn task test-runner --template ${key} --no-link -s test-runner --junit`,
                 },
               },
-              testResults.persist(join(ROOT_DIR, SANDBOX_DIR, id, 'test-results')),
+              testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
             ],
           },
           [ids.build]
@@ -357,7 +357,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
             command: `yarn task test-runner --template ${sandbox.name} --no-link -s test-runner --junit`,
           },
         },
-        testResults.persist(join(ROOT_DIR, SANDBOX_DIR, sandbox.path, 'test-results')),
+        testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     },
     [sandbox.jobs[1].id]
@@ -406,7 +406,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
             command: `yarn task e2e-tests-dev --template ${sandbox.name} --no-link -s e2e-tests-dev --junit`,
           },
         },
-        testResults.persist(join(ROOT_DIR, SANDBOX_DIR, sandbox.path, 'test-results')),
+        testResults.persist(`C:\\Users\\circleci\\project\\test-results`),
       ],
     },
     [sandbox.jobs[0].id]

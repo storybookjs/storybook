@@ -253,7 +253,7 @@ export const testsUnit_linux = defineJob(
           ].join('\n'),
         },
       },
-      testResults.persist(`test-results`),
+      testResults.persist(`code/test-results`),
 
       git.check(),
       ...workflow.report_on_failure(),
@@ -282,7 +282,7 @@ export const testsStories_linux = defineJob(
           ].join('\n'),
         },
       },
-      testResults.persist(`test-results`),
+      testResults.persist(`code/test-results`),
 
       git.check(),
       ...workflow.report_on_failure(),
@@ -316,7 +316,7 @@ export const testUnit_windows = defineJob(
           working_directory: `code`,
         },
       },
-      testResults.persist(`test-results`),
+      testResults.persist(`code/test-results`),
     ],
   },
   [build_windows.id]

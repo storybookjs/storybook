@@ -28,7 +28,7 @@ type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
     | undefined;
 };
 
-export type AbstractTemplate = {
+export type Template = {
   /**
    * Readable name for the template, which will be used for feedback and the status page Follows the
    * naming scheme when it makes sense: <framework> <"v"version|"Latest"|"Prerelease">
@@ -106,7 +106,7 @@ export type AbstractTemplate = {
   isInternal?: boolean;
 };
 
-type BaseTemplates = AbstractTemplate & {
+type BaseTemplates = Template & {
   name: `${string} ${`v${number}` | 'Latest' | 'Prerelease'} (${'Webpack' | 'Vite' | 'RsBuild'} | ${
     | 'JavaScript'
     | 'TypeScript'})`;
@@ -881,7 +881,7 @@ const internalTemplates = {
       type: ProjectType.SERVER,
     },
   },
-} satisfies Record<`internal/${string}`, AbstractTemplate & { isInternal: true }>;
+} satisfies Record<`internal/${string}`, Template & { isInternal: true }>;
 
 const benchTemplates = {
   'bench/react-vite-default-ts': {
@@ -973,9 +973,9 @@ const benchTemplates = {
       'vitest-integration',
     ],
   },
-} satisfies Record<string, AbstractTemplate & { isInternal: true }>;
+} satisfies Record<string, Template & { isInternal: true }>;
 
-export const allTemplates: Record<TemplateKey, AbstractTemplate> = {
+export const allTemplates: Record<TemplateKey, Template> = {
   ...baseTemplates,
   ...internalTemplates,
   ...benchTemplates,
@@ -1040,6 +1040,6 @@ export const daily: TemplateKey[] = [
 ];
 
 export const templatesByCadence = { normal, merged, daily };
-export type TemplateType = Pick<AbstractTemplate, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
+export type TemplateType = Pick<Template, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
 export type AllTemplatesKey = keyof typeof allTemplates;
 export type AllTemplatesType = Record<AllTemplatesKey, TemplateType>;

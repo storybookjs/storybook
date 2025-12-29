@@ -18,7 +18,7 @@ import { lt, prerelease } from 'semver';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import type { AbstractTemplate, TemplateKey } from './sandbox-templates';
+import type { Template, TemplateKey } from './sandbox-templates';
 import { allTemplates as TEMPLATES } from './sandbox-templates';
 
 interface SandboxOptions {
@@ -39,7 +39,7 @@ export const sandbox = async ({
   ...options
 }: SandboxOptions) => {
   // Either get a direct match when users pass a template id, or filter through all templates
-  let selectedConfig: AbstractTemplate | undefined = TEMPLATES[filterValue as TemplateKey];
+  let selectedConfig: Template | undefined = TEMPLATES[filterValue as TemplateKey];
   let templateId: Choice | null = selectedConfig ? (filterValue as TemplateKey) : null;
 
   const { packageManager: pkgMgr } = options;

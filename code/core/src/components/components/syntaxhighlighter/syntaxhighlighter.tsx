@@ -113,6 +113,9 @@ const Pre = styled.pre<PreProps>(({ theme, padded }) => ({
   padding: padded ? theme.layoutMargin : 0,
 }));
 
+// Clearance for absolutely-positioned Copy button
+const ACTION_BAR_CLEARANCE = 85;
+
 /*
 We can't use `code` since PrismJS races for it.
 See https://github.com/storybookjs/storybook/issues/18090
@@ -120,7 +123,7 @@ See https://github.com/storybookjs/storybook/issues/18090
 const Code = styled.div(({ theme }) => ({
   flex: 1,
   paddingLeft: 2, // TODO: To match theming/global.ts for now
-  paddingRight: 85,
+  paddingRight: ACTION_BAR_CLEARANCE,
   opacity: 1,
   fontFamily: theme.typography.fonts.mono,
 }));

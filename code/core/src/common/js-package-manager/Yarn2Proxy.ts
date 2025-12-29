@@ -145,6 +145,7 @@ export class Yarn2Proxy extends JsPackageManager {
 
       return this.mapDependencies(commandResult, pattern);
     } catch (e) {
+      logger.debug(`Error finding installations for ${pattern.join(', ')}: ${String(e)}`);
       return undefined;
     }
   }

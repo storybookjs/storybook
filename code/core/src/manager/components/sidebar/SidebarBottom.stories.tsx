@@ -137,7 +137,7 @@ export const DynamicHeight: Story = {
   // do not test in chromatic
   parameters: {
     chromatic: {
-      disable: true,
+      disableSnapshot: true,
     },
   },
   args: {

@@ -42,7 +42,7 @@ export const WorkingStory = () => (
   />
 );
 WorkingStory.parameters = {
-  chromatic: { disable: true },
+  chromatic: { disableSnapshot: true },
 };
 
 export const WorkingDocs = () => (
@@ -57,7 +57,7 @@ export const WorkingDocs = () => (
   />
 );
 WorkingStory.parameters = {
-  chromatic: { disable: true },
+  chromatic: { disableSnapshot: true },
 };
 
 export const MissingStory = {
@@ -90,7 +90,7 @@ export const PreparingStory = () => (
   />
 );
 PreparingStory.parameters = {
-  chromatic: { disable: true },
+  chromatic: { disableSnapshot: true },
 };
 
 export const PreparingDocs = () => (
@@ -105,5 +105,5 @@ export const PreparingDocs = () => (
   />
 );
 PreparingDocs.parameters = {
-  chromatic: { disable: true },
+  chromatic: { disableSnapshot: true },
 };

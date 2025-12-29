@@ -69,6 +69,9 @@ const Wrapper = styled.div<WrapperProps>(
   ({ theme }) => ({
     position: 'relative',
     overflow: 'hidden',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: theme.layoutMargin,
     color: theme.color.defaultText,
   }),
   ({ theme, bordered }) =>
@@ -82,7 +85,6 @@ const Wrapper = styled.div<WrapperProps>(
   ({ showLineNumbers }) =>
     showLineNumbers
       ? {
-          // use the before pseudo element to display line numbers
           '.react-syntax-highlighter-line-number::before': {
             content: 'attr(data-line-number)',
           },
@@ -98,6 +100,13 @@ const UnstyledScroller = ({ children, className }: ScrollAreaProps) => (
 const Scroller = styled(UnstyledScroller)(
   {
     position: 'relative',
+    width: 'fit-content',
+    '> div': {
+      width: 'fit-content',
+      '> div > pre': {
+        width: 'fit-content',
+      },
+    },
   },
   ({ theme }) => themedSyntax(theme)
 );
@@ -113,20 +122,18 @@ const Pre = styled.pre<PreProps>(({ theme, padded }) => ({
   padding: padded ? theme.layoutMargin : 0,
 }));
 
-// Clearance for absolutely-positioned Copy button
-const ACTION_BAR_CLEARANCE = 85;
-
-/*
-We can't use `code` since PrismJS races for it.
-See https://github.com/storybookjs/storybook/issues/18090
- */
 const Code = styled.div(({ theme }) => ({
   flex: 1,
-  paddingLeft: 2, // TODO: To match theming/global.ts for now
-  paddingRight: ACTION_BAR_CLEARANCE,
+  paddingLeft: 2,
   opacity: 1,
   fontFamily: theme.typography.fonts.mono,
 }));
+
+const RelativeActionBar = styled(ActionBar)({
+  position: 'relative',
+  marginLeft: 'auto',
+  alignSelf: 'flex-end',
+});
 
 const processLineNumber = (row: any) => {
   const children = [...row.children];
@@ -134,13 +141,10 @@ const processLineNumber = (row: any) => {
   const lineNumber = lineNumberNode.children[0].value;
   const processedLineNumberNode = {
     ...lineNumberNode,
-    // empty the line-number element
     children: [],
     properties: {
       ...lineNumberNode.properties,
-      // add a data-line-number attribute to line-number element, so we can access the line number with `content: attr(data-line-number)`
       'data-line-number': lineNumber,
-      // remove the 'userSelect: none' style, which will produce extra empty lines when copy-pasting in firefox
       style: { ...lineNumberNode.properties.style, userSelect: 'auto' },
     },
   };
@@ -148,10 +152,6 @@ const processLineNumber = (row: any) => {
   return { ...row, children };
 };
 
-/**
- * A custom renderer for handling `span.linenumber` element in each line of code, which is enabled
- * by default if no renderer is passed in from the parent component
- */
 const defaultRenderer: SyntaxHighlighterRenderer = ({ rows, stylesheet, useInlineStyles }) => {
   return rows.map((node: any, i: number) => {
     return createElement({
@@ -180,8 +180,6 @@ const wrapRenderer = (
 export interface SyntaxHighlighterState {
   copied: boolean;
 }
-
-// copied from @types/react-syntax-highlighter/index.d.ts
 
 export const SyntaxHighlighter = ({
   children,
@@ -250,7 +248,7 @@ export const SyntaxHighlighter = ({
       </Scroller>
 
       {copyable ? (
-        <ActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} />
+        <RelativeActionBar actionItems={[{ title: copied ? 'Copied' : 'Copy', onClick }]} />
       ) : null}
     </Wrapper>
   );

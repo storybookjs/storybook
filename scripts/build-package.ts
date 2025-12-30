@@ -28,9 +28,9 @@ async function run() {
   const packages = (await getCodeWorkspaces()).filter(({ name }) => name !== '@storybook/code');
   const packageTasks = packages
     .map((pkg) => {
-      let suffix = pkg.name.replace('@storybook/', '');
+      let suffix = `--${pkg.name.replace('@storybook/', '')}`;
       if (pkg.name === '@storybook/cli') {
-        suffix = 'sb-cli';
+        suffix = '--sb-cli';
       }
       return {
         ...pkg,

@@ -14,7 +14,7 @@ import { global } from '@storybook/global';
 import { dequal as deepEqual } from 'dequal';
 
 import type { ModuleArgs, ModuleFn } from '../lib/types';
-import { defaultLayoutState } from './layout';
+import { DEFAULT_BOTTOM_PANEL_HEIGHT, DEFAULT_NAV_SIZE, DEFAULT_RIGHT_PANEL_WIDTH } from './layout';
 
 const { window: globalWindow } = global;
 
@@ -68,14 +68,14 @@ const initialUrlSupport = ({
     bottomPanelHeight = 0;
     rightPanelWidth = 0;
   } else if (parseBoolean(full) === false) {
-    navSize = defaultLayoutState.layout.navSize;
-    bottomPanelHeight = defaultLayoutState.layout.bottomPanelHeight;
-    rightPanelWidth = defaultLayoutState.layout.rightPanelWidth;
+    navSize = DEFAULT_NAV_SIZE;
+    bottomPanelHeight = DEFAULT_BOTTOM_PANEL_HEIGHT;
+    rightPanelWidth = DEFAULT_RIGHT_PANEL_WIDTH;
   }
   // set sizes based on nav
   if (!singleStory) {
     if (parseBoolean(nav) === true) {
-      navSize = defaultLayoutState.layout.navSize;
+      navSize = DEFAULT_NAV_SIZE;
     }
     if (parseBoolean(nav) === false) {
       navSize = 0;

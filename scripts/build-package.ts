@@ -11,8 +11,6 @@
  *
  * When you pass no package names, you will be prompted to select which packages to build.
  */
-// FIXME --all not working
-// FIXME --no-watch and --no-prod needed
 import { join } from 'node:path';
 
 import { exec } from 'child_process';

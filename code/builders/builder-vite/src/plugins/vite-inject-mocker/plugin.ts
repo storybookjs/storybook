@@ -80,15 +80,21 @@ export const viteInjectMockerRuntime = (options: {
         return null;
       },
     },
-    async load(id) {
-      if (exactRegex(id).test(entryPath)) {
-        return readFileSync(
-          join(resolvePackageDir('storybook'), 'assets', 'server', 'mocker-runtime.template.js'),
-          'utf-8'
-        );
-      }
+    load: {
+      filter: {
+        id: exactRegex(entryPath),
+      },
+      async handler(id) {
+        // Double-check for backward compatibility
+        if (exactRegex(id).test(entryPath)) {
+          return readFileSync(
+            join(resolvePackageDir('storybook'), 'assets', 'server', 'mocker-runtime.template.js'),
+            'utf-8'
+          );
+        }
 
-      return null;
+        return null;
+      },
     },
     transformIndexHtml(html: string) {
       const headTag = html.match(/<head[^>]*>/);

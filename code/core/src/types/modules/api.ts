@@ -5,9 +5,14 @@ import type { State } from '../../manager-api';
 import type { RenderData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { Addon_RenderOptions } from './addons';
-import type { API_FilterFunction, API_HashEntry, API_IndexHash } from './api-stories';
+import type {
+  API_FilterFunction,
+  API_HashEntry,
+  API_IndexHash,
+  API_PreparedIndexEntry,
+} from './api-stories';
 import type { SetStoriesStory, SetStoriesStoryData } from './channelApi';
-import type { DocsOptions } from './core-common';
+import type { DocsOptions, TagsOptions } from './core-common';
 import type { StoryIndex } from './indexer';
 
 type OrString<T extends string> = T | (string & {});
@@ -69,6 +74,8 @@ export interface API_UIOptions {
   selectedPanel?: string;
 }
 
+export type FilterFunction = (entry: API_PreparedIndexEntry, excluded?: boolean) => boolean;
+
 export interface API_Layout {
   initialActive: API_ActiveTabsType;
   navSize: number;
@@ -86,6 +93,12 @@ export interface API_Layout {
   panelPosition: API_PanelPositions;
   showTabs: boolean;
   showToolbar: boolean;
+  /** Initial tag filters applied when Storybook loads (not accounting for persisted store state). */
+  tagPresets: TagsOptions;
+  /** Tags to include in the filter (entries with this tag are shown). Persisted permanently. */
+  includedTagFilters: string[];
+  /** Tags to exclude from the filter (entries with this tag are hidden). Persisted permanently. */
+  excludedTagFilters: string[];
 }
 
 export interface API_LayoutCustomisations {

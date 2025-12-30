@@ -101,7 +101,7 @@ async function run() {
   }
 
   if (hasInvalidName) {
-    process.exit(0);
+    process.exit(1);
   }
 
   if (!selection.length) {

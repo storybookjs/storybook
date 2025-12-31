@@ -1,11 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-import {
-  Button,
-  PopoverProvider,
-  TooltipLinkList,
-  getStoryHref,
-} from 'storybook/internal/components';
+import { Button, PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -78,23 +73,22 @@ const QRDescription = styled.div(({ theme }) => ({
 }));
 
 function ShareMenu({
-  baseUrl,
-  storyId,
-  queryParams,
   qrUrl,
   isDevelopment,
+  refId,
+  storyId,
 }: {
-  baseUrl: string;
-  storyId: string;
-  queryParams: Record<string, any>;
   qrUrl: string;
   isDevelopment: boolean;
+  refId: string | null | undefined;
+  storyId: string;
 }) {
   const api = useStorybookApi();
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
   const [copied, setCopied] = useState(false);
   const copyStoryLink = shortcutKeys?.copyStoryLink;
+  const openInIsolation = shortcutKeys?.openInIsolation;
 
   const links = useMemo(() => {
     const copyTitle = copied ? 'Copied!' : 'Copy story link';
@@ -113,11 +107,11 @@ function ShareMenu({
         },
         {
           id: 'open-new-tab',
-          title: 'Open in isolation mode',
+          title: 'Open in isolation',
           icon: <BugIcon />,
+          right: enableShortcuts ? <Shortcut keys={openInIsolation} /> : null,
           onClick: () => {
-            const href = getStoryHref(baseUrl, storyId, queryParams);
-            window.open(href, '_blank', 'noopener,noreferrer');
+            api.openInIsolation(storyId, refId);
           },
         },
       ],
@@ -144,7 +138,17 @@ function ShareMenu({
     ]);
 
     return baseLinks;
-  }, [baseUrl, storyId, queryParams, copied, qrUrl, enableShortcuts, copyStoryLink, isDevelopment]);
+  }, [
+    copied,
+    qrUrl,
+    enableShortcuts,
+    copyStoryLink,
+    isDevelopment,
+    api,
+    openInIsolation,
+    refId,
+    storyId,
+  ]);
 
   return <TooltipLinkList links={links} style={{ width: 210 }} />;
 }
@@ -157,7 +161,7 @@ export const shareTool: Addon_BaseType = {
   render: () => {
     return (
       <Consumer filter={mapper}>
-        {({ baseUrl, storyId, queryParams }) => {
+        {({ storyId, refId }) => {
           const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
           const storyUrl = global.STORYBOOK_NETWORK_ADDRESS
             ? new URL(window.location.search, global.STORYBOOK_NETWORK_ADDRESS).href
@@ -169,7 +173,12 @@ export const shareTool: Addon_BaseType = {
               placement="bottom"
               padding={0}
               popover={
-                <ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: storyUrl, isDevelopment }} />
+                <ShareMenu
+                  qrUrl={storyUrl}
+                  isDevelopment={isDevelopment}
+                  refId={refId}
+                  storyId={storyId}
+                />
               }
             >
               <Button padding="small" variant="ghost" ariaLabel="Share" tooltip="Share...">

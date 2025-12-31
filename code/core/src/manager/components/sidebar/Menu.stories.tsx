@@ -16,6 +16,32 @@ import { internal_universalChecklistStore as mockStore } from '../../manager-sto
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { type MenuList, SidebarMenu } from './Menu';
 
+const getAPIMocks = () => ({
+  getShortcutKeys: fn()
+    .mockName('api::getShortcutKeys')
+    .mockImplementation(() => ({})),
+  getAddonsShortcuts: fn()
+    .mockName('api::getAddonsShortcuts')
+    .mockImplementation(() => ({})),
+  versionUpdateAvailable: fn()
+    .mockName('api::versionUpdateAvailable')
+    .mockImplementation(() => false),
+  isWhatsNewUnread: fn()
+    .mockName('api::isWhatsNewUnread')
+    .mockImplementation(() => false),
+  getDocsUrl: fn()
+    .mockName('api::getDocsUrl')
+    .mockImplementation(() => 'https://storybook.js.org/docs/'),
+  toggleNav: fn().mockName('api::toggleNav'),
+  toggleToolbar: fn().mockName('api::toggleToolbar'),
+  togglePanel: fn().mockName('api::togglePanel'),
+  jumpToComponent: fn().mockName('api::jumpToComponent'),
+  getSiblingComponentHref: fn().mockName('api::getSiblingComponentHref'),
+  jumpToStory: fn().mockName('api::jumpToStory'),
+  getSiblingStoryHref: fn().mockName('api::getSiblingStoryHref'),
+  emit: fn().mockName('api::emit'),
+});
+
 const fakemenu: MenuList = [
   [
     { title: 'has icon', icon: <LinkIcon />, id: 'icon' },
@@ -90,6 +116,7 @@ export const Expanded: Story = {
   render: () => {
     const menu = useMenu({
       api: {
+        ...getAPIMocks(),
         // @ts-expect-error (Converted from ts-ignore)
         getShortcutKeys: () => ({}),
         getAddonsShortcuts: () => ({}),
@@ -140,6 +167,7 @@ export const ExpandedWithShortcuts: Story = {
   render: () => {
     const menu = useMenu({
       api: {
+        ...getAPIMocks(),
         // @ts-expect-error (invalid)
         getShortcutKeys: () => ({
           shortcutsPage: ['⌘', '⇧​', ','],
@@ -192,6 +220,7 @@ export const ExpandedWithWhatsNew: Story = {
   render: () => {
     const menu = useMenu({
       api: {
+        ...getAPIMocks(),
         // @ts-expect-error (invalid)
         getShortcutKeys: () => ({}),
         getAddonsShortcuts: () => ({}),

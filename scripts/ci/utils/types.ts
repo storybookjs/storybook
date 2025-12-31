@@ -12,8 +12,40 @@ export type JobImplementation = {
         name: 'win/default';
         size: 'small' | 'medium' | 'medium+' | 'large' | 'xlarge';
       };
-  steps: unknown[]; // Make this more type-strict, maybe
+  /**
+   * The steps to run in the job.
+   *
+   * @example
+   *
+   * ```ts
+   * {
+   *   run: {
+   *     name: string,
+   *     working_directory: string,
+   *     command: string,
+   *     background: boolean,
+   *     shell: string,
+   *     env: Record<string, string>,
+   *     timeout: number,
+   *     retries: number,
+   *     retry_delay: number,
+   *     retry_delay_max: number,
+   *   },
+   * }
+   * ```
+   *
+   * @todo Make this more type-strict, maybe with a union type of step objects. See the example
+   *   above.
+   */
+  steps: unknown[];
+
+  /** I think we generally want to avoid this, since we're generating the jobs dynamically. */
   parameters?: Record<string, unknown>;
+
+  /**
+   * We don't use this today, but it's available for future use. We might want to use it when
+   * running many many unit tests in parallel.
+   */
   parallelism?: number;
 };
 

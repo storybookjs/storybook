@@ -78,8 +78,14 @@ function generateConfig(workflow: Workflow) {
    *
    * You do not need to consider the `requires` field, as the `ensureRequiredJobs` function will
    * handle that for you.
+   *
+   * @example
+   *
+   * ```ts
+   * const filteredTodos = todos.filter((job) => !!job.id.includes('qwik'));
+   * ```
    */
-  const filteredTodos = todos.filter((job) => !!job.id.includes('qwik'));
+  const filteredTodos = todos.filter((job) => !!job);
 
   const isDebugging = filteredTodos.length !== todos.length;
 

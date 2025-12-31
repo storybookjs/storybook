@@ -740,7 +740,7 @@ export const baseTemplates = {
       builder: 'storybook-framework-qwik',
     },
     // TODO: The community template does not provide standard stories, which is required for e2e tests.
-    skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration', 'chromatic'],
   },
   'ember/3-js': {
     name: 'Ember v3 (Webpack | JavaScript)',

@@ -729,19 +729,20 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
-  'qwik-vite/default-ts': {
-    name: 'Qwik CLI Latest (Vite | TypeScript)',
-    script: 'npm create qwik playground {{beforeDir}}',
-    // TODO: The community template does not provide standard stories, which is required for e2e tests. Reenable once it does.
-    inDevelopment: true,
-    expected: {
-      framework: 'storybook-framework-qwik',
-      renderer: 'storybook-framework-qwik',
-      builder: 'storybook-framework-qwik',
-    },
-    // TODO: The community template does not provide standard stories, which is required for e2e tests.
-    skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration', 'chromatic'],
-  },
+  /** This is currently broken, we generate components and stories that do not work */
+  // 'qwik-vite/default-ts': {
+  //   name: 'Qwik CLI Latest (Vite | TypeScript)',
+  //   script: 'npm create qwik playground {{beforeDir}}',
+  //   // TODO: The community template does not provide standard stories, which is required for e2e tests. Reenable once it does.
+  //   inDevelopment: true,
+  //   expected: {
+  //     framework: 'storybook-framework-qwik',
+  //     renderer: 'storybook-framework-qwik',
+  //     builder: 'storybook-framework-qwik',
+  //   },
+  //   // TODO: The community template does not provide standard stories, which is required for e2e tests.
+  //   skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration', 'chromatic'],
+  // },
   'ember/3-js': {
     name: 'Ember v3 (Webpack | JavaScript)',
     script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}}',

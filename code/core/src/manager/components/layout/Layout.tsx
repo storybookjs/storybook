@@ -206,7 +206,14 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
                 position={panelPosition === 'bottom' ? 'left' : 'right'}
                 ref={panelResizerRef}
               />
-              {slots.slotPanel}
+              <div
+                hidden={
+                  (panelPosition === 'bottom' ? bottomPanelHeight === 0 : rightPanelWidth === 0) ||
+                  undefined
+                }
+              >
+                {slots.slotPanel}
+              </div>
             </PanelContainer>
           )}
         </ContentPanelWrapper>

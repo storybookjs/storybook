@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
-import { type CsfEnricher } from 'storybook/internal/types';
 
 import type { CsfPluginOptions } from '@storybook/csf-plugin';
 
@@ -219,3 +218,4 @@ const optimizeViteDeps = [
 ];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };
+export { manifests as experimental_manifests } from './manifest';

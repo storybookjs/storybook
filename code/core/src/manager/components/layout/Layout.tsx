@@ -171,7 +171,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
       <>
         {isDesktop && (
-          <SidebarContainer>
+          <SidebarContainer width={navSize}>
             <Drag ref={sidebarResizerRef} />
             {slots.slotSidebar}
           </SidebarContainer>
@@ -184,18 +184,33 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           />
         )}
 
-        <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
+        <ContentPanelWrapper
+          panelPosition={panelPosition}
+          showPanel={showPanel}
+          rightPanelWidth={rightPanelWidth}
+          bottomPanelHeight={bottomPanelHeight}
+        >
+          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
 
-        {isDesktop && showPanel && (
-          <PanelContainer position={panelPosition}>
-            <Drag
-              orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
-              position={panelPosition === 'bottom' ? 'left' : 'right'}
-              ref={panelResizerRef}
-            />
-            {slots.slotPanel}
-          </PanelContainer>
-        )}
+          {isDesktop && showPanel && (
+            <PanelContainer
+              position={panelPosition}
+              style={
+                panelPosition === 'right'
+                  ? { width: `${rightPanelWidth}px` }
+                  : { height: `${bottomPanelHeight}px` }
+              }
+            >
+              <Drag
+                orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
+                position={panelPosition === 'bottom' ? 'left' : 'right'}
+                ref={panelResizerRef}
+              />
+              {slots.slotPanel}
+            </PanelContainer>
+          )}
+        </ContentPanelWrapper>
+
         {isMobile && <Notifications />}
       </>
     </LayoutContainer>
@@ -213,33 +228,34 @@ const LayoutContainer = styled.div<LayoutState & { showPanel: boolean }>(
       colorScheme: 'light dark',
 
       [MEDIA_DESKTOP_BREAKPOINT]: {
-        display: 'grid',
-        gap: 0,
-        gridTemplateColumns: `minmax(0, ${navSize}px) minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, ${rightPanelWidth}px)`,
-        gridTemplateRows: `1fr minmax(0, ${bottomPanelHeight}px)`,
-        gridTemplateAreas: (() => {
-          if (!showPanel) {
-            // showPanel is false by default when viewMode is not 'story', but can be overridden by the user
-            return `"sidebar content content"
-                  "sidebar content content"`;
-          }
-          if (panelPosition === 'right') {
-            return `"sidebar content panel"
-                  "sidebar content panel"`;
-          }
-          return `"sidebar content content"
-                "sidebar panel   panel"`;
-        })(),
+        flexDirection: 'row',
       },
     };
   }
 );
 
-const SidebarContainer = styled.div(({ theme }) => ({
+const SidebarContainer = styled.div<{ width: number }>(({ theme, width }) => ({
   backgroundColor: theme.appBg,
-  gridArea: 'sidebar',
   position: 'relative',
   borderRight: `1px solid ${theme.appBorderColor}`,
+  width,
+
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    flexShrink: 0,
+  },
+}));
+
+const ContentPanelWrapper = styled.div<{
+  panelPosition: LayoutState['panelPosition'];
+  showPanel: boolean;
+  rightPanelWidth: number;
+  bottomPanelHeight: number;
+}>(({ panelPosition, bottomPanelHeight, showPanel }) => ({
+  display: 'flex',
+  overflow: 'hidden',
+  flex: 1,
+  minWidth: 0,
+  flexDirection: panelPosition === 'bottom' ? 'column' : 'row',
 }));
 
 const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
@@ -248,27 +264,22 @@ const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
   backgroundColor: theme.appContentBg,
   display: shown ? 'grid' : 'none', // This is needed to make the content container fill the available space
   overflow: 'auto',
+  minWidth: MINIMUM_CONTENT_WIDTH_PX,
 
   [MEDIA_DESKTOP_BREAKPOINT]: {
     flex: 'auto',
-    gridArea: 'content',
   },
 }));
 
 const PagesContainer = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gridRowStart: 'sidebar-start',
-  gridRowEnd: '-1',
-  gridColumnStart: 'sidebar-end',
-  gridColumnEnd: '-1',
   backgroundColor: theme.appContentBg,
   zIndex: 1,
 }));
 
 const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(
   ({ theme, position }) => ({
-    gridArea: 'panel',
     position: 'relative',
     backgroundColor: theme.appContentBg,
     borderTop: position === 'bottom' ? `1px solid ${theme.appBorderColor}` : undefined,

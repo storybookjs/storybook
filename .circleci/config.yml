@@ -32,7 +32,7 @@ jobs:
   generate-and-run-config:
     executor: 
       name: node/default
-      resource_class: medium
+      resource_class: small
     steps:
       - node/install:
           install-yarn: true

@@ -187,6 +187,7 @@ export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
 
   return (
     <Button
+      type="button"
       padding="small"
       ariaLabel="Close modal"
       variant="ghost"

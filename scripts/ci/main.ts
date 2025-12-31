@@ -81,6 +81,8 @@ function generateConfig(workflow: Workflow) {
    */
   const filteredTodos = todos.filter((job) => !!job.id.includes('qwik'));
 
+  const isDebugging = filteredTodos.length !== todos.length;
+
   const ensured = ensureRequiredJobs(filteredTodos);
 
   const sorted = ensured.sort((a, b) => {
@@ -110,7 +112,7 @@ function generateConfig(workflow: Workflow) {
       {} as Record<string, JobImplementation | HubImplementation>
     ),
     workflows: {
-      [`${workflow}-generated`]: {
+      [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {
         jobs: sorted.map((t) =>
           t.requires && t.requires.length > 0
             ? { [t.id]: { requires: t.requires.map((r) => r.id) } }

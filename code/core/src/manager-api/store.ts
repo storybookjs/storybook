@@ -28,6 +28,7 @@ type GetState = () => State;
 type SetState = (a: any, b: any) => any;
 
 interface Upstream {
+  allowPersistence?: boolean;
   getState: GetState;
   setState: SetState;
 }
@@ -46,11 +47,12 @@ type CallbackOrOptions = CallBack | Options;
 // Our store piggybacks off the internal React state of the Context Provider
 // It has been augmented to persist state to local/sessionStorage
 export default class Store {
+  upstreamPersistence: boolean;
   upstreamGetState: GetState;
-
   upstreamSetState: SetState;
 
-  constructor({ setState, getState }: Upstream) {
+  constructor({ allowPersistence, setState, getState }: Upstream) {
+    this.upstreamPersistence = allowPersistence ?? true;
     this.upstreamSetState = setState;
     this.upstreamGetState = getState;
   }
@@ -108,7 +110,7 @@ export default class Store {
       });
     });
 
-    if (persistence !== 'none') {
+    if (persistence !== 'none' && this.upstreamPersistence) {
       const storage = persistence === 'session' ? store.session : store.local;
       await update(storage, delta);
     }
@@ -119,4 +121,39 @@ export default class Store {
 
     return newState;
   }
+}
+
+/**
+ * Factory function to create a valid Store instance for testing purposes. Provides a simple
+ * in-memory store without persistence logic. Useful for mocking the store in stories.
+ *
+ * @param initialState - The initial state for the store
+ * @param onChange - Optional callback invoked whenever state changes
+ * @returns A Store instance configured for testing
+ */
+export function createTestingStore(
+  initialState: State,
+  onChange?: (internalState: State) => void
+): Store {
+  let internalState = { ...initialState };
+
+  const upstream = {
+    allowPersistence: false,
+    getState: () => internalState,
+    setState: (patch: any, callback?: any) => {
+      if (typeof patch === 'function') {
+        internalState = { ...internalState, ...patch(internalState) };
+      } else {
+        internalState = { ...internalState, ...patch };
+      }
+      if (callback && typeof callback === 'function') {
+        callback(internalState);
+      }
+      if (onChange) {
+        onChange(internalState);
+      }
+    },
+  };
+
+  return new Store(upstream);
 }

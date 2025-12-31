@@ -861,7 +861,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   await writeConfig(mainConfig);
 };
 
-export const extendPreview: Task['run'] = async ({ template, sandboxDir, key }) => {
+export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   logger.log('📝 Extending preview.js');
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
 

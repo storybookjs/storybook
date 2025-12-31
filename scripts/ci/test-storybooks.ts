@@ -3,7 +3,13 @@ import { join } from 'path/posix';
 
 import { build_linux } from './code';
 import { artifact, workflow } from './utils/helpers';
-import { type Workflow, defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
+import {
+  type JobsOrHub,
+  type Workflow,
+  defineHub,
+  defineJob,
+  isWorkflowOrAbove,
+} from './utils/types';
 
 export function definePortableStoryTest(directory: string) {
   const working_directory = `test-storybooks/portable-stories-kitchen-sink/${directory}`;
@@ -73,7 +79,7 @@ export function definePortableStoryTest(directory: string) {
         },
       ],
     },
-    [testStorybooksHub.id]
+    [testStorybooksHub]
   );
 }
 
@@ -106,7 +112,7 @@ export function definePortableStoryTestPNP() {
         },
       ],
     },
-    [testStorybooksHub.id]
+    [testStorybooksHub]
   );
 }
 
@@ -139,14 +145,14 @@ export function definePortableStoryTestVitest3() {
         },
       ],
     },
-    [testStorybooksHub.id]
+    [testStorybooksHub]
   );
 }
 
-export const testStorybooksHub = defineHub('test-storybooks', [build_linux.id]);
+export const testStorybooksHub = defineHub('test-storybooks', [build_linux]);
 
 export function getTestStorybooks(workflow: Workflow) {
-  const testStorybooks = ['react', 'vue3'].map(definePortableStoryTest);
+  const testStorybooks: JobsOrHub[] = ['react', 'vue3'].map(definePortableStoryTest);
 
   if (isWorkflowOrAbove(workflow, 'daily')) {
     testStorybooks.push(definePortableStoryTestPNP());

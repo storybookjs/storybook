@@ -15,28 +15,26 @@ import {
   workspace,
 } from './utils/helpers';
 import { defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
-import type { JobImplementation, Workflow } from './utils/types';
+import type { JobsOrHub, Workflow } from './utils/types';
 
 function defineSandboxJob_build({
   directory,
   name,
   template,
-  needs,
+  requires,
 }: {
   directory: string;
   name: string;
-  needs: string[];
+  requires: JobsOrHub[];
   template: string;
 }) {
-  const executor: JobImplementation['executor'] = {
-    name: 'sb_node_22_classic',
-    class: 'large',
-  };
-
   return defineJob(
     name,
     {
-      executor,
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'large',
+      },
       steps: [
         ...workflow.restore_linux(),
         {
@@ -48,38 +46,36 @@ function defineSandboxJob_build({
         workspace.persist([`${SANDBOX_DIR}/${directory}/storybook-static`]),
       ],
     },
-    needs
+    requires
   );
 }
 function defineSandboxJob_dev({
   name,
   directory,
   template,
-  needs,
+  requires,
   options,
 }: {
   name: string;
   directory: string;
-  needs: string[];
+  requires: JobsOrHub[];
   template: string;
   options: {
     e2e: boolean;
   };
 }) {
-  const executor: JobImplementation['executor'] = options.e2e
-    ? {
-        name: 'sb_playwright',
-        class: 'xlarge',
-      }
-    : {
-        name: 'sb_node_22_classic',
-        class: 'large',
-      };
-
   return defineJob(
     name,
     {
-      executor,
+      executor: options.e2e
+        ? {
+            name: 'sb_playwright',
+            class: 'xlarge',
+          }
+        : {
+            name: 'sb_node_22_classic',
+            class: 'large',
+          },
       steps: [
         ...workflow.restore_linux(),
         ...(options.e2e
@@ -120,7 +116,7 @@ function defineSandboxJob_dev({
             ]),
       ],
     },
-    needs
+    requires
   );
 }
 
@@ -140,169 +136,188 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     vitest: `${name} (vitest)`,
     testRunner: `${name} (test-runner)`,
   };
-  const ids = Object.fromEntries(Object.entries(names).map(([key, value]) => [key, toId(value)]));
+
+  const createJob = defineJob(
+    names.create,
+    {
+      executor: {
+        name: 'sb_node_22_browsers',
+        class: 'large',
+      },
+      steps: [
+        ...workflow.restore_linux(),
+        verdaccio.start(),
+        {
+          run: {
+            name: 'Start Event Collector',
+            working_directory: `scripts`,
+            background: true,
+            command: 'yarn jiti ./event-log-collector.ts',
+          },
+        },
+        server.wait([...verdaccio.ports, '6007']),
+        {
+          run: {
+            name: 'Setup Corepack',
+            command: [
+              //
+              'sudo corepack enable',
+              'which yarn',
+              'yarn --version',
+            ].join('\n'),
+          },
+        },
+        {
+          run: {
+            name: 'Create Sandboxes',
+            command: `yarn task sandbox --template ${key} --no-link -s ${inDevelopment ? 'generate' : 'sandbox'} --debug`,
+            environment: {
+              STORYBOOK_SANDBOX_GENERATE: 1,
+              STORYBOOK_TELEMETRY_DEBUG: 1,
+              STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
+            },
+          },
+        },
+        ...(id.includes('svelte-kit')
+          ? [
+              {
+                run: {
+                  name: 'Run prepare',
+                  working_directory: `${ROOT_DIR}/${SANDBOX_DIR}/${id}`,
+                  command: `yarn prepare`,
+                },
+              },
+            ]
+          : []),
+        artifact.persist(`${ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
+        workspace.persist([`${SANDBOX_DIR}/${id}`]),
+      ],
+    },
+    [sandboxesHub]
+  );
+  const buildJob = defineSandboxJob_build({
+    directory: id,
+    name: names.build,
+    template: key,
+    requires: [createJob],
+  });
+  const devJob = defineSandboxJob_dev({
+    name: names.dev,
+    directory: id,
+    template: key,
+    requires: [createJob],
+    options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
+  });
+  const chromaticJob = defineJob(
+    names.chromatic,
+    {
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'medium',
+      },
+      steps: [
+        'checkout', // we need the full git history for chromatic
+        workspace.attach(),
+        cache.attach(CACHE_KEYS()),
+        {
+          // we copy to the working directory to get git history, which chromatic needs for baselines
+          run: {
+            name: 'Copy sandbox to working directory',
+            command: `cp ${join(ROOT_DIR, SANDBOX_DIR)} ${join(ROOT_DIR, WORKING_DIR, 'sandbox')} -r --remove-destination`,
+          },
+        },
+        {
+          run: {
+            name: 'Running Chromatic',
+            command: `yarn task chromatic --template ${key} --no-link -s chromatic`,
+            environment: {
+              STORYBOOK_SANDBOX_ROOT: `./sandbox`,
+            },
+          },
+        },
+      ],
+    },
+    [buildJob]
+  );
+  const vitestJob = defineJob(
+    names.vitest,
+    {
+      executor: {
+        name: 'sb_playwright',
+        class: 'medium',
+      },
+      steps: [
+        ...workflow.restore_linux(),
+        {
+          run: {
+            name: 'Running Vitest',
+            command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
+          },
+        },
+        testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
+      ],
+    },
+    [buildJob]
+  );
+  const e2eJob = defineJob(
+    names.e2e,
+    {
+      executor: {
+        name: 'sb_playwright',
+        class: 'xlarge',
+      },
+      steps: [
+        ...workflow.restore_linux(),
+        {
+          run: {
+            name: 'Serve storybook',
+            background: true,
+            command: `yarn task serve --template ${key} --no-link -s serve`,
+          },
+        },
+        server.wait(['8001']),
+        {
+          run: {
+            name: 'Running E2E Tests',
+            command: [
+              `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
+              `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
+            ].join('\n'),
+          },
+        },
+        testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
+      ],
+    },
+    [buildJob]
+  );
+  const testRunnerJob = defineJob(
+    names.testRunner,
+    {
+      executor: {
+        name: 'sb_playwright',
+        class: 'medium',
+      },
+      steps: [
+        ...workflow.restore_linux(),
+        {
+          run: {
+            name: 'Running test-runner',
+            command: `yarn task test-runner --template ${key} --no-link -s test-runner --junit`,
+          },
+        },
+        testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
+      ],
+    },
+    [buildJob]
+  );
 
   const jobs = [
-    defineJob(
-      names.create,
-      {
-        executor: {
-          name: 'sb_node_22_browsers',
-          class: 'large',
-        },
-        steps: [
-          ...workflow.restore_linux(),
-          verdaccio.start(),
-          {
-            run: {
-              name: 'Start Event Collector',
-              working_directory: `scripts`,
-              background: true,
-              command: 'yarn jiti ./event-log-collector.ts',
-            },
-          },
-          server.wait([...verdaccio.ports, '6007']),
-          {
-            run: {
-              name: 'Setup Corepack',
-              command: [
-                //
-                'sudo corepack enable',
-                'which yarn',
-                'yarn --version',
-              ].join('\n'),
-            },
-          },
-          {
-            run: {
-              name: 'Create Sandboxes',
-              command: `yarn task sandbox --template ${key} --no-link -s ${inDevelopment ? 'generate' : 'sandbox'} --debug`,
-              environment: {
-                STORYBOOK_SANDBOX_GENERATE: 1,
-                STORYBOOK_TELEMETRY_DEBUG: 1,
-                STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
-              },
-            },
-          },
-          ...(id.includes('svelte-kit')
-            ? [
-                {
-                  run: {
-                    name: 'Run prepare',
-                    working_directory: `${ROOT_DIR}/${SANDBOX_DIR}/${id}`,
-                    command: `yarn prepare`,
-                  },
-                },
-              ]
-            : []),
-          artifact.persist(`${ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
-          workspace.persist([`${SANDBOX_DIR}/${id}`]),
-        ],
-      },
-      [sandboxesHub.id]
-    ),
-    defineSandboxJob_build({
-      directory: id,
-      name: names.build,
-      template: key,
-      needs: [ids.create],
-    }),
-    defineSandboxJob_dev({
-      name: names.dev,
-      directory: id,
-      template: key,
-      needs: [ids.create],
-      options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
-    }),
-    !skipTasks?.includes('chromatic')
-      ? defineJob(
-          names.chromatic,
-          {
-            executor: {
-              name: 'sb_node_22_classic',
-              class: 'medium',
-            },
-            steps: [
-              'checkout', // we need the full git history for chromatic
-              workspace.attach(),
-              cache.attach(CACHE_KEYS()),
-              {
-                // we copy to the working directory to get git history, which chromatic needs for baselines
-                run: {
-                  name: 'Copy sandbox to working directory',
-                  command: `cp ${join(ROOT_DIR, SANDBOX_DIR)} ${join(ROOT_DIR, WORKING_DIR, 'sandbox')} -r --remove-destination`,
-                },
-              },
-              {
-                run: {
-                  name: 'Running Chromatic',
-                  command: `yarn task chromatic --template ${key} --no-link -s chromatic`,
-                  environment: {
-                    STORYBOOK_SANDBOX_ROOT: `./sandbox`,
-                  },
-                },
-              },
-            ],
-          },
-          [ids.build]
-        )
-      : undefined,
-    !skipTasks?.includes('vitest-integration')
-      ? defineJob(
-          names.vitest,
-          {
-            executor: {
-              name: 'sb_playwright',
-              class: 'medium',
-            },
-            steps: [
-              ...workflow.restore_linux(),
-              {
-                run: {
-                  name: 'Running Vitest',
-                  command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
-                },
-              },
-              testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
-            ],
-          },
-          [ids.build]
-        )
-      : undefined,
-
-    !skipTasks?.includes('e2e-tests')
-      ? defineJob(
-          names.e2e,
-          {
-            executor: {
-              name: 'sb_playwright',
-              class: 'xlarge',
-            },
-            steps: [
-              ...workflow.restore_linux(),
-              {
-                run: {
-                  name: 'Serve storybook',
-                  background: true,
-                  command: `yarn task serve --template ${key} --no-link -s serve`,
-                },
-              },
-              server.wait(['8001']),
-              {
-                run: {
-                  name: 'Running E2E Tests',
-                  command: [
-                    `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
-                  ].join('\n'),
-                },
-              },
-              testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
-            ],
-          },
-          [ids.build]
-        )
-      : undefined,
+    createJob,
+    buildJob,
+    devJob,
+    !skipTasks?.includes('chromatic') ? chromaticJob : undefined,
+    !skipTasks?.includes('vitest-integration') ? vitestJob : undefined,
+    !skipTasks?.includes('e2e-tests') ? e2eJob : undefined,
 
     /**
      * Question: What is this for? Do we want to know if the test-runner works? Or do we want to
@@ -313,26 +328,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
      * to run it when we're already running the chromatic job.
      */
     !skipTasks?.includes('test-runner') && skipTasks.includes('chromatic')
-      ? defineJob(
-          names.testRunner,
-          {
-            executor: {
-              name: 'sb_playwright',
-              class: 'medium',
-            },
-            steps: [
-              ...workflow.restore_linux(),
-              {
-                run: {
-                  name: 'Running test-runner',
-                  command: `yarn task test-runner --template ${key} --no-link -s test-runner --junit`,
-                },
-              },
-              testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
-            ],
-          },
-          [ids.build]
-        )
+      ? testRunnerJob
       : undefined,
   ].filter(Boolean);
   return {
@@ -361,7 +357,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
         testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     },
-    [sandbox.jobs[1].id]
+    [sandbox.jobs[1]]
   );
 }
 
@@ -410,7 +406,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
         testResults.persist(`C:\\Users\\circleci\\project\\test-results`),
       ],
     },
-    [sandbox.jobs[0].id]
+    [sandbox.jobs[0]]
   );
 }
 
@@ -463,11 +459,11 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
         },
       ],
     },
-    [sandbox.jobs[0].id]
+    [sandbox.jobs[0]]
   );
 }
 
-export const sandboxesHub = defineHub('sandboxes', [build_linux.id]);
+export const sandboxesHub = defineHub('sandboxes', [build_linux]);
 
 const getListOfSandboxes = (workflow: Workflow) => {
   switch (workflow) {
@@ -485,7 +481,7 @@ const getListOfSandboxes = (workflow: Workflow) => {
 export function getSandboxes(workflow: Workflow) {
   const sandboxes = getListOfSandboxes(workflow).map(defineSandboxFlow);
 
-  const list = sandboxes.flatMap((sandbox) => sandbox.jobs);
+  const list: JobsOrHub[] = sandboxes.flatMap((sandbox) => sandbox.jobs);
 
   if (isWorkflowOrAbove(workflow, 'merged')) {
     const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);

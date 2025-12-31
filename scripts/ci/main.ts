@@ -22,15 +22,16 @@ import { getInitEmpty, initEmptyHub } from './init-empty';
 import { getSandboxes, sandboxesHub } from './sandboxes';
 import { getTestStorybooks, testStorybooksHub } from './test-storybooks';
 import { executors } from './utils/executors';
+import { ensureRequiredJobs } from './utils/helpers';
 import { orbs } from './utils/orbs';
 import { parameters } from './utils/parameters';
-import type { defineHub, defineJob } from './utils/types';
+import type { HubImplementation, JobsOrHub } from './utils/types';
 import { type JobImplementation, type Workflow, isWorkflowOrAbove } from './utils/types';
 
 const dirname = import.meta.dirname;
 
 function generateConfig(workflow: Workflow) {
-  const todos: (ReturnType<typeof defineJob> | ReturnType<typeof defineHub>)[] = [];
+  const todos: JobsOrHub[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {
     todos.push(prettyDocs);
   } else {
@@ -66,7 +67,23 @@ function generateConfig(workflow: Workflow) {
     );
   }
 
-  const sorted = todos.sort((a, b) => {
+  /**
+   * If you want to filter down to a particular job, e.g.for debugging purposes.. you can do that
+   * here.
+   *
+   * You can filter on the `job.id` for example.
+   *
+   * Though is also possible to comment-out certain sandboxes in`sandbox-templates.ts`, or comment
+   * out `todos.push`-statements above.
+   *
+   * You do not need to consider the `requires` field, as the `ensureRequiredJobs` function will
+   * handle that for you.
+   */
+  const filteredTodos = todos.filter((job) => !!job);
+
+  const ensured = ensureRequiredJobs(filteredTodos);
+
+  const sorted = ensured.sort((a, b) => {
     if (a.requires.length && b.requires.length) {
       return a.requires.length - b.requires.length;
     }
@@ -90,12 +107,14 @@ function generateConfig(workflow: Workflow) {
         acc[job.id] = job.implementation;
         return acc;
       },
-      {} as Record<string, JobImplementation | { type: 'no-op' }>
+      {} as Record<string, JobImplementation | HubImplementation>
     ),
     workflows: {
       [`${workflow}-generated`]: {
         jobs: sorted.map((t) =>
-          t.requires && t.requires.length > 0 ? { [t.id]: { requires: t.requires } } : t.id
+          t.requires && t.requires.length > 0
+            ? { [t.id]: { requires: t.requires.map((r) => r.id) } }
+            : t.id
         ),
       },
     },

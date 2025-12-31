@@ -125,7 +125,7 @@ export const build_windows = defineJob('Build (windows)', {
   ],
 });
 
-export const codeHub = defineHub('code', [build_linux.id]);
+export const codeHub = defineHub('code', [build_linux]);
 
 export const storybookChromatic = defineJob(
   'Local storybook & chromatic',
@@ -152,7 +152,7 @@ export const storybookChromatic = defineJob(
       },
     ],
   },
-  [codeHub.id]
+  [codeHub]
 );
 
 export const check = defineJob(
@@ -182,7 +182,7 @@ export const check = defineJob(
       ...workflow.cancel_on_failure(),
     ],
   },
-  [codeHub.id]
+  [codeHub]
 );
 
 export const lint = defineJob(
@@ -210,7 +210,7 @@ export const lint = defineJob(
       },
     ],
   },
-  [codeHub.id]
+  [codeHub]
 );
 
 export const knip = defineJob(
@@ -231,7 +231,7 @@ export const knip = defineJob(
       },
     ],
   },
-  [codeHub.id]
+  [codeHub]
 );
 
 export const testsUnit_linux = defineJob(
@@ -260,7 +260,7 @@ export const testsUnit_linux = defineJob(
       ...workflow.cancel_on_failure(),
     ],
   },
-  [codeHub.id]
+  [codeHub]
 );
 
 export const testsStories_linux = defineJob(
@@ -289,7 +289,7 @@ export const testsStories_linux = defineJob(
       ...workflow.cancel_on_failure(),
     ],
   },
-  [codeHub.id]
+  [codeHub]
 );
 
 export const testUnit_windows = defineJob(
@@ -319,7 +319,7 @@ export const testUnit_windows = defineJob(
       testResults.persist(`code/test-results`),
     ],
   },
-  [build_windows.id]
+  [build_windows]
 );
 
 export const benchmarkPackages = defineJob(
@@ -343,5 +343,5 @@ export const benchmarkPackages = defineJob(
       },
     ],
   },
-  [codeHub.id]
+  [codeHub]
 );

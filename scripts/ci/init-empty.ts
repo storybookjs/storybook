@@ -1,6 +1,12 @@
 import { build_linux } from './code';
 import { server, verdaccio, workflow } from './utils/helpers';
-import { type Workflow, defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
+import {
+  type JobsOrHub,
+  type Workflow,
+  defineHub,
+  defineJob,
+  isWorkflowOrAbove,
+} from './utils/types';
 
 export const defineEmptyInitFlow = (template: string) =>
   defineJob(
@@ -41,7 +47,7 @@ export const defineEmptyInitFlow = (template: string) =>
       ],
     },
 
-    [initEmptyHub.id]
+    [initEmptyHub]
   );
 
 export function defineEmptyInitFeatures() {
@@ -82,7 +88,7 @@ export function defineEmptyInitFeatures() {
         },
       ],
     },
-    [initEmptyHub.id]
+    [initEmptyHub]
   );
 }
 
@@ -125,14 +131,14 @@ export function defineEmptyInitWindows() {
         },
       ],
     },
-    [initEmptyHub.id]
+    [initEmptyHub]
   );
 }
 
-export const initEmptyHub = defineHub('init-empty', [build_linux.id]);
+export const initEmptyHub = defineHub('init-empty', [build_linux]);
 
 export function getInitEmpty(workflow: Workflow) {
-  const initEmpty = ['react-vite-ts'].map(defineEmptyInitFlow);
+  const initEmpty: JobsOrHub[] = ['react-vite-ts'].map(defineEmptyInitFlow);
 
   if (isWorkflowOrAbove(workflow, 'merged')) {
     initEmpty.push(...['nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'].map(defineEmptyInitFlow));

@@ -127,7 +127,7 @@ function defineSandboxJob_dev({
 export function defineSandboxFlow<Key extends string>(key: Key) {
   const id = toId(key);
   const data = sandboxTemplates.allTemplates[key as keyof typeof sandboxTemplates.allTemplates];
-  const { skipTasks = [], name } = data;
+  const { skipTasks = [], name, inDevelopment } = data;
 
   const path = key.replace('/', '-');
 
@@ -176,7 +176,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           {
             run: {
               name: 'Create Sandboxes',
-              command: `yarn task sandbox --template ${key} --no-link -s sandbox --debug`,
+              command: `yarn task sandbox --template ${key} --no-link -s ${inDevelopment ? 'generate' : 'sandbox'} --debug`,
               environment: {
                 STORYBOOK_TELEMETRY_DEBUG: 1,
                 STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',

@@ -178,6 +178,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               name: 'Create Sandboxes',
               command: `yarn task sandbox --template ${key} --no-link -s ${inDevelopment ? 'generate' : 'sandbox'} --debug`,
               environment: {
+                STORYBOOK_SANDBOX_GENERATE: 1,
                 STORYBOOK_TELEMETRY_DEBUG: 1,
                 STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
               },

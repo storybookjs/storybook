@@ -861,7 +861,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   await writeConfig(mainConfig);
 };
 
-export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
+export const extendPreview: Task['run'] = async ({ template, sandboxDir, key }) => {
   logger.log('📝 Extending preview.js');
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
 
@@ -889,22 +889,28 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   previewConfig.setImport(['sb'], 'storybook/test');
   let config = formatConfig(previewConfig);
 
-  const mockBlock = [
-    "sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');",
-    "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });",
-    "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');",
-    "sb.mock(import('lodash-es'));",
-    "sb.mock(import('lodash-es/add'));",
-    "sb.mock(import('lodash-es/sum'));",
-    "sb.mock(import('uuid'));",
-    '',
-  ].join('\n');
+  const isCoreRenderer =
+    template.expected.renderer.startsWith('@storybook/') &&
+    template.expected.renderer !== '@storybook/server';
 
-  // find last import statement and append sb.mock calls
-  config = config.replace(
-    'import { sb } from "storybook/test";',
-    `import { sb } from 'storybook/test';\n\n${mockBlock}`
-  );
+  if (isCoreRenderer) {
+    const mockBlock = [
+      "sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');",
+      "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });",
+      "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');",
+      "sb.mock(import('lodash-es'));",
+      "sb.mock(import('lodash-es/add'));",
+      "sb.mock(import('lodash-es/sum'));",
+      "sb.mock(import('uuid'));",
+      '',
+    ].join('\n');
+
+    // find last import statement and append sb.mock calls
+    config = config.replace(
+      'import { sb } from "storybook/test";',
+      `import { sb } from 'storybook/test';\n\n${mockBlock}`
+    );
+  }
 
   await writeFile(previewConfig.fileName, config);
 };

@@ -1029,7 +1029,7 @@ export const daily: TemplateKey[] = [
   'lit-vite/default-js',
   'svelte-vite/default-js',
   'nextjs/prerelease',
-  'qwik-vite/default-ts',
+  // 'qwik-vite/default-ts',
   'preact-vite/default-js',
   'html-vite/default-js',
   'internal/react16-webpack',

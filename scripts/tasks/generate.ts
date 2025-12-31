@@ -25,6 +25,9 @@ export const generate: Task = {
       return isReady;
     }
     if ('inDevelopment' in template && template.inDevelopment && link) {
+      if (pathExists(join(REPROS_DIRECTORY, key))) {
+        return true;
+      }
       throw new Error('Cannot link an in development template');
     }
     return isReady;

@@ -1,5 +1,5 @@
 import { ROOT_DIR } from './constants';
-import { type Job, type JobsOrHub } from './types';
+import { type JobsOrHub } from './types';
 
 export const workspace = {
   attach: (at = ROOT_DIR) => {

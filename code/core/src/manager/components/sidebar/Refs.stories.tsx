@@ -194,6 +194,7 @@ export const Optimized = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -205,6 +206,7 @@ export const NoEntries = () => (
     hasEntries={false}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -216,6 +218,7 @@ export const IsEmpty = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -227,6 +230,7 @@ export const StartInjectedUnknown = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -238,6 +242,7 @@ export const StartInjectedLoading = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -249,6 +254,7 @@ export const StartInjectedReady = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -260,6 +266,7 @@ export const Versions = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -271,6 +278,7 @@ export const VersionsMissingCurrent = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -282,6 +290,7 @@ export const Errored = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -293,6 +302,7 @@ export const ErroredMobile = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -339,6 +349,7 @@ export const Auth = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -350,6 +361,7 @@ export const Long = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
@@ -362,6 +374,7 @@ export const WithSourceCode = () => (
     hasEntries={true}
     isLoading={false}
     isBrowsing
+    isDevelopment
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}

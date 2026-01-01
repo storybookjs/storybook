@@ -3,12 +3,13 @@ import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import type { StatusValue } from 'storybook/internal/types';
-import {
-  type API_HashEntry,
-  type StatusByTypeId,
-  type StatusesByStoryIdAndTypeId,
-  type StoryId,
+import type {
+  API_HashEntry,
+  API_SidebarOptions,
+  StatusByTypeId,
+  StatusValue,
+  StatusesByStoryIdAndTypeId,
+  StoryId,
 } from 'storybook/internal/types';
 
 import {
@@ -143,6 +144,7 @@ interface NodeProps {
   item: Item;
   refId: string;
   docsMode: boolean;
+  isDevelopment: boolean;
   isOrphan: boolean;
   isDisplayed: boolean;
   isSelected: boolean;
@@ -197,6 +199,11 @@ const statusOrder: StatusValue[] = [
   'status-value:unknown',
 ];
 
+const SpacerDiv = styled.div({
+  width: 28,
+  height: 28,
+});
+
 const Node = React.memo<NodeProps>(function Node(props) {
   const {
     item,
@@ -204,6 +211,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     groupStatus,
     refId,
     docsMode,
+    isDevelopment,
     isOrphan,
     isDisplayed,
     isSelected,
@@ -220,6 +228,8 @@ const Node = React.memo<NodeProps>(function Node(props) {
   if (!isDisplayed) {
     return null;
   }
+
+  const renderContext = { isMobile, location: 'sidebar' as const };
 
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
@@ -276,6 +286,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         <LeafNode
           // @ts-expect-error (non strict)
           style={isSelected ? {} : { color: textColor }}
+          aria-label={item.renderAriaLabel?.(item, api, renderContext)}
           href={getLink(item, refId)}
           id={id}
           depth={isOrphan ? item.depth : item.depth - 1}
@@ -289,8 +300,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           }}
           {...(item.type === 'docs' && { docsMode })}
         >
-          {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
-            item.name}
+          {item.renderLabel?.(item, api, renderContext) || item.name}
         </LeafNode>
         {isSelected && (
           <SkipToContentLink asChild ariaLabel={false}>
@@ -325,7 +335,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
       >
         <CollapseButton
           variant="ghost"
-          ariaLabel={isExpanded ? 'Collapse' : 'Expand'}
+          ariaLabel={item.renderAriaLabel?.(item, api, renderContext)}
           data-action="collapse-root"
           onClick={(event) => {
             event.preventDefault();
@@ -334,7 +344,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           aria-expanded={isExpanded}
         >
           <CollapseIcon isExpanded={isExpanded} />
-          {item.renderLabel?.(item, api) || item.name}
+          {item.renderLabel?.(item, api, renderContext) || item.name}
         </CollapseButton>
         {isExpanded && (
           <Button
@@ -400,6 +410,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           style={color && !isSelected ? { color } : {}}
           aria-controls={children.join(' ')}
           aria-expanded={isExpanded}
+          aria-label={item.renderAriaLabel?.(item, api, renderContext)}
           depth={isOrphan ? item.depth : item.depth - 1}
           isExpandable={children.length > 0}
           isExpanded={isExpanded}
@@ -428,8 +439,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
             }
           }}
         >
-          {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
-            item.name}
+          {item.renderLabel?.(item, api, renderContext) || item.name}
         </BranchNode>
         {isSelected && (
           <SkipToContentLink asChild ariaLabel={false}>
@@ -449,9 +459,9 @@ const Node = React.memo<NodeProps>(function Node(props) {
               <UseSymbol type="dot" />
             </svg>
           </StatusButton>
-        ) : (
-          itemStatusButton
-        )}
+        ) : itemStatusButton || isDevelopment ? (
+          <SpacerDiv />
+        ) : null}
       </LeafNodeStyleWrapper>
     );
   }
@@ -474,6 +484,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     >
       <LeafNode
         style={itemColor && !isSelected ? { color: itemColor } : {}}
+        aria-label={item.renderAriaLabel?.(item, api, renderContext)}
         href={getLink(item, refId)}
         id={id}
         depth={isOrphan ? item.depth : item.depth - 1}
@@ -486,8 +497,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           }
         }}
       >
-        {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
-          item.name}
+        {item.renderLabel?.(item, api, renderContext) || item.name}
       </LeafNode>
       {isSelected && (
         <SkipToContentLink ariaLabel={false} asChild>
@@ -522,6 +532,7 @@ const Root = React.memo<NodeProps & { expandableDescendants: string[] }>(functio
 
 export const Tree = React.memo<{
   isBrowsing: boolean;
+  isDevelopment: boolean;
   isMain: boolean;
   allStatuses?: StatusesByStoryIdAndTypeId;
   refId: string;
@@ -533,6 +544,7 @@ export const Tree = React.memo<{
   onSelectStoryId: (storyId: string) => void;
 }>(function Tree({
   isBrowsing,
+  isDevelopment,
   refId,
   data,
   allStatuses,
@@ -714,6 +726,7 @@ export const Tree = React.memo<{
           groupStatus={groupStatus}
           refId={refId}
           docsMode={docsMode}
+          isDevelopment={isDevelopment}
           isOrphan={orphanIds.some((oid) => itemId === oid || itemId.startsWith(`${oid}-`))}
           isDisplayed={isDisplayed}
           isSelected={selectedStoryId === itemId}
@@ -729,6 +742,7 @@ export const Tree = React.memo<{
     collapsedData,
     collapsedItems,
     docsMode,
+    isDevelopment,
     expandableDescendants,
     expanded,
     groupStatus,

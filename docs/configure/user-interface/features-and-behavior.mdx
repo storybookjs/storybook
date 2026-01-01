@@ -36,7 +36,17 @@ The following options are configurable under the `sidebar` namespace:
 | ------------------ | -------- | ------------------------------------------------------------- | ----------------------------------------------------- |
 | **showRoots**      | Boolean  | Display the top-level nodes as a "root" in the sidebar        | `false`                                               |
 | **collapsedRoots** | Array    | Set of root node IDs to visually collapse by default          | `['misc', 'other']`                                   |
-| **renderLabel**    | Function | Create a custom label for tree nodes; must return a ReactNode | `(item, api) => <abbr title="...">{item.name}</abbr>` |
+| **renderAriaLabel**    | Function | Create a custom ARIA label for tree nodes; must return a human-readable string | `(item, api, context) => `${item.name}${item.tags.includes('deprecated') ? ' (deprecated)' : ''}` |
+| **renderLabel**    | Function | Create a custom label for tree nodes; must return a ReactNode | `(item, api, context) => <abbr title="...">{item.name}</abbr>` |
+
+The `sidebar.renderLabel` and `sidebar.renderAriaLabel` functions are called on every tree node in the sidebar, but also in the bottom bar of the mobile layout (for the current entry and its parents). If your `renderLabel` function adds contextual UI elements, we recommend removing them in the `bottom-bar`. Both functions receive the following parameters:
+
+| Name        | Type            | Description                           | Example Value                            |
+| ----------- | --------------- | ------------------------------------- | ---------------------------------------- |
+| **item**    | `API_HashEntry` | The index entry being rendered        | `{ type: 'story', name: 'ButtonLarge' }` |
+| **api**     | `API`           | The [Storybook API](https://storybook.js.org/docs/addons/addons-api#storybook-api) instance | `{ ... }` |
+| **context** | `{ isMobile: boolean; location: 'sidebar' \| 'bottom-bar' }` | Information about where the label is being rendered | `{ isMobile: true, location: 'bottom-bar' }` |
+
 
 The following options are configurable under the `toolbar` namespace:
 

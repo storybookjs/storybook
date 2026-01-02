@@ -209,7 +209,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "properties": {},
 				      "type": "object",
 				    },
-				    "name": "get-ui-building-instructions",
+				    "name": "get-storybook-story-instructions",
 				    "title": "UI Component Building Instructions",
 				  },
 				  {
@@ -294,10 +294,10 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(response.result.content[0].text).toContain('NonExistent');
 		});
 	});
-	describe('Tool: get-ui-building-instructions', () => {
+	describe('Tool: get-storybook-story-instructions', () => {
 		it('should return UI building instructions', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-ui-building-instructions',
+				name: 'get-storybook-story-instructions',
 				arguments: {},
 			});
 
@@ -476,7 +476,7 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
 				  "get-story-urls",
-				  "get-ui-building-instructions",
+				  "get-storybook-story-instructions",
 				]
 			`);
 		});

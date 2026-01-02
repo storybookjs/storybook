@@ -4,6 +4,24 @@ When writing UI, prefer breaking larger components up into smaller parts.
 
 ALWAYS write a Storybook story for any component written. If editing a component, ensure appropriate changes have been made to stories for that component.
 
+## How to write good stories
+
+Goal: Cover every distinct piece of business logic and state the component can reach (happy paths, error/edge states, loading, permissions/roles, empty states, variations from props/context). Avoid redundant stories that show the same logic.
+
+Interactivity: If the component is interactive, add play tests that drive the UI with storybook/test utilities (e.g., fn, userEvent, expect). Simulate key user flows: clicking buttons/links, typing, focus/blur, keyboard nav, form submit, async responses, toggle/selection changes, pagination/filters, etc. When passing `fn` functions as `args` for callback functions, make sure to add a play function which interacts with the component and assert whether the callback function was actually called.
+
+Data/setup: Provide realistic props, state, and mocked data. Include meaningful labels/text to make behaviors observable. Stub network/services with deterministic fixtures; keep stories reliable.
+
+Assertions: In play, assert the visible outcome of the interaction (text, aria state, enabled/disabled, class/state changes, emitted events). Prefer role/label-based queries.
+
+Variants to consider (pick only those that change behavior): default vs. alternate themes; loading vs. loaded vs. empty vs. error; validated vs. invalid input; permissions/roles/capabilities; feature flags; size/density/layout variants that alter logic.
+
+Accessibility: Use semantic roles/labels; ensure focusable/keyboard interactions are test-covered where relevant.
+
+Naming/structure: Use clear story names that describe the scenario (“Error state after failed submit”). Group related variants logically; don’t duplicate.
+
+Imports/format: Import Meta/StoryObj from the framework package; import test helpers from storybook/test (not @storybook/test). Keep stories minimal—only what's needed to demonstrate behavior.
+
 ## Storybook 9 Essential Changes for Story Writing
 
 ### Package Consolidation

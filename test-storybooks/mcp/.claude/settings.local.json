@@ -1,11 +1,14 @@
 {
 	"permissions": {
 		"allow": [
-			"mcp__storybook-addon-mcp__get-ui-building-instructions",
+			"mcp__storybook-addon-mcp__get-storybook-story-instructions",
 			"mcp__storybook-addon-mcp__get-story-urls",
 			"mcp__storybook-addon-mcp__list-all-components",
 			"mcp__storybook-addon-mcp__get-component-documentation"
 		]
 	},
-	"enabledMcpjsonServers": ["storybook-addon-mcp", "storybook-mcp"]
+	"enabledMcpjsonServers": [
+		"storybook-addon-mcp",
+		"storybook-mcp"
+	]
 }

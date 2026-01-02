@@ -881,7 +881,11 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setFieldValue(['tags'], ['vitest']);
   }
 
-  if (template.modifications?.skipMocking) {
+  const isCoreRenderer =
+    template.expected.renderer.startsWith('@storybook/') &&
+    template.expected.renderer !== '@storybook/server';
+
+  if (template.modifications?.skipMocking || !isCoreRenderer) {
     await writeConfig(previewConfig);
     return;
   }
@@ -889,28 +893,22 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   previewConfig.setImport(['sb'], 'storybook/test');
   let config = formatConfig(previewConfig);
 
-  const isCoreRenderer =
-    template.expected.renderer.startsWith('@storybook/') &&
-    template.expected.renderer !== '@storybook/server';
+  const mockBlock = [
+    "sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');",
+    "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });",
+    "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');",
+    "sb.mock(import('lodash-es'));",
+    "sb.mock(import('lodash-es/add'));",
+    "sb.mock(import('lodash-es/sum'));",
+    "sb.mock(import('uuid'));",
+    '',
+  ].join('\n');
 
-  if (isCoreRenderer) {
-    const mockBlock = [
-      "sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');",
-      "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });",
-      "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');",
-      "sb.mock(import('lodash-es'));",
-      "sb.mock(import('lodash-es/add'));",
-      "sb.mock(import('lodash-es/sum'));",
-      "sb.mock(import('uuid'));",
-      '',
-    ].join('\n');
-
-    // find last import statement and append sb.mock calls
-    config = config.replace(
-      'import { sb } from "storybook/test";',
-      `import { sb } from 'storybook/test';\n\n${mockBlock}`
-    );
-  }
+  // find last import statement and append sb.mock calls
+  config = config.replace(
+    'import { sb } from "storybook/test";',
+    `import { sb } from 'storybook/test';\n\n${mockBlock}`
+  );
 
   await writeFile(previewConfig.fileName, config);
 };

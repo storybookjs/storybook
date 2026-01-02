@@ -109,6 +109,8 @@ export type Workflow = (typeof parameters.workflow.enum)[number];
 /**
  * Checks if the current workflow is at least the minimum workflow.
  *
+ * `docs` → `normal` → `merged` → `daily`
+ *
  * @example
  *
  * ```ts

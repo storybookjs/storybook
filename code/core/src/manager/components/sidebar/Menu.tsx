@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 import { ActionList, Button, PopoverProvider, ToggleButton } from 'storybook/internal/components';
 
-import { CloseIcon, CogIcon } from '@storybook/icons';
+import { AccessibilityIcon, CloseIcon, CogIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { type Theme, css, styled } from 'storybook/theming';
@@ -133,12 +133,12 @@ const SidebarMenuList: FC<{
 export interface SidebarMenuProps {
   menu: MenuList;
   isHighlighted?: boolean;
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }
 
-export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick }) => {
+export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted }) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
-  const { isMobile, setMobileMenuOpen } = useLayout();
+  const { isMobile, setMobileAboutOpen, setMobileA11yStatementOpen, setMobileMenuOpen } =
+    useLayout();
 
   if (isMobile) {
     return (
@@ -146,9 +146,19 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
         <SidebarButton
           padding="small"
           variant="ghost"
+          ariaLabel="Accessibility statement"
+          highlighted={!!isHighlighted}
+          onClick={() => setMobileA11yStatementOpen(true)}
+          isMobile={true}
+        >
+          <AccessibilityIcon />
+        </SidebarButton>
+        <SidebarButton
+          padding="small"
+          variant="ghost"
           ariaLabel="About Storybook"
           highlighted={!!isHighlighted}
-          onClick={onClick}
+          onClick={() => setMobileAboutOpen(true)}
           isMobile={true}
         >
           <CogIcon />

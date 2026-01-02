@@ -6,6 +6,7 @@ import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 import {
+  AccessibilityIcon,
   CheckIcon,
   CommandIcon,
   DocumentIcon,
@@ -84,6 +85,17 @@ export const useMenu = ({
       onClick: () => api.changeSettingsTab('about'),
       closeOnClick: true,
       icon: <InfoIcon />,
+    }),
+    [api]
+  );
+
+  const a11yStatement = useMemo(
+    () => ({
+      id: 'accessibility-statement',
+      title: 'Accessibility statement',
+      onClick: () => api.changeSettingsTab('accessibility-statement'),
+      closeOnClick: true,
+      icon: <AccessibilityIcon />,
     }),
     [api]
   );
@@ -249,10 +261,11 @@ export const useMenu = ({
         ],
         [sidebarToggle, toolbarToogle, addonsToggle, up, down, prev, next, collapse],
         getAddonsShortcuts(),
-        [documentation],
+        [a11yStatement, documentation],
       ] satisfies NormalLink[][],
     [
       about,
+      a11yStatement,
       guide,
       documentation,
       shortcuts,

@@ -3,17 +3,12 @@ import React from 'react';
 import type { Combo, StoriesHash } from 'storybook/manager-api';
 import { Consumer, experimental_useStatusStore } from 'storybook/manager-api';
 
-import type { SidebarProps as SidebarComponentProps } from '../components/sidebar/Sidebar';
 import { Sidebar as SidebarComponent } from '../components/sidebar/Sidebar';
 import { useMenu } from './Menu';
 
 export type Item = StoriesHash[keyof StoriesHash];
 
-interface SidebarProps {
-  onMenuClick?: SidebarComponentProps['onMenuClick'];
-}
-
-const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
+const Sidebar = React.memo(function SidebarContainer() {
   const mapper = ({ state, api }: Combo) => {
     const {
       ui: { name, url, enableShortcuts },
@@ -63,7 +58,6 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
           <SidebarComponent
             {...state}
             menu={menu}
-            onMenuClick={onMenuClick}
             allStatuses={allStatuses}
             enableShortcuts={enableShortcuts}
           />

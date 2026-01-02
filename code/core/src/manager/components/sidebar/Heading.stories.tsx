@@ -239,3 +239,17 @@ export const SkipToCanvasLinkFocused: StoryObj<typeof Heading> = {
     screen.getAllByText('Skip to canvas').forEach((x) => x.focus());
   },
 };
+
+export const AccessibilityStatementLinkFocused: StoryObj<typeof Heading> = {
+  args: {
+    menu: menuItems,
+    a11yStatementHref: './?path=/settings/accessibility-statement',
+    isLoading: false,
+  },
+  globals: { sb_theme: 'light' },
+  parameters: { layout: 'padded', chromatic: { delay: 300 } },
+  play: () => {
+    // focus each instance for chromatic/storybook's stacked theme
+    screen.getAllByText('Accessibility Statement').forEach((x) => x.focus());
+  },
+};

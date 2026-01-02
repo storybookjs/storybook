@@ -8,7 +8,6 @@ import { addons } from 'storybook/manager-api';
 import { Global, createGlobal } from 'storybook/theming';
 
 import { Layout } from './components/layout/Layout';
-import { useLayout } from './components/layout/LayoutProvider';
 import Panel from './container/Panel';
 import Preview from './container/Preview';
 import Sidebar from './container/Sidebar';
@@ -21,8 +20,6 @@ type Props = {
 };
 
 export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }: Props) => {
-  const { setMobileAboutOpen } = useLayout();
-
   /**
    * Lets us tell the UI whether or not keyboard shortcuts are enabled, in places where it's not
    * convenient to load the addons singleton to figure it out.
@@ -67,7 +64,7 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
         managerLayoutState={managerLayoutState}
         setManagerLayoutState={setManagerLayoutState}
         slotMain={<Preview id="main" withLoader />}
-        slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
+        slotSidebar={<Sidebar />}
         slotPanel={<Panel />}
         slotPages={pages.map(({ id, render: Content }) => (
           <Content key={id} />

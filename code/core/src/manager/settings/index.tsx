@@ -12,6 +12,7 @@ import { types, useStorybookApi, useStorybookState } from 'storybook/manager-api
 import { styled } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../keybinding';
+import { A11yStatementPage } from './A11yStatementPage';
 import { AboutPage } from './AboutPage';
 import { GuidePage } from './GuidePage';
 import { ShortcutsPage } from './ShortcutsPage';
@@ -82,6 +83,16 @@ const Pages: FC<{
       children: (
         <RouteWrapper path="shortcuts">
           <ShortcutsPage key="shortcuts" />
+        </RouteWrapper>
+      ),
+    });
+
+    tabsToInclude.push({
+      id: 'accessibility-statement',
+      title: 'Accessibility statement',
+      children: (
+        <RouteWrapper path="accessibility-statement">
+          <A11yStatementPage key="a11y" />
         </RouteWrapper>
       ),
     });

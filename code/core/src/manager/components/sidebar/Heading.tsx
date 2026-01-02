@@ -6,15 +6,15 @@ import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { Brand } from './Brand';
-import type { MenuList, SidebarMenuProps } from './Menu';
+import type { MenuList } from './Menu';
 import { SidebarMenu } from './Menu';
 
 export interface HeadingProps {
   menuHighlighted?: boolean;
   menu: MenuList;
   skipLinkHref?: string;
+  a11yStatementHref?: string;
   isLoading: boolean;
-  onMenuClick?: SidebarMenuProps['onClick'];
 }
 
 const BrandArea = styled.div(({ theme }) => ({
@@ -81,8 +81,7 @@ export const Heading: FC<HeadingProps & ComponentProps<typeof HeadingWrapper>> =
   menuHighlighted = false,
   menu,
   skipLinkHref,
-  isLoading,
-  onMenuClick,
+  a11yStatementHref,
   ...props
 }) => {
   return (
@@ -95,11 +94,19 @@ export const Heading: FC<HeadingProps & ComponentProps<typeof HeadingWrapper>> =
         </SkipToCanvasLink>
       )}
 
+      {a11yStatementHref && (
+        <SkipToCanvasLink ariaLabel={false} asChild>
+          <a href={a11yStatementHref} rel="canonical" tabIndex={0}>
+            Accessibility Statement
+          </a>
+        </SkipToCanvasLink>
+      )}
+
       <BrandArea>
         <Brand />
       </BrandArea>
 
-      <SidebarMenu menu={menu} isHighlighted={menuHighlighted} onClick={onMenuClick} />
+      <SidebarMenu menu={menu} isHighlighted={menuHighlighted} />
     </HeadingWrapper>
   );
 };

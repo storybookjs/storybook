@@ -15,7 +15,6 @@ import { useLayout } from '../layout/LayoutProvider';
 import { ChecklistWidget } from './ChecklistWidget';
 import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
 import { Explorer } from './Explorer';
-import type { HeadingProps } from './Heading';
 import { Heading } from './Heading';
 import { Search } from './Search';
 import { SearchResults } from './SearchResults';
@@ -111,7 +110,6 @@ export interface SidebarProps extends API_LoadedRefData {
   refId?: string;
   menuHighlighted?: boolean;
   enableShortcuts?: boolean;
-  onMenuClick?: HeadingProps['onMenuClick'];
   showCreateStoryButton?: boolean;
   indexJson?: StoryIndex;
   isDevelopment?: boolean;
@@ -130,7 +128,6 @@ export const Sidebar = React.memo(function Sidebar({
   enableShortcuts = true,
   isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
   refs = {},
-  onMenuClick,
   showCreateStoryButton = isDevelopment && isRendererReact,
 }: SidebarProps) {
   const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
@@ -163,8 +160,8 @@ export const Sidebar = React.memo(function Sidebar({
               menuHighlighted={menuHighlighted}
               menu={menu}
               skipLinkHref="#storybook-preview-wrapper"
+              a11yStatementHref="./?path=/settings/accessibility-statement"
               isLoading={isLoading}
-              onMenuClick={onMenuClick}
             />
             {!isLoading && global.CONFIG_TYPE === 'DEVELOPMENT' && <ChecklistWidget />}
           </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type FC, useEffect } from 'react';
 
 import { TooltipLinkList } from 'storybook/internal/components';
 
@@ -13,7 +13,7 @@ import { styled } from 'storybook/theming';
 import { initialState } from '../../../shared/checklist-store/checklistData.state';
 import { useMenu } from '../../container/Menu';
 import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock';
-import { LayoutProvider } from '../layout/LayoutProvider';
+import { LayoutProvider, useLayout } from '../layout/LayoutProvider';
 import { type MenuList, SidebarMenu } from './Menu';
 
 const fakemenu: MenuList = [
@@ -220,5 +220,90 @@ export const ExpandedWithWhatsNew: Story = {
     await Expanded.play(context);
     const releaseNotes = await canvas.queryByText(/What's new/);
     await expect(releaseNotes).not.toBeInTheDocument();
+  },
+};
+
+const LayoutContainerPrinter: FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isMobileMenuOpen, isMobileA11yStatementOpen, isMobileAboutOpen, setMobileMenuOpen } =
+    useLayout();
+
+  useEffect(() => {
+    setMobileMenuOpen(true);
+  }, [setMobileMenuOpen]);
+
+  return (
+    <>
+      {children}
+      <hr />
+      <ul>
+        <li>isMobileMenuOpen: {isMobileMenuOpen.toString()}</li>
+        <li>isMobileA11yStatementOpen: {isMobileA11yStatementOpen.toString()}</li>
+        <li>isMobileAboutOpen: {isMobileAboutOpen.toString()}</li>
+      </ul>
+    </>
+  );
+};
+
+const MobileLayoutProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <LayoutProvider forceDesktop={false}>
+      <LayoutContainerPrinter>{children}</LayoutContainerPrinter>
+    </LayoutProvider>
+  );
+};
+
+export const Mobile: Story = {
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={managerContext}>
+        <MobileLayoutProvider>{storyFn()}</MobileLayoutProvider>
+      </ManagerContext.Provider>
+    ),
+  ],
+};
+
+export const MobileA11yStatement: Story = {
+  name: 'MobileA11yStatement',
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={managerContext}>
+        <MobileLayoutProvider>{storyFn()}</MobileLayoutProvider>
+      </ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvas }) => {
+    const a11yButton = await canvas.findByRole('button', { name: 'Accessibility statement' });
+    await userEvent.click(a11yButton);
+    await expect(canvas.getByText('isMobileA11yStatementOpen: true')).toBeInTheDocument();
+  },
+};
+
+export const MobileAbout: Story = {
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={managerContext}>
+        <MobileLayoutProvider>{storyFn()}</MobileLayoutProvider>
+      </ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvas }) => {
+    const aboutButton = await canvas.findByRole('button', { name: 'About Storybook' });
+    await userEvent.click(aboutButton);
+    await expect(canvas.getByText('isMobileAboutOpen: true')).toBeInTheDocument();
+  },
+};
+
+export const MobileClose: Story = {
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={managerContext}>
+        <MobileLayoutProvider>{storyFn()}</MobileLayoutProvider>
+      </ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvas }) => {
+    const closeButton = await canvas.findByRole('button', { name: /Close menu/i });
+    await userEvent.click(closeButton);
+    await expect(canvas.getByText('isMobileMenuOpen: false')).toBeInTheDocument();
   },
 };

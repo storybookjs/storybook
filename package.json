@@ -19,7 +19,6 @@
     "ci-tests": "cd code; yarn ci-tests",
     "get-report-message": "cd scripts; yarn get-report-message",
     "get-sandbox-dir": "cd scripts; yarn get-sandbox-dir",
-    "get-template": "cd scripts; yarn get-template",
     "i": "yarn",
     "knip": "cd code; yarn knip",
     "lint": "cd code; yarn lint",

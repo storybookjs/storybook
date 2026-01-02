@@ -206,6 +206,17 @@ yarn build --prod --watch angular storybook addon-docs
 
 You can pick a specific template to use as your sandbox by running `yarn task`, which will prompt you to make further choices about which template you want and which task you want to run.
 
+### Focussing on fixing a sandbox in CI
+
+Our CI runs many sandboxes, especially when selecting the `ci:daily` workflow.
+
+When a particular sandbox is failing, it's preferred to debug locally, but if this is somehow not possible, you can force the Ci to focus on a selection of sandboxes instead of running all. Here's the process of how:
+
+Inside of here you can edit the filter-function:
+https://github.com/storybookjs/storybook/blob/3d49093954243d4d520774243866de840f298bf4/scripts/ci/main.ts#L70-L88
+
+In fact you can filter on any job you wish, only running `test-runner`, `e2e`, `vite`-sandboxes, etc.
+
 ## Troubleshooting 
 
 ### The initialization process throws an error 

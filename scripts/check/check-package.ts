@@ -26,8 +26,8 @@ const tsDiagnostics = getTSDiagnostics(program, normalizedCwd, host);
 if (tsDiagnostics.length > 0) {
   console.log(tsDiagnostics);
   process.exit(1);
-} else {
-  console.log('no type errors');
+} else if (!process.env.CI) {
+  console.log('✅ No type errors');
 }
 
 // TODO, add more package checks here, like:

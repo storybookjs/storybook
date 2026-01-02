@@ -1149,7 +1149,7 @@ parameters:
         type: enum
 version: 2.1
 workflows:
-    daily:
+    daily-legacy-comparison:
         jobs:
             - pretty-docs
             - build

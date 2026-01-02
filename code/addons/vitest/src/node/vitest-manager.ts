@@ -19,6 +19,7 @@ import * as find from 'empathic/find';
 import path, { dirname, join, normalize } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
+import type { Report } from 'storybook/preview-api';
 
 import { COVERAGE_DIRECTORY } from '../constants';
 import { log } from '../logger';
@@ -83,25 +84,35 @@ export class VitestManager {
         ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
         ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
       ],
-      { last: getProjectRoot() }
+      { cwd: getProjectRoot() }
     );
 
-    const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
+    // When there's a workspace config, we need to filter by project name
+    // to ensure we run the correct project that has the storybook plugin configuration
+    const shouldUseProjectFilter = !!vitestWorkspaceConfig;
+    const projectName = shouldUseProjectFilter
+      ? 'storybook:' + process.env.STORYBOOK_CONFIG_DIR
+      : undefined;
+
+    const vitestConfig: any = {
+      root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
+      watch: watch ?? false,
+      passWithNoTests: false,
+      // TODO:
+      // Do we want to enable Vite's default reporter?
+      // The output in the terminal might be too spamy and it might be better to
+      // find a way to just show errors and warnings for example
+      // Otherwise it might be hard for the user to discover Storybook related logs
+      reporters: ['default', new StorybookReporter(this.testManager)],
+      coverage: coverageOptions,
+    };
+
+    if (shouldUseProjectFilter && projectName) {
+      vitestConfig.project = [projectName];
+    }
 
     try {
-      this.vitest = await createVitest('test', {
-        root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
-        watch: watch ?? true,
-        passWithNoTests: false,
-        project: [projectName],
-        // TODO:
-        // Do we want to enable Vite's default reporter?
-        // The output in the terminal might be too spamy and it might be better to
-        // find a way to just show errors and warnings for example
-        // Otherwise it might be hard for the user to discover Storybook related logs
-        reporters: ['default', new StorybookReporter(this.testManager)],
-        coverage: coverageOptions,
-      });
+      this.vitest = await createVitest('test', vitestConfig);
     } catch (err: any) {
       const originalMessage = String(err.message);
       if (originalMessage.includes('Found multiple projects')) {
@@ -368,7 +379,15 @@ export class VitestManager {
     testResults: any[];
     testSummary: { total: number; passed: number; failed: number };
   }> {
-    const { createVitest } = await import('vitest/node');
+    // This flow must reuse the already-initialized Vitest instance in the child process.
+    // Starting a second Vitest/Vite server here can lead to port conflicts and startup failures.
+    await this.vitestRestartPromise;
+    if (!this.vitest) {
+      throw new Error('Vitest is not initialized yet');
+    }
+
+    this.resetGlobalTestNamePattern();
+    await this.cancelCurrentRun();
 
     // Get test specifications for the stories
     const testSpecifications = await this.getStorybookTestSpecifications();
@@ -390,23 +409,13 @@ export class VitestManager {
       };
     }
 
-    // Create a temporary Vitest instance with silent reporters
-    const vitestWorkspaceConfig = find.any(
-      [
-        ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
-        ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
-      ],
-      { last: getProjectRoot() }
-    );
-
-    const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
-
     // Collect test results
     const testResults: any[] = [];
     let totalTests = 0;
     let passedTests = 0;
     let failedTests = 0;
 
+    // Create a temporary reporter that collects results silently
     const silentReporter = new (class implements Reporter {
       onTestCaseResult(testCase: TestCase) {
         const { storyId, reports, componentPath } = testCase.meta() as TaskMeta &
@@ -442,28 +451,23 @@ export class VitestManager {
       onTestRunEnd() {}
     })();
 
-    const vitest = await createVitest('test', {
-      root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
-      watch: false,
-      passWithNoTests: false,
-      project: [projectName],
-      reporters: [silentReporter], // Only use our silent reporter
-      coverage: { enabled: false },
-    });
+    // Temporarily replace the reporters to suppress output and collect results
+    const originalReporters = this.vitest.config.reporters;
+    const originalStdoutWrite = process.stdout.write;
+    const originalStderrWrite = process.stderr.write;
+    this.vitest.config.reporters = [silentReporter];
 
     try {
       // Suppress console output during test execution
-      const originalStdoutWrite = process.stdout.write;
-      const originalStderrWrite = process.stderr.write;
       process.stdout.write = () => true;
       process.stderr.write = () => true;
 
-      await vitest.runTestSpecifications(filteredTestSpecifications, true);
-
+      await this.vitest.runTestSpecifications(filteredTestSpecifications, true);
+    } finally {
       process.stdout.write = originalStdoutWrite;
       process.stderr.write = originalStderrWrite;
-    } finally {
-      await vitest.close();
+      this.vitest.config.reporters = originalReporters;
+      this.resetGlobalTestNamePattern();
     }
 
     return {

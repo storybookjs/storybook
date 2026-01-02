@@ -41,6 +41,8 @@ const testStateToStatusValueMap: Record<TestState | 'warning', StatusValue> = {
 };
 
 export class TestManager {
+  private options: TestManagerOptions;
+
   public store: TestManagerOptions['store'];
 
   public vitestManager: VitestManager;
@@ -63,6 +65,7 @@ export class TestManager {
   }[] = [];
 
   constructor(options: TestManagerOptions) {
+    this.options = options;
     this.store = options.store;
     this.componentTestStatusStore = options.componentTestStatusStore;
     this.a11yStatusStore = options.a11yStatusStore;
@@ -77,7 +80,10 @@ export class TestManager {
     this.store
       .untilReady()
       .then(() => {
-        return this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage });
+        return this.vitestManager.startVitest({
+          coverage: this.store.getState().config.coverage,
+          watch: this.store.getState().watching,
+        });
       })
       .then(() => this.onReady?.())
       .catch((e) => {
@@ -321,5 +327,13 @@ export class TestManager {
         },
       });
     });
+  }
+
+  /** Run tests for story discovery - completely isolated from UI and normal test flow */
+  async runStoryDiscoveryTests(storyIds: string[]): Promise<{
+    testResults: any[];
+    testSummary: { total: number; passed: number; failed: number };
+  }> {
+    return this.vitestManager.runStoryDiscoveryTests(storyIds);
   }
 }

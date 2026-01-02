@@ -37,7 +37,7 @@ const channel: Channel = new Channel({
 
 const store = UniversalStore.create<StoreState, StoreEvent>(storeOptions);
 
-new TestManager({
+const testManager = new TestManager({
   store,
   componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
   a11yStatusStore: getStatusStore(STATUS_TYPE_ID_A11Y),
@@ -56,6 +56,22 @@ new TestManager({
   storybookOptions: {
     configDir: process.env.STORYBOOK_CONFIG_DIR || '',
   } as any,
+});
+
+// Handle story discovery requests directly in the child process
+channel.on('story-discovery-test-run', async (storyIds: string[]) => {
+  try {
+    const results = await testManager.vitestManager.runStoryDiscoveryTests(storyIds);
+    process.send?.({
+      type: 'story-discovery-result',
+      result: results,
+    });
+  } catch (error: any) {
+    process.send?.({
+      type: 'story-discovery-error',
+      error: error.message,
+    });
+  }
 });
 
 const exit = (code = 0) => {

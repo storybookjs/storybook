@@ -33,7 +33,7 @@ import {
   storeOptions,
 } from './constants';
 import { log } from './logger';
-import { runTestRunner } from './node/boot-test-runner';
+import { runStoryDiscoveryTests, runTestRunner } from './node/boot-test-runner';
 import { TestManager } from './node/test-manager';
 import { VitestManager } from './node/vitest-manager';
 import type { CachedState, ErrorLike, StoreState } from './types';
@@ -247,29 +247,10 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       const storyIds = data.payload.storyIds || [];
       const requestId = data.id;
 
-      console.log('Running real tests for story discovery:', storyIds);
+      console.log('Running super real tests for story discovery:', storyIds);
 
-      // Create a temporary test manager and vitest manager for isolated execution
-      const testManager = new TestManager({
-        store: store as any,
-        componentTestStatusStore: {
-          set: () => {},
-          unset: () => {},
-        } as any,
-        a11yStatusStore: {
-          set: () => {},
-          unset: () => {},
-        } as any,
-        testProviderStore: {
-          runWithState: (callback: () => Promise<void>) => callback(),
-        } as any,
-        storybookOptions: options,
-      });
-
-      const vitestManager = new VitestManager(testManager);
-
-      // Run tests directly using the isolated story discovery method
-      const testRunResult = await vitestManager.runStoryDiscoveryTests(storyIds);
+      // Run tests using the existing child process infrastructure
+      const testRunResult = await runStoryDiscoveryTests(storyIds, channel, store, options);
 
       console.log('Real test results:', testRunResult.testResults);
       console.log('Test summary:', testRunResult.testSummary);

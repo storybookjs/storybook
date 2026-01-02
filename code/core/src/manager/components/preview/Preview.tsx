@@ -8,6 +8,7 @@ import type { Addon_BaseType, Addon_WrapperType } from 'storybook/internal/types
 
 import { global } from '@storybook/global';
 
+import { useLandmark } from '@react-aria/landmark';
 import type { TabListState } from '@react-stately/tabs';
 import { Helmet } from 'react-helmet-async';
 import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-api';
@@ -110,6 +111,12 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
     }
   }, [entry, viewMode, storyId, api]);
 
+  const mainRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { 'aria-labelledby': 'main-preview-heading', role: 'main' },
+    mainRef
+  );
+
   return (
     <Fragment>
       {previewId === 'main' && (
@@ -127,7 +134,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
             tools={tools}
             toolsExtra={toolsExtra}
           />
-          <S.FrameWrap aria-labelledby="main-preview-heading">
+          <S.FrameWrap ref={mainRef} {...landmarkProps}>
             <h2 id="main-preview-heading" className="sb-sr-only">
               Main preview area
             </h2>

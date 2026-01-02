@@ -19,6 +19,7 @@ import type {
 import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/icons';
 
 import { internal_fullTestProviderStore } from '#manager-stores';
+import { useLandmark } from '@react-aria/landmark';
 import { styled } from 'storybook/theming';
 
 import { Optional } from '../Optional/Optional';
@@ -253,6 +254,15 @@ export const TestingWidget = ({
     return null;
   }
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { landmarkProps } = useLandmark(
+    {
+      'aria-labelledby': 'storybook-testing-widget-heading',
+      role: 'region',
+    },
+    cardRef
+  );
+
   return (
     <HoverCard
       id="storybook-testing-module"
@@ -261,7 +271,12 @@ export const TestingWidget = ({
       outlineColor={
         isCrashed || (isRunning && errorCount > 0) ? 'negative' : isUpdated ? 'positive' : undefined
       }
+      ref={cardRef}
+      outlineProps={landmarkProps}
     >
+      <h2 id="storybook-testing-widget-heading" className="sb-sr-only">
+        Component tests
+      </h2>
       <Bar {...(hasTestProviders ? { onClick: (e) => toggleCollapsed(e) } : {})}>
         <Action>
           {hasTestProviders && (

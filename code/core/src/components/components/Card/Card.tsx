@@ -1,4 +1,4 @@
-import React, { type ComponentProps, forwardRef } from 'react';
+import React, { type ComponentProps, type DOMAttributes, forwardRef } from 'react';
 
 import type { CSSObject, color } from 'storybook/theming';
 import { keyframes, styled } from 'storybook/theming';
@@ -92,15 +92,16 @@ const CardOutline = styled.div<{
 interface CardProps extends ComponentProps<typeof CardContent> {
   outlineAnimation?: 'none' | 'rainbow' | 'spin';
   outlineColor?: keyof typeof color;
+  outlineProps?: DOMAttributes<HTMLDivElement>;
 }
 
 export const Card = Object.assign(
   forwardRef<HTMLDivElement, CardProps>(function Card(
-    { outlineAnimation = 'none', outlineColor, ...props },
+    { outlineAnimation = 'none', outlineColor, outlineProps = {}, ...props },
     ref
   ) {
     return (
-      <CardOutline animation={outlineAnimation} color={outlineColor} ref={ref}>
+      <CardOutline animation={outlineAnimation} color={outlineColor} ref={ref} {...outlineProps}>
         <CardContent {...props} />
       </CardOutline>
     );

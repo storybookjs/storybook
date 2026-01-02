@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 import { AbstractToolbar, Button, Separator, TabList } from 'storybook/internal/components';
 import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
+import { useLandmark } from '@react-aria/landmark';
 import type { TabListState } from '@react-stately/tabs';
 import {
   type API,
@@ -83,12 +84,22 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
   tabs,
   tabState,
 }) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    {
+      'aria-labelledby': 'sb-preview-toolbar-title',
+      role: 'region',
+    },
+    sectionRef
+  );
+
   return isShown && (tabs || tools || toolsExtra) ? (
     <StyledSection
       className="sb-bar"
       key="toolbar"
       data-testid="sb-preview-toolbar"
-      aria-labelledby="sb-preview-toolbar-title"
+      ref={sectionRef}
+      {...landmarkProps}
     >
       <h2 id="sb-preview-toolbar-title" className="sb-sr-only">
         Toolbar

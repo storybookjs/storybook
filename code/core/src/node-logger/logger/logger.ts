@@ -178,9 +178,14 @@ export const logBox = (message: string, { title, ...options }: BoxOptions = {}) 
         console.log(message);
       }
     }
-  } catch (error) {
-    console.error(error);
-    console.log(message);
+  } catch {
+    /**
+     * Clack.logBox can throw with "Invalid count value"-errors
+     *
+     * Possibly it may only happen on CI, but considering rendering a box is not critical, we will
+     * just log the message to the console and discard the error.
+     */
+    clack.log.message(message);
   }
 };
 

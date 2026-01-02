@@ -5,6 +5,7 @@ import { Button } from 'storybook/internal/components';
 import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
 
+import { useLandmark } from '@react-aria/landmark';
 import type { DownshiftState, StateChangeOptions } from 'downshift';
 import Downshift from 'downshift';
 import type { FuseOptions } from 'fuse.js';
@@ -312,6 +313,14 @@ export const Search = React.memo<SearchProps>(function Search({
   );
   const { isMobile } = useLayout();
 
+  const searchLandmarkRef = useRef<HTMLDivElement>(null);
+  const { landmarkProps } = useLandmark(
+    {
+      role: 'search',
+    },
+    searchLandmarkRef
+  );
+
   return (
     // @ts-expect-error (non strict)
     <Downshift<DownshiftItem>
@@ -388,7 +397,7 @@ export const Search = React.memo<SearchProps>(function Search({
         return (
           <>
             <ScreenReaderLabel {...labelProps}>Search for components</ScreenReaderLabel>
-            <SearchBar>
+            <SearchBar ref={searchLandmarkRef} {...landmarkProps}>
               <SearchField
                 {...getRootProps({ refKey: '' }, { suppressRefError: true })}
                 isMobile={isMobile}

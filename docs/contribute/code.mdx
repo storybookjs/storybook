@@ -102,6 +102,19 @@ Otherwise, if it affects the `Manager` (the outermost Storybook `iframe` where t
 
 ![Storybook manager preview](../_assets/addons/manager-preview.png)
 
+The `yarn build` commands accepts arguments to help speed up your development workflow:
+* `--all` will cause all packages to be built
+* `--watch` will enable watch mode (and skip the watch mode prompt)
+* `--prod` will build for production (and skip the production mode prompt)
+* individual package names can be passed, without the `@storybook/` prefix, e.g. `storybook`, `addon-docs`, etc.
+
+For example, to build Storybook and the docs addon in watch mode, run:
+
+```shell
+yarn build --watch storybook addon-docs
+```
+
+
 ## Check your work
 
 When you're done coding, add documentation and tests as appropriate. That simplifies the PR review process, which means your code will get merged faster.

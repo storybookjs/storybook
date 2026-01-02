@@ -30,6 +30,12 @@ import { type JobImplementation, type Workflow, isWorkflowOrAbove } from './util
 
 const dirname = import.meta.dirname;
 
+/**
+ * Generate the CircleCI config for a given workflow.
+ *
+ * @param workflow - The workflow to generate the config for.
+ * @returns The generated config for CircleCI in JS format.
+ */
 function generateConfig(workflow: Workflow) {
   const todos: JobsOrHub[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {

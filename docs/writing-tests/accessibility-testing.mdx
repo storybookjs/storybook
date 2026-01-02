@@ -50,19 +50,17 @@ This allows you to run accessibility tests automatically with your component tes
 
 If you need to configure this manually (for example, if the automigration was skipped), you can add the following to your `.storybook/vitest.setup.ts`:
 
-```ts
-import * as previewAnnotations from '@storybook/preview-api';
-// Replace your-renderer with the renderer you are using, e.g. react, svelte, vue3, etc.
-import { setProjectAnnotations } from '@storybook/your-renderer';
+```ts title=".storybook/vitest.setup.js|ts"
+// Replace your-framework with the framework you are using, e.g., react-vite, nextjs-vite, etc.
+import { setProjectAnnotations } from '@storybook/your-framework';
 import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
 
-const annotations = setProjectAnnotations([
-  a11yAddonAnnotations,
-  previewAnnotations,
-]);
+import * as previewAnnotations from './preview';
 
-// Run Storybook's beforeAll hook
-beforeAll(annotations.beforeAll);
+const annotations = setProjectAnnotations([
+  a11yAddonAnnotations, 
+  previewAnnotations
+]);
 ```
 
 <If renderer="react">

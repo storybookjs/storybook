@@ -118,7 +118,7 @@ function generateConfig(workflow: Workflow) {
       {} as Record<string, JobImplementation | HubImplementation>
     ),
     workflows: {
-      [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {
+      [`${workflow}-generated${isDebugging ? '-debug' : ''}-comparison`]: {
         jobs: sorted.map((t) =>
           t.requires && t.requires.length > 0
             ? { [t.id]: { requires: t.requires.map((r) => r.id) } }

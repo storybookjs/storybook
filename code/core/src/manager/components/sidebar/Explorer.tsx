@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
+import { useLandmark } from '../../hooks/useLandmark';
 import { HighlightStyles } from './HighlightStyles';
 import { Ref } from './Refs';
 import type { CombinedDataset, Selection } from './types';
@@ -31,13 +32,25 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
     selected,
   });
 
+  const { landmarkProps } = useLandmark(
+    {
+      'aria-labelledby': 'storybook-explorer-tree-heading',
+      role: 'navigation',
+    },
+    containerRef
+  );
+
   return (
-    <div
+    <nav
       ref={containerRef}
       id="storybook-explorer-tree"
       data-highlighted-ref-id={highlighted?.refId}
       data-highlighted-item-id={highlighted?.itemId}
+      {...landmarkProps}
     >
+      <h2 id="storybook-explorer-tree-heading" className="sb-sr-only">
+        Stories
+      </h2>
       {highlighted && <HighlightStyles {...highlighted} />}
       {dataset.entries.map(([refId, ref]) => (
         <Ref
@@ -51,6 +64,6 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
           setHighlighted={setHighlighted}
         />
       ))}
-    </div>
+    </nav>
   );
 });

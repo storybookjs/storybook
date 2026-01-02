@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 
 import { Button, ScrollArea } from 'storybook/internal/components';
 import type { API_LoadedRefData, StoryIndex, TagsOptions } from 'storybook/internal/types';
@@ -11,6 +11,7 @@ import { type State, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { useLandmark } from '../../hooks/useLandmark';
 import { useLayout } from '../layout/LayoutProvider';
 import { ChecklistWidget } from './ChecklistWidget';
 import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
@@ -26,7 +27,7 @@ import { useLastViewed } from './useLastViewed';
 
 export const DEFAULT_REF_ID = 'storybook_internal';
 
-const Container = styled.nav(({ theme }) => ({
+const Container = styled.header(({ theme }) => ({
   position: 'absolute',
   zIndex: 1,
   left: 0,
@@ -153,8 +154,20 @@ export const Sidebar = React.memo(function Sidebar({
     []
   );
 
+  const headerRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    {
+      'aria-labelledby': 'global-site-h1',
+      role: 'banner',
+    },
+    headerRef
+  );
+
   return (
-    <Container className="container sidebar-container" aria-label="Global">
+    <Container className="container sidebar-container" ref={headerRef} {...landmarkProps}>
+      <h1 id="global-site-h1" className="sb-sr-only">
+        Storybook
+      </h1>
       <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
         <Stack>
           <div>

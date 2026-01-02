@@ -1,10 +1,10 @@
-import React, { useEffect, useLayoutEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { Match } from 'storybook/internal/router';
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
 import { type API, useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { Notifications } from '../../container/Notifications';
@@ -145,6 +145,8 @@ const OrderedMobileNavigation = styled(MobileNavigation)({
 export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
   const api = useStorybookApi();
+  const theme = useTheme();
+  const currentAnimationRef = useRef<Animation | null>(null);
 
   const {
     navSize,
@@ -157,6 +159,66 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     showPanel,
     isDragging,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
+
+  // Global keyboard handler for F6/Shift+F6 landmark navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F6') {
+        let currentElement: Element | null = document.activeElement;
+        let landmarkElement: HTMLElement | null = null;
+
+        // Walk up from activeElement to find first element with data-sb-landmark
+        while (currentElement) {
+          if (
+            currentElement instanceof HTMLElement &&
+            currentElement.hasAttribute('data-sb-landmark')
+          ) {
+            landmarkElement = currentElement;
+            break;
+          }
+          currentElement = currentElement.parentElement;
+        }
+
+        if (landmarkElement) {
+          console.log('FOUND LANDMARK', landmarkElement);
+
+          // Cancel any existing animation
+          if (currentAnimationRef.current) {
+            currentAnimationRef.current.cancel();
+            currentAnimationRef.current = null;
+          }
+
+          // Start new animation on ::after pseudo-element
+          const animation = landmarkElement.animate(
+            [
+              {
+                border: `2px solid ${theme.color.primary}`,
+              },
+              {
+                border: `2px solid transparent`,
+              },
+            ],
+            {
+              duration: 1500,
+              pseudoElement: '::after',
+            }
+          );
+
+          currentAnimationRef.current = animation;
+
+          // Clear ref when animation finishes
+          animation.onfinish = () => {
+            currentAnimationRef.current = null;
+          };
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, { capture: true });
+    };
+  }, [theme.color.primary]);
 
   return (
     <LayoutContainer

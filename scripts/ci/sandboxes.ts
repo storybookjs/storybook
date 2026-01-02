@@ -127,18 +127,8 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
 
   const path = key.replace('/', '-');
 
-  const names = {
-    create: `${name} (create)`,
-    build: `${name} (build)`,
-    dev: `${name} (dev)`,
-    e2e: `${name} (e2e)`,
-    chromatic: `${name} (chromatic)`,
-    vitest: `${name} (vitest)`,
-    testRunner: `${name} (test-runner)`,
-  };
-
   const createJob = defineJob(
-    names.create,
+    `${name} (create)`,
     {
       executor: {
         name: 'sb_node_22_browsers',
@@ -210,20 +200,20 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     [sandboxesHub]
   );
   const buildJob = defineSandboxJob_build({
-    directory: id,
-    name: names.build,
+    name: `${name} (build)`,
     template: key,
+    directory: id,
     requires: [createJob],
   });
   const devJob = defineSandboxJob_dev({
-    name: names.dev,
+    name: `${name} (dev)`,
     directory: id,
     template: key,
     requires: [createJob],
     options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
   });
   const chromaticJob = defineJob(
-    names.chromatic,
+    `${name} (chromatic)`,
     {
       executor: {
         name: 'sb_node_22_classic',
@@ -254,7 +244,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     [buildJob]
   );
   const vitestJob = defineJob(
-    names.vitest,
+    `${name} (vitest)`,
     {
       executor: {
         name: 'sb_playwright',
@@ -274,7 +264,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     [buildJob]
   );
   const e2eJob = defineJob(
-    names.e2e,
+    `${name} (e2e)`,
     {
       executor: {
         name: 'sb_playwright',
@@ -305,7 +295,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     [buildJob]
   );
   const testRunnerJob = defineJob(
-    names.testRunner,
+    `${name} (test-runner)`,
     {
       executor: {
         name: 'sb_playwright',

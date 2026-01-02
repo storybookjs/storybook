@@ -25,6 +25,7 @@ type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
   features?:
     | (Partial<NonNullable<StorybookConfigRaw['features']>> & Record<string, unknown>)
     | undefined;
+  typescriptOptions?: any;
 };
 
 export type Template = {
@@ -427,6 +428,9 @@ export const baseTemplates = {
       mainConfig: {
         features: {
           experimentalTestSyntax: true,
+        },
+        typescriptOptions: {
+          reactDocgen: 'react-docgen-typescript',
         },
       },
     },

@@ -34,9 +34,9 @@
   ],
   "dependencies": {
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.1",
-    "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
     "@types/semver": "^7.7.1",
     "pnp-webpack-plugin": "^1.7.0",
+    "react-docgen-typescript-plugin": "^1.0.8",
     "semver": "^7.7.3"
   },
   "devDependencies": {

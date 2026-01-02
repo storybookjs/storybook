@@ -45,6 +45,7 @@ export type JobImplementation = {
    * }
    * ```
    *
+   * @see https://circleci.com/docs/guides/orchestrate/jobs-steps/#steps-overview
    * @todo Make this more type-strict, maybe with a union type of step objects. See the example
    *   above.
    */

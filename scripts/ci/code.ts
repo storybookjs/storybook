@@ -2,7 +2,7 @@
 import glob from 'fast-glob';
 import { join } from 'path/posix';
 
-import { WORKING_DIR } from './utils/constants';
+import { WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants';
 import {
   CACHE_KEYS,
   CACHE_PATHS,
@@ -120,7 +120,7 @@ export const build_windows = defineJob('Build (windows)', {
         `.verdaccio-cache`,
         `code/bench`,
       ],
-      'C:\\Users\\circleci\\project'
+      `${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`
     ),
   ],
 });
@@ -218,7 +218,7 @@ export const knip = defineJob(
   {
     executor: {
       name: 'sb_node_22_classic',
-      class: 'xlarge',
+      class: 'medium',
     },
     steps: [
       ...workflow.restore_linux(),
@@ -239,7 +239,7 @@ export const testsUnit_linux = defineJob(
   {
     executor: {
       name: 'sb_node_22_classic',
-      class: 'xlarge',
+      class: 'large',
     },
     steps: [
       ...workflow.restore_linux(),
@@ -297,11 +297,11 @@ export const testUnit_windows = defineJob(
   {
     executor: {
       name: 'win/default',
-      size: 'medium',
+      size: 'large',
       shell: 'bash.exe',
     },
     steps: [
-      ...workflow.restore_windows('C:\\Users\\circleci\\project'),
+      ...workflow.restore_windows(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
       {
         run: {
           command: 'yarn install',
@@ -327,7 +327,7 @@ export const benchmarkPackages = defineJob(
   {
     executor: {
       name: 'sb_node_22_classic',
-      class: 'xlarge',
+      class: 'large',
     },
     steps: [
       ...workflow.restore_linux(),

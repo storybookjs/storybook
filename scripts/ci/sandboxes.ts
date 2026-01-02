@@ -2,7 +2,7 @@ import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { build_linux } from './code';
-import { ROOT_DIR, SANDBOX_DIR, WORKING_DIR } from './utils/constants';
+import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants';
 import {
   CACHE_KEYS,
   artifact,
@@ -99,10 +99,10 @@ function defineSandboxJob_dev({
                 },
               },
               artifact.persist(
-                join(ROOT_DIR, SANDBOX_DIR, directory, 'test-results'),
+                join(LINUX_ROOT_DIR, SANDBOX_DIR, directory, 'test-results'),
                 'test-results'
               ),
-              testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
+              testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
             ]
           : [
               {
@@ -187,13 +187,13 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               {
                 run: {
                   name: 'Run prepare',
-                  working_directory: `${ROOT_DIR}/${SANDBOX_DIR}/${id}`,
+                  working_directory: `${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}`,
                   command: `yarn prepare`,
                 },
               },
             ]
           : []),
-        artifact.persist(`${ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
+        artifact.persist(`${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
         workspace.persist([`${SANDBOX_DIR}/${id}`]),
       ],
     },
@@ -227,7 +227,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           // we copy to the working directory to get git history, which chromatic needs for baselines
           run: {
             name: 'Copy sandbox to working directory',
-            command: `cp ${join(ROOT_DIR, SANDBOX_DIR)} ${join(ROOT_DIR, WORKING_DIR, 'sandbox')} -r --remove-destination`,
+            command: `cp ${join(LINUX_ROOT_DIR, SANDBOX_DIR)} ${join(LINUX_ROOT_DIR, WORKING_DIR, 'sandbox')} -r --remove-destination`,
           },
         },
         {
@@ -258,7 +258,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
           },
         },
-        testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
+        testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     },
     [buildJob]
@@ -289,7 +289,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             ].join('\n'),
           },
         },
-        testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
+        testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     },
     [buildJob]
@@ -309,7 +309,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             command: `yarn task test-runner --template ${key} --no-link -s test-runner --junit`,
           },
         },
-        testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
+        testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     },
     [buildJob]
@@ -358,7 +358,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
             command: `yarn task test-runner --template ${sandbox.name} --no-link -s test-runner --junit`,
           },
         },
-        testResults.persist(join(ROOT_DIR, WORKING_DIR, 'test-results')),
+        testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     },
     [sandbox.jobs[1]]
@@ -381,7 +381,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
         {
           run: {
             name: 'Run Install',
-            working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\${sandbox.path}`,
+            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.path}`,
             command: 'yarn install',
           },
         },
@@ -395,7 +395,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
           run: {
             name: 'Run storybook',
             background: true,
-            working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\${sandbox.path}`,
+            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.path}`,
             command: 'yarn storybook --port 8001',
           },
         },
@@ -407,7 +407,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
             command: `yarn task e2e-tests-dev --template ${sandbox.name} --no-link -s e2e-tests-dev --junit`,
           },
         },
-        testResults.persist(`C:\\Users\\circleci\\project\\test-results`),
+        testResults.persist(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}\\test-results`),
       ],
     },
     [sandbox.jobs[0]]
@@ -430,7 +430,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
         {
           run: {
             name: 'Run Install',
-            working_directory: `C:\\Users\\circleci\\storybook-sandboxes\\${sandbox.path}`,
+            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.path}`,
             command: 'yarn install',
           },
         },

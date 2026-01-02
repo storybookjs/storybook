@@ -4,6 +4,10 @@ import { type StoriesEntry, type StorybookConfigRaw } from 'storybook/internal/t
 import { ProjectType } from '../../../core/src/cli/projectTypes';
 import { SupportedBuilder } from '../../../core/src/types/modules/builders';
 
+export type TemplateType = Pick<Template, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
+export type AllTemplatesKey = keyof typeof allTemplates;
+export type AllTemplatesType = Record<AllTemplatesKey, TemplateType>;
+
 export type SkippableTask =
   | 'smoke-test'
   | 'test-runner'
@@ -1041,6 +1045,3 @@ export const daily: TemplateKey[] = [
 ];
 
 export const templatesByCadence = { normal, merged, daily };
-export type TemplateType = Pick<Template, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
-export type AllTemplatesKey = keyof typeof allTemplates;
-export type AllTemplatesType = Record<AllTemplatesKey, TemplateType>;

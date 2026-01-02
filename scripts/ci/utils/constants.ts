@@ -13,6 +13,7 @@
  *
  * To ensure the correct paths are used across config generation, we use the following constants.
  */
-export const ROOT_DIR = '/tmp';
+export const LINUX_ROOT_DIR = '/tmp';
+export const WINDOWS_ROOT_DIR = 'C:\\Users\\circleci';
 export const WORKING_DIR = `project`;
 export const SANDBOX_DIR = `storybook-sandboxes`;

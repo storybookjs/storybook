@@ -1,4 +1,4 @@
-import { ROOT_DIR, WORKING_DIR } from './constants';
+import { LINUX_ROOT_DIR, WORKING_DIR } from './constants';
 
 export const executors = {
   sb_node_22_browsers: {
@@ -19,7 +19,7 @@ export const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: `${ROOT_DIR}/${WORKING_DIR}`,
+    working_directory: `${LINUX_ROOT_DIR}/${WORKING_DIR}`,
   },
   sb_node_22_classic: {
     docker: [
@@ -39,7 +39,7 @@ export const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: `${ROOT_DIR}/${WORKING_DIR}`,
+    working_directory: `${LINUX_ROOT_DIR}/${WORKING_DIR}`,
   },
   sb_playwright: {
     docker: [
@@ -59,6 +59,6 @@ export const executors = {
       },
     },
     resource_class: '<<parameters.class>>',
-    working_directory: `${ROOT_DIR}/${WORKING_DIR}`,
+    working_directory: `${LINUX_ROOT_DIR}/${WORKING_DIR}`,
   },
 } as const;

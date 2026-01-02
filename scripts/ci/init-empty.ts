@@ -1,4 +1,5 @@
 import { build_linux } from './code';
+import { WINDOWS_ROOT_DIR } from './utils/constants';
 import { server, verdaccio, workflow } from './utils/helpers';
 import {
   type JobsOrHub,
@@ -108,7 +109,7 @@ export function defineEmptyInitWindows() {
         {
           run: {
             name: 'Storybook init from empty directory (Windows NPM)',
-            working_directory: 'C:\\Users\\circleci',
+            working_directory: WINDOWS_ROOT_DIR,
             command: [
               `mkdir empty-react-vite-ts`,
               `cd empty-react-vite-ts`,
@@ -125,7 +126,7 @@ export function defineEmptyInitWindows() {
         {
           run: {
             name: 'Run storybook smoke test',
-            working_directory: 'C:\\Users\\circleci\\empty-react-vite-ts',
+            working_directory: `${WINDOWS_ROOT_DIR}\\empty-react-vite-ts`,
             command: 'npm run storybook -- --smoke-test',
           },
         },
@@ -142,7 +143,6 @@ export function getInitEmpty(workflow: Workflow) {
 
   if (isWorkflowOrAbove(workflow, 'merged')) {
     initEmpty.push(...['nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'].map(defineEmptyInitFlow));
-
     initEmpty.push(defineEmptyInitWindows());
   }
 

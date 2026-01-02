@@ -1,15 +1,15 @@
-import { ROOT_DIR } from './constants';
+import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR } from './constants';
 import { type JobsOrHub } from './types';
 
 export const workspace = {
-  attach: (at = ROOT_DIR) => {
+  attach: (at = LINUX_ROOT_DIR) => {
     return {
       attach_workspace: {
         at,
       },
     };
   },
-  persist: (paths: string[], root = ROOT_DIR) => {
+  persist: (paths: string[], root = LINUX_ROOT_DIR) => {
     return {
       persist_to_workspace: {
         paths,
@@ -174,7 +174,7 @@ export const workflow = {
     workspace.attach(),
     cache.attach(CACHE_KEYS()),
   ],
-  restore_windows: (at = 'C:\\Users\\circleci') => [
+  restore_windows: (at = WINDOWS_ROOT_DIR) => [
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
     workspace.attach(at),

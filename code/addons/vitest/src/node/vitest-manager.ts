@@ -3,14 +3,18 @@ import { existsSync } from 'node:fs';
 import type {
   CoverageOptions,
   ResolvedCoverageOptions,
+  TestCase,
+  TestModule,
   TestProject,
   TestSpecification,
   Vitest,
 } from 'vitest/node';
+import { type Reporter } from 'vitest/reporters';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
+import type { TaskMeta } from '@vitest/runner';
 import * as find from 'empathic/find';
 import path, { dirname, join, normalize } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
@@ -264,12 +268,10 @@ export class VitestManager {
     const coverageShouldBeEnabled =
       config.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
     const currentCoverage = this.vitest?.config.coverage?.enabled;
-    const isStoryDiscovery = triggeredBy === 'story-discovery';
-    const shouldWatch = watching && !isStoryDiscovery;
+    const shouldWatch = watching;
 
     console.log({
       shouldWatch,
-      isStoryDiscovery,
       triggeredBy,
       currentVitestWatch: this.vitest?.config.watch,
     });
@@ -359,6 +361,115 @@ export class VitestManager {
   async cancelCurrentRun() {
     await this.vitest?.cancelCurrentRun('keyboard-input');
     await this.runningPromise;
+  }
+
+  /** Run tests for story discovery - completely isolated from UI and normal test flow */
+  async runStoryDiscoveryTests(storyIds: string[]): Promise<{
+    testResults: any[];
+    testSummary: { total: number; passed: number; failed: number };
+  }> {
+    const { createVitest } = await import('vitest/node');
+
+    // Get test specifications for the stories
+    const testSpecifications = await this.getStorybookTestSpecifications();
+    const allStories = await this.fetchStories();
+
+    const filteredStories = storyIds
+      ? allStories.filter((story) => storyIds.includes(story.id))
+      : allStories;
+
+    const { filteredTestSpecifications } = this.filterTestSpecifications(
+      testSpecifications,
+      filteredStories
+    );
+
+    if (filteredTestSpecifications.length === 0) {
+      return {
+        testResults: [],
+        testSummary: { total: 0, passed: 0, failed: 0 },
+      };
+    }
+
+    // Create a temporary Vitest instance with silent reporters
+    const vitestWorkspaceConfig = find.any(
+      [
+        ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
+        ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
+      ],
+      { last: getProjectRoot() }
+    );
+
+    const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
+
+    // Collect test results
+    const testResults: any[] = [];
+    let totalTests = 0;
+    let passedTests = 0;
+    let failedTests = 0;
+
+    const silentReporter = new (class implements Reporter {
+      onTestCaseResult(testCase: TestCase) {
+        const { storyId, reports, componentPath } = testCase.meta() as TaskMeta &
+          Partial<{ storyId: string; reports: Report[]; componentPath: string }>;
+
+        const testResult = testCase.result();
+        totalTests++;
+
+        if (testResult.state === 'passed') {
+          passedTests++;
+        } else if (testResult.state === 'failed') {
+          failedTests++;
+        }
+
+        testResults.push({
+          storyId,
+          status:
+            testResult.state === 'passed'
+              ? 'PASS'
+              : testResult.state === 'failed'
+                ? 'FAIL'
+                : 'PENDING',
+          componentFilePath: componentPath || '',
+          error: testResult.errors?.[0]?.message,
+        });
+      }
+
+      // Required Reporter methods (no-op for silent reporter)
+      onInit() {}
+      onTestModuleStart() {}
+      onTestModuleEnd() {}
+      onTestCaseStart() {}
+      onTestRunEnd() {}
+    })();
+
+    const vitest = await createVitest('test', {
+      root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
+      watch: false,
+      passWithNoTests: false,
+      project: [projectName],
+      reporters: [silentReporter], // Only use our silent reporter
+      coverage: { enabled: false },
+    });
+
+    try {
+      // Suppress console output during test execution
+      const originalStdoutWrite = process.stdout.write;
+      const originalStderrWrite = process.stderr.write;
+      process.stdout.write = () => true;
+      process.stderr.write = () => true;
+
+      await vitest.runTestSpecifications(filteredTestSpecifications, true);
+
+      process.stdout.write = originalStdoutWrite;
+      process.stderr.write = originalStderrWrite;
+    } finally {
+      await vitest.close();
+    }
+
+    return {
+      testResults,
+      testSummary: { total: totalTests, passed: passedTests, failed: failedTests },
+    };
   }
 
   async getStorybookTestSpecifications() {

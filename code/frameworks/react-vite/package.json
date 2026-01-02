@@ -55,7 +55,7 @@
     "@storybook/react": "workspace:*",
     "empathic": "^2.0.0",
     "magic-string": "^0.30.0",
-    "react-docgen": "^8.0.0",
+    "react-docgen": "^8.0.2",
     "resolve": "^1.22.8",
     "tsconfig-paths": "^4.2.0"
   },

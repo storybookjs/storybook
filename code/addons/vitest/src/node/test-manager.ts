@@ -149,15 +149,9 @@ export class TestManager {
 
       const currentRun = this.store.getState().currentRun;
 
-      // For story discovery runs, include the collected test results
-      const payload =
-        triggeredBy === 'story-discovery'
-          ? { ...currentRun, testResults: this.batchedTestCaseResults.slice() }
-          : currentRun;
-
       this.store.send({
         type: 'TEST_RUN_COMPLETED',
-        payload,
+        payload: currentRun,
       });
 
       if (currentRun.unhandledErrors.length > 0) {

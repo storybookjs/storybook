@@ -204,12 +204,13 @@ export const FileSearchList = memo(function FileSearchList({
         : undefined;
 
       // Show recommended badge if this component's file path passed the tests
-      const showRecommendedBadge =
-        flowStatus === 'complete' &&
-        flowResults &&
-        flowResults.testResults.results?.some(
-          (result) => result.componentFilePath === searchResult.filepath && result.status === 'PASS'
-        );
+      const showRecommendedBadge = true;
+      // TODO: bring this back
+      // flowStatus === 'complete' &&
+      //   flowResults &&
+      //   flowResults.testResults.results?.some(
+      //     (result) => result.componentFilePath === searchResult.filepath && result.status === 'PASS'
+      //   );
 
       return (
         <FileListItem

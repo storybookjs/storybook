@@ -34,6 +34,8 @@ import {
 } from './constants';
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
+import { TestManager } from './node/test-manager';
+import { VitestManager } from './node/vitest-manager';
 import type { CachedState, ErrorLike, StoreState } from './types';
 import type { StoreEvent } from './types';
 
@@ -247,67 +249,27 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
 
       console.log('Running real tests for story discovery:', storyIds);
 
-      // Track story discovery runs to match completion events
-      const storyDiscoveryRuns = new Map<
-        string,
-        { resolve: Function; reject: Function; storyIds: string[] }
-      >();
-
-      // Create a promise that will resolve when the test run completes
-      const testRunPromise = new Promise<any>((resolve, reject) => {
-        storyDiscoveryRuns.set(requestId, { resolve, reject, storyIds });
-
-        // Set a timeout for the entire operation
-        const timeout = setTimeout(() => {
-          storyDiscoveryRuns.delete(requestId);
-          reject(new Error('Story discovery test run timed out after 60 seconds'));
-        }, 60000);
-
-        // Listen for test run completion events
-        const handleTestRunCompleted = (event: any) => {
-          const runData = storyDiscoveryRuns.get(requestId);
-          if (runData && event.storyIds && arraysEqual(event.storyIds, runData.storyIds)) {
-            clearTimeout(timeout);
-            storyDiscoveryRuns.delete(requestId);
-            channel.off('vitest-test-run-completed', handleTestRunCompleted);
-
-            // Transform the real test results
-            const testResults = (event.testResults || []).map((result: any) => ({
-              storyId: result.storyId,
-              status:
-                result.testResult?.state === 'pass'
-                  ? 'PASS'
-                  : result.testResult?.state === 'fail'
-                    ? 'FAIL'
-                    : 'PENDING',
-              componentFilePath: result.componentPath || '', // From test metadata
-            }));
-
-            resolve({
-              testResults,
-              testSummary: {
-                total: event.totalTestCount || 0,
-                passed: event.passedTestCount || 0,
-                failed: event.failedTestCount || 0,
-              },
-            });
-          }
-        };
-
-        channel.on('vitest-test-run-completed', handleTestRunCompleted);
-
-        // Trigger the test run using the existing TRIGGER_RUN mechanism
-        // This will go through the normal TestManager flow
-        store.send({
-          type: 'TRIGGER_RUN',
-          payload: {
-            storyIds,
-            triggeredBy: 'story-discovery',
-          },
-        });
+      // Create a temporary test manager and vitest manager for isolated execution
+      const testManager = new TestManager({
+        store: store as any,
+        componentTestStatusStore: {
+          set: () => {},
+          unset: () => {},
+        } as any,
+        a11yStatusStore: {
+          set: () => {},
+          unset: () => {},
+        } as any,
+        testProviderStore: {
+          runWithState: (callback: () => Promise<void>) => callback(),
+        } as any,
+        storybookOptions: options,
       });
 
-      const testRunResult = await testRunPromise;
+      const vitestManager = new VitestManager(testManager);
+
+      // Run tests directly using the isolated story discovery method
+      const testRunResult = await vitestManager.runStoryDiscoveryTests(storyIds);
 
       console.log('Real test results:', testRunResult.testResults);
       console.log('Test summary:', testRunResult.testSummary);

@@ -34,16 +34,16 @@ export const build_linux = defineJob('Build (linux)', {
     npm.check(),
     {
       run: {
-        command: 'yarn task --task compile --start-from=auto --no-link --debug',
         name: 'Compile',
         working_directory: `code`,
+        command: 'yarn task --task compile --start-from=auto --no-link --debug',
       },
     },
     {
       run: {
-        command: 'yarn local-registry --publish',
         name: 'Publish to Verdaccio',
         working_directory: `code`,
+        command: 'yarn local-registry --publish',
       },
     },
     ...workflow.report_on_failure(),

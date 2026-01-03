@@ -1,4 +1,4 @@
-import type { LoaderFunction } from 'storybook/internal/csf';
+import type { AfterEach, LoaderFunction } from 'storybook/internal/csf';
 import { definePreviewAddon } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
 
@@ -152,6 +152,37 @@ const enhanceContext: LoaderFunction = async (context) => {
   } catch {}
 };
 
+const isEmptyRender = (element: HTMLElement) => {
+  const style = getComputedStyle(element);
+  const rect = element.getBoundingClientRect();
+
+  const rendersContent =
+    rect.width > 0 &&
+    rect.height > 0 &&
+    style.visibility !== 'hidden' &&
+    style.opacity !== '0' &&
+    style.display !== 'none';
+
+  return !rendersContent;
+};
+
+const afterEach: AfterEach = async ({ reporting, canvasElement }) => {
+  try {
+    const emptyRender = isEmptyRender(canvasElement.firstChild ?? canvasElement);
+
+    if (emptyRender) {
+      reporting.addReport({
+        type: 'render-analysis',
+        version: 1,
+        result: {
+          emptyRender,
+        },
+        status: 'warning',
+      });
+    }
+  } catch {}
+};
+
 interface TestParameters {
   test?: {
     /** Ignore unhandled errors during test execution */
@@ -169,4 +200,5 @@ export interface TestTypes {
 export default () =>
   definePreviewAddon<TestTypes>({
     loaders: [resetAllMocksLoader, nameSpiesAndWrapActionsInSpies, enhanceContext],
+    afterEach,
   });

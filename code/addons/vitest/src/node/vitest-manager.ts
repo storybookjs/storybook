@@ -3,18 +3,23 @@ import { existsSync } from 'node:fs';
 import type {
   CoverageOptions,
   ResolvedCoverageOptions,
+  TestCase,
+  TestModule,
   TestProject,
   TestSpecification,
   Vitest,
 } from 'vitest/node';
+import { type Reporter } from 'vitest/reporters';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
+import type { TaskMeta } from '@vitest/runner';
 import * as find from 'empathic/find';
 import path, { dirname, join, normalize } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
+import type { Report } from 'storybook/preview-api';
 
 import { COVERAGE_DIRECTORY } from '../constants';
 import { log } from '../logger';
@@ -51,7 +56,7 @@ export class VitestManager {
 
   constructor(private testManager: TestManager) {}
 
-  async startVitest({ coverage }: { coverage: boolean }) {
+  async startVitest({ coverage, watch }: { coverage: boolean; watch?: boolean }) {
     const { createVitest } = await import('vitest/node');
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
@@ -79,25 +84,35 @@ export class VitestManager {
         ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
         ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
       ],
-      { last: getProjectRoot() }
+      { cwd: getProjectRoot() }
     );
 
-    const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
+    // When there's a workspace config, we need to filter by project name
+    // to ensure we run the correct project that has the storybook plugin configuration
+    const shouldUseProjectFilter = !!vitestWorkspaceConfig;
+    const projectName = shouldUseProjectFilter
+      ? 'storybook:' + process.env.STORYBOOK_CONFIG_DIR
+      : undefined;
+
+    const vitestConfig: any = {
+      root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
+      watch: watch ?? false,
+      passWithNoTests: false,
+      // TODO:
+      // Do we want to enable Vite's default reporter?
+      // The output in the terminal might be too spamy and it might be better to
+      // find a way to just show errors and warnings for example
+      // Otherwise it might be hard for the user to discover Storybook related logs
+      reporters: ['default', new StorybookReporter(this.testManager)],
+      coverage: coverageOptions,
+    };
+
+    if (shouldUseProjectFilter && projectName) {
+      vitestConfig.project = [projectName];
+    }
 
     try {
-      this.vitest = await createVitest('test', {
-        root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
-        watch: true,
-        passWithNoTests: false,
-        project: [projectName],
-        // TODO:
-        // Do we want to enable Vite's default reporter?
-        // The output in the terminal might be too spamy and it might be better to
-        // find a way to just show errors and warnings for example
-        // Otherwise it might be hard for the user to discover Storybook related logs
-        reporters: ['default', new StorybookReporter(this.testManager)],
-        coverage: coverageOptions,
-      });
+      this.vitest = await createVitest('test', vitestConfig);
     } catch (err: any) {
       const originalMessage = String(err.message);
       if (originalMessage.includes('Found multiple projects')) {
@@ -143,13 +158,13 @@ export class VitestManager {
     await this.setupWatchers();
   }
 
-  async restartVitest({ coverage }: { coverage: boolean }) {
+  async restartVitest({ coverage, watch }: { coverage: boolean; watch?: boolean }) {
     await this.vitestRestartPromise;
     this.vitestRestartPromise = new Promise(async (resolve, reject) => {
       try {
         await this.runningPromise;
         await this.vitest?.close();
-        await this.startVitest({ coverage });
+        await this.startVitest({ coverage, watch });
         resolve();
       } catch (e) {
         reject(e);
@@ -259,17 +274,35 @@ export class VitestManager {
     return { filteredTestSpecifications, filteredStoryIds };
   }
 
-  async runTests(runPayload: TriggerRunEvent['payload']) {
+  async runTests(runPayload: TriggerRunEvent['payload'], triggeredBy?: string) {
     const { watching, config } = this.testManager.store.getState();
     const coverageShouldBeEnabled =
       config.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
     const currentCoverage = this.vitest?.config.coverage?.enabled;
+    const shouldWatch = watching;
+
+    console.log({
+      shouldWatch,
+      triggeredBy,
+      currentVitestWatch: this.vitest?.config.watch,
+    });
 
     if (!this.vitest) {
-      await this.startVitest({ coverage: coverageShouldBeEnabled });
-    } else if (currentCoverage !== coverageShouldBeEnabled) {
-      await this.restartVitest({ coverage: coverageShouldBeEnabled });
+      console.log('Starting Vitest with watch:', shouldWatch);
+      await this.startVitest({ coverage: coverageShouldBeEnabled, watch: shouldWatch });
+    } else if (
+      currentCoverage !== coverageShouldBeEnabled ||
+      this.vitest.config.watch !== shouldWatch
+    ) {
+      console.log(
+        'Restarting Vitest with watch:',
+        shouldWatch,
+        'current:',
+        this.vitest.config.watch
+      );
+      await this.restartVitest({ coverage: coverageShouldBeEnabled, watch: shouldWatch });
     } else {
+      console.log('Using existing Vitest with watch:', this.vitest.config.watch);
       await this.vitestRestartPromise;
     }
 
@@ -339,6 +372,108 @@ export class VitestManager {
   async cancelCurrentRun() {
     await this.vitest?.cancelCurrentRun('keyboard-input');
     await this.runningPromise;
+  }
+
+  /** Run tests for story discovery - completely isolated from UI and normal test flow */
+  async runStoryDiscoveryTests(storyIds: string[]): Promise<{
+    testResults: any[];
+    testSummary: { total: number; passed: number; failed: number };
+  }> {
+    // This flow must reuse the already-initialized Vitest instance in the child process.
+    // Starting a second Vitest/Vite server here can lead to port conflicts and startup failures.
+    await this.vitestRestartPromise;
+    if (!this.vitest) {
+      throw new Error('Vitest is not initialized yet');
+    }
+
+    this.resetGlobalTestNamePattern();
+    await this.cancelCurrentRun();
+
+    // Get test specifications for the stories
+    const testSpecifications = await this.getStorybookTestSpecifications();
+    const allStories = await this.fetchStories();
+
+    const filteredStories = storyIds
+      ? allStories.filter((story) => storyIds.includes(story.id))
+      : allStories;
+
+    const { filteredTestSpecifications } = this.filterTestSpecifications(
+      testSpecifications,
+      filteredStories
+    );
+
+    if (filteredTestSpecifications.length === 0) {
+      return {
+        testResults: [],
+        testSummary: { total: 0, passed: 0, failed: 0 },
+      };
+    }
+
+    // Collect test results
+    const testResults: any[] = [];
+    let totalTests = 0;
+    let passedTests = 0;
+    let failedTests = 0;
+
+    // Create a temporary reporter that collects results silently
+    const silentReporter = new (class implements Reporter {
+      onTestCaseResult(testCase: TestCase) {
+        const { storyId, reports, componentPath } = testCase.meta() as TaskMeta &
+          Partial<{ storyId: string; reports: Report[]; componentPath: string }>;
+
+        const testResult = testCase.result();
+        totalTests++;
+
+        if (testResult.state === 'passed') {
+          passedTests++;
+        } else if (testResult.state === 'failed') {
+          failedTests++;
+        }
+
+        testResults.push({
+          storyId,
+          status:
+            testResult.state === 'passed'
+              ? 'PASS'
+              : testResult.state === 'failed'
+                ? 'FAIL'
+                : 'PENDING',
+          componentFilePath: componentPath || '',
+          error: testResult.errors?.[0]?.message,
+        });
+      }
+
+      // Required Reporter methods (no-op for silent reporter)
+      onInit() {}
+      onTestModuleStart() {}
+      onTestModuleEnd() {}
+      onTestCaseStart() {}
+      onTestRunEnd() {}
+    })();
+
+    // Temporarily replace the reporters to suppress output and collect results
+    const originalReporters = this.vitest.config.reporters;
+    const originalStdoutWrite = process.stdout.write;
+    const originalStderrWrite = process.stderr.write;
+    this.vitest.config.reporters = [silentReporter];
+
+    try {
+      // Suppress console output during test execution
+      process.stdout.write = () => true;
+      process.stderr.write = () => true;
+
+      await this.vitest.runTestSpecifications(filteredTestSpecifications, true);
+    } finally {
+      process.stdout.write = originalStdoutWrite;
+      process.stderr.write = originalStderrWrite;
+      this.vitest.config.reporters = originalReporters;
+      this.resetGlobalTestNamePattern();
+    }
+
+    return {
+      testResults,
+      testSummary: { total: totalTests, passed: passedTests, failed: failedTests },
+    };
   }
 
   async getStorybookTestSpecifications() {
@@ -493,7 +628,7 @@ export class VitestManager {
       if (isConfig) {
         log('Restarting Vitest due to config change');
         const { watching, config } = this.testManager.store.getState();
-        await this.restartVitest({ coverage: config.coverage && !watching });
+        await this.restartVitest({ coverage: config.coverage && !watching, watch: watching });
       }
     });
   }

@@ -11,6 +11,8 @@ interface JavaScriptTemplateData {
   exportedStoryName: string;
   /** The args to include in the story */
   args?: Record<string, any>;
+  /** The custom tags to add to the story */
+  tags?: string[];
 }
 
 export async function getJavaScriptTemplateForNewStoryFile(data: JavaScriptTemplateData) {
@@ -23,6 +25,10 @@ export async function getJavaScriptTemplateForNewStoryFile(data: JavaScriptTempl
 
   const hasArgs = Boolean(data.args && Object.keys(data.args).length > 0);
   const argsString = hasArgs ? `args: ${JSON.stringify(data.args, null, 2)},` : '';
+  const tagsString =
+    data.tags && Array.isArray(data.tags) && data.tags.length > 0
+      ? `tags: ${JSON.stringify(data.tags)},`
+      : '';
   const storyExport = hasArgs
     ? dedent`
       export const ${data.exportedStoryName} = {
@@ -36,6 +42,7 @@ export async function getJavaScriptTemplateForNewStoryFile(data: JavaScriptTempl
 
   const meta = {
     component: ${importName},
+    ${tagsString}
   };
 
   export default meta;

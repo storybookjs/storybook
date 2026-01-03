@@ -122,6 +122,12 @@ const bootTestRunner = async ({
             payload: event.payload,
           });
           reject();
+        } else if (event.type === 'story-discovery-result') {
+          // Forward story discovery results to the channel
+          channel.emit('story-discovery-result', event.result);
+        } else if (event.type === 'story-discovery-error') {
+          // Forward story discovery errors to the channel
+          channel.emit('story-discovery-error', event.error);
         } else {
           channel.emit(event.type, ...event.args);
         }
@@ -178,6 +184,40 @@ export const runTestRunner = async ({
     await bootTestRunner({ channel, store, options });
     ready = true;
   }
+};
+
+// Special function to run story discovery tests
+export const runStoryDiscoveryTests = async (
+  storyIds: string[],
+  channel: Channel,
+  store: Store,
+  options: Options
+): Promise<any> => {
+  if (!child) {
+    ready = false;
+    await bootTestRunner({ channel, store, options });
+    ready = true;
+  }
+
+  return new Promise((resolve, reject) => {
+    const handleResult = (result: any) => {
+      channel.off('story-discovery-result', handleResult);
+      channel.off('story-discovery-error', handleError);
+      resolve(result);
+    };
+
+    const handleError = (error: string) => {
+      channel.off('story-discovery-result', handleResult);
+      channel.off('story-discovery-error', handleError);
+      reject(new Error(error));
+    };
+
+    channel.on('story-discovery-result', handleResult);
+    channel.on('story-discovery-error', handleError);
+
+    // Send the story discovery request to the child process
+    child?.send({ type: 'story-discovery-test-run', args: [storyIds], from: 'server' });
+  });
 };
 
 export const killTestRunner = () => {

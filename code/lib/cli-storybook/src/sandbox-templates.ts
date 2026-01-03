@@ -369,6 +369,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      skipTemplateStories: true,
       extraDependencies: ['prop-types', '@types/prop-types'],
       mainConfig: {
         features: {

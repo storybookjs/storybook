@@ -1,9 +1,10 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 
-import { TooltipNote, TooltipProvider } from 'storybook/internal/components';
+import { Badge, TooltipNote, TooltipProvider } from 'storybook/internal/components';
 import type {
   CreateNewStoryRequestPayload,
   FileComponentSearchResponsePayload,
+  StoryDiscoveryResponsePayload,
 } from 'storybook/internal/core-events';
 
 import {
@@ -61,6 +62,22 @@ interface FileSearchListProps {
   searchResults: Array<SearchResult> | null;
   onNewStory: (props: NewStoryPayload) => void;
   errorItemId?: number | string;
+  flowResults: {
+    generatedCount: number;
+    testResults: {
+      passed: number;
+      failed: number;
+      total: number;
+      pending: number;
+      results?: Array<{
+        storyId: string;
+        status: 'PASS' | 'FAIL' | 'PENDING';
+        componentFilePath?: string;
+      }>;
+    };
+    testSummary?: StoryDiscoveryResponsePayload['testSummary'];
+  } | null;
+  flowStatus: 'idle' | 'generating' | 'testing' | 'complete';
 }
 
 interface FileItemContentProps {
@@ -86,6 +103,8 @@ export const FileSearchList = memo(function FileSearchList({
   searchResults,
   onNewStory,
   errorItemId,
+  flowResults,
+  flowStatus,
 }: FileSearchListProps) {
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
   const parentRef = React.useRef<HTMLDivElement>();
@@ -186,6 +205,11 @@ export const FileSearchList = memo(function FileSearchList({
         ? "We can't evaluate exports for this file. Automatic story creation is disabled."
         : undefined;
 
+      // Show recommended badge if this component's path is in the passed component paths
+      const showRecommendedBadge =
+        flowStatus === 'complete' &&
+        flowResults?.testSummary?.passedComponentPaths?.includes(searchResult.filepath);
+
       return (
         <FileListItem
           aria-expanded={itemSelected}
@@ -215,6 +239,7 @@ export const FileSearchList = memo(function FileSearchList({
               <FileListItemContent>
                 <FileListItemLabel error={itemError}>
                   {searchResult.filepath.split('/').at(-1)}
+                  {showRecommendedBadge && <Badge status="positive">Recommended</Badge>}
                 </FileListItemLabel>
                 <FileListItemPath>{searchResult.filepath}</FileListItemPath>
               </FileListItemContent>
@@ -291,7 +316,7 @@ export const FileSearchList = memo(function FileSearchList({
         </FileListItem>
       );
     },
-    [handleFileItemComponentSelection, errorItemId]
+    [handleFileItemComponentSelection, errorItemId, flowStatus, flowResults]
   );
 
   if (isLoading && (searchResults === null || searchResults?.length === 0)) {

@@ -8,6 +8,7 @@ import {
   loadPreviewOrConfigFile,
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
+import { RUN_STORY_TESTS_REQUEST, RUN_STORY_TESTS_RESPONSE } from 'storybook/internal/core-events';
 import {
   experimental_UniversalStore,
   experimental_getTestProviderStore,
@@ -32,7 +33,9 @@ import {
   storeOptions,
 } from './constants';
 import { log } from './logger';
-import { runTestRunner } from './node/boot-test-runner';
+import { runStoryDiscoveryTests, runTestRunner } from './node/boot-test-runner';
+import { TestManager } from './node/test-manager';
+import { VitestManager } from './node/vitest-manager';
 import type { CachedState, ErrorLike, StoreState } from './types';
 import type { StoreEvent } from './types';
 
@@ -206,6 +209,10 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     });
     store.subscribe('TEST_RUN_COMPLETED', async (event) => {
       const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
+
+      // Forward the event to the channel for bulk story test operations
+      channel.emit('vitest-test-run-completed', event.payload);
+
       await telemetry('addon-test', {
         ...currentRun,
         duration: (finishedAt ?? 0) - (startedAt ?? 0),
@@ -227,6 +234,53 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
         });
       });
     }
+  }
+
+  // Forward test case results from the test runner process to the channel
+  channel.on('test-case-result', (result) => {
+    channel.emit('vitest-test-case-result', result);
+  });
+
+  // Handle story discovery test requests
+  channel.on(RUN_STORY_TESTS_REQUEST, async (data: any) => {
+    try {
+      const storyIds = data.payload.storyIds || [];
+      const requestId = data.id;
+
+      console.log('Running super real tests for story discovery:', storyIds);
+
+      // Run tests using the existing child process infrastructure
+      const testRunResult = await runStoryDiscoveryTests(storyIds, channel, store, options);
+
+      console.log('Real test results:', testRunResult.testResults);
+      console.log('Test summary:', testRunResult.testSummary);
+
+      channel.emit(RUN_STORY_TESTS_RESPONSE, {
+        success: true,
+        id: requestId,
+        payload: {
+          success: true,
+          testResults: testRunResult.testResults,
+          testSummary: testRunResult.testSummary,
+        },
+        error: null,
+      } satisfies any);
+    } catch (error: any) {
+      console.error('Error in story discovery test execution:', error);
+      channel.emit(RUN_STORY_TESTS_RESPONSE, {
+        success: false,
+        id: data.id,
+        error: error.message || 'Failed to run story tests',
+      } satisfies any);
+    }
+  });
+
+  // Helper function to compare arrays
+  function arraysEqual(a: any[], b: any[]): boolean {
+    if (a.length !== b.length) {
+      return false;
+    }
+    return a.every((val, index) => val === b[index]);
   }
 
   return channel;

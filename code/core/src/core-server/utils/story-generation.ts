@@ -3,23 +3,51 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import { JsPackageManagerFactory } from 'storybook/internal/common';
+import type {
+  StoryGenerationRequestPayload,
+  StoryGenerationResponsePayload,
+} from 'storybook/internal/core-events';
 import { experimental_loadStorybook, generateStoryFile } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
-import { prompt } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
 import { getComponentComplexity } from '@hipster/sb-utils/component-analyzer';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 
-async function findEasyToStorybookComponents(files: string[], sampleComponents: number) {
-  const candidates = [];
+interface ComponentCandidate {
+  file: string;
+  score: number;
+}
+
+interface ComponentInfo {
+  filePath: string;
+  exportName: string;
+  isDefaultExport: boolean;
+  exportCount: number;
+}
+
+async function findEasyToStorybookComponents(
+  files: string[],
+  sampleComponents: number
+): Promise<ComponentCandidate[]> {
+  const candidates: ComponentCandidate[] = [];
 
   for (const file of files) {
     try {
+      logger.debug(`Analyzing component complexity: ${file}`);
       const analysis = await getComponentComplexity(file);
       const { low, high } = analysis.features;
+      logger.debug(`Level: ${analysis.level}, Factors: ${analysis.factors}`);
 
+      // TODO: Undo this and rethink the filtering logic
+      if (analysis.level === 'simple') {
+        candidates.push({
+          file,
+          score: analysis.score,
+        });
+        continue;
+      }
       // 2. APPLY FILTERS
       // We want components that are "Pure" and isolated.
 
@@ -52,9 +80,7 @@ async function findEasyToStorybookComponents(files: string[], sampleComponents: 
       }
 
       logger.debug(`Found easy to Storybook component: ${file}`);
-      if (analysis.factors.length > 0) {
-        logger.debug(`Factors: ${analysis.factors.join(', ')}`);
-      }
+      logger.debug(`Factors: ${analysis.factors.join(', ')}`);
 
       // If we got here, it's a great candidate!
       candidates.push({
@@ -66,156 +92,12 @@ async function findEasyToStorybookComponents(files: string[], sampleComponents: 
     }
   }
 
-  // Get top 10 simplest components, easiest first
-  return candidates
-    .sort((a, b) => a.score - b.score)
-    .slice(0, sampleComponents)
-    .map((c) => c.file);
+  // Get top N simplest components, easiest first
+  return candidates.sort((a, b) => a.score - b.score).slice(0, sampleComponents);
 }
 
-interface GenerateStoriesOptions {
-  glob: string;
-  interactive?: boolean;
-  configDir?: string;
-  sampleComponents?: number;
-  force?: boolean;
-}
-
-interface ComponentInfo {
-  filePath: string;
-  exportName: string;
-  isDefaultExport: boolean;
-  exportCount: number;
-}
-
-export const generateStories = async ({
-  glob: globPattern,
-  interactive = false,
-  configDir = '.storybook',
-  sampleComponents,
-  force = false,
-}: GenerateStoriesOptions) => {
-  logger.debug(`Starting story generation with glob: ${globPattern}`);
-  logger.debug(`Interactive mode: ${interactive}`);
-  logger.debug(`Config dir: ${configDir}`);
-
-  try {
-    // Load Storybook configuration
-    logger.debug('Loading Storybook configuration...');
-    const options = await experimental_loadStorybook({
-      configDir,
-      packageJson: JsPackageManagerFactory.getPackageManager({
-        configDir,
-      }).primaryPackageJson,
-    });
-
-    logger.debug('Storybook configuration loaded successfully');
-
-    let files: string[] = [];
-
-    if (interactive) {
-      logger.debug('Starting interactive component selection...');
-      files = (await prompt.fileSystemTreeSelect({
-        message: 'Select components to generate stories for:',
-        multiple: true,
-        glob: globPattern,
-        root: process.cwd(),
-      })) as string[];
-      logger.debug(`User selected ${files.length} files`);
-    } else {
-      // Find files matching the glob pattern
-      logger.debug(`Finding files matching glob pattern: "${globPattern}"`);
-      files = await glob(globPattern, {
-        cwd: process.cwd(),
-        absolute: true,
-        ignore: [
-          '**/node_modules/**',
-          '**/.git/**',
-          '**/dist/**',
-          '**/build/**',
-          '**/storybook-static/**',
-          '**/*.stories.*',
-          '**/*.test.*',
-          '**/*.d.*',
-          '**/*.config.*',
-          '**/*.spec.*',
-        ],
-      });
-
-      logger.debug(`Found ${files.length} files matching glob pattern`);
-    }
-
-    // Filter out barrel files that only export other files
-    files = await filterOutBarrelFiles(files);
-
-    if (files.length === 0) {
-      logger.warn(`No files found matching glob pattern: ${globPattern}`);
-      return {
-        success: true,
-        generated: 0,
-        skipped: 0,
-        failed: 0,
-      };
-    }
-
-    if (sampleComponents) {
-      logger.debug('Filtering out easy to Storybook components...');
-      files = await findEasyToStorybookComponents(files, sampleComponents);
-      logger.debug(`Found ${files.length} easy to Storybook components`);
-    }
-
-    // Extract component information from files
-    logger.debug('Extracting component information from files...');
-    const components = await extractComponentsFromFiles(files);
-
-    logger.debug(`Extracted ${components.length} components from files`);
-
-    if (components.length === 0) {
-      logger.warn('No components found in the matched files');
-      return {
-        success: true,
-        generated: 0,
-        skipped: 0,
-        failed: 0,
-      };
-    }
-
-    // Filter components interactively if requested
-    const selectedComponents = components;
-
-    // Generate stories for selected components
-    logger.debug('Generating stories for selected components...');
-    const results = await generateStoriesForComponents(selectedComponents, options, force);
-
-    // Report results
-    const { generated, skipped, failed } = results;
-    logger.info(`Story generation completed:`);
-    logger.info(`  ✅ Generated: ${generated}`);
-    logger.info(`  ⏭️  Skipped: ${skipped}`);
-    logger.info(`  ❌ Failed: ${failed}`);
-
-    return {
-      success: failed === 0,
-      generated,
-      skipped,
-      failed,
-    };
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(`Failed to generate stories: ${errorMessage}`);
-    logger.debug(`Full error: ${error}`);
-    return {
-      success: false,
-      generated: 0,
-      skipped: 0,
-      failed: 1,
-      error: errorMessage,
-    };
-  }
-};
-
-async function filterOutBarrelFiles(files: string[]) {
-  const filteredFiles = [];
+async function filterOutBarrelFiles(files: string[]): Promise<string[]> {
+  const filteredFiles: string[] = [];
   for (const file of files) {
     if (file.includes('index')) {
       const content = await readFile(file, 'utf-8');
@@ -339,10 +221,21 @@ async function generateStoriesForComponents(
   components: ComponentInfo[],
   options: Options,
   force?: boolean
-): Promise<{ generated: number; skipped: number; failed: number }> {
+): Promise<{
+  generated: number;
+  skipped: number;
+  failed: number;
+  stories: Array<{ storyId: string; storyFilePath: string; componentName: string }>;
+}> {
   let generated = 0;
   let skipped = 0;
   let failed = 0;
+  const stories: Array<{
+    storyId: string;
+    storyFilePath: string;
+    componentName: string;
+    componentFilePath: string;
+  }> = [];
 
   for (const component of components) {
     logger.debug(`Generating story for ${component.filePath} - ${component.exportName}`);
@@ -365,6 +258,7 @@ async function generateStoriesForComponents(
           componentExportName: component.exportName,
           componentIsDefaultExport: component.isDefaultExport,
           componentExportCount: component.exportCount,
+          tags: ['auto-generated', '!dev'],
         },
         options,
         { checkFileExists: true }
@@ -373,6 +267,12 @@ async function generateStoriesForComponents(
       if (result.success) {
         generated++;
         logger.info(`✅ Generated story: ${result.storyFilePath}`);
+        stories.push({
+          storyId: result.storyId!,
+          storyFilePath: result.storyFilePath!,
+          componentName: component.exportName,
+          componentFilePath: component.filePath,
+        });
       } else if (result.errorType === 'STORY_FILE_EXISTS') {
         skipped++;
         logger.info(`⏭️  Skipped (already exists): ${result.storyFilePath}`);
@@ -388,5 +288,112 @@ async function generateStoriesForComponents(
     }
   }
 
-  return { generated, skipped, failed };
+  return { generated, skipped, failed, stories };
+}
+
+export async function generateSampledStories({
+  sampleSize = 20,
+  globPattern = '**/*.{ts,tsx,js,jsx}',
+  options,
+}: {
+  sampleSize?: number;
+  globPattern?: string;
+  options: Options;
+}): Promise<StoryGenerationResponsePayload> {
+  logger.debug(`Starting story generation with glob: ${globPattern}`);
+  logger.debug(`Sample size: ${sampleSize}`);
+
+  try {
+    // Load Storybook configuration
+    logger.debug('Loading Storybook configuration...');
+    const storybookOptions = await experimental_loadStorybook({
+      configDir: options.configDir,
+      packageJson: JsPackageManagerFactory.getPackageManager({
+        configDir: options.configDir,
+      }).primaryPackageJson,
+    });
+
+    logger.debug('Storybook configuration loaded successfully');
+
+    let files: string[] = [];
+
+    // Find files matching the glob pattern
+    logger.debug('Finding files matching glob pattern...');
+    files = await glob(globPattern, {
+      cwd: process.cwd(),
+      absolute: true,
+      ignore: [
+        '**/node_modules/**',
+        '**/.git/**',
+        '**/dist/**',
+        '**/build/**',
+        '**/storybook-static/**',
+        '**/*.stories.*',
+        '**/*.test.*',
+        '**/*.d.*',
+        '**/*.config.*',
+        '**/*.spec.*',
+      ],
+    });
+
+    logger.debug(`Found ${files.length} files matching glob pattern`);
+    logger.debug(files.join('\n'));
+
+    // Filter out barrel files
+    files = await filterOutBarrelFiles(files);
+
+    if (files.length === 0) {
+      logger.warn(`No files found matching glob pattern: ${globPattern}`);
+      return {
+        success: true,
+        generatedStories: [],
+      };
+    }
+
+    if (sampleSize > 0) {
+      logger.debug('Filtering out easy to Storybook components...');
+      const candidates = await findEasyToStorybookComponents(files, sampleSize);
+      files = candidates.map((c) => c.file);
+      logger.debug(`Found ${files.length} easy to Storybook components`);
+    }
+
+    // Extract component information from files
+    logger.debug('Extracting component information from files...');
+    const components = await extractComponentsFromFiles(files);
+
+    logger.debug(`Extracted ${components.length} components from files`);
+
+    if (components.length === 0) {
+      logger.warn('No components found in the matched files');
+      return {
+        success: true,
+        generatedStories: [],
+      };
+    }
+
+    // Generate stories for selected components
+    logger.debug('Generating stories for selected components...');
+    const results = await generateStoriesForComponents(components, storybookOptions, false);
+
+    // Report results
+    const { generated, skipped, failed, stories } = results;
+    logger.info(`Story generation completed:`);
+    logger.info(`  ✅ Generated: ${generated}`);
+    logger.info(`  ⏭️  Skipped: ${skipped}`);
+    logger.info(`  ❌ Failed: ${failed}`);
+
+    return {
+      success: failed === 0,
+      generatedStories: stories,
+    };
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error(`Failed to generate stories: ${errorMessage}`);
+    logger.debug(`Full error: ${error}`);
+    return {
+      success: false,
+      generatedStories: [],
+      error: errorMessage,
+    };
+  }
 }

@@ -39,6 +39,7 @@ const vitest = vi.hoisted(() => ({
   },
   config: {
     coverage: { enabled: false },
+    watch: false,
   },
 }));
 

@@ -24,6 +24,12 @@ export type TestManagerOptions = {
   testProviderStore: TestProviderStoreById;
   onError?: (message: string, error: Error) => void;
   onReady?: () => void;
+  onTestCaseResult?: (result: {
+    storyId?: string;
+    testResult: TestResult;
+    reports?: Report[];
+    componentPath?: string;
+  }) => void;
 };
 
 const testStateToStatusValueMap: Record<TestState | 'warning', StatusValue> = {
@@ -35,6 +41,8 @@ const testStateToStatusValueMap: Record<TestState | 'warning', StatusValue> = {
 };
 
 export class TestManager {
+  private options: TestManagerOptions;
+
   public store: TestManagerOptions['store'];
 
   public vitestManager: VitestManager;
@@ -53,9 +61,11 @@ export class TestManager {
     storyId: string;
     testResult: TestResult;
     reports?: Report[];
+    componentPath?: string;
   }[] = [];
 
   constructor(options: TestManagerOptions) {
+    this.options = options;
     this.store = options.store;
     this.componentTestStatusStore = options.componentTestStatusStore;
     this.a11yStatusStore = options.a11yStatusStore;
@@ -70,7 +80,10 @@ export class TestManager {
     this.store
       .untilReady()
       .then(() => {
-        return this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage });
+        return this.vitestManager.startVitest({
+          coverage: this.store.getState().config.coverage,
+          watch: this.store.getState().watching,
+        });
       })
       .then(() => this.onReady?.())
       .catch((e) => {
@@ -85,7 +98,7 @@ export class TestManager {
       callback: async () => {
         try {
           await this.vitestManager.vitestRestartPromise;
-          await this.vitestManager.runTests(event.payload);
+          await this.vitestManager.runTests(event.payload, event.payload.triggeredBy);
         } catch (err) {
           this.reportFatalError('Failed to run tests', err);
           throw err;
@@ -139,11 +152,15 @@ export class TestManager {
 
     await this.testProviderStore.runWithState(async () => {
       await callback();
+
+      const currentRun = this.store.getState().currentRun;
+
       this.store.send({
         type: 'TEST_RUN_COMPLETED',
-        payload: this.store.getState().currentRun,
+        payload: currentRun,
       });
-      if (this.store.getState().currentRun.unhandledErrors.length > 0) {
+
+      if (currentRun.unhandledErrors.length > 0) {
         throw new Error('Tests completed but there are unhandled errors');
       }
     });
@@ -159,14 +176,22 @@ export class TestManager {
     }));
   }
 
-  onTestCaseResult(result: { storyId?: string; testResult: TestResult; reports?: Report[] }) {
-    const { storyId, testResult, reports } = result;
+  onTestCaseResult(result: {
+    storyId?: string;
+    testResult: TestResult;
+    reports?: Report[];
+    componentPath?: string;
+  }) {
+    const { storyId, testResult, reports, componentPath } = result;
     if (!storyId) {
       return;
     }
 
-    this.batchedTestCaseResults.push({ storyId, testResult, reports });
+    this.batchedTestCaseResults.push({ storyId, testResult, reports, componentPath });
     this.throttledFlushTestCaseResults();
+
+    // Emit individual test case result
+    this.options.onTestCaseResult?.(result);
   }
 
   /**
@@ -302,5 +327,13 @@ export class TestManager {
         },
       });
     });
+  }
+
+  /** Run tests for story discovery - completely isolated from UI and normal test flow */
+  async runStoryDiscoveryTests(storyIds: string[]): Promise<{
+    testResults: any[];
+    testSummary: { total: number; passed: number; failed: number };
+  }> {
+    return this.vitestManager.runStoryDiscoveryTests(storyIds);
   }
 }

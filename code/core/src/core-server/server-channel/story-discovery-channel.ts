@@ -1,4 +1,4 @@
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -31,6 +31,7 @@ export function initStoryDiscoveryChannel(
   /** Listens for events to discover and test stories */
   channel.on(STORY_DISCOVERY_REQUEST, async (data: RequestData<StoryDiscoveryRequestPayload>) => {
     const { sampleSize = 20, globPattern } = data.payload;
+    let generatedStoryFiles: string[] = [];
 
     try {
       // First, generate stories from components based on a glob pattern
@@ -58,6 +59,11 @@ export function initStoryDiscoveryChannel(
         return;
       }
 
+      // Collect story file paths for cleanup
+      generatedStoryFiles = generationResult.generatedStories.map(
+        (story: GeneratedStoryInfo) => story.storyFilePath
+      );
+
       // Emit progress for story generation completion
       channel.emit(STORY_DISCOVERY_PROGRESS, {
         phase: 'generating',
@@ -72,7 +78,7 @@ export function initStoryDiscoveryChannel(
       );
       console.log('Running tests on stories:', storyIds);
 
-      const testRunResult = await runStoryTests();
+      const testRunResult = await runStoryTests(generatedStoryFiles);
 
       // Emit progress updates during testing (we'll get updates from the test runner)
       const testSummaryWithPending = {
@@ -95,15 +101,6 @@ export function initStoryDiscoveryChannel(
       const allGeneratedStories = generationResult.generatedStories;
       console.log('Test results:', testResults);
 
-      // Extract metrics for telemetry
-      const successRate =
-        testResults.summary.total > 0 ? testResults.summary.passed / testResults.summary.total : 0;
-      const failureRate =
-        testResults.summary.total > 0 ? testResults.summary.failed / testResults.summary.total : 0;
-
-      // Extract and deduplicate error messages
-      const uniqueErrors = extractUniqueErrors(testRunResult.testResults);
-
       // Emit final response
       channel.emit(STORY_DISCOVERY_RESPONSE, {
         success: true,
@@ -122,9 +119,7 @@ export function initStoryDiscoveryChannel(
           success: testRunResult.success,
           generatedCount: allGeneratedStories.length,
           testResults: testResults.summary,
-          successRate,
-          failureRate,
-          uniqueErrors,
+          testSummary: testRunResult.testSummary,
           sampleSize,
         });
       }
@@ -144,6 +139,21 @@ export function initStoryDiscoveryChannel(
           error: errorMessage,
           sampleSize,
         });
+      }
+    } finally {
+      // Clean up generated story files regardless of success or failure
+      if (generatedStoryFiles.length > 0) {
+        console.log('Cleaning up generated story files...');
+        await Promise.allSettled(
+          generatedStoryFiles.map(async (filePath) => {
+            try {
+              await rm(filePath, { force: true });
+              console.log(`Deleted story file: ${filePath}`);
+            } catch (cleanupError) {
+              console.warn(`Failed to delete story file ${filePath}:`, cleanupError);
+            }
+          })
+        );
       }
     }
   });
@@ -181,7 +191,7 @@ function extractUniqueErrors(testResults: StoryTestResult[]): string[] {
   return Array.from(errorSet);
 }
 
-async function runStoryTestsTestRunner(): Promise<RunStoryTestsResponsePayload> {
+async function runStoryTests(generatedStoryFiles: string[]): Promise<RunStoryTestsResponsePayload> {
   try {
     // Create the cache directory for story discovery tests
     const cacheDir = resolvePathInStorybookCache('story-discovery-tests');
@@ -195,109 +205,16 @@ async function runStoryTestsTestRunner(): Promise<RunStoryTestsResponsePayload> 
     const startTime = Date.now();
 
     try {
-      // Execute the test runner command
+      // Execute the test runner command with specific story files
       const testProcess = executeCommand({
         command: 'npx',
         args: [
-          '@storybook/test-runner',
-          '--index-json',
-          '--json',
-          '--includeTags=auto-generated',
-          `--outputFile`,
-          `"${outputFile}"`,
-        ],
-        stdio: 'inherit',
-      });
-
-      // Wait for the process to complete
-      await testProcess;
-    } catch {}
-
-    // Calculate duration of the command execution
-    const duration = Date.now() - startTime;
-
-    // Read and parse the JSON results
-    const resultsJson = await readFile(outputFile, 'utf8');
-    const testResults = JSON.parse(resultsJson);
-
-    // Transform the Jest test results to our expected format
-    const storyTestResults: StoryTestResult[] = [];
-
-    for (const testSuite of testResults.testResults) {
-      for (const assertion of testSuite.assertionResults) {
-        // Extract story ID from the test title (assuming format like "Example/Button Default smoke-test")
-        const storyId = assertion.ancestorTitles.slice(0, -1).join('/'); // Remove the last part (usually "Default")
-
-        storyTestResults.push({
-          storyId,
-          status:
-            assertion.status === 'passed'
-              ? 'PASS'
-              : assertion.status === 'failed'
-                ? 'FAIL'
-                : 'PENDING',
-          error: assertion.failureMessages?.join('\n') || undefined,
-        });
-      }
-    }
-
-    const testSummary = {
-      total: testResults.numTotalTests,
-      passed: testResults.numPassedTests,
-      failed: testResults.numFailedTests,
-    };
-
-    console.log(
-      `Test run completed in ${duration}ms with ${testSummary.passed} passed, ${testSummary.failed} failed out of ${testSummary.total} total tests`
-    );
-
-    console.log({ testResults });
-    return {
-      success: testResults.success,
-      testResults: storyTestResults,
-      testSummary,
-      duration,
-    };
-  } catch (error) {
-    console.error('Error running story tests:', error);
-
-    return {
-      success: false,
-      testResults: [],
-      testSummary: {
-        total: 0,
-        passed: 0,
-        failed: 0,
-      },
-      error: error instanceof Error ? error.message : String(error),
-      duration: 0, // Command didn't complete, so duration is 0
-    };
-  }
-}
-
-async function runStoryTests(): Promise<RunStoryTestsResponsePayload> {
-  try {
-    // Create the cache directory for story discovery tests
-    const cacheDir = resolvePathInStorybookCache('story-discovery-tests');
-    await mkdir(cacheDir, { recursive: true });
-
-    // Create timestamped output file
-    const timestamp = Date.now();
-    const outputFile = join(cacheDir, `test-results-${timestamp}.json`);
-
-    // Start timing the command execution
-    const startTime = Date.now();
-
-    try {
-      // Execute the test runner command
-      const testProcess = executeCommand({
-        command: 'npx',
-        args: [
-          'vitest run',
+          'vitest',
+          'run',
           '--project=storybook',
           '--reporter=json',
-          `--outputFile`,
-          `"${outputFile}"`,
+          `--outputFile=${outputFile}`,
+          ...generatedStoryFiles,
         ],
         stdio: 'ignore',
       });
@@ -313,46 +230,103 @@ async function runStoryTests(): Promise<RunStoryTestsResponsePayload> {
     const resultsJson = await readFile(outputFile, 'utf8');
     const testResults = JSON.parse(resultsJson);
 
-    console.log({ testResults });
-
-    // Transform the Jest test results to our expected format
+    // Transform the Vitest test results to our expected format
     const storyTestResults: StoryTestResult[] = [];
+    let passingCount = 0;
+    let failingCount = 0;
+    let passedButEmptyRenderCount = 0;
+    const passedComponentPaths: string[] = [];
 
     for (const testSuite of testResults.testResults) {
       for (const assertion of testSuite.assertionResults) {
-        // Extract story ID from the test title (assuming format like "Example/Button Default smoke-test")
-        const storyId = assertion.ancestorTitles.slice(0, -1).join('/'); // Remove the last part (usually "Default")
+        const storyId = assertion.meta?.storyId || assertion.fullName;
+
+        const status =
+          assertion.status === 'passed'
+            ? 'PASS'
+            : assertion.status === 'failed'
+              ? 'FAIL'
+              : 'PENDING';
+
+        // Check for empty render in reports
+        const hasEmptyRender = assertion.meta?.reports?.some(
+          (report: { type: string; result?: { emptyRender?: boolean } }) =>
+            report.type === 'render-analysis' && report.result?.emptyRender === true
+        );
+
+        if (status === 'PASS') {
+          passingCount++;
+          if (hasEmptyRender) {
+            passedButEmptyRenderCount++;
+          }
+          // Collect component paths of passed tests to pass to the frontend
+          if (assertion.meta?.componentPath) {
+            // name is the actual story file path
+            const storiesFilePath = testSuite.name;
+            // and component path is relative e.g. ./Button
+            const componentPath = assertion.meta.componentPath.replace('./', '');
+            // So we get the directory of the story file and combine with the component path to get the full component path
+            const storiesDir = storiesFilePath.substring(0, storiesFilePath.lastIndexOf('/') + 1);
+            const fullComponentPath = storiesDir + componentPath;
+            passedComponentPaths.push(fullComponentPath);
+          }
+        } else if (status === 'FAIL') {
+          failingCount++;
+        }
+
+        // Extract error message (first line of failureMessages)
+        let error: string | undefined;
+        if (assertion.failureMessages && assertion.failureMessages.length > 0) {
+          error = assertion.failureMessages[0].split('\n')[0]; // Take only the first line
+        }
 
         storyTestResults.push({
           storyId,
-          status:
-            assertion.status === 'passed'
-              ? 'PASS'
-              : assertion.status === 'failed'
-                ? 'FAIL'
-                : 'PENDING',
-          error: assertion.failureMessages?.join('\n') || undefined,
+          status,
+          error,
         });
       }
     }
 
+    const total = testResults.numTotalTests;
+    const passed = testResults.numPassedTests;
+    const failed = testResults.numFailedTests;
+    const successRate = total > 0 ? parseFloat((passed / total).toFixed(2)) : 0;
+    const failureRate = total > 0 ? parseFloat((failed / total).toFixed(2)) : 0;
+    const successRateWithoutEmptyRender =
+      total > 0 ? parseFloat(((passed - passedButEmptyRenderCount) / total).toFixed(2)) : 0;
+
+    // Extract unique errors
+    const uniqueErrors = extractUniqueErrors(storyTestResults);
+    const uniqueErrorCount = uniqueErrors.length;
+
+    // Deduplicate component paths as there could be multiple components in the same file
+    const uniquePassedComponentPaths = Array.from(new Set(passedComponentPaths));
+
     const testSummary = {
-      total: testResults.numTotalTests,
-      passed: testResults.numPassedTests,
-      failed: testResults.numFailedTests,
+      total,
+      passed,
+      failed,
+      // Additional metrics for Vitest
+      failureRate,
+      successRate,
+      successRateWithoutEmptyRender,
+      uniqueErrors,
+      uniqueErrorCount,
+      passingCount,
+      failingCount,
+      passedButEmptyRenderCount,
+      passedComponentPaths: uniquePassedComponentPaths,
     };
 
-    console.log(
-      `Test run completed in ${duration}ms with ${testSummary.passed} passed, ${testSummary.failed} failed out of ${testSummary.total} total tests`
-    );
-
-    console.log({ testResults });
-    return {
+    const enhancedResponse: RunStoryTestsResponsePayload = {
       success: testResults.success,
       testResults: storyTestResults,
       testSummary,
       duration,
     };
+
+    return enhancedResponse;
   } catch (error) {
     console.error('Error running story tests:', error);
 
@@ -363,9 +337,18 @@ async function runStoryTests(): Promise<RunStoryTestsResponsePayload> {
         total: 0,
         passed: 0,
         failed: 0,
+        failureRate: 0,
+        successRate: 0,
+        successRateWithoutEmptyRender: 0,
+        uniqueErrors: [],
+        uniqueErrorCount: 0,
+        passingCount: 0,
+        failingCount: 0,
+        passedButEmptyRenderCount: 0,
+        passedComponentPaths: [],
       },
       error: error instanceof Error ? error.message : String(error),
-      duration: 0, // Command didn't complete, so duration is 0
+      duration: 0,
     };
   }
 }

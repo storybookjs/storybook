@@ -56,6 +56,15 @@ export interface StoryDiscoveryResponsePayload {
     total: number;
     passed: number;
     failed: number;
+    failureRate: number;
+    successRate: number;
+    successRateWithoutEmptyRender: number;
+    uniqueErrors: string[];
+    uniqueErrorCount: number;
+    passingCount: number;
+    failingCount: number;
+    passedButEmptyRenderCount: number;
+    passedComponentPaths: string[];
   };
   // Error message if the operation failed
   error?: string;
@@ -72,6 +81,15 @@ export interface RunStoryTestsResponsePayload {
     total: number;
     passed: number;
     failed: number;
+    failureRate: number;
+    successRate: number;
+    successRateWithoutEmptyRender: number;
+    uniqueErrors: string[];
+    uniqueErrorCount: number;
+    passingCount: number;
+    failingCount: number;
+    passedButEmptyRenderCount: number;
+    passedComponentPaths: string[];
   };
   duration: number;
   error?: string;

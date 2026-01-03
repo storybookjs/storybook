@@ -258,7 +258,7 @@ async function generateStoriesForComponents(
           componentExportName: component.exportName,
           componentIsDefaultExport: component.isDefaultExport,
           componentExportCount: component.exportCount,
-          tags: ['auto-generated'],
+          tags: ['auto-generated', '!dev'],
         },
         options,
         { checkFileExists: true }

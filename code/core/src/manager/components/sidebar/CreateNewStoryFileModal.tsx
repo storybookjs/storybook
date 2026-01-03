@@ -81,6 +81,7 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
         componentFilePath?: string;
       }>;
     };
+    testSummary?: StoryDiscoveryResponsePayload['testSummary'];
   } | null>(null);
   const hasRunFlow = useRef(false);
 
@@ -293,10 +294,13 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
       setFlowResults({
         generatedCount: result.generatedStories.length,
         testResults: {
-          ...result.testSummary,
+          passed: result.testSummary.passed,
+          failed: result.testSummary.failed,
+          total: result.testSummary.total,
           pending: 0, // No pending tests when complete
           results: result.testResults,
         },
+        testSummary: result.testSummary,
       });
       setFlowStatus('complete');
     } catch (error: any) {

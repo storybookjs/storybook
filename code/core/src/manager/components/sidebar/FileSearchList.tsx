@@ -4,6 +4,7 @@ import { Badge, TooltipNote, TooltipProvider } from 'storybook/internal/componen
 import type {
   CreateNewStoryRequestPayload,
   FileComponentSearchResponsePayload,
+  StoryDiscoveryResponsePayload,
 } from 'storybook/internal/core-events';
 
 import {
@@ -74,6 +75,7 @@ interface FileSearchListProps {
         componentFilePath?: string;
       }>;
     };
+    testSummary?: StoryDiscoveryResponsePayload['testSummary'];
   } | null;
   flowStatus: 'idle' | 'generating' | 'testing' | 'complete';
 }
@@ -203,14 +205,10 @@ export const FileSearchList = memo(function FileSearchList({
         ? "We can't evaluate exports for this file. Automatic story creation is disabled."
         : undefined;
 
-      // Show recommended badge if this component's file path passed the tests
-      const showRecommendedBadge = true;
-      // TODO: bring this back
-      // flowStatus === 'complete' &&
-      //   flowResults &&
-      //   flowResults.testResults.results?.some(
-      //     (result) => result.componentFilePath === searchResult.filepath && result.status === 'PASS'
-      //   );
+      // Show recommended badge if this component's path is in the passed component paths
+      const showRecommendedBadge =
+        flowStatus === 'complete' &&
+        flowResults?.testSummary?.passedComponentPaths?.includes(searchResult.filepath);
 
       return (
         <FileListItem

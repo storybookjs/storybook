@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useTransition } from 'react';
 
 import { Form, Modal } from 'storybook/internal/components';
+import type { StoryDiscoveryResponsePayload } from 'storybook/internal/core-events';
 
 import { CloseAltIcon, SearchIcon, SyncIcon } from '@storybook/icons';
 
@@ -139,6 +140,7 @@ interface FileSearchModalProps {
   flowResults: {
     generatedCount: number;
     testResults: { passed: number; failed: number; total: number; pending: number };
+    testSummary?: StoryDiscoveryResponsePayload['testSummary'];
   } | null;
   flowStatus: 'idle' | 'generating' | 'testing' | 'complete';
 }

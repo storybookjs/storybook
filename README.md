@@ -93,7 +93,7 @@ Storybook comes with a lot of [addons](https://storybook.js.org/docs/configure/u
 For additional help, share your issue in [the repo's GitHub Discussions](https://github.com/storybookjs/storybook/discussions/new?category=help).
 
 ## Projects
-
+<a href="https://www.rently.pk">Rently</a>
 ### Supported Frameworks
 
 | Renderer                                                       | Demo                                                                                                                                                                         |                                                                                                                                                       |

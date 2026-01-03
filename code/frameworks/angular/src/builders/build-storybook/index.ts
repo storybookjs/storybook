@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
 import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
@@ -31,7 +32,6 @@ import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
 import type { StandaloneOptions } from '../utils/standalone-options';
 import { VERSION } from '@angular/core';
-import { joinPathFragments } from '../utils/paths';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -85,7 +85,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
 
   const { tsConfig } = await setup(options, context);
 
-  const pathToConfigDir = joinPathFragments(context.workspaceRoot, options.configDir);
+  const pathToConfigDir = path.join(context.workspaceRoot, options.configDir);
   const docTSConfig = find.up('tsconfig.doc.json', {
     cwd: pathToConfigDir,
     last: getProjectRoot(),
@@ -180,7 +180,7 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
     );
   }
 
-  const pathToConfigDir = joinPathFragments(context.workspaceRoot, options.configDir);
+  const pathToConfigDir = path.join(context.workspaceRoot, options.configDir);
   return {
     tsConfig:
       options.tsConfig ??

@@ -33,6 +33,7 @@ export async function getNewStoryFile(
     componentExportName,
     componentIsDefaultExport,
     componentExportCount,
+    tags,
   }: CreateNewStoryRequestPayload,
   options: Options
 ) {
@@ -113,6 +114,7 @@ export async function getNewStoryFile(
       exportedStoryName,
       previewImportPath,
       args,
+      tags,
     });
   } else {
     storyFileContent =
@@ -124,6 +126,7 @@ export async function getNewStoryFile(
             frameworkPackage: sanitizedFrameworkPackageName,
             exportedStoryName,
             args,
+            tags,
           })
         : await getJavaScriptTemplateForNewStoryFile({
             basenameWithoutExtension,
@@ -131,6 +134,7 @@ export async function getNewStoryFile(
             componentIsDefaultExport,
             exportedStoryName,
             args,
+            tags,
           });
   }
 

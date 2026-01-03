@@ -73,5 +73,6 @@ export interface RunStoryTestsResponsePayload {
     passed: number;
     failed: number;
   };
+  duration: number;
   error?: string;
 }

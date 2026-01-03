@@ -7,6 +7,8 @@ export interface CreateNewStoryRequestPayload {
   componentIsDefaultExport: boolean;
   // The amount of exports in the file
   componentExportCount: number;
+  // Custom tags to add to the story file
+  tags?: string[];
 }
 
 export interface CreateNewStoryResponsePayload {

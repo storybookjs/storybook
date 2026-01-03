@@ -13,6 +13,8 @@ interface TypeScriptTemplateData {
   exportedStoryName: string;
   /** The args to include in the story */
   args?: Record<string, any>;
+  /** The custom tags to add to the story */
+  tags?: string[];
 }
 
 export async function getTypeScriptTemplateForNewStoryFile(data: TypeScriptTemplateData) {
@@ -33,6 +35,11 @@ export async function getTypeScriptTemplateForNewStoryFile(data: TypeScriptTempl
       `
     : `export const ${data.exportedStoryName}: Story = {};`;
 
+  const tagsString =
+    data.tags && Array.isArray(data.tags) && data.tags.length > 0
+      ? `tags: ${JSON.stringify(data.tags)},`
+      : '';
+
   return dedent`
   import type { Meta, StoryObj } from '${data.frameworkPackage}';
 
@@ -40,6 +47,7 @@ export async function getTypeScriptTemplateForNewStoryFile(data: TypeScriptTempl
 
   const meta = {
     component: ${importName},
+    ${tagsString}
   } satisfies Meta<typeof ${importName}>;
 
   export default meta;

@@ -55,14 +55,16 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 
 /** @ts-expect-error We cannot implement the meta faithfully here, but that is okay. */
 export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes & T> {
+  type<R>(): ReactPreview<T & R>;
+
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<ReactTypes & T, any>,
     // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<TArgs>,
+    TMetaArgs extends Partial<TArgs & T['args']>,
   >(
     meta: {
-      render?: ArgsStoryFn<ReactTypes & T, TArgs>;
+      render?: ArgsStoryFn<ReactTypes & T, TArgs & T['args']>;
       component?: ComponentType<TArgs>;
       decorators?: Decorators | Decorators[];
       args?: TMetaArgs;

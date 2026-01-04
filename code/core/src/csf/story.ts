@@ -172,6 +172,7 @@ export interface StrictGlobalTypes {
 }
 
 export interface AddonTypes {
+  args?: unknown;
   parameters?: Record<string, any>;
   globals?: Record<string, any>;
 }

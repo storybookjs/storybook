@@ -11,6 +11,8 @@ import type {
   TestFunction,
 } from 'storybook/internal/types';
 
+import type { SetOptional } from 'type-fest';
+
 import {
   combineParameters,
   composeConfigs,
@@ -26,9 +28,14 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
-  meta<TArgs extends Args, TInput extends ComponentAnnotations<TRenderer & { args: TArgs }, TArgs>>(
+  meta<
+    TArgs extends Args,
+    TInput extends ComponentAnnotations<TRenderer & { args: TArgs }, TArgs & TRenderer['args']>,
+  >(
     input: TInput
   ): Meta<TRenderer & { args: TArgs }, TInput>;
+
+  type<T>(): Preview<TRenderer & T>;
 }
 
 export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
@@ -51,6 +58,9 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
         composeConfigs([...getCoreAnnotations(), ...(addons ?? []), rest])
       );
       return composed;
+    },
+    type() {
+      return this;
     },
     meta(meta) {
       // @ts-expect-error hard
@@ -76,13 +86,13 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
 
 export interface Meta<
   TRenderer extends Renderer,
-  TInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
+  TMetaInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
     TRenderer,
     TRenderer['args']
   >,
 > {
   readonly _tag: 'Meta';
-  input: TInput;
+  input: TMetaInput;
   // composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;
 
@@ -90,7 +100,13 @@ export interface Meta<
     input?: () => TRenderer['storyResult']
   ): Story<TRenderer, { render: () => TRenderer['storyResult'] }>;
 
-  story<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
+  story<
+    TInput extends StoryAnnotations<
+      TRenderer,
+      TRenderer['args'],
+      SetOptional<TRenderer['args'], keyof TRenderer['args'] & keyof TMetaInput['args']>
+    >,
+  >(
     input?: TInput
   ): Story<TRenderer, TInput>;
 }

@@ -30,6 +30,7 @@ import type {
   StoryDiscoveryResponsePayload,
 } from 'storybook/internal/core-events';
 
+import { global } from '@storybook/global';
 import { CheckIcon } from '@storybook/icons';
 
 import type { RequestResponseError } from 'storybook/manager-api';
@@ -44,6 +45,8 @@ interface CreateNewStoryFileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const isRendererReact = global.STORYBOOK_RENDERER === 'react';
 
 const stringifyArgs = (args: Record<string, any>) =>
   JSON.stringify(args, (_, value) => {
@@ -241,7 +244,7 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
 
   // Trigger the one-time flow when modal opens
   useEffect(() => {
-    if (open && !hasRunFlow.current && flowStatus === 'idle') {
+    if (open && isRendererReact && !hasRunFlow.current && flowStatus === 'idle') {
       hasRunFlow.current = true;
       executeStoryGenerationFlow();
     }
@@ -255,10 +258,11 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
       const channel = addons.getChannel();
       const handleProgress = (event: StoryDiscoveryProgressPayload) => {
         if (event.phase === 'generating') {
-          setFlowResults({
-            generatedCount: event.progress.generatedCount || 0,
-            testResults: { passed: 0, failed: 0, total: 0, pending: 0 },
-          });
+          // TODO: think about whether we want this or not
+          // setFlowResults({
+          //   generatedCount: event.progress.generatedCount || 0,
+          //   testResults: { passed: 0, failed: 0, total: 0, pending: 0 },
+          // });
         } else if (event.phase === 'testing') {
           setFlowStatus('testing');
           setFlowResults((prev) => ({

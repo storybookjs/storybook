@@ -18,6 +18,7 @@ describe('csf-factories', () => {
 
       const meta = preview.meta({
         component: Foo,
+        
       });
 
       export const Default = meta.story({});"
@@ -39,6 +40,7 @@ describe('csf-factories', () => {
 
       const meta = preview.meta({
         component: FooComponent,
+        
       });
 
       export const Default = meta.story({});"
@@ -61,6 +63,7 @@ describe('csf-factories', () => {
 
       const meta = preview.meta({
         component: Foo,
+        
       });
 
       export const Default = meta.story({});"

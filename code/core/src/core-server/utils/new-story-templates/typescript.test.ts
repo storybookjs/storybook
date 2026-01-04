@@ -19,6 +19,7 @@ describe('typescript', () => {
 
       const meta = {
         component: Foo,
+        
       } satisfies Meta<typeof Foo>;
 
       export default meta;
@@ -45,6 +46,7 @@ describe('typescript', () => {
 
       const meta = {
         component: Example,
+        
       } satisfies Meta<typeof Example>;
 
       export default meta;

@@ -130,7 +130,6 @@ describe('createNewStoryChannel', () => {
       mockChannel.emit(CREATE_NEW_STORYFILE_REQUEST, {
         id: 'components-page--default',
         payload: {
-          alreadyContainsArgs: false,
           componentFilePath: 'src/components/Page.jsx',
           componentExportName: 'Page',
           componentIsDefaultExport: true,

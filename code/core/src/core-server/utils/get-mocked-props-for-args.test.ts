@@ -42,8 +42,10 @@ describe('new-story-docgen', () => {
     });
 
     it('generates node values using prop name', () => {
-      expect(generateMockValueFromSBType({ name: 'node' }, 'children')).toBe('children');
-      expect(generateMockValueFromSBType({ name: 'node' })).toBe('Hello world');
+      expect(generateMockValueFromSBType({ name: 'node', renderer: 'react' }, 'children')).toBe(
+        'children'
+      );
+      expect(generateMockValueFromSBType({ name: 'node', renderer: 'react' })).toBe('Hello world');
     });
 
     it('generates functions as placeholders', () => {
@@ -123,7 +125,7 @@ describe('new-story-docgen', () => {
           backgroundColor: { required: true, type: { name: 'string' } },
           websiteUrl: { required: false, type: { name: 'string' } },
           onClick: { required: true, type: { name: 'function' } },
-          children: { required: false, type: { name: 'node', type: 'react' } },
+          children: { required: false, type: { name: 'node', renderer: 'react' } },
         },
       };
 

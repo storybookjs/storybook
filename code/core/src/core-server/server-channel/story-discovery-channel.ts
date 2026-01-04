@@ -2,7 +2,12 @@ import { mkdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
-import { executeCommand, resolvePathInStorybookCache } from 'storybook/internal/common';
+import {
+  cache,
+  executeCommand,
+  getProjectRoot,
+  resolvePathInStorybookCache,
+} from 'storybook/internal/common';
 import type {
   GeneratedStoryInfo,
   RequestData,
@@ -18,10 +23,12 @@ import {
   STORY_DISCOVERY_REQUEST,
   STORY_DISCOVERY_RESPONSE,
 } from 'storybook/internal/core-events';
-import { telemetry } from 'storybook/internal/telemetry';
+import { getLastEvents, getStorybookMetadata, telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import { generateSampledStories } from '../utils/story-generation';
+
+const STORY_DISCOVERY_CACHE_KEY = 'experimental/story-discovery/has-run';
 
 export function initStoryDiscoveryChannel(
   channel: Channel,
@@ -32,8 +39,35 @@ export function initStoryDiscoveryChannel(
   channel.on(STORY_DISCOVERY_REQUEST, async (data: RequestData<StoryDiscoveryRequestPayload>) => {
     const { sampleSize = 20, globPattern } = data.payload;
     let generatedStoryFiles: string[] = [];
-
+    let matchCount = 0;
     try {
+      // only execute discovery if it's a storybook init run
+      // TODO: uncomment this later, it's commented out for debugging purposes
+      // const lastEvents = await getLastEvents();
+      // if (!lastEvents.init) {
+      //   console.log('Skipping discovery run', { lastEvents });
+      //   return;
+      // }
+
+      const alreadyRan = await cache.get(STORY_DISCOVERY_CACHE_KEY);
+      if (alreadyRan) {
+        console.log('Skipping discovery run - already ran');
+        return;
+      }
+
+      const metadata = await getStorybookMetadata(options.configDir);
+      const isReactStorybook = metadata?.renderer === '@storybook/react';
+      const hasVitestAddon = metadata?.addons && '@storybook/addon-vitest' in metadata.addons;
+
+      // For now this is gated by React + Vitest
+      if (!isReactStorybook || !hasVitestAddon) {
+        console.log('Skipping discovery run - not react vitest', { metadata });
+        return;
+      }
+
+      // Mark as ran up-front so we only ever attempt this once
+      await cache.set(STORY_DISCOVERY_CACHE_KEY, { timestamp: Date.now() });
+
       // First, generate stories from components based on a glob pattern
       console.log('Generating stories...');
       const generationResult = await generateSampledStories({
@@ -41,6 +75,7 @@ export function initStoryDiscoveryChannel(
         globPattern,
         options,
       });
+      matchCount = generationResult.matchCount;
       console.log('Stories generated:', generationResult);
       if (!generationResult.success) {
         channel.emit(STORY_DISCOVERY_RESPONSE, {
@@ -54,6 +89,7 @@ export function initStoryDiscoveryChannel(
             success: false,
             error: generationResult.error,
             sampleSize,
+            matchCount,
           });
         }
         return;
@@ -121,6 +157,7 @@ export function initStoryDiscoveryChannel(
           testResults: testResults.summary,
           testSummary: testRunResult.testSummary,
           sampleSize,
+          matchCount: generationResult.matchCount,
         });
       }
     } catch (error: unknown) {
@@ -138,6 +175,7 @@ export function initStoryDiscoveryChannel(
           success: false,
           error: errorMessage,
           sampleSize,
+          matchCount,
         });
       }
     } finally {
@@ -261,6 +299,7 @@ async function runStoryTests(generatedStoryFiles: string[]): Promise<RunStoryTes
           }
           // Collect component paths of passed tests to pass to the frontend
           if (assertion.meta?.componentPath) {
+            const root = getProjectRoot();
             // name is the actual story file path
             const storiesFilePath = testSuite.name;
             // and component path is relative e.g. ./Button
@@ -268,7 +307,11 @@ async function runStoryTests(generatedStoryFiles: string[]): Promise<RunStoryTes
             // So we get the directory of the story file and combine with the component path to get the full component path
             const storiesDir = storiesFilePath.substring(0, storiesFilePath.lastIndexOf('/') + 1);
             const fullComponentPath = storiesDir + componentPath;
-            passedComponentPaths.push(fullComponentPath);
+            // Make the path relative to the project root
+            const relativeComponentPath = fullComponentPath.startsWith(root)
+              ? fullComponentPath.slice(root.length).replace(/^[\\/]/, '') // Remove leading slash/backslash if present
+              : fullComponentPath;
+            passedComponentPaths.push(relativeComponentPath);
           }
         } else if (status === 'FAIL') {
           failingCount++;

@@ -16,6 +16,7 @@ describe('javascript', () => {
 
       const meta = {
         component: Foo,
+        
       };
       
       export default meta;
@@ -37,6 +38,7 @@ describe('javascript', () => {
 
       const meta = {
         component: Example,
+        
       };
 
       export default meta;

@@ -3,10 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import { JsPackageManagerFactory } from 'storybook/internal/common';
-import type {
-  StoryGenerationRequestPayload,
-  StoryGenerationResponsePayload,
-} from 'storybook/internal/core-events';
+import type { GeneratedStoryInfo } from 'storybook/internal/core-events';
 import { experimental_loadStorybook, generateStoryFile } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
@@ -225,7 +222,7 @@ async function generateStoriesForComponents(
   generated: number;
   skipped: number;
   failed: number;
-  stories: Array<{ storyId: string; storyFilePath: string; componentName: string }>;
+  stories: GeneratedStoryInfo[];
 }> {
   let generated = 0;
   let skipped = 0;
@@ -299,9 +296,15 @@ export async function generateSampledStories({
   sampleSize?: number;
   globPattern?: string;
   options: Options;
-}): Promise<StoryGenerationResponsePayload> {
+}): Promise<{
+  success: boolean;
+  generatedStories: GeneratedStoryInfo[];
+  error?: string;
+  matchCount: number;
+}> {
   logger.debug(`Starting story generation with glob: ${globPattern}`);
   logger.debug(`Sample size: ${sampleSize}`);
+  let matchCount = 0;
 
   try {
     // Load Storybook configuration
@@ -339,6 +342,8 @@ export async function generateSampledStories({
     logger.debug(`Found ${files.length} files matching glob pattern`);
     logger.debug(files.join('\n'));
 
+    matchCount = files.length;
+
     // Filter out barrel files
     files = await filterOutBarrelFiles(files);
 
@@ -347,6 +352,7 @@ export async function generateSampledStories({
       return {
         success: true,
         generatedStories: [],
+        matchCount,
       };
     }
 
@@ -361,15 +367,16 @@ export async function generateSampledStories({
     logger.debug('Extracting component information from files...');
     const components = await extractComponentsFromFiles(files);
 
-    logger.debug(`Extracted ${components.length} components from files`);
-
     if (components.length === 0) {
-      logger.warn('No components found in the matched files');
+      logger.debug('No components found in the matched files');
       return {
         success: true,
         generatedStories: [],
+        matchCount,
       };
     }
+
+    logger.debug(`Extracted ${components.length} components from files`);
 
     // Generate stories for selected components
     logger.debug('Generating stories for selected components...');
@@ -385,6 +392,7 @@ export async function generateSampledStories({
     return {
       success: failed === 0,
       generatedStories: stories,
+      matchCount,
     };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -394,6 +402,7 @@ export async function generateSampledStories({
       success: false,
       generatedStories: [],
       error: errorMessage,
+      matchCount,
     };
   }
 }

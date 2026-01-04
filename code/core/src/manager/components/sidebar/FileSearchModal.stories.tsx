@@ -39,6 +39,8 @@ export const InitialState: Story = {
     isLoading: false,
     error: null,
     searchResults: null,
+    flowResults: null,
+    flowStatus: 'idle',
   },
 };
 export const InitialStateLight = Object.assign({}, InitialState, {
@@ -52,6 +54,8 @@ export const Loading: Story = {
     isLoading: true,
     error: null,
     searchResults: null,
+    flowResults: null,
+    flowStatus: 'idle',
   },
 };
 export const LoadingLight = Object.assign({}, Loading, { globals: { sb_theme: 'light' } });
@@ -63,6 +67,8 @@ export const LoadingWithPreviousResults: Story = {
     isLoading: true,
     error: null,
     searchResults: WithResults.args.searchResults,
+    flowResults: null,
+    flowStatus: 'idle',
   },
 };
 export const LoadingWithPreviousResultsLight = Object.assign({}, LoadingWithPreviousResults, {
@@ -76,6 +82,8 @@ export const Empty: Story = {
     isLoading: false,
     error: null,
     searchResults: [],
+    flowResults: null,
+    flowStatus: 'idle',
   },
 };
 export const EmptyLight = Object.assign({}, Empty, { globals: { sb_theme: 'light' } });
@@ -87,6 +95,8 @@ export const WithSearchResults: Story = {
     isLoading: false,
     error: null,
     searchResults: WithResults.args.searchResults,
+    flowResults: null,
+    flowStatus: 'idle',
   },
   play: async ({ canvasElement, args }) => {
     const parent = within(canvasElement.parentNode as HTMLElement);
@@ -118,6 +128,8 @@ export const WithSearchResultsAndError: Story = {
     isLoading: false,
     error: { error: 'Some error occured', selectedItemId: 'src/module-multiple-exports.js' },
     searchResults: WithResults.args.searchResults,
+    flowResults: null,
+    flowStatus: 'idle',
   },
 };
 export const WithSearchResultsAndErrorLight = Object.assign({}, WithSearchResultsAndError, {
@@ -134,6 +146,8 @@ export const WithSearchResultsAndMultiLineError: Story = {
       selectedItemId: 'src/module-multiple-exports.js',
     },
     searchResults: WithResults.args.searchResults,
+    flowResults: null,
+    flowStatus: 'idle',
   },
 };
 export const WithSearchResultsAndMultiLineErrorLight = Object.assign(

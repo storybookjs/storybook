@@ -16,10 +16,8 @@ interface InternalLayoutState {
   isDragging: boolean;
 }
 
-interface ManagerLayoutState extends Pick<
-  API_Layout,
-  'navSize' | 'bottomPanelHeight' | 'rightPanelWidth' | 'panelPosition'
-> {
+interface ManagerLayoutState
+  extends Pick<API_Layout, 'navSize' | 'bottomPanelHeight' | 'rightPanelWidth' | 'panelPosition'> {
   viewMode: API_ViewMode;
 }
 
@@ -155,23 +153,14 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     sidebarResizerRef,
     showPages,
     showPanel,
-    isDragging,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
 
   return (
-    <LayoutContainer
-      navSize={navSize}
-      rightPanelWidth={rightPanelWidth}
-      bottomPanelHeight={bottomPanelHeight}
-      panelPosition={managerLayoutState.panelPosition}
-      isDragging={isDragging}
-      viewMode={managerLayoutState.viewMode}
-      showPanel={showPanel}
-    >
+    <LayoutContainer>
       {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
       <>
         {isDesktop && (
-          <SidebarContainer width={navSize}>
+          <SidebarContainer style={{ width: navSize }}>
             <Drag ref={sidebarResizerRef} />
             {slots.slotSidebar}
           </SidebarContainer>
@@ -224,28 +213,23 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
   );
 };
 
-const LayoutContainer = styled.div<LayoutState & { showPanel: boolean }>(
-  ({ navSize, rightPanelWidth, bottomPanelHeight, viewMode, panelPosition, showPanel }) => {
-    return {
-      width: '100%',
-      height: ['100vh', '100dvh'], // This array is a special Emotion syntax to set a fallback if 100dvh is not supported
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-      colorScheme: 'light dark',
+const LayoutContainer = styled.div({
+  width: '100%',
+  height: ['100vh', '100dvh'], // This array is a special Emotion syntax to set a fallback if 100dvh is not supported
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+  colorScheme: 'light dark',
 
-      [MEDIA_DESKTOP_BREAKPOINT]: {
-        flexDirection: 'row',
-      },
-    };
-  }
-);
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    flexDirection: 'row',
+  },
+});
 
-const SidebarContainer = styled.div<{ width: number }>(({ theme, width }) => ({
+const SidebarContainer = styled.div(({ theme }) => ({
   backgroundColor: theme.appBg,
   position: 'relative',
   borderRight: `1px solid ${theme.appBorderColor}`,
-  width,
 
   [MEDIA_DESKTOP_BREAKPOINT]: {
     flexShrink: 0,
@@ -257,7 +241,7 @@ const ContentPanelWrapper = styled.div<{
   showPanel: boolean;
   rightPanelWidth: number;
   bottomPanelHeight: number;
-}>(({ panelPosition, bottomPanelHeight, showPanel }) => ({
+}>(({ panelPosition }) => ({
   display: 'flex',
   overflow: 'hidden',
   flex: 1,

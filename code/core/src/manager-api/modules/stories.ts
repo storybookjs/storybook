@@ -60,9 +60,6 @@ import { fullStatusStore } from '../stores/status';
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
 
-// TODO: port this to getStoryUrls once available.
-const DEFAULT_REF_ID = 'storybook_internal';
-
 type Direction = -1 | 1;
 type ParameterName = string;
 
@@ -154,22 +151,6 @@ export interface SubAPI {
    * @returns {void}
    */
   jumpToStory: (direction: Direction) => void;
-  /**
-   * Computes the URL for the next or previous component in the index.
-   *
-   * @param {Direction} direction - The direction to navigate. Use -1 to get the previous component,
-   *   and 1 to get the next component.
-   * @returns {string | null} The URL for the target component, or null if no sibling was found.
-   */
-  getSiblingComponentHref: (direction: Direction) => string | null;
-  /**
-   * Computes the URL for the next or previous story in the story index.
-   *
-   * @param {Direction} direction - The direction to navigate. Use -1 to get the previous story and
-   *   1 to get the next story.
-   * @returns {string | null} The URL for the target story, or null if no sibling was found.
-   */
-  getSiblingStoryHref: (direction: Direction) => string | null;
   /**
    * Returns the data for the given story ID and optional ref ID.
    *
@@ -338,48 +319,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   viewMode: initialViewMode,
   docsOptions = {},
 }) => {
-  /**
-   * Helper function to find sibling component in the given direction. Shared logic between
-   * jumpToComponent and getSiblingComponentHref.
-   */
-  const findSiblingComponent = (direction: Direction): StoryId | undefined => {
-    const { filteredIndex, storyId, refs, refId } = store.getState();
-    const story = api.getData(storyId, refId);
-
-    if (!story) {
-      return undefined;
-    }
-
-    const hash = refId ? refs[refId].filteredIndex || {} : filteredIndex;
-
-    if (!hash) {
-      return undefined;
-    }
-
-    return api.findSiblingStoryId(storyId, hash, direction, true);
-  };
-
-  /**
-   * Helper function to find sibling story in the given direction. Shared logic between jumpToStory
-   * and getSiblingStoryHref.
-   */
-  const findSiblingStory = (direction: Direction): StoryId | undefined => {
-    const { filteredIndex, storyId, refs, refId } = store.getState();
-    const story = api.getData(storyId, refId);
-
-    if (!story) {
-      return undefined;
-    }
-
-    const hash = refId ? refs[refId].filteredIndex : filteredIndex;
-
-    if (!hash) {
-      return undefined;
-    }
-
-    return api.findSiblingStoryId(storyId, hash, direction, false);
-  };
-
   const api: SubAPI = {
     storyId: toId,
     getData: (storyId, refId): any => {
@@ -440,50 +379,47 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       return parameters || undefined;
     },
     jumpToComponent: (direction) => {
-      const result = findSiblingComponent(direction);
+      const { filteredIndex, storyId, refs, refId } = store.getState();
+      const story = api.getData(storyId, refId);
+
+      // cannot navigate when there's no current selection
+      if (!story) {
+        return;
+      }
+
+      const hash = refId ? refs[refId].filteredIndex || {} : filteredIndex;
+
+      if (!hash) {
+        return;
+      }
+
+      const result = api.findSiblingStoryId(storyId, hash, direction, true);
+
       if (result) {
         const { refId } = store.getState();
         api.selectStory(result, undefined, { ref: refId });
       }
     },
     jumpToStory: (direction) => {
-      const result = findSiblingStory(direction);
+      const { filteredIndex, storyId, refs, refId } = store.getState();
+      const story = api.getData(storyId, refId);
+
+      // cannot navigate when there's no current selection
+      if (!story) {
+        return;
+      }
+
+      const hash = story.refId ? refs[story.refId].filteredIndex : filteredIndex;
+
+      if (!hash) {
+        return;
+      }
+
+      const result = api.findSiblingStoryId(storyId, hash, direction, false);
+
       if (result) {
-        const { refId } = store.getState();
         api.selectStory(result, undefined, { ref: refId });
       }
-    },
-    getSiblingComponentHref: (direction) => {
-      const result = findSiblingComponent(direction);
-      if (!result) {
-        return null;
-      }
-
-      const { filteredIndex, refs, refId } = store.getState();
-      const hash = refId ? refs[refId].filteredIndex || {} : filteredIndex;
-      const entry = hash?.[result];
-      if (!entry || (entry.type !== 'docs' && entry.type !== 'story')) {
-        return null;
-      }
-
-      // TODO: port this to getStoryUrls once available.
-      return `./?path=/${entry.type}/${!refId || refId === DEFAULT_REF_ID ? entry.id : `${refId}_${entry.id}`}`;
-    },
-    getSiblingStoryHref: (direction) => {
-      const result = findSiblingStory(direction);
-      if (!result) {
-        return null;
-      }
-
-      const { filteredIndex, refs, refId } = store.getState();
-      const hash = refId ? refs[refId].filteredIndex : filteredIndex;
-      const entry = hash?.[result];
-      if (!entry || (entry.type !== 'docs' && entry.type !== 'story')) {
-        return null;
-      }
-
-      // TODO: port this to getStoryUrls once available.
-      return `./?path=/${entry.type}/${!refId || refId === DEFAULT_REF_ID ? entry.id : `${refId}_${entry.id}`}`;
     },
     selectFirstStory: () => {
       const { index } = store.getState();

@@ -36,9 +36,7 @@ const getAPIMocks = () => ({
   toggleToolbar: fn().mockName('api::toggleToolbar'),
   togglePanel: fn().mockName('api::togglePanel'),
   jumpToComponent: fn().mockName('api::jumpToComponent'),
-  getSiblingComponentHref: fn().mockName('api::getSiblingComponentHref'),
   jumpToStory: fn().mockName('api::jumpToStory'),
-  getSiblingStoryHref: fn().mockName('api::getSiblingStoryHref'),
   emit: fn().mockName('api::emit'),
 });
 

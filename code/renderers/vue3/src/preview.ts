@@ -77,7 +77,7 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<VueTypes & T, TArgs & T['args']>,
-      'decorators' | 'args' | 'render'
+      'decorators' | 'component' | 'args' | 'render'
     >
   ): VueMeta<
     InferVueTypes<T, TArgs, Decorators>,

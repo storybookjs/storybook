@@ -40,23 +40,49 @@ type InferArgs<TArgs, T, Decorators> = Simplify<
 type InferWebComponentsTypes<T, TArgs, Decorators> = WebComponentsTypes &
   T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
 
-// @ts-expect-error Hard
 export interface WebComponentsPreview<T extends AddonTypes>
   extends Preview<WebComponentsTypes & T> {
   type<S>(): WebComponentsPreview<T & S>;
 
   meta<
-    TArgs,
+    C extends keyof HTMLElementTagNameMap,
     Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
-    TMetaArgs extends Partial<T['args']>,
+    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
+    TMetaArgs extends Partial<HTMLElementTagNameMap[C] & T['args']>,
   >(
     meta: {
-      render?: ArgsStoryFn<WebComponentsTypes & T, TArgs & T['args']>;
+      component?: C;
+      args?: TMetaArgs;
+      decorators?: Decorators | Decorators[];
+    } & Omit<
+      ComponentAnnotations<WebComponentsTypes & T, Partial<HTMLElementTagNameMap[C]> & T['args']>,
+      'decorators' | 'component' | 'args'
+    >
+  ): WebComponentsMeta<
+    InferWebComponentsTypes<T, Partial<HTMLElementTagNameMap[C]>, Decorators>,
+    Omit<
+      ComponentAnnotations<
+        InferWebComponentsTypes<T, Partial<HTMLElementTagNameMap[C]>, Decorators>
+      >,
+      'args'
+    > & {
+      args: {} extends TMetaArgs ? {} : TMetaArgs;
+    }
+  >;
+
+  meta<
+    TArgs,
+    Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
+    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
+    TMetaArgs extends Partial<TArgs>,
+  >(
+    meta: {
+      render?: ArgsStoryFn<WebComponentsTypes & T, TArgs>;
       args?: TMetaArgs;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<WebComponentsTypes & T, TArgs & T['args']>,
-      'decorators' | 'args' | 'render'
+      'decorators' | 'component' | 'args' | 'render'
     >
   ): WebComponentsMeta<
     InferWebComponentsTypes<T, TArgs, Decorators>,

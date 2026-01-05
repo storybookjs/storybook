@@ -105,8 +105,9 @@ type ThemeData = 'light' | 'dark';
 
 describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
-    const meta = preview.meta({
-      render: (args: ButtonProps & { theme: ThemeData }) => {
+    const meta = preview.type<{ args: { theme: ThemeData } }>().meta({
+      component: Button,
+      render: (args) => {
         return h('div', [h('div', `Use the theme ${args.theme}`), h(Button, args)]);
       },
       args: { disabled: false },
@@ -181,4 +182,18 @@ it('mount accepts a Component', () => {
       expectTypeOf(canvas).toMatchTypeOf<Canvas>();
     },
   };
+});
+
+it('allow types to be inferred from render as well', () => {
+  const meta = preview.meta({
+    render: (args: ButtonProps) => ({
+      data: () => ({ args }),
+      template: `<Button v-bind="args" />`,
+    }),
+    args: { label: 'hello' },
+  });
+
+  const Story = meta.story({
+    args: { disabled: true },
+  });
 });

@@ -40,9 +40,32 @@ type InferArgs<TArgs, T, Decorators> = Simplify<
 type InferAngularTypes<T, TArgs, Decorators> = AngularRenderer &
   T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
 
-// @ts-expect-error Hard
 export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRenderer & T> {
   type<S>(): AngularPreview<T & S>;
+
+  meta<
+    C extends abstract new (...args: any) => any,
+    Decorators extends DecoratorFunction<AngularRenderer & T, any>,
+    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
+    TMetaArgs extends Partial<InstanceType<C> & T['args']>,
+  >(
+    meta: {
+      component?: C;
+      args?: TMetaArgs;
+      decorators?: Decorators | Decorators[];
+    } & Omit<
+      ComponentAnnotations<AngularRenderer & T, Partial<InstanceType<C>> & T['args']>,
+      'decorators' | 'component' | 'args'
+    >
+  ): AngularMeta<
+    InferAngularTypes<T, Partial<InstanceType<C>>, Decorators>,
+    Omit<
+      ComponentAnnotations<InferAngularTypes<T, Partial<InstanceType<C>>, Decorators>>,
+      'args'
+    > & {
+      args: {} extends TMetaArgs ? {} : TMetaArgs;
+    }
+  >;
 
   meta<
     TArgs,
@@ -55,7 +78,7 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<AngularRenderer & T, TArgs & T['args']>,
-      'decorators' | 'args' | 'render'
+      'decorators' | 'args' | 'render' | 'component'
     >
   ): AngularMeta<
     InferAngularTypes<T, TArgs, Decorators>,

@@ -55,7 +55,7 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
       args?: TMetaArgs;
       decorators?: Decorators | Decorators[];
     } & Omit<
-      ComponentAnnotations<VueTypes & T, ComponentPropsAndSlots<C>>,
+      ComponentAnnotations<VueTypes & T, ComponentPropsAndSlots<C> & T['args']>,
       'decorators' | 'component' | 'args'
     >
   ): VueMeta<

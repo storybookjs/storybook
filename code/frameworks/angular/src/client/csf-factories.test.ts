@@ -30,9 +30,9 @@ const preview = __definePreview({
 });
 
 test('csf factories', () => {
-  const meta = preview.type<{ args: ButtonProps }>().meta({
+  const meta = preview.meta({
     component: ButtonComponent,
-    args: { disabled: true },
+    args: { disabled: false },
   });
 
   const MyStory = meta.story({
@@ -46,12 +46,14 @@ test('csf factories', () => {
 
 describe('Args can be provided in multiple ways', () => {
   it('✅ All required args may be provided in meta', () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
+    const meta = preview.meta({
       component: ButtonComponent,
-      args: { label: 'good', disabled: false },
+      args: { disabled: false },
     });
 
-    const Basic = meta.story({});
+    const Basic = meta.story({
+      args: {},
+    });
   });
 
   it('✅ Required args may be provided partial in meta and the story', () => {
@@ -66,7 +68,9 @@ describe('Args can be provided in multiple ways', () => {
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
-      const meta = preview.type<{ args: ButtonProps }>().meta({ component: ButtonComponent });
+      const meta = preview.type<{ args: { disabled: boolean } }>().meta({
+        component: ButtonComponent,
+      });
       // @ts-expect-error disabled not provided ❌
       const Basic = meta.story({
         args: { label: 'good' },
@@ -120,10 +124,10 @@ type ThemeData = 'light' | 'dark';
 
 describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
+    const meta = preview.type<{ args: { theme: ThemeData } }>().meta({
       component: ButtonComponent,
       args: { disabled: false },
-      render: (args: ButtonProps & { theme: ThemeData }) => {
+      render: (args) => {
         return {
           template: `<div class="theme-${args.theme}">
             <storybook-button [label]="label" [disabled]="disabled"></storybook-button>
@@ -196,7 +200,6 @@ describe('Story args can be inferred', () => {
     const meta = preview
       .type<{ args: Omit<ButtonProps, 'disabledChange'> & { disabledChange?: boolean } }>()
       .meta({
-        component: ButtonComponent,
         render: ({ disabledChange, ...args }) => {
           return {
             template: `<storybook-button

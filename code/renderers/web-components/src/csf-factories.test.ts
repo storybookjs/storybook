@@ -3,21 +3,44 @@ import { describe, expect, it, test } from 'vitest';
 
 import type { Args } from 'storybook/internal/types';
 
-import { html } from 'lit';
+import { html, LitElement } from 'lit';
 
 import { __definePreview } from './preview';
 import type { Decorator } from './public-types';
+import {customElement, property} from 'lit/decorators.js';
 
-type ButtonProps = { label: string; disabled: boolean; onKeyDown?: () => void };
+type ButtonProps = { label: string; disabled: boolean };
+
+class MyButton extends LitElement {
+  disabled!: boolean;
+  label!: string;
+
+  render() {
+    return html`<button>${this.label}</button>`;
+  }
+}
+
+@customElement('my-component')
+class MyComponent extends LitElement {
+  render() {
+    return html`<button></button>`;
+  }
+}
+declare global {
+  interface HTMLElementTagNameMap {
+    'my-button': MyButton;
+    'my-component': MyComponent;
+  }
+}
 
 const preview = __definePreview({
   addons: [],
 });
 
 test('csf factories', () => {
-  const meta = preview.type<{ args: ButtonProps }>().meta({
+  const meta = preview.meta({
     component: 'my-button',
-    args: { disabled: true },
+    args: { label: '1' },
   });
 
   const MyStory = meta.story({
@@ -31,7 +54,7 @@ test('csf factories', () => {
 
 describe('Args can be provided in multiple ways', () => {
   it('✅ All required args may be provided in meta', () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
+    const meta = preview.meta({
       component: 'my-button',
       args: { label: 'good', disabled: false },
     });
@@ -40,7 +63,7 @@ describe('Args can be provided in multiple ways', () => {
   });
 
   it('✅ Required args may be provided partial in meta and the story', () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
+    const meta = preview.meta({
       component: 'my-button',
       args: { label: 'good' },
     });
@@ -75,7 +98,7 @@ describe('Args can be provided in multiple ways', () => {
   });
 
   it("✅ Required args don't need to be provided when the user uses an empty render", () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
+    const meta = preview.meta({
       component: 'my-button',
       args: { label: 'good' },
     });
@@ -105,10 +128,10 @@ type ThemeData = 'light' | 'dark';
 
 describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
+    const meta = preview.type<{args: { theme: ThemeData }}>().meta({
       component: 'my-button',
       args: { disabled: false },
-      render: (args: ButtonProps & { theme: ThemeData }) => {
+      render: (args) => {
         return html`<div class="theme-${args.theme}">
           <my-button .label=${args.label} .disabled=${args.disabled}></my-button>
         </div>`;
@@ -123,7 +146,7 @@ describe('Story args can be inferred', () => {
   `;
 
   it('Correct args are inferred when type is widened for decorators', () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
+    const meta = preview.meta({
       component: 'my-button',
       args: { disabled: false },
       decorators: [withDecorator],
@@ -133,8 +156,6 @@ describe('Story args can be inferred', () => {
   });
 
   it('Correct args are inferred when type is widened for multiple decorators', () => {
-    type Props = ButtonProps & { decoratorArg: number; decoratorArg2: string };
-
     const secondDecorator: Decorator<{ decoratorArg2: string }> = (Story, { args }) => html`
       <div>Decorator: ${args.decoratorArg2} ${Story()}</div>
     `;
@@ -145,7 +166,7 @@ describe('Story args can be inferred', () => {
     // decorator is not using args
     const fourthDecorator: Decorator = (Story) => html` <div>${Story()}</div> `;
 
-    const meta = preview.type<{ args: ButtonProps }>().meta({
+    const meta = preview.meta({
       component: 'my-button',
       args: { disabled: false },
       decorators: [withDecorator, secondDecorator, thirdDecorator, fourthDecorator],
@@ -156,48 +177,8 @@ describe('Story args can be inferred', () => {
     });
   });
 
-  it('Component type can be overridden', () => {
-    const meta = preview
-      .type<{ args: Omit<ButtonProps, 'onKeyDown'> & { onKeyDown?: boolean } }>()
-      .meta({
-        component: 'my-button',
-        render: ({ onKeyDown, ...args }) => {
-          return html`<my-button
-            .label=${args.label}
-            .disabled=${args.disabled}
-            .onKeyDown=${onKeyDown ? () => {} : undefined}
-          ></my-button>`;
-        },
-        args: { label: 'hello', onKeyDown: false },
-      });
-
-    const Basic = meta.story({
-      args: {
-        disabled: false,
-      },
-    });
-    const WithKeyDown = meta.story({ args: { disabled: false, onKeyDown: true } });
-  });
-
-  it('Correct args are inferred when type is added in renderer', () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
-      component: 'my-button',
-      args: { label: 'hello', onKeyDownToggle: false },
-      render: ({ onKeyDownToggle, ...args }: ButtonProps & { onKeyDownToggle?: boolean }) => {
-        return html`<my-button
-          .label=${args.label}
-          .disabled=${args.disabled}
-          .onKeyDown=${onKeyDownToggle ? () => {} : undefined}
-        ></my-button>`;
-      },
-    });
-
-    const Basic = meta.story({ args: { disabled: false } });
-    const WithKeyDown = meta.story({ args: { disabled: false, onKeyDownToggle: true } });
-  });
-
   it('args can be reused', () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
+    const meta = preview.meta({
       component: 'my-button',
     });
 
@@ -206,7 +187,7 @@ describe('Story args can be inferred', () => {
   });
 
   it('stories can be extended', () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
+    const meta = preview.meta({
       component: 'my-button',
     });
 

@@ -35,6 +35,10 @@ export function initStoryDiscoveryChannel(
   options: Options,
   coreOptions: CoreConfig
 ) {
+  if (coreOptions.disableTelemetry) {
+    return;
+  }
+
   /** Listens for events to discover and test stories */
   channel.on(STORY_DISCOVERY_REQUEST, async (data: RequestData<StoryDiscoveryRequestPayload>) => {
     const { sampleSize = 20, globPattern } = data.payload;
@@ -77,21 +81,30 @@ export function initStoryDiscoveryChannel(
       });
       matchCount = generationResult.matchCount;
       console.log('Stories generated:', generationResult);
-      if (!generationResult.success) {
+      if (generationResult.error) {
         channel.emit(STORY_DISCOVERY_RESPONSE, {
           success: false,
           id: data.id,
           error: generationResult.error || 'Unknown error occurred',
         } satisfies ResponseData<StoryDiscoveryResponsePayload>);
 
-        if (!coreOptions.disableTelemetry) {
-          telemetry('story-discovery', {
-            success: false,
-            error: generationResult.error,
-            sampleSize,
-            matchCount,
-          });
-        }
+        telemetry('story-discovery', {
+          success: false,
+          error: generationResult.error,
+          sampleSize,
+          matchCount,
+        });
+        return;
+      }
+
+      if (generationResult.generatedStories.length === 0) {
+        console.log('No stories generated');
+        telemetry('story-discovery', {
+          success: false,
+          error: 'No stories generated',
+          sampleSize,
+          matchCount,
+        });
         return;
       }
 
@@ -150,16 +163,14 @@ export function initStoryDiscoveryChannel(
         error: null,
       } satisfies ResponseData<StoryDiscoveryResponsePayload>);
 
-      if (!coreOptions.disableTelemetry) {
-        telemetry('story-discovery', {
-          success: testRunResult.success,
-          generatedCount: allGeneratedStories.length,
-          testResults: testResults.summary,
-          testSummary: testRunResult.testSummary,
-          sampleSize,
-          matchCount: generationResult.matchCount,
-        });
-      }
+      telemetry('story-discovery', {
+        success: testRunResult.success,
+        generatedCount: allGeneratedStories.length,
+        testResults: testResults.summary,
+        testSummary: testRunResult.testSummary,
+        sampleSize,
+        matchCount: generationResult.matchCount,
+      });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -170,14 +181,12 @@ export function initStoryDiscoveryChannel(
         error: errorMessage,
       } satisfies ResponseData<StoryDiscoveryResponsePayload>);
 
-      if (!coreOptions.disableTelemetry) {
-        telemetry('story-discovery', {
-          success: false,
-          error: errorMessage,
-          sampleSize,
-          matchCount,
-        });
-      }
+      telemetry('story-discovery', {
+        success: false,
+        error: errorMessage,
+        sampleSize,
+        matchCount,
+      });
     } finally {
       // Clean up generated story files regardless of success or failure
       if (generatedStoryFiles.length > 0) {
@@ -259,7 +268,9 @@ async function runStoryTests(generatedStoryFiles: string[]): Promise<RunStoryTes
 
       // Wait for the process to complete
       await testProcess;
-    } catch {}
+    } catch (error) {
+      console.error('Error running story tests:', error);
+    }
 
     // Calculate duration of the command execution
     const duration = Date.now() - startTime;

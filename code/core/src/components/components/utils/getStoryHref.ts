@@ -11,7 +11,7 @@ function parseQuery(queryString: string) {
   return query;
 }
 
-/** @deprecated Use the api.getStoryHrefs method instead */
+/** @deprecated Use the api.getStoryHrefs method instead (from `storybook/manager-api`) */
 export const getStoryHref = (
   baseUrl: string,
   storyId: string,

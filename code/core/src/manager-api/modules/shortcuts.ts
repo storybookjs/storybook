@@ -113,6 +113,7 @@ export interface API_Shortcuts {
   expandAll: API_KeyCollection;
   remount: API_KeyCollection;
   openInEditor: API_KeyCollection;
+  openInIsolation: API_KeyCollection;
   copyStoryLink: API_KeyCollection;
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: API_KeyCollection;
@@ -152,6 +153,7 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   expandAll: [controlOrMetaKey(), 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],
   openInEditor: ['alt', 'shift', 'E'],
+  openInIsolation: ['alt', 'shift', 'I'],
   copyStoryLink: ['alt', 'shift', 'L'],
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
@@ -247,6 +249,8 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       const {
         ui: { enableShortcuts },
         storyId,
+        refId,
+        viewMode,
       } = store.getState();
       if (!enableShortcuts) {
         return;
@@ -397,6 +401,13 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           }
           break;
         }
+        case 'openInIsolation': {
+          if (storyId && viewMode === 'story') {
+            const { previewHref } = fullAPI.getStoryHrefs(storyId, { refId });
+            window.open(previewHref, '_blank', 'noopener,noreferrer');
+          }
+          break;
+        }
         // TODO: bring this back once we want to add shortcuts for this
         // case 'copyStoryName': {
         //   const storyData = fullAPI.getCurrentStoryData();
@@ -406,7 +417,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         //   break;
         // }
         case 'copyStoryLink': {
-          copy(window.location.href);
+          if (storyId) {
+            const { managerHref } = fullAPI.getStoryHrefs(storyId, { refId });
+            copy(managerHref);
+          }
           break;
         }
         default:

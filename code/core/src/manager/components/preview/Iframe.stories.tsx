@@ -82,32 +82,36 @@ export const MissingStory = {
   },
 };
 
-export const PreparingStory = () => (
-  <IFrame
-    active
-    id="iframe"
-    title="Preparing Story"
-    src="/iframe.html?__SPECIAL_TEST_PARAMETER__=preparing-story"
-    allowFullScreen
-    style={style}
-    scale={1.0}
-  />
-);
-PreparingStory.parameters = {
-  chromatic: { disableSnapshot: true },
+export const PreparingStory = {
+  render: () => (
+    <IFrame
+      active
+      id="iframe"
+      title="Preparing Story"
+      src="/iframe.html?__SPECIAL_TEST_PARAMETER__=preparing-story"
+      allowFullScreen
+      style={style}
+      scale={1.0}
+    />
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
 };
 
-export const PreparingDocs = () => (
-  <IFrame
-    active
-    id="iframe"
-    title="Preparing Docs"
-    src="/iframe.html?__SPECIAL_TEST_PARAMETER__=preparing-docs"
-    allowFullScreen
-    style={style}
-    scale={1.0}
-  />
-);
-PreparingDocs.parameters = {
-  chromatic: { disableSnapshot: true },
+export const PreparingDocs = {
+  render: () => (
+    <IFrame
+      active
+      id="iframe"
+      title="Preparing Docs"
+      src="/iframe.html?__SPECIAL_TEST_PARAMETER__=preparing-docs"
+      allowFullScreen
+      style={style}
+      scale={1.0}
+    />
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
 };

@@ -30,34 +30,38 @@ const style: CSSProperties = {
   height: '700px',
 };
 
-export const WorkingStory = () => (
-  <IFrame
-    active
-    id="iframe"
-    title="Missing"
-    src="/iframe.html?id=components-loader--infinite-state"
-    allowFullScreen
-    style={style}
-    scale={1.0}
-  />
-);
-WorkingStory.parameters = {
-  chromatic: { disableSnapshot: true },
+export const WorkingStory = {
+  render: () => (
+    <IFrame
+      active
+      id="iframe"
+      title="Missing"
+      src="/iframe.html?id=components-loader--infinite-state"
+      allowFullScreen
+      style={style}
+      scale={1.0}
+    />
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
 };
 
-export const WorkingDocs = () => (
-  <IFrame
-    active
-    id="iframe"
-    title="Missing"
-    src="/iframe.html?id=brand-colorpalette--docs"
-    allowFullScreen
-    style={style}
-    scale={1.0}
-  />
-);
-WorkingStory.parameters = {
-  chromatic: { disableSnapshot: true },
+export const WorkingDocs = {
+  render: () => (
+    <IFrame
+      active
+      id="iframe"
+      title="Missing"
+      src="/iframe.html?id=brand-colorpalette--docs"
+      allowFullScreen
+      style={style}
+      scale={1.0}
+    />
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
 };
 
 export const MissingStory = {

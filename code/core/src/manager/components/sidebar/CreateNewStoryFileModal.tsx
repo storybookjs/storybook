@@ -273,6 +273,7 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
               total: event.progress.testSummary?.total || 0,
               pending: event.progress.testSummary?.pending || 0,
             },
+            testSummary: event.progress.testSummary as any,
           }));
         }
       };

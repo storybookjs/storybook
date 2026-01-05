@@ -207,8 +207,14 @@ export const FileSearchList = memo(function FileSearchList({
 
       // Show recommended badge if this component's path is in the passed component paths
       const showRecommendedBadge =
-        flowStatus === 'complete' &&
-        flowResults?.testSummary?.passedComponentPaths?.includes(searchResult.filepath);
+        true ||
+        (flowStatus === 'complete' &&
+          flowResults?.testSummary?.passedComponentPaths?.includes(searchResult.filepath));
+
+      console.log({
+        searchResult: searchResult.filepath,
+        paths: flowResults?.testSummary?.passedComponentPaths,
+      });
 
       return (
         <FileListItem

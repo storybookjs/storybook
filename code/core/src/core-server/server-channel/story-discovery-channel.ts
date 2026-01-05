@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -166,8 +167,8 @@ export function initStoryDiscoveryChannel(
       telemetry('story-discovery', {
         success: testRunResult.success,
         generatedCount: allGeneratedStories.length,
+        testDuration: testRunResult.duration,
         testResults: testResults.summary,
-        testSummary: testRunResult.testSummary,
         sampleSize,
         matchCount: generationResult.matchCount,
       });
@@ -250,6 +251,7 @@ async function runStoryTests(generatedStoryFiles: string[]): Promise<RunStoryTes
 
     // Start timing the command execution
     const startTime = Date.now();
+    let testFailureMessage;
 
     try {
       // Execute the test runner command with specific story files
@@ -266,16 +268,39 @@ async function runStoryTests(generatedStoryFiles: string[]): Promise<RunStoryTes
         stdio: 'ignore',
       });
 
-      // Wait for the process to complete
       await testProcess;
     } catch (error) {
-      console.error('Error running story tests:', error);
+      // if a test run fails, we proceed
+      testFailureMessage = error instanceof Error ? error.message : String(error);
     }
 
     // Calculate duration of the command execution
     const duration = Date.now() - startTime;
 
     // Read and parse the JSON results
+    if (!existsSync(outputFile)) {
+      return {
+        success: false,
+        testResults: [],
+        duration: 0,
+        error: testFailureMessage,
+        testSummary: {
+          total: 0,
+          passed: 0,
+          failed: 0,
+          failureRate: 0,
+          successRate: 0,
+          successRateWithoutEmptyRender: 0,
+          uniqueErrors: [],
+          uniqueErrorCount: 0,
+          passingCount: 0,
+          failingCount: 0,
+          passedButEmptyRenderCount: 0,
+          passedComponentPaths: [],
+        },
+      };
+    }
+
     const resultsJson = await readFile(outputFile, 'utf8');
     const testResults = JSON.parse(resultsJson);
 

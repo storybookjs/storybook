@@ -190,8 +190,8 @@ export const FileSearchModal = ({
             <Modal.Description>We will create a new story for your component</Modal.Description>
           </Modal.Header>
 
-          {/* Flow status indicator */}
-          {flowStatus !== 'idle' && (
+          {/* Flow status indicator TODO think about this */}
+          {/* {flowStatus !== 'idle' && (
             <FlowStatusIndicator>
               {flowStatus === 'generating' && '🔄 Generating stories...'}
               {flowStatus === 'testing' && '🧪 Running tests...'}
@@ -202,7 +202,7 @@ export const FileSearchModal = ({
                 flowResults &&
                 `✅ Generated ${flowResults.generatedCount} stories • ${flowResults.testResults.passed}/${flowResults.testResults.total} tests passed`}
             </FlowStatusIndicator>
-          )}
+          )} */}
           <SearchField>
             <SearchIconWrapper>
               <SearchIcon />

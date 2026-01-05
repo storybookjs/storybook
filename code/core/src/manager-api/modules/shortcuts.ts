@@ -250,6 +250,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         ui: { enableShortcuts },
         storyId,
         refId,
+        viewMode,
       } = store.getState();
       if (!enableShortcuts) {
         return;
@@ -401,7 +402,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           break;
         }
         case 'openInIsolation': {
-          if (storyId) {
+          if (storyId && viewMode === 'story') {
             const { previewHref } = fullAPI.getStoryHrefs(storyId, { refId });
             window.open(previewHref, '_blank', 'noopener,noreferrer');
           }

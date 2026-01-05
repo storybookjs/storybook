@@ -20,8 +20,8 @@ import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection }
 
 import * as vueAnnotations from './entry-preview';
 import * as vueDocsAnnotations from './entry-preview-docs';
-import { type Args, ComponentPropsAndSlots } from './public-types';
-import { VueTypes } from './types';
+import { type Args, type ComponentPropsAndSlots } from './public-types';
+import { type VueTypes } from './types';
 
 export function __definePreview<Addons extends PreviewAddon<never>[]>(
   input: { addons: Addons } & ProjectAnnotations<VueTypes & InferTypes<Addons>>
@@ -34,17 +34,21 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   return preview;
 }
 
-type InferArgs<C, T, Decorators> = Simplify<
-  ComponentPropsAndSlots<C> &
-    Simplify<RemoveIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
+type InferArgs<TArgs, T, Decorators> = Simplify<
+  TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
 >;
 
+type InferVueTypes<T, TArgs, Decorators> = VueTypes &
+  T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
+
 export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> {
+  type<R>(): VuePreview<T & R>;
+
   meta<
     C,
     Decorators extends DecoratorFunction<VueTypes & T, any>,
     // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<ComponentPropsAndSlots<C>>,
+    TMetaArgs extends Partial<ComponentPropsAndSlots<C> & T['args']>,
   >(
     meta: {
       component?: C;
@@ -55,8 +59,8 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
       'decorators' | 'component' | 'args'
     >
   ): VueMeta<
-    VueTypes & T & { args: InferArgs<C, T, Decorators> },
-    Omit<ComponentAnnotations<VueTypes & T & { args: InferArgs<C, T, Decorators> }>, 'args'> & {
+    InferVueTypes<T, ComponentPropsAndSlots<C>, Decorators>,
+    Omit<ComponentAnnotations<InferVueTypes<T, ComponentPropsAndSlots<C>, Decorators>>, 'args'> & {
       args: {} extends TMetaArgs ? {} : TMetaArgs;
     }
   >;
@@ -71,25 +75,13 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
       render?: ArgsStoryFn<VueTypes & T, TArgs>;
       args?: TMetaArgs;
       decorators?: Decorators | Decorators[];
-    } & Omit<ComponentAnnotations<VueTypes & T, TArgs>, 'decorators' | 'args' | 'render'>
+    } & Omit<
+      ComponentAnnotations<VueTypes & T, TArgs & T['args']>,
+      'decorators' | 'args' | 'render'
+    >
   ): VueMeta<
-    VueTypes &
-      T & {
-        args: Simplify<
-          TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
-        >;
-      },
-    Omit<
-      ComponentAnnotations<
-        VueTypes &
-          T & {
-            args: Simplify<
-              TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
-            >;
-          }
-      >,
-      'args'
-    > & {
+    InferVueTypes<T, TArgs, Decorators>,
+    Omit<ComponentAnnotations<InferVueTypes<T, TArgs, Decorators>>, 'args'> & {
       args: {} extends TMetaArgs ? {} : TMetaArgs;
     }
   >;
@@ -102,10 +94,11 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
 export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotations<T>>
 /** @ts-expect-error hard */
   extends Meta<T, MetaInput> {
-  // Required args don't need to be provided when the user uses an empty render
+  // meta.story(() => defineComponent())
   story<
     TInput extends
       | (() => VueTypes['storyResult'])
+      // Required args don't need to be provided when the user uses an empty render
       | (StoryAnnotations<T, T['args']> & {
           render: () => VueTypes['storyResult'];
         }),
@@ -113,6 +106,7 @@ export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotati
     story: TInput
   ): VueStory<T, TInput extends () => VueTypes['storyResult'] ? { render: TInput } : TInput>;
 
+  // meta.story({ args: {} })
   story<
     TInput extends Simplify<
       StoryAnnotations<
@@ -125,6 +119,7 @@ export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotati
     story: TInput
   ): VueStory<T, TInput>;
 
+  // meta.story()
   story(
     ..._args: Partial<T['args']> extends SetOptional<
       T['args'],

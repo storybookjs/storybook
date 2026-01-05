@@ -1,7 +1,6 @@
 import type { AddonTypes, StoryContext } from 'storybook/internal/csf';
 import { combineTags } from 'storybook/internal/csf';
 import type {
-  Args,
   ComponentAnnotations,
   ComposedStoryFn,
   NormalizedProjectAnnotations,
@@ -29,7 +28,7 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   composed: NormalizedProjectAnnotations<TRenderer>;
 
   meta<
-    TArgs extends Args,
+    TArgs,
     TInput extends ComponentAnnotations<TRenderer & { args: TArgs }, TArgs & TRenderer['args']>,
   >(
     input: TInput

@@ -120,6 +120,53 @@ export const computeStorybookMetadata = async ({
     )
   );
 
+  const stylingPackages = [
+    'styled-components',
+    '@emotion/react',
+    '@emotion/styled',
+    'emotion',
+    'styled-jsx',
+    '@stitches/react',
+    '@stitches/core',
+    'stitches',
+    '@vanilla-extract/css',
+    'linaria',
+    'goober',
+    'styletron-react',
+    'styletron-engine-atomic',
+    'styletron-engine-monolithic',
+    'styletron-standard',
+    'tailwindcss',
+    'twin.macro',
+    'twind',
+    'windicss',
+    'postcss',
+    'autoprefixer',
+    'sass',
+    'node-sass',
+    'dart-sass',
+    'less',
+    'stylus',
+    'fela',
+    'fela-dom',
+    'aphrodite',
+    'jss',
+    '@mui/styles',
+    'astroturf',
+    'bootstrap',
+    'bulma',
+    'semantic-ui-css',
+    'foundation-sites',
+  ];
+  const stylingPackageDeps = Object.keys(allDependencies).filter((dep) =>
+    stylingPackages.some((pkg) => dep.includes(pkg))
+  );
+  metadata.stylingPackages = Object.fromEntries(
+    await Promise.all(
+      stylingPackageDeps.map(async (dep) => [dep, (await getActualPackageVersion(dep))?.version])
+    )
+  );
+
   metadata.hasRouterPackage = getHasRouterPackage(packageJson);
 
   const monorepoType = getMonorepoType();

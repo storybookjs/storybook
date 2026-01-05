@@ -417,8 +417,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         //   break;
         // }
         case 'copyStoryLink': {
-          const { managerHref } = fullAPI.getStoryHrefs(storyId, { refId });
-          copy(managerHref);
+          if (storyId) {
+            const { managerHref } = fullAPI.getStoryHrefs(storyId, { refId });
+            copy(managerHref);
+          }
           break;
         }
         default:

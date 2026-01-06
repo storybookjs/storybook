@@ -1,6 +1,5 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { analyze } from '@storybook/docs-mdx';
 
 import { groupBy } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
@@ -14,6 +13,8 @@ import type {
   PresetPropertyFn,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
+
+import { analyze } from '@storybook/docs-mdx';
 
 export interface DocsManifestEntry {
   id: string;

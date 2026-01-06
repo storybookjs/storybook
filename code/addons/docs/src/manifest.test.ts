@@ -171,7 +171,9 @@ describe('experimental_manifests', () => {
       title: 'Example',
       summary: 'An example documentation page',
     });
-    expect(result.components?.components.example.docs?.['example--docs'].content).toContain('This is example documentation.');
+    expect(result.components?.components.example.docs?.['example--docs'].content).toContain(
+      'This is example documentation.'
+    );
   });
 
   it('should generate docs manifest for unattached-mdx entries', async () => {
@@ -197,7 +199,9 @@ describe('experimental_manifests', () => {
       title: 'Standalone',
       summary: 'A standalone documentation page',
     });
-    expect(result.docs?.docs['standalone--docs'].content).toContain('This is standalone documentation.');
+    expect(result.docs?.docs['standalone--docs'].content).toContain(
+      'This is standalone documentation.'
+    );
   });
 
   it('should handle both attached and unattached docs entries separately', async () => {
@@ -257,7 +261,9 @@ describe('experimental_manifests', () => {
       title: 'Example',
       summary: 'An example documentation page',
     });
-    expect(result.components?.components.example.docs?.['example--docs'].content).toContain('This is example documentation.');
+    expect(result.components?.components.example.docs?.['example--docs'].content).toContain(
+      'This is example documentation.'
+    );
   });
 
   it('should preserve existing manifests and add unattached docs', async () => {

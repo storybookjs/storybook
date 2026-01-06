@@ -11,13 +11,12 @@ import {
 import { uniqBy } from 'es-toolkit/array';
 import path from 'pathe';
 
+import { Tag } from 'storybook/internal/core-server';
 import { getCodeSnippet } from './generateCodeSnippet';
 import { getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj } from './reactDocgen';
 import { cachedFindUp, cachedReadFileSync, invalidateCache, invariant } from './utils';
-
-const ATTACHED_MDX_TAG = 'attached-mdx';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
@@ -113,7 +112,7 @@ export const manifests: PresetPropertyFn<
         // addon-docs will add docs entries to these manifest entries afterwards
         // Docs entries have importPath pointing to MDX file, but storiesImports[0] points to the story file
         (entry.type === 'docs' &&
-          entry.tags?.includes(ATTACHED_MDX_TAG) &&
+          entry.tags?.includes(Tag.ATTACHED_MDX) &&
           entry.storiesImports.length > 0)
     ),
     (entry) => entry.id.split('--')[0]

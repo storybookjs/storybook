@@ -19,7 +19,6 @@ import type {
   StoryId,
   StoryIndexV2,
   StoryIndexV3,
-  Tag,
 } from 'storybook/internal/types';
 
 import { countBy } from 'es-toolkit/array';
@@ -28,6 +27,7 @@ import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
 import { type API, type State, combineParameters } from '../root';
+import { Tag } from '../../shared/constants/tags';
 import intersect from './intersect';
 import merge from './merge';
 
@@ -155,7 +155,7 @@ export const transformStoryIndexV4toV5 = (
       (acc, entry) => {
         acc[entry.id] = {
           ...entry,
-          tags: entry.tags ? ['dev', 'test', ...entry.tags] : ['dev'],
+          tags: entry.tags ? [Tag.DEV, Tag.TEST, ...entry.tags] : [Tag.DEV],
         };
 
         return acc;

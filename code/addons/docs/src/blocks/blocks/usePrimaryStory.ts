@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 
+import { Tag } from 'storybook/internal/preview-api';
 import type { PreparedStory } from 'storybook/internal/types';
 
 import { DocsContext } from './DocsContext';
@@ -11,5 +12,5 @@ import { DocsContext } from './DocsContext';
 export const usePrimaryStory = (): PreparedStory | undefined => {
   const context = useContext(DocsContext);
   const stories = context.componentStories();
-  return stories.find((story) => story.tags.includes('autodocs'));
+  return stories.find((story) => story.tags.includes(Tag.AUTODOCS));
 };

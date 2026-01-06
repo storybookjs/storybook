@@ -8,7 +8,7 @@ import {
   store,
   testProviderStore,
 } from '#manager-store';
-import { addons } from 'storybook/manager-api';
+import { addons, Tag } from 'storybook/manager-api';
 
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { SidebarContextMenu } from './components/SidebarContextMenu';
@@ -95,7 +95,7 @@ addons.register(ADDON_ID, (api) => {
         if (context.type === 'docs') {
           return null;
         }
-        if (context.type === 'story' && !context.tags.includes('test')) {
+        if (context.type === 'story' && !context.tags.includes(Tag.TEST)) {
           return null;
         }
         return <SidebarContextMenu context={context} api={api} />;

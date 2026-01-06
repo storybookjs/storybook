@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { global } from '@storybook/global';
 
+import { Tag } from 'storybook/internal/preview-api';
 import { configure } from 'storybook/test';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
@@ -31,7 +32,7 @@ export const decorators: Decorator[] = [
   },
   (story, context) => {
     // @ts-expect-error this feature flag only exists in the react frameworks
-    if (context.tags?.includes('test-fn') && !global.FEATURES?.experimentalTestSyntax) {
+    if (context.tags?.includes(Tag.TEST_FN) && !global.FEATURES?.experimentalTestSyntax) {
       throw new Error(
         'To use the experimental test function, you must enable the experimentalTestSyntax feature flag. See https://storybook.js.org/docs/api/main-config/main-config-features#experimentaltestsyntax'
       );

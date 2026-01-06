@@ -1,5 +1,7 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
+import { Tag } from 'storybook/internal/core-server';
+
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
@@ -13,7 +15,7 @@ beforeEach(() => {
 
 test('manifests generates correct id, name, description and examples ', async () => {
   const manifestEntries = Object.values(indexJson.entries).filter(
-    (entry) => entry.tags?.includes('manifest') ?? false
+    (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
   );
   const result = await manifests(undefined, { manifestEntries } as any);
 
@@ -272,7 +274,7 @@ async function getManifestForStory(code: string) {
       title: 'Example/Button',
       importPath: './src/stories/Button.stories.ts',
       componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs', 'manifest'],
+      tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS, Tag.MANIFEST],
       exportName: 'Primary',
     },
   ];
@@ -509,7 +511,7 @@ test('should create component manifest when only attached-mdx docs have manifest
       name: 'Docs',
       title: 'Example/Button',
       importPath: './src/stories/Button.mdx',
-      tags: ['dev', 'test', 'manifest', 'attached-mdx'],
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST, Tag.ATTACHED_MDX],
       storiesImports: ['./src/stories/Button.stories.ts'],
     },
   ];

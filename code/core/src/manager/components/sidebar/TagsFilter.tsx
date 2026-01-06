@@ -4,28 +4,20 @@ import { Badge, Button, PopoverProvider } from 'storybook/internal/components';
 import type {
   API_PreparedIndexEntry,
   StoryIndex,
-  Tag,
   TagsOptions,
 } from 'storybook/internal/types';
 
 import { BeakerIcon, DocumentIcon, FilterIcon, PlayHollowIcon } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
+import { Tag } from 'storybook/manager-api';
 import { color, styled } from 'storybook/theming';
 
 import { type Filter, type FilterFunction, TagsFilterPanel, groupByType } from './TagsFilterPanel';
 
 const TAGS_FILTER = 'tags-filter';
 
-const BUILT_IN_TAGS = new Set([
-  'dev',
-  'test',
-  'autodocs',
-  'attached-mdx',
-  'unattached-mdx',
-  'play-fn',
-  'test-fn',
-]);
+const BUILT_IN_TAGS = new Set<string>(Object.values(Tag));
 
 const StyledButton = styled(Button)<{ isHighlighted: boolean }>(({ isHighlighted, theme }) => ({
   '&:focus-visible': {
@@ -119,8 +111,8 @@ export const TagsFilter = ({ api, indexJson, tagPresets }: TagsFilterProps) => {
         icon: <PlayHollowIcon color={color.seafoam} />,
         ...withCount((entry: API_PreparedIndexEntry, excluded?: boolean) =>
           excluded
-            ? entry.type !== 'story' || !entry.tags?.includes('play-fn')
-            : entry.type === 'story' && !!entry.tags?.includes('play-fn')
+            ? entry.type !== 'story' || !entry.tags?.includes(Tag.PLAY_FN)
+            : entry.type === 'story' && !!entry.tags?.includes(Tag.PLAY_FN)
         ),
       },
       _test: {

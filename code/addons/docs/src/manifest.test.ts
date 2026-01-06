@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Tag } from 'storybook/internal/core-server';
 import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
@@ -71,7 +72,7 @@ describe('experimental_manifests', () => {
         type: 'story',
         subtype: 'story',
         importPath: './Example.stories.tsx',
-        tags: ['manifest'],
+        tags: [Tag.MANIFEST],
       },
     ];
 
@@ -104,7 +105,7 @@ describe('experimental_manifests', () => {
         title: 'Example',
         type: 'docs',
         importPath: './Example.mdx',
-        tags: ['manifest', 'autodocs'], // No attached-mdx or unattached-mdx tag
+        tags: [Tag.MANIFEST, Tag.AUTODOCS], // No attached-mdx or unattached-mdx tag
         storiesImports: ['./Example.stories.tsx'],
       } satisfies DocsIndexEntry,
     ];
@@ -140,7 +141,7 @@ describe('experimental_manifests', () => {
         title: 'Example',
         type: 'docs',
         importPath: './Example.mdx',
-        tags: ['manifest', 'attached-mdx'],
+        tags: [Tag.MANIFEST, Tag.ATTACHED_MDX],
         storiesImports: ['./Example.stories.tsx'],
       } satisfies DocsIndexEntry,
     ];
@@ -170,7 +171,7 @@ describe('experimental_manifests', () => {
         title: 'Standalone',
         type: 'docs',
         importPath: './Standalone.mdx',
-        tags: ['manifest', 'unattached-mdx'],
+        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
         storiesImports: [],
       } satisfies DocsIndexEntry,
     ];
@@ -214,7 +215,7 @@ describe('experimental_manifests', () => {
         title: 'Example',
         type: 'docs',
         importPath: './Example.mdx',
-        tags: ['manifest', 'attached-mdx'],
+        tags: [Tag.MANIFEST, Tag.ATTACHED_MDX],
         storiesImports: ['./Example.stories.tsx'],
       } satisfies DocsIndexEntry,
       {
@@ -223,7 +224,7 @@ describe('experimental_manifests', () => {
         title: 'Standalone',
         type: 'docs',
         importPath: './Standalone.mdx',
-        tags: ['manifest', 'unattached-mdx'],
+        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
         storiesImports: [],
       } satisfies DocsIndexEntry,
     ];
@@ -274,7 +275,7 @@ describe('experimental_manifests', () => {
         title: 'Standalone',
         type: 'docs',
         importPath: './Standalone.mdx',
-        tags: ['manifest', 'unattached-mdx'],
+        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
         storiesImports: [],
       } satisfies DocsIndexEntry,
     ];
@@ -297,7 +298,7 @@ describe('experimental_manifests', () => {
         title: 'Missing',
         type: 'docs',
         importPath: './NonExistent.mdx',
-        tags: ['manifest', 'unattached-mdx'],
+        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
         storiesImports: [],
       } satisfies DocsIndexEntry,
     ];
@@ -326,7 +327,7 @@ describe('experimental_manifests', () => {
         title: 'Standalone',
         type: 'docs',
         importPath: './Standalone.mdx',
-        tags: ['manifest', 'unattached-mdx'],
+        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
         storiesImports: [],
       } satisfies DocsIndexEntry,
       {
@@ -335,7 +336,7 @@ describe('experimental_manifests', () => {
         title: 'Missing',
         type: 'docs',
         importPath: './NonExistent.mdx',
-        tags: ['manifest', 'unattached-mdx'],
+        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
         storiesImports: [],
       } satisfies DocsIndexEntry,
     ];

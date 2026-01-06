@@ -2,6 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
 import { groupBy } from 'storybook/internal/common';
+import { Tag } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import type {
   ComponentManifest,
@@ -12,9 +13,6 @@ import type {
   PresetPropertyFn,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
-
-const ATTACHED_MDX_TAG = 'attached-mdx';
-const UNATTACHED_MDX_TAG = 'unattached-mdx';
 
 export interface DocsManifestEntry {
   id: string;
@@ -141,9 +139,9 @@ export const manifests: PresetPropertyFn<
 
   const { attachedEntries = [], unattachedEntries = [] } = groupBy(docsEntries, (entry) => {
     switch (true) {
-      case entry.tags?.includes(UNATTACHED_MDX_TAG):
+      case entry.tags?.includes(Tag.UNATTACHED_MDX):
         return 'unattachedEntries';
-      case entry.tags?.includes(ATTACHED_MDX_TAG):
+      case entry.tags?.includes(Tag.ATTACHED_MDX):
         return 'attachedEntries';
       default:
         return 'ignored';

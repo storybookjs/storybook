@@ -10,11 +10,12 @@ import type { PreparedStory } from 'storybook/internal/types';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import { usePrimaryStory } from './usePrimaryStory';
+import { Tag } from 'storybook/internal/core-server';
 
 const stories: Record<string, Partial<PreparedStory>> = {
-  story1: { name: 'Story One', tags: ['!autodocs'] },
-  story2: { name: 'Story Two', tags: ['autodocs'] },
-  story3: { name: 'Story Three', tags: ['autodocs'] },
+  story1: { name: 'Story One', tags: [`!${Tag.AUTODOCS}`] },
+  story2: { name: 'Story Two', tags: [Tag.AUTODOCS] },
+  story3: { name: 'Story Three', tags: [Tag.AUTODOCS] },
   story4: { name: 'Story Four', tags: [] },
 };
 

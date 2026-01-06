@@ -98,6 +98,10 @@ const mdxStubPlugin: Plugin = {
 };
 
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
+  if (!optionalEnvToBoolean(process.env.VITEST)) {
+    return [];
+  }
+
   const finalOptions = {
     ...defaultOptions,
     ...options,
@@ -142,7 +146,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   const [
     { storiesGlobs },
     framework,
-    storybookEnv,
     viteConfigFromStorybook,
     staticDirs,
     previewLevelTags,
@@ -152,7 +155,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   ] = await Promise.all([
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
-    presets.apply('env', {}),
     presets.apply<{ plugins?: Plugin[]; root: string }>('viteFinal', commonConfig),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
@@ -191,7 +193,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         .replace('</head>', `${headHtmlSnippet ?? ''}</head>`)
         .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
     },
-    async config(nonMutableInputConfig) {
+    async config(nonMutableInputConfig, { mode }) {
+      if (mode) {
+        // Needed for `preset.apply('env')` to work correctly
+        process.env.BUILD_TARGET = mode;
+      }
       // ! We're not mutating the input config, instead we're returning a new partial config
       // ! see https://vite.dev/guide/api-plugin.html#config
       try {
@@ -254,7 +260,15 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             : {}),
 
           env: {
-            ...storybookEnv,
+            /**
+             * We do this late, because we need vitest's --mode to be available and set to
+             * BUILD_MODE. Unfortunately, the dependencies we use to load .env files can only be
+             * configured using that environment variable. We need it to be synced up with the mode
+             * that vitest is running in, or risk leaking envs from the wrong file.
+             *
+             * @see https://github.com/storybookjs/storybook/issues/33101
+             */
+            ...(await presets.apply('env', {})),
             // To be accessed by the setup file
             __STORYBOOK_URL__: finalOptions.storybookUrl,
 
@@ -408,10 +422,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       }
     },
     async transform(code, id) {
-      if (!optionalEnvToBoolean(process.env.VITEST)) {
-        return code;
-      }
-
       const relativeId = relative(finalOptions.vitestRoot, id);
 
       if (match([relativeId], finalOptions.includeStories).length > 0) {

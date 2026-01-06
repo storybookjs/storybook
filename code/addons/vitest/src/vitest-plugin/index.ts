@@ -14,6 +14,7 @@ import {
 } from 'storybook/internal/common';
 import {
   StoryIndexGenerator,
+  Tag,
   experimental_loadStorybook,
   mapStaticDir,
 } from 'storybook/internal/core-server';
@@ -109,7 +110,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       ? resolve(WORKING_DIR, options.configDir)
       : defaultOptions.configDir,
     tags: {
-      include: options?.tags?.include ?? ['test'],
+      include: options?.tags?.include ?? [Tag.TEST],
       exclude: options?.tags?.exclude ?? [],
       skip: options?.tags?.skip ?? [],
     },

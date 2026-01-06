@@ -51,13 +51,11 @@ function defineSandboxJob_build({
 }
 function defineSandboxJob_dev({
   name,
-  directory,
   template,
   requires,
   options,
 }: {
   name: string;
-  directory: string;
   requires: JobOrNoOpJob[];
   template: string;
   options: {
@@ -98,10 +96,7 @@ function defineSandboxJob_dev({
                   ].join('\n'),
                 },
               },
-              artifact.persist(
-                join(LINUX_ROOT_DIR, SANDBOX_DIR, directory, 'test-results'),
-                'test-results'
-              ),
+              artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
               testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
             ]
           : [
@@ -212,7 +207,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
   });
   const devJob = defineSandboxJob_dev({
     name: `${name} (dev)`,
-    directory: id,
     template: key,
     requires: [createJob],
     options: { e2e: !skipTasks?.includes('e2e-tests-dev') },
@@ -294,6 +288,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             ].join('\n'),
           },
         },
+        artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
     },

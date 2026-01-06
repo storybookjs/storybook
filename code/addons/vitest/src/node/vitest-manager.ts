@@ -281,12 +281,6 @@ export class VitestManager {
     const currentCoverage = this.vitest?.config.coverage?.enabled;
     const shouldWatch = watching;
 
-    console.log({
-      shouldWatch,
-      triggeredBy,
-      currentVitestWatch: this.vitest?.config.watch,
-    });
-
     if (!this.vitest) {
       console.log('Starting Vitest with watch:', shouldWatch);
       await this.startVitest({ coverage: coverageShouldBeEnabled, watch: shouldWatch });

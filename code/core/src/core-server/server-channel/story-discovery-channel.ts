@@ -128,7 +128,10 @@ export function initStoryDiscoveryChannel(
       );
       console.log('Running tests on stories:', storyIds);
 
-      const testRunResult = await runStoryTests(generatedStoryFiles);
+      const componentFilePaths = generationResult.generatedStories.map(
+        (story: GeneratedStoryInfo) => story.componentFilePath
+      );
+      const testRunResult = await runStoryTests(generatedStoryFiles, componentFilePaths);
 
       // Emit progress updates during testing (we'll get updates from the test runner)
       const testSummaryWithPending = {
@@ -239,7 +242,10 @@ function extractUniqueErrors(testResults: StoryTestResult[]): string[] {
   return Array.from(errorSet);
 }
 
-async function runStoryTests(generatedStoryFiles: string[]): Promise<RunStoryTestsResponsePayload> {
+async function runStoryTests(
+  generatedStoryFiles: string[],
+  componentFilePaths: string[]
+): Promise<RunStoryTestsResponsePayload> {
   try {
     // Create the cache directory for story discovery tests
     const cacheDir = resolvePathInStorybookCache('story-discovery-tests');
@@ -266,6 +272,9 @@ async function runStoryTests(generatedStoryFiles: string[]): Promise<RunStoryTes
           ...generatedStoryFiles,
         ],
         stdio: 'ignore',
+        env: {
+          STORYBOOK_COMPONENT_PATHS: componentFilePaths.join(';'),
+        },
       });
 
       await testProcess;

@@ -17,7 +17,7 @@ import {
   experimental_loadStorybook,
   mapStaticDir,
 } from 'storybook/internal/core-server';
-import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
+import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 import { oneWayHash } from 'storybook/internal/telemetry';
@@ -96,6 +96,64 @@ const mdxStubPlugin: Plugin = {
     return null;
   },
 };
+
+// Transforming components and extracting args can be expensive
+// so we pass the paths via env variable and use as filter
+const getComponentTestPaths = (): string[] => {
+  const envPaths = process.env.STORYBOOK_COMPONENT_PATHS;
+
+  if (!envPaths) {
+    return [];
+  }
+
+  const path = require('path');
+  return envPaths
+    .split(';')
+    .filter(Boolean)
+    .map((p) => path.resolve(process.cwd(), p));
+};
+
+const storybookComponentTestPaths = getComponentTestPaths();
+
+const createComponentTestTransformPlugin = (presets: Presets, configDir: string): Plugin => ({
+  name: 'storybook:component-test-transform-plugin',
+  enforce: 'pre',
+  async transform(code, id) {
+    if (!optionalEnvToBoolean(process.env.VITEST)) {
+      return code;
+    }
+
+    if (id.includes('.stories') || id.includes('node_modules')) {
+      return code;
+    }
+
+    // If STORYBOOK_COMPONENT_PATHS env is set, filter on that
+    if (storybookComponentTestPaths.length > 0) {
+      const path = require('path');
+      const resolvedId = path.resolve(id);
+      const matches = storybookComponentTestPaths.some(
+        (testPath) => resolvedId === testPath || resolvedId.startsWith(testPath + path.sep)
+      );
+      if (!matches) {
+        return code;
+      }
+    }
+
+    const result = await componentTransform({
+      code,
+      fileName: id,
+      getComponentArgTypes: async ({ componentName, fileName }) =>
+        presets.apply('experimental_getArgTypesData', null, {
+          componentFilePath: fileName,
+          componentExportName: componentName,
+          configDir,
+        }),
+    });
+
+    console.log('RESULT', id, result.code);
+    return result.code;
+  },
+});
 
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   const finalOptions = {
@@ -196,7 +254,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // ! see https://vite.dev/guide/api-plugin.html#config
       try {
         await validateConfigurationFiles(finalOptions.configDir);
-      } catch (err) {
+      } catch {
         throw new MainFileMissingError({
           location: finalOptions.configDir,
           source: 'vitest',
@@ -264,7 +322,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
 
-          include: includeStories,
+          include: [...includeStories, ...storybookComponentTestPaths],
           exclude: [
             ...(nonMutableInputConfig.test?.exclude ?? []),
             join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
@@ -352,8 +410,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // alert the user of problems
       if ((nonMutableInputConfig.test?.include?.length ?? 0) > 0) {
         // remove the user's existing include, because we're replacing it with our own heuristic based on main.ts#stories
-        // @ts-expect-error: Ignore
-        nonMutableInputConfig.test.include = [];
         console.log(
           picocolors.yellow(dedent`
             Warning: Starting in Storybook 8.5.0-alpha.18, the "test.include" option in Vitest is discouraged in favor of just using the "stories" field in your Storybook configuration.
@@ -426,6 +482,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       }
     },
   };
+
+  if (storybookComponentTestPaths.length > 0) {
+    plugins.push(createComponentTestTransformPlugin(presets, finalOptions.configDir));
+  }
 
   plugins.push(storybookTestPlugin);
 

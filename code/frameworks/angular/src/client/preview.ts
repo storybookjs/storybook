@@ -52,7 +52,7 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
     C extends abstract new (...args: any) => any,
     Decorators extends DecoratorFunction<AngularRenderer & T, any>,
     // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<InstanceType<C> & T['args']>,
+    TMetaArgs extends Partial<InferComponentArgs<C> & T['args']>,
   >(
     meta: {
       component?: C;

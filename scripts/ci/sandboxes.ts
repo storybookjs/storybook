@@ -183,6 +183,10 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             },
           },
         },
+        /**
+         * Due to the way we create sandboxes, a unique situation arises where a sveltekit
+         * cache-config-file is missing. This generates it.
+         */
         ...(id.includes('svelte-kit')
           ? [
               {

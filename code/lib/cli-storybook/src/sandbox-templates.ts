@@ -25,7 +25,6 @@ type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
   features?:
     | (Partial<NonNullable<StorybookConfigRaw['features']>> & Record<string, unknown>)
     | undefined;
-  typescriptOptions?: any;
 };
 
 export type Template = {
@@ -429,7 +428,8 @@ export const baseTemplates = {
         features: {
           experimentalTestSyntax: true,
         },
-        typescriptOptions: {
+        typescript: {
+          // @ts-expect-error (the generic type does not contain this property)
           reactDocgen: 'react-docgen-typescript',
         },
       },

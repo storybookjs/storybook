@@ -412,10 +412,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       }
     },
     async transform(code, id) {
-      if (!optionalEnvToBoolean(process.env.VITEST)) {
-        return code;
-      }
-
       const relativeId = relative(finalOptions.vitestRoot, id);
 
       if (match([relativeId], finalOptions.includeStories).length > 0) {

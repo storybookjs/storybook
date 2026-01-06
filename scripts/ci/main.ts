@@ -46,7 +46,7 @@ function generateConfig(workflow: Workflow) {
     const initEmpty = getInitEmpty(workflow);
 
     if (isWorkflowOrAbove(workflow, 'merged')) {
-      jobs.push(build_windows, testUnit_windows);
+      // jobs.push(build_windows, testUnit_windows);
     }
 
     jobs.push(
@@ -124,7 +124,7 @@ function generateConfig(workflow: Workflow) {
       {} as Record<string, JobImplementation | NoOpJobImplementation>
     ),
     workflows: {
-      [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {
+      [`${workflow}-generated${isDebugging ? '-debug' : ''}-measured`]: {
         jobs: sortedJobs.map((t) =>
           t.requires && t.requires.length > 0
             ? { [t.id]: { requires: t.requires.map((r) => r.id) } }

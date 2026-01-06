@@ -26,7 +26,7 @@ export function definePortableStoryTest(directory: string) {
         class: 'medium',
       },
       steps: [
-        ...workflow.restore_linux(),
+        ...workflow.restoreLinux(),
         {
           run: {
             name: 'Install dependencies',
@@ -92,7 +92,7 @@ export function definePortableStoryTestPNP() {
         class: 'medium',
       },
       steps: [
-        ...workflow.restore_linux(),
+        ...workflow.restoreLinux(),
         {
           run: {
             name: 'Install dependencies',
@@ -125,7 +125,7 @@ export function definePortableStoryTestVitest3() {
         class: 'medium',
       },
       steps: [
-        ...workflow.restore_linux(),
+        ...workflow.restoreLinux(),
         {
           run: {
             name: 'Install dependencies',

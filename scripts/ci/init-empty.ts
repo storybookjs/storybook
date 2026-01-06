@@ -18,7 +18,7 @@ export const defineEmptyInitFlow = (template: string) =>
         class: 'medium',
       },
       steps: [
-        ...workflow.restore_linux(),
+        ...workflow.restoreLinux(),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {
@@ -60,7 +60,7 @@ export function defineEmptyInitFeatures() {
         class: 'medium',
       },
       steps: [
-        ...workflow.restore_linux(),
+        ...workflow.restoreLinux(),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {
@@ -103,7 +103,7 @@ export function defineEmptyInitWindows() {
         shell: 'bash.exe',
       },
       steps: [
-        ...workflow.restore_windows(),
+        ...workflow.restoreWindows(),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
         {

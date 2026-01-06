@@ -46,7 +46,7 @@ export const build_linux = defineJob('Build (linux)', {
         command: 'yarn local-registry --publish',
       },
     },
-    ...workflow.report_on_failure(),
+    ...workflow.reportOnFailure(),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.persist([
       ...glob
@@ -135,7 +135,7 @@ export const storybookChromatic = defineJob(
       class: 'medium+',
     },
     steps: [
-      ...workflow.restore_linux(),
+      ...workflow.restoreLinux(),
       {
         run: {
           name: 'Build internal storybook',
@@ -163,7 +163,7 @@ export const check = defineJob(
       class: 'xlarge',
     },
     steps: [
-      ...workflow.restore_linux(),
+      ...workflow.restoreLinux(),
       {
         run: {
           name: 'TypeCheck code',
@@ -178,8 +178,8 @@ export const check = defineJob(
           command: 'yarn check',
         },
       },
-      ...workflow.report_on_failure(),
-      ...workflow.cancel_on_failure(),
+      ...workflow.reportOnFailure(),
+      ...workflow.cancelOnFailure(),
     ],
   },
   [codeHub]
@@ -193,7 +193,7 @@ export const lint = defineJob(
       class: 'xlarge',
     },
     steps: [
-      ...workflow.restore_linux(),
+      ...workflow.restoreLinux(),
       {
         run: {
           name: 'Lint code',
@@ -221,7 +221,7 @@ export const knip = defineJob(
       class: 'medium',
     },
     steps: [
-      ...workflow.restore_linux(),
+      ...workflow.restoreLinux(),
       {
         run: {
           name: 'Run Knip',
@@ -242,7 +242,7 @@ export const testsUnit_linux = defineJob(
       class: 'large',
     },
     steps: [
-      ...workflow.restore_linux(),
+      ...workflow.restoreLinux(),
       {
         run: {
           name: 'Run tests',
@@ -256,8 +256,8 @@ export const testsUnit_linux = defineJob(
       testResults.persist(`code/test-results`),
 
       git.check(),
-      ...workflow.report_on_failure(),
-      ...workflow.cancel_on_failure(),
+      ...workflow.reportOnFailure(),
+      ...workflow.cancelOnFailure(),
     ],
   },
   [codeHub]
@@ -271,7 +271,7 @@ export const testsStories_linux = defineJob(
       class: 'xlarge',
     },
     steps: [
-      ...workflow.restore_linux(),
+      ...workflow.restoreLinux(),
       {
         run: {
           name: 'Run stories tests',
@@ -285,8 +285,8 @@ export const testsStories_linux = defineJob(
       testResults.persist(`code/test-results`),
 
       git.check(),
-      ...workflow.report_on_failure(),
-      ...workflow.cancel_on_failure(),
+      ...workflow.reportOnFailure(),
+      ...workflow.cancelOnFailure(),
     ],
   },
   [codeHub]
@@ -301,7 +301,7 @@ export const testUnit_windows = defineJob(
       shell: 'bash.exe',
     },
     steps: [
-      ...workflow.restore_windows(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
+      ...workflow.restoreWindows(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
       {
         run: {
           command: 'yarn install',
@@ -330,7 +330,7 @@ export const benchmarkPackages = defineJob(
       class: 'large',
     },
     steps: [
-      ...workflow.restore_linux(),
+      ...workflow.restoreLinux(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {

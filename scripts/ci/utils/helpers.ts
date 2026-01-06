@@ -168,13 +168,13 @@ export const verdaccio = {
 };
 
 export const workflow = {
-  restore_linux: () => [
+  restoreLinux: () => [
     //
     git.checkout(),
     workspace.attach(),
     cache.attach(CACHE_KEYS()),
   ],
-  restore_windows: (at = WINDOWS_ROOT_DIR) => [
+  restoreWindows: (at = WINDOWS_ROOT_DIR) => [
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
     workspace.attach(at),
@@ -192,7 +192,7 @@ export const workflow = {
       },
     },
   ],
-  cancel_on_failure: () => {
+  cancelOnFailure: () => {
     return [
       {
         run: {
@@ -204,7 +204,7 @@ export const workflow = {
       },
     ];
   },
-  report_on_failure: () => {
+  reportOnFailure: () => {
     return [
       {
         run: {

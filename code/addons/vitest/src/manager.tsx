@@ -8,7 +8,7 @@ import {
   store,
   testProviderStore,
 } from '#manager-store';
-import { addons, Tag } from 'storybook/manager-api';
+import { Tag, addons } from 'storybook/manager-api';
 
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { SidebarContextMenu } from './components/SidebarContextMenu';

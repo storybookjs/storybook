@@ -5,12 +5,12 @@ import { describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import type { FC, PropsWithChildren } from 'react';
 
+import { Tag } from 'storybook/internal/core-server';
 import type { PreparedStory } from 'storybook/internal/types';
 
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import { usePrimaryStory } from './usePrimaryStory';
-import { Tag } from 'storybook/internal/core-server';
 
 const stories: Record<string, Partial<PreparedStory>> = {
   story1: { name: 'Story One', tags: [`!${Tag.AUTODOCS}`] },

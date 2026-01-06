@@ -1,5 +1,5 @@
-import { readConfig } from 'storybook/internal/csf-tools';
 import { Tag } from 'storybook/internal/core-server';
+import { readConfig } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 

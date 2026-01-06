@@ -62,8 +62,9 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
   return preview;
 }
 
-export interface PreviewAddon<in TExtraContext extends AddonTypes = AddonTypes>
-  extends ProjectAnnotations<Renderer> {}
+export interface PreviewAddon<
+  in TExtraContext extends AddonTypes = AddonTypes,
+> extends ProjectAnnotations<Renderer> {}
 
 export function definePreviewAddon<TExtraContext extends AddonTypes = AddonTypes>(
   preview: ProjectAnnotations<Renderer>

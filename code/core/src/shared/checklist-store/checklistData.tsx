@@ -15,7 +15,7 @@ import {
   type API_StoryEntry,
 } from 'storybook/internal/types';
 
-import { type API, addons, internal_universalTestProviderStore, Tag } from 'storybook/manager-api';
+import { type API, Tag, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
 import { ADDON_ID as ADDON_A11Y_ID } from '../../../../addons/a11y/src/constants';

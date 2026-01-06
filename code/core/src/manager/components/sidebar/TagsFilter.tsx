@@ -1,11 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Badge, Button, PopoverProvider } from 'storybook/internal/components';
-import type {
-  API_PreparedIndexEntry,
-  StoryIndex,
-  TagsOptions,
-} from 'storybook/internal/types';
+import type { API_PreparedIndexEntry, StoryIndex, TagsOptions } from 'storybook/internal/types';
 
 import { BeakerIcon, DocumentIcon, FilterIcon, PlayHollowIcon } from '@storybook/icons';
 

@@ -1,4 +1,5 @@
 import { recast } from 'storybook/internal/babel';
+import { Tag } from 'storybook/internal/core-server';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
@@ -11,7 +12,6 @@ import {
 import { uniqBy } from 'es-toolkit/array';
 import path from 'pathe';
 
-import { Tag } from 'storybook/internal/core-server';
 import { getCodeSnippet } from './generateCodeSnippet';
 import { getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';

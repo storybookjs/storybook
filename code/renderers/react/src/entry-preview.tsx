@@ -1,8 +1,9 @@
 import * as React from 'react';
 
+import { Tag } from 'storybook/internal/preview-api';
+
 import { global } from '@storybook/global';
 
-import { Tag } from 'storybook/internal/preview-api';
 import { configure } from 'storybook/test';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';

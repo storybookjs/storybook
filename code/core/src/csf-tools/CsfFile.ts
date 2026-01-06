@@ -23,9 +23,9 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
+import { Tag } from '../shared/constants/tags';
 import type { PrintResultType } from './PrintResultType';
 import { findVarInitialization } from './findVarInitialization';
-import { Tag } from '../shared/constants/tags';
 
 // We add this BabelFile as a temporary workaround to deal with a BabelFileClass "ImportEquals should have a literal source" issue in no link mode with tsup
 interface BabelFile {

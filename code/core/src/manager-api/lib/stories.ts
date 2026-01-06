@@ -26,8 +26,8 @@ import { mapValues } from 'es-toolkit/object';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
-import { type API, type State, combineParameters } from '../root';
 import { Tag } from '../../shared/constants/tags';
+import { type API, type State, combineParameters } from '../root';
 import intersect from './intersect';
 import merge from './merge';
 

@@ -2,6 +2,7 @@ import type { FC, ReactElement } from 'react';
 import React, { useContext } from 'react';
 
 import { Tag } from 'storybook/internal/preview-api';
+
 import { styled } from 'storybook/theming';
 
 import { DocsContext } from './DocsContext';

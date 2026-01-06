@@ -196,7 +196,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     async config(nonMutableInputConfig, { mode }) {
       if (mode) {
         // Needed for `preset.apply('env')` to work correctly
-        process.env.BUILD_MODE = mode;
+        process.env.BUILD_TARGET = mode;
       }
       // ! We're not mutating the input config, instead we're returning a new partial config
       // ! see https://vite.dev/guide/api-plugin.html#config

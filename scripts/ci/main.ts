@@ -37,19 +37,19 @@ const dirname = import.meta.dirname;
  * @returns The generated config for CircleCI in JS format.
  */
 function generateConfig(workflow: Workflow) {
-  const todos: JobsOrHub[] = [];
+  const jobs: JobsOrHub[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {
-    todos.push(prettyDocs);
+    jobs.push(prettyDocs);
   } else {
     const sandboxes = getSandboxes(workflow);
     const testStorybooks = getTestStorybooks(workflow);
     const initEmpty = getInitEmpty(workflow);
 
     if (isWorkflowOrAbove(workflow, 'merged')) {
-      todos.push(build_windows, testUnit_windows);
+      jobs.push(build_windows, testUnit_windows);
     }
 
-    todos.push(
+    jobs.push(
       build_linux,
       testsUnit_linux,
       testsStories_linux,
@@ -91,13 +91,13 @@ function generateConfig(workflow: Workflow) {
    * const filteredTodos = todos.filter((job) => !!job.id.includes('qwik'));
    * ```
    */
-  const filteredTodos = todos.filter((job) => !!job);
+  const filteredJobs = jobs.filter((job) => !!job);
 
-  const isDebugging = filteredTodos.length !== todos.length;
+  const isDebugging = filteredJobs.length !== jobs.length;
 
-  const ensured = ensureRequiredJobs(filteredTodos);
+  const ensuredJobs = ensureRequiredJobs(filteredJobs);
 
-  const sorted = ensured.sort((a, b) => {
+  const sortedJobs = ensuredJobs.sort((a, b) => {
     if (a.requires.length && b.requires.length) {
       return a.requires.length - b.requires.length;
     }
@@ -116,7 +116,7 @@ function generateConfig(workflow: Workflow) {
     executors,
     parameters,
 
-    jobs: sorted.reduce(
+    jobs: sortedJobs.reduce(
       (acc, job) => {
         acc[job.id] = job.implementation;
         return acc;
@@ -125,7 +125,7 @@ function generateConfig(workflow: Workflow) {
     ),
     workflows: {
       [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {
-        jobs: sorted.map((t) =>
+        jobs: sortedJobs.map((t) =>
           t.requires && t.requires.length > 0
             ? { [t.id]: { requires: t.requires.map((r) => r.id) } }
             : t.id

@@ -429,9 +429,8 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
         typescript: {
-          // @ts-expect-error (the generic type does not contain this property)
           reactDocgen: 'react-docgen-typescript',
-        },
+        } as any, // the generic type does not contain the reactDocgen property
       },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],

@@ -22,3 +22,5 @@ export {
   checklistStore as internal_checklistStore,
   universalChecklistStore as internal_universalChecklistStore,
 } from './stores/checklist';
+
+export { Tag } from '../shared/constants/tags';

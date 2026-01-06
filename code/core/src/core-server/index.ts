@@ -12,6 +12,8 @@ export { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 
 export { loadStorybook as experimental_loadStorybook } from './load';
 
+export { Tag } from '../shared/constants/tags';
+
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
 export {

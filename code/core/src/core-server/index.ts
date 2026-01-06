@@ -13,6 +13,7 @@ export { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 export { loadStorybook as experimental_loadStorybook } from './load';
 
 export { Tag } from '../shared/constants/tags';
+export { analyze as analyzeMdx } from '@storybook/docs-mdx';
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';

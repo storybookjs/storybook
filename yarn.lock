@@ -7655,7 +7655,6 @@ __metadata:
     "@mdx-js/react": "npm:^3.0.0"
     "@rollup/pluginutils": "npm:^5.0.2"
     "@storybook/csf-plugin": "workspace:*"
-    "@storybook/docs-mdx": "npm:3.2.0--canary.20.3700111.0"
     "@storybook/icons": "npm:^2.0.1"
     "@storybook/react-dom-shim": "workspace:*"
     "@types/color-convert": "npm:^2.0.0"

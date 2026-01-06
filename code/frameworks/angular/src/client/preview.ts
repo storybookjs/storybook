@@ -20,6 +20,7 @@ import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection }
 
 import * as angularAnnotations from './config';
 import * as angularDocsAnnotations from './docs/config';
+import type { TransformComponentType } from './public-types';
 import { type AngularRenderer } from './types';
 
 export function __definePreview<Addons extends PreviewAddon<never>[]>(
@@ -35,6 +36,10 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 
 type InferArgs<TArgs, T, Decorators> = Simplify<
   TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<AngularRenderer & T, Decorators>>>
+>;
+
+type InferComponentArgs<C extends abstract new (...args: any) => any> = Partial<
+  TransformComponentType<InstanceType<C>>
 >;
 
 type InferAngularTypes<T, TArgs, Decorators> = AngularRenderer &
@@ -54,15 +59,12 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
       args?: TMetaArgs;
       decorators?: Decorators | Decorators[];
     } & Omit<
-      ComponentAnnotations<AngularRenderer & T, Partial<InstanceType<C>> & T['args']>,
+      ComponentAnnotations<AngularRenderer & T, InferComponentArgs<C> & T['args']>,
       'decorators' | 'component' | 'args'
     >
   ): AngularMeta<
-    InferAngularTypes<T, Partial<InstanceType<C>>, Decorators>,
-    Omit<
-      ComponentAnnotations<InferAngularTypes<T, Partial<InstanceType<C>>, Decorators>>,
-      'args'
-    > & {
+    InferAngularTypes<T, InferComponentArgs<C>, Decorators>,
+    Omit<ComponentAnnotations<InferAngularTypes<T, InferComponentArgs<C>, Decorators>>, 'args'> & {
       args: {} extends TMetaArgs ? {} : TMetaArgs;
     }
   >;

@@ -1,5 +1,6 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { analyze } from '@storybook/docs-mdx';
 
 import { groupBy } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
@@ -20,6 +21,7 @@ export interface DocsManifestEntry {
   path: Path;
   title: string;
   content?: string;
+  summary?: string;
   error?: { name: string; message: string };
 }
 
@@ -47,12 +49,15 @@ export async function createDocsManifestEntry(entry: DocsIndexEntry): Promise<Do
   const absolutePath = path.join(process.cwd(), entry.importPath);
   try {
     const content = await fs.readFile(absolutePath, 'utf-8');
+    const { summary } = await analyze(content);
+
     return {
       id: entry.id,
       name: entry.name,
       path: entry.importPath,
       title: entry.title,
       content,
+      ...(summary && { summary }),
     };
   } catch (err) {
     return {

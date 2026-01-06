@@ -7655,6 +7655,7 @@ __metadata:
     "@mdx-js/react": "npm:^3.0.0"
     "@rollup/pluginutils": "npm:^5.0.2"
     "@storybook/csf-plugin": "workspace:*"
+    "@storybook/docs-mdx": "npm:3.2.0--canary.20.3700111.0"
     "@storybook/icons": "npm:^2.0.1"
     "@storybook/react-dom-shim": "workspace:*"
     "@types/color-convert": "npm:^2.0.0"
@@ -8070,12 +8071,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/docs-mdx@npm:4.0.0-next.1":
-  version: 4.0.0-next.1
-  resolution: "@storybook/docs-mdx@npm:4.0.0-next.1"
+"@storybook/docs-mdx@npm:3.2.0--canary.20.3700111.0":
+  version: 3.2.0--canary.20.3700111.0
+  resolution: "@storybook/docs-mdx@npm:3.2.0--canary.20.3700111.0"
   dependencies:
     acorn: "npm:^8.12.1"
-  checksum: 10c0/8779279014a0a48c00d5884d310b3ca7828a49057c7403371e4eaf0fd053d8c93a412084cbbd6e5ea65e509e27f96752e8de7dadacdfa89198158b8b10deabdc
+  checksum: 10c0/3c1ac6829697d34ca721a60dcdfd69a2126bd1911375f2b13bc6d27ce27bb733117eecc3a1a7c3084a4ff35afd9028cae2800e9081ad6298ebee90be7c6b7a96
   languageName: node
   linkType: hard
 
@@ -28424,7 +28425,7 @@ __metadata:
     "@react-stately/tabs": "npm:^3.8.5"
     "@react-types/shared": "npm:^3.32.0"
     "@rolldown/pluginutils": "npm:1.0.0-beta.18"
-    "@storybook/docs-mdx": "npm:4.0.0-next.1"
+    "@storybook/docs-mdx": "npm:3.2.0--canary.20.3700111.0"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.1"
     "@tanstack/react-virtual": "npm:^3.3.0"

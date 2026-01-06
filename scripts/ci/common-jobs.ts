@@ -17,7 +17,7 @@ import {
   workflow,
   workspace,
 } from './utils/helpers';
-import { defineHub, defineJob } from './utils/types';
+import { defineJob, defineNoOpJob } from './utils/types';
 
 const dirname = import.meta.dirname;
 
@@ -119,7 +119,7 @@ export const build_windows = defineJob('Build (windows)', {
   ],
 });
 
-export const commonJobsHub = defineHub('Common Jobs', [build_linux]);
+export const commonJobsNoOpJob = defineNoOpJob('Common Jobs', [build_linux]);
 
 export const storybookChromatic = defineJob(
   'Local storybook & chromatic',
@@ -146,7 +146,7 @@ export const storybookChromatic = defineJob(
       },
     ],
   },
-  [commonJobsHub]
+  [commonJobsNoOpJob]
 );
 
 export const check = defineJob(
@@ -176,7 +176,7 @@ export const check = defineJob(
       ...workflow.cancelOnFailure(),
     ],
   },
-  [commonJobsHub]
+  [commonJobsNoOpJob]
 );
 
 export const lint = defineJob(
@@ -204,7 +204,7 @@ export const lint = defineJob(
       },
     ],
   },
-  [commonJobsHub]
+  [commonJobsNoOpJob]
 );
 
 export const knip = defineJob(
@@ -225,7 +225,7 @@ export const knip = defineJob(
       },
     ],
   },
-  [commonJobsHub]
+  [commonJobsNoOpJob]
 );
 
 export const testsUnit_linux = defineJob(
@@ -254,7 +254,7 @@ export const testsUnit_linux = defineJob(
       ...workflow.cancelOnFailure(),
     ],
   },
-  [commonJobsHub]
+  [commonJobsNoOpJob]
 );
 
 export const testsStories_linux = defineJob(
@@ -283,7 +283,7 @@ export const testsStories_linux = defineJob(
       ...workflow.cancelOnFailure(),
     ],
   },
-  [commonJobsHub]
+  [commonJobsNoOpJob]
 );
 
 export const testUnit_windows = defineJob(
@@ -337,5 +337,5 @@ export const benchmarkPackages = defineJob(
       },
     ],
   },
-  [commonJobsHub]
+  [commonJobsNoOpJob]
 );

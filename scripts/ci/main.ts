@@ -9,7 +9,7 @@ import {
   build_linux,
   build_windows,
   check,
-  commonJobsHub,
+  commonJobsNoOpJob,
   knip,
   lint,
   prettyDocs,
@@ -18,14 +18,14 @@ import {
   testsStories_linux,
   testsUnit_linux,
 } from './common-jobs';
-import { getInitEmpty, initEmptyHub } from './init-empty';
-import { getSandboxes, sandboxesHub } from './sandboxes';
-import { getTestStorybooks, testStorybooksHub } from './test-storybooks';
+import { getInitEmpty, initEmptyNoOpJob } from './init-empty';
+import { getSandboxes, sandboxesNoOpJob } from './sandboxes';
+import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks';
 import { executors } from './utils/executors';
 import { ensureRequiredJobs } from './utils/helpers';
 import { orbs } from './utils/orbs';
 import { parameters } from './utils/parameters';
-import type { HubImplementation, JobsOrHub } from './utils/types';
+import type { JobOrNoOpJob, NoOpJobImplementation } from './utils/types';
 import { type JobImplementation, type Workflow, isWorkflowOrAbove } from './utils/types';
 
 const dirname = import.meta.dirname;
@@ -37,7 +37,7 @@ const dirname = import.meta.dirname;
  * @returns The generated config for CircleCI in JS format.
  */
 function generateConfig(workflow: Workflow) {
-  const jobs: JobsOrHub[] = [];
+  const jobs: JobOrNoOpJob[] = [];
   if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(prettyDocs);
   } else {
@@ -54,7 +54,7 @@ function generateConfig(workflow: Workflow) {
       testsUnit_linux,
       testsStories_linux,
 
-      commonJobsHub,
+      commonJobsNoOpJob,
       lint,
       check,
       knip,
@@ -62,13 +62,13 @@ function generateConfig(workflow: Workflow) {
       storybookChromatic,
       benchmarkPackages,
 
-      sandboxesHub,
+      sandboxesNoOpJob,
       ...sandboxes,
 
-      testStorybooksHub,
+      testStorybooksNoOpJob,
       ...testStorybooks,
 
-      initEmptyHub,
+      initEmptyNoOpJob,
       ...initEmpty
     );
   }
@@ -121,7 +121,7 @@ function generateConfig(workflow: Workflow) {
         acc[job.id] = job.implementation;
         return acc;
       },
-      {} as Record<string, JobImplementation | HubImplementation>
+      {} as Record<string, JobImplementation | NoOpJobImplementation>
     ),
     workflows: {
       [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {

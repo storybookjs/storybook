@@ -2,18 +2,18 @@ import type { executors } from './executors';
 import { toId } from './helpers';
 import type { parameters } from './parameters';
 
-export type Job<K extends string, I extends JobImplementation | HubImplementation> = {
+export type Job<K extends string, I extends JobImplementation | NoOpJobImplementation> = {
   id: string;
   name: K;
   implementation: I;
-  requires: JobsOrHub[];
+  requires: JobOrNoOpJob[];
 };
 
-export type Hub<K extends string> = Job<K, HubImplementation>;
+export type NoOpJob<K extends string> = Job<K, NoOpJobImplementation>;
 
-export type JobsOrHub = Job<string, JobImplementation | HubImplementation>;
+export type JobOrNoOpJob = Job<string, JobImplementation | NoOpJobImplementation>;
 
-export type HubImplementation = {
+export type NoOpJobImplementation = {
   type: 'no-op';
 };
 
@@ -74,7 +74,7 @@ export type JobImplementation = {
 export function defineJob<K extends string, I extends JobImplementation>(
   name: K,
   implementation: I,
-  requires = [] as JobsOrHub[]
+  requires = [] as JobOrNoOpJob[]
 ): Job<K, I> {
   return {
     id: toId(name),
@@ -94,7 +94,10 @@ export function defineJob<K extends string, I extends JobImplementation>(
  * @param name - The name of the hub
  * @param requires - The jobs that this hub depends on
  */
-export function defineHub<K extends string>(name: K, requires = [] as JobsOrHub[]): Hub<K> {
+export function defineNoOpJob<K extends string>(
+  name: K,
+  requires = [] as JobOrNoOpJob[]
+): NoOpJob<K> {
   return {
     id: toId(name),
     name,

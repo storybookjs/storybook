@@ -1,5 +1,5 @@
 import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR } from './constants';
-import { type JobsOrHub } from './types';
+import { type JobOrNoOpJob } from './types';
 
 export const workspace = {
   attach: (at = LINUX_ROOT_DIR) => {
@@ -258,8 +258,8 @@ export const testResults = {
  * We ensure that if (due to filtering for example) any required jobs are not present in the todos
  * array, we add them back in. This is recursive, as a required job can have required jobs itself.
  */
-export function ensureRequiredJobs(jobs: JobsOrHub[]): JobsOrHub[] {
-  const results: JobsOrHub[] = [];
+export function ensureRequiredJobs(jobs: JobOrNoOpJob[]): JobOrNoOpJob[] {
+  const results: JobOrNoOpJob[] = [];
   while (jobs.length > 0) {
     const job = jobs.shift();
     if (job) {

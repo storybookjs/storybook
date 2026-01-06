@@ -4,10 +4,10 @@ import { join } from 'path/posix';
 import { build_linux } from './common-jobs';
 import { artifact, workflow } from './utils/helpers';
 import {
-  type JobsOrHub,
+  type JobOrNoOpJob,
   type Workflow,
-  defineHub,
   defineJob,
+  defineNoOpJob,
   isWorkflowOrAbove,
 } from './utils/types';
 
@@ -79,7 +79,7 @@ export function definePortableStoryTest(directory: string) {
         },
       ],
     },
-    [testStorybooksHub]
+    [testStorybooksNoOpJob]
   );
 }
 
@@ -112,7 +112,7 @@ export function definePortableStoryTestPNP() {
         },
       ],
     },
-    [testStorybooksHub]
+    [testStorybooksNoOpJob]
   );
 }
 
@@ -145,14 +145,14 @@ export function definePortableStoryTestVitest3() {
         },
       ],
     },
-    [testStorybooksHub]
+    [testStorybooksNoOpJob]
   );
 }
 
-export const testStorybooksHub = defineHub('test-storybooks', [build_linux]);
+export const testStorybooksNoOpJob = defineNoOpJob('test-storybooks', [build_linux]);
 
 export function getTestStorybooks(workflow: Workflow) {
-  const testStorybooks: JobsOrHub[] = ['react', 'vue3'].map(definePortableStoryTest);
+  const testStorybooks: JobOrNoOpJob[] = ['react', 'vue3'].map(definePortableStoryTest);
 
   if (isWorkflowOrAbove(workflow, 'daily')) {
     testStorybooks.push(definePortableStoryTestPNP());

@@ -14,8 +14,8 @@ import {
   workflow,
   workspace,
 } from './utils/helpers';
-import { defineHub, defineJob, isWorkflowOrAbove } from './utils/types';
-import type { JobsOrHub, Workflow } from './utils/types';
+import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types';
+import type { JobOrNoOpJob, Workflow } from './utils/types';
 
 function defineSandboxJob_build({
   directory,
@@ -25,7 +25,7 @@ function defineSandboxJob_build({
 }: {
   directory: string;
   name: string;
-  requires: JobsOrHub[];
+  requires: JobOrNoOpJob[];
   template: string;
 }) {
   return defineJob(
@@ -58,7 +58,7 @@ function defineSandboxJob_dev({
 }: {
   name: string;
   directory: string;
-  requires: JobsOrHub[];
+  requires: JobOrNoOpJob[];
   template: string;
   options: {
     e2e: boolean;
@@ -202,7 +202,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         workspace.persist([`${SANDBOX_DIR}/${id}`]),
       ],
     },
-    [sandboxesHub]
+    [sandboxesNoOpJob]
   );
   const buildJob = defineSandboxJob_build({
     name: `${name} (build)`,
@@ -472,7 +472,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
   );
 }
 
-export const sandboxesHub = defineHub('sandboxes', [build_linux]);
+export const sandboxesNoOpJob = defineNoOpJob('sandboxes', [build_linux]);
 
 const getListOfSandboxes = (workflow: Workflow) => {
   switch (workflow) {
@@ -490,7 +490,7 @@ const getListOfSandboxes = (workflow: Workflow) => {
 export function getSandboxes(workflow: Workflow) {
   const sandboxes = getListOfSandboxes(workflow).map(defineSandboxFlow);
 
-  const list: JobsOrHub[] = sandboxes.flatMap((sandbox) => sandbox.jobs);
+  const list: JobOrNoOpJob[] = sandboxes.flatMap((sandbox) => sandbox.jobs);
 
   if (isWorkflowOrAbove(workflow, 'merged')) {
     const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);

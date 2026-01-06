@@ -2,10 +2,10 @@ import { build_linux } from './common-jobs';
 import { WINDOWS_ROOT_DIR } from './utils/constants';
 import { server, verdaccio, workflow } from './utils/helpers';
 import {
-  type JobsOrHub,
+  type JobOrNoOpJob,
   type Workflow,
-  defineHub,
   defineJob,
+  defineNoOpJob,
   isWorkflowOrAbove,
 } from './utils/types';
 
@@ -48,7 +48,7 @@ export const defineEmptyInitFlow = (template: string) =>
       ],
     },
 
-    [initEmptyHub]
+    [initEmptyNoOpJob]
   );
 
 export function defineEmptyInitFeatures() {
@@ -89,7 +89,7 @@ export function defineEmptyInitFeatures() {
         },
       ],
     },
-    [initEmptyHub]
+    [initEmptyNoOpJob]
   );
 }
 
@@ -132,14 +132,14 @@ export function defineEmptyInitWindows() {
         },
       ],
     },
-    [initEmptyHub]
+    [initEmptyNoOpJob]
   );
 }
 
-export const initEmptyHub = defineHub('init-empty', [build_linux]);
+export const initEmptyNoOpJob = defineNoOpJob('init-empty', [build_linux]);
 
 export function getInitEmpty(workflow: Workflow) {
-  const initEmpty: JobsOrHub[] = ['react-vite-ts'].map(defineEmptyInitFlow);
+  const initEmpty: JobOrNoOpJob[] = ['react-vite-ts'].map(defineEmptyInitFlow);
 
   if (isWorkflowOrAbove(workflow, 'merged')) {
     initEmpty.push(...['nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'].map(defineEmptyInitFlow));

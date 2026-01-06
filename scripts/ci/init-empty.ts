@@ -1,4 +1,4 @@
-import { build_linux } from './code';
+import { build_linux } from './common-jobs';
 import { WINDOWS_ROOT_DIR } from './utils/constants';
 import { server, verdaccio, workflow } from './utils/helpers';
 import {

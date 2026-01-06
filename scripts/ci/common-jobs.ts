@@ -99,13 +99,7 @@ export const build_windows = defineJob('Build (windows)', {
         command: 'yarn task --task compile --start-from=auto --no-link --debug',
       },
     },
-    {
-      run: {
-        name: 'Publish to Verdaccio',
-        working_directory: `code`,
-        command: 'yarn local-registry --publish',
-      },
-    },
+    verdaccio.start(),
     workspace.persist(
       [
         ...glob
@@ -125,7 +119,7 @@ export const build_windows = defineJob('Build (windows)', {
   ],
 });
 
-export const codeHub = defineHub('code', [build_linux]);
+export const commonJobsHub = defineHub('Common Jobs', [build_linux]);
 
 export const storybookChromatic = defineJob(
   'Local storybook & chromatic',
@@ -152,7 +146,7 @@ export const storybookChromatic = defineJob(
       },
     ],
   },
-  [codeHub]
+  [commonJobsHub]
 );
 
 export const check = defineJob(
@@ -182,7 +176,7 @@ export const check = defineJob(
       ...workflow.cancelOnFailure(),
     ],
   },
-  [codeHub]
+  [commonJobsHub]
 );
 
 export const lint = defineJob(
@@ -210,7 +204,7 @@ export const lint = defineJob(
       },
     ],
   },
-  [codeHub]
+  [commonJobsHub]
 );
 
 export const knip = defineJob(
@@ -231,7 +225,7 @@ export const knip = defineJob(
       },
     ],
   },
-  [codeHub]
+  [commonJobsHub]
 );
 
 export const testsUnit_linux = defineJob(
@@ -260,7 +254,7 @@ export const testsUnit_linux = defineJob(
       ...workflow.cancelOnFailure(),
     ],
   },
-  [codeHub]
+  [commonJobsHub]
 );
 
 export const testsStories_linux = defineJob(
@@ -289,7 +283,7 @@ export const testsStories_linux = defineJob(
       ...workflow.cancelOnFailure(),
     ],
   },
-  [codeHub]
+  [commonJobsHub]
 );
 
 export const testUnit_windows = defineJob(
@@ -343,5 +337,5 @@ export const benchmarkPackages = defineJob(
       },
     ],
   },
-  [codeHub]
+  [commonJobsHub]
 );

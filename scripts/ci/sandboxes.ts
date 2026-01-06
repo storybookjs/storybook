@@ -1,7 +1,7 @@
 import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { build_linux } from './code';
+import { build_linux } from './common-jobs';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants';
 import {
   CACHE_KEYS,

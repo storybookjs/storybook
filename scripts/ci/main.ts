@@ -9,7 +9,7 @@ import {
   build_linux,
   build_windows,
   check,
-  codeHub,
+  commonJobsHub,
   knip,
   lint,
   prettyDocs,
@@ -17,7 +17,7 @@ import {
   testUnit_windows,
   testsStories_linux,
   testsUnit_linux,
-} from './code';
+} from './common-jobs';
 import { getInitEmpty, initEmptyHub } from './init-empty';
 import { getSandboxes, sandboxesHub } from './sandboxes';
 import { getTestStorybooks, testStorybooksHub } from './test-storybooks';
@@ -54,7 +54,7 @@ function generateConfig(workflow: Workflow) {
       testsUnit_linux,
       testsStories_linux,
 
-      codeHub,
+      commonJobsHub,
       lint,
       check,
       knip,

@@ -98,6 +98,10 @@ const mdxStubPlugin: Plugin = {
 };
 
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
+  if (!optionalEnvToBoolean(process.env.VITEST)) {
+    return [];
+  }
+
   const finalOptions = {
     ...defaultOptions,
     ...options,

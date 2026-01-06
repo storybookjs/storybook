@@ -3,11 +3,11 @@ import { describe, expect, it, test } from 'vitest';
 
 import type { Args } from 'storybook/internal/types';
 
-import { html, LitElement } from 'lit';
+import { LitElement, html } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
 
 import { __definePreview } from './preview';
 import type { Decorator } from './public-types';
-import {customElement, property} from 'lit/decorators.js';
 
 type ButtonProps = { label: string; disabled: boolean };
 
@@ -20,7 +20,6 @@ class MyButton extends LitElement {
   }
 }
 
-@customElement('my-component')
 class MyComponent extends LitElement {
   render() {
     return html`<button></button>`;
@@ -128,7 +127,7 @@ type ThemeData = 'light' | 'dark';
 
 describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
-    const meta = preview.type<{args: { theme: ThemeData }}>().meta({
+    const meta = preview.type<{ args: { theme: ThemeData } }>().meta({
       component: 'my-button',
       args: { disabled: false },
       render: (args) => {

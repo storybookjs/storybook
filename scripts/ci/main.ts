@@ -45,8 +45,8 @@ function generateConfig(workflow: Workflow) {
     const testStorybooks = getTestStorybooks(workflow);
     const initEmpty = getInitEmpty(workflow);
 
-    if (isWorkflowOrAbove(workflow, 'merged')) {
-      // jobs.push(build_windows, testUnit_windows);
+    if (isWorkflowOrAbove(workflow, 'merged') && process.env.NEVER_TRUE) {
+      jobs.push(build_windows, testUnit_windows);
     }
 
     jobs.push(

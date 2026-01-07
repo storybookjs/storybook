@@ -11,7 +11,7 @@ export default {
         component: '**Component** description',
       },
     },
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 

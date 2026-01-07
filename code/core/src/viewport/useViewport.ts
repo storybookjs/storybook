@@ -35,10 +35,10 @@ const cycle = (
       : keys[nextIndex];
 };
 
-const normalizeValue = (value: string | GlobalState): Required<GlobalState> =>
+const normalizeValue = (value: string | GlobalState): GlobalState =>
   typeof value === 'string'
-    ? { value, isRotated: false }
-    : { value: value?.value, isRotated: value?.isRotated ?? false };
+    ? { value, isRotated: undefined }
+    : { value: value?.value, isRotated: value?.isRotated };
 
 const parseGlobals = (
   globals: Globals,

@@ -45,7 +45,7 @@ export const ViewportTool = () => {
       onReset={reset}
       key="viewport"
       disabled={isLocked}
-      ariaLabel={isLocked ? 'Viewport set by story parameters' : 'Viewport'}
+      ariaLabel={isLocked ? 'Viewport set by story parameters' : 'Viewport size'}
       ariaDescription="Select a viewport among predefined options for the preview area, or reset to the default viewport."
       tooltip={isLocked ? 'Viewport set by story parameters' : 'Change viewport'}
       defaultOptions={value}

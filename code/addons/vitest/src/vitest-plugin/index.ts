@@ -99,7 +99,7 @@ const mdxStubPlugin: Plugin = {
 
 // Transforming components and extracting args can be expensive
 // so we pass the paths via env variable and use as filter
-const getComponentTestPaths = (): string[] => {
+const getComponentTestPaths = (vitestRoot: string): string[] => {
   const envPaths = process.env.STORYBOOK_COMPONENT_PATHS;
 
   if (!envPaths) {
@@ -107,53 +107,68 @@ const getComponentTestPaths = (): string[] => {
   }
 
   const path = require('path');
-  return envPaths
-    .split(';')
-    .filter(Boolean)
-    .map((p) => path.resolve(process.cwd(), p));
+  return (
+    envPaths
+      .split(';')
+      .filter(Boolean)
+      // TODO: check whether this is actually needed
+      .map((p) => path.relative(vitestRoot, path.resolve(process.cwd(), p)))
+  );
 };
 
-const storybookComponentTestPaths = getComponentTestPaths();
+const createComponentTestTransformPlugin = (presets: Presets, configDir: string): Plugin => {
+  let vitestRoot: string;
+  let storybookComponentTestPaths: string[] = [];
 
-const createComponentTestTransformPlugin = (presets: Presets, configDir: string): Plugin => ({
-  name: 'storybook:component-test-transform-plugin',
-  enforce: 'pre',
-  async transform(code, id) {
-    if (!optionalEnvToBoolean(process.env.VITEST)) {
-      return code;
-    }
-
-    if (id.includes('.stories') || id.includes('node_modules')) {
-      return code;
-    }
-
-    // If STORYBOOK_COMPONENT_PATHS env is set, filter on that
-    if (storybookComponentTestPaths.length > 0) {
-      const path = require('path');
-      const resolvedId = path.resolve(id);
-      const matches = storybookComponentTestPaths.some(
-        (testPath) => resolvedId === testPath || resolvedId.startsWith(testPath + path.sep)
-      );
-      if (!matches) {
+  console.log('🚨');
+  return {
+    name: 'storybook:component-test-transform-plugin',
+    enforce: 'pre',
+    async config(config) {
+      console.log('🚨🚨');
+      vitestRoot = config.test?.dir || config.test?.root || config.root || process.cwd();
+      storybookComponentTestPaths = getComponentTestPaths(vitestRoot);
+      console.log({ storybookComponentTestPaths });
+    },
+    async transform(code, id) {
+      if (!optionalEnvToBoolean(process.env.VITEST)) {
         return code;
       }
-    }
 
-    const result = await componentTransform({
-      code,
-      fileName: id,
-      getComponentArgTypes: async ({ componentName, fileName }) =>
-        presets.apply('experimental_getArgTypesData', null, {
-          componentFilePath: fileName,
-          componentExportName: componentName,
-          configDir,
-        }),
-    });
+      if (id.includes('.stories') || id.includes('dist') || id.includes('node_modules')) {
+        return code;
+      }
 
-    console.log('RESULT', id, result.code);
-    return result.code;
-  },
-});
+      // If STORYBOOK_COMPONENT_PATHS env is set, filter on that
+      if (storybookComponentTestPaths.length > 0) {
+        const path = require('path');
+        const resolvedId = path.resolve(id);
+        const matches = storybookComponentTestPaths.some(
+          (testPath) =>
+            resolvedId === testPath ||
+            resolvedId.startsWith(testPath + path.sep) ||
+            resolvedId.endsWith(testPath)
+        );
+        if (!matches) {
+          return code;
+        }
+      }
+      const result = await componentTransform({
+        code,
+        fileName: id,
+        getComponentArgTypes: async ({ componentName, fileName }) =>
+          presets.apply('experimental_getArgTypesData', null, {
+            componentFilePath: fileName,
+            componentExportName: componentName,
+            configDir,
+          }),
+      });
+
+      console.log('RESULT', id, result.code);
+      return result.code;
+    },
+  };
+};
 
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   const finalOptions = {
@@ -322,7 +337,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
 
-          include: [...includeStories, ...storybookComponentTestPaths],
+          include: [...includeStories, ...getComponentTestPaths(finalOptions.vitestRoot)],
           exclude: [
             ...(nonMutableInputConfig.test?.exclude ?? []),
             join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
@@ -421,6 +436,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         );
       }
 
+      console.log('INCLUDE', config.test?.include);
       // return the new config, it will be deep-merged by vite
       return config;
     },
@@ -483,7 +499,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
   };
 
-  if (storybookComponentTestPaths.length > 0) {
+  if (!!process.env.STORYBOOK_COMPONENT_PATHS) {
     plugins.push(createComponentTestTransformPlugin(presets, finalOptions.configDir));
   }
 

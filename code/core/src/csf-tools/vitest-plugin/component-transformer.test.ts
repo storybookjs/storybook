@@ -101,9 +101,16 @@ describe('component transformer', () => {
 
   it('generates tests for every exported component', async () => {
     const code = `
-      export const Badge = () => <div />;
+      export const Label = () => <div />;
       export const Tag = () => <span />;
       export default () => <div />;
+
+      const Input = () => <input />;
+      const Checkbox = () => <input type="checkbox" />;
+      export {
+        Input,
+        Checkbox as CheckboxInput
+      };
     `;
 
     const result = await transform({ code, fileName: 'src/components/Badge.tsx' });
@@ -113,25 +120,28 @@ describe('component transformer', () => {
     expect(result.code).toMatchInlineSnapshot(`
       "import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
       import { test as _test, expect as _expect } from "vitest";
-      export const Badge = () => <div />;
+      export const Label = () => <div />;
       export const Tag = () => <span />;
       const _Badge = () => <div />;
       export default _Badge;
+      const Input = () => <input />;
+      const Checkbox = () => <input type="checkbox" />;
+      export { Input, Checkbox as CheckboxInput };
       const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
       if (_isRunningFromThisFile) {
-        _test("Badge", _testStory({
-          exportName: "Badge",
+        _test("Label", _testStory({
+          exportName: "Label",
           story: {
             args: {}
           },
           meta: {
-            title: "generated/tests/Badge",
-            component: Badge
+            title: "generated/tests/Label",
+            component: Label
           },
           skipTags: [],
-          storyId: "generated-story-badge",
+          storyId: "generated-story-label",
           componentPath: "src/components/Badge.tsx",
-          componentName: "Badge"
+          componentName: "Label"
         }));
         _test("Tag", _testStory({
           exportName: "Tag",
@@ -160,6 +170,34 @@ describe('component transformer', () => {
           storyId: "generated-story-badge",
           componentPath: "src/components/Badge.tsx",
           componentName: "_Badge"
+        }));
+        _test("Input", _testStory({
+          exportName: "Input",
+          story: {
+            args: {}
+          },
+          meta: {
+            title: "generated/tests/Input",
+            component: Input
+          },
+          skipTags: [],
+          storyId: "generated-story-input",
+          componentPath: "src/components/Badge.tsx",
+          componentName: "Input"
+        }));
+        _test("CheckboxInput", _testStory({
+          exportName: "CheckboxInput",
+          story: {
+            args: {}
+          },
+          meta: {
+            title: "generated/tests/CheckboxInput",
+            component: Checkbox
+          },
+          skipTags: [],
+          storyId: "generated-story-checkbox-input",
+          componentPath: "src/components/Badge.tsx",
+          componentName: "Checkbox"
         }));
       }"
     `);

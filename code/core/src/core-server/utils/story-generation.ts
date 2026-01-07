@@ -2,13 +2,15 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import type { types as t } from 'storybook/internal/babel';
+import { babelParse, traverse } from 'storybook/internal/babel';
 import { JsPackageManagerFactory } from 'storybook/internal/common';
 import type { GeneratedStoryInfo } from 'storybook/internal/core-events';
 import { experimental_loadStorybook, generateStoryFile } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
-import { getComponentComplexity } from '@hipster/sb-utils/component-analyzer';
+// import { getComponentComplexity } from '@hipster/sb-utils/component-analyzer';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 
@@ -24,6 +26,98 @@ interface ComponentInfo {
   exportCount: number;
 }
 
+function braceDelta(line: string): number {
+  // Lightweight heuristic: count braces without trying to parse strings/comments.
+  // This is "good enough" for typical type/interface blocks.
+  let delta = 0;
+  for (const ch of line) {
+    if (ch === '{') {
+      delta += 1;
+    } else if (ch === '}') {
+      delta -= 1;
+    }
+  }
+  return delta;
+}
+function countNonEmptyRuntimeLines(lines: string[]): number {
+  // Excludes top-level TypeScript-only declarations that often bloat LOC:
+  // - type Foo = ...
+  // - interface Foo { ... }
+  // - export type { Foo } from '...'
+  //
+  // Heuristic approach (no TS compiler API at runtime).
+  const TYPE_OR_INTERFACE_DECL_RE =
+    /^\s*(export\s+)?(declare\s+)?(type|interface)\s+[A-Za-z_$][\w$]*/;
+  const TYPE_ONLY_EXPORT_RE = /^\s*export\s+type\s*\{/;
+
+  let nonEmptyRuntimeLines = 0;
+  let inTypeBlock = false;
+  let typeBraceDepth = 0;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (trimmed.length === 0) {
+      continue;
+    }
+
+    // Exclude type-only export lines (no runtime impact).
+    if (!inTypeBlock && TYPE_ONLY_EXPORT_RE.test(trimmed)) {
+      continue;
+    }
+
+    if (!inTypeBlock && TYPE_OR_INTERFACE_DECL_RE.test(trimmed)) {
+      inTypeBlock = true;
+      typeBraceDepth += braceDelta(trimmed);
+
+      // End immediately for one-liners like:
+      // - interface X {}
+      // - type X = { ... }
+      // - type X = Foo | Bar;
+      const endsWithSemicolon = /;\s*$/.test(trimmed);
+      const endsWithClosingBrace = /}\s*;?\s*$/.test(trimmed);
+      const oneLineBraceBlock = trimmed.includes('{') && trimmed.includes('}');
+      if (typeBraceDepth <= 0 && (endsWithSemicolon || endsWithClosingBrace || oneLineBraceBlock)) {
+        inTypeBlock = false;
+        typeBraceDepth = 0;
+      }
+      continue;
+    }
+
+    if (inTypeBlock) {
+      typeBraceDepth += braceDelta(trimmed);
+      const endsWithSemicolon = /;\s*$/.test(trimmed);
+      const endsWithClosingBrace = /}\s*;?\s*$/.test(trimmed);
+      if (typeBraceDepth <= 0 && (endsWithSemicolon || endsWithClosingBrace)) {
+        inTypeBlock = false;
+        typeBraceDepth = 0;
+      }
+      continue;
+    }
+
+    nonEmptyRuntimeLines += 1;
+  }
+
+  return nonEmptyRuntimeLines;
+}
+
+const getComponentComplexity = async (file: string): Promise<number> => {
+  const fileContent = await readFile(file, 'utf-8');
+  const lines = fileContent.split('\n');
+  const nonEmptyRuntimeLines = countNonEmptyRuntimeLines(lines);
+
+  // Simple check for imports, good enough for our purposes
+  const importCount = lines.filter((line: string) => line.trim().startsWith('import')).length;
+
+  // Simple scoring: prioritize file with fewer nonEmptyRuntimeLines and fewer imports.
+  // loc = nonEmptyLines, importCount = number of imports, score is inverse of complexity
+  // (lower loc/imports = higher score)
+  // formula: score = 1 / (1 + nonEmptyRuntimeLines + importCount)
+  const score = 1 / (1 + nonEmptyRuntimeLines + importCount);
+
+  return score;
+};
+
 async function findEasyToStorybookComponents(
   files: string[],
   sampleComponents: number
@@ -33,56 +127,10 @@ async function findEasyToStorybookComponents(
   for (const file of files) {
     try {
       logger.debug(`Analyzing component complexity: ${file}`);
-      const analysis = await getComponentComplexity(file);
-      const { low, high } = analysis.features;
-      logger.debug(`Level: ${analysis.level}, Factors: ${analysis.factors}`);
-
-      // TODO: Undo this and rethink the filtering logic
-      if (analysis.level === 'simple') {
-        candidates.push({
-          file,
-          score: analysis.score,
-        });
-        continue;
-      }
-      // 2. APPLY FILTERS
-      // We want components that are "Pure" and isolated.
-
-      // CRITICAL BLOCKERS: These almost always require Storybook decorators with providers
-      if (
-        high.hasAuthIntegration ||
-        high.hasDataFetching ||
-        high.hasRouting ||
-        high.hasComplexState
-      ) {
-        continue;
-      }
-
-      // PREFERENCE: 'Design System' components are usually just props -> UI
-      // But 'Feature' components might be okay if they are simple enough
-      // Pages are too big
-      if (analysis.type === 'page') {
-        continue;
-      }
-
-      // METRIC CHECKS:
-      // If it imports 10+ internal files, it's probably complex
-      if (low.imports.internal.length > 10) {
-        continue;
-      }
-
-      // If it's "Ultra" complex, it probably has hidden side effects
-      if (analysis.level === 'very-high') {
-        continue;
-      }
-
-      logger.debug(`Found easy to Storybook component: ${file}`);
-      logger.debug(`Factors: ${analysis.factors.join(', ')}`);
-
-      // If we got here, it's a great candidate!
+      const score = await getComponentComplexity(file);
       candidates.push({
         file,
-        score: analysis.score,
+        score,
       });
     } catch (e) {
       logger.error(`Failed to analyze ${file}: ${e}`);
@@ -93,19 +141,78 @@ async function findEasyToStorybookComponents(
   return candidates.sort((a, b) => a.score - b.score).slice(0, sampleComponents);
 }
 
-async function filterOutBarrelFiles(files: string[]): Promise<string[]> {
-  const filteredFiles: string[] = [];
-  for (const file of files) {
-    if (file.includes('index')) {
-      const content = await readFile(file, 'utf-8');
-      if (!content.includes('export * from')) {
-        filteredFiles.push(file);
+// Check whether the file contains React code and at least something is exported
+function isValidCandidate(ast: t.File): boolean {
+  let hasJSX = false;
+  let hasExport = false;
+
+  traverse(ast, {
+    JSXElement(path) {
+      hasJSX = true;
+
+      if (hasExport) {
+        path.stop();
       }
-    } else {
-      filteredFiles.push(file);
+    },
+    JSXFragment(path) {
+      hasJSX = true;
+
+      if (hasExport) {
+        path.stop();
+      }
+    },
+    ExportNamedDeclaration(path) {
+      hasExport = true;
+
+      if (hasJSX) {
+        path.stop();
+      }
+    },
+    ExportDefaultDeclaration(path) {
+      hasExport = true;
+
+      if (hasJSX) {
+        path.stop();
+      }
+    },
+    ExportAllDeclaration(path) {
+      hasExport = true;
+
+      if (hasJSX) {
+        path.stop();
+      }
+    },
+  });
+
+  return hasJSX && hasExport;
+}
+
+export async function filterOutNonReactFiles(files: string[]): Promise<string[]> {
+  const result: string[] = [];
+
+  for (const file of files) {
+    let source: string;
+
+    try {
+      source = await readFile(file, 'utf-8');
+    } catch {
+      continue;
+    }
+
+    let ast: t.File;
+    try {
+      ast = babelParse(source);
+    } catch {
+      // Invalid JS/TS/Flow — treat as non-React
+      continue;
+    }
+
+    if (isValidCandidate(ast)) {
+      result.push(file);
     }
   }
-  return filteredFiles;
+
+  return result;
 }
 
 async function extractComponentsFromFiles(files: string[]): Promise<ComponentInfo[]> {
@@ -288,6 +395,85 @@ async function generateStoriesForComponents(
   return { generated, skipped, failed, stories };
 }
 
+export async function getComponentCandidates({
+  sampleSize = 20,
+  globPattern = '**/*.{ts,tsx,js,jsx}',
+}: {
+  sampleSize?: number;
+  globPattern?: string;
+}): Promise<{
+  candidates: ComponentCandidate[];
+  error?: string;
+  matchCount: number;
+}> {
+  logger.debug(`Starting story sampling with glob: ${globPattern}`);
+  logger.debug(`Sample size: ${sampleSize}`);
+  let matchCount = 0;
+
+  try {
+    let files: string[] = [];
+
+    // Find files matching the glob pattern
+    logger.debug('Finding files matching glob pattern...');
+    files = await glob(globPattern, {
+      cwd: process.cwd(),
+      absolute: true,
+      ignore: [
+        '**/node_modules/**',
+        '**/.git/**',
+        '**/dist/**',
+        '**/__mocks__/**',
+        '**/build/**',
+        '**/storybook-static/**',
+        '**/*.stories.*',
+        '**/*.test.*',
+        '**/*.d.*',
+        '**/*.config.*',
+        '**/*.spec.*',
+      ],
+    });
+
+    logger.debug(`Found ${files.length} files matching glob pattern`);
+
+    matchCount = files.length;
+
+    // Filter out non-react files
+    files = await filterOutNonReactFiles(files);
+    console.log('actual react files:', files.length);
+
+    if (files.length === 0) {
+      logger.warn(`No files found matching glob pattern: ${globPattern}`);
+      return {
+        candidates: [],
+        matchCount,
+      };
+    }
+
+    let candidates: ComponentCandidate[] = [];
+    if (sampleSize > 0) {
+      logger.debug('Filtering out easy to Storybook components...');
+      candidates = await findEasyToStorybookComponents(files, sampleSize);
+      files = candidates.map((c) => c.file);
+      logger.debug(`Found ${files.length} easy to Storybook components`);
+      logger.debug(`Files: ${files.join('\n')}`);
+    }
+
+    return {
+      candidates,
+      matchCount,
+    };
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error(`Failed to find candidates: ${errorMessage}`);
+    logger.debug(`Full error: ${error}`);
+    return {
+      candidates: [],
+      error: errorMessage,
+      matchCount,
+    };
+  }
+}
+
 export async function generateSampledStories({
   sampleSize = 20,
   globPattern = '**/*.{ts,tsx,js,jsx}',
@@ -340,12 +526,11 @@ export async function generateSampledStories({
     });
 
     logger.debug(`Found ${files.length} files matching glob pattern`);
-    logger.debug(files.join('\n'));
 
     matchCount = files.length;
 
     // Filter out barrel files
-    files = await filterOutBarrelFiles(files);
+    files = await filterOutNonReactFiles(files);
 
     if (files.length === 0) {
       logger.warn(`No files found matching glob pattern: ${globPattern}`);

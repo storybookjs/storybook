@@ -136,7 +136,7 @@ const config = defineMain({
     },
   },
   core: {
-    disableTelemetry: true,
+    // disableTelemetry: true,
   },
   features: {
     developmentModeForBuild: true,

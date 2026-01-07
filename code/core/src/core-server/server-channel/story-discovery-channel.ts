@@ -27,7 +27,7 @@ import {
 import { getLastEvents, getStorybookMetadata, telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
-import { generateSampledStories } from '../utils/story-generation';
+import { getComponentCandidates } from '../utils/story-generation';
 
 const STORY_DISCOVERY_CACHE_KEY = 'experimental/story-discovery/has-run';
 
@@ -37,13 +37,14 @@ export function initStoryDiscoveryChannel(
   coreOptions: CoreConfig
 ) {
   if (coreOptions.disableTelemetry) {
+    console.log('Skipping discovery run - telemetry disabled');
     return;
   }
 
   /** Listens for events to discover and test stories */
   channel.on(STORY_DISCOVERY_REQUEST, async (data: RequestData<StoryDiscoveryRequestPayload>) => {
     const { sampleSize = 20, globPattern } = data.payload;
-    let generatedStoryFiles: string[] = [];
+    const generatedStoryFiles: string[] = [];
     let matchCount = 0;
     try {
       // only execute discovery if it's a storybook init run
@@ -75,63 +76,43 @@ export function initStoryDiscoveryChannel(
 
       // First, generate stories from components based on a glob pattern
       console.log('Generating stories...');
-      const generationResult = await generateSampledStories({
+      const candidatesResult = await getComponentCandidates({
         sampleSize,
         globPattern,
-        options,
       });
-      matchCount = generationResult.matchCount;
-      console.log('Stories generated:', generationResult);
-      if (generationResult.error) {
+      matchCount = candidatesResult.matchCount;
+      console.log('Candidates found:', candidatesResult);
+      if (candidatesResult.error) {
         channel.emit(STORY_DISCOVERY_RESPONSE, {
           success: false,
           id: data.id,
-          error: generationResult.error || 'Unknown error occurred',
+          error: candidatesResult.error || 'Unknown error occurred',
         } satisfies ResponseData<StoryDiscoveryResponsePayload>);
 
         telemetry('story-discovery', {
           success: false,
-          error: generationResult.error,
+          error: candidatesResult.error,
           sampleSize,
           matchCount,
         });
         return;
       }
 
-      if (generationResult.generatedStories.length === 0) {
-        console.log('No stories generated');
+      if (candidatesResult.candidates.length === 0) {
+        console.log('No candidates found');
         telemetry('story-discovery', {
           success: false,
-          error: 'No stories generated',
+          error: 'No candidates found',
           sampleSize,
           matchCount,
         });
         return;
       }
 
-      // Collect story file paths for cleanup
-      generatedStoryFiles = generationResult.generatedStories.map(
-        (story: GeneratedStoryInfo) => story.storyFilePath
-      );
-
-      // Emit progress for story generation completion
-      channel.emit(STORY_DISCOVERY_PROGRESS, {
-        phase: 'generating',
-        progress: {
-          generatedCount: generationResult.generatedStories.length,
-        },
-      } satisfies StoryDiscoveryProgressPayload);
-
       // Phase 2: Run tests on generated stories using Vitest
-      const storyIds = generationResult.generatedStories.map(
-        (story: GeneratedStoryInfo) => story.storyId
-      );
-      console.log('Running tests on stories:', storyIds);
+      const filesToTest = candidatesResult.candidates.map((candidate) => candidate.file);
 
-      const componentFilePaths = generationResult.generatedStories.map(
-        (story: GeneratedStoryInfo) => story.componentFilePath
-      );
-      const testRunResult = await runStoryTests(generatedStoryFiles, componentFilePaths);
+      const testRunResult = await runStoryTests(filesToTest);
 
       // Emit progress updates during testing (we'll get updates from the test runner)
       const testSummaryWithPending = {
@@ -151,7 +132,15 @@ export function initStoryDiscoveryChannel(
         summary: testSummaryWithPending,
       };
 
-      const allGeneratedStories = generationResult.generatedStories;
+      const allCandidateStories = candidatesResult.candidates.map<GeneratedStoryInfo>(
+        (candidate) => ({
+          // TODO: fix later
+          storyId: candidate.file,
+          storyFilePath: candidate.file,
+          componentName: candidate.file,
+          componentFilePath: candidate.file,
+        })
+      );
       console.log('Test results:', testResults);
 
       // Emit final response
@@ -160,7 +149,7 @@ export function initStoryDiscoveryChannel(
         id: data.id,
         payload: {
           success: testRunResult.success,
-          generatedStories: allGeneratedStories,
+          generatedStories: allCandidateStories,
           testResults: testResults.results,
           testSummary: testResults.summary,
         },
@@ -169,11 +158,11 @@ export function initStoryDiscoveryChannel(
 
       telemetry('story-discovery', {
         success: testRunResult.success,
-        generatedCount: allGeneratedStories.length,
+        generatedCount: allCandidateStories.length,
         testDuration: testRunResult.duration,
         testResults: testResults.summary,
         sampleSize,
-        matchCount: generationResult.matchCount,
+        matchCount: candidatesResult.matchCount,
       });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -242,10 +231,7 @@ function extractUniqueErrors(testResults: StoryTestResult[]): string[] {
   return Array.from(errorSet);
 }
 
-async function runStoryTests(
-  generatedStoryFiles: string[],
-  componentFilePaths: string[]
-): Promise<RunStoryTestsResponsePayload> {
+async function runStoryTests(componentFilePaths: string[]): Promise<RunStoryTestsResponsePayload> {
   try {
     // Create the cache directory for story discovery tests
     const cacheDir = resolvePathInStorybookCache('story-discovery-tests');
@@ -266,12 +252,12 @@ async function runStoryTests(
         args: [
           'vitest',
           'run',
-          '--project=storybook',
+          '--reporter=default',
           '--reporter=json',
           `--outputFile=${outputFile}`,
-          ...generatedStoryFiles,
+          ...componentFilePaths,
         ],
-        stdio: 'ignore',
+        stdio: 'pipe',
         env: {
           STORYBOOK_COMPONENT_PATHS: componentFilePaths.join(';'),
         },

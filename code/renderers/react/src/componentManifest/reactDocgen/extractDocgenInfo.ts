@@ -57,7 +57,7 @@ export function mapReactDocgenToArgType(docgenType: ReactDocgenTsType): SBType {
     case 'ReactElementType':
     case 'ReactNode':
     case 'ReactReactNode':
-      return { name: 'node', type: 'react' };
+      return { name: 'node', renderer: 'react' };
     case 'signature': {
       // Object-signature: `{ foo: string }`
       if (isObjectSignatureType(docgenType)) {

@@ -42,12 +42,16 @@ describe('new-story-docgen', () => {
     });
 
     it('generates node values using prop name', () => {
-      expect(generateDummyValueFromSBType({ name: 'node' }, 'children')).toBe('children');
-      expect(generateDummyValueFromSBType({ name: 'node' })).toBe('Hello world');
+      expect(generateDummyValueFromSBType({ name: 'node', renderer: 'react' }, 'children')).toBe(
+        'children'
+      );
+      expect(generateDummyValueFromSBType({ name: 'node', renderer: 'react' })).toBe('Hello world');
     });
 
     it('generates functions as placeholders', () => {
-      expect(generateDummyValueFromSBType({ name: 'function' })).toBe('__function__');
+      expect(generateDummyValueFromSBType({ name: 'function' })).toBe(
+        '[[STORYBOOK_FN_PLACEHOLDER]]'
+      );
     });
 
     it('generates object values recursively', () => {
@@ -61,7 +65,7 @@ describe('new-story-docgen', () => {
 
       expect(generateDummyValueFromSBType(type)).toEqual({
         count: 42,
-        onClick: '__function__',
+        onClick: '[[STORYBOOK_FN_PLACEHOLDER]]',
       });
     });
 
@@ -98,12 +102,12 @@ describe('new-story-docgen', () => {
           name: 'tuple',
           value: [{ name: 'string' }, { name: 'number' }],
         })
-      ).toEqual(['Hello world', 42]);
+      ).toEqual(['', 42]);
     });
 
     it('generates other values conservatively', () => {
       expect(generateDummyValueFromSBType({ name: 'other', value: 'ReactMouseEvent' })).toBe(
-        '__function__'
+        '[[STORYBOOK_FN_PLACEHOLDER]]'
       );
       expect(generateDummyValueFromSBType({ name: 'other', value: 'Foo' })).toBe('Foo');
       expect(generateDummyValueFromSBType({ name: 'other', value: 'null' })).toBeNull();
@@ -123,14 +127,14 @@ describe('new-story-docgen', () => {
           backgroundColor: { required: true, type: { name: 'string' } },
           websiteUrl: { required: false, type: { name: 'string' } },
           onClick: { required: true, type: { name: 'function' } },
-          children: { required: false, type: { name: 'node', type: 'react' } },
+          children: { required: false, type: { name: 'node', renderer: 'react' } },
         },
       };
 
       expect(generateDummyPropsFromDocgen(docgen)).toEqual({
         required: {
           backgroundColor: '#ff0000',
-          onClick: '__function__',
+          onClick: '[[STORYBOOK_FN_PLACEHOLDER]]',
         },
         optional: {
           websiteUrl: 'https://example.com',

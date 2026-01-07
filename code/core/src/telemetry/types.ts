@@ -76,7 +76,15 @@ export type StorybookMetadata = {
     packageName: string;
     version: string;
   };
-  testPackages?: Record<string, string | undefined>;
+  knownPackages?: {
+    testPackages?: Record<string, string | undefined>;
+    stylingPackages?: Record<string, string | undefined>;
+    stateManagementPackages?: Record<string, string | undefined>;
+    dataFetchingPackages?: Record<string, string | undefined>;
+    uiLibraryPackages?: Record<string, string | undefined>;
+    i18nPackages?: Record<string, string | undefined>;
+    routerPackages?: Record<string, string | undefined>;
+  };
   hasRouterPackage?: boolean;
   hasStorybookEslint?: boolean;
   hasStaticDirs?: boolean;

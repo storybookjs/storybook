@@ -1,5 +1,6 @@
 import React, { type ComponentProps, forwardRef } from 'react';
 
+import { darken } from 'polished';
 import type { TransitionStatus } from 'react-transition-state';
 import { styled } from 'storybook/theming';
 
@@ -20,8 +21,21 @@ const ActionListItem = styled.li<{
 
     fontSize: theme.typography.size.s1,
     fontWeight: active ? theme.typography.weight.bold : theme.typography.weight.regular,
-    color: active ? theme.color.secondary : theme.color.defaultText,
-    '--listbox-item-muted-color': active ? theme.color.secondary : theme.color.mediumdark,
+    color: active ? 'var(--listbox-item-active-color)' : theme.color.defaultText,
+    '--listbox-item-active-color':
+      theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
+    '--listbox-item-muted-color': active
+      ? 'var(--listbox-item-active-color)'
+      : theme.color.mediumdark,
+
+    '&[aria-disabled="true"]': {
+      opacity: 0.5,
+      cursor: 'not-allowed',
+    },
+    '&[aria-selected="true"]': {
+      color: 'var(--listbox-item-active-color)',
+      fontWeight: theme.typography.weight.bold,
+    },
 
     '&:not(:hover, :has(:focus-visible)) svg + input': {
       position: 'absolute',
@@ -118,6 +132,8 @@ const ActionListToggle = forwardRef<HTMLButtonElement, ComponentProps<typeof Sty
 );
 
 const ActionListAction = styled(ActionListButton)(({ theme }) => ({
+  height: 'auto',
+  minHeight: 32,
   flex: '0 1 100%',
   textAlign: 'start',
   justifyContent: 'space-between',
@@ -139,19 +155,27 @@ const ActionListLink = (
   props: ComponentProps<typeof ActionListAction> & React.AnchorHTMLAttributes<HTMLAnchorElement>
 ) => <ActionListAction as="a" {...props} />;
 
-const ActionListText = styled.div({
+const ActionListText = styled.div<{ muted?: boolean }>(({ theme }) => ({
   display: 'flex',
-  alignItems: 'center',
-  gap: 8,
+  flexDirection: 'column',
+  justifyContent: 'center',
   flexGrow: 1,
   minWidth: 0,
   padding: '8px 0',
   lineHeight: '16px',
 
-  '& span': {
+  '& > *': {
+    margin: 0,
+    whiteSpace: 'normal',
+  },
+  '& > span': {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+  },
+  '& small': {
+    fontSize: 'inherit',
+    color: theme.textMutedColor,
   },
   '&:first-child': {
     paddingLeft: 8,
@@ -165,7 +189,7 @@ const ActionListText = styled.div({
   'button > &:last-child': {
     paddingRight: 0,
   },
-});
+}));
 
 const ActionListIcon = styled.div({
   display: 'flex',

@@ -1,26 +1,40 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
-import { ToggleButton } from 'storybook/internal/components';
+import { Select } from 'storybook/internal/components';
 
 import { GrowIcon } from '@storybook/icons';
 
 import { useViewport } from '../useViewport';
+import { iconsMap } from '../viewportIcons';
 
 export const ViewportTool = () => {
-  const { isDefault, isLocked, options, lastSelectedOption, reset, select } = useViewport();
+  const { name, value, isDefault, isLocked, options: viewportMap, reset, select } = useViewport();
+
+  const options = useMemo(
+    () =>
+      Object.entries(viewportMap).map(([k, value]) => ({
+        value: k,
+        title: value.name,
+        icon: iconsMap[value.type!],
+      })),
+    [viewportMap]
+  );
 
   return (
-    <ToggleButton
-      padding="small"
-      variant="ghost"
+    <Select
+      resetLabel="Reset viewport"
+      onReset={reset}
       key="viewport"
-      pressed={!isDefault || isLocked}
       disabled={isLocked}
-      ariaLabel={isLocked ? 'Viewport size set by story parameters' : 'Viewport'}
-      tooltip={isLocked ? 'Viewport size set by story parameters' : 'Change viewport'}
-      onClick={() => (isDefault ? select(lastSelectedOption || Object.keys(options)[0]) : reset())}
+      ariaLabel={isLocked ? 'Viewport set by story parameters' : 'Viewport'}
+      ariaDescription="Select a viewport among predefined options for the preview area, or reset to the default viewport."
+      tooltip={isLocked ? 'Viewport set by story parameters' : 'Change viewport'}
+      defaultOptions={value}
+      options={options}
+      onSelect={(selected) => select(selected as string)}
+      icon={<GrowIcon />}
     >
-      <GrowIcon />
-    </ToggleButton>
+      {isDefault ? null : name}
+    </Select>
   );
 };

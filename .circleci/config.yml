@@ -193,7 +193,7 @@ jobs:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench)
     build:
         executor:
-            class: large
+            class: xlarge
             name: sb_node_22_classic
         steps:
             - git-shallow-clone/checkout_advanced:
@@ -240,7 +240,7 @@ jobs:
                 root: /tmp
     check:
         executor:
-            class: large
+            class: xlarge
             name: sb_node_22_classic
         steps:
             - git-shallow-clone/checkout_advanced:
@@ -299,6 +299,10 @@ jobs:
             - checkout
             - attach_workspace:
                 at: /tmp
+            - run:
+                command: yarn storybook:ui:build
+                name: Build Storybook
+                working_directory: code
             - run:
                 command: yarn storybook:ui:chromatic
                 name: Running Chromatic
@@ -412,10 +416,10 @@ jobs:
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
             - store_test_results:
-                path: storybook/test-results
+                path: test-results
             - store_artifacts:
                 destination: playwright
-                path: storybook/code/playwright-results/
+                path: code/playwright-results/
     e2e-production:
         executor:
             class: medium
@@ -443,10 +447,10 @@ jobs:
             - report-workflow-on-failure:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
             - store_test_results:
-                path: storybook/test-results
+                path: test-results
             - store_artifacts:
                 destination: playwright
-                path: storybook/code/playwright-results/
+                path: code/playwright-results/
     e2e-ui:
         executor:
             class: medium

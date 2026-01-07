@@ -3,13 +3,13 @@ name: Build and Publish Storybook to GitHub Pages
 on:
   push:
     branches:
-      - "your-branch-name" # Use specific branch name
+      - 'your-branch-name' # Use specific branch name
 permissions:
   contents: read
   pages: write
   id-token: write
 concurrency:
-  group: "pages"
+  group: 'pages'
   cancel-in-progress: false
 jobs:
   deploy:
@@ -25,8 +25,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm" # Adjust caching strategy and configuration if using other package managers
+          node-version: '20'
+          cache: 'npm' # Adjust caching strategy and configuration if using other package managers
       - name: Install dependencies
         run: npm ci # Replace with appropriate command if using other package managers
       - name: Build Storybook
@@ -35,7 +35,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "storybook-static"
+          path: 'storybook-static'
       # Deploy to Github Pages
       - id: deploy
         name: Deploy to GitHub Pages

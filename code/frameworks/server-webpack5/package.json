@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server-webpack5",
-  "version": "10.2.0-alpha.5",
+  "version": "10.2.0-alpha.12",
   "description": "Storybook for Server: View HTML snippets from a server in isolation with Hot Reloading.",
   "keywords": [
     "storybook",
@@ -49,8 +49,8 @@
     "@storybook/server": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.8.3"
+    "@types/node": "^22.19.1",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

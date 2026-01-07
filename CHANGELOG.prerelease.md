@@ -1,3 +1,60 @@
+## 10.2.0-alpha.12
+
+- Addon-docs: Add MDX manifest generation - [#33408](https://github.com/storybookjs/storybook/pull/33408), thanks @copilot-swe-agent!
+- AddonVitest: Improve perf & fix loading incorrect `.env` file - [#33469](https://github.com/storybookjs/storybook/pull/33469), thanks @ndelangen!
+- Core: Add `getStoryHrefs` manager API and add hotkey for "open in isolation" - [#33416](https://github.com/storybookjs/storybook/pull/33416), thanks @ghengeveld!
+
+## 10.2.0-alpha.11
+
+- Core: Add try-catch for cross-origin access in Storybook hooks - [#33448](https://github.com/storybookjs/storybook/pull/33448), thanks @ndelangen!
+- UI: Keep preview frame stable in overall layout - [#33447](https://github.com/storybookjs/storybook/pull/33447), thanks @Sidnioulz!
+
+## 10.2.0-alpha.10
+
+- Dependencies: Bump various packages - [#33412](https://github.com/storybookjs/storybook/pull/33412), thanks @ndelangen!
+- Interactions: Add disable parameter for interactions panel - [#33368](https://github.com/storybookjs/storybook/pull/33368), thanks @jeevikar14!
+- Interactions: Fix state reset bug when switching stories with date mocks - [#33388](https://github.com/storybookjs/storybook/pull/33388), thanks @Sidnioulz!
+- Manifests: Refactor from `componentManifestGenerator` to extensible `manifests` preset property - [#33392](https://github.com/storybookjs/storybook/pull/33392), thanks @JReinhold!
+- Manifests: Support `!manifest` tag in preview files - [#33406](https://github.com/storybookjs/storybook/pull/33406), thanks @JReinhold!
+- NextJS: Import `next/dist` with `.js`-extension for ESM compat - [#33380](https://github.com/storybookjs/storybook/pull/33380), thanks @yue4u!
+- Preview: Treat canceled animations as finished - [#32401](https://github.com/storybookjs/storybook/pull/32401), thanks @bawjensen!
+- UI: Ensure consistent right padding in TreeNode - [#33322](https://github.com/storybookjs/storybook/pull/33322), thanks @Sidnioulz!
+- UI: Fix React error 300 on some addons - [#33381](https://github.com/storybookjs/storybook/pull/33381), thanks @Sidnioulz!
+- UI: Prevent primary story from duplicating anchor ID - [#33384](https://github.com/storybookjs/storybook/pull/33384), thanks @Sidnioulz!
+- Upgrade: Preserve package.json indentation when upgrading - [#32280](https://github.com/storybookjs/storybook/pull/32280), thanks @y-hsgw!
+- Vitest: Fallback detecting vitest version in postinstall - [#33415](https://github.com/storybookjs/storybook/pull/33415), thanks @ndelangen!
+
+## 10.2.0-alpha.9
+
+- Core and Vite: Use story index as source of truth for Vite paths - [#30612](https://github.com/storybookjs/storybook/pull/30612), thanks @JReinhold!
+
+## 10.2.0-alpha.8
+
+- React: Fix several CSF factory bugs  - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!
+
+## 10.2.0-alpha.7
+
+- Automigrate: Fix missing await - [#33333](https://github.com/storybookjs/storybook/pull/33333), thanks @valentinpalkovic!
+- CLI: Remove REACT_PROJECT projectType - [#33334](https://github.com/storybookjs/storybook/pull/33334), thanks @valentinpalkovic!
+- Core: Exclude open from pre-bundling to make local xdg-open reachable - [#33325](https://github.com/storybookjs/storybook/pull/33325), thanks @Sidnioulz!
+- Core: Fix `.env`-file parsing - [#33383](https://github.com/storybookjs/storybook/pull/33383), thanks @JReinhold!
+- Next.js: Handle v14 compatibility for draftMode import - [#33341](https://github.com/storybookjs/storybook/pull/33341), thanks @tanujbhaud!
+- Nextjs-Vite: Update vite-plugin-storybook-nextjs to v3.1.7 - [#33351](https://github.com/storybookjs/storybook/pull/33351), thanks @valentinpalkovic!
+- React-Vite: Update @joshwooding/vite-plugin-react-docgen-typescript - [#33349](https://github.com/storybookjs/storybook/pull/33349), thanks @valentinpalkovic!
+- React: Use self-closing tag for code snippets - [#33342](https://github.com/storybookjs/storybook/pull/33342), thanks @valentinpalkovic!
+- Sidebar: Prevent updating non-existent stories - [#33037](https://github.com/storybookjs/storybook/pull/33037), thanks @ia319!
+- Telemetry: Fix race condition in telemetry cache causing malformed JSON - [#33323](https://github.com/storybookjs/storybook/pull/33323), thanks @valentinpalkovic!
+- Telemetry: Remove instance of check for sub-error handling - [#33356](https://github.com/storybookjs/storybook/pull/33356), thanks @valentinpalkovic!
+
+## 10.2.0-alpha.6
+
+- Controls: Fix displaying as object instead of select for optional union types - [#33200](https://github.com/storybookjs/storybook/pull/33200), thanks @tanujbhaud!
+- Controls: Force object control JSON mode to reset - [#33330](https://github.com/storybookjs/storybook/pull/33330), thanks @Sidnioulz!
+- Docs-Blocks: Fix broken tooltip in ArgValue details - [#33264](https://github.com/storybookjs/storybook/pull/33264), thanks @Sidnioulz!
+- Manager: Ensure reset item only appears in globals toolbar when specified - [#33276](https://github.com/storybookjs/storybook/pull/33276), thanks @mrginglymus!
+- Nextjs-Vite: Install `vite` during migration if not installed yet - [#33316](https://github.com/storybookjs/storybook/pull/33316), thanks @ghengeveld!
+- UI: Make vertical alignment of TestStatusIcon more robust - [#33305](https://github.com/storybookjs/storybook/pull/33305), thanks @Sidnioulz!
+
 ## 10.2.0-alpha.5
 
 - Addon-Vitest: Added timeout for fetching localhost 6006 during global setup.  - [#33232](https://github.com/storybookjs/storybook/pull/33232), thanks @snippy4!

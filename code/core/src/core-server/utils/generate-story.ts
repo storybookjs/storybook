@@ -14,7 +14,6 @@ export interface GenerateStoryResult {
   kind?: string;
   storyFilePath?: string;
   exportedStoryName?: string;
-  alreadyContainsArgs?: boolean;
   error?: string;
   errorType?: 'STORY_FILE_EXISTS' | 'UNKNOWN';
 }
@@ -70,8 +69,10 @@ export async function generateStoryFile(
   const { checkFileExists = true } = generateOptions;
 
   try {
-    const { storyFilePath, exportedStoryName, storyFileContent, alreadyContainsArgs } =
-      await getNewStoryFile(payload, options);
+    const { storyFilePath, exportedStoryName, storyFileContent } = await getNewStoryFile(
+      payload,
+      options
+    );
 
     const relativeStoryFilePath = relative(process.cwd(), storyFilePath);
 
@@ -95,7 +96,6 @@ export async function generateStoryFile(
       kind,
       storyFilePath: relativeStoryFilePath,
       exportedStoryName,
-      alreadyContainsArgs,
     };
   } catch (e: any) {
     return {

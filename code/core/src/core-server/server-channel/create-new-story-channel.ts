@@ -34,7 +34,6 @@ export function initCreateNewStoryChannel(
             storyId: result.storyId!,
             storyFilePath: result.storyFilePath!,
             exportedStoryName: result.exportedStoryName!,
-            alreadyContainsArgs: result.alreadyContainsArgs!,
           },
           error: null,
         } satisfies ResponseData<CreateNewStoryResponsePayload>);

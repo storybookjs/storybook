@@ -10,8 +10,6 @@ export interface CreateNewStoryRequestPayload {
 }
 
 export interface CreateNewStoryResponsePayload {
-  // Whether the story file already contains args from docgen extraction
-  alreadyContainsArgs: boolean;
   // The story id
   storyId: string;
   // The story file path relative to the cwd

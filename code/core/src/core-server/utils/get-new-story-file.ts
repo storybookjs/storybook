@@ -144,7 +144,6 @@ export async function getNewStoryFile(
     exportedStoryName,
     storyFileContent: formattedStoryFileContent,
     dirname: dir,
-    alreadyContainsArgs: !!args,
   };
 }
 

@@ -44,7 +44,7 @@ const meta = preview.meta({
   args: {
     active: true,
     id: 'storybook-preview-iframe',
-    src: 'http://localhost:6006/iframe.html?id=manager-settings-checklist--default',
+    src: '/iframe.html?id=manager-settings-checklist--default',
     scale: 1,
   },
   decorators: [

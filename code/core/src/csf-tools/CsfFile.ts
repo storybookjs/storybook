@@ -19,11 +19,11 @@ import type {
   IndexInputStats,
   IndexedCSFFile,
   StoryAnnotations,
-  Tag,
 } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
+import { Tag } from '../shared/constants/tags';
 import type { PrintResultType } from './PrintResultType';
 import { findVarInitialization } from './findVarInitialization';
 
@@ -255,11 +255,10 @@ export class BadMetaError extends Error {
   }
 }
 
-export interface StaticMeta
-  extends Pick<
-    ComponentAnnotations,
-    'id' | 'title' | 'includeStories' | 'excludeStories' | 'tags'
-  > {
+export interface StaticMeta extends Pick<
+  ComponentAnnotations,
+  'id' | 'title' | 'includeStories' | 'excludeStories' | 'tags'
+> {
   component?: string;
 }
 
@@ -875,7 +874,7 @@ export class CsfFile {
     const entries = Object.entries(self._stories);
     self._meta.title = this._options.makeTitle(self._meta?.title as string);
     if (self._metaAnnotations.play) {
-      self._meta.tags = [...(self._meta.tags || []), 'play-fn'];
+      self._meta.tags = [...(self._meta.tags || []), Tag.PLAY_FN];
     }
     self._stories = entries.reduce(
       (acc, [key, story]) => {
@@ -904,7 +903,7 @@ export class CsfFile {
           acc[key].tags = parseTags(node);
         }
         if (play) {
-          acc[key].tags = [...(acc[key].tags || []), 'play-fn'];
+          acc[key].tags = [...(acc[key].tags || []), Tag.PLAY_FN];
         }
         const stats = acc[key].__stats;
         ['play', 'render', 'loaders', 'beforeEach', 'globals', 'tags'].forEach((annotation) => {
@@ -1025,10 +1024,10 @@ export class CsfFile {
             tags: [
               ...storyInput.tags,
               // this tag comes before test tags so users can invert if they like
-              '!autodocs',
+              `!${Tag.AUTODOCS}`,
               ...test.tags,
               // this tag comes after test tags so users can't change it
-              'test-fn',
+              Tag.TEST_FN,
             ],
             __id: test.id,
           });

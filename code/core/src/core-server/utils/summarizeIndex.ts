@@ -1,10 +1,10 @@
 import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
-import { AUTODOCS_TAG, PLAY_FN_TAG, TEST_FN_TAG, isMdxEntry } from './StoryIndexGenerator';
+import { Tag } from '../../shared/constants/tags';
+import { isMdxEntry } from './StoryIndexGenerator';
 
 const PAGE_REGEX = /(page|screen)/i;
-const SVELTE_CSF_TAG = 'svelte-csf';
 
 export const isPageStory = (storyId: string) => PAGE_REGEX.test(storyId);
 
@@ -63,10 +63,10 @@ export function summarizeIndex(storyIndex: StoryIndex) {
       if (isPageStory(entry.title)) {
         pageStoryCount += 1;
       }
-      if (entry.tags?.includes(PLAY_FN_TAG)) {
+      if (entry.tags?.includes(Tag.PLAY_FN)) {
         playStoryCount += 1;
       }
-      if (entry.tags?.includes(TEST_FN_TAG) && entry.parent) {
+      if (entry.tags?.includes(Tag.TEST_FN) && entry.parent) {
         testStoryCount += 1;
         testsPerParentStory.set(entry.parent, (testsPerParentStory.get(entry.parent) ?? 0) + 1);
       }
@@ -78,7 +78,7 @@ export function summarizeIndex(storyIndex: StoryIndex) {
     } else if (entry.type === 'docs') {
       if (isMdxEntry(entry)) {
         mdxCount += 1;
-      } else if (entry.tags?.includes(AUTODOCS_TAG)) {
+      } else if (entry.tags?.includes(Tag.AUTODOCS)) {
         autodocsCount += 1;
       }
     }

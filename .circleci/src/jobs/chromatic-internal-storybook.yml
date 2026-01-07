@@ -11,6 +11,10 @@ steps:
   - attach_workspace:
       at: /tmp
   - run:
+      name: Build Storybook
+      command: yarn storybook:ui:build
+      working_directory: code
+  - run:
       name: Running Chromatic
       command: yarn storybook:ui:chromatic
       working_directory: code

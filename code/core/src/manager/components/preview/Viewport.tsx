@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import { ActionList, PopoverProvider } from 'storybook/internal/components';
+import { ActionList } from 'storybook/internal/components';
 
 import { TransferIcon, UndoIcon } from '@storybook/icons';
 
@@ -11,7 +11,6 @@ import {
   VIEWPORT_MIN_WIDTH,
   useViewport,
 } from '../../../viewport/useViewport';
-import { iconsMap } from '../../../viewport/viewportIcons';
 import { IFrame } from './Iframe';
 import { SizeInput } from './SizeInput';
 
@@ -56,15 +55,6 @@ const ViewportDimensions = styled.div({
   display: 'flex',
   gap: 2,
 });
-
-const Dimensions = styled.div(({ theme }) => ({
-  display: 'flex',
-  gap: 2,
-  fontFamily: theme.typography.fonts.mono,
-  fontSize: theme.typography.size.s1 - 1,
-  fontWeight: theme.typography.weight.regular,
-  color: theme.textMutedColor,
-}));
 
 const FrameWrapper = styled.div<{
   isDefault: boolean;
@@ -160,21 +150,8 @@ export const Viewport = ({
   src: string;
   scale: number;
 }) => {
-  const {
-    name,
-    type,
-    width,
-    height,
-    option,
-    isCustom,
-    isDefault,
-    isLocked,
-    options,
-    lastSelectedOption,
-    resize,
-    rotate,
-    select,
-  } = useViewport();
+  const { width, height, isCustom, isDefault, lastSelectedOption, resize, rotate, select } =
+    useViewport();
 
   const [dragging, setDragging] = useState<DragSide>('none');
   const targetRef = useRef<HTMLDivElement>(null);
@@ -223,38 +200,6 @@ export const Viewport = ({
     <ViewportWrapper key={id} active={active} isDefault={isDefault}>
       {!isDefault && (
         <ViewportControls>
-          <PopoverProvider
-            offset={4}
-            padding={0}
-            popover={() => (
-              <ActionList style={{ minWidth: 240 }}>
-                {Object.entries(options).map(([key, { name, styles, type = 'other' }]) => (
-                  <ActionList.Item key={key} active={key === option}>
-                    <ActionList.Action ariaLabel={false} onClick={() => select(key)}>
-                      <ActionList.Icon>{iconsMap[type]}</ActionList.Icon>
-                      <ActionList.Text>{name}</ActionList.Text>
-                      <Dimensions>
-                        <span>{styles.width.replace('px', '')}</span>
-                        <span>&times;</span>
-                        <span>{styles.height.replace('px', '')}</span>
-                      </Dimensions>
-                    </ActionList.Action>
-                  </ActionList.Item>
-                ))}
-              </ActionList>
-            )}
-          >
-            <ActionList.Button
-              size="small"
-              variant="outline"
-              disabled={isLocked}
-              readOnly={isLocked}
-            >
-              <ActionList.Icon>{iconsMap[type]}</ActionList.Icon>
-              <ActionList.Text>{name}</ActionList.Text>
-            </ActionList.Button>
-          </PopoverProvider>
-
           <ViewportDimensions>
             <SizeInput
               data-size-input="width"

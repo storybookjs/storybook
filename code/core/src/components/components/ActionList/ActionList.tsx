@@ -35,6 +35,7 @@ const ActionListItem = styled.li<{
     '&[aria-selected="true"]': {
       color: 'var(--listbox-item-active-color)',
       fontWeight: theme.typography.weight.bold,
+      '--listbox-item-muted-color': 'var(--listbox-item-active-color)',
     },
 
     '&:not(:hover, :has(:focus-visible)) svg + input': {

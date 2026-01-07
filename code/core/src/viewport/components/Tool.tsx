@@ -4,8 +4,20 @@ import { Select } from 'storybook/internal/components';
 
 import { GrowIcon } from '@storybook/icons';
 
+import { styled } from 'storybook/theming';
+
 import { useViewport } from '../useViewport';
 import { iconsMap } from '../viewportIcons';
+
+const Dimensions = styled.div(({ theme }) => ({
+  display: 'flex',
+  gap: 2,
+  marginLeft: 20,
+  fontFamily: theme.typography.fonts.mono,
+  fontSize: theme.typography.size.s1 - 1,
+  fontWeight: theme.typography.weight.regular,
+  color: theme.textMutedColor,
+}));
 
 export const ViewportTool = () => {
   const { name, value, isDefault, isLocked, options: viewportMap, reset, select } = useViewport();
@@ -16,6 +28,13 @@ export const ViewportTool = () => {
         value: k,
         title: value.name,
         icon: iconsMap[value.type!],
+        right: (
+          <Dimensions>
+            <span>{value.styles.width.replace('px', '')}</span>
+            <span>&times;</span>
+            <span>{value.styles.height.replace('px', '')}</span>
+          </Dimensions>
+        ),
       })),
     [viewportMap]
   );

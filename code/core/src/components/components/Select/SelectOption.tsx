@@ -22,6 +22,9 @@ export interface SelectOptionProps {
   /** Decorative icon. */
   icon?: React.ReactNode;
 
+  /** Right-aligned content. */
+  right?: React.ReactNode;
+
   /** Optional rendering of the option. Use sparingly. */
   children?: React.ReactNode;
 
@@ -47,6 +50,7 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
   title,
   description,
   icon,
+  right,
   children,
   isSelected,
   isActive,
@@ -76,6 +80,7 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
               <p>{title}</p>
               {description && <small>{description}</small>}
             </ActionList.Text>
+            {right}
           </>
         )}
       </ActionList.Action>

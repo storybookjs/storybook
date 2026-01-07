@@ -45,7 +45,7 @@ function generateConfig(workflow: Workflow) {
     const testStorybooks = getTestStorybooks(workflow);
     const initEmpty = getInitEmpty(workflow);
 
-    if (isWorkflowOrAbove(workflow, 'merged') && process.env.NEVER_TRUE) {
+    if (isWorkflowOrAbove(workflow, 'daily')) {
       jobs.push(build_windows, testUnit_windows);
     }
 
@@ -124,7 +124,7 @@ function generateConfig(workflow: Workflow) {
       {} as Record<string, JobImplementation | NoOpJobImplementation>
     ),
     workflows: {
-      [`${workflow}-generated${isDebugging ? '-debug' : ''}-measured`]: {
+      [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {
         jobs: sortedJobs.map((t) =>
           t.requires && t.requires.length > 0
             ? { [t.id]: { requires: t.requires.map((r) => r.id) } }

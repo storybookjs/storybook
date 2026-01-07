@@ -487,7 +487,7 @@ export function getSandboxes(workflow: Workflow) {
 
   const list: JobOrNoOpJob[] = sandboxes.flatMap((sandbox) => sandbox.jobs);
 
-  if (isWorkflowOrAbove(workflow, 'merged') && process.env.NEVER_TRUE) {
+  if (isWorkflowOrAbove(workflow, 'daily')) {
     const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
     const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
     const testRunner = defineSandboxTestRunner(sandboxes[0]);

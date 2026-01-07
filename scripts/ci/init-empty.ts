@@ -143,9 +143,10 @@ export function getInitEmpty(workflow: Workflow) {
 
   if (isWorkflowOrAbove(workflow, 'merged')) {
     initEmpty.push(...['nextjs-ts', 'vue-vite-ts', 'lit-vite-ts'].map(defineEmptyInitFlow));
+  }
+  if (isWorkflowOrAbove(workflow, 'daily')) {
     initEmpty.push(defineEmptyInitWindows());
   }
-
   if (isWorkflowOrAbove(workflow, 'normal')) {
     initEmpty.push(defineEmptyInitFeatures());
   }

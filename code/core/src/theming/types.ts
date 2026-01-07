@@ -46,6 +46,9 @@ export interface ThemeVarsColors {
   inputTextColor: string;
   inputBorderRadius: number;
 
+  // Highlight styles
+  highlightOpacity?: number;
+
   brandTitle?: string;
   brandUrl?: string;
   brandImage?: string;
@@ -92,6 +95,9 @@ export interface StorybookTheme {
   barHoverColor: string;
   barSelectedColor: string;
   barBg: string;
+
+  // Highlight styles
+  highlightOpacity: number;
 
   brand: Brand;
 

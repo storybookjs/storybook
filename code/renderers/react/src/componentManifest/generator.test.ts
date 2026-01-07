@@ -1,5 +1,7 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
+import { Tag } from 'storybook/internal/core-server';
+
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
@@ -13,7 +15,7 @@ beforeEach(() => {
 
 test('manifests generates correct id, name, description and examples ', async () => {
   const manifestEntries = Object.values(indexJson.entries).filter(
-    (entry) => entry.tags?.includes('manifest') ?? false
+    (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
   );
   const result = await manifests(undefined, { manifestEntries } as any);
 
@@ -272,7 +274,7 @@ async function getManifestForStory(code: string) {
       title: 'Example/Button',
       importPath: './src/stories/Button.stories.ts',
       componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs', 'manifest'],
+      tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS, Tag.MANIFEST],
       exportName: 'Primary',
     },
   ];
@@ -454,6 +456,112 @@ test('unknown expressions', async () => {
         },
       ],
       "summary": undefined,
+    }
+  `);
+});
+
+test('should create component manifest when only attached-mdx docs have manifest tag', async () => {
+  // This test verifies that the React renderer creates a component manifest entry
+  // when only an attached-mdx docs entry has the 'manifest' tag (and no story entries do).
+  // Note: The `docs` property of the component manifest is added by addon-docs, not by this generator,
+  // so it is not part of this test's snapshot.
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/stories/Button.stories.ts']: dedent`
+        import type { Meta, StoryObj } from '@storybook/react';
+        import { fn } from 'storybook/test';
+        import { Button } from './Button';
+
+        const meta = {
+          title: 'Example/Button',
+          component: Button,
+          args: { onClick: fn() },
+        } satisfies Meta<typeof Button>;
+        export default meta;
+        type Story = StoryObj<typeof meta>;
+
+        export const Primary: Story = { args: { primary: true, label: 'Button', tags: ['!manifest'] } };
+      `,
+      ['./src/stories/Button.tsx']: dedent`
+        import React from 'react';
+        export interface ButtonProps {
+          /** Description of primary */
+          primary?: boolean;
+          label: string;
+        }
+
+        /** Primary UI component for user interaction */
+        export const Button = ({
+          primary = false,
+          label,
+        }: ButtonProps) => {
+          return <button type="button">{label}</button>;
+        };
+      `,
+    },
+    '/app'
+  );
+
+  // Only docs entry has manifest tag, story does not
+  const manifestEntries = [
+    {
+      type: 'docs',
+      id: 'example-button--docs',
+      name: 'Docs',
+      title: 'Example/Button',
+      importPath: './src/stories/Button.mdx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST, Tag.ATTACHED_MDX],
+      storiesImports: ['./src/stories/Button.stories.ts'],
+    },
+  ];
+
+  expect(await manifests(undefined, { manifestEntries } as any)).toMatchInlineSnapshot(`
+    {
+      "components": {
+        "components": {
+          "example-button": {
+            "description": "Primary UI component for user interaction",
+            "error": undefined,
+            "id": "example-button",
+            "import": "import { Button } from "some-package";",
+            "jsDocTags": {},
+            "name": "Button",
+            "path": "./src/stories/Button.stories.ts",
+            "reactDocgen": {
+              "actualName": "Button",
+              "definedInFile": "./src/stories/Button.tsx",
+              "description": "Primary UI component for user interaction",
+              "displayName": "Button",
+              "exportName": "Button",
+              "methods": [],
+              "props": {
+                "label": {
+                  "description": "",
+                  "required": true,
+                  "tsType": {
+                    "name": "string",
+                  },
+                },
+                "primary": {
+                  "defaultValue": {
+                    "computed": false,
+                    "value": "false",
+                  },
+                  "description": "Description of primary",
+                  "required": false,
+                  "tsType": {
+                    "name": "boolean",
+                  },
+                },
+              },
+            },
+            "stories": [],
+            "summary": undefined,
+          },
+        },
+        "v": 0,
+      },
     }
   `);
 });

@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { Fragment, useRef } from 'react';
 
-import { Button, getStoryHref } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 
 import type { Combo } from 'storybook/manager-api';
 import { Consumer } from 'storybook/manager-api';
@@ -9,7 +9,6 @@ import { Global, styled } from 'storybook/theming';
 import type { CSSObject } from 'storybook/theming';
 
 import { IFrame } from './Iframe';
-import { stringifyQueryParams } from './utils/stringifyQueryParams';
 import type { FramesRendererProps } from './utils/types';
 
 const getActive = (refId: FramesRendererProps['refId'], refs: FramesRendererProps['refs']) => {
@@ -53,19 +52,15 @@ const styles: CSSObject = {
 };
 
 export const FramesRenderer: FC<FramesRendererProps> = ({
+  api,
   refs,
   scale,
   viewMode = 'story',
   refId,
   queryParams = {},
-  baseUrl,
   storyId = '*',
 }) => {
   const version = refs[refId]?.version;
-  const stringifiedQueryParams = stringifyQueryParams({
-    ...queryParams,
-    ...(version && { version }),
-  });
   const active = getActive(refId, refs);
   const { current: frames } = useRef<Record<string, string>>({});
 
@@ -74,19 +69,21 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
   }, {});
 
   if (!frames['storybook-preview-iframe']) {
-    frames['storybook-preview-iframe'] = getStoryHref(baseUrl, storyId, {
-      ...queryParams,
-      ...(version && { version }),
+    frames['storybook-preview-iframe'] = api.getStoryHrefs(storyId, {
+      queryParams: { ...queryParams, ...(version && { version }) },
+      refId,
       viewMode,
-    });
+    }).previewHref;
   }
 
   refsToLoad.forEach((ref) => {
     const id = `storybook-ref-${ref.id}`;
-    const existingUrl = frames[id]?.split('/iframe.html')[0];
-    if (!existingUrl || ref.url !== existingUrl) {
-      const newUrl = `${ref.url}/iframe.html?id=${storyId}&viewMode=${viewMode}&refId=${ref.id}${stringifiedQueryParams}`;
-      frames[id] = newUrl;
+    if (!frames[id]?.startsWith(ref.url)) {
+      frames[id] = api.getStoryHrefs(storyId, {
+        queryParams: { ...queryParams, ...(version && { version }) },
+        refId: ref.id,
+        viewMode,
+      }).previewHref;
     }
   });
 

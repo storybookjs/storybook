@@ -19,6 +19,7 @@ import {
   normalizeProjectAnnotations,
 } from '../preview-api/index';
 import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils';
+import { Tag } from '../shared/constants/tags';
 import { getCoreAnnotations } from './core-annotations';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
@@ -219,7 +220,7 @@ function defineStory<
       const test = this.extend({
         ...annotations,
         name,
-        tags: ['test-fn', '!autodocs', ...(annotations.tags ?? [])],
+        tags: [Tag.TEST_FN, `!${Tag.AUTODOCS}`, ...(annotations.tags ?? [])],
         play,
       });
       __children.push(test);

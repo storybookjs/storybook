@@ -16,7 +16,7 @@ test.describe('addon-viewport', () => {
 
     // Click on viewport button and select small mobile
     await sbPage.navigateToStory('example/button', 'primary');
-    await sbPage.selectToolbar('[aria-label="Viewport size"]', 'text=/Small mobile/');
+    await sbPage.selectToolbar('[aria-label="Viewport"]', 'text=/Small mobile/');
 
     // Check that Button story is still displayed
     await expect(sbPage.previewRoot()).toContainText('Button');
@@ -32,7 +32,7 @@ test.describe('addon-viewport', () => {
     const originalDimensions = await sbPage.getCanvasBodyElement().boundingBox();
     expect(originalDimensions?.width).toBeDefined();
 
-    await sbPage.selectToolbar('[aria-label="Viewport size"]', 'text=/Small mobile/');
+    await sbPage.selectToolbar('[aria-label="Viewport"]', 'text=/Small mobile/');
 
     // Measure the adjusted dimensions of previewRoot after clicking the mobile item.
     const adjustedDimensions = await sbPage.getCanvasBodyElement().boundingBox();
@@ -52,7 +52,7 @@ test.describe('addon-viewport', () => {
     const originalDimensions = await sbPage.getCanvasBodyElement().boundingBox();
     expect(originalDimensions?.width).toBeDefined();
 
-    const toolbar = page.getByLabel('Viewport size');
+    const toolbar = page.getByLabel('Viewport');
 
     await expect(toolbar).toBeDisabled();
   });

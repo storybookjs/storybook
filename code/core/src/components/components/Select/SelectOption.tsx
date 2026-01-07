@@ -1,8 +1,5 @@
 import React from 'react';
 
-import { darken, transparentize } from 'polished';
-import { styled } from 'storybook/theming';
-
 import { ActionList } from '../..';
 
 export interface SelectOptionProps {

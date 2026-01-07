@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PackageJson } from 'storybook/internal/types';
 
-import { analyzeEcosystemPackages } from './get-known-packages';
+import { analyzeEcosystemPackages, getSafeVersionSpecifier } from './get-known-packages';
 import { getActualPackageVersion } from './package-json';
 
 vi.mock(import('./package-json'), { spy: true });
@@ -14,6 +14,20 @@ describe('get-known-packages', () => {
       version: '1.0.0',
     }));
   });
+
+  describe('getSafeVersionSpecifier', () => {
+    it('should return the version specifier with operator', () => {
+      expect(getSafeVersionSpecifier('^1.0.0')).toBe('^1.0.0');
+      expect(getSafeVersionSpecifier('~1.0.0')).toBe('~1.0.0');
+      expect(getSafeVersionSpecifier('1.0.0')).toBe('1.0.0');
+      expect(getSafeVersionSpecifier('1.0.0-beta.0')).toBe('1.0.0'); // prerelease versions are stripped off
+      expect(getSafeVersionSpecifier('latest')).toBe(null);
+      expect(getSafeVersionSpecifier('*')).toBe(null);
+      expect(getSafeVersionSpecifier('file:../some/path')).toBe(null);
+      expect(getSafeVersionSpecifier(undefined)).toBe(null);
+    });
+  });
+
   describe('analyzeEcosystemPackages', () => {
     it('should analyze test packages with actual versions', async () => {
       const packageJson: PackageJson = {
@@ -128,6 +142,30 @@ describe('get-known-packages', () => {
       expect(result.stylingPackages).toEqual({
         '@emotion/react': '11.0.0',
         '@emotion/styled': '11.0.0',
+      });
+    });
+
+    it('should handle packages with invalid semver version specifiers', async () => {
+      vi.mocked(getActualPackageVersion).mockImplementation(async (pkg: string) => ({
+        name: pkg,
+        version: 'file:../some/path',
+      }));
+
+      const packageJson: PackageJson = {
+        dependencies: {
+          '@testing-library/react': 'file:../some/path',
+          '@emotion/react': 'latest',
+        },
+      };
+
+      const result = await analyzeEcosystemPackages(packageJson);
+
+      expect(result.testPackages).toEqual({
+        '@testing-library/react': null,
+      });
+
+      expect(result.stylingPackages).toEqual({
+        '@emotion/react': null,
       });
     });
 

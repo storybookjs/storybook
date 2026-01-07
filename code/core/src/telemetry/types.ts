@@ -2,6 +2,7 @@ import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/type
 
 import type { DetectResult } from 'package-manager-detector';
 
+import type { KnownPackagesList } from './get-known-packages';
 import type { MonorepoType } from './get-monorepo-type';
 
 export type EventType =
@@ -76,15 +77,7 @@ export type StorybookMetadata = {
     packageName: string;
     version: string;
   };
-  knownPackages?: {
-    testPackages?: Record<string, string | undefined>;
-    stylingPackages?: Record<string, string | undefined>;
-    stateManagementPackages?: Record<string, string | undefined>;
-    dataFetchingPackages?: Record<string, string | undefined>;
-    uiLibraryPackages?: Record<string, string | undefined>;
-    i18nPackages?: Record<string, string | undefined>;
-    routerPackages?: Record<string, string | undefined>;
-  };
+  knownPackages?: KnownPackagesList;
   hasRouterPackage?: boolean;
   hasStorybookEslint?: boolean;
   hasStaticDirs?: boolean;

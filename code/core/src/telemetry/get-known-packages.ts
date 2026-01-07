@@ -1,10 +1,12 @@
 import type { PackageJson } from 'storybook/internal/types';
 
+import semver from 'semver';
+
 import { getActualPackageVersion } from './package-json';
 
 type PackageGroupResult = Record<string, string | undefined>;
 
-type AnalysisResult = {
+export type KnownPackagesList = {
   testPackages?: PackageGroupResult;
   stylingPackages?: PackageGroupResult;
   stateManagementPackages?: PackageGroupResult;
@@ -75,7 +77,6 @@ const STYLING_PACKAGES = [
 ] as const;
 
 const STATE_MANAGEMENT_PACKAGES = [
-  // a million and above
   // 11m
   'redux',
   // 5,4m
@@ -200,7 +201,19 @@ const ROUTER_PACKAGES = [
   '@reach/router',
 ] as const;
 
-export async function analyzeEcosystemPackages(packageJson: PackageJson): Promise<AnalysisResult> {
+export function getSafeVersionSpecifier(version?: string): string | null {
+  if (!version) {
+    return null;
+  }
+
+  const operator = version.trim().match(/^[~^]/)?.[0] ?? '';
+  const coerced = semver.coerce(version);
+  return coerced ? `${operator}${coerced.version}` : null;
+}
+
+export async function analyzeEcosystemPackages(
+  packageJson: PackageJson
+): Promise<KnownPackagesList> {
   const allDependencies = {
     ...packageJson?.dependencies,
     ...packageJson?.devDependencies,
@@ -217,7 +230,12 @@ export async function analyzeEcosystemPackages(packageJson: PackageJson): Promis
 
   const pickDepsObject = (packages: readonly string[]) => {
     const result = Object.fromEntries(
-      pickMatches(packages).map((dep) => [dep, allDependencies[dep]])
+      pickMatches(packages).map((dep) => {
+        const rawVersion = allDependencies[dep];
+        // Only allow valid semver version specifiers
+        const version = getSafeVersionSpecifier(rawVersion);
+        return [dep, version];
+      })
     );
     return Object.keys(result).length === 0 ? null : result;
   };
@@ -229,8 +247,11 @@ export async function analyzeEcosystemPackages(packageJson: PackageJson): Promis
         .filter((dep) => TEST_PACKAGES.some((pkg) => dep.includes(pkg)))
         .map(async (dep) => {
           // Only for test packages we resolve the version, for other packages we use the specifiers instead
-          const resolved = await getActualPackageVersion(dep);
-          return [dep, resolved?.version];
+          const resolved = (await getActualPackageVersion(dep))?.version ?? allDependencies[dep];
+
+          // Only allow valid semver version specifiers
+          const version = getSafeVersionSpecifier(resolved);
+          return [dep, version];
         })
     )
   );

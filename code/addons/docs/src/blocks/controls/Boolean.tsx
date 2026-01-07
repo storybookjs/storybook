@@ -143,13 +143,13 @@ export const BooleanControl: FC<BooleanProps> = ({
   const parsedValue = typeof value === 'string' ? parse(value) : value;
 
   return (
-    <Label aria-disabled={readonly} htmlFor={controlId} aria-label={name}>
+    <Label aria-disabled={readonly} htmlFor={controlId}>
       <input
         id={controlId}
         type="checkbox"
         onChange={(e) => onChange(e.target.checked)}
         checked={parsedValue}
-        role="switch"
+        aria-label={`${name}: ${parsedValue ? 'true' : 'false'}`}
         disabled={readonly}
         {...{ name, onBlur, onFocus }}
       />

@@ -1,6 +1,6 @@
 import React, { type ComponentProps, forwardRef } from 'react';
 
-import { darken } from 'polished';
+import { darken, transparentize } from 'polished';
 import type { TransitionStatus } from 'react-transition-state';
 import { styled } from 'storybook/theming';
 
@@ -43,10 +43,26 @@ const ActionListItem = styled.li<{
       opacity: 0,
     },
 
+    '&[role="option"]': {
+      cursor: 'pointer',
+      borderRadius: theme.input.borderRadius,
+      outlineOffset: -2,
+      padding: '0 9px',
+      gap: 8,
+
+      '&:hover': {
+        background: transparentize(0.86, theme.color.secondary),
+      },
+      '&:focus-visible': {
+        outline: `2px solid ${theme.color.secondary}`,
+      },
+    },
+
     '@supports (interpolate-size: allow-keywords)': {
       interpolateSize: 'allow-keywords',
-      transition: 'all var(--transition-duration, 0.2s)',
       transitionBehavior: 'allow-discrete',
+      transitionDuration: 'var(--transition-duration, 0.2s)',
+      transitionProperty: 'opacity, block-size, content-visibility',
     },
 
     '@media (prefers-reduced-motion: reduce)': {
@@ -184,10 +200,10 @@ const ActionListText = styled.div<{ muted?: boolean }>(({ theme }) => ({
   '&:last-child': {
     paddingRight: 8,
   },
-  'button > &:first-child': {
+  'button > &:first-child, li > &:first-child': {
     paddingLeft: 0,
   },
-  'button > &:last-child': {
+  'button > &:last-child, li > &:last-child': {
     paddingRight: 0,
   },
 }));

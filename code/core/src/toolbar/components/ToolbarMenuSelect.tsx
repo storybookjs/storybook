@@ -18,6 +18,7 @@ import { getSelectedIcon, getSelectedTitle } from '../utils/get-selected';
 
 const ToolbarMenuItemContainer = styled('div')({
   width: '100%',
+  minHeight: 32,
   display: 'flex',
   alignItems: 'center',
   gap: 8,

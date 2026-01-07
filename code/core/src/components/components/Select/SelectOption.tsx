@@ -72,18 +72,16 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
       onFocus={onFocus}
       onKeyDown={onKeyDown}
     >
-      <ActionList.Action>
-        {children ?? (
-          <>
-            {icon && <ActionList.Icon>{icon}</ActionList.Icon>}
-            <ActionList.Text>
-              <p>{title}</p>
-              {description && <small>{description}</small>}
-            </ActionList.Text>
-            {right}
-          </>
-        )}
-      </ActionList.Action>
+      {children ?? (
+        <>
+          {icon && <ActionList.Icon>{icon}</ActionList.Icon>}
+          <ActionList.Text>
+            <p>{title}</p>
+            {description && <small>{description}</small>}
+          </ActionList.Text>
+          {right}
+        </>
+      )}
     </ActionList.Item>
   );
 };

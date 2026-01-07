@@ -24,7 +24,7 @@ import { SupportedFramework } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import { dirname, relative, resolve } from 'pathe';
-import { satisfies } from 'semver';
+import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
@@ -50,17 +50,33 @@ export default async function postInstall(options: PostinstallOptions) {
       { last: getProjectRoot(), cwd: options.configDir }
     );
 
-  const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+  const allDeps = packageManager.getAllDependencies();
+
+  // Determine Vitest version/range from installed or declared dependency to avoid pulling
+  // incompatible majors by default.
+  let vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+  if (!vitestVersionSpecifier && allDeps['vitest']) {
+    vitestVersionSpecifier = allDeps['vitest'];
+  }
+
+  /**
+   * Coerce the version specifier to a version string
+   *
+   * This removed any version range specifiers like ^, ~, etc. which is needed to check with
+   * semver.satisfies.
+   */
+  vitestVersionSpecifier = coerce(vitestVersionSpecifier)?.version ?? null;
+
   logger.debug(`Vitest version specifier: ${vitestVersionSpecifier}`);
   const isVitest3_2To4 = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=3.2.0 <4.0.0')
     : false;
+
   const isVitest4OrNewer = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=4.0.0')
     : true;
 
   const info = await getStorybookInfo(options.configDir);
-  const allDeps = packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
 
   const addonVitestService = new AddonVitestService(packageManager);

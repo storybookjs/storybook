@@ -1,8 +1,8 @@
 import { NextjsRouterMocksNotAvailable } from 'storybook/internal/preview-errors';
 
-import * as actual from 'next/dist/client/components/navigation';
-import { getRedirectError } from 'next/dist/client/components/redirect';
-import { RedirectStatusCode } from 'next/dist/client/components/redirect-status-code';
+import * as actual from 'next/dist/client/components/navigation.js';
+import { RedirectStatusCode } from 'next/dist/client/components/redirect-status-code.js';
+import { getRedirectError } from 'next/dist/client/components/redirect.js';
 import type { Mock } from 'storybook/test';
 import { fn } from 'storybook/test';
 
@@ -57,7 +57,7 @@ export const getRouter = () => {
 };
 
 // re-exports of the actual module
-export * from 'next/dist/client/components/navigation';
+export * from 'next/dist/client/components/navigation.js';
 
 // mock utilities/overrides (as of Next v14.2.0)
 export const redirect = fn(

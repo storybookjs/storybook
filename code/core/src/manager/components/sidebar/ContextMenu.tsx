@@ -53,17 +53,17 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
   const topLinks = useMemo<Link[]>(() => {
     const defaultLinks = [];
 
-    if (context && 'importPath' in context) {
+    if (context && 'importPath' in context && context.importPath) {
       defaultLinks.push({
         id: 'open-in-editor',
         title: 'Open in editor',
         icon: <EditorIcon />,
         right: enableShortcuts ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
         onClick: (e: SyntheticEvent) => {
-          e.preventDefault();
-          api.openInEditor({
-            file: context.importPath,
-          });
+          if (context.importPath) {
+            e.preventDefault();
+            api.openInEditor({ file: context.importPath });
+          }
         },
       });
     }

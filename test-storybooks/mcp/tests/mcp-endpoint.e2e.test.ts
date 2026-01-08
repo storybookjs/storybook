@@ -210,7 +210,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "type": "object",
 				    },
 				    "name": "get-storybook-story-instructions",
-				    "title": "UI Component Building Instructions",
+				    "title": "Storybook Story Development Instructions",
 				  },
 				  {
 				    "description": "List all available UI components and documentation entries from the Storybook",

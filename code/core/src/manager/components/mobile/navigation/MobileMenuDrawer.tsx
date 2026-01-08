@@ -6,6 +6,7 @@ import { Modal } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { MOBILE_TRANSITION_DURATION } from '../../../constants';
+import { MobileA11yStatement } from '../a11y/MobileA11yStatement';
 import { MobileAbout } from '../about/MobileAbout';
 
 interface MobileMenuDrawerProps {
@@ -38,6 +39,7 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({
       onOpenChange={onOpenChange}
     >
       {children}
+      <MobileA11yStatement />
       <MobileAbout />
     </StyledModal>
   );

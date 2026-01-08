@@ -200,10 +200,10 @@ const ActionListText = styled.div<{ muted?: boolean }>(({ theme }) => ({
   '&:last-child': {
     paddingRight: 8,
   },
-  'button > &:first-child, li > &:first-child': {
+  'button > &:first-child, [role="option"] > &:first-child': {
     paddingLeft: 0,
   },
-  'button > &:last-child, li > &:last-child': {
+  'button > &:last-child, [role="option"] > &:last-child': {
     paddingRight: 0,
   },
 }));

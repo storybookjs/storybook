@@ -65,8 +65,8 @@ export async function getCandidatesForStorybook(
   files: string[],
   sampleCount: number
 ): Promise<string[]> {
-  const simpleCandidates: string[] = [];
-  const analyzedCandidates: string[] = [];
+  const simpleCandidates: { file: string; complexity: number }[] = [];
+  const analyzedCandidates: { file: string; complexity: number }[] = [];
 
   for (const file of files) {
     let source: string;
@@ -81,10 +81,10 @@ export async function getCandidatesForStorybook(
     }
 
     const complexity = getComponentComplexity(source);
-    analyzedCandidates.push(file);
+    analyzedCandidates.push({ file, complexity });
 
-    if (complexity < 0.2) {
-      simpleCandidates.push(file);
+    if (complexity < 0.3) {
+      simpleCandidates.push({ file, complexity });
       if (simpleCandidates.length >= sampleCount) {
         break;
       }
@@ -95,14 +95,20 @@ export async function getCandidatesForStorybook(
     logger.debug(
       `Found ${simpleCandidates.length} enough simple candidates after analyzing ${analyzedCandidates.length} out of ${files.length} files`
     );
-    return simpleCandidates.slice(0, sampleCount);
+    return simpleCandidates
+      .sort((a, b) => a.complexity - b.complexity)
+      .map(({ file }) => file)
+      .slice(0, sampleCount);
   }
 
   logger.debug(
     `Found ${simpleCandidates.length} simple and ${analyzedCandidates.length - simpleCandidates.length} complex candidates after analyzing ${analyzedCandidates.length} out of ${files.length} files`
   );
   // Otherwise, return all analyzed candidates
-  return analyzedCandidates.slice(0, sampleCount);
+  return analyzedCandidates
+    .sort((a, b) => a.complexity - b.complexity)
+    .map(({ file }) => file)
+    .slice(0, sampleCount);
 }
 
 export async function getComponentCandidates({

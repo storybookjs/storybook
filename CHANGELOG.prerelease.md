@@ -1,3 +1,8 @@
+## 10.2.0-alpha.14
+
+- ReactDocgen: Try using the latest version of the original - [#33454](https://github.com/storybookjs/storybook/pull/33454), thanks @ndelangen!
+- ReactDocgen: Try using the latest version of the original - [#33487](https://github.com/storybookjs/storybook/pull/33487), thanks @ndelangen!
+
 ## 10.2.0-alpha.13
 
 - Core: Fix onboarding visual bugs, survey telemetry and modal dismissal - [#33326](https://github.com/storybookjs/storybook/pull/33326), thanks @ghengeveld!

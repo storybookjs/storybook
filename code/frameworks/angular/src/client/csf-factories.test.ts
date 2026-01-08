@@ -320,7 +320,7 @@ it('Components without Props can be used', () => {
   const Basic = meta.story();
 });
 
-it('Components without Props can be used', () => {
+it('Signal components can be used', () => {
   @Component({
     standalone: false,
     // Needs to be a different name to the CLI template button

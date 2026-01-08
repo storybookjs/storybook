@@ -1,0 +1,414 @@
+<html>
+  <head>
+    <title>Nx Cloud login</title>
+    <style>
+      *,
+      :before,
+      :after {
+        -webkit-text-size-adjust: 100%;
+        tab-size: 4;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          sans-serif,
+          'Apple Color Emoji',
+          'Segoe UI Emoji',
+          Segoe UI Symbol,
+          'Noto Color Emoji';
+        font-feature-settings: normal;
+        font-variation-settings: normal;
+        -webkit-tap-highlight-color: transparent;
+        line-height: inherit;
+        --tw-text-opacity: 1;
+        color: rgb(51 65 85 / var(--tw-text-opacity));
+        box-sizing: border-box;
+        border-width: 0;
+        border-style: solid;
+        --tw-border-spacing-x: 0;
+        --tw-border-spacing-y: 0;
+        --tw-translate-x: 0;
+        --tw-translate-y: 0;
+        --tw-rotate: 0;
+        --tw-skew-x: 0;
+        --tw-skew-y: 0;
+        --tw-scale-x: 1;
+        --tw-scale-y: 1;
+        --tw-pan-x: ;
+        --tw-pan-y: ;
+        --tw-pinch-zoom: ;
+        --tw-scroll-snap-strictness: proximity;
+        --tw-gradient-from-position: ;
+        --tw-gradient-via-position: ;
+        --tw-gradient-to-position: ;
+        --tw-ordinal: ;
+        --tw-slashed-zero: ;
+        --tw-numeric-figure: ;
+        --tw-numeric-spacing: ;
+        --tw-numeric-fraction: ;
+        --tw-ring-inset: ;
+        --tw-ring-offset-width: 0px;
+        --tw-ring-offset-color: #fff;
+        --tw-ring-color: rgb(59 130 246 / 0.5);
+        --tw-ring-offset-shadow: 0 0 #0000;
+        --tw-ring-shadow: 0 0 #0000;
+        --tw-shadow: 0 0 #0000;
+        --tw-shadow-colored: 0 0 #0000;
+        --tw-blur: ;
+        --tw-brightness: ;
+        --tw-contrast: ;
+        --tw-grayscale: ;
+        --tw-hue-rotate: ;
+        --tw-invert: ;
+        --tw-saturate: ;
+        --tw-sepia: ;
+        --tw-drop-shadow: ;
+        --tw-backdrop-blur: ;
+        --tw-backdrop-brightness: ;
+        --tw-backdrop-contrast: ;
+        --tw-backdrop-grayscale: ;
+        --tw-backdrop-hue-rotate: ;
+        --tw-backdrop-invert: ;
+        --tw-backdrop-opacity: ;
+        --tw-backdrop-saturate: ;
+        --tw-backdrop-sepia: ;
+        --tw-contain-size: ;
+        --tw-contain-layout: ;
+        --tw-contain-paint: ;
+        --tw-contain-style: ;
+        /*border-bottom-width: 1px;*/
+        --tw-border-opacity: 1;
+        border-color: rgb(226 232 240 / var(--tw-border-opacity));
+        --tw-bg-opacity: 1;
+        background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+      }
+      .mx-auto {
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .mb-2 {
+        margin-bottom: 0.5rem;
+      }
+      .mt-20 {
+        margin-top: 5rem;
+      }
+      .flex {
+        display: flex;
+      }
+      .hidden {
+        display: none;
+      }
+      .h-14 {
+        height: 3.5rem;
+      }
+      .h-5 {
+        height: 1.25rem;
+      }
+      .h-6 {
+        height: 1.5rem;
+      }
+      .min-h-full {
+        min-height: 100%;
+      }
+      .w-5 {
+        width: 1.25rem;
+      }
+      .w-6 {
+        width: 1.5rem;
+      }
+      .w-auto {
+        width: auto;
+      }
+      .max-w-7xl {
+        max-width: 80rem;
+      }
+      .flex-shrink-0 {
+        flex-shrink: 0;
+      }
+      .flex-col {
+        flex-direction: column;
+      }
+      .items-start {
+        align-items: flex-start;
+      }
+      .items-center {
+        align-items: center;
+      }
+      .justify-center {
+        justify-content: center;
+      }
+      .justify-between {
+        justify-content: space-between;
+      }
+      .gap-4 {
+        gap: 1rem;
+      }
+      .gap-8 {
+        gap: 2rem;
+      }
+      .border-b {
+        border-bottom-width: 1px;
+      }
+      .border-t {
+        border-top-width: 1px;
+      }
+      .border-slate-100 {
+        --tw-border-opacity: 1;
+        border-color: rgb(241 245 249 / var(--tw-border-opacity));
+      }
+      .border-slate-200 {
+        --tw-border-opacity: 1;
+        border-color: rgb(226 232 240 / var(--tw-border-opacity));
+      }
+      .bg-white {
+        --tw-bg-opacity: 1;
+        background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+      }
+      .p-8 {
+        padding: 2rem;
+      }
+      .px-4 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      .px-40 {
+        padding-left: 10rem;
+        padding-right: 10rem;
+      }
+      .py-10 {
+        padding-top: 2.5rem;
+        padding-bottom: 2.5rem;
+      }
+      .text-2xl {
+        font-size: 1.5rem;
+        line-height: 2rem;
+      }
+      .text-xs {
+        font-size: 0.75rem;
+        line-height: 1rem;
+      }
+      .text-wrap {
+        max-width: 100%;
+        word-wrap: break-word;
+      }
+      .font-bold {
+        font-weight: 700;
+      }
+      .font-semibold {
+        font-weight: 600;
+      }
+      .italic {
+        font-style: italic;
+      }
+      .leading-7 {
+        line-height: 1.75rem;
+      }
+      .text-slate-400 {
+        --tw-text-opacity: 1;
+        color: rgb(148 163 184 / var(--tw-text-opacity));
+      }
+      .text-slate-700 {
+        --tw-text-opacity: 1;
+        color: rgb(51 65 85 / var(--tw-text-opacity));
+      }
+      .text-slate-900 {
+        --tw-text-opacity: 1;
+        color: rgb(15 23 42 / var(--tw-text-opacity));
+      }
+      .underline {
+        text-decoration-line: underline;
+      }
+      .opacity-50 {
+        opacity: 0.5;
+      }
+      .opacity-25 {
+        opacity: 0.3;
+      }
+      .transition {
+        transition-property: color, background-color, border-color,
+          text-decoration-color, fill, stroke, opacity, box-shadow, transform,
+          filter, backdrop-filter;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 0.15s;
+      }
+      body {
+        min-height: 100%;
+        height: 100%;
+      }
+      a {
+        color: inherit;
+        text-decoration: inherit;
+      }
+      .hover\:opacity-100:hover {
+        opacity: 1;
+      }
+      @media (min-width: 640px) {
+        .sm\:-my-px {
+          margin-top: -1px;
+          margin-bottom: -1px;
+        }
+        .sm\:ml-6 {
+          margin-left: 1.5rem;
+        }
+        .sm\:flex {
+          display: flex;
+        }
+        .sm\:truncate {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .sm\:px-6 {
+          padding-left: 1.5rem;
+          padding-right: 1.5rem;
+        }
+        .sm\:text-3xl {
+          font-size: 1.875rem;
+          line-height: 2.25rem;
+        }
+        .sm\:tracking-tight {
+          letter-spacing: -0.025em;
+        }
+      }
+      @media (min-width: 768px) {
+        .md\:grid {
+          display: grid;
+        }
+        .md\:grid-cols-4 {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        .md\:gap-4 {
+          gap: 1rem;
+        }
+        .md\:p-2 {
+          padding: 0.5rem;
+        }
+      }
+      @media (min-width: 1024px) {
+        .lg\:flex {
+          display: flex;
+        }
+        .lg\:px-8 {
+          padding-left: 2rem;
+          padding-right: 2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="min-h-full">
+      <nav class="border-b border-slate-200 bg-white">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div class="flex h-14 justify-between">
+            <div class="flex">
+              <div class="flex flex-shrink-0 items-center">
+                <a href="{{ nxCloudUrl }}">
+                  <svg
+                    id="nx-cloud-header-logo"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="currentColor"
+                    fill="transparent"
+                    viewBox="0 0 24 24"
+                    class="h-6 w-6"
+                  >
+                    <path
+                      stroke-width="2"
+                      d="M23 3.75V6.5c-3.036 0-5.5 2.464-5.5 5.5s-2.464 5.5-5.5 5.5-5.5 2.464-5.5 5.5H3.75C2.232 23 1 21.768 1 20.25V3.75C1 2.232 2.232 1 3.75 1h16.5C21.768 1 23 2.232 23 3.75Z"
+                      id="nx-cloud-header-logo-stroke-1"
+                    ></path>
+                    <path
+                      stroke-width="2"
+                      d="M23 6v14.1667C23 21.7307 21.7307 23 20.1667 23H6c0-3.128 2.53867-5.6667 5.6667-5.6667 3.128 0 5.6666-2.5386 5.6666-5.6666C17.3333 8.53867 19.872 6 23 6Z"
+                      id="nx-cloud-header-logo-stroke-2"
+                    ></path>
+                  </svg>
+                </a>
+              </div>
+              <div class="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8"></div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div class="py-10">
+        <div
+          class="mx-auto flex max-w-7xl flex-col items-start justify-center gap-2 px-40"
+        >
+          <h1
+            class="text-2xl leading-7 font-bold text-slate-900 sm:truncate sm:text-3xl sm:tracking-tight"
+          >
+            Your workspace is connected to Nx Cloud
+          </h1>
+          <div>
+            <p class="mb-2">You may now close this window.</p>
+          </div>
+        </div>
+      </div>
+      <footer
+        class="mt-20 flex border-t border-slate-100 dark:border-slate-800"
+      >
+        <nav
+          role="menu"
+          aria-labelledby="bottom-navigation"
+          class="mx-auto flex w-auto max-w-7xl items-center px-4 text-slate-400 dark:text-slate-600"
+        >
+          <div class="flex items-center gap-4 p-8 opacity-50">
+            <a title="Nx Cloud" href="{{ nxCloudUrl }}">
+              <svg
+                id="nx-cloud-header-logo"
+                role="img"
+                xmlns="http://www.w3.org/2000/svg"
+                stroke="currentColor"
+                fill="transparent"
+                viewBox="0 0 24 24"
+                class="h-5 w-5"
+              >
+                <path
+                  stroke-width="2"
+                  d="M23 3.75V6.5c-3.036 0-5.5 2.464-5.5 5.5s-2.464 5.5-5.5 5.5-5.5 2.464-5.5 5.5H3.75C2.232 23 1 21.768 1 20.25V3.75C1 2.232 2.232 1 3.75 1h16.5C21.768 1 23 2.232 23 3.75Z"
+                  id="nx-cloud-header-logo-stroke-1"
+                ></path>
+                <path
+                  stroke-width="2"
+                  d="M23 6v14.1667C23 21.7307 21.7307 23 20.1667 23H6c0-3.128 2.53867-5.6667 5.6667-5.6667 3.128 0 5.6666-2.5386 5.6666-5.6666C17.3333 8.53867 19.872 6 23 6Z"
+                  id="nx-cloud-header-logo-stroke-2"
+                ></path>
+              </svg>
+            </a>
+            <p class="text-xs transition">&copy; 2024 - Nx Cloud</p>
+          </div>
+          <section
+            class="hidden gap-8 p-8 text-xs opacity-25 transition hover:opacity-100 md:grid md:grid-cols-4 md:gap-4 md:p-2 lg:flex"
+          >
+            <a href="https://nx.app/terms" title="Terms of Service"
+              >Terms of Service</a
+            ><a href="https://nx.app/privacy" title="Privacy Policy"
+              >Privacy Policy</a
+            ><a
+              href="https://status.nx.app"
+              title="Status"
+              target="_blank"
+              rel="noopener"
+              >Status</a
+            ><a
+              href="https://nx.dev/ci/intro/ci-with-nx?utm_source=nx.app"
+              title="Docs"
+              >Docs</a
+            ><a href="mailto:cloud-support@nrwl.io" title="Contact Nx Cloud"
+              >Contact Nx Cloud</a
+            ><a href="https://nx.dev/pricing?utm_source=nx.app" title="Pricing"
+              >Pricing</a
+            ><a href="https://nx.dev/company?utm_source=nx.app" title="Company"
+              >Company</a
+            ><a
+              href="https://twitter.com/nxdevtools"
+              title="@NxDevTools"
+              target="_blank"
+              rel="noopener"
+              >@NxDevTools</a
+            >
+          </section>
+        </nav>
+      </footer>
+    </div>
+  </body>
+</html>

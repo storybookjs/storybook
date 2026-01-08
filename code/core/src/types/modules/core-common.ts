@@ -2,13 +2,17 @@
 import type { FileSystemCache } from 'storybook/internal/common';
 import { type StoryIndexGenerator } from 'storybook/internal/core-server';
 import { type CsfFile } from 'storybook/internal/csf-tools';
+import type { LogLevel } from 'storybook/internal/node-logger';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
+import type { SupportedBuilder } from './builders';
+import type { SupportedFramework } from './frameworks';
 import type { Indexer, StoriesEntry } from './indexer';
+import type { SupportedRenderer } from './renderers';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
@@ -170,7 +174,8 @@ export interface CLIBaseOptions {
   disableTelemetry?: boolean;
   enableCrashReports?: boolean;
   configDir?: string;
-  loglevel?: string;
+  loglevel?: LogLevel;
+  logfile?: string | boolean;
   quiet?: boolean;
 }
 
@@ -368,9 +373,9 @@ export interface ComponentsManifest {
   components: Record<string, ComponentManifest>;
 }
 
-export type ComponentManifestGenerator = (
-  storyIndexGenerator: StoryIndexGenerator
-) => Promise<ComponentsManifest>;
+type ManifestName = string;
+
+export type Manifests = { components?: ComponentsManifest } & Record<ManifestName, unknown>;
 
 export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
 
@@ -387,7 +392,7 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
-  experimental_componentManifestGenerator?: ComponentManifestGenerator;
+  experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
@@ -526,6 +531,8 @@ export interface StorybookConfigRaw {
   previewAnnotations?: Entry[];
 
   experimental_indexers?: Indexer[];
+
+  storyIndexGenerator?: StoryIndexGenerator;
 
   experimental_devServer?: ServerApp;
 
@@ -680,15 +687,16 @@ export type CoreCommon_AddonEntry = string | CoreCommon_OptionsEntry;
 export type CoreCommon_AddonInfo = { name: string; inEssentials: boolean };
 
 export interface CoreCommon_StorybookInfo {
-  version: string;
-  // FIXME: these are renderers for now,
-  // need to update with framework OR fix
-  // the calling code
-  framework: string;
-  frameworkPackage: string;
-  renderer: string;
-  rendererPackage: string;
+  addons: string[];
+  versionSpecifier?: string;
+  framework?: SupportedFramework;
+  renderer?: SupportedRenderer;
+  builder?: SupportedBuilder;
+  rendererPackage?: string;
+  frameworkPackage?: string;
+  builderPackage?: string;
   configDir?: string;
+  mainConfig: StorybookConfigRaw;
   mainConfigPath?: string;
   previewConfigPath?: string;
   managerConfigPath?: string;

@@ -1,0 +1,33 @@
+{
+  "inputs": {
+    "src/types.ts": {
+      "bytes": 1333,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 25,
+      "imports": [
+        {
+          "path": "src/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [],
+      "exports": [],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 0
+    }
+  }
+}

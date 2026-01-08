@@ -1,0 +1,42 @@
+{
+  "inputs": {
+    "src/preset.ts": {
+      "bytes": 242,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/node/index.ts": {
+      "bytes": 123,
+      "imports": [],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/preset.js": {
+      "imports": [],
+      "exports": [
+        "core"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/preset.ts": {
+          "bytesInOutput": 143
+        }
+      },
+      "bytes": 800
+    },
+    "dist/node/index.js": {
+      "imports": [],
+      "exports": [
+        "defineMain"
+      ],
+      "entryPoint": "src/node/index.ts",
+      "inputs": {
+        "src/node/index.ts": {
+          "bytesInOutput": 49
+        }
+      },
+      "bytes": 716
+    }
+  }
+}

@@ -177,7 +177,8 @@ interface WithHideFn {
 }
 
 export interface WithTooltipPureProps
-  extends Omit<ReactPopperTooltipConfig, 'closeOnOutsideClick'>,
+  extends
+    Omit<ReactPopperTooltipConfig, 'closeOnOutsideClick'>,
     Omit<ComponentProps<typeof TargetContainer>, 'trigger'>,
     PopperOptions {
   svg?: boolean;
@@ -378,14 +379,14 @@ const DeprecatedPure: FC<WithTooltipPureProps> = (props: WithTooltipPureProps) =
   deprecate(
     'WithTooltipPure is deprecated and will be removed in Storybook 11. Please use WithTooltip instead.'
   );
-  return <WithTooltipPure {...props} />;
+  return <WithTooltipPure data-deprecated="WithTooltipPure" {...props} />;
 };
 
 const DeprecatedState: FC<WithTooltipStateProps> = (props: WithTooltipStateProps) => {
   deprecate(
     'WithToolTipState is deprecated and will be removed in Storybook 11. Please use WithTooltip instead.'
   );
-  return <WithToolTipState {...props} />;
+  return <WithToolTipState data-deprecated="WithToolTipState" {...props} />;
 };
 
 export {

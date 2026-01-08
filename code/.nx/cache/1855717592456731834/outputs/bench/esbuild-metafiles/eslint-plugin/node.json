@@ -1,0 +1,815 @@
+{
+  "inputs": {
+    "src/configs/addon-interactions.ts": {
+      "bytes": 825,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/configs/csf.ts": {
+      "bytes": 845,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/configs/csf-strict.ts": {
+      "bytes": 676,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/configs/flat/addon-interactions.ts": {
+      "bytes": 1166,
+      "imports": [
+        {
+          "path": "src/index.ts",
+          "kind": "import-statement",
+          "original": "../../index"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/configs/flat/csf.ts": {
+      "bytes": 1139,
+      "imports": [
+        {
+          "path": "src/index.ts",
+          "kind": "import-statement",
+          "original": "../../index"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/configs/flat/csf-strict.ts": {
+      "bytes": 579,
+      "imports": [
+        {
+          "path": "src/configs/flat/csf.ts",
+          "kind": "import-statement",
+          "original": "./csf"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/configs/flat/recommended.ts": {
+      "bytes": 1424,
+      "imports": [
+        {
+          "path": "src/index.ts",
+          "kind": "import-statement",
+          "original": "../../index"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/configs/recommended.ts": {
+      "bytes": 1116,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/utils/ast.ts": {
+      "bytes": 3121,
+      "imports": [
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/utils/constants.ts": {
+      "bytes": 147,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/utils/index.ts": {
+      "bytes": 3797,
+      "imports": [
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "./ast"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/utils/create-storybook-rule.ts": {
+      "bytes": 928,
+      "imports": [
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils/index.ts",
+          "kind": "import-statement",
+          "original": "./index"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/await-interactions.ts": {
+      "bytes": 6787,
+      "imports": [
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/context-in-play-function.ts": {
+      "bytes": 4873,
+      "imports": [
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/csf-component.ts": {
+      "bytes": 1968,
+      "imports": [
+        {
+          "path": "src/utils/index.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        },
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/default-exports.ts": {
+      "bytes": 4257,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/hierarchy-separator.ts": {
+      "bytes": 2446,
+      "imports": [
+        {
+          "path": "src/utils/index.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        },
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/meta-inline-properties.ts": {
+      "bytes": 3210,
+      "imports": [
+        {
+          "path": "src/utils/index.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/meta-satisfies-type.ts": {
+      "bytes": 3708,
+      "imports": [
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils/index.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        },
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/no-redundant-story-name.ts": {
+      "bytes": 4237,
+      "imports": [
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/no-renderer-packages.ts": {
+      "bytes": 2600,
+      "imports": [
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/no-stories-of.ts": {
+      "bytes": 1507,
+      "imports": [
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/no-title-property-in-meta.ts": {
+      "bytes": 2283,
+      "imports": [
+        {
+          "path": "src/utils/index.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        },
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/ts-dedent/dist/index.js": {
+      "bytes": 1757,
+      "imports": [],
+      "format": "cjs"
+    },
+    "src/rules/no-uninstalled-addons.ts": {
+      "bytes": 9720,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/utils/index.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        },
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/prefer-pascal-case.ts": {
+      "bytes": 5890,
+      "imports": [
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils/index.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        },
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/story-exports.ts": {
+      "bytes": 3728,
+      "imports": [
+        {
+          "path": "src/utils/index.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        },
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/use-storybook-expect.ts": {
+      "bytes": 2901,
+      "imports": [
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rules/use-storybook-testing-library.ts": {
+      "bytes": 4735,
+      "imports": [
+        {
+          "path": "src/utils/ast.ts",
+          "kind": "import-statement",
+          "original": "../utils/ast"
+        },
+        {
+          "path": "src/utils/constants.ts",
+          "kind": "import-statement",
+          "original": "../utils/constants"
+        },
+        {
+          "path": "src/utils/create-storybook-rule.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-storybook-rule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 2670,
+      "imports": [
+        {
+          "path": "src/configs/addon-interactions.ts",
+          "kind": "import-statement",
+          "original": "./configs/addon-interactions"
+        },
+        {
+          "path": "src/configs/csf.ts",
+          "kind": "import-statement",
+          "original": "./configs/csf"
+        },
+        {
+          "path": "src/configs/csf-strict.ts",
+          "kind": "import-statement",
+          "original": "./configs/csf-strict"
+        },
+        {
+          "path": "src/configs/flat/addon-interactions.ts",
+          "kind": "import-statement",
+          "original": "./configs/flat/addon-interactions"
+        },
+        {
+          "path": "src/configs/flat/csf.ts",
+          "kind": "import-statement",
+          "original": "./configs/flat/csf"
+        },
+        {
+          "path": "src/configs/flat/csf-strict.ts",
+          "kind": "import-statement",
+          "original": "./configs/flat/csf-strict"
+        },
+        {
+          "path": "src/configs/flat/recommended.ts",
+          "kind": "import-statement",
+          "original": "./configs/flat/recommended"
+        },
+        {
+          "path": "src/configs/recommended.ts",
+          "kind": "import-statement",
+          "original": "./configs/recommended"
+        },
+        {
+          "path": "src/rules/await-interactions.ts",
+          "kind": "import-statement",
+          "original": "./rules/await-interactions"
+        },
+        {
+          "path": "src/rules/context-in-play-function.ts",
+          "kind": "import-statement",
+          "original": "./rules/context-in-play-function"
+        },
+        {
+          "path": "src/rules/csf-component.ts",
+          "kind": "import-statement",
+          "original": "./rules/csf-component"
+        },
+        {
+          "path": "src/rules/default-exports.ts",
+          "kind": "import-statement",
+          "original": "./rules/default-exports"
+        },
+        {
+          "path": "src/rules/hierarchy-separator.ts",
+          "kind": "import-statement",
+          "original": "./rules/hierarchy-separator"
+        },
+        {
+          "path": "src/rules/meta-inline-properties.ts",
+          "kind": "import-statement",
+          "original": "./rules/meta-inline-properties"
+        },
+        {
+          "path": "src/rules/meta-satisfies-type.ts",
+          "kind": "import-statement",
+          "original": "./rules/meta-satisfies-type"
+        },
+        {
+          "path": "src/rules/no-redundant-story-name.ts",
+          "kind": "import-statement",
+          "original": "./rules/no-redundant-story-name"
+        },
+        {
+          "path": "src/rules/no-renderer-packages.ts",
+          "kind": "import-statement",
+          "original": "./rules/no-renderer-packages"
+        },
+        {
+          "path": "src/rules/no-stories-of.ts",
+          "kind": "import-statement",
+          "original": "./rules/no-stories-of"
+        },
+        {
+          "path": "src/rules/no-title-property-in-meta.ts",
+          "kind": "import-statement",
+          "original": "./rules/no-title-property-in-meta"
+        },
+        {
+          "path": "src/rules/no-uninstalled-addons.ts",
+          "kind": "import-statement",
+          "original": "./rules/no-uninstalled-addons"
+        },
+        {
+          "path": "src/rules/prefer-pascal-case.ts",
+          "kind": "import-statement",
+          "original": "./rules/prefer-pascal-case"
+        },
+        {
+          "path": "src/rules/story-exports.ts",
+          "kind": "import-statement",
+          "original": "./rules/story-exports"
+        },
+        {
+          "path": "src/rules/use-storybook-expect.ts",
+          "kind": "import-statement",
+          "original": "./rules/use-storybook-expect"
+        },
+        {
+          "path": "src/rules/use-storybook-testing-library.ts",
+          "kind": "import-statement",
+          "original": "./rules/use-storybook-testing-library"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@typescript-eslint/utils",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "configs",
+        "default",
+        "rules"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "../../node_modules/ts-dedent/dist/index.js": {
+          "bytesInOutput": 1730
+        },
+        "src/configs/addon-interactions.ts": {
+          "bytesInOutput": 663
+        },
+        "src/configs/csf.ts": {
+          "bytesInOutput": 668
+        },
+        "src/configs/csf-strict.ts": {
+          "bytesInOutput": 517
+        },
+        "src/configs/flat/addon-interactions.ts": {
+          "bytesInOutput": 834
+        },
+        "src/configs/flat/csf.ts": {
+          "bytesInOutput": 792
+        },
+        "src/configs/flat/csf-strict.ts": {
+          "bytesInOutput": 399
+        },
+        "src/configs/flat/recommended.ts": {
+          "bytesInOutput": 1084
+        },
+        "src/configs/recommended.ts": {
+          "bytesInOutput": 948
+        },
+        "src/utils/ast.ts": {
+          "bytesInOutput": 2486
+        },
+        "src/utils/create-storybook-rule.ts": {
+          "bytesInOutput": 349
+        },
+        "src/utils/index.ts": {
+          "bytesInOutput": 2385
+        },
+        "src/rules/await-interactions.ts": {
+          "bytesInOutput": 4227
+        },
+        "src/rules/context-in-play-function.ts": {
+          "bytesInOutput": 2675
+        },
+        "src/rules/csf-component.ts": {
+          "bytesInOutput": 818
+        },
+        "src/rules/default-exports.ts": {
+          "bytesInOutput": 2630
+        },
+        "src/rules/hierarchy-separator.ts": {
+          "bytesInOutput": 1754
+        },
+        "src/rules/meta-inline-properties.ts": {
+          "bytesInOutput": 1688
+        },
+        "src/rules/meta-satisfies-type.ts": {
+          "bytesInOutput": 2450
+        },
+        "src/rules/no-redundant-story-name.ts": {
+          "bytesInOutput": 2879
+        },
+        "src/rules/no-renderer-packages.ts": {
+          "bytesInOutput": 1759
+        },
+        "src/rules/no-stories-of.ts": {
+          "bytesInOutput": 651
+        },
+        "src/rules/no-title-property-in-meta.ts": {
+          "bytesInOutput": 1523
+        },
+        "src/rules/no-uninstalled-addons.ts": {
+          "bytesInOutput": 6359
+        },
+        "src/rules/prefer-pascal-case.ts": {
+          "bytesInOutput": 3628
+        },
+        "src/rules/story-exports.ts": {
+          "bytesInOutput": 2100
+        },
+        "src/rules/use-storybook-expect.ts": {
+          "bytesInOutput": 1666
+        },
+        "src/rules/use-storybook-testing-library.ts": {
+          "bytesInOutput": 3178
+        },
+        "src/index.ts": {
+          "bytesInOutput": 1306
+        }
+      },
+      "bytes": 57167
+    }
+  }
+}

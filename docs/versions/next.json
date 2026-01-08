@@ -1,1 +1,1 @@
-{"version":"10.1.0-alpha.10","info":{"plain":"- Core: Significantly improve Storybook's own accessibility - [#32458](https://github.com/storybookjs/storybook/pull/32458), thanks @Sidnioulz!"}}
+{"version":"10.2.0-alpha.14","info":{"plain":"- ReactDocgen: Try using the latest version of the original - [#33454](https://github.com/storybookjs/storybook/pull/33454), thanks @ndelangen!\n- ReactDocgen: Try using the latest version of the original - [#33487](https://github.com/storybookjs/storybook/pull/33487), thanks @ndelangen!"}}

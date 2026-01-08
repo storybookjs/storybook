@@ -16,6 +16,7 @@ export type ComponentRef = {
   importName?: string;
   namespace?: string;
   path?: string;
+  isPackage: boolean;
   reactDocgen?: ReturnType<typeof getReactDocgen>;
 };
 
@@ -145,8 +146,8 @@ export const getComponents = ({
     } // missing binding -> keep (will become null import) // missing binding -> keep (will become null import)
     const isImportBinding = Boolean(
       binding.path.isImportSpecifier?.() ||
-        binding.path.isImportDefaultSpecifier?.() ||
-        binding.path.isImportNamespaceSpecifier?.()
+      binding.path.isImportDefaultSpecifier?.() ||
+      binding.path.isImportNamespaceSpecifier?.()
     );
     return !isImportBinding;
   };
@@ -191,6 +192,7 @@ export const getComponents = ({
     })
     .map((component) => {
       let path;
+      let isPackage = false;
       try {
         if (component.importId && storyFilePath) {
           path = cachedResolveImport(matchPath(component.importId, dirname(storyFilePath)), {
@@ -200,17 +202,28 @@ export const getComponents = ({
       } catch (e) {
         logger.debug(e);
       }
+
+      try {
+        if (component.importId && !component.importId.startsWith('.') && storyFilePath) {
+          // throws when it can not be resolved
+          cachedResolveImport(component.importId, { basedir: dirname(storyFilePath) });
+          isPackage = true;
+        }
+      } catch {}
+
+      const componentWithPackage = { ...component, isPackage };
+
       if (path) {
-        const reactDocgen = getReactDocgen(path, component);
+        const reactDocgen = getReactDocgen(path, componentWithPackage);
         return {
-          ...component,
+          ...componentWithPackage,
           path,
           reactDocgen,
           importOverride:
             reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
         };
       }
-      return component;
+      return componentWithPackage;
     })
     .sort((a, b) => a.componentName.localeCompare(b.componentName));
 
@@ -256,8 +269,6 @@ export const getImports = ({
     order: number;
   };
 
-  const isRelative = (id: string) => id.startsWith('.') || id === '.';
-
   const withSource = components
     .filter((c) => Boolean(c.importId))
     .map((c, idx) => {
@@ -281,7 +292,9 @@ export const getImports = ({
       const rewritten =
         overrideSource !== undefined
           ? overrideSource
-          : packageName && isRelative(importId)
+          : // only rewrite to the package name it the import id is not already a valid package
+            // tsconfig paths such as ~/components/Button and components/Button are not seen as packages
+            packageName && !c.isPackage
             ? packageName
             : importId;
       return { c, src: t.stringLiteral(rewritten), key: rewritten, ord: idx };

@@ -140,8 +140,10 @@ export const Container = styled.div<{
           right: '0',
           width: width ?? '100%',
           height: height ?? '80%',
-          interpolateSize: 'allow-keywords',
           maxWidth: '100%',
+          '@supports (interpolate-size: allow-keywords)': {
+            interpolateSize: 'allow-keywords',
+          },
           '@media (prefers-reduced-motion: no-preference)': {
             animationTimingFunction: 'cubic-bezier(.9,.16,.77,.64)',
             animation:
@@ -185,6 +187,7 @@ export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
 
   return (
     <Button
+      type="button"
       padding="small"
       ariaLabel="Close modal"
       variant="ghost"
@@ -199,7 +202,7 @@ export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
 export const Dialog = {
   Close: () => {
     deprecate('Modal.Dialog.Close is deprecated, please use Modal.Close instead.');
-    return <Close />;
+    return <Close data-deprecated="Modal.Dialog.Close" />;
   },
 };
 
@@ -208,7 +211,7 @@ export const CloseButton = ({ ariaLabel, ...props }: React.ComponentProps<typeof
 
   return (
     <Close asChild>
-      <Button ariaLabel={ariaLabel || 'Close'} {...props}>
+      <Button ariaLabel={ariaLabel || 'Close'} data-deprecated="Modal.CloseButton" {...props}>
         <CrossIcon />
       </Button>
     </Close>
@@ -236,11 +239,12 @@ export const Col = styled.div({
 
 export const Header = ({
   hasClose = true,
+  onClose,
   ...props
-}: React.ComponentProps<typeof Col> & { hasClose?: boolean }) => (
+}: React.ComponentProps<typeof Col> & { hasClose?: boolean; onClose?: () => void }) => (
   <Row>
     <Col {...props} />
-    {hasClose && <Close />}
+    {hasClose && <Close onClick={onClose} />}
   </Row>
 );
 

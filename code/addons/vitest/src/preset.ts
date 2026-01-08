@@ -36,15 +36,20 @@ import { runTestRunner } from './node/boot-test-runner';
 import type { CachedState, ErrorLike, StoreState } from './types';
 import type { StoreEvent } from './types';
 
-type Event = {
-  type: 'test-discrepancy';
-  payload: {
-    storyId: StoryId;
-    browserStatus: 'PASS' | 'FAIL';
-    cliStatus: 'FAIL' | 'PASS';
-    message: string;
-  };
-};
+type Event =
+  | {
+      type: 'test-discrepancy';
+      payload: {
+        storyId: StoryId;
+        browserStatus: 'PASS' | 'FAIL';
+        cliStatus: 'FAIL' | 'PASS';
+        message: string;
+      };
+    }
+  | {
+      type: 'test-run-completed';
+      payload: StoreState['currentRun'];
+    };
 
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
   const core = await options.presets.apply('core');
@@ -64,9 +69,9 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   if (!resolvedPreviewBuilder?.includes('vite')) {
     if (framework.includes('nextjs')) {
       log(dedent`
-        You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.
+        You're using ${framework}, which is a Webpack-based builder. In order to use Storybook's Vitest addon, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.
 
-        Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs?ref=upgrade#with-vite')}\n
+        Refer to the following documentation for more information: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs-vite?ref=upgrade#choose-between-vite-and-webpack')}\n
       `);
     }
     return channel;
@@ -183,13 +188,15 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
 
     channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
-      telemetry('addon-test', {
-        ...event,
-        payload: {
-          ...event.payload,
-          storyId: oneWayHash(event.payload.storyId),
-        },
-      });
+      if (event.type !== 'test-run-completed') {
+        telemetry('addon-test', {
+          ...event,
+          payload: {
+            ...event.payload,
+            storyId: oneWayHash(event.payload.storyId),
+          },
+        });
+      }
     });
 
     store.subscribe('TOGGLE_WATCHING', async (event) => {

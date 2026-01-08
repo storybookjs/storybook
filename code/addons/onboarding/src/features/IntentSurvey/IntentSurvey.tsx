@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Fragment, useState } from 'react';
 
 import { Button, Form, Modal } from 'storybook/internal/components';
 
@@ -65,9 +65,11 @@ const Checkbox = styled(Form.Checkbox)({
 });
 
 export const IntentSurvey = ({
+  isOpen,
   onComplete,
   onDismiss,
 }: {
+  isOpen: boolean;
   onComplete: (formData: Record<string, Record<string, boolean>>) => void;
   onDismiss: () => void;
 }) => {
@@ -172,7 +174,7 @@ export const IntentSurvey = ({
   return (
     <Modal
       ariaLabel="Storybook user survey"
-      defaultOpen
+      open={isOpen}
       width={420}
       onOpenChange={(isOpen) => {
         if (!isOpen) {
@@ -182,14 +184,14 @@ export const IntentSurvey = ({
     >
       <Form onSubmit={onSubmitForm} id="intent-survey-form">
         <Content>
-          <Modal.Header>
+          <Modal.Header onClose={onDismiss}>
             <Modal.Title>Help improve Storybook</Modal.Title>
           </Modal.Header>
 
           {(Object.keys(formFields) as Array<keyof FormFields>).map((key) => {
             const field = formFields[key];
             return (
-              <React.Fragment key={key}>
+              <Fragment key={key}>
                 <Question>{field.label}</Question>
                 {field.type === 'checkbox' && (
                   <Row>
@@ -233,7 +235,7 @@ export const IntentSurvey = ({
                     ))}
                   </Form.Select>
                 )}
-              </React.Fragment>
+              </Fragment>
             );
           })}
 

@@ -1,11 +1,10 @@
-import { access, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
 import type { TemplateKey } from '../get-template';
 import { exec } from './exec';
-import touch from './touch';
 
 export type YarnOptions = {
   cwd: string;
@@ -41,7 +40,6 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     playwright: '1.52.0',
     'playwright-core': '1.52.0',
     '@playwright/test': '1.52.0',
-    rollup: '4.44.2',
   };
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
@@ -52,13 +50,17 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   // TODO: Remove in SB11
   const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
-  const command = [
-    touch('yarn.lock'),
-    touch('.yarnrc.yml'),
-    `yarn set version berry`,
+  await mkdir(cwd, { recursive: true }).then(() =>
+    Promise.all([
+      //
+      writeFile(join(cwd, 'yarn.lock'), ''),
+      writeFile(join(cwd, '.yarnrc.yml'), ''),
+    ])
+  );
 
-    // Use the global cache so we aren't re-caching dependencies each time we run sandbox
-    `yarn config set enableGlobalCache true`,
+  const command = [
+    `yarn set version berry`,
+    `yarn config set enableGlobalCache true`, // Use the global cache so we aren't re-caching dependencies each time we run sandbox
     `yarn config set checksumBehavior ignore`,
   ];
 
@@ -67,13 +69,13 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   }
 
   await exec(
-    command,
+    command.join(' && '),
     { cwd },
     {
       dryRun,
       debug,
-      startMessage: `🧶 Installing Yarn 2`,
-      errorMessage: `🚨 Installing Yarn 2 failed`,
+      startMessage: `🧶 Installing Yarn`,
+      errorMessage: `🚨 Installing Yarn failed`,
     }
   );
 };
@@ -93,7 +95,11 @@ export const addWorkaroundResolutions = async ({
   const content = await readFile(packageJsonPath, 'utf-8');
   const packageJson = JSON.parse(content);
 
-  const additionalReact19Resolutions = ['nextjs/default-ts', 'nextjs/prerelease'].includes(key)
+  const additionalReact19Resolutions = [
+    'nextjs/default-ts',
+    'nextjs/prerelease',
+    'react-native-web-vite/expo-ts',
+  ].includes(key)
     ? {
         react: '^19.0.0',
         'react-dom': '^19.0.0',
@@ -103,7 +109,11 @@ export const addWorkaroundResolutions = async ({
           react: packageJson.dependencies.react,
           'react-dom': packageJson.dependencies['react-dom'],
         }
-      : {};
+      : key === 'react-rsbuild/default-ts'
+        ? {
+            'react-docgen': '^8.0.2',
+          }
+        : {};
 
   packageJson.resolutions = {
     ...packageJson.resolutions,
@@ -111,7 +121,6 @@ export const addWorkaroundResolutions = async ({
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
-    rollup: '4.44.2',
   };
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
@@ -126,6 +135,7 @@ export const configureYarn2ForVerdaccio = async ({
   const command = [
     // We don't want to use the cache or we might get older copies of our built packages
     // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed
+    // TODO publish unique versions instead
     `yarn config set enableGlobalCache false`,
     `yarn config set enableMirror false`,
     // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)
@@ -143,7 +153,11 @@ export const configureYarn2ForVerdaccio = async ({
     // React prereleases will have INCOMPATIBLE_PEER_DEPENDENCY errors because of transitive dependencies not allowing v19 betas
     key.includes('nextjs') ||
     key.includes('react-vite/prerelease') ||
-    key.includes('react-webpack/prerelease')
+    key.includes('react-webpack/prerelease') ||
+    key.includes('react-rsbuild/default-ts') ||
+    key.includes('vue-rsbuild/default-ts') ||
+    key.includes('html-rsbuild/default-ts') ||
+    key.includes('web-components-rsbuild/default-ts')
   ) {
     // Don't error with INCOMPATIBLE_PEER_DEPENDENCY for SvelteKit sandboxes, it is expected to happen with @sveltejs/vite-plugin-svelte
     command.push(
@@ -160,7 +174,7 @@ export const configureYarn2ForVerdaccio = async ({
   }
 
   await exec(
-    command,
+    command.join(' && '),
     { cwd },
     {
       dryRun,

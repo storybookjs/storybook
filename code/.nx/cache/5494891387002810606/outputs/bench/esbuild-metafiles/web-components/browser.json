@@ -1,0 +1,437 @@
+{
+  "inputs": {
+    "src/globals.ts": {
+      "bytes": 134,
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/public-types.ts": {
+      "bytes": 1483,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/framework-api.ts": {
+      "bytes": 1198,
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/render.ts": {
+      "bytes": 2609,
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lit",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lit/directive-helpers.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/entry-preview.ts": {
+      "bytes": 113,
+      "imports": [
+        {
+          "path": "src/render.ts",
+          "kind": "import-statement",
+          "original": "./render"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/portable-stories.ts": {
+      "bytes": 1381,
+      "imports": [
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/entry-preview.ts",
+          "kind": "import-statement",
+          "original": "./entry-preview"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 1112,
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/globals.ts",
+          "kind": "import-statement",
+          "original": "./globals"
+        },
+        {
+          "path": "src/public-types.ts",
+          "kind": "import-statement",
+          "original": "./public-types"
+        },
+        {
+          "path": "src/framework-api.ts",
+          "kind": "import-statement",
+          "original": "./framework-api"
+        },
+        {
+          "path": "src/portable-stories.ts",
+          "kind": "import-statement",
+          "original": "./portable-stories"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/custom-elements.ts": {
+      "bytes": 4616,
+      "imports": [
+        {
+          "path": "storybook/internal/client-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tiny-invariant",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/index.ts",
+          "kind": "import-statement",
+          "original": ".."
+        }
+      ],
+      "format": "esm"
+    },
+    "src/entry-preview-argtypes.ts": {
+      "bytes": 470,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/docs/custom-elements.ts",
+          "kind": "import-statement",
+          "original": "./docs/custom-elements"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/sourceDecorator.ts": {
+      "bytes": 1884,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lit",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/entry-preview-docs.ts": {
+      "bytes": 483,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/docs/sourceDecorator.ts",
+          "kind": "import-statement",
+          "original": "./docs/sourceDecorator"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-XQFQKYGQ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-UN5GYDGC.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-4BE7D4DS.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "getCustomElements",
+        "isValidComponent",
+        "isValidMetaData",
+        "setCustomElements",
+        "setCustomElementsManifest",
+        "setProjectAnnotations"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {},
+      "bytes": 427
+    },
+    "dist/entry-preview.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-UN5GYDGC.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-4BE7D4DS.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "parameters",
+        "render",
+        "renderToCanvas"
+      ],
+      "entryPoint": "src/entry-preview.ts",
+      "inputs": {},
+      "bytes": 195
+    },
+    "dist/entry-preview-argtypes.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-XQFQKYGQ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-UN5GYDGC.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-4BE7D4DS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/client-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tiny-invariant",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "argTypesEnhancers",
+        "parameters"
+      ],
+      "entryPoint": "src/entry-preview-argtypes.ts",
+      "inputs": {
+        "src/entry-preview-argtypes.ts": {
+          "bytesInOutput": 193
+        },
+        "src/docs/custom-elements.ts": {
+          "bytesInOutput": 3335
+        }
+      },
+      "bytes": 3880
+    },
+    "dist/_browser-chunks/chunk-XQFQKYGQ.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-UN5GYDGC.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "getCustomElements",
+        "isValidComponent",
+        "isValidMetaData",
+        "setCustomElements",
+        "setCustomElementsManifest",
+        "setProjectAnnotations"
+      ],
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 369
+        },
+        "src/globals.ts": {
+          "bytesInOutput": 130
+        },
+        "src/framework-api.ts": {
+          "bytesInOutput": 1023
+        },
+        "src/portable-stories.ts": {
+          "bytesInOutput": 306
+        }
+      },
+      "bytes": 2144
+    },
+    "dist/_browser-chunks/chunk-UN5GYDGC.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-4BE7D4DS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lit",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lit/directive-helpers.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "entry_preview_exports",
+        "parameters",
+        "render",
+        "renderToCanvas"
+      ],
+      "inputs": {
+        "src/entry-preview.ts": {
+          "bytesInOutput": 216
+        },
+        "src/render.ts": {
+          "bytesInOutput": 1723
+        }
+      },
+      "bytes": 2136
+    },
+    "dist/entry-preview-docs.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-4BE7D4DS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lit",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "decorators",
+        "parameters"
+      ],
+      "entryPoint": "src/entry-preview-docs.ts",
+      "inputs": {
+        "src/entry-preview-docs.ts": {
+          "bytesInOutput": 246
+        },
+        "src/docs/sourceDecorator.ts": {
+          "bytesInOutput": 1115
+        }
+      },
+      "bytes": 1538
+    },
+    "dist/_browser-chunks/chunk-4BE7D4DS.js": {
+      "imports": [],
+      "exports": [
+        "__export"
+      ],
+      "inputs": {},
+      "bytes": 189
+    }
+  }
+}

@@ -1,0 +1,10 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/lib/eslint-plugin[39m
+Running prebuild script
+(node:44036) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✅ Generated types for [36mlib/eslint-plugin/src/index.ts[39m
+Prebuild script completed in [33m15 s[39m
+Bundled in [33m21 ms[39m
+Generated types in [33m2.39 s[39m

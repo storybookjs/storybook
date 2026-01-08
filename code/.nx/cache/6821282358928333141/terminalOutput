@@ -1,0 +1,15 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/addons/docs[39m
+(node:44021) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✅ Generated types for [36maddons/docs/src/ember/index.ts[39m
+Generated an empty chunk: "index".
+✅ Generated types for [36maddons/docs/src/web-components/index.ts[39m
+✅ Generated types for [36maddons/docs/src/mdx-react-shim.ts[39m
+✅ Generated types for [36maddons/docs/src/angular/index.ts[39m
+✅ Generated types for [36maddons/docs/src/preview.ts[39m
+✅ Generated types for [36maddons/docs/src/index.ts[39m
+✅ Generated types for [36maddons/docs/src/blocks.ts[39m
+Bundled in [33m2.33 s[39m
+Generated types in [33m6.02 s[39m

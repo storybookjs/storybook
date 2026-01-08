@@ -1,19 +1,18 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
-import { optionalEnvToBoolean } from 'storybook/internal/common';
+import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
-  findConfigFile,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
   loadEnvs,
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
+import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
@@ -23,6 +22,7 @@ import type {
   Options,
   PresetProperty,
   PresetPropertyFn,
+  StorybookConfigRaw,
 } from 'storybook/internal/types';
 
 import { isAbsolute, join } from 'pathe';
@@ -34,6 +34,7 @@ import { initCreateNewStoryChannel } from '../server-channel/create-new-story-ch
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
 import { initPreviewInitializedChannel } from '../server-channel/preview-initialized-channel';
+import { initializeChecklist } from '../utils/checklist';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
@@ -110,7 +111,7 @@ export const babel = async (_: unknown, options: Options) => {
     ...babelDefault,
     // This override makes sure that we will never transpile babel further down then the browsers that storybook supports.
     // This is needed to support the mount property of the context described here:
-    // https://storybook.js.org/docs/writing-tests/interaction-testing#run-code-before-each-test
+    // https://storybook.js.org/docs/writing-tests/interaction-testing#run-code-before-each-story-in-a-file
     overrides: [
       ...(babelDefault?.overrides ?? []),
       {
@@ -253,6 +254,7 @@ export const experimental_serverChannel = async (
 ) => {
   const coreOptions = await options.presets.apply('core');
 
+  initializeChecklist();
   initializeWhatsNew(channel, options, coreOptions);
   initializeSaveStory(channel, options, coreOptions);
 
@@ -289,72 +291,41 @@ export const managerEntries = async (existing: any) => {
   ];
 };
 
-export const viteFinal = async (
-  existing: import('vite').UserConfig,
-  options: Options
-): Promise<import('vite').UserConfig> => {
-  const previewConfigPath = findConfigFile('preview', options.configDir);
-
-  // If there's no preview file, there's nothing to mock.
-  if (!previewConfigPath) {
-    return existing;
+// Store the promise (not the result) to prevent race conditions.
+// The promise is assigned synchronously, so concurrent calls will share the same initialization.
+// This is essentially an async singleton pattern.
+let storyIndexGeneratorPromise: Promise<StoryIndexGenerator> | undefined;
+export const storyIndexGenerator: PresetPropertyFn<
+  'storyIndexGenerator',
+  StorybookConfigRaw
+> = async (_, options) => {
+  if (storyIndexGeneratorPromise) {
+    return storyIndexGeneratorPromise;
   }
 
-  const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
-  const { viteMockPlugin } = await import('./vitePlugins/vite-mock/plugin');
-  const coreOptions = await options.presets.apply('core');
+  storyIndexGeneratorPromise = (async () => {
+    const workingDir = process.cwd();
+    const configDir = options.configDir;
+    const stories = await options.presets.apply('stories');
+    const normalizedStories = normalizeStories(stories, {
+      configDir,
+      workingDir,
+    });
 
-  return {
-    ...existing,
-    plugins: [
-      ...(existing.plugins ?? []),
-      ...(previewConfigPath
-        ? [
-            viteInjectMockerRuntime({ previewConfigPath }),
-            viteMockPlugin({ previewConfigPath, coreOptions, configDir: options.configDir }),
-          ]
-        : []),
-    ],
-  };
-};
+    const [indexers, docs] = await Promise.all([
+      options.presets.apply('experimental_indexers', []),
+      options.presets.apply('docs'),
+    ]);
 
-export const webpackFinal = async (
-  config: import('webpack').Configuration,
-  options: Options
-): Promise<import('webpack').Configuration> => {
-  const previewConfigPath = findConfigFile('preview', options.configDir);
+    const generator = new StoryIndexGenerator(normalizedStories, {
+      workingDir,
+      configDir,
+      indexers,
+      docs,
+    });
+    await generator.initialize();
+    return generator;
+  })();
 
-  // If there's no preview file, there's nothing to mock.
-  if (!previewConfigPath) {
-    return config;
-  }
-
-  const { WebpackMockPlugin } = await import('./webpack/plugins/webpack-mock-plugin');
-  const { WebpackInjectMockerRuntimePlugin } = await import(
-    './webpack/plugins/webpack-inject-mocker-runtime-plugin'
-  );
-
-  config.plugins = config.plugins || [];
-
-  // 1. Add the loader to normalize sb.mock(import(...)) calls.
-  config.module!.rules!.push({
-    test: /preview\.(t|j)sx?$/,
-    use: [
-      {
-        loader: fileURLToPath(
-          import.meta.resolve('storybook/webpack/loaders/storybook-mock-transform-loader')
-        ),
-      },
-    ],
-  });
-
-  // 2. Add the plugin to handle module replacement based on sb.mock() calls.
-  // This plugin scans the preview file and sets up rules to swap modules.
-  config.plugins.push(new WebpackMockPlugin({ previewConfigPath }));
-
-  // 3. Add the plugin to inject the mocker runtime script into the HTML.
-  // This ensures the `sb` object is available before any other code runs.
-  config.plugins.push(new WebpackInjectMockerRuntimePlugin());
-
-  return config;
+  return storyIndexGeneratorPromise;
 };

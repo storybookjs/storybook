@@ -318,7 +318,8 @@ export class NextJsSharpError extends StorybookError {
       name: 'NextJsSharpError',
       category: Category.FRAMEWORK_NEXTJS,
       code: 1,
-      documentation: 'https://storybook.js.org/docs/get-started/nextjs#faq',
+      documentation:
+        'https://storybook.js.org/docs/get-started/frameworks/nextjs#error-you-are-importing-avif-images-but-you-dont-have-sharp-installed-you-have-to-install-sharp-in-order-to-use-image-optimization-features-in-nextjs',
       message: dedent`
       You are importing avif images, but you don't have sharp installed.
 

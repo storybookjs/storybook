@@ -1,0 +1,141 @@
+{
+  "inputs": {
+    "src/node/index.ts": {
+      "bytes": 123,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/util.ts": {
+      "bytes": 485,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "empathic/package",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/server/framework-preset-babel-ember.ts": {
+      "bytes": 1697,
+      "imports": [
+        {
+          "path": "ember-source/dist/ember-template-compiler.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/util.ts",
+          "kind": "import-statement",
+          "original": "../util"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preset.ts": {
+      "bytes": 1701,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-webpack5",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/node/index.js": {
+      "imports": [],
+      "exports": [
+        "defineMain"
+      ],
+      "entryPoint": "src/node/index.ts",
+      "inputs": {
+        "src/node/index.ts": {
+          "bytesInOutput": 49
+        }
+      },
+      "bytes": 716
+    },
+    "dist/server/framework-preset-babel-ember.js": {
+      "imports": [
+        {
+          "path": "ember-source/dist/ember-template-compiler.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "empathic/package",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "babel",
+        "previewAnnotations"
+      ],
+      "entryPoint": "src/server/framework-preset-babel-ember.ts",
+      "inputs": {
+        "src/server/framework-preset-babel-ember.ts": {
+          "bytesInOutput": 1262
+        },
+        "src/util.ts": {
+          "bytesInOutput": 446
+        }
+      },
+      "bytes": 2480
+    },
+    "dist/preset.js": {
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-webpack5",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "addons",
+        "core",
+        "webpackFinal"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/preset.ts": {
+          "bytesInOutput": 1430
+        }
+      },
+      "bytes": 2113
+    }
+  }
+}

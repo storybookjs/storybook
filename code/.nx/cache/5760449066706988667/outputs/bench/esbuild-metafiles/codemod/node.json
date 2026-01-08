@@ -1,0 +1,327 @@
+{
+  "inputs": {
+    "src/lib/utils.ts": {
+      "bytes": 645,
+      "imports": [
+        {
+          "path": "es-toolkit/string",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 3771,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "cross-spawn",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tinyglobby",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/lib/utils.ts",
+          "kind": "import-statement",
+          "original": "./lib/utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/transforms/upgrade-deprecated-types.ts": {
+      "bytes": 4996,
+      "imports": [
+        {
+          "path": "storybook/internal/babel",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "prettier",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/transforms/csf-2-to-3.ts": {
+      "bytes": 12122,
+      "imports": [
+        {
+          "path": "storybook/internal/babel",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "prettier",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tiny-invariant",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/transforms/upgrade-deprecated-types.ts",
+          "kind": "import-statement",
+          "original": "./upgrade-deprecated-types"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/transforms/find-implicit-spies.ts": {
+      "bytes": 4727,
+      "imports": [
+        {
+          "path": "storybook/internal/babel",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/transforms/upgrade-hierarchy-separators.js": {
+      "bytes": 1101,
+      "imports": [],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "cross-spawn",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tinyglobby",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "es-toolkit/string",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "listCodemods",
+        "runCodemod"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 3215
+        },
+        "src/lib/utils.ts": {
+          "bytesInOutput": 266
+        }
+      },
+      "bytes": 4191
+    },
+    "dist/transforms/csf-2-to-3.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-MCRJRETC.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/babel",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "prettier",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tiny-invariant",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "default",
+        "parser"
+      ],
+      "entryPoint": "src/transforms/csf-2-to-3.ts",
+      "inputs": {
+        "src/transforms/csf-2-to-3.ts": {
+          "bytesInOutput": 8744
+        }
+      },
+      "bytes": 9514
+    },
+    "dist/transforms/find-implicit-spies.js": {
+      "imports": [
+        {
+          "path": "storybook/internal/babel",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "default",
+        "parser"
+      ],
+      "entryPoint": "src/transforms/find-implicit-spies.ts",
+      "inputs": {
+        "src/transforms/find-implicit-spies.ts": {
+          "bytesInOutput": 3878
+        }
+      },
+      "bytes": 4579
+    },
+    "dist/transforms/upgrade-deprecated-types.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-MCRJRETC.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "default",
+        "parser",
+        "upgradeDeprecatedTypes"
+      ],
+      "entryPoint": "src/transforms/upgrade-deprecated-types.ts",
+      "inputs": {},
+      "bytes": 786
+    },
+    "dist/_node-chunks/chunk-MCRJRETC.js": {
+      "imports": [
+        {
+          "path": "storybook/internal/babel",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "prettier",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "parser",
+        "transform",
+        "upgradeDeprecatedTypes"
+      ],
+      "inputs": {
+        "src/transforms/upgrade-deprecated-types.ts": {
+          "bytesInOutput": 3445
+        }
+      },
+      "bytes": 4167
+    },
+    "dist/transforms/upgrade-hierarchy-separators.js": {
+      "imports": [],
+      "exports": [
+        "default"
+      ],
+      "entryPoint": "src/transforms/upgrade-hierarchy-separators.js",
+      "inputs": {
+        "src/transforms/upgrade-hierarchy-separators.js": {
+          "bytesInOutput": 892
+        }
+      },
+      "bytes": 1594
+    }
+  }
+}

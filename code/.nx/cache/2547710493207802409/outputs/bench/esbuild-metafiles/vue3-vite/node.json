@@ -1,0 +1,238 @@
+{
+  "inputs": {
+    "src/plugins/vue-component-meta.ts": {
+      "bytes": 10804,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vue-component-meta",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vue-docgen-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/vue-docgen.ts": {
+      "bytes": 710,
+      "imports": [
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vue-docgen-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/vue-template.ts": {
+      "bytes": 312,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/preset.ts": {
+      "bytes": 1684,
+      "imports": [
+        {
+          "path": "src/plugins/vue-component-meta.ts",
+          "kind": "import-statement",
+          "original": "./plugins/vue-component-meta"
+        },
+        {
+          "path": "src/plugins/vue-docgen.ts",
+          "kind": "import-statement",
+          "original": "./plugins/vue-docgen"
+        },
+        {
+          "path": "src/plugins/vue-template.ts",
+          "kind": "import-statement",
+          "original": "./plugins/vue-template"
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/node/index.ts": {
+      "bytes": 123,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/vite-plugin.ts": {
+      "bytes": 198,
+      "imports": [
+        {
+          "path": "src/plugins/vue-template.ts",
+          "kind": "import-statement",
+          "original": "./plugins/vue-template"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/preset.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-T37CWNGL.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vue-component-meta",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vue-docgen-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vue-docgen-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "exports": [
+        "core",
+        "viteFinal"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/plugins/vue-component-meta.ts": {
+          "bytesInOutput": 6022
+        },
+        "src/plugins/vue-docgen.ts": {
+          "bytesInOutput": 576
+        },
+        "src/preset.ts": {
+          "bytesInOutput": 841
+        }
+      },
+      "bytes": 8245
+    },
+    "dist/node/index.js": {
+      "imports": [],
+      "exports": [
+        "defineMain"
+      ],
+      "entryPoint": "src/node/index.ts",
+      "inputs": {
+        "src/node/index.ts": {
+          "bytesInOutput": 49
+        }
+      },
+      "bytes": 710
+    },
+    "dist/vite-plugin.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-T37CWNGL.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "storybookVuePlugin"
+      ],
+      "entryPoint": "src/vite-plugin.ts",
+      "inputs": {
+        "src/vite-plugin.ts": {
+          "bytesInOutput": 56
+        }
+      },
+      "bytes": 800
+    },
+    "dist/_node-chunks/chunk-T37CWNGL.js": {
+      "imports": [],
+      "exports": [
+        "templateCompilation"
+      ],
+      "inputs": {
+        "src/plugins/vue-template.ts": {
+          "bytesInOutput": 230
+        }
+      },
+      "bytes": 911
+    }
+  }
+}

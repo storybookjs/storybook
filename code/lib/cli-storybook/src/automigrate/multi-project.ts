@@ -1,6 +1,6 @@
 import type { JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS, type TaskLogInstance, logger, prompt } from 'storybook/internal/node-logger';
-import { sanitizeError } from 'storybook/internal/telemetry';
+import { ErrorCollector, sanitizeError } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { UpgradeOptions } from '../upgrade';
@@ -20,6 +20,7 @@ export interface ProjectAutomigrationData {
   storybookVersion: string;
   beforeVersion: string;
   storiesPaths: string[];
+  hasCsfFactoryPreview: boolean;
 }
 
 export interface AutomigrationCheckResultReport {
@@ -109,6 +110,7 @@ export async function collectAutomigrationsAcrossProjects(
           previewConfigPath: project.previewConfigPath,
           mainConfigPath: project.mainConfigPath,
           storiesPaths: project.storiesPaths,
+          hasCsfFactoryPreview: project.hasCsfFactoryPreview,
         };
         const result = await fix.check(checkOptions);
 
@@ -124,6 +126,7 @@ export async function collectAutomigrationsAcrossProjects(
           `Failed to check fix ${fix.id} for project ${shortenPath(project.configDir)}.`
         );
         logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
+        ErrorCollector.addError(error);
       }
     }
   }
@@ -388,6 +391,7 @@ export async function runAutomigrationsForProjects(
         fixFailures[fix.id] = sanitizeError(error as Error);
         taskLog.message(CLI_COLORS.error(`${logger.SYMBOLS.error} ${automigration.fix.id}`));
         logger.debug(errorMessage);
+        ErrorCollector.addError(error);
       }
     }
 
@@ -428,6 +432,7 @@ export async function runAutomigrations(
     storybookVersion: project.currentCLIVersion,
     beforeVersion: project.beforeVersion,
     storiesPaths: project.storiesPaths,
+    hasCsfFactoryPreview: project.hasCsfFactoryPreview,
   }));
 
   const detectingAutomigrationTask = prompt.taskLog({

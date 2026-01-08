@@ -1,0 +1,195 @@
+{
+  "inputs": {
+    "src/types.ts": {
+      "bytes": 1253,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/load-custom-webpack-config.ts": {
+      "bytes": 310,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/check-webpack-version.ts": {
+      "bytes": 804,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/merge-webpack-config.ts": {
+      "bytes": 2328,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/importPipeline.ts": {
+      "bytes": 956,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/to-importFn.ts": {
+      "bytes": 3249,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/importPipeline.ts",
+          "kind": "import-statement",
+          "original": "./importPipeline"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/to-require-context.ts": {
+      "bytes": 812,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 221,
+      "imports": [
+        {
+          "path": "src/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        },
+        {
+          "path": "src/load-custom-webpack-config.ts",
+          "kind": "import-statement",
+          "original": "./load-custom-webpack-config"
+        },
+        {
+          "path": "src/check-webpack-version.ts",
+          "kind": "import-statement",
+          "original": "./check-webpack-version"
+        },
+        {
+          "path": "src/merge-webpack-config.ts",
+          "kind": "import-statement",
+          "original": "./merge-webpack-config"
+        },
+        {
+          "path": "src/to-importFn.ts",
+          "kind": "import-statement",
+          "original": "./to-importFn"
+        },
+        {
+          "path": "src/to-require-context.ts",
+          "kind": "import-statement",
+          "original": "./to-require-context"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "checkWebpackVersion",
+        "loadCustomWebpackConfig",
+        "mergeConfigs",
+        "toImportFn",
+        "toImportFnPart",
+        "toRequireContext",
+        "toRequireContextString",
+        "webpackIncludeRegexp"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 0
+        },
+        "src/load-custom-webpack-config.ts": {
+          "bytesInOutput": 282
+        },
+        "src/check-webpack-version.ts": {
+          "bytesInOutput": 735
+        },
+        "src/merge-webpack-config.ts": {
+          "bytesInOutput": 1684
+        },
+        "src/to-importFn.ts": {
+          "bytesInOutput": 2200
+        },
+        "src/importPipeline.ts": {
+          "bytesInOutput": 287
+        },
+        "src/to-require-context.ts": {
+          "bytesInOutput": 476
+        }
+      },
+      "bytes": 6662
+    }
+  }
+}

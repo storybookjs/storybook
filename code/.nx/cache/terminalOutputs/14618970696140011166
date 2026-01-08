@@ -1,0 +1,14 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/frameworks/nextjs[39m
+(node:44171) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✅ Generated types for [36mframeworks/nextjs/src/node/index.ts[39m
+✅ Generated types for [36mframeworks/nextjs/src/export-mocks/navigation/index.ts[39m
+✅ Generated types for [36mframeworks/nextjs/src/export-mocks/router/index.ts[39m
+✅ Generated types for [36mframeworks/nextjs/src/export-mocks/cache/index.ts[39m
+✅ Generated types for [36mframeworks/nextjs/src/export-mocks/headers/index.ts[39m
+✅ Generated types for [36mframeworks/nextjs/src/preview.tsx[39m
+✅ Generated types for [36mframeworks/nextjs/src/index.ts[39m
+Bundled in [33m371 ms[39m
+Generated types in [33m4.67 s[39m

@@ -1,0 +1,920 @@
+{
+  "inputs": {
+    "src/client/globals.ts": {
+      "bytes": 1366,
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/public-types.ts": {
+      "bytes": 3287,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/client/angular-beta/utils/NgComponentAnalyzer.ts": {
+      "bytes": 4146,
+      "imports": [
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/ComputesTemplateFromComponent.ts": {
+      "bytes": 6520,
+      "imports": [
+        {
+          "path": "src/client/angular-beta/utils/NgComponentAnalyzer.ts",
+          "kind": "import-statement",
+          "original": "./utils/NgComponentAnalyzer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/StorybookProvider.ts": {
+      "bytes": 1017,
+      "imports": [
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/utils/NgModulesAnalyzer.ts": {
+      "bytes": 1531,
+      "imports": [
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/utils/PropertyExtractor.ts": {
+      "bytes": 9159,
+      "imports": [
+        {
+          "path": "@angular/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/platform-browser",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/client/angular-beta/utils/NgModulesAnalyzer.ts",
+          "kind": "import-statement",
+          "original": "./NgModulesAnalyzer"
+        },
+        {
+          "path": "@angular/platform-browser/animations",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/StorybookWrapperComponent.ts": {
+      "bytes": 5411,
+      "imports": [
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs/operators",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/client/angular-beta/StorybookProvider.ts",
+          "kind": "import-statement",
+          "original": "./StorybookProvider"
+        },
+        {
+          "path": "src/client/angular-beta/utils/NgComponentAnalyzer.ts",
+          "kind": "import-statement",
+          "original": "./utils/NgComponentAnalyzer"
+        },
+        {
+          "path": "src/client/angular-beta/utils/PropertyExtractor.ts",
+          "kind": "import-statement",
+          "original": "./utils/PropertyExtractor"
+        },
+        {
+          "path": "<runtime>",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/StorybookModule.ts": {
+      "bytes": 1214,
+      "imports": [
+        {
+          "path": "src/client/angular-beta/ComputesTemplateFromComponent.ts",
+          "kind": "import-statement",
+          "original": "./ComputesTemplateFromComponent"
+        },
+        {
+          "path": "src/client/angular-beta/StorybookWrapperComponent.ts",
+          "kind": "import-statement",
+          "original": "./StorybookWrapperComponent"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/utils/BootstrapQueue.ts": {
+      "bytes": 1963,
+      "imports": [
+        {
+          "path": "@angular/core",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/utils/Zoneless.ts": {
+      "bytes": 376,
+      "imports": [
+        {
+          "path": "@angular/core",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/AbstractRenderer.ts": {
+      "bytes": 7885,
+      "imports": [
+        {
+          "path": "@angular/platform-browser",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "telejson",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/client/angular-beta/StorybookModule.ts",
+          "kind": "import-statement",
+          "original": "./StorybookModule"
+        },
+        {
+          "path": "src/client/angular-beta/StorybookProvider.ts",
+          "kind": "import-statement",
+          "original": "./StorybookProvider"
+        },
+        {
+          "path": "src/client/angular-beta/utils/BootstrapQueue.ts",
+          "kind": "import-statement",
+          "original": "./utils/BootstrapQueue"
+        },
+        {
+          "path": "src/client/angular-beta/utils/PropertyExtractor.ts",
+          "kind": "import-statement",
+          "original": "./utils/PropertyExtractor"
+        },
+        {
+          "path": "src/client/angular-beta/utils/Zoneless.ts",
+          "kind": "import-statement",
+          "original": "./utils/Zoneless"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/CanvasRenderer.ts": {
+      "bytes": 496,
+      "imports": [
+        {
+          "path": "src/client/angular-beta/AbstractRenderer.ts",
+          "kind": "import-statement",
+          "original": "./AbstractRenderer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/utils/StoryUID.ts": {
+      "bytes": 1178,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/client/angular-beta/DocsRenderer.ts": {
+      "bytes": 1844,
+      "imports": [
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/client/angular-beta/AbstractRenderer.ts",
+          "kind": "import-statement",
+          "original": "./AbstractRenderer"
+        },
+        {
+          "path": "src/client/angular-beta/utils/StoryUID.ts",
+          "kind": "import-statement",
+          "original": "./utils/StoryUID"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/angular-beta/RendererFactory.ts": {
+      "bytes": 1871,
+      "imports": [
+        {
+          "path": "src/client/angular-beta/AbstractRenderer.ts",
+          "kind": "import-statement",
+          "original": "./AbstractRenderer"
+        },
+        {
+          "path": "src/client/angular-beta/CanvasRenderer.ts",
+          "kind": "import-statement",
+          "original": "./CanvasRenderer"
+        },
+        {
+          "path": "src/client/angular-beta/DocsRenderer.ts",
+          "kind": "import-statement",
+          "original": "./DocsRenderer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/render.ts": {
+      "bytes": 740,
+      "imports": [
+        {
+          "path": "@angular/compiler",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/client/angular-beta/RendererFactory.ts",
+          "kind": "import-statement",
+          "original": "./angular-beta/RendererFactory"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/portable-stories.ts": {
+      "bytes": 1375,
+      "imports": [
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/client/render.ts",
+          "kind": "import-statement",
+          "original": "./render"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/decorators.ts": {
+      "bytes": 3003,
+      "imports": [
+        {
+          "path": "src/client/angular-beta/ComputesTemplateFromComponent.ts",
+          "kind": "import-statement",
+          "original": "./angular-beta/ComputesTemplateFromComponent"
+        },
+        {
+          "path": "src/client/angular-beta/utils/NgComponentAnalyzer.ts",
+          "kind": "import-statement",
+          "original": "./angular-beta/utils/NgComponentAnalyzer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/argsToTemplate.ts": {
+      "bytes": 3094,
+      "imports": [
+        {
+          "path": "src/client/angular-beta/ComputesTemplateFromComponent.ts",
+          "kind": "import-statement",
+          "original": "./angular-beta/ComputesTemplateFromComponent"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/index.ts": {
+      "bytes": 302,
+      "imports": [
+        {
+          "path": "src/client/globals.ts",
+          "kind": "import-statement",
+          "original": "./globals"
+        },
+        {
+          "path": "src/client/public-types.ts",
+          "kind": "import-statement",
+          "original": "./public-types"
+        },
+        {
+          "path": "src/client/portable-stories.ts",
+          "kind": "import-statement",
+          "original": "./portable-stories"
+        },
+        {
+          "path": "src/client/decorators.ts",
+          "kind": "import-statement",
+          "original": "./decorators"
+        },
+        {
+          "path": "src/client/argsToTemplate.ts",
+          "kind": "import-statement",
+          "original": "./argsToTemplate"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/types.ts": {
+      "bytes": 1305,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 391,
+      "imports": [
+        {
+          "path": "src/client/index.ts",
+          "kind": "import-statement",
+          "original": "./client/index"
+        },
+        {
+          "path": "src/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/decorateStory.ts": {
+      "bytes": 2172,
+      "imports": [
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/client/angular-beta/ComputesTemplateFromComponent.ts",
+          "kind": "import-statement",
+          "original": "./angular-beta/ComputesTemplateFromComponent"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/compodoc.ts": {
+      "bytes": 9243,
+      "imports": [
+        {
+          "path": "storybook/internal/client-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/config.ts": {
+      "bytes": 598,
+      "imports": [
+        {
+          "path": "src/client/globals.ts",
+          "kind": "import-statement",
+          "original": "./globals"
+        },
+        {
+          "path": "src/client/render.ts",
+          "kind": "import-statement",
+          "original": "./render"
+        },
+        {
+          "path": "src/client/decorateStory.ts",
+          "kind": "import-statement",
+          "original": "./decorateStory"
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/client/compodoc.ts",
+          "kind": "import-statement",
+          "original": "./compodoc"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/preview-prod.ts": {
+      "bytes": 67,
+      "imports": [
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/renderer.ts": {
+      "bytes": 466,
+      "imports": [
+        {
+          "path": "src/client/angular-beta/StorybookProvider.ts",
+          "kind": "import-statement",
+          "original": "./client/angular-beta/StorybookProvider"
+        },
+        {
+          "path": "src/client/angular-beta/ComputesTemplateFromComponent.ts",
+          "kind": "import-statement",
+          "original": "./client/angular-beta/ComputesTemplateFromComponent"
+        },
+        {
+          "path": "src/client/render.ts",
+          "kind": "import-statement",
+          "original": "./client/render"
+        },
+        {
+          "path": "src/client/angular-beta/AbstractRenderer.ts",
+          "kind": "import-statement",
+          "original": "./client/angular-beta/AbstractRenderer"
+        },
+        {
+          "path": "src/client/angular-beta/StorybookModule.ts",
+          "kind": "import-statement",
+          "original": "./client/angular-beta/StorybookModule"
+        },
+        {
+          "path": "src/client/angular-beta/utils/PropertyExtractor.ts",
+          "kind": "import-statement",
+          "original": "./client/angular-beta/utils/PropertyExtractor"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/docs/sourceDecorator.ts": {
+      "bytes": 2132,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/renderer.ts",
+          "kind": "import-statement",
+          "original": "../../renderer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/client/docs/config.ts": {
+      "bytes": 396,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/client/docs/sourceDecorator.ts",
+          "kind": "import-statement",
+          "original": "./sourceDecorator"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-T32Z4CGF.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-DAHG2CDK.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-6CHBWP5J.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "applicationConfig",
+        "argsToTemplate",
+        "componentWrapperDecorator",
+        "moduleMetadata",
+        "setProjectAnnotations"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 379
+    },
+    "dist/client/index.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-T32Z4CGF.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-DAHG2CDK.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-6CHBWP5J.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "applicationConfig",
+        "argsToTemplate",
+        "componentWrapperDecorator",
+        "moduleMetadata",
+        "setProjectAnnotations"
+      ],
+      "entryPoint": "src/client/index.ts",
+      "inputs": {},
+      "bytes": 382
+    },
+    "dist/_browser-chunks/chunk-T32Z4CGF.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-6CHBWP5J.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "applicationConfig",
+        "argsToTemplate",
+        "componentWrapperDecorator",
+        "moduleMetadata",
+        "setProjectAnnotations"
+      ],
+      "inputs": {
+        "src/client/index.ts": {
+          "bytesInOutput": 0
+        },
+        "src/client/portable-stories.ts": {
+          "bytesInOutput": 299
+        },
+        "src/client/decorators.ts": {
+          "bytesInOutput": 1500
+        },
+        "src/client/argsToTemplate.ts": {
+          "bytesInOutput": 510
+        }
+      },
+      "bytes": 2657
+    },
+    "dist/client/config.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-DAHG2CDK.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-6CHBWP5J.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/client-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "applyDecorators",
+        "argTypesEnhancers",
+        "parameters",
+        "render",
+        "renderToCanvas"
+      ],
+      "entryPoint": "src/client/config.ts",
+      "inputs": {
+        "src/client/config.ts": {
+          "bytesInOutput": 243
+        },
+        "src/client/decorateStory.ts": {
+          "bytesInOutput": 1184
+        },
+        "src/client/compodoc.ts": {
+          "bytesInOutput": 7043
+        }
+      },
+      "bytes": 8852
+    },
+    "dist/_browser-chunks/chunk-DAHG2CDK.js": {
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "inputs": {
+        "src/client/globals.ts": {
+          "bytesInOutput": 78
+        }
+      },
+      "bytes": 103
+    },
+    "dist/client/preview-prod.js": {
+      "imports": [
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "entryPoint": "src/client/preview-prod.ts",
+      "inputs": {
+        "src/client/preview-prod.ts": {
+          "bytesInOutput": 66
+        }
+      },
+      "bytes": 96
+    },
+    "dist/client/docs/config.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-6CHBWP5J.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "decorators",
+        "parameters"
+      ],
+      "entryPoint": "src/client/docs/config.ts",
+      "inputs": {
+        "src/client/docs/config.ts": {
+          "bytesInOutput": 219
+        },
+        "src/client/docs/sourceDecorator.ts": {
+          "bytesInOutput": 1162
+        },
+        "src/renderer.ts": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 1616
+    },
+    "dist/_browser-chunks/chunk-6CHBWP5J.js": {
+      "imports": [
+        {
+          "path": "@angular/compiler",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/platform-browser",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "telejson",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs/operators",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/platform-browser",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/platform-browser/animations",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "@angular/core",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "@angular/core",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "computesTemplateFromComponent",
+        "computesTemplateSourceFromComponent",
+        "formatPropInTemplate",
+        "isComponent",
+        "render",
+        "renderToCanvas",
+        "render_exports"
+      ],
+      "inputs": {
+        "src/client/render.ts": {
+          "bytesInOutput": 564
+        },
+        "src/client/angular-beta/AbstractRenderer.ts": {
+          "bytesInOutput": 5574
+        },
+        "src/client/angular-beta/utils/NgComponentAnalyzer.ts": {
+          "bytesInOutput": 2305
+        },
+        "src/client/angular-beta/ComputesTemplateFromComponent.ts": {
+          "bytesInOutput": 4370
+        },
+        "src/client/angular-beta/StorybookWrapperComponent.ts": {
+          "bytesInOutput": 3521
+        },
+        "src/client/angular-beta/StorybookProvider.ts": {
+          "bytesInOutput": 690
+        },
+        "src/client/angular-beta/utils/PropertyExtractor.ts": {
+          "bytesInOutput": 8005
+        },
+        "src/client/angular-beta/utils/NgModulesAnalyzer.ts": {
+          "bytesInOutput": 1059
+        },
+        "src/client/angular-beta/StorybookModule.ts": {
+          "bytesInOutput": 571
+        },
+        "src/client/angular-beta/utils/BootstrapQueue.ts": {
+          "bytesInOutput": 597
+        },
+        "src/client/angular-beta/utils/Zoneless.ts": {
+          "bytesInOutput": 339
+        },
+        "src/client/angular-beta/CanvasRenderer.ts": {
+          "bytesInOutput": 210
+        },
+        "src/client/angular-beta/DocsRenderer.ts": {
+          "bytesInOutput": 808
+        },
+        "src/client/angular-beta/utils/StoryUID.ts": {
+          "bytesInOutput": 250
+        },
+        "src/client/angular-beta/RendererFactory.ts": {
+          "bytesInOutput": 1145
+        }
+      },
+      "bytes": 31834
+    }
+  }
+}

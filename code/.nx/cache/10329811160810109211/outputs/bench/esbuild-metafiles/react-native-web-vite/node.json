@@ -1,0 +1,125 @@
+{
+  "inputs": {
+    "src/node/index.ts": {
+      "bytes": 123,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/preset.ts": {
+      "bytes": 1742,
+      "imports": [
+        {
+          "path": "@storybook/react-vite/preset",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite-plugin-rnw",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite-tsconfig-paths",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/vite-plugin.ts": {
+      "bytes": 225,
+      "imports": [
+        {
+          "path": "vite-plugin-rnw",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite-tsconfig-paths",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/node/index.js": {
+      "imports": [],
+      "exports": [
+        "defineMain"
+      ],
+      "entryPoint": "src/node/index.ts",
+      "inputs": {
+        "src/node/index.ts": {
+          "bytesInOutput": 49
+        }
+      },
+      "bytes": 722
+    },
+    "dist/preset.js": {
+      "imports": [
+        {
+          "path": "@storybook/react-vite/preset",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite-plugin-rnw",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite-tsconfig-paths",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "exports": [
+        "core",
+        "viteFinal"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/preset.ts": {
+          "bytesInOutput": 1368
+        }
+      },
+      "bytes": 2044
+    },
+    "dist/vite-plugin.js": {
+      "imports": [
+        {
+          "path": "vite-plugin-rnw",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite-tsconfig-paths",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "storybookReactNativeWeb"
+      ],
+      "entryPoint": "src/vite-plugin.ts",
+      "inputs": {
+        "src/vite-plugin.ts": {
+          "bytesInOutput": 189
+        }
+      },
+      "bytes": 876
+    }
+  }
+}

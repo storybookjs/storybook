@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "10.1.0-alpha.10",
+  "version": "10.2.0-alpha.14",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -48,10 +48,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/react-dom-shim": "workspace:*",
@@ -61,14 +57,14 @@
     "@types/babel-plugin-react-docgen": "^4.2.3",
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^1.0.6",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "acorn": "^7.4.1",
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",
     "babel-plugin-react-docgen": "^4.2.1",
     "comment-parser": "^1.4.1",
     "empathic": "^2.0.0",
-    "es-toolkit": "^1.36.0",
+    "es-toolkit": "^1.43.0",
     "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
     "html-tags": "^3.1.0",

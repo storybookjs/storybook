@@ -1,0 +1,7 @@
+[2m> [22myarn prep --reset
+
+Building [92mcode/core[39m
+Running prebuild script
+Prebuild script completed in [33m3.15 s[39m
+Bundled in [33m589 ms[39m
+Generated type mappers in [33m15 ms[39m

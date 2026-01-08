@@ -1,0 +1,9 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/renderers/svelte[39m
+(node:43952) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✅ Generated types for [36mrenderers/svelte/src/playwright.ts[39m
+✅ Generated types for [36mrenderers/svelte/src/index.ts[39m
+Bundled in [33m32 ms[39m
+Generated types in [33m3.34 s[39m

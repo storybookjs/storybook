@@ -1,0 +1,357 @@
+{
+  "inputs": {
+    "src/helpers/checkPresets.ts": {
+      "bytes": 622,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/helpers/getModulePath.ts": {
+      "bytes": 756,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "<runtime>",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/exsolve/dist/index.mjs": {
+      "bytes": 41441,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:v8",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:util",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs": {
+      "bytes": 6539,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/index.mjs": {
+      "bytes": 272,
+      "imports": [
+        {
+          "path": "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs",
+          "kind": "import-statement",
+          "original": "./shared/pathe.ff20891b.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../core/src/shared/utils/module.ts": {
+      "bytes": 4584,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path/win32",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/exsolve/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "exsolve"
+        },
+        {
+          "path": "../../node_modules/pathe/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "pathe"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/helpers/getReactScriptsPath.ts": {
+      "bytes": 1847,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../core/src/shared/utils/module.ts",
+          "kind": "import-statement",
+          "original": "../../../../core/src/shared/utils/module"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/helpers/mergePlugins.ts": {
+      "bytes": 956,
+      "imports": [
+        {
+          "path": "@pmmmwh/react-refresh-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/helpers/processCraConfig.ts": {
+      "bytes": 5451,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 5600,
+      "imports": [
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "pnp-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/helpers/checkPresets.ts",
+          "kind": "import-statement",
+          "original": "./helpers/checkPresets"
+        },
+        {
+          "path": "src/helpers/getModulePath.ts",
+          "kind": "import-statement",
+          "original": "./helpers/getModulePath"
+        },
+        {
+          "path": "src/helpers/getReactScriptsPath.ts",
+          "kind": "import-statement",
+          "original": "./helpers/getReactScriptsPath"
+        },
+        {
+          "path": "src/helpers/mergePlugins.ts",
+          "kind": "import-statement",
+          "original": "./helpers/mergePlugins"
+        },
+        {
+          "path": "src/helpers/processCraConfig.ts",
+          "kind": "import-statement",
+          "original": "./helpers/processCraConfig"
+        },
+        {
+          "path": "<runtime>",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "pnp-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:v8",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:util",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@pmmmwh/react-refresh-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "core",
+        "webpack"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 3406
+        },
+        "src/helpers/checkPresets.ts": {
+          "bytesInOutput": 483
+        },
+        "src/helpers/getModulePath.ts": {
+          "bytesInOutput": 489
+        },
+        "src/helpers/getReactScriptsPath.ts": {
+          "bytesInOutput": 1037
+        },
+        "../../core/src/shared/utils/module.ts": {
+          "bytesInOutput": 560
+        },
+        "../../node_modules/exsolve/dist/index.mjs": {
+          "bytesInOutput": 8715
+        },
+        "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs": {
+          "bytesInOutput": 2932
+        },
+        "../../node_modules/pathe/dist/index.mjs": {
+          "bytesInOutput": 0
+        },
+        "src/helpers/mergePlugins.ts": {
+          "bytesInOutput": 575
+        },
+        "src/helpers/processCraConfig.ts": {
+          "bytesInOutput": 3250
+        }
+      },
+      "bytes": 22892
+    }
+  }
+}

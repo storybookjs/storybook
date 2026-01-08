@@ -51,6 +51,7 @@ const managerContext: any = {
   api: {
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
+    once: fn().mockName('api::once'),
     updateTestProviderState: fn(),
   },
 };
@@ -84,6 +85,7 @@ const meta = {
     api: {
       on: fn(),
       off: fn(),
+      once: fn(),
       clearNotification: fn(),
       updateTestProviderState: fn(),
       emit: fn(),
@@ -135,7 +137,7 @@ export const DynamicHeight: Story = {
   // do not test in chromatic
   parameters: {
     chromatic: {
-      disable: true,
+      disableSnapshot: true,
     },
   },
   args: {

@@ -38,6 +38,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   preview.meta = (_input) => {
     const meta = defineMeta(_input);
     const defineStory = meta.story.bind(meta);
+    // @ts-expect-error internal code that is hard to type
     meta.story = (__input: any) => {
       const story = defineStory(__input);
       // TODO: [test-syntax] Are we sure we want this? the Component construct was for
@@ -51,6 +52,12 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   };
   return preview;
 }
+
+type InferArgs<
+  TArgs extends Args,
+  T extends AddonTypes,
+  Decorators extends DecoratorFunction<ReactTypes & T, any>,
+> = Simplify<TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>>;
 
 /** @ts-expect-error We cannot implement the meta faithfully here, but that is okay. */
 export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes & T> {
@@ -70,13 +77,13 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
       'decorators' | 'component' | 'args' | 'render'
     >
   ): ReactMeta<
-    ReactTypes &
-      T & {
-        args: Simplify<
-          TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
-        >;
-      },
-    { args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs }
+    ReactTypes & T & { args: InferArgs<TArgs, T, Decorators> },
+    Omit<
+      ComponentAnnotations<ReactTypes & T & { args: InferArgs<TArgs, T, Decorators> }>,
+      'args'
+    > & {
+      args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs;
+    }
   >;
 }
 
@@ -85,7 +92,7 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
 >;
 
 export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
-/** @ts-expect-error hard */
+  /** @ts-expect-error hard */
   extends Meta<T, MetaInput> {
   // Required args don't need to be provided when the user uses an empty render
   story<
@@ -95,7 +102,7 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
           render: () => ReactTypes['storyResult'];
         }),
   >(
-    story?: TInput
+    story: TInput
   ): ReactStory<T, TInput extends () => ReactTypes['storyResult'] ? { render: TInput } : TInput>;
 
   story<
@@ -108,12 +115,24 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
       >
     >,
   >(
-    story?: TInput
+    story: TInput
     /** @ts-expect-error hard */
   ): ReactStory<T, TInput>;
+
+  // This overload matches meta.story(), but only when all args are optional
+  story(
+    ..._args: Partial<T['args']> extends SetOptional<
+      T['args'],
+      keyof T['args'] & keyof MetaInput['args']
+    >
+      ? []
+      : [never]
+  ): ReactStory<T, {}>;
 }
 
-export interface ReactStory<T extends ReactTypes, TInput extends StoryAnnotations<T, T['args']>>
-  extends Story<T, TInput> {
+export interface ReactStory<
+  T extends ReactTypes,
+  TInput extends StoryAnnotations<T, T['args']>,
+> extends Story<T, TInput> {
   Component: ComponentType<Partial<T['args']>>;
 }

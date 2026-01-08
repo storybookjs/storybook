@@ -9,11 +9,15 @@ steps:
   # switched this to the CircleCI helper to get the full git history for TurboSnap
   - checkout
   - attach_workspace:
-      at: .
+      at: /tmp
+  - run:
+      name: Build Storybook
+      command: yarn storybook:ui:build
+      working_directory: code
   - run:
       name: Running Chromatic
       command: yarn storybook:ui:chromatic
       working_directory: code
   - report-workflow-on-failure
   - store_test_results:
-      path: test-results
+      path: storybook/test-results

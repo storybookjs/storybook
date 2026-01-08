@@ -1,0 +1,5 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/presets/create-react-app[39m
+Bundled in [33m331 ms[39m
+Generated types in [33m19 ms[39m

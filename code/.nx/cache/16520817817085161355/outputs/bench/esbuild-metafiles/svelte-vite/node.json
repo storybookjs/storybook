@@ -1,0 +1,177 @@
+{
+  "inputs": {
+    "src/plugins/generateDocgen.ts": {
+      "bytes": 15927,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "svelte2tsx",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "svelte/compiler",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "typescript",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/svelte-docgen.ts": {
+      "bytes": 5213,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/plugins/generateDocgen.ts",
+          "kind": "import-statement",
+          "original": "./generateDocgen"
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/utils.ts": {
+      "bytes": 1284,
+      "imports": [
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-vite",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preset.ts": {
+      "bytes": 1027,
+      "imports": [
+        {
+          "path": "src/plugins/svelte-docgen.ts",
+          "kind": "import-statement",
+          "original": "./plugins/svelte-docgen"
+        },
+        {
+          "path": "src/utils.ts",
+          "kind": "import-statement",
+          "original": "./utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/node/index.ts": {
+      "bytes": 123,
+      "imports": [],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/preset.js": {
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "svelte2tsx",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "svelte/compiler",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "typescript",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-vite",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "core",
+        "viteFinal"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/plugins/svelte-docgen.ts": {
+          "bytesInOutput": 3846
+        },
+        "src/plugins/generateDocgen.ts": {
+          "bytesInOutput": 11116
+        },
+        "src/utils.ts": {
+          "bytesInOutput": 598
+        },
+        "src/preset.ts": {
+          "bytesInOutput": 465
+        }
+      },
+      "bytes": 16806
+    },
+    "dist/node/index.js": {
+      "imports": [],
+      "exports": [
+        "defineMain"
+      ],
+      "entryPoint": "src/node/index.ts",
+      "inputs": {
+        "src/node/index.ts": {
+          "bytesInOutput": 49
+        }
+      },
+      "bytes": 710
+    }
+  }
+}

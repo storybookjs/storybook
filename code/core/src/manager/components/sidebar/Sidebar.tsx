@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-import { Button, ScrollArea, Spaced } from 'storybook/internal/components';
+import { Button, ScrollArea } from 'storybook/internal/components';
 import type { API_LoadedRefData, StoryIndex, TagsOptions } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
@@ -12,6 +12,7 @@ import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { useLayout } from '../layout/LayoutProvider';
+import { ChecklistWidget } from './ChecklistWidget';
 import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
 import { Explorer } from './Explorer';
 import type { HeadingProps } from './Heading';
@@ -43,12 +44,11 @@ const Container = styled.nav(({ theme }) => ({
   },
 }));
 
-const Top = styled(Spaced)({
-  paddingLeft: 12,
-  paddingRight: 12,
-  paddingBottom: 20,
-  paddingTop: 16,
-  flex: 1,
+const Stack = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
+  padding: '16px 12px 20px 12px',
 });
 
 const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
@@ -156,15 +156,18 @@ export const Sidebar = React.memo(function Sidebar({
   return (
     <Container className="container sidebar-container" aria-label="Global">
       <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
-        <Top row={1.6}>
-          <Heading
-            className="sidebar-header"
-            menuHighlighted={menuHighlighted}
-            menu={menu}
-            skipLinkHref="#storybook-preview-wrapper"
-            isLoading={isLoading}
-            onMenuClick={onMenuClick}
-          />
+        <Stack>
+          <div>
+            <Heading
+              className="sidebar-header"
+              menuHighlighted={menuHighlighted}
+              menu={menu}
+              skipLinkHref="#storybook-preview-wrapper"
+              isLoading={isLoading}
+              onMenuClick={onMenuClick}
+            />
+            {!isLoading && global.CONFIG_TYPE === 'DEVELOPMENT' && <ChecklistWidget />}
+          </div>
           <Search
             dataset={dataset}
             enableShortcuts={enableShortcuts}
@@ -190,14 +193,7 @@ export const Sidebar = React.memo(function Sidebar({
               )
             }
             searchFieldContent={
-              indexJson && (
-                <TagsFilter
-                  api={api}
-                  indexJson={indexJson}
-                  isDevelopment={isDevelopment}
-                  tagPresets={tagPresets}
-                />
-              )
+              indexJson && <TagsFilter api={api} indexJson={indexJson} tagPresets={tagPresets} />
             }
             {...lastViewedProps}
           >
@@ -232,7 +228,7 @@ export const Sidebar = React.memo(function Sidebar({
               </Swap>
             )}
           </Search>
-        </Top>
+        </Stack>
         {isMobile || isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
       </ScrollArea>
     </Container>

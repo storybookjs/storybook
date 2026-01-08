@@ -5,6 +5,8 @@ import type { Status } from './shared/status-store';
 import type { StatusTypeId } from './shared/status-store';
 import { StorybookError } from './storybook-error';
 
+export { StorybookError } from './storybook-error';
+
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
  * path of which the error is thrown. For instance: If it's from `@storybook/node-logger`, then
@@ -143,7 +145,7 @@ export class InvalidStoriesEntryError extends StorybookError {
         'https://storybook.js.org/docs/faq#can-i-have-a-storybook-with-no-local-stories',
       message: dedent`
         Storybook could not index your stories.
-        Your main configuration somehow does not contain a 'stories' field, or it resolved to an empty array.
+        Your main configuration does not contain a 'stories' field, or it resolved to an empty array.
         
         Please check your main configuration file and make sure it exports a 'stories' field that is not an empty array.`,
     });
@@ -307,7 +309,7 @@ export class GoogleFontsDownloadError extends StorybookError {
       category: Category.FRAMEWORK_NEXTJS,
       code: 1,
       documentation:
-        'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md#nextjs-font-optimization',
+        'https://storybook.js.org/docs/get-started/frameworks/nextjs#nextjs-font-optimization',
       message: dedent`
         Failed to fetch \`${data.fontFamily}\` from Google Fonts with URL: \`${data.url}\``,
     });
@@ -321,7 +323,7 @@ export class GoogleFontsLoadingError extends StorybookError {
       category: Category.FRAMEWORK_NEXTJS,
       code: 2,
       documentation:
-        'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md#nextjs-font-optimization',
+        'https://storybook.js.org/docs/get-started/frameworks/nextjs#nextjs-font-optimization',
       message: dedent`
         An error occurred when trying to load Google Fonts with URL \`${data.url}\`.
         
@@ -372,12 +374,12 @@ export class MainFileMissingError extends StorybookError {
     const map = {
       storybook: {
         helperMessage:
-          'You can pass a --config-dir flag to tell Storybook, where your main.js file is located at.',
+          'You can pass a --config-dir flag to tell Storybook, where your main.js|ts file is located at.',
         documentation: 'https://storybook.js.org/docs/configure?ref=error',
       },
       vitest: {
         helperMessage:
-          'You can pass a configDir plugin option to tell where your main.js file is located at.',
+          'You can pass a configDir plugin option to tell where your main.js|ts file is located at.',
         // TODO: add proper docs once available
         documentation: 'https://storybook.js.org/docs/configure?ref=error',
       },
@@ -390,7 +392,7 @@ export class MainFileMissingError extends StorybookError {
       documentation,
       message: dedent`
         No configuration files have been found in your configDir: ${picocolors.yellow(data.location)}.
-        Storybook needs a "main.js" file, please add it.
+        Storybook needs a "main.js|ts" file, please add it.
         
         ${helperMessage}`,
     });
@@ -451,6 +453,92 @@ export class GenerateNewProjectOnInitError extends StorybookError {
         } project.
         
         ${data.error instanceof Error ? data.error.message : ''}`,
+    });
+  }
+}
+
+export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError {
+  constructor(public data: { reasons: string[] }) {
+    super({
+      name: 'AddonVitestPostinstallPrerequisiteCheckError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 4,
+      documentation: '',
+      message: 'The prerequisite check for the Vitest addon failed.',
+    });
+  }
+}
+
+export class AddonVitestPostinstallFailedAddonA11yError extends StorybookError {
+  constructor(public data: { error: unknown | Error }) {
+    super({
+      name: 'AddonVitestPostinstallFailedAddonA11yError',
+      message: "The @storybook/addon-a11y couldn't be set up for the Vitest addon",
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 6,
+    });
+  }
+}
+
+export class AddonVitestPostinstallExistingSetupFileError extends StorybookError {
+  constructor(public data: { filePath: string }) {
+    super({
+      name: 'AddonVitestPostinstallExistingSetupFileError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 7,
+      documentation: `https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced`,
+      message: dedent`
+        Found an existing Vitest setup file: ${data.filePath}
+        Please refer to the documentation to complete the setup manually.
+      `,
+    });
+  }
+}
+
+export class AddonVitestPostinstallWorkspaceUpdateError extends StorybookError {
+  constructor(public data: { filePath: string }) {
+    super({
+      name: 'AddonVitestPostinstallWorkspaceUpdateError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 8,
+      documentation: `https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced`,
+      message: dedent`
+        Could not update existing Vitest workspace file: ${data.filePath}
+        Please refer to the documentation to complete the setup manually.
+      `,
+    });
+  }
+}
+
+export class AddonVitestPostinstallConfigUpdateError extends StorybookError {
+  constructor(public data: { filePath: string }) {
+    super({
+      name: 'AddonVitestPostinstallConfigUpdateError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 9,
+      documentation: `https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced`,
+      message: dedent`
+        Unable to update existing Vitest config file: ${data.filePath}
+        Please refer to the documentation to complete the setup manually.
+      `,
+    });
+  }
+}
+
+export class AddonVitestPostinstallError extends StorybookError {
+  constructor(public data: { errors: StorybookError[] }) {
+    super({
+      name: 'AddonVitestPostinstallError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 5,
+      message: 'The Vitest addon setup failed.',
+      subErrors: data.errors,
     });
   }
 }
@@ -577,6 +665,19 @@ export class CommonJsConfigNotSupportedError extends StorybookError {
         
         CommonJS files (ending in .cjs, .cts, .cjsx, .ctsx) or files containing 'module.exports' are no longer supported.
         Please convert your config to use ES modules (import/export syntax).`,
+    });
+  }
+}
+
+export class AutomigrateError extends StorybookError {
+  constructor(public data: { errors: Array<Error | unknown> }) {
+    super({
+      name: 'AutomigrateError',
+      category: Category.CLI_AUTOMIGRATE,
+      code: 2,
+      message: dedent`
+        An error occurred while running the automigrate command.
+      `,
     });
   }
 }

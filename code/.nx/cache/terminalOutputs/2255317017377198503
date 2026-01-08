@@ -1,0 +1,9 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/frameworks/angular[39m
+(node:44099) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✅ Generated types for [36mframeworks/angular/src/node/index.ts[39m
+✅ Generated types for [36mframeworks/angular/src/index.ts[39m
+Bundled in [33m216 ms[39m
+Generated types in [33m6.29 s[39m

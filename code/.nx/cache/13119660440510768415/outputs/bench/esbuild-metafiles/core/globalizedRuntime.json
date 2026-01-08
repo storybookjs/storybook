@@ -1,0 +1,5139 @@
+{
+  "inputs": {
+    "global-externals:react": {
+      "bytes": 1048,
+      "imports": [],
+      "format": "esm"
+    },
+    "global-externals:storybook/internal/channels": {
+      "bytes": 316,
+      "imports": [],
+      "format": "esm"
+    },
+    "global-externals:storybook/internal/core-events": {
+      "bytes": 2504,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@storybook/global/dist/index.mjs": {
+      "bytes": 380,
+      "imports": [],
+      "format": "esm"
+    },
+    "global-externals:@storybook/icons": {
+      "bytes": 6916,
+      "imports": [],
+      "format": "esm"
+    },
+    "global-externals:storybook/manager-api": {
+      "bytes": 1828,
+      "imports": [],
+      "format": "esm"
+    },
+    "global-externals:storybook/theming": {
+      "bytes": 636,
+      "imports": [],
+      "format": "esm"
+    },
+    "global-externals:storybook/internal/components": {
+      "bytes": 1924,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/toolbar/utils/normalize-toolbar-arg-type.ts": {
+      "bytes": 894,
+      "imports": [],
+      "format": "esm"
+    },
+    "global-externals:storybook/internal/client-logger": {
+      "bytes": 160,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/components/components/icon/icon.tsx": {
+      "bytes": 7899,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/client-logger",
+          "kind": "import-statement",
+          "original": "storybook/internal/client-logger"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/toolbar/utils/create-cycle-value-array.ts": {
+      "bytes": 454,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/toolbar/constants.ts": {
+      "bytes": 96,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/toolbar/utils/register-shortcuts.ts": {
+      "bytes": 1193,
+      "imports": [
+        {
+          "path": "src/toolbar/constants.ts",
+          "kind": "import-statement",
+          "original": "../constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/toolbar/hoc/withKeyboardCycle.tsx": {
+      "bytes": 2347,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/toolbar/utils/create-cycle-value-array.ts",
+          "kind": "import-statement",
+          "original": "../utils/create-cycle-value-array"
+        },
+        {
+          "path": "src/toolbar/utils/register-shortcuts.ts",
+          "kind": "import-statement",
+          "original": "../utils/register-shortcuts"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/toolbar/utils/get-selected.ts": {
+      "bytes": 838,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/toolbar/components/ToolbarMenuSelect.tsx": {
+      "bytes": 3558,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/components/components/icon/icon.tsx",
+          "kind": "import-statement",
+          "original": "../../components/components/icon/icon"
+        },
+        {
+          "path": "src/toolbar/hoc/withKeyboardCycle.tsx",
+          "kind": "import-statement",
+          "original": "../hoc/withKeyboardCycle"
+        },
+        {
+          "path": "src/toolbar/utils/get-selected.ts",
+          "kind": "import-statement",
+          "original": "../utils/get-selected"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/toolbar/components/ToolbarManager.tsx": {
+      "bytes": 889,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/toolbar/utils/normalize-toolbar-arg-type.ts",
+          "kind": "import-statement",
+          "original": "../utils/normalize-toolbar-arg-type"
+        },
+        {
+          "path": "src/toolbar/components/ToolbarMenuSelect.tsx",
+          "kind": "import-statement",
+          "original": "./ToolbarMenuSelect"
+        }
+      ],
+      "format": "esm"
+    },
+    "global-externals:react-dom/client": {
+      "bytes": 130,
+      "imports": [],
+      "format": "esm"
+    },
+    "global-externals:storybook/internal/manager-errors": {
+      "bytes": 318,
+      "imports": [],
+      "format": "esm"
+    },
+    "global-externals:storybook/internal/router": {
+      "bytes": 438,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/prop-types/lib/ReactPropTypesSecret.js": {
+      "bytes": 314,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../node_modules/prop-types/factoryWithThrowingShims.js": {
+      "bytes": 1639,
+      "imports": [
+        {
+          "path": "../node_modules/prop-types/lib/ReactPropTypesSecret.js",
+          "kind": "require-call",
+          "original": "./lib/ReactPropTypesSecret"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../node_modules/prop-types/index.js": {
+      "bytes": 710,
+      "imports": [
+        {
+          "path": "../node_modules/prop-types/factoryWithThrowingShims.js",
+          "kind": "require-call",
+          "original": "./factoryWithThrowingShims"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../node_modules/react-fast-compare/index.js": {
+      "bytes": 4823,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../node_modules/invariant/browser.js": {
+      "bytes": 1397,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../node_modules/shallowequal/index.js": {
+      "bytes": 979,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../node_modules/react-helmet-async/lib/index.module.js": {
+      "bytes": 14282,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "../node_modules/prop-types/index.js",
+          "kind": "import-statement",
+          "original": "prop-types"
+        },
+        {
+          "path": "../node_modules/react-fast-compare/index.js",
+          "kind": "import-statement",
+          "original": "react-fast-compare"
+        },
+        {
+          "path": "../node_modules/invariant/browser.js",
+          "kind": "import-statement",
+          "original": "invariant"
+        },
+        {
+          "path": "../node_modules/shallowequal/index.js",
+          "kind": "import-statement",
+          "original": "shallowequal"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/constants.ts": {
+      "bytes": 157,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/manager/hooks/useMedia.tsx": {
+      "bytes": 1029,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/layout/LayoutProvider.tsx": {
+      "bytes": 1911,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "src/manager/constants.ts",
+          "kind": "import-statement",
+          "original": "../../constants"
+        },
+        {
+          "path": "src/manager/hooks/useMedia.tsx",
+          "kind": "import-statement",
+          "original": "../../hooks/useMedia"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@babel/runtime/helpers/esm/extends.js": {
+      "bytes": 336,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js": {
+      "bytes": 203,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@babel/runtime/helpers/esm/setPrototypeOf.js": {
+      "bytes": 232,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@babel/runtime/helpers/esm/inheritsLoose.js": {
+      "bytes": 216,
+      "imports": [
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/setPrototypeOf.js",
+          "kind": "import-statement",
+          "original": "./setPrototypeOf.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js": {
+      "bytes": 244,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@babel/runtime/helpers/esm/isNativeFunction.js": {
+      "bytes": 207,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@babel/runtime/helpers/esm/isNativeReflectConstruct.js": {
+      "bytes": 308,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@babel/runtime/helpers/esm/construct.js": {
+      "bytes": 396,
+      "imports": [
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/isNativeReflectConstruct.js",
+          "kind": "import-statement",
+          "original": "./isNativeReflectConstruct.js"
+        },
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/setPrototypeOf.js",
+          "kind": "import-statement",
+          "original": "./setPrototypeOf.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@babel/runtime/helpers/esm/wrapNativeSuper.js": {
+      "bytes": 984,
+      "imports": [
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js",
+          "kind": "import-statement",
+          "original": "./getPrototypeOf.js"
+        },
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/setPrototypeOf.js",
+          "kind": "import-statement",
+          "original": "./setPrototypeOf.js"
+        },
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/isNativeFunction.js",
+          "kind": "import-statement",
+          "original": "./isNativeFunction.js"
+        },
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/construct.js",
+          "kind": "import-statement",
+          "original": "./construct.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@babel/runtime/helpers/esm/taggedTemplateLiteralLoose.js": {
+      "bytes": 143,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/polished/dist/polished.esm.js": {
+      "bytes": 124094,
+      "imports": [
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/extends.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/extends"
+        },
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/assertThisInitialized"
+        },
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/inheritsLoose.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/inheritsLoose"
+        },
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/wrapNativeSuper.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/wrapNativeSuper"
+        },
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/taggedTemplateLiteralLoose.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/taggedTemplateLiteralLoose"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/notifications/NotificationItem.tsx": {
+      "bytes": 6381,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/internal/router",
+          "kind": "import-statement",
+          "original": "storybook/internal/router"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "../node_modules/polished/dist/polished.esm.js",
+          "kind": "import-statement",
+          "original": "polished"
+        },
+        {
+          "path": "storybook/manager-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/constants.ts",
+          "kind": "import-statement",
+          "original": "../../constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/notifications/NotificationList.tsx": {
+      "bytes": 1195,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "../layout/LayoutProvider"
+        },
+        {
+          "path": "src/manager/components/notifications/NotificationItem.tsx",
+          "kind": "import-statement",
+          "original": "./NotificationItem"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/container/Notifications.tsx": {
+      "bytes": 556,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/manager/components/notifications/NotificationList.tsx",
+          "kind": "import-statement",
+          "original": "../components/notifications/NotificationList"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs": {
+      "bytes": 908,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useEffectEvent.mjs": {
+      "bytes": 1846,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useLayoutEffect.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useValueEffect.mjs": {
+      "bytes": 2318,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useEffectEvent.mjs",
+          "kind": "import-statement",
+          "original": "./useEffectEvent.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useLayoutEffect.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/ssr/dist/SSRProvider.mjs": {
+      "bytes": 9628,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/ssr/dist/import.mjs": {
+      "bytes": 1046,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/ssr/dist/SSRProvider.mjs",
+          "kind": "import-statement",
+          "original": "./SSRProvider.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useId.mjs": {
+      "bytes": 4527,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useLayoutEffect.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useValueEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useValueEffect.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "../node_modules/@react-aria/ssr/dist/import.mjs",
+          "kind": "import-statement",
+          "original": "@react-aria/ssr"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/chain.mjs": {
+      "bytes": 1005,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/domHelpers.mjs": {
+      "bytes": 1168,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-stately/flags/dist/import.mjs": {
+      "bytes": 1432,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/DOMFunctions.mjs": {
+      "bytes": 1963,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/domHelpers.mjs",
+          "kind": "import-statement",
+          "original": "./domHelpers.mjs"
+        },
+        {
+          "path": "../node_modules/@react-stately/flags/dist/import.mjs",
+          "kind": "import-statement",
+          "original": "@react-stately/flags"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/ShadowTreeWalker.mjs": {
+      "bytes": 8115,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/DOMFunctions.mjs",
+          "kind": "import-statement",
+          "original": "./DOMFunctions.mjs"
+        },
+        {
+          "path": "../node_modules/@react-stately/flags/dist/import.mjs",
+          "kind": "import-statement",
+          "original": "@react-stately/flags"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/clsx/dist/clsx.mjs": {
+      "bytes": 388,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/mergeProps.mjs": {
+      "bytes": 2046,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/chain.mjs",
+          "kind": "import-statement",
+          "original": "./chain.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useId.mjs",
+          "kind": "import-statement",
+          "original": "./useId.mjs"
+        },
+        {
+          "path": "../node_modules/clsx/dist/clsx.mjs",
+          "kind": "import-statement",
+          "original": "clsx"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/mergeRefs.mjs": {
+      "bytes": 1527,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/filterDOMProps.mjs": {
+      "bytes": 2956,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/focusWithoutScrolling.mjs": {
+      "bytes": 2904,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/getOffset.mjs": {
+      "bytes": 1026,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/platform.mjs": {
+      "bytes": 3948,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/openLink.mjs": {
+      "bytes": 8863,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/focusWithoutScrolling.mjs",
+          "kind": "import-statement",
+          "original": "./focusWithoutScrolling.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/platform.mjs",
+          "kind": "import-statement",
+          "original": "./platform.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/runAfterTransition.mjs": {
+      "bytes": 4968,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useDrag1D.mjs": {
+      "bytes": 6193,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/getOffset.mjs",
+          "kind": "import-statement",
+          "original": "./getOffset.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useGlobalListeners.mjs": {
+      "bytes": 2627,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useLabels.mjs": {
+      "bytes": 1645,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useId.mjs",
+          "kind": "import-statement",
+          "original": "./useId.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useObjectRef.mjs": {
+      "bytes": 2001,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useUpdateEffect.mjs": {
+      "bytes": 1523,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useUpdateLayoutEffect.mjs": {
+      "bytes": 1622,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useLayoutEffect.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useResizeObserver.mjs": {
+      "bytes": 1260,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useSyncRef.mjs": {
+      "bytes": 1173,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useLayoutEffect.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/isScrollable.mjs": {
+      "bytes": 1154,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/getScrollParent.mjs": {
+      "bytes": 1328,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/isScrollable.mjs",
+          "kind": "import-statement",
+          "original": "./isScrollable.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/getScrollParents.mjs": {
+      "bytes": 1182,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/isScrollable.mjs",
+          "kind": "import-statement",
+          "original": "./isScrollable.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/keyboard.mjs": {
+      "bytes": 1568,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/platform.mjs",
+          "kind": "import-statement",
+          "original": "./platform.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useViewportSize.mjs": {
+      "bytes": 4064,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/keyboard.mjs",
+          "kind": "import-statement",
+          "original": "./keyboard.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "../node_modules/@react-aria/ssr/dist/import.mjs",
+          "kind": "import-statement",
+          "original": "@react-aria/ssr"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useDescription.mjs": {
+      "bytes": 2180,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useLayoutEffect.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useEvent.mjs": {
+      "bytes": 1468,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useEffectEvent.mjs",
+          "kind": "import-statement",
+          "original": "./useEffectEvent.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/scrollIntoView.mjs": {
+      "bytes": 8126,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/getScrollParents.mjs",
+          "kind": "import-statement",
+          "original": "./getScrollParents.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/platform.mjs",
+          "kind": "import-statement",
+          "original": "./platform.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/isVirtualEvent.mjs": {
+      "bytes": 2430,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/platform.mjs",
+          "kind": "import-statement",
+          "original": "./platform.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useDeepMemo.mjs": {
+      "bytes": 1313,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useFormReset.mjs": {
+      "bytes": 1599,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useEffectEvent.mjs",
+          "kind": "import-statement",
+          "original": "./useEffectEvent.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useLoadMore.mjs": {
+      "bytes": 3396,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useEvent.mjs",
+          "kind": "import-statement",
+          "original": "./useEvent.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useLayoutEffect.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/useLoadMoreSentinel.mjs": {
+      "bytes": 3092,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/getScrollParent.mjs",
+          "kind": "import-statement",
+          "original": "./getScrollParent.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useEffectEvent.mjs",
+          "kind": "import-statement",
+          "original": "./useEffectEvent.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useLayoutEffect.mjs"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/inertValue.mjs": {
+      "bytes": 432,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/constants.mjs": {
+      "bytes": 1020,
+      "imports": [],
+      "format": "esm"
+    },
+    "global-externals:react-dom": {
+      "bytes": 520,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/animation.mjs": {
+      "bytes": 4052,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useLayoutEffect.mjs"
+        },
+        {
+          "path": "global-externals:react-dom",
+          "kind": "import-statement",
+          "original": "react-dom"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/isElementVisible.mjs": {
+      "bytes": 2638,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/domHelpers.mjs",
+          "kind": "import-statement",
+          "original": "./domHelpers.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/isFocusable.mjs": {
+      "bytes": 2452,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/isElementVisible.mjs",
+          "kind": "import-statement",
+          "original": "./isElementVisible.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-stately/utils/dist/useControlledState.mjs": {
+      "bytes": 3924,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-stately/utils/dist/number.mjs": {
+      "bytes": 2992,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@react-stately/utils/dist/import.mjs": {
+      "bytes": 1215,
+      "imports": [
+        {
+          "path": "../node_modules/@react-stately/utils/dist/useControlledState.mjs",
+          "kind": "import-statement",
+          "original": "./useControlledState.mjs"
+        },
+        {
+          "path": "../node_modules/@react-stately/utils/dist/number.mjs",
+          "kind": "import-statement",
+          "original": "./number.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@react-aria/utils/dist/import.mjs": {
+      "bytes": 10769,
+      "imports": [
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useId.mjs",
+          "kind": "import-statement",
+          "original": "./useId.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/chain.mjs",
+          "kind": "import-statement",
+          "original": "./chain.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/ShadowTreeWalker.mjs",
+          "kind": "import-statement",
+          "original": "./ShadowTreeWalker.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/DOMFunctions.mjs",
+          "kind": "import-statement",
+          "original": "./DOMFunctions.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/domHelpers.mjs",
+          "kind": "import-statement",
+          "original": "./domHelpers.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/mergeProps.mjs",
+          "kind": "import-statement",
+          "original": "./mergeProps.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/mergeRefs.mjs",
+          "kind": "import-statement",
+          "original": "./mergeRefs.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/filterDOMProps.mjs",
+          "kind": "import-statement",
+          "original": "./filterDOMProps.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/focusWithoutScrolling.mjs",
+          "kind": "import-statement",
+          "original": "./focusWithoutScrolling.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/getOffset.mjs",
+          "kind": "import-statement",
+          "original": "./getOffset.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/openLink.mjs",
+          "kind": "import-statement",
+          "original": "./openLink.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/runAfterTransition.mjs",
+          "kind": "import-statement",
+          "original": "./runAfterTransition.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useDrag1D.mjs",
+          "kind": "import-statement",
+          "original": "./useDrag1D.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useGlobalListeners.mjs",
+          "kind": "import-statement",
+          "original": "./useGlobalListeners.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLabels.mjs",
+          "kind": "import-statement",
+          "original": "./useLabels.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useObjectRef.mjs",
+          "kind": "import-statement",
+          "original": "./useObjectRef.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useUpdateEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useUpdateEffect.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useUpdateLayoutEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useUpdateLayoutEffect.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useLayoutEffect.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useResizeObserver.mjs",
+          "kind": "import-statement",
+          "original": "./useResizeObserver.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useSyncRef.mjs",
+          "kind": "import-statement",
+          "original": "./useSyncRef.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/getScrollParent.mjs",
+          "kind": "import-statement",
+          "original": "./getScrollParent.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/getScrollParents.mjs",
+          "kind": "import-statement",
+          "original": "./getScrollParents.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/isScrollable.mjs",
+          "kind": "import-statement",
+          "original": "./isScrollable.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useViewportSize.mjs",
+          "kind": "import-statement",
+          "original": "./useViewportSize.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useDescription.mjs",
+          "kind": "import-statement",
+          "original": "./useDescription.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/platform.mjs",
+          "kind": "import-statement",
+          "original": "./platform.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useEvent.mjs",
+          "kind": "import-statement",
+          "original": "./useEvent.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useValueEffect.mjs",
+          "kind": "import-statement",
+          "original": "./useValueEffect.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/scrollIntoView.mjs",
+          "kind": "import-statement",
+          "original": "./scrollIntoView.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/isVirtualEvent.mjs",
+          "kind": "import-statement",
+          "original": "./isVirtualEvent.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useEffectEvent.mjs",
+          "kind": "import-statement",
+          "original": "./useEffectEvent.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useDeepMemo.mjs",
+          "kind": "import-statement",
+          "original": "./useDeepMemo.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useFormReset.mjs",
+          "kind": "import-statement",
+          "original": "./useFormReset.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLoadMore.mjs",
+          "kind": "import-statement",
+          "original": "./useLoadMore.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/useLoadMoreSentinel.mjs",
+          "kind": "import-statement",
+          "original": "./useLoadMoreSentinel.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/inertValue.mjs",
+          "kind": "import-statement",
+          "original": "./inertValue.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/constants.mjs",
+          "kind": "import-statement",
+          "original": "./constants.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/keyboard.mjs",
+          "kind": "import-statement",
+          "original": "./keyboard.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/animation.mjs",
+          "kind": "import-statement",
+          "original": "./animation.mjs"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/isFocusable.mjs",
+          "kind": "import-statement",
+          "original": "./isFocusable.mjs"
+        },
+        {
+          "path": "../node_modules/@react-stately/utils/dist/import.mjs",
+          "kind": "import-statement",
+          "original": "@react-stately/utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/mobile/navigation/MobileAddonsDrawer.tsx": {
+      "bytes": 925,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/constants.ts",
+          "kind": "import-statement",
+          "original": "../../../constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/react-transition-state/dist/esm/hooks/utils.mjs": {
+      "bytes": 1197,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/react-transition-state/dist/esm/hooks/useTransitionState.mjs": {
+      "bytes": 2188,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "../node_modules/react-transition-state/dist/esm/hooks/utils.mjs",
+          "kind": "import-statement",
+          "original": "./utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/react-transition-state/dist/esm/hooks/useTransitionMap.mjs": {
+      "bytes": 3897,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "../node_modules/react-transition-state/dist/esm/hooks/utils.mjs",
+          "kind": "import-statement",
+          "original": "./utils.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/react-transition-state/dist/esm/index.mjs": {
+      "bytes": 202,
+      "imports": [
+        {
+          "path": "../node_modules/react-transition-state/dist/esm/hooks/useTransitionState.mjs",
+          "kind": "import-statement",
+          "original": "./hooks/useTransitionState.mjs"
+        },
+        {
+          "path": "../node_modules/react-transition-state/dist/esm/hooks/useTransitionMap.mjs",
+          "kind": "import-statement",
+          "original": "./hooks/useTransitionMap.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/upgrade/UpgradeBlock.tsx": {
+      "bytes": 2371,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/constants.ts",
+          "kind": "import-statement",
+          "original": "../../constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/mobile/about/MobileAbout.tsx": {
+      "bytes": 4539,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "../node_modules/react-transition-state/dist/esm/index.mjs",
+          "kind": "import-statement",
+          "original": "react-transition-state"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/constants.ts",
+          "kind": "import-statement",
+          "original": "../../../constants"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "../../layout/LayoutProvider"
+        },
+        {
+          "path": "src/manager/components/upgrade/UpgradeBlock.tsx",
+          "kind": "import-statement",
+          "original": "../../upgrade/UpgradeBlock"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/mobile/navigation/MobileMenuDrawer.tsx": {
+      "bytes": 986,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/constants.ts",
+          "kind": "import-statement",
+          "original": "../../../constants"
+        },
+        {
+          "path": "src/manager/components/mobile/about/MobileAbout.tsx",
+          "kind": "import-statement",
+          "original": "../about/MobileAbout"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/mobile/navigation/MobileNavigation.tsx": {
+      "bytes": 4959,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "../node_modules/@react-aria/utils/dist/import.mjs",
+          "kind": "import-statement",
+          "original": "@react-aria/utils"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "../../layout/LayoutProvider"
+        },
+        {
+          "path": "src/manager/components/mobile/navigation/MobileAddonsDrawer.tsx",
+          "kind": "import-statement",
+          "original": "./MobileAddonsDrawer"
+        },
+        {
+          "path": "src/manager/components/mobile/navigation/MobileMenuDrawer.tsx",
+          "kind": "import-statement",
+          "original": "./MobileMenuDrawer"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/layout/useDragging.ts": {
+      "bytes": 6331,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/layout/Layout.tsx": {
+      "bytes": 10594,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/router",
+          "kind": "import-statement",
+          "original": "storybook/internal/router"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/constants.ts",
+          "kind": "import-statement",
+          "original": "../../constants"
+        },
+        {
+          "path": "src/manager/container/Notifications.tsx",
+          "kind": "import-statement",
+          "original": "../../container/Notifications"
+        },
+        {
+          "path": "src/manager/components/mobile/navigation/MobileNavigation.tsx",
+          "kind": "import-statement",
+          "original": "../mobile/navigation/MobileNavigation"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "./LayoutProvider"
+        },
+        {
+          "path": "src/manager/components/layout/useDragging.ts",
+          "kind": "import-statement",
+          "original": "./useDragging"
+        }
+      ],
+      "format": "esm"
+    },
+    "global-externals:storybook/internal/types": {
+      "bytes": 112,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/core-events/data/create-new-story.ts": {
+      "bytes": 717,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/core-events/data/file-component-search.ts": {
+      "bytes": 524,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/core-events/data/argtypes-info.ts": {
+      "bytes": 175,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/core-events/data/request-response.ts": {
+      "bytes": 321,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/core-events/data/save-story.ts": {
+      "bytes": 391,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/core-events/data/whats-new.ts": {
+      "bytes": 410,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/core-events/data/phases.ts": {
+      "bytes": 169,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/core-events/data/open-in-editor.ts": {
+      "bytes": 215,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/core-events/index.ts": {
+      "bytes": 6437,
+      "imports": [
+        {
+          "path": "src/core-events/data/create-new-story.ts",
+          "kind": "import-statement",
+          "original": "./data/create-new-story"
+        },
+        {
+          "path": "src/core-events/data/file-component-search.ts",
+          "kind": "import-statement",
+          "original": "./data/file-component-search"
+        },
+        {
+          "path": "src/core-events/data/argtypes-info.ts",
+          "kind": "import-statement",
+          "original": "./data/argtypes-info"
+        },
+        {
+          "path": "src/core-events/data/request-response.ts",
+          "kind": "import-statement",
+          "original": "./data/request-response"
+        },
+        {
+          "path": "src/core-events/data/save-story.ts",
+          "kind": "import-statement",
+          "original": "./data/save-story"
+        },
+        {
+          "path": "src/core-events/data/whats-new.ts",
+          "kind": "import-statement",
+          "original": "./data/whats-new"
+        },
+        {
+          "path": "src/core-events/data/phases.ts",
+          "kind": "import-statement",
+          "original": "./data/phases"
+        },
+        {
+          "path": "src/core-events/data/open-in-editor.ts",
+          "kind": "import-statement",
+          "original": "./data/open-in-editor"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/panel/Panel.tsx": {
+      "bytes": 5253,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "../layout/LayoutProvider"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/container/Panel.tsx": {
+      "bytes": 1831,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/types",
+          "kind": "import-statement",
+          "original": "storybook/internal/types"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/core-events/index.ts",
+          "kind": "import-statement",
+          "original": "../../core-events"
+        },
+        {
+          "path": "src/manager/components/panel/Panel.tsx",
+          "kind": "import-statement",
+          "original": "../components/panel/Panel"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/memoizerific/memoizerific.js": {
+      "bytes": 6750,
+      "imports": [
+        {
+          "path": "<runtime>",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "src/manager/components/preview/Iframe.tsx": {
+      "bytes": 1384,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/picoquery/lib/string-util.js": {
+      "bytes": 2908,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../node_modules/picoquery/lib/shared.js": {
+      "bytes": 1451,
+      "imports": [
+        {
+          "path": "../node_modules/picoquery/lib/string-util.js",
+          "kind": "require-call",
+          "original": "./string-util.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../node_modules/picoquery/lib/object-util.js": {
+      "bytes": 3415,
+      "imports": [
+        {
+          "path": "../node_modules/picoquery/lib/shared.js",
+          "kind": "require-call",
+          "original": "./shared.js"
+        },
+        {
+          "path": "../node_modules/picoquery/lib/string-util.js",
+          "kind": "require-call",
+          "original": "./string-util.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../node_modules/picoquery/lib/decode-uri-component.js": {
+      "bytes": 3545,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../node_modules/picoquery/lib/parse.js": {
+      "bytes": 9578,
+      "imports": [
+        {
+          "path": "../node_modules/picoquery/lib/object-util.js",
+          "kind": "require-call",
+          "original": "./object-util.js"
+        },
+        {
+          "path": "../node_modules/picoquery/lib/shared.js",
+          "kind": "require-call",
+          "original": "./shared.js"
+        },
+        {
+          "path": "../node_modules/picoquery/lib/decode-uri-component.js",
+          "kind": "require-call",
+          "original": "./decode-uri-component.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../node_modules/picoquery/lib/stringify.js": {
+      "bytes": 519,
+      "imports": [
+        {
+          "path": "../node_modules/picoquery/lib/object-util.js",
+          "kind": "require-call",
+          "original": "./object-util.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../node_modules/picoquery/lib/main.js": {
+      "bytes": 1168,
+      "imports": [
+        {
+          "path": "../node_modules/picoquery/lib/parse.js",
+          "kind": "require-call",
+          "original": "./parse.js"
+        },
+        {
+          "path": "../node_modules/picoquery/lib/stringify.js",
+          "kind": "require-call",
+          "original": "./stringify.js"
+        },
+        {
+          "path": "../node_modules/picoquery/lib/shared.js",
+          "kind": "require-call",
+          "original": "./shared.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "src/manager/components/preview/utils/stringifyQueryParams.tsx": {
+      "bytes": 229,
+      "imports": [
+        {
+          "path": "../node_modules/picoquery/lib/main.js",
+          "kind": "import-statement",
+          "original": "picoquery"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/preview/FramesRenderer.tsx": {
+      "bytes": 3502,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/preview/Iframe.tsx",
+          "kind": "import-statement",
+          "original": "./Iframe"
+        },
+        {
+          "path": "src/manager/components/preview/utils/stringifyQueryParams.tsx",
+          "kind": "import-statement",
+          "original": "./utils/stringifyQueryParams"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/preview/Toolbar.tsx": {
+      "bytes": 5142,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/internal/types",
+          "kind": "import-statement",
+          "original": "storybook/internal/types"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "../layout/LayoutProvider"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/preview/utils/components.ts": {
+      "bytes": 1581,
+      "imports": [
+        {
+          "path": "global-externals:storybook/internal/router",
+          "kind": "import-statement",
+          "original": "storybook/internal/router"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/preview/Wrappers.tsx": {
+      "bytes": 902,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/types",
+          "kind": "import-statement",
+          "original": "storybook/internal/types"
+        },
+        {
+          "path": "src/manager/components/preview/utils/components.ts",
+          "kind": "import-statement",
+          "original": "./utils/components"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/preview/tools/zoom.tsx": {
+      "bytes": 2761,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/preview/Preview.tsx": {
+      "bytes": 8775,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/client-logger",
+          "kind": "import-statement",
+          "original": "storybook/internal/client-logger"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/internal/core-events",
+          "kind": "import-statement",
+          "original": "storybook/internal/core-events"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "../node_modules/react-helmet-async/lib/index.module.js",
+          "kind": "import-statement",
+          "original": "react-helmet-async"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/manager/components/preview/FramesRenderer.tsx",
+          "kind": "import-statement",
+          "original": "./FramesRenderer"
+        },
+        {
+          "path": "src/manager/components/preview/Toolbar.tsx",
+          "kind": "import-statement",
+          "original": "./Toolbar"
+        },
+        {
+          "path": "src/manager/components/preview/Wrappers.tsx",
+          "kind": "import-statement",
+          "original": "./Wrappers"
+        },
+        {
+          "path": "src/manager/components/preview/tools/zoom.tsx",
+          "kind": "import-statement",
+          "original": "./tools/zoom"
+        },
+        {
+          "path": "src/manager/components/preview/utils/components.ts",
+          "kind": "import-statement",
+          "original": "./utils/components"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/preview/tools/addons.tsx": {
+      "bytes": 1228,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/preview/tools/menu.tsx": {
+      "bytes": 1145,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/preview/tools/open-in-editor.tsx": {
+      "bytes": 1559,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/preview/tools/remount.tsx": {
+      "bytes": 2131,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/internal/core-events",
+          "kind": "import-statement",
+          "original": "storybook/internal/core-events"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/toggle-selection/index.js": {
+      "bytes": 780,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../node_modules/copy-to-clipboard/index.js": {
+      "bytes": 3365,
+      "imports": [
+        {
+          "path": "../node_modules/toggle-selection/index.js",
+          "kind": "require-call",
+          "original": "toggle-selection"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../node_modules/qrcode.react/lib/esm/index.js": {
+      "bytes": 44840,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/container/Menu.tsx": {
+      "bytes": 7864,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/internal/core-events",
+          "kind": "import-statement",
+          "original": "storybook/internal/core-events"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/preview/tools/share.tsx": {
+      "bytes": 5009,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "../node_modules/copy-to-clipboard/index.js",
+          "kind": "import-statement",
+          "original": "copy-to-clipboard"
+        },
+        {
+          "path": "../node_modules/qrcode.react/lib/esm/index.js",
+          "kind": "import-statement",
+          "original": "qrcode.react"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/container/Menu.tsx",
+          "kind": "import-statement",
+          "original": "../../../container/Menu"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/container/Preview.tsx": {
+      "bytes": 4973,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/types",
+          "kind": "import-statement",
+          "original": "storybook/internal/types"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "../node_modules/memoizerific/memoizerific.js",
+          "kind": "import-statement",
+          "original": "memoizerific"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/manager/components/preview/Preview.tsx",
+          "kind": "import-statement",
+          "original": "../components/preview/Preview"
+        },
+        {
+          "path": "src/manager/components/preview/Toolbar.tsx",
+          "kind": "import-statement",
+          "original": "../components/preview/Toolbar"
+        },
+        {
+          "path": "src/manager/components/preview/Wrappers.tsx",
+          "kind": "import-statement",
+          "original": "../components/preview/Wrappers"
+        },
+        {
+          "path": "src/manager/components/preview/tools/addons.tsx",
+          "kind": "import-statement",
+          "original": "../components/preview/tools/addons"
+        },
+        {
+          "path": "src/manager/components/preview/tools/menu.tsx",
+          "kind": "import-statement",
+          "original": "../components/preview/tools/menu"
+        },
+        {
+          "path": "src/manager/components/preview/tools/open-in-editor.tsx",
+          "kind": "import-statement",
+          "original": "../components/preview/tools/open-in-editor"
+        },
+        {
+          "path": "src/manager/components/preview/tools/remount.tsx",
+          "kind": "import-statement",
+          "original": "../components/preview/tools/remount"
+        },
+        {
+          "path": "src/manager/components/preview/tools/share.tsx",
+          "kind": "import-statement",
+          "original": "../components/preview/tools/share"
+        },
+        {
+          "path": "src/manager/components/preview/tools/zoom.tsx",
+          "kind": "import-statement",
+          "original": "../components/preview/tools/zoom"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/hooks/useDebounce.ts": {
+      "bytes": 383,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/hooks/useMeasure.tsx": {
+      "bytes": 997,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@tanstack/virtual-core/dist/esm/utils.js": {
+      "bytes": 2150,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/@tanstack/virtual-core/dist/esm/index.js": {
+      "bytes": 26449,
+      "imports": [
+        {
+          "path": "../node_modules/@tanstack/virtual-core/dist/esm/utils.js",
+          "kind": "import-statement",
+          "original": "./utils.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@tanstack/react-virtual/dist/esm/index.js": {
+      "bytes": 1688,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:react-dom",
+          "kind": "import-statement",
+          "original": "react-dom"
+        },
+        {
+          "path": "../node_modules/@tanstack/virtual-core/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "@tanstack/virtual-core"
+        },
+        {
+          "path": "../node_modules/@tanstack/virtual-core/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "@tanstack/virtual-core"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/FIleSearchList.utils.tsx": {
+      "bytes": 4140,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:react-dom",
+          "kind": "import-statement",
+          "original": "react-dom"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/FileList.tsx": {
+      "bytes": 5035,
+      "imports": [
+        {
+          "path": "../node_modules/polished/dist/polished.esm.js",
+          "kind": "import-statement",
+          "original": "polished"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/FileSearchListSkeleton.tsx": {
+      "bytes": 1676,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/sidebar/FileList.tsx",
+          "kind": "import-statement",
+          "original": "./FileList"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/FileSearchList.tsx": {
+      "bytes": 12175,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "../node_modules/@tanstack/react-virtual/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "@tanstack/react-virtual"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/sidebar/FIleSearchList.utils.tsx",
+          "kind": "import-statement",
+          "original": "./FIleSearchList.utils"
+        },
+        {
+          "path": "src/manager/components/sidebar/FileList.tsx",
+          "kind": "import-statement",
+          "original": "./FileList"
+        },
+        {
+          "path": "src/manager/components/sidebar/FileSearchListSkeleton.tsx",
+          "kind": "import-statement",
+          "original": "./FileSearchListSkeleton"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/FileSearchModal.tsx": {
+      "bytes": 5971,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/hooks/useMeasure.tsx",
+          "kind": "import-statement",
+          "original": "../../hooks/useMeasure"
+        },
+        {
+          "path": "src/manager/components/sidebar/FileSearchList.tsx",
+          "kind": "import-statement",
+          "original": "./FileSearchList"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/FileSearchModal.utils.tsx": {
+      "bytes": 2996,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/CreateNewStoryFileModal.tsx": {
+      "bytes": 6991,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/core-events",
+          "kind": "import-statement",
+          "original": "storybook/internal/core-events"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/manager/hooks/useDebounce.ts",
+          "kind": "import-statement",
+          "original": "../../hooks/useDebounce"
+        },
+        {
+          "path": "src/manager/components/sidebar/FileSearchModal.tsx",
+          "kind": "import-statement",
+          "original": "./FileSearchModal"
+        },
+        {
+          "path": "src/manager/components/sidebar/FileSearchModal.utils.tsx",
+          "kind": "import-statement",
+          "original": "./FileSearchModal.utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/HighlightStyles.tsx": {
+      "bytes": 919,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "../node_modules/polished/dist/polished.esm.js",
+          "kind": "import-statement",
+          "original": "polished"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/utils/tree.ts": {
+      "bytes": 4073,
+      "imports": [
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "../node_modules/memoizerific/memoizerific.js",
+          "kind": "import-statement",
+          "original": "memoizerific"
+        },
+        {
+          "path": "src/manager/components/sidebar/Sidebar.tsx",
+          "kind": "import-statement",
+          "original": "../components/sidebar/Sidebar"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/Loader.tsx": {
+      "bytes": 1363,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/NoResults.tsx": {
+      "bytes": 424,
+      "imports": [
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/RefBlocks.tsx": {
+      "bytes": 5638,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/client-logger",
+          "kind": "import-statement",
+          "original": "storybook/internal/client-logger"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "../layout/LayoutProvider"
+        },
+        {
+          "path": "src/manager/components/sidebar/Loader.tsx",
+          "kind": "import-statement",
+          "original": "./Loader"
+        },
+        {
+          "path": "src/manager/components/sidebar/NoResults.tsx",
+          "kind": "import-statement",
+          "original": "./NoResults"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/RefIndicator.tsx": {
+      "bytes": 9730,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "../layout/LayoutProvider"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/manager-stores.ts": {
+      "bytes": 239,
+      "imports": [
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/IconSymbols.tsx": {
+      "bytes": 5357,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/utils/status.tsx": {
+      "bytes": 2703,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/sidebar/IconSymbols.tsx",
+          "kind": "import-statement",
+          "original": "../components/sidebar/IconSymbols"
+        },
+        {
+          "path": "src/manager/utils/tree.ts",
+          "kind": "import-statement",
+          "original": "./tree"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/StatusButton.tsx": {
+      "bytes": 2728,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "../node_modules/polished/dist/polished.esm.js",
+          "kind": "import-statement",
+          "original": "polished"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/ContextMenu.tsx": {
+      "bytes": 6358,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/internal/types",
+          "kind": "import-statement",
+          "original": "storybook/internal/types"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "../node_modules/copy-to-clipboard/index.js",
+          "kind": "import-statement",
+          "original": "copy-to-clipboard"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/container/Menu.tsx",
+          "kind": "import-statement",
+          "original": "../../container/Menu"
+        },
+        {
+          "path": "src/manager/components/sidebar/StatusButton.tsx",
+          "kind": "import-statement",
+          "original": "./StatusButton"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/StatusContext.tsx": {
+      "bytes": 1680,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "src/manager/utils/tree.ts",
+          "kind": "import-statement",
+          "original": "../../utils/tree"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/components/CollapseIcon.tsx": {
+      "bytes": 914,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/TreeNode.tsx": {
+      "bytes": 4707,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/sidebar/IconSymbols.tsx",
+          "kind": "import-statement",
+          "original": "./IconSymbols"
+        },
+        {
+          "path": "src/manager/components/sidebar/components/CollapseIcon.tsx",
+          "kind": "import-statement",
+          "original": "./components/CollapseIcon"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/after.mjs": {
+      "bytes": 310,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/ary.mjs": {
+      "bytes": 133,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/asyncNoop.mjs": {
+      "bytes": 54,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/before.mjs": {
+      "bytes": 311,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/curry.mjs": {
+      "bytes": 486,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/curryRight.mjs": {
+      "bytes": 511,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/debounce.mjs": {
+      "bytes": 1652,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/flow.mjs": {
+      "bytes": 291,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/flowRight.mjs": {
+      "bytes": 129,
+      "imports": [
+        {
+          "path": "../node_modules/es-toolkit/dist/function/flow.mjs",
+          "kind": "import-statement",
+          "original": "./flow.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/identity.mjs": {
+      "bytes": 61,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/memoize.mjs": {
+      "bytes": 447,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/negate.mjs": {
+      "bytes": 88,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/noop.mjs": {
+      "bytes": 38,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/once.mjs": {
+      "bytes": 237,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/partial.mjs": {
+      "bytes": 804,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/partialRight.mjs": {
+      "bytes": 1032,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/rest.mjs": {
+      "bytes": 349,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/error/AbortError.mjs": {
+      "bytes": 180,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/promise/delay.mjs": {
+      "bytes": 658,
+      "imports": [
+        {
+          "path": "../node_modules/es-toolkit/dist/error/AbortError.mjs",
+          "kind": "import-statement",
+          "original": "../error/AbortError.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/retry.mjs": {
+      "bytes": 1011,
+      "imports": [
+        {
+          "path": "../node_modules/es-toolkit/dist/promise/delay.mjs",
+          "kind": "import-statement",
+          "original": "../promise/delay.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/spread.mjs": {
+      "bytes": 127,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/throttle.mjs": {
+      "bytes": 690,
+      "imports": [
+        {
+          "path": "../node_modules/es-toolkit/dist/function/debounce.mjs",
+          "kind": "import-statement",
+          "original": "./debounce.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/unary.mjs": {
+      "bytes": 103,
+      "imports": [
+        {
+          "path": "../node_modules/es-toolkit/dist/function/ary.mjs",
+          "kind": "import-statement",
+          "original": "./ary.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/es-toolkit/dist/function/index.mjs": {
+      "bytes": 837,
+      "imports": [
+        {
+          "path": "../node_modules/es-toolkit/dist/function/after.mjs",
+          "kind": "import-statement",
+          "original": "./after.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/ary.mjs",
+          "kind": "import-statement",
+          "original": "./ary.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/asyncNoop.mjs",
+          "kind": "import-statement",
+          "original": "./asyncNoop.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/before.mjs",
+          "kind": "import-statement",
+          "original": "./before.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/curry.mjs",
+          "kind": "import-statement",
+          "original": "./curry.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/curryRight.mjs",
+          "kind": "import-statement",
+          "original": "./curryRight.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/debounce.mjs",
+          "kind": "import-statement",
+          "original": "./debounce.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/flow.mjs",
+          "kind": "import-statement",
+          "original": "./flow.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/flowRight.mjs",
+          "kind": "import-statement",
+          "original": "./flowRight.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/identity.mjs",
+          "kind": "import-statement",
+          "original": "./identity.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/memoize.mjs",
+          "kind": "import-statement",
+          "original": "./memoize.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/negate.mjs",
+          "kind": "import-statement",
+          "original": "./negate.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/noop.mjs",
+          "kind": "import-statement",
+          "original": "./noop.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/once.mjs",
+          "kind": "import-statement",
+          "original": "./once.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/partial.mjs",
+          "kind": "import-statement",
+          "original": "./partial.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/partialRight.mjs",
+          "kind": "import-statement",
+          "original": "./partialRight.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/rest.mjs",
+          "kind": "import-statement",
+          "original": "./rest.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/retry.mjs",
+          "kind": "import-statement",
+          "original": "./retry.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/spread.mjs",
+          "kind": "import-statement",
+          "original": "./spread.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/throttle.mjs",
+          "kind": "import-statement",
+          "original": "./throttle.mjs"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/unary.mjs",
+          "kind": "import-statement",
+          "original": "./unary.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/keybinding.ts": {
+      "bytes": 1147,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/useExpanded.ts": {
+      "bytes": 8203,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/core-events",
+          "kind": "import-statement",
+          "original": "storybook/internal/core-events"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/index.mjs",
+          "kind": "import-statement",
+          "original": "es-toolkit/function"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/manager/keybinding.ts",
+          "kind": "import-statement",
+          "original": "../../keybinding"
+        },
+        {
+          "path": "src/manager/utils/tree.ts",
+          "kind": "import-statement",
+          "original": "../../utils/tree"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/Tree.tsx": {
+      "bytes": 22410,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/internal/core-events",
+          "kind": "import-statement",
+          "original": "storybook/internal/core-events"
+        },
+        {
+          "path": "storybook/internal/types",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "src/manager/manager-stores.ts",
+          "kind": "import-statement",
+          "original": "#manager-stores"
+        },
+        {
+          "path": "../node_modules/polished/dist/polished.esm.js",
+          "kind": "import-statement",
+          "original": "polished"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/constants.ts",
+          "kind": "import-statement",
+          "original": "../../constants"
+        },
+        {
+          "path": "src/manager/utils/status.tsx",
+          "kind": "import-statement",
+          "original": "../../utils/status"
+        },
+        {
+          "path": "src/manager/utils/tree.ts",
+          "kind": "import-statement",
+          "original": "../../utils/tree"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "../layout/LayoutProvider"
+        },
+        {
+          "path": "src/manager/components/sidebar/ContextMenu.tsx",
+          "kind": "import-statement",
+          "original": "./ContextMenu"
+        },
+        {
+          "path": "src/manager/components/sidebar/IconSymbols.tsx",
+          "kind": "import-statement",
+          "original": "./IconSymbols"
+        },
+        {
+          "path": "src/manager/components/sidebar/StatusButton.tsx",
+          "kind": "import-statement",
+          "original": "./StatusButton"
+        },
+        {
+          "path": "src/manager/components/sidebar/StatusContext.tsx",
+          "kind": "import-statement",
+          "original": "./StatusContext"
+        },
+        {
+          "path": "src/manager/components/sidebar/TreeNode.tsx",
+          "kind": "import-statement",
+          "original": "./TreeNode"
+        },
+        {
+          "path": "src/manager/components/sidebar/components/CollapseIcon.tsx",
+          "kind": "import-statement",
+          "original": "./components/CollapseIcon"
+        },
+        {
+          "path": "src/manager/components/sidebar/useExpanded.ts",
+          "kind": "import-statement",
+          "original": "./useExpanded"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/Refs.tsx": {
+      "bytes": 5186,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/utils/tree.ts",
+          "kind": "import-statement",
+          "original": "../../utils/tree"
+        },
+        {
+          "path": "src/manager/components/sidebar/RefBlocks.tsx",
+          "kind": "import-statement",
+          "original": "./RefBlocks"
+        },
+        {
+          "path": "src/manager/components/sidebar/RefIndicator.tsx",
+          "kind": "import-statement",
+          "original": "./RefIndicator"
+        },
+        {
+          "path": "src/manager/components/sidebar/Sidebar.tsx",
+          "kind": "import-statement",
+          "original": "./Sidebar"
+        },
+        {
+          "path": "src/manager/components/sidebar/Tree.tsx",
+          "kind": "import-statement",
+          "original": "./Tree"
+        },
+        {
+          "path": "src/manager/components/sidebar/components/CollapseIcon.tsx",
+          "kind": "import-statement",
+          "original": "./components/CollapseIcon"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/useHighlighted.ts": {
+      "bytes": 5784,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/core-events",
+          "kind": "import-statement",
+          "original": "storybook/internal/core-events"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/manager/keybinding.ts",
+          "kind": "import-statement",
+          "original": "../../keybinding"
+        },
+        {
+          "path": "src/manager/utils/tree.ts",
+          "kind": "import-statement",
+          "original": "../../utils/tree"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/Explorer.tsx": {
+      "bytes": 1507,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "src/manager/components/sidebar/HighlightStyles.tsx",
+          "kind": "import-statement",
+          "original": "./HighlightStyles"
+        },
+        {
+          "path": "src/manager/components/sidebar/Refs.tsx",
+          "kind": "import-statement",
+          "original": "./Refs"
+        },
+        {
+          "path": "src/manager/components/sidebar/useHighlighted.ts",
+          "kind": "import-statement",
+          "original": "./useHighlighted"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/Brand.tsx": {
+      "bytes": 1732,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/Menu.tsx": {
+      "bytes": 3589,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "../node_modules/polished/dist/polished.esm.js",
+          "kind": "import-statement",
+          "original": "polished"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "../layout/LayoutProvider"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/Heading.tsx": {
+      "bytes": 2322,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/sidebar/Brand.tsx",
+          "kind": "import-statement",
+          "original": "./Brand"
+        },
+        {
+          "path": "src/manager/components/sidebar/Menu.tsx",
+          "kind": "import-statement",
+          "original": "./Menu"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@babel/runtime/helpers/esm/objectWithoutPropertiesLoose.js": {
+      "bytes": 270,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/downshift/node_modules/react-is/cjs/react-is.production.min.js": {
+      "bytes": 2265,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../node_modules/downshift/node_modules/react-is/index.js": {
+      "bytes": 196,
+      "imports": [
+        {
+          "path": "../node_modules/downshift/node_modules/react-is/cjs/react-is.production.min.js",
+          "kind": "require-call",
+          "original": "./cjs/react-is.production.min.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../node_modules/compute-scroll-into-view/dist/index.js": {
+      "bytes": 2990,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/tslib/tslib.es6.mjs": {
+      "bytes": 17648,
+      "imports": [],
+      "format": "esm"
+    },
+    "../node_modules/downshift/dist/downshift.esm.js": {
+      "bytes": 151362,
+      "imports": [
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/objectWithoutPropertiesLoose.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/objectWithoutPropertiesLoose"
+        },
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/extends.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/extends"
+        },
+        {
+          "path": "../node_modules/@babel/runtime/helpers/esm/inheritsLoose.js",
+          "kind": "import-statement",
+          "original": "@babel/runtime/helpers/esm/inheritsLoose"
+        },
+        {
+          "path": "../node_modules/prop-types/index.js",
+          "kind": "import-statement",
+          "original": "prop-types"
+        },
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "../node_modules/downshift/node_modules/react-is/index.js",
+          "kind": "import-statement",
+          "original": "react-is"
+        },
+        {
+          "path": "../node_modules/compute-scroll-into-view/dist/index.js",
+          "kind": "import-statement",
+          "original": "compute-scroll-into-view"
+        },
+        {
+          "path": "../node_modules/tslib/tslib.es6.mjs",
+          "kind": "import-statement",
+          "original": "tslib"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/fuse.js/dist/fuse.js": {
+      "bytes": 12200,
+      "imports": [],
+      "format": "cjs"
+    },
+    "src/manager/components/sidebar/types.ts": {
+      "bytes": 1735,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/Search.tsx": {
+      "bytes": 13322,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "../node_modules/downshift/dist/downshift.esm.js",
+          "kind": "import-statement",
+          "original": "downshift"
+        },
+        {
+          "path": "../node_modules/fuse.js/dist/fuse.js",
+          "kind": "import-statement",
+          "original": "fuse.js"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/utils/status.tsx",
+          "kind": "import-statement",
+          "original": "../../utils/status"
+        },
+        {
+          "path": "src/manager/utils/tree.ts",
+          "kind": "import-statement",
+          "original": "../../utils/tree"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "../layout/LayoutProvider"
+        },
+        {
+          "path": "src/manager/components/sidebar/Sidebar.tsx",
+          "kind": "import-statement",
+          "original": "./Sidebar"
+        },
+        {
+          "path": "src/manager/components/sidebar/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/SearchResults.tsx": {
+      "bytes": 9948,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/internal/core-events",
+          "kind": "import-statement",
+          "original": "storybook/internal/core-events"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "../node_modules/polished/dist/polished.esm.js",
+          "kind": "import-statement",
+          "original": "polished"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/keybinding.ts",
+          "kind": "import-statement",
+          "original": "../../keybinding"
+        },
+        {
+          "path": "src/manager/utils/status.tsx",
+          "kind": "import-statement",
+          "original": "../../utils/status"
+        },
+        {
+          "path": "src/manager/components/sidebar/IconSymbols.tsx",
+          "kind": "import-statement",
+          "original": "./IconSymbols"
+        },
+        {
+          "path": "src/manager/components/sidebar/NoResults.tsx",
+          "kind": "import-statement",
+          "original": "./NoResults"
+        },
+        {
+          "path": "src/manager/components/sidebar/StatusButton.tsx",
+          "kind": "import-statement",
+          "original": "./StatusButton"
+        },
+        {
+          "path": "src/manager/components/sidebar/TreeNode.tsx",
+          "kind": "import-statement",
+          "original": "./TreeNode"
+        },
+        {
+          "path": "src/manager/components/sidebar/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/useDynamicFavicon.ts": {
+      "bytes": 1722,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/TestingModule.tsx": {
+      "bytes": 13266,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/client-logger",
+          "kind": "import-statement",
+          "original": "storybook/internal/client-logger"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "src/manager/manager-stores.ts",
+          "kind": "import-statement",
+          "original": "#manager-stores"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/sidebar/useDynamicFavicon.ts",
+          "kind": "import-statement",
+          "original": "./useDynamicFavicon"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/SidebarBottom.tsx": {
+      "bytes": 6979,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/types",
+          "kind": "import-statement",
+          "original": "storybook/internal/types"
+        },
+        {
+          "path": "src/manager/manager-stores.ts",
+          "kind": "import-statement",
+          "original": "#manager-stores"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/notifications/NotificationList.tsx",
+          "kind": "import-statement",
+          "original": "../notifications/NotificationList"
+        },
+        {
+          "path": "src/manager/components/sidebar/TestingModule.tsx",
+          "kind": "import-statement",
+          "original": "./TestingModule"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/TagsFilterPanel.tsx": {
+      "bytes": 6769,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/TagsFilter.tsx": {
+      "bytes": 8510,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/sidebar/TagsFilterPanel.tsx",
+          "kind": "import-statement",
+          "original": "./TagsFilterPanel"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/store2/dist/store2.js": {
+      "bytes": 11082,
+      "imports": [],
+      "format": "cjs"
+    },
+    "src/manager/components/sidebar/useLastViewed.ts": {
+      "bytes": 1639,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "../node_modules/es-toolkit/dist/function/index.mjs",
+          "kind": "import-statement",
+          "original": "es-toolkit/function"
+        },
+        {
+          "path": "../node_modules/store2/dist/store2.js",
+          "kind": "import-statement",
+          "original": "store2"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/components/sidebar/Sidebar.tsx": {
+      "bytes": 7342,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/constants.ts",
+          "kind": "import-statement",
+          "original": "../../constants"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "../layout/LayoutProvider"
+        },
+        {
+          "path": "src/manager/components/sidebar/CreateNewStoryFileModal.tsx",
+          "kind": "import-statement",
+          "original": "./CreateNewStoryFileModal"
+        },
+        {
+          "path": "src/manager/components/sidebar/Explorer.tsx",
+          "kind": "import-statement",
+          "original": "./Explorer"
+        },
+        {
+          "path": "src/manager/components/sidebar/Heading.tsx",
+          "kind": "import-statement",
+          "original": "./Heading"
+        },
+        {
+          "path": "src/manager/components/sidebar/Search.tsx",
+          "kind": "import-statement",
+          "original": "./Search"
+        },
+        {
+          "path": "src/manager/components/sidebar/SearchResults.tsx",
+          "kind": "import-statement",
+          "original": "./SearchResults"
+        },
+        {
+          "path": "src/manager/components/sidebar/SidebarBottom.tsx",
+          "kind": "import-statement",
+          "original": "./SidebarBottom"
+        },
+        {
+          "path": "src/manager/components/sidebar/TagsFilter.tsx",
+          "kind": "import-statement",
+          "original": "./TagsFilter"
+        },
+        {
+          "path": "src/manager/components/sidebar/useLastViewed.ts",
+          "kind": "import-statement",
+          "original": "./useLastViewed"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/container/Sidebar.tsx": {
+      "bytes": 1988,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/manager/components/sidebar/Sidebar.tsx",
+          "kind": "import-statement",
+          "original": "../components/sidebar/Sidebar"
+        },
+        {
+          "path": "src/manager/container/Menu.tsx",
+          "kind": "import-statement",
+          "original": "./Menu"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/App.tsx": {
+      "bytes": 1561,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/layout/Layout.tsx",
+          "kind": "import-statement",
+          "original": "./components/layout/Layout"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "./components/layout/LayoutProvider"
+        },
+        {
+          "path": "src/manager/container/Panel.tsx",
+          "kind": "import-statement",
+          "original": "./container/Panel"
+        },
+        {
+          "path": "src/manager/container/Preview.tsx",
+          "kind": "import-statement",
+          "original": "./container/Preview"
+        },
+        {
+          "path": "src/manager/container/Sidebar.tsx",
+          "kind": "import-statement",
+          "original": "./container/Sidebar"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/provider.ts": {
+      "bytes": 402,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/manager/settings/About.tsx": {
+      "bytes": 2498,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/components/upgrade/UpgradeBlock.tsx",
+          "kind": "import-statement",
+          "original": "../components/upgrade/UpgradeBlock"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/settings/AboutPage.tsx": {
+      "bytes": 1104,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/manager/settings/About.tsx",
+          "kind": "import-statement",
+          "original": "./About"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/settings/SettingsFooter.tsx": {
+      "bytes": 918,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/settings/shortcuts.tsx": {
+      "bytes": 9784,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/settings/SettingsFooter.tsx",
+          "kind": "import-statement",
+          "original": "./SettingsFooter"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/settings/ShortcutsPage.tsx": {
+      "bytes": 658,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "src/manager/settings/shortcuts.tsx",
+          "kind": "import-statement",
+          "original": "./shortcuts"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/settings/whats_new.tsx": {
+      "bytes": 5639,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/settings/whats_new_page.tsx": {
+      "bytes": 199,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "src/manager/settings/whats_new.tsx",
+          "kind": "import-statement",
+          "original": "./whats_new"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/settings/index.tsx": {
+      "bytes": 3884,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/components",
+          "kind": "import-statement",
+          "original": "storybook/internal/components"
+        },
+        {
+          "path": "global-externals:storybook/internal/router",
+          "kind": "import-statement",
+          "original": "storybook/internal/router"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/keybinding.ts",
+          "kind": "import-statement",
+          "original": "../keybinding"
+        },
+        {
+          "path": "src/manager/settings/AboutPage.tsx",
+          "kind": "import-statement",
+          "original": "./AboutPage"
+        },
+        {
+          "path": "src/manager/settings/ShortcutsPage.tsx",
+          "kind": "import-statement",
+          "original": "./ShortcutsPage"
+        },
+        {
+          "path": "src/manager/settings/whats_new_page.tsx",
+          "kind": "import-statement",
+          "original": "./whats_new_page"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/index.tsx": {
+      "bytes": 3344,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:react-dom/client",
+          "kind": "import-statement",
+          "original": "react-dom/client"
+        },
+        {
+          "path": "global-externals:storybook/internal/manager-errors",
+          "kind": "import-statement",
+          "original": "storybook/internal/manager-errors"
+        },
+        {
+          "path": "global-externals:storybook/internal/router",
+          "kind": "import-statement",
+          "original": "storybook/internal/router"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "../node_modules/react-helmet-async/lib/index.module.js",
+          "kind": "import-statement",
+          "original": "react-helmet-async"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/manager/App.tsx",
+          "kind": "import-statement",
+          "original": "./App"
+        },
+        {
+          "path": "src/manager/components/layout/LayoutProvider.tsx",
+          "kind": "import-statement",
+          "original": "./components/layout/LayoutProvider"
+        },
+        {
+          "path": "src/manager/provider.ts",
+          "kind": "import-statement",
+          "original": "./provider"
+        },
+        {
+          "path": "src/manager/settings/index.tsx",
+          "kind": "import-statement",
+          "original": "./settings/index"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/manager/runtime.tsx": {
+      "bytes": 2497,
+      "imports": [
+        {
+          "path": "global-externals:react",
+          "kind": "import-statement",
+          "original": "react"
+        },
+        {
+          "path": "global-externals:storybook/internal/channels",
+          "kind": "import-statement",
+          "original": "storybook/internal/channels"
+        },
+        {
+          "path": "global-externals:storybook/internal/core-events",
+          "kind": "import-statement",
+          "original": "storybook/internal/core-events"
+        },
+        {
+          "path": "../node_modules/@storybook/global/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "@storybook/global"
+        },
+        {
+          "path": "global-externals:@storybook/icons",
+          "kind": "import-statement",
+          "original": "@storybook/icons"
+        },
+        {
+          "path": "global-externals:storybook/manager-api",
+          "kind": "import-statement",
+          "original": "storybook/manager-api"
+        },
+        {
+          "path": "global-externals:storybook/theming",
+          "kind": "import-statement",
+          "original": "storybook/theming"
+        },
+        {
+          "path": "src/toolbar/components/ToolbarManager.tsx",
+          "kind": "import-statement",
+          "original": "../toolbar/components/ToolbarManager"
+        },
+        {
+          "path": "src/toolbar/constants.ts",
+          "kind": "import-statement",
+          "original": "../toolbar/constants"
+        },
+        {
+          "path": "src/manager/index.tsx",
+          "kind": "import-statement",
+          "original": "./index"
+        },
+        {
+          "path": "src/manager/provider.ts",
+          "kind": "import-statement",
+          "original": "./provider"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/manager/runtime.js": {
+      "imports": [],
+      "exports": [],
+      "entryPoint": "src/manager/runtime.tsx",
+      "inputs": {
+        "../node_modules/prop-types/lib/ReactPropTypesSecret.js": {
+          "bytesInOutput": 274
+        },
+        "../node_modules/prop-types/factoryWithThrowingShims.js": {
+          "bytesInOutput": 1573
+        },
+        "../node_modules/prop-types/index.js": {
+          "bytesInOutput": 202
+        },
+        "../node_modules/react-fast-compare/index.js": {
+          "bytesInOutput": 2944
+        },
+        "../node_modules/invariant/browser.js": {
+          "bytesInOutput": 807
+        },
+        "../node_modules/shallowequal/index.js": {
+          "bytesInOutput": 1015
+        },
+        "../node_modules/memoizerific/memoizerific.js": {
+          "bytesInOutput": 6775
+        },
+        "../node_modules/picoquery/lib/string-util.js": {
+          "bytesInOutput": 2777
+        },
+        "../node_modules/picoquery/lib/shared.js": {
+          "bytesInOutput": 1452
+        },
+        "../node_modules/picoquery/lib/object-util.js": {
+          "bytesInOutput": 2719
+        },
+        "../node_modules/picoquery/lib/decode-uri-component.js": {
+          "bytesInOutput": 5642
+        },
+        "../node_modules/picoquery/lib/parse.js": {
+          "bytesInOutput": 5990
+        },
+        "../node_modules/picoquery/lib/stringify.js": {
+          "bytesInOutput": 504
+        },
+        "../node_modules/picoquery/lib/main.js": {
+          "bytesInOutput": 1336
+        },
+        "../node_modules/toggle-selection/index.js": {
+          "bytesInOutput": 929
+        },
+        "../node_modules/copy-to-clipboard/index.js": {
+          "bytesInOutput": 3030
+        },
+        "../node_modules/downshift/node_modules/react-is/cjs/react-is.production.min.js": {
+          "bytesInOutput": 3323
+        },
+        "../node_modules/downshift/node_modules/react-is/index.js": {
+          "bytesInOutput": 198
+        },
+        "../node_modules/fuse.js/dist/fuse.js": {
+          "bytesInOutput": 19774
+        },
+        "../node_modules/store2/dist/store2.js": {
+          "bytesInOutput": 8865
+        },
+        "global-externals:react": {
+          "bytesInOutput": 542
+        },
+        "global-externals:storybook/internal/channels": {
+          "bytesInOutput": 192
+        },
+        "global-externals:storybook/internal/core-events": {
+          "bytesInOutput": 1292
+        },
+        "../node_modules/@storybook/global/dist/index.mjs": {
+          "bytesInOutput": 214
+        },
+        "global-externals:@storybook/icons": {
+          "bytesInOutput": 12425
+        },
+        "global-externals:storybook/manager-api": {
+          "bytesInOutput": 946
+        },
+        "global-externals:storybook/theming": {
+          "bytesInOutput": 350
+        },
+        "global-externals:storybook/internal/components": {
+          "bytesInOutput": 1016
+        },
+        "src/toolbar/utils/normalize-toolbar-arg-type.ts": {
+          "bytesInOutput": 522
+        },
+        "global-externals:storybook/internal/client-logger": {
+          "bytesInOutput": 124
+        },
+        "src/components/components/icon/icon.tsx": {
+          "bytesInOutput": 6808
+        },
+        "src/toolbar/utils/create-cycle-value-array.ts": {
+          "bytesInOutput": 182
+        },
+        "src/toolbar/constants.ts": {
+          "bytesInOutput": 28
+        },
+        "src/toolbar/utils/register-shortcuts.ts": {
+          "bytesInOutput": 737
+        },
+        "src/toolbar/hoc/withKeyboardCycle.tsx": {
+          "bytesInOutput": 1507
+        },
+        "src/toolbar/utils/get-selected.ts": {
+          "bytesInOutput": 483
+        },
+        "src/toolbar/components/ToolbarMenuSelect.tsx": {
+          "bytesInOutput": 2036
+        },
+        "src/toolbar/components/ToolbarManager.tsx": {
+          "bytesInOutput": 485
+        },
+        "global-externals:react-dom/client": {
+          "bytesInOutput": 95
+        },
+        "global-externals:storybook/internal/manager-errors": {
+          "bytesInOutput": 217
+        },
+        "global-externals:storybook/internal/router": {
+          "bytesInOutput": 256
+        },
+        "../node_modules/react-helmet-async/lib/index.module.js": {
+          "bytesInOutput": 20021
+        },
+        "src/manager/constants.ts": {
+          "bytesInOutput": 60
+        },
+        "src/manager/hooks/useMedia.tsx": {
+          "bytesInOutput": 510
+        },
+        "src/manager/components/layout/LayoutProvider.tsx": {
+          "bytesInOutput": 1137
+        },
+        "../node_modules/@babel/runtime/helpers/esm/extends.js": {
+          "bytesInOutput": 319
+        },
+        "../node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js": {
+          "bytesInOutput": 161
+        },
+        "../node_modules/@babel/runtime/helpers/esm/setPrototypeOf.js": {
+          "bytesInOutput": 202
+        },
+        "../node_modules/@babel/runtime/helpers/esm/inheritsLoose.js": {
+          "bytesInOutput": 138
+        },
+        "../node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js": {
+          "bytesInOutput": 210
+        },
+        "../node_modules/@babel/runtime/helpers/esm/isNativeFunction.js": {
+          "bytesInOutput": 166
+        },
+        "../node_modules/@babel/runtime/helpers/esm/isNativeReflectConstruct.js": {
+          "bytesInOutput": 239
+        },
+        "../node_modules/@babel/runtime/helpers/esm/construct.js": {
+          "bytesInOutput": 260
+        },
+        "../node_modules/@babel/runtime/helpers/esm/wrapNativeSuper.js": {
+          "bytesInOutput": 777
+        },
+        "../node_modules/polished/dist/polished.esm.js": {
+          "bytesInOutput": 20564
+        },
+        "src/manager/components/notifications/NotificationItem.tsx": {
+          "bytesInOutput": 5365
+        },
+        "src/manager/components/notifications/NotificationList.tsx": {
+          "bytesInOutput": 683
+        },
+        "src/manager/container/Notifications.tsx": {
+          "bytesInOutput": 297
+        },
+        "../node_modules/@react-aria/utils/dist/useLayoutEffect.mjs": {
+          "bytesInOutput": 115
+        },
+        "../node_modules/@react-aria/utils/dist/useEffectEvent.mjs": {
+          "bytesInOutput": 343
+        },
+        "../node_modules/@react-aria/ssr/dist/SSRProvider.mjs": {
+          "bytesInOutput": 3147
+        },
+        "../node_modules/@react-aria/utils/dist/useId.mjs": {
+          "bytesInOutput": 1403
+        },
+        "../node_modules/@react-aria/utils/dist/focusWithoutScrolling.mjs": {
+          "bytesInOutput": 1839
+        },
+        "../node_modules/@react-aria/utils/dist/platform.mjs": {
+          "bytesInOutput": 2584
+        },
+        "../node_modules/@react-aria/utils/dist/openLink.mjs": {
+          "bytesInOutput": 2349
+        },
+        "../node_modules/@react-aria/utils/dist/runAfterTransition.mjs": {
+          "bytesInOutput": 1653
+        },
+        "../node_modules/@react-aria/utils/dist/useViewportSize.mjs": {
+          "bytesInOutput": 91
+        },
+        "global-externals:react-dom": {
+          "bytesInOutput": 376
+        },
+        "../node_modules/@react-aria/utils/dist/isElementVisible.mjs": {
+          "bytesInOutput": 116
+        },
+        "../node_modules/@react-aria/utils/dist/isFocusable.mjs": {
+          "bytesInOutput": 771
+        },
+        "src/manager/components/mobile/navigation/MobileAddonsDrawer.tsx": {
+          "bytesInOutput": 437
+        },
+        "../node_modules/react-transition-state/dist/esm/hooks/utils.mjs": {
+          "bytesInOutput": 710
+        },
+        "../node_modules/react-transition-state/dist/esm/hooks/useTransitionState.mjs": {
+          "bytesInOutput": 1779
+        },
+        "../node_modules/react-transition-state/dist/esm/index.mjs": {
+          "bytesInOutput": 0
+        },
+        "src/manager/components/upgrade/UpgradeBlock.tsx": {
+          "bytesInOutput": 1940
+        },
+        "src/manager/components/mobile/about/MobileAbout.tsx": {
+          "bytesInOutput": 3821
+        },
+        "src/manager/components/mobile/navigation/MobileMenuDrawer.tsx": {
+          "bytesInOutput": 480
+        },
+        "src/manager/components/mobile/navigation/MobileNavigation.tsx": {
+          "bytesInOutput": 3611
+        },
+        "src/manager/components/layout/useDragging.ts": {
+          "bytesInOutput": 4339
+        },
+        "src/manager/components/layout/Layout.tsx": {
+          "bytesInOutput": 7531
+        },
+        "global-externals:storybook/internal/types": {
+          "bytesInOutput": 84
+        },
+        "src/core-events/index.ts": {
+          "bytesInOutput": 5649
+        },
+        "src/manager/components/panel/Panel.tsx": {
+          "bytesInOutput": 4165
+        },
+        "src/manager/container/Panel.tsx": {
+          "bytesInOutput": 1341
+        },
+        "src/manager/container/Preview.tsx": {
+          "bytesInOutput": 3047
+        },
+        "src/manager/components/preview/Iframe.tsx": {
+          "bytesInOutput": 940
+        },
+        "src/manager/components/preview/utils/stringifyQueryParams.tsx": {
+          "bytesInOutput": 201
+        },
+        "src/manager/components/preview/FramesRenderer.tsx": {
+          "bytesInOutput": 2515
+        },
+        "src/manager/components/preview/Toolbar.tsx": {
+          "bytesInOutput": 3808
+        },
+        "src/manager/components/preview/utils/components.ts": {
+          "bytesInOutput": 1365
+        },
+        "src/manager/components/preview/Wrappers.tsx": {
+          "bytesInOutput": 466
+        },
+        "src/manager/components/preview/tools/zoom.tsx": {
+          "bytesInOutput": 2197
+        },
+        "src/manager/components/preview/Preview.tsx": {
+          "bytesInOutput": 5527
+        },
+        "src/manager/components/preview/tools/addons.tsx": {
+          "bytesInOutput": 875
+        },
+        "src/manager/components/preview/tools/menu.tsx": {
+          "bytesInOutput": 795
+        },
+        "src/manager/components/preview/tools/open-in-editor.tsx": {
+          "bytesInOutput": 959
+        },
+        "src/manager/components/preview/tools/remount.tsx": {
+          "bytesInOutput": 1325
+        },
+        "src/manager/components/preview/tools/share.tsx": {
+          "bytesInOutput": 3984
+        },
+        "../node_modules/qrcode.react/lib/esm/index.js": {
+          "bytesInOutput": 40855
+        },
+        "src/manager/container/Menu.tsx": {
+          "bytesInOutput": 7443
+        },
+        "src/manager/hooks/useDebounce.ts": {
+          "bytesInOutput": 307
+        },
+        "src/manager/hooks/useMeasure.tsx": {
+          "bytesInOutput": 692
+        },
+        "../node_modules/@tanstack/virtual-core/dist/esm/utils.js": {
+          "bytesInOutput": 1830
+        },
+        "../node_modules/@tanstack/virtual-core/dist/esm/index.js": {
+          "bytesInOutput": 21099
+        },
+        "../node_modules/@tanstack/react-virtual/dist/esm/index.js": {
+          "bytesInOutput": 808
+        },
+        "src/manager/components/sidebar/FIleSearchList.utils.tsx": {
+          "bytesInOutput": 2339
+        },
+        "src/manager/components/sidebar/FileList.tsx": {
+          "bytesInOutput": 4452
+        },
+        "src/manager/components/sidebar/FileSearchListSkeleton.tsx": {
+          "bytesInOutput": 1488
+        },
+        "src/manager/components/sidebar/FileSearchList.tsx": {
+          "bytesInOutput": 8426
+        },
+        "src/manager/components/sidebar/FileSearchModal.tsx": {
+          "bytesInOutput": 4469
+        },
+        "src/manager/components/sidebar/FileSearchModal.utils.tsx": {
+          "bytesInOutput": 2491
+        },
+        "src/manager/components/sidebar/CreateNewStoryFileModal.tsx": {
+          "bytesInOutput": 4380
+        },
+        "src/manager/components/sidebar/HighlightStyles.tsx": {
+          "bytesInOutput": 761
+        },
+        "src/manager/utils/tree.ts": {
+          "bytesInOutput": 2917
+        },
+        "src/manager/components/sidebar/Loader.tsx": {
+          "bytesInOutput": 885
+        },
+        "src/manager/components/sidebar/NoResults.tsx": {
+          "bytesInOutput": 369
+        },
+        "src/manager/components/sidebar/RefBlocks.tsx": {
+          "bytesInOutput": 4475
+        },
+        "src/manager/components/sidebar/RefIndicator.tsx": {
+          "bytesInOutput": 8130
+        },
+        "src/manager/manager-stores.ts": {
+          "bytesInOutput": 0
+        },
+        "src/manager/components/sidebar/IconSymbols.tsx": {
+          "bytesInOutput": 4690
+        },
+        "src/manager/utils/status.tsx": {
+          "bytesInOutput": 1995
+        },
+        "src/manager/components/sidebar/ContextMenu.tsx": {
+          "bytesInOutput": 4168
+        },
+        "src/manager/components/sidebar/StatusButton.tsx": {
+          "bytesInOutput": 1958
+        },
+        "src/manager/components/sidebar/StatusContext.tsx": {
+          "bytesInOutput": 997
+        },
+        "src/manager/components/sidebar/components/CollapseIcon.tsx": {
+          "bytesInOutput": 742
+        },
+        "src/manager/components/sidebar/TreeNode.tsx": {
+          "bytesInOutput": 3709
+        },
+        "../node_modules/es-toolkit/dist/function/index.mjs": {
+          "bytesInOutput": 0
+        },
+        "../node_modules/es-toolkit/dist/function/debounce.mjs": {
+          "bytesInOutput": 1178
+        },
+        "../node_modules/es-toolkit/dist/function/partial.mjs": {
+          "bytesInOutput": 675
+        },
+        "../node_modules/es-toolkit/dist/function/partialRight.mjs": {
+          "bytesInOutput": 870
+        },
+        "../node_modules/es-toolkit/dist/function/retry.mjs": {
+          "bytesInOutput": 48
+        },
+        "../node_modules/es-toolkit/dist/function/throttle.mjs": {
+          "bytesInOutput": 467
+        },
+        "src/manager/keybinding.ts": {
+          "bytesInOutput": 726
+        },
+        "src/manager/components/sidebar/useExpanded.ts": {
+          "bytesInOutput": 4948
+        },
+        "src/manager/components/sidebar/Tree.tsx": {
+          "bytesInOutput": 16773
+        },
+        "src/manager/components/sidebar/Refs.tsx": {
+          "bytesInOutput": 3633
+        },
+        "src/manager/components/sidebar/useHighlighted.ts": {
+          "bytesInOutput": 3698
+        },
+        "src/manager/components/sidebar/Explorer.tsx": {
+          "bytesInOutput": 932
+        },
+        "src/manager/components/sidebar/Brand.tsx": {
+          "bytesInOutput": 1407
+        },
+        "src/manager/components/sidebar/Menu.tsx": {
+          "bytesInOutput": 2555
+        },
+        "src/manager/components/sidebar/Heading.tsx": {
+          "bytesInOutput": 1753
+        },
+        "../node_modules/@babel/runtime/helpers/esm/objectWithoutPropertiesLoose.js": {
+          "bytesInOutput": 233
+        },
+        "../node_modules/downshift/dist/downshift.esm.js": {
+          "bytesInOutput": 101108
+        },
+        "../node_modules/compute-scroll-into-view/dist/index.js": {
+          "bytesInOutput": 4341
+        },
+        "../node_modules/tslib/tslib.es6.mjs": {
+          "bytesInOutput": 325
+        },
+        "src/manager/components/sidebar/Search.tsx": {
+          "bytesInOutput": 9756
+        },
+        "src/manager/components/sidebar/types.ts": {
+          "bytesInOutput": 121
+        },
+        "src/manager/components/sidebar/SearchResults.tsx": {
+          "bytesInOutput": 7722
+        },
+        "src/manager/components/sidebar/useDynamicFavicon.ts": {
+          "bytesInOutput": 1166
+        },
+        "src/manager/components/sidebar/TestingModule.tsx": {
+          "bytesInOutput": 10396
+        },
+        "src/manager/components/sidebar/SidebarBottom.tsx": {
+          "bytesInOutput": 4628
+        },
+        "src/manager/components/sidebar/TagsFilterPanel.tsx": {
+          "bytesInOutput": 5059
+        },
+        "src/manager/components/sidebar/TagsFilter.tsx": {
+          "bytesInOutput": 6562
+        },
+        "src/manager/components/sidebar/useLastViewed.ts": {
+          "bytesInOutput": 1285
+        },
+        "src/manager/components/sidebar/Sidebar.tsx": {
+          "bytesInOutput": 4849
+        },
+        "src/manager/container/Sidebar.tsx": {
+          "bytesInOutput": 1353
+        },
+        "src/manager/App.tsx": {
+          "bytesInOutput": 964
+        },
+        "src/manager/provider.ts": {
+          "bytesInOutput": 304
+        },
+        "src/manager/settings/About.tsx": {
+          "bytesInOutput": 2166
+        },
+        "src/manager/settings/AboutPage.tsx": {
+          "bytesInOutput": 682
+        },
+        "src/manager/settings/SettingsFooter.tsx": {
+          "bytesInOutput": 814
+        },
+        "src/manager/settings/shortcuts.tsx": {
+          "bytesInOutput": 7707
+        },
+        "src/manager/settings/ShortcutsPage.tsx": {
+          "bytesInOutput": 444
+        },
+        "src/manager/settings/whats_new.tsx": {
+          "bytesInOutput": 4584
+        },
+        "src/manager/settings/whats_new_page.tsx": {
+          "bytesInOutput": 76
+        },
+        "src/manager/settings/index.tsx": {
+          "bytesInOutput": 2794
+        },
+        "src/manager/index.tsx": {
+          "bytesInOutput": 1709
+        },
+        "src/manager/runtime.tsx": {
+          "bytesInOutput": 1405
+        }
+      },
+      "bytes": 599755
+    }
+  }
+}

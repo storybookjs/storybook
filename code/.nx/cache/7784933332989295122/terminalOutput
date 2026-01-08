@@ -1,0 +1,5 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/lib/cli-storybook[39m
+Bundled in [33m720 ms[39m
+Generated types in [33m22 ms[39m

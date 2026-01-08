@@ -2,13 +2,17 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
+// eslint-disable-next-line depend/ban-dependencies
+import type { ResultPromise } from 'execa';
 
+import type { ExecuteCommandOptions } from '../utils/command';
+import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 
@@ -34,7 +38,7 @@ export type PnpmListOutput = PnpmListItem[];
 const PNPM_ERROR_REGEX = /(ELIFECYCLE|ERR_PNPM_[A-Z_]+)\s+(.*)/i;
 
 export class PNPMProxy extends JsPackageManager {
-  readonly type = 'pnpm';
+  readonly type = PackageManagerName.PNPM;
 
   installArgs: string[] | undefined;
 
@@ -49,16 +53,13 @@ export class PNPMProxy extends JsPackageManager {
     return `pnpm run ${command}`;
   }
 
-  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
-    return `pnpm dlx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
-  }
-
   async getPnpmVersion(): Promise<string> {
-    const result = await this.executeCommand({
+    const result = await executeCommand({
+      cwd: this.cwd,
       command: 'pnpm',
       args: ['--version'],
     });
-    return result.stdout ?? null;
+    return typeof result.stdout === 'string' ? result.stdout : '';
   }
 
   getInstallArgs(): string[] {
@@ -72,31 +73,18 @@ export class PNPMProxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  public runPackageCommandSync(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ): string {
-    return this.executeCommandSync({
-      command: 'pnpm',
-      args: ['exec', command, ...args],
-      cwd,
-      stdio,
-    });
+  getPackageCommand(args: string[]): string {
+    return `pnpm exec ${args.join(' ')}`;
   }
 
-  public runPackageCommand(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ) {
-    return this.executeCommand({
+  public runPackageCommand({
+    args,
+    ...options
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ResultPromise {
+    return executeCommand({
       command: 'pnpm',
-      args: ['exec', command, ...args],
-      cwd,
-      stdio,
+      args: ['exec', ...args],
+      ...options,
     });
   }
 
@@ -106,38 +94,41 @@ export class PNPMProxy extends JsPackageManager {
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
   ) {
-    return this.executeCommand({
+    return executeCommand({
       command: 'pnpm',
       args: [command, ...args],
-      cwd,
+      cwd: cwd ?? this.cwd,
       stdio,
     });
   }
 
   public async getRegistryURL() {
-    const childProcess = await this.executeCommand({
+    const childProcess = await executeCommand({
       command: 'pnpm',
       args: ['config', 'get', 'registry'],
     });
-    const url = (childProcess.stdout ?? '').trim();
+    const url = (typeof childProcess.stdout === 'string' ? childProcess.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     try {
-      const childProcess = await this.executeCommand({
+      const args = ['list', pattern.map((p) => `"${p}"`).join(' '), '--json', `--depth=${depth}`];
+      const childProcess = await executeCommand({
         command: 'pnpm',
-        args: ['list', pattern.map((p) => `"${p}"`).join(' '), '--json', `--depth=${depth}`],
+        shell: true,
+        args,
         env: {
           FORCE_COLOR: 'false',
         },
         cwd: this.instanceDir,
       });
-      const commandResult = childProcess.stdout ?? '';
+      const commandResult = typeof childProcess.stdout === 'string' ? childProcess.stdout : '';
 
       const parsedOutput = JSON.parse(commandResult);
       return this.mapDependencies(parsedOutput, pattern);
     } catch (e) {
+      logger.debug(`Error finding installations for ${pattern.join(', ')}: ${String(e)}`);
       return undefined;
     }
   }
@@ -174,7 +165,10 @@ export class PNPMProxy extends JsPackageManager {
     }
 
     const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;
@@ -193,7 +187,7 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
-    return this.executeCommand({
+    return executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       stdio: prompt.getPreferredStdio(),
@@ -210,7 +204,7 @@ export class PNPMProxy extends JsPackageManager {
 
     const commandArgs = ['add', ...args, ...this.getInstallArgs()];
 
-    return this.executeCommand({
+    return executeCommand({
       command: 'pnpm',
       args: commandArgs,
       stdio: prompt.getPreferredStdio(),
@@ -225,12 +219,12 @@ export class PNPMProxy extends JsPackageManager {
     const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
 
     try {
-      const process = this.executeCommand({
+      const process = executeCommand({
         command: 'pnpm',
         args: ['info', packageName, ...args],
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 

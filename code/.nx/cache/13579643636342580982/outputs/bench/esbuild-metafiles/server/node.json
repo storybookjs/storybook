@@ -1,0 +1,57 @@
+{
+  "inputs": {
+    "src/preset.ts": {
+      "bytes": 1448,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "yaml",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/preset.js": {
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "yaml",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "experimental_indexers",
+        "previewAnnotations"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/preset.ts": {
+          "bytesInOutput": 1014
+        }
+      },
+      "bytes": 1716
+    }
+  }
+}

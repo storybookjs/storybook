@@ -5,9 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAddonNames, removeAddon } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
-import type { RunOptions } from '../types';
+import type { CheckOptions, RunOptions } from '../types';
 import {
   type MigrateAddonConsoleOptions,
   migrateAddonConsole,
@@ -65,7 +65,7 @@ describe('migrateAddonConsole', () => {
         mainConfig,
         packageManager,
         previewConfigPath,
-      } as RunOptions<MigrateAddonConsoleOptions>);
+      } as CheckOptions);
 
       expect(result).toBeNull();
       expect(packageManager.isDependencyInstalled).toHaveBeenCalledWith('@storybook/addon-console');
@@ -82,7 +82,7 @@ describe('migrateAddonConsole', () => {
         mainConfig,
         packageManager,
         previewConfigPath,
-      } as RunOptions<MigrateAddonConsoleOptions>);
+      } as CheckOptions);
 
       expect(result).toEqual({
         transformedPreviewCode: expect.any(String),
@@ -100,7 +100,7 @@ describe('migrateAddonConsole', () => {
         mainConfig,
         packageManager,
         previewConfigPath,
-      } as RunOptions<MigrateAddonConsoleOptions>);
+      } as CheckOptions);
 
       expect(result).toEqual({
         transformedPreviewCode: expect.any(String),
@@ -117,7 +117,7 @@ describe('migrateAddonConsole', () => {
         mainConfig,
         packageManager,
         previewConfigPath: undefined,
-      } as RunOptions<MigrateAddonConsoleOptions>);
+      } as CheckOptions);
 
       expect(result).toEqual({
         previewConfigPath: undefined,

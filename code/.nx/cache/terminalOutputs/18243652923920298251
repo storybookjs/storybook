@@ -1,0 +1,10 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/renderers/react[39m
+(node:44028) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✅ Generated types for [36mrenderers/react/src/playwright.ts[39m
+✅ Generated types for [36mrenderers/react/src/preview.tsx[39m
+✅ Generated types for [36mrenderers/react/src/index.ts[39m
+Bundled in [33m632 ms[39m
+Generated types in [33m5.23 s[39m

@@ -1,0 +1,7 @@
+[2m> [22myarn prep --reset
+
+Building [92mcode/lib/eslint-plugin[39m
+Running prebuild script
+Prebuild script completed in [33m2.07 s[39m
+Bundled in [33m24 ms[39m
+Generated type mappers in [33m4.53 ms[39m

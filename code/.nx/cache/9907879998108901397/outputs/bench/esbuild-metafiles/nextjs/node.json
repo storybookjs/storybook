@@ -1,0 +1,1531 @@
+{
+  "inputs": {
+    "src/node/index.ts": {
+      "bytes": 123,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/babel/plugins/amp-attributes.ts": {
+      "bytes": 868,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/babel/plugins/jsx-pragma.ts": {
+      "bytes": 3802,
+      "imports": [
+        {
+          "path": "next/dist/compiled/babel/plugin-syntax-jsx.js",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/babel/plugins/optimize-hook-destructuring.ts": {
+      "bytes": 2928,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/babel/plugins/react-loadable-plugin.ts": {
+      "bytes": 6621,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/babel/preset.ts": {
+      "bytes": 6632,
+      "imports": [
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/babel/plugins/amp-attributes.ts",
+          "kind": "import-statement",
+          "original": "./plugins/amp-attributes"
+        },
+        {
+          "path": "src/babel/plugins/jsx-pragma.ts",
+          "kind": "import-statement",
+          "original": "./plugins/jsx-pragma"
+        },
+        {
+          "path": "src/babel/plugins/optimize-hook-destructuring.ts",
+          "kind": "import-statement",
+          "original": "./plugins/optimize-hook-destructuring"
+        },
+        {
+          "path": "src/babel/plugins/react-loadable-plugin.ts",
+          "kind": "import-statement",
+          "original": "./plugins/react-loadable-plugin"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/exsolve/dist/index.mjs": {
+      "bytes": 41441,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:v8",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:util",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs": {
+      "bytes": 6539,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/index.mjs": {
+      "bytes": 272,
+      "imports": [
+        {
+          "path": "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs",
+          "kind": "import-statement",
+          "original": "./shared/pathe.ff20891b.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../core/src/shared/utils/module.ts": {
+      "bytes": 4584,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path/win32",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/exsolve/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "exsolve"
+        },
+        {
+          "path": "../../node_modules/pathe/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "pathe"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/utils.ts": {
+      "bytes": 5609,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-webpack5",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/constants.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/server/config.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../core/src/shared/utils/module.ts",
+          "kind": "import-statement",
+          "original": "../../../core/src/shared/utils/module"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/config/webpack.ts": {
+      "bytes": 3039,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        },
+        {
+          "path": "webpack",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/font/babel/helpers.ts": {
+      "bytes": 9663,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/font/babel/index.ts": {
+      "bytes": 2948,
+      "imports": [
+        {
+          "path": "src/font/babel/helpers.ts",
+          "kind": "import-statement",
+          "original": "./helpers"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/font/webpack/configureNextFont.ts": {
+      "bytes": 559,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/imports/webpack.ts": {
+      "bytes": 760,
+      "imports": [
+        {
+          "path": "tsconfig-paths",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tsconfig-paths-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/css/webpack.ts": {
+      "bytes": 4126,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/webpack/config/blocks/css/loaders/file-resolve.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../core/src/shared/utils/module.ts",
+          "kind": "import-statement",
+          "original": "../../../../core/src/shared/utils/module"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/images/webpack.ts": {
+      "bytes": 2133,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/styledJsx/webpack.ts": {
+      "bytes": 228,
+      "imports": [
+        {
+          "path": "src/utils.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/nodePolyfills/webpack.ts": {
+      "bytes": 484,
+      "imports": [
+        {
+          "path": "node-polyfill-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/compatibility/compatibility-map.ts": {
+      "bytes": 1113,
+      "imports": [
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/export-mocks/webpack.ts": {
+      "bytes": 808,
+      "imports": [
+        {
+          "path": "src/compatibility/compatibility-map.ts",
+          "kind": "import-statement",
+          "original": "../compatibility/compatibility-map"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/aliases/webpack.ts": {
+      "bytes": 964,
+      "imports": [
+        {
+          "path": "../../core/src/shared/utils/module.ts",
+          "kind": "import-statement",
+          "original": "../../../../core/src/shared/utils/module"
+        },
+        {
+          "path": "src/compatibility/compatibility-map.ts",
+          "kind": "import-statement",
+          "original": "../compatibility/compatibility-map"
+        },
+        {
+          "path": "src/export-mocks/webpack.ts",
+          "kind": "import-statement",
+          "original": "../export-mocks/webpack"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/fastRefresh/webpack.ts": {
+      "bytes": 529,
+      "imports": [
+        {
+          "path": "@pmmmwh/react-refresh-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/rsc/webpack.ts": {
+      "bytes": 361,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/swc/loader.ts": {
+      "bytes": 2116,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-webpack5",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/load-jsconfig.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/utils.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/babel/loader.ts": {
+      "bytes": 1277,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-webpack5",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/utils.ts",
+          "kind": "import-statement",
+          "original": "../utils"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preset.ts": {
+      "bytes": 7425,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@babel/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/babel/preset.ts",
+          "kind": "import-statement",
+          "original": "./babel/preset"
+        },
+        {
+          "path": "src/config/webpack.ts",
+          "kind": "import-statement",
+          "original": "./config/webpack"
+        },
+        {
+          "path": "src/font/babel/index.ts",
+          "kind": "import-statement",
+          "original": "./font/babel"
+        },
+        {
+          "path": "src/utils.ts",
+          "kind": "import-statement",
+          "original": "./utils"
+        },
+        {
+          "path": "src/font/webpack/configureNextFont.ts",
+          "kind": "dynamic-import",
+          "original": "./font/webpack/configureNextFont"
+        },
+        {
+          "path": "src/utils.ts",
+          "kind": "dynamic-import",
+          "original": "./utils"
+        },
+        {
+          "path": "src/imports/webpack.ts",
+          "kind": "dynamic-import",
+          "original": "./imports/webpack"
+        },
+        {
+          "path": "src/css/webpack.ts",
+          "kind": "dynamic-import",
+          "original": "./css/webpack"
+        },
+        {
+          "path": "src/images/webpack.ts",
+          "kind": "dynamic-import",
+          "original": "./images/webpack"
+        },
+        {
+          "path": "src/styledJsx/webpack.ts",
+          "kind": "dynamic-import",
+          "original": "./styledJsx/webpack"
+        },
+        {
+          "path": "src/nodePolyfills/webpack.ts",
+          "kind": "dynamic-import",
+          "original": "./nodePolyfills/webpack"
+        },
+        {
+          "path": "src/aliases/webpack.ts",
+          "kind": "dynamic-import",
+          "original": "./aliases/webpack"
+        },
+        {
+          "path": "src/fastRefresh/webpack.ts",
+          "kind": "dynamic-import",
+          "original": "./fastRefresh/webpack"
+        },
+        {
+          "path": "src/rsc/webpack.ts",
+          "kind": "dynamic-import",
+          "original": "./rsc/webpack"
+        },
+        {
+          "path": "src/swc/loader.ts",
+          "kind": "dynamic-import",
+          "original": "./swc/loader"
+        },
+        {
+          "path": "src/babel/loader.ts",
+          "kind": "dynamic-import",
+          "original": "./babel/loader"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/export-mocks/index.ts": {
+      "bytes": 47,
+      "imports": [
+        {
+          "path": "src/export-mocks/webpack.ts",
+          "kind": "import-statement",
+          "original": "./webpack"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/swc/next-swc-loader-patch.ts": {
+      "bytes": 6902,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/swc/index.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/swc/options.js",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/font/webpack/loader/google/get-font-face-declarations.ts": {
+      "bytes": 1767,
+      "imports": [
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/@next/font/dist/google/fetch-css-from-google-fonts.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/@next/font/dist/google/get-font-axes.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/@next/font/dist/google/get-google-fonts-url.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/@next/font/dist/google/validate-google-font-function-call.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/loader-utils3/index.js",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/font/webpack/loader/local/get-font-face-declarations.ts": {
+      "bytes": 2132,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/@next/font/dist/local/validate-local-font-function-call.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/loader-utils3/index.js",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/font/webpack/loader/utils/get-css-meta.ts": {
+      "bytes": 1964,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/font/webpack/loader/utils/set-font-declarations-in-head.ts": {
+      "bytes": 753,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/font/webpack/loader/storybook-nextjs-font-loader.ts": {
+      "bytes": 2322,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/font/webpack/loader/google/get-font-face-declarations.ts",
+          "kind": "import-statement",
+          "original": "./google/get-font-face-declarations"
+        },
+        {
+          "path": "src/font/webpack/loader/local/get-font-face-declarations.ts",
+          "kind": "import-statement",
+          "original": "./local/get-font-face-declarations"
+        },
+        {
+          "path": "src/font/webpack/loader/utils/get-css-meta.ts",
+          "kind": "import-statement",
+          "original": "./utils/get-css-meta"
+        },
+        {
+          "path": "src/font/webpack/loader/utils/set-font-declarations-in-head.ts",
+          "kind": "import-statement",
+          "original": "./utils/set-font-declarations-in-head"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/_node-chunks/loader-HMF5JCZ3.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-JYTRPWI3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-KP5BHB3H.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-webpack5",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "configureBabelLoader"
+      ],
+      "entryPoint": "src/babel/loader.ts",
+      "inputs": {
+        "src/babel/loader.ts": {
+          "bytesInOutput": 1051
+        }
+      },
+      "bytes": 1828
+    },
+    "dist/_node-chunks/webpack-DI37ARSY.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-KP5BHB3H.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/webpack/config/blocks/css/loaders/file-resolve.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "configureCss"
+      ],
+      "entryPoint": "src/css/webpack.ts",
+      "inputs": {
+        "src/css/webpack.ts": {
+          "bytesInOutput": 2947
+        }
+      },
+      "bytes": 3676
+    },
+    "dist/_node-chunks/webpack-KDT6WTWL.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-JYTRPWI3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-KP5BHB3H.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "configureImages"
+      ],
+      "entryPoint": "src/images/webpack.ts",
+      "inputs": {
+        "src/images/webpack.ts": {
+          "bytesInOutput": 1750
+        }
+      },
+      "bytes": 2514
+    },
+    "dist/_node-chunks/webpack-U7NSRTYX.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-JYTRPWI3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-KP5BHB3H.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "configureStyledJsx"
+      ],
+      "entryPoint": "src/styledJsx/webpack.ts",
+      "inputs": {
+        "src/styledJsx/webpack.ts": {
+          "bytesInOutput": 90
+        }
+      },
+      "bytes": 858
+    },
+    "dist/_node-chunks/webpack-HDI6UJ4S.js": {
+      "imports": [
+        {
+          "path": "node-polyfill-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "configureNodePolyfills"
+      ],
+      "entryPoint": "src/nodePolyfills/webpack.ts",
+      "inputs": {
+        "src/nodePolyfills/webpack.ts": {
+          "bytesInOutput": 280
+        }
+      },
+      "bytes": 970
+    },
+    "dist/_node-chunks/webpack-TZAZYAYJ.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-WATU4CI7.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-JYTRPWI3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-KP5BHB3H.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "configureAliases"
+      ],
+      "entryPoint": "src/aliases/webpack.ts",
+      "inputs": {
+        "src/aliases/webpack.ts": {
+          "bytesInOutput": 559
+        }
+      },
+      "bytes": 1425
+    },
+    "dist/_node-chunks/webpack-HUBMBO4J.js": {
+      "imports": [
+        {
+          "path": "@pmmmwh/react-refresh-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "configureFastRefresh"
+      ],
+      "entryPoint": "src/fastRefresh/webpack.ts",
+      "inputs": {
+        "src/fastRefresh/webpack.ts": {
+          "bytesInOutput": 429
+        }
+      },
+      "bytes": 1115
+    },
+    "dist/_node-chunks/webpack-RCJ7S2US.js": {
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "configureRSC"
+      ],
+      "entryPoint": "src/rsc/webpack.ts",
+      "inputs": {
+        "src/rsc/webpack.ts": {
+          "bytesInOutput": 263
+        }
+      },
+      "bytes": 933
+    },
+    "dist/_node-chunks/loader-AA6P3F6Q.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-JYTRPWI3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-KP5BHB3H.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-webpack5",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/load-jsconfig.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/utils.js",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "configureSWCLoader"
+      ],
+      "entryPoint": "src/swc/loader.ts",
+      "inputs": {
+        "src/swc/loader.ts": {
+          "bytesInOutput": 1759
+        }
+      },
+      "bytes": 2532
+    },
+    "dist/node/index.js": {
+      "imports": [],
+      "exports": [
+        "defineMain"
+      ],
+      "entryPoint": "src/node/index.ts",
+      "inputs": {
+        "src/node/index.ts": {
+          "bytesInOutput": 49
+        }
+      },
+      "bytes": 716
+    },
+    "dist/preset.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-JYTRPWI3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-KP5BHB3H.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@babel/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/babel/plugin-syntax-jsx.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "dist/_node-chunks/configureNextFont-AOVW7RHE.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/utils-4NW4JI4A.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/webpack-MPQJGYF7.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/webpack-DI37ARSY.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/webpack-KDT6WTWL.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/webpack-U7NSRTYX.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/webpack-HDI6UJ4S.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/webpack-TZAZYAYJ.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/webpack-HUBMBO4J.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/webpack-RCJ7S2US.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/loader-AA6P3F6Q.js",
+          "kind": "dynamic-import"
+        },
+        {
+          "path": "dist/_node-chunks/loader-HMF5JCZ3.js",
+          "kind": "dynamic-import"
+        }
+      ],
+      "exports": [
+        "addons",
+        "babel",
+        "core",
+        "previewAnnotations",
+        "webpackFinal"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/preset.ts": {
+          "bytesInOutput": 5595
+        },
+        "src/babel/preset.ts": {
+          "bytesInOutput": 4842
+        },
+        "src/babel/plugins/amp-attributes.ts": {
+          "bytesInOutput": 439
+        },
+        "src/babel/plugins/jsx-pragma.ts": {
+          "bytesInOutput": 2602
+        },
+        "src/babel/plugins/optimize-hook-destructuring.ts": {
+          "bytesInOutput": 1344
+        },
+        "src/babel/plugins/react-loadable-plugin.ts": {
+          "bytesInOutput": 4308
+        },
+        "src/config/webpack.ts": {
+          "bytesInOutput": 1739
+        },
+        "src/font/babel/helpers.ts": {
+          "bytesInOutput": 4696
+        },
+        "src/font/babel/index.ts": {
+          "bytesInOutput": 1312
+        }
+      },
+      "bytes": 28070
+    },
+    "dist/export-mocks/index.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-WATU4CI7.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-JYTRPWI3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-KP5BHB3H.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "getPackageAliases"
+      ],
+      "entryPoint": "src/export-mocks/index.ts",
+      "inputs": {
+        "src/export-mocks/index.ts": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 813
+    },
+    "dist/_node-chunks/chunk-WATU4CI7.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-JYTRPWI3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "configureCompatibilityAliases",
+        "configureNextExportMocks",
+        "getPackageAliases"
+      ],
+      "inputs": {
+        "src/compatibility/compatibility-map.ts": {
+          "bytesInOutput": 781
+        },
+        "src/export-mocks/webpack.ts": {
+          "bytesInOutput": 448
+        }
+      },
+      "bytes": 2106
+    },
+    "dist/swc/next-swc-loader-patch.js": {
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/swc/index.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/build/swc/options.js",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "default",
+        "pitch",
+        "raw"
+      ],
+      "entryPoint": "src/swc/next-swc-loader-patch.ts",
+      "inputs": {
+        "src/swc/next-swc-loader-patch.ts": {
+          "bytesInOutput": 4264
+        }
+      },
+      "bytes": 4972
+    },
+    "dist/font/webpack/loader/storybook-nextjs-font-loader.js": {
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/@next/font/dist/google/fetch-css-from-google-fonts.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/@next/font/dist/google/get-font-axes.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/@next/font/dist/google/get-google-fonts-url.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/@next/font/dist/google/validate-google-font-function-call.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/loader-utils3/index.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/@next/font/dist/local/validate-local-font-function-call.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/compiled/loader-utils3/index.js",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "default"
+      ],
+      "entryPoint": "src/font/webpack/loader/storybook-nextjs-font-loader.ts",
+      "inputs": {
+        "src/font/webpack/loader/storybook-nextjs-font-loader.ts": {
+          "bytesInOutput": 1493
+        },
+        "src/font/webpack/loader/google/get-font-face-declarations.ts": {
+          "bytesInOutput": 1580
+        },
+        "src/font/webpack/loader/local/get-font-face-declarations.ts": {
+          "bytesInOutput": 1743
+        },
+        "src/font/webpack/loader/utils/get-css-meta.ts": {
+          "bytesInOutput": 1495
+        },
+        "src/font/webpack/loader/utils/set-font-declarations-in-head.ts": {
+          "bytesInOutput": 658
+        }
+      },
+      "bytes": 8006
+    },
+    "dist/_node-chunks/utils-4NW4JI4A.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-JYTRPWI3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-KP5BHB3H.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "addScopedAlias",
+        "configureRuntimeNextjsVersionResolution",
+        "getNextjsVersion",
+        "getNodeModulesExcludeRegex",
+        "isNextVersionGte",
+        "resolveNextConfig",
+        "scopedResolve",
+        "setAlias"
+      ],
+      "entryPoint": "src/utils.ts",
+      "inputs": {},
+      "bytes": 1061
+    },
+    "dist/_node-chunks/chunk-JYTRPWI3.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-KP5BHB3H.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-webpack5",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/constants.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "next/dist/server/config.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "addScopedAlias",
+        "configureRuntimeNextjsVersionResolution",
+        "getNextjsVersion",
+        "getNodeModulesExcludeRegex",
+        "isNextVersionGte",
+        "resolveNextConfig",
+        "scopedResolve",
+        "setAlias"
+      ],
+      "inputs": {
+        "src/utils.ts": {
+          "bytesInOutput": 2600
+        }
+      },
+      "bytes": 3489
+    },
+    "dist/_node-chunks/chunk-KP5BHB3H.js": {
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:v8",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:util",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "resolvePackageDir"
+      ],
+      "inputs": {
+        "../../core/src/shared/utils/module.ts": {
+          "bytesInOutput": 559
+        },
+        "../../node_modules/exsolve/dist/index.mjs": {
+          "bytesInOutput": 8715
+        },
+        "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs": {
+          "bytesInOutput": 2931
+        },
+        "../../node_modules/pathe/dist/index.mjs": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 13048
+    },
+    "dist/_node-chunks/configureNextFont-AOVW7RHE.js": {
+      "imports": [],
+      "exports": [
+        "configureNextFont"
+      ],
+      "entryPoint": "src/font/webpack/configureNextFont.ts",
+      "inputs": {
+        "src/font/webpack/configureNextFont.ts": {
+          "bytesInOutput": 432
+        }
+      },
+      "bytes": 1126
+    },
+    "dist/_node-chunks/webpack-MPQJGYF7.js": {
+      "imports": [
+        {
+          "path": "tsconfig-paths",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tsconfig-paths-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "configureImports"
+      ],
+      "entryPoint": "src/imports/webpack.ts",
+      "inputs": {
+        "src/imports/webpack.ts": {
+          "bytesInOutput": 514
+        }
+      },
+      "bytes": 1192
+    }
+  }
+}

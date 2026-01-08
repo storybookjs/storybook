@@ -8,12 +8,11 @@ import { isFunction } from 'es-toolkit/predicate';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
+// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
 import { babelParse, types as t } from '../../code/core/src/babel';
-import { detectLanguage } from '../../code/core/src/cli/detect';
-import { SupportedLanguage } from '../../code/core/src/cli/project_types';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
 import storybookPackages from '../../code/core/src/common/versions';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
@@ -22,10 +21,12 @@ import {
   formatConfig,
   writeConfig,
 } from '../../code/core/src/csf-tools';
+import { SupportedLanguage } from '../../code/core/src/types';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
-import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
+import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
 import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir';
 import { addPreviewAnnotations, readConfig } from '../utils/main-js';
@@ -56,6 +57,14 @@ async function ensureSymlink(src: string, dest: string): Promise<void> {
 
 // Windows-compatible symlink function that falls back to copying
 async function ensureSymlinkOrCopy(source: string, target: string): Promise<void> {
+  if (process.env.CI) {
+    /**
+     * On CI, we don't need to symlink, we can just copy the files because there's no benefit in
+     * having a symlink on CI, but it does cause issues if we persist the workspace to windows.
+     */
+    await cp(source, target, { recursive: true, force: true });
+    return;
+  }
   try {
     await ensureSymlink(source, target);
   } catch (error: any) {
@@ -109,7 +118,7 @@ export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRu
   } else {
     await executeCLIStep(steps.repro, {
       argument: key,
-      optionValues: { output: sandboxDir, init: false, debug },
+      optionValues: { output: sandboxDir, init: false, debug, loglevel: 'debug' },
       cwd: parentDir,
       dryRun,
       debug,
@@ -196,7 +205,12 @@ export const init: Task['run'] = async (
 
   await executeCLIStep(steps.init, {
     cwd,
-    optionValues: { debug, yes: true, 'skip-install': true, ...extra },
+    optionValues: {
+      loglevel: 'debug',
+      yes: true,
+      ...extra,
+      ...(template.initOptions || {}),
+    },
     dryRun,
     debug,
   });
@@ -253,7 +267,7 @@ export const init: Task['run'] = async (
 function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
   // NOTE: the test regexp here will apply whether the path is symlink-preserved or otherwise
   const require = createRequire(import.meta.url);
-  const esbuildLoaderPath = require.resolve('../../code/node_modules/esbuild-loader');
+  const esbuildLoaderPath = require.resolve('../../node_modules/esbuild-loader');
   const webpackFinalCode = `
   (config) => ({
     ...config,
@@ -347,15 +361,27 @@ function updateStoriesField(mainConfig: ConfigFile, isJs: boolean) {
 }
 
 // Add a stories field entry for the passed symlink
-function addStoriesEntry(mainConfig: ConfigFile, path: string, disableDocs: boolean) {
+function addStoriesEntry(
+  mainConfig: ConfigFile,
+  path: string,
+  disableDocs: boolean,
+  skipMocking: boolean
+) {
   const stories = mainConfig.getFieldValue(['stories']) as string[];
+
+  const basePattern = disableDocs
+    ? '**/*.stories.@(js|jsx|mjs|ts|tsx)'
+    : '**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))';
+
+  // When skipMocking is true and we're linking core template stories, exclude any stories
+  // with "mocking" in their file name (not related to docs filtering).
+  const files =
+    skipMocking && path === 'core' ? basePattern.replace('**/*', '**/!(*Mocking)*') : basePattern;
 
   const entry = {
     directory: slash(join('../template-stories', path)),
     titlePrefix: slash(path),
-    files: disableDocs
-      ? '**/*.stories.@(js|jsx|mjs|ts|tsx)'
-      : '**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))',
+    files,
   };
 
   mainConfig.setFieldValue(['stories'], [...stories, entry]);
@@ -373,7 +399,14 @@ async function linkPackageStories(
     cwd,
     linkInDir,
     disableDocs,
-  }: { mainConfig: ConfigFile; cwd: string; linkInDir?: string; disableDocs: boolean },
+    skipMocking,
+  }: {
+    mainConfig: ConfigFile;
+    cwd: string;
+    linkInDir?: string;
+    disableDocs: boolean;
+    skipMocking: boolean;
+  },
   variant?: string
 ) {
   const storiesFolderName = variant ? getStoriesFolderWithVariant(variant) : 'stories';
@@ -391,7 +424,7 @@ async function linkPackageStories(
   await ensureSymlinkOrCopy(source, target);
 
   if (!linkInDir) {
-    addStoriesEntry(mainConfig, packageDir, disableDocs);
+    addStoriesEntry(mainConfig, packageDir, disableDocs, skipMocking);
   }
 
   // Add `previewAnnotation` entries of the form
@@ -519,7 +552,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     if (lastBraceIndex !== -1) {
       // Insert before the last }
       const before = args.slice(0, lastBraceIndex).trimEnd();
-      const needsComma = before.endsWith('{') ? '' : ',';
+      const needsComma = before.endsWith('{') || before.endsWith(',') ? '' : ',';
       const after = args.slice(lastBraceIndex);
       return `storybookTest(${before}${needsComma}\n  tags: {\n    include: ['vitest']\n  }\n${after})`;
     }
@@ -585,6 +618,7 @@ export const addStories: Task['run'] = async (
   { addon: extraAddons, disableDocs }
 ) => {
   logger.log('💃 Adding stories');
+  const skipMocking = template.modifications?.skipMocking;
   const cwd = sandboxDir;
   const storiesPath =
     (await findFirstPath([join('src', 'stories'), 'stories'], { cwd })) || 'stories';
@@ -592,11 +626,13 @@ export const addStories: Task['run'] = async (
   const mainConfig = await readConfig({ fileName: 'main', cwd });
   const packageManager = JsPackageManagerFactory.getPackageManager({}, sandboxDir);
 
+  // Package manager types differ slightly due to private methods and compilation differences of types
+  const projectTypeService = new ProjectTypeService(packageManager as any);
+
   // Ensure that we match the right stories in the stories directory
   updateStoriesField(
     mainConfig,
-    (await detectLanguage(packageManager as any as Parameters<typeof detectLanguage>[0])) ===
-      SupportedLanguage.JAVASCRIPT
+    (await projectTypeService.detectLanguage()) === SupportedLanguage.JAVASCRIPT
   );
 
   const isCoreRenderer =
@@ -621,6 +657,7 @@ export const addStories: Task['run'] = async (
       cwd,
       linkInDir: resolve(cwd, storiesPath),
       disableDocs,
+      skipMocking,
     });
 
     if (
@@ -635,6 +672,7 @@ export const addStories: Task['run'] = async (
           cwd,
           linkInDir: resolve(cwd, storiesPath),
           disableDocs,
+          skipMocking,
         },
         sandboxSpecificStoriesFolder
       );
@@ -653,6 +691,7 @@ export const addStories: Task['run'] = async (
         cwd,
         linkInDir: resolve(cwd, storiesPath),
         disableDocs,
+        skipMocking,
       });
     }
 
@@ -668,6 +707,7 @@ export const addStories: Task['run'] = async (
           cwd,
           linkInDir: resolve(cwd, storiesPath),
           disableDocs,
+          skipMocking,
         },
         sandboxSpecificStoriesFolder
       );
@@ -681,12 +721,14 @@ export const addStories: Task['run'] = async (
       mainConfig,
       cwd,
       disableDocs,
+      skipMocking,
     });
 
     await linkPackageStories(await workspacePath('addon test package', '@storybook/addon-vitest'), {
       mainConfig,
       cwd,
       disableDocs,
+      skipMocking,
     });
   }
 
@@ -716,13 +758,24 @@ export const addStories: Task['run'] = async (
       .filter((addon: string) =>
         Object.keys(storybookPackages).find((pkg: string) => pkg === `@storybook/addon-${addon}`)
       )
+      .filter((addon: string) => {
+        // RSBUILD frameworks are not configured to ignore docs addon stories, which are React based
+        if (
+          template.expected.framework === 'storybook-vue3-rsbuild' ||
+          template.expected.framework === 'storybook-web-components-rsbuild' ||
+          template.expected.framework === 'storybook-html-rsbuild'
+        ) {
+          return addon !== 'docs';
+        }
+        return true;
+      })
       .map(async (addon) => workspacePath('addon', `@storybook/addon-${addon}`))
   );
 
   if (isCoreRenderer) {
     const existingStories = await filterExistsInCodeDir(addonDirs, join('template', 'stories'));
     for (const packageDir of existingStories) {
-      await linkPackageStories(packageDir, { mainConfig, cwd, disableDocs });
+      await linkPackageStories(packageDir, { mainConfig, cwd, disableDocs, skipMocking });
     }
 
     // Add some extra settings (see above for what these do)
@@ -828,7 +881,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setFieldValue(['tags'], ['vitest']);
   }
 
-  if (template.name.includes('Bench')) {
+  if (template.modifications?.skipMocking) {
     await writeConfig(previewConfig);
     return;
   }
@@ -986,7 +1039,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    'docs:json': 'DIR=$PWD; yarn --cwd ../../scripts jiti combine-compodoc $DIR',
+    'docs:json': `DIR=$PWD; yarn --cwd ${join(ROOT_DIRECTORY, 'scripts')} jiti combine-compodoc $DIR`,
     storybook: `yarn docs:json && ${packageJson.scripts.storybook}`,
     'build-storybook': `yarn docs:json && ${packageJson.scripts['build-storybook']}`,
   };

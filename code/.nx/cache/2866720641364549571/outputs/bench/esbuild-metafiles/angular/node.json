@@ -1,0 +1,722 @@
+{
+  "inputs": {
+    "src/node/index.ts": {
+      "bytes": 123,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/preset.ts": {
+      "bytes": 1716,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/server/framework-preset-angular-ivy.ts": {
+      "bytes": 2674,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/resolve.mjs": {
+      "bytes": 971,
+      "imports": [
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/walk.mjs": {
+      "bytes": 535,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/resolve.mjs",
+          "kind": "import-statement",
+          "original": "empathic/resolve"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/find.mjs": {
+      "bytes": 2033,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/walk.mjs",
+          "kind": "import-statement",
+          "original": "empathic/walk"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/server/plugins/storybook-normalize-angular-entry-plugin.js": {
+      "bytes": 2216,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/server/utils/filter-out-styling-rules.ts": {
+      "bytes": 462,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/server/angular-cli-webpack.js": {
+      "bytes": 7617,
+      "imports": [
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/server/plugins/storybook-normalize-angular-entry-plugin.js",
+          "kind": "import-statement",
+          "original": "./plugins/storybook-normalize-angular-entry-plugin"
+        },
+        {
+          "path": "src/server/utils/filter-out-styling-rules.ts",
+          "kind": "import-statement",
+          "original": "./utils/filter-out-styling-rules"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/server/framework-preset-angular-cli.ts": {
+      "bytes": 6057,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-webpack5",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular-devkit/architect",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular-devkit/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/find.mjs",
+          "kind": "import-statement",
+          "original": "empathic/find"
+        },
+        {
+          "path": "src/server/angular-cli-webpack.js",
+          "kind": "import-statement",
+          "original": "./angular-cli-webpack"
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/access.mjs": {
+      "bytes": 726,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/package.mjs": {
+      "bytes": 1650,
+      "imports": [
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/access.mjs",
+          "kind": "import-statement",
+          "original": "empathic/access"
+        },
+        {
+          "path": "../../node_modules/empathic/find.mjs",
+          "kind": "import-statement",
+          "original": "empathic/find"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/builders/utils/error-handler.ts": {
+      "bytes": 1147,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/builders/utils/run-compodoc.ts": {
+      "bytes": 1534,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/builders/start-storybook/index.ts": {
+      "bytes": 6380,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-server",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular-devkit/architect",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/find.mjs",
+          "kind": "import-statement",
+          "original": "empathic/find"
+        },
+        {
+          "path": "../../node_modules/empathic/package.mjs",
+          "kind": "import-statement",
+          "original": "empathic/package"
+        },
+        {
+          "path": "rxjs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs/operators",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/builders/utils/error-handler.ts",
+          "kind": "import-statement",
+          "original": "../utils/error-handler"
+        },
+        {
+          "path": "src/builders/utils/run-compodoc.ts",
+          "kind": "import-statement",
+          "original": "../utils/run-compodoc"
+        },
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/builders/build-storybook/index.ts": {
+      "bytes": 5862,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-server",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular-devkit/architect",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/find.mjs",
+          "kind": "import-statement",
+          "original": "empathic/find"
+        },
+        {
+          "path": "../../node_modules/empathic/package.mjs",
+          "kind": "import-statement",
+          "original": "empathic/package"
+        },
+        {
+          "path": "rxjs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs/operators",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/builders/utils/error-handler.ts",
+          "kind": "import-statement",
+          "original": "../utils/error-handler"
+        },
+        {
+          "path": "src/builders/utils/run-compodoc.ts",
+          "kind": "import-statement",
+          "original": "../utils/run-compodoc"
+        },
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/node/index.js": {
+      "imports": [],
+      "exports": [
+        "defineMain"
+      ],
+      "entryPoint": "src/node/index.ts",
+      "inputs": {
+        "src/node/index.ts": {
+          "bytesInOutput": 49
+        }
+      },
+      "bytes": 716
+    },
+    "dist/preset.js": {
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "addons",
+        "core",
+        "previewAnnotations",
+        "typescript"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/preset.ts": {
+          "bytesInOutput": 1286
+        }
+      },
+      "bytes": 1989
+    },
+    "dist/server/framework-preset-angular-ivy.js": {
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "runNgcc",
+        "webpack"
+      ],
+      "entryPoint": "src/server/framework-preset-angular-ivy.ts",
+      "inputs": {
+        "src/server/framework-preset-angular-ivy.ts": {
+          "bytesInOutput": 1134
+        }
+      },
+      "bytes": 1834
+    },
+    "dist/server/framework-preset-angular-cli.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-LKDSKFL3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-webpack5",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular-devkit/architect",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular-devkit/core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "deepMerge",
+        "getBuilderOptions",
+        "webpackFinal"
+      ],
+      "entryPoint": "src/server/framework-preset-angular-cli.ts",
+      "inputs": {
+        "src/server/framework-preset-angular-cli.ts": {
+          "bytesInOutput": 3811
+        },
+        "src/server/angular-cli-webpack.js": {
+          "bytesInOutput": 4178
+        },
+        "src/server/plugins/storybook-normalize-angular-entry-plugin.js": {
+          "bytesInOutput": 1064
+        },
+        "src/server/utils/filter-out-styling-rules.ts": {
+          "bytesInOutput": 268
+        }
+      },
+      "bytes": 10346
+    },
+    "dist/builders/start-storybook/index.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-YWGGHOOY.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-LKDSKFL3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-server",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular-devkit/architect",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs/operators",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "default"
+      ],
+      "entryPoint": "src/builders/start-storybook/index.ts",
+      "inputs": {
+        "src/builders/start-storybook/index.ts": {
+          "bytesInOutput": 3820
+        }
+      },
+      "bytes": 4712
+    },
+    "dist/builders/build-storybook/index.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-YWGGHOOY.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-LKDSKFL3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-server",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular-devkit/architect",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs/operators",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@angular/core",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "default"
+      ],
+      "entryPoint": "src/builders/build-storybook/index.ts",
+      "inputs": {
+        "src/builders/build-storybook/index.ts": {
+          "bytesInOutput": 3425
+        }
+      },
+      "bytes": 4317
+    },
+    "dist/_node-chunks/chunk-YWGGHOOY.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-LKDSKFL3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "rxjs",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "errorSummary",
+        "printErrorDetails",
+        "runCompodoc",
+        "up"
+      ],
+      "inputs": {
+        "../../node_modules/empathic/package.mjs": {
+          "bytesInOutput": 64
+        },
+        "src/builders/utils/error-handler.ts": {
+          "bytesInOutput": 735
+        },
+        "src/builders/utils/run-compodoc.ts": {
+          "bytesInOutput": 1104
+        }
+      },
+      "bytes": 2767
+    },
+    "dist/_node-chunks/chunk-LKDSKFL3.js": {
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "up"
+      ],
+      "inputs": {
+        "../../node_modules/empathic/find.mjs": {
+          "bytesInOutput": 272
+        },
+        "../../node_modules/empathic/walk.mjs": {
+          "bytesInOutput": 289
+        },
+        "../../node_modules/empathic/resolve.mjs": {
+          "bytesInOutput": 156
+        }
+      },
+      "bytes": 1570
+    }
+  }
+}

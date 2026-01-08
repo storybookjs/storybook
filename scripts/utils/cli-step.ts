@@ -7,9 +7,8 @@ import { createOptions, getCommand } from './options';
 const require = createRequire(import.meta.url);
 const cliExecutable = require.resolve('../../code/core/dist/bin/dispatcher.js');
 const toolboxExecutable = require.resolve('../../code/lib/cli-storybook/dist/bin/index.js');
-const createStorybookExecutable = require.resolve(
-  '../../code/lib/create-storybook/dist/bin/index.js'
-);
+const createStorybookExecutable =
+  require.resolve('../../code/lib/create-storybook/dist/bin/index.js');
 
 export type CLIStep<TOptions extends OptionSpecifier> = {
   command: string;
@@ -30,6 +29,7 @@ export const steps = {
       output: { type: 'string' },
       // TODO allow default values for strings
       branch: { type: 'string', values: ['main', 'next'] },
+      loglevel: { type: 'string' },
       init: { type: 'boolean', inverse: true },
       debug: { type: 'boolean' },
     }),
@@ -41,7 +41,8 @@ export const steps = {
     options: createOptions({
       yes: { type: 'boolean' },
       type: { type: 'string' },
-      debug: { type: 'boolean' },
+      loglevel: { type: 'string' },
+      builder: { type: 'string' },
       'skip-install': { type: 'boolean' },
     }),
   },

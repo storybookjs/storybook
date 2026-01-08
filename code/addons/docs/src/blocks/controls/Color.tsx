@@ -42,7 +42,8 @@ const Swatches = styled.div({
   width: 200,
 });
 
-const swatchBackground = `url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill-opacity=".05"><path d="M8 0h8v8H8zM0 8h8v8H0z"/></svg>')`;
+const swatchBackground = (isDark: boolean) =>
+  `url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill-opacity="0.05" fill="${isDark ? 'white' : 'black'}"><path d="M8 0h8v8H8zM0 8h8v8H0z"/></svg>')`;
 
 const SwatchColor = styled(Button)<{ selected?: boolean; value: string }>(
   ({ value, selected, theme }) => ({
@@ -56,7 +57,7 @@ const SwatchColor = styled(Button)<{ selected?: boolean; value: string }>(
     '&, &:hover': {
       background: 'unset',
       backgroundColor: 'unset',
-      backgroundImage: `linear-gradient(${value}, ${value}), ${swatchBackground}, linear-gradient(hsl(0 0 100 / .4), hsl(0 0 100 / .4))`,
+      backgroundImage: `linear-gradient(${value}, ${value}), ${swatchBackground(theme.base === 'dark')}`,
     },
   })
 );

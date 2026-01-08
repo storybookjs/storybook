@@ -2,8 +2,11 @@
   "compileOnSave": false,
   "compilerOptions": {
     "baseUrl": ".",
+    "noEmit": true,
     "incremental": false,
     "noImplicitAny": true,
+    "allowJs": true,
+    "checkJs": true,
     "jsx": "react",
     "moduleResolution": "bundler",
     "target": "ESNext",

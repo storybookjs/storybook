@@ -1,5 +1,14 @@
 # @storybook/addon-mcp
 
+## 0.1.7
+
+### Patch Changes
+
+- [#120](https://github.com/storybookjs/mcp/pull/120) [`c1fc816`](https://github.com/storybookjs/mcp/commit/c1fc8167a8077e3bb07bce3c9c22539b23a07a29) Thanks [@JReinhold](https://github.com/JReinhold)! - Add support for docs entries in manifests, sourced by MDX files.
+
+- Updated dependencies [[`c1fc816`](https://github.com/storybookjs/mcp/commit/c1fc8167a8077e3bb07bce3c9c22539b23a07a29)]:
+  - @storybook/mcp@0.2.0
+
 ## 0.1.6
 
 ### Patch Changes

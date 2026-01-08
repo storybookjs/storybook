@@ -138,7 +138,7 @@ const ErrorFallback = ({ error, errorInfo }: ErrorFallbackProps) => {
             browser storage if the issue persists.
           </SubHeading>
           <Button asChild size="medium">
-            <a href={window.location.origin + window.location.pathname}>
+            <a href={window.location.origin + window.location.pathname.replace('iframe.html', '')}>
               <SyncIcon size={14} />
               Reload Storybook
             </a>

@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { spyOn } from 'storybook/test';
 
+import preview from '../../../../../.storybook/preview';
 import { ManagerErrorBoundary } from './ManagerErrorBoundary';
 
 // Component that throws an error immediately when rendered
@@ -44,7 +43,7 @@ const DeepErrorComponent = () => {
   return null;
 };
 
-const meta = {
+const meta = preview.meta({
   title: 'ManagerErrorBoundary',
   component: ManagerErrorBoundary,
   parameters: {
@@ -65,28 +64,27 @@ const meta = {
       return <Story />;
     },
   ],
-} satisfies Meta<typeof ManagerErrorBoundary>;
+});
 
 export default meta;
-type Story = StoryObj<typeof meta>;
 
-export const WithError: Story = {
+export const WithError = meta.story({
   render: () => (
     <ManagerErrorBoundary>
       <ThrowingComponent />
     </ManagerErrorBoundary>
   ),
-};
+});
 
-export const WithDeepStackTrace: Story = {
+export const WithDeepStackTrace = meta.story({
   render: () => (
     <ManagerErrorBoundary>
       <DeepErrorComponent />
     </ManagerErrorBoundary>
   ),
-};
+});
 
-export const WithoutError: Story = {
+export const WithoutError = meta.story({
   render: () => (
     <ManagerErrorBoundary>
       <div style={{ padding: 40 }}>
@@ -95,9 +93,9 @@ export const WithoutError: Story = {
       </div>
     </ManagerErrorBoundary>
   ),
-};
+});
 
-export const InteractiveError: Story = {
+export const InteractiveError = meta.story({
   render: () => (
     <ManagerErrorBoundary>
       <div style={{ padding: 40, textAlign: 'center' }}>
@@ -107,9 +105,9 @@ export const InteractiveError: Story = {
       </div>
     </ManagerErrorBoundary>
   ),
-};
+});
 
-export const CustomErrorMessage: Story = {
+export const CustomErrorMessage = meta.story({
   render: () => {
     const CustomError = () => {
       throw new Error(
@@ -123,4 +121,4 @@ export const CustomErrorMessage: Story = {
       </ManagerErrorBoundary>
     );
   },
-};
+});

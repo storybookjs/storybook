@@ -15,7 +15,7 @@ export async function addGetUIBuildingInstructionsTool(
 		{
 			name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
 			title: 'Storybook Story Development Instructions',
-			description: `Get comprehensive instructions for writing and updating Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js files).
+			description: `Get comprehensive instructions for writing and updating Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
 
 CRITICAL: You MUST call this tool before:
 - Creating new Storybook stories or story files

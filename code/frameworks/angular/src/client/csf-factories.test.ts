@@ -251,13 +251,10 @@ describe('Story args can be inferred', () => {
   });
 
   it('Correct args are inferred when render arg type is required', () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
+    const meta = preview.type<{ args: { disabledChangeToggle: boolean } }>().meta({
       component: ButtonComponent,
       args: { label: 'hello' },
-      render: ({
-        disabledChangeToggle,
-        ...args
-      }: ButtonProps & { disabledChangeToggle: boolean }) => {
+      render: (args) => {
         return {
           template: `<storybook-button
             [label]="label"
@@ -266,14 +263,14 @@ describe('Story args can be inferred', () => {
           ></storybook-button>`,
           props: {
             ...args,
-            onDisabledChangeHandler: disabledChangeToggle ? () => {} : undefined,
+            onDisabledChangeHandler: args.disabledChangeToggle ? () => {} : undefined,
           },
         };
       },
     });
 
-    // disabledChangeToggle is required since it's not optional in the render function type
-    const Basic = meta.story({ args: { disabled: false, disabledChangeToggle: false } });
+    // @ts-expect-error disabledChangeToggle is required
+    const Basic = meta.story({ args: { disabled: false } });
     const WithHandler = meta.story({ args: { disabled: false, disabledChangeToggle: true } });
   });
 

@@ -7,8 +7,5 @@
 			"mcp__storybook-addon-mcp__get-documentation"
 		]
 	},
-	"enabledMcpjsonServers": [
-		"storybook-addon-mcp",
-		"storybook-mcp"
-	]
+	"enabledMcpjsonServers": ["storybook-addon-mcp", "storybook-mcp"]
 }

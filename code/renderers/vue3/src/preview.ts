@@ -172,7 +172,22 @@ export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotati
     story: TInput
   ): VueStory<T, TInput>;
 
-  // meta.story()
+  /**
+   * Creates a story with no additional configuration.
+   *
+   * This overload is only available when all required args have been provided in meta.
+   * The conditional type `Partial<T['args']> extends SetOptional<...>` checks if the
+   * remaining required args (after accounting for args provided in meta) are all optional.
+   * If so, the function accepts zero arguments `[]`. Otherwise, it requires `[never]`
+   * which makes this overload unmatchable, forcing the user to provide args.
+   *
+   * @example
+   * ```ts
+   * // When meta provides all required args, story() can be called with no arguments
+   * const meta = preview.meta({ component: Button, args: { label: 'Hi', disabled: false } });
+   * export const Default = meta.story(); // Valid - all args provided in meta
+   * ```
+   */
   story(
     ..._args: Partial<T['args']> extends SetOptional<
       T['args'],

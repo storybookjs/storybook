@@ -1,5 +1,22 @@
 # @storybook/mcp
 
+## 0.2.0
+
+### Minor Changes
+
+- [#120](https://github.com/storybookjs/mcp/pull/120) [`c1fc816`](https://github.com/storybookjs/mcp/commit/c1fc8167a8077e3bb07bce3c9c22539b23a07a29) Thanks [@JReinhold](https://github.com/JReinhold)! - Add support for docs entries in manifests, sourced by MDX files.
+
+  # Breaking Changes
+
+  This change introduces a number of minor breaking changes to `@storybook/mcp`:
+  1. The lower level tool adder functions have been renamed:
+  2. `addGetComponentDocumentationTool` -> `addGetDocumentationTool`
+  3. `addListAllComponentsTool` -> `addListAllDocumentationTool`
+  4. The optional tool hooks have been renamed:
+  5. `onListAllComponents` -> `onListAllDocumentation`
+  6. `onGetComponentDocumentation` -> `onGetDocumentation`
+  7. The exported `MANIFEST_PATH` constant have been removed in favor of two new constants, `COMPONENT_MANIFEST_PATH` and `DOCS_MANIFEST_PATH`
+
 ## 0.1.1
 
 ### Patch Changes

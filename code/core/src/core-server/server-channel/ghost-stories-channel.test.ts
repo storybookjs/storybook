@@ -29,7 +29,7 @@ vi.mock('storybook/internal/telemetry', async (importOriginal) => {
   };
 });
 
-vi.mock('../utils/ghost-stories/story-generation', async (importOriginal) => {
+vi.mock('../utils/ghost-stories/get-candidates', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../utils/ghost-stories/get-candidates')>();
   return {
     ...actual,
@@ -165,7 +165,7 @@ describe('ghostStoriesChannel', () => {
           'component1.tsx',
           'component2.tsx',
         ],
-        stdio: 'ignore',
+        stdio: 'pipe',
         env: {
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
@@ -176,19 +176,17 @@ describe('ghostStoriesChannel', () => {
         success: true,
         generatedCount: 2,
         testDuration: expect.any(Number),
-        analysisDuration: expect.any(Number),
-        testResults: {
+        analysisDuration: 0,
+        testSummary: {
           total: 2,
           passed: 2,
           failed: 0,
           failureRate: 0,
           successRate: 1,
           successRateWithoutEmptyRender: 1,
-          uniqueErrors: [],
+          categorizedErrors: [],
           uniqueErrorCount: 0,
-          passingCount: 2,
-          failingCount: 0,
-          passedButEmptyRenderCount: 0,
+          passedButEmptyRender: 0,
         },
         matchCount: 10,
       });
@@ -263,7 +261,7 @@ describe('ghostStoriesChannel', () => {
           'component1.tsx',
           'component2.tsx',
         ],
-        stdio: 'ignore',
+        stdio: 'pipe',
         env: {
           STORYBOOK_COMPONENT_PATHS: 'component1.tsx;component2.tsx',
         },
@@ -277,22 +275,29 @@ describe('ghostStoriesChannel', () => {
           generatedCount: 2,
           testDuration: expect.any(Number),
           analysisDuration: expect.any(Number),
-          testResults: expect.objectContaining({
+          testSummary: expect.objectContaining({
             total: 2,
             passed: 0,
             failed: 2,
             failureRate: 1,
             successRate: 0,
             // There should be two unique errors: one for component1, one for component2
-            uniqueErrors: expect.arrayContaining([
-              expect.stringContaining('Expected button to be disabled'),
-              expect.stringContaining('TypeError: Cannot read properties of undefined'),
-              expect.stringContaining('Expected button to be disabled'),
+            categorizedErrors: expect.arrayContaining([
+              expect.objectContaining({
+                category: expect.any(String),
+                examples: expect.arrayContaining([
+                  expect.stringContaining('TypeError: Cannot read properties of undefined'),
+                ]),
+              }),
+              expect.objectContaining({
+                category: expect.any(String),
+                examples: expect.arrayContaining([
+                  expect.stringContaining('Expected button to be disabled'),
+                ]),
+              }),
             ]),
             uniqueErrorCount: expect.any(Number),
-            passingCount: 0,
-            failingCount: 2,
-            passedButEmptyRenderCount: 0,
+            passedButEmptyRender: 0,
           }),
           matchCount: 10,
         })
@@ -472,20 +477,9 @@ describe('ghostStoriesChannel', () => {
           generatedCount: 1,
           testDuration: expect.any(Number),
           analysisDuration: expect.any(Number),
-          testResults: {
-            total: 0,
-            passed: 0,
-            failed: 0,
-            failureRate: 0,
-            successRate: 0,
-            successRateWithoutEmptyRender: 0,
-            uniqueErrors: [],
-            uniqueErrorCount: 0,
-            passingCount: 0,
-            failingCount: 0,
-            passedButEmptyRenderCount: 0,
-          },
           matchCount: 5,
+          error: 'Error: Test execution failed',
+          testSummary: undefined,
         });
       });
 

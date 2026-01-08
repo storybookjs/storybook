@@ -4,21 +4,7 @@ import {
   isStateManagementPackage,
   isStylingPackage,
 } from '../../../telemetry/ecosystem-identifier';
-import type { StoryTestResult } from './types';
-
-export interface CategorizedError {
-  category: ErrorCategory;
-  description: string;
-  count: number;
-  examples: string[];
-  matchedDependencies: string[];
-}
-
-export interface ErrorCategorizationResult {
-  totalErrors: number;
-  categorizedErrors: CategorizedError[];
-  uniqueErrorCount: number;
-}
+import type { ErrorCategorizationResult, StoryTestResult } from './types';
 
 export const ERROR_CATEGORIES = {
   MISSING_PROVIDER: 'Missing Provider',

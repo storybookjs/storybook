@@ -8,7 +8,7 @@ describe('categorize-render-errors', () => {
     vi.clearAllMocks();
   });
 
-  describe('extractUniqueCategorizedErrors', () => {
+  describe('extractCategorizedErrors', () => {
     it('should return empty result when there are no failed tests', () => {
       const testResults: StoryTestResult[] = [
         { storyId: 'story1', status: 'PASS' },

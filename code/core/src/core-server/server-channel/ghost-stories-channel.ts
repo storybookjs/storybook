@@ -17,7 +17,7 @@ export function initGhostStoriesChannel(
 ) {
   if (coreOptions.disableTelemetry) {
     logger.debug('Skipping discovery run - telemetry disabled');
-    return;
+    return channel;
   }
 
   /** Listens for events to discover and test stories */

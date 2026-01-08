@@ -153,16 +153,16 @@ export async function getComponentCandidates({
 
     matchCount = files.length;
 
-    const candidates = await getCandidatesForStorybook(files, sampleSize);
-    logger.debug('candidates files:' + files.length);
-
-    if (files.length === 0) {
+    if (matchCount === 0) {
       logger.warn(`No files found matching glob pattern: ${globPattern}`);
       return {
         candidates: [],
         matchCount,
       };
     }
+
+    const candidates = await getCandidatesForStorybook(files, sampleSize);
+    logger.debug('candidates files:' + files.length);
 
     return {
       candidates,

@@ -1,17 +1,22 @@
 export interface StoryTestResult {
-  // The story id
   storyId: string;
-  // Test status
   status: 'PASS' | 'FAIL' | 'PENDING';
   error?: string;
   stack?: string;
 }
 
-export interface ClassifiedError {
+export interface CategorizedError {
   category: string;
   description: string;
   count: number;
   examples: string[];
+  matchedDependencies: string[];
+}
+
+export interface ErrorCategorizationResult {
+  totalErrors: number;
+  categorizedErrors: CategorizedError[];
+  uniqueErrorCount: number;
 }
 
 export interface GhostStoriesResponsePayload {
@@ -26,7 +31,7 @@ export interface GhostStoriesResponsePayload {
     successRateWithoutEmptyRender: number;
     failureRate: number;
     uniqueErrorCount: number;
-    classifiedErrors: ClassifiedError[];
+    categorizedErrors: CategorizedError[];
   };
   // Error message if the operation failed
   error?: string;

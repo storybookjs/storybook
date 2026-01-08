@@ -1,8 +1,9 @@
+import { existsSync } from 'node:fs';
+import { mkdir, readFile } from 'node:fs/promises';
+
 import { executeCommand, resolvePathInStorybookCache } from 'storybook/internal/common';
 
-import { existsSync } from 'fs';
-import { mkdir, readFile } from 'fs/promises';
-import { join } from 'path/posix';
+import { join } from 'pathe';
 
 import { extractCategorizedErrors } from './categorize-render-errors';
 import { type GhostStoriesResponsePayload, type StoryTestResult } from './types';
@@ -55,7 +56,7 @@ export async function runStoryTests(
     if (!existsSync(outputFile)) {
       return {
         success: false,
-        duration: 0,
+        duration,
         error: testFailureMessage,
       };
     }
@@ -115,7 +116,7 @@ export async function runStoryTests(
 
     // Extract and classify unique errors
     const errorClassification = extractCategorizedErrors(storyTestResults);
-    const classifiedErrors = errorClassification.categorizedErrors;
+    const categorizedErrors = errorClassification.categorizedErrors;
 
     const testSummary = {
       total,
@@ -126,7 +127,7 @@ export async function runStoryTests(
       successRateWithoutEmptyRender,
       failureRate,
       uniqueErrorCount: errorClassification.uniqueErrorCount,
-      classifiedErrors,
+      categorizedErrors,
     };
 
     const enhancedResponse: GhostStoriesResponsePayload = {

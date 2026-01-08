@@ -244,5 +244,7 @@ export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotati
  * Represents a single story with its configuration and provides access to the composed story for
  * testing via `story.run()`.
  */
-export interface VueStory<T extends VueTypes, TInput extends StoryAnnotations<T, T['args']>>
-  extends Story<T, TInput> {}
+export interface VueStory<
+  T extends VueTypes,
+  TInput extends StoryAnnotations<T, T['args']>,
+> extends Story<T, TInput> {}

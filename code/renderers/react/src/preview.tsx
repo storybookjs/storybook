@@ -246,7 +246,9 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
  *
  * Also includes a `Component` property for portable story compatibility.
  */
-export interface ReactStory<T extends ReactTypes, TInput extends StoryAnnotations<T, T['args']>>
-  extends Story<T, TInput> {
+export interface ReactStory<
+  T extends ReactTypes,
+  TInput extends StoryAnnotations<T, T['args']>,
+> extends Story<T, TInput> {
   Component: ComponentType<Partial<T['args']>>;
 }

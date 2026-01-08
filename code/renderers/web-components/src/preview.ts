@@ -73,8 +73,9 @@ type InferWebComponentsTypes<T, TArgs, Decorators> = WebComponentsTypes &
  * export const Primary = meta.story({ args: { label: 'Click me' } });
  * ```
  */
-export interface WebComponentsPreview<T extends AddonTypes>
-  extends Preview<WebComponentsTypes & T> {
+export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
+  WebComponentsTypes & T
+> {
   /**
    * Narrows the type of the preview to include additional type information. This is useful when you
    * need to add args that aren't inferred from the component.
@@ -150,9 +151,9 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
  * story level.
  */
 export interface WebComponentsMeta<
-    T extends WebComponentsTypes,
-    MetaInput extends ComponentAnnotations<T>,
-  >
+  T extends WebComponentsTypes,
+  MetaInput extends ComponentAnnotations<T>,
+>
   // @ts-expect-error WebComponentsMeta requires two type parameters, but Meta's constraints differ
   extends Meta<T, MetaInput> {
   /**

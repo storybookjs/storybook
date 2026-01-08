@@ -17,6 +17,7 @@ const ActionListItem = styled.li<{
     justifyContent: 'space-between',
     flex: '0 0 auto',
     overflow: 'hidden',
+    minHeight: 32,
     gap: 4,
 
     fontSize: theme.typography.size.s1,
@@ -172,7 +173,7 @@ const ActionListLink = (
   props: ComponentProps<typeof ActionListAction> & React.AnchorHTMLAttributes<HTMLAnchorElement>
 ) => <ActionListAction as="a" {...props} />;
 
-const ActionListText = styled.div<{ muted?: boolean }>(({ theme }) => ({
+const ActionListText = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',
@@ -200,10 +201,10 @@ const ActionListText = styled.div<{ muted?: boolean }>(({ theme }) => ({
   '&:last-child': {
     paddingRight: 8,
   },
-  'button > &:first-child, li > &:first-child': {
+  'button > &:first-child, [role="option"] > &:first-child': {
     paddingLeft: 0,
   },
-  'button > &:last-child, li > &:last-child': {
+  'button > &:last-child, [role="option"] > &:last-child': {
     paddingRight: 0,
   },
 }));

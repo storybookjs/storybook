@@ -94,9 +94,9 @@ export const PseudoStates = meta.story({
   ),
   parameters: {
     pseudo: {
-      hover: '[data-state="hover"] button',
-      focus: '[data-state="focus"] button',
-      focusVisible: '[data-state="focus"] button',
+      hover: '[data-state="hover"]',
+      focus: '[data-state="focus"]',
+      focusVisible: '[data-state="focus"]',
     },
   },
 });

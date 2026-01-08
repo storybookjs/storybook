@@ -69,12 +69,6 @@ export const Default = meta.story({
           <Shortcut keys={['⌘', 'A']} />
         </ActionList.Action>
       </ActionList.Item>
-      <ActionList.Item aria-selected="true">
-        <ActionList.Text>Selected</ActionList.Text>
-      </ActionList.Item>
-      <ActionList.Item aria-disabled="true">
-        <ActionList.Text>Visually disabled</ActionList.Text>
-      </ActionList.Item>
       <ActionList.Item>
         <ActionList.Text>
           Some very long text which will wrap when the container is too narrow
@@ -108,6 +102,33 @@ export const Default = meta.story({
         </ActionList.Action>
       </ActionList.Item>
     </ActionList>
+  ),
+});
+
+export const Listbox = meta.story({
+  render: () => (
+    <>
+      <ActionList role="listbox" aria-label="Sample listbox">
+        <ActionList.Item role="option">
+          <ActionList.Icon>
+            <CheckIcon />
+          </ActionList.Icon>
+          <ActionList.Text>Option</ActionList.Text>
+        </ActionList.Item>
+        <ActionList.Item role="option" aria-selected="true">
+          <ActionList.Icon>
+            <CheckIcon />
+          </ActionList.Icon>
+          <ActionList.Text>Selected</ActionList.Text>
+        </ActionList.Item>
+        <ActionList.Item role="option" aria-disabled="true">
+          <ActionList.Icon>
+            <CheckIcon />
+          </ActionList.Icon>
+          <ActionList.Text>Visually disabled</ActionList.Text>
+        </ActionList.Item>
+      </ActionList>
+    </>
   ),
 });
 

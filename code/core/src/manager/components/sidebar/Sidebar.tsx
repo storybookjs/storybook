@@ -168,7 +168,7 @@ export const Sidebar = React.memo(function Sidebar({
             />
             {!isLoading &&
               global.CONFIG_TYPE === 'DEVELOPMENT' &&
-              global.FEATURES?.checklistWidget && <ChecklistWidget />}
+              global.FEATURES?.sidebarOnboardingChecklist !== false && <ChecklistWidget />}
           </div>
           <Search
             dataset={dataset}

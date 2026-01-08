@@ -49,7 +49,7 @@ export const GuidePage = () => {
         </p>
       </Intro>
       <Checklist {...checklist} />
-      {global.FEATURES?.checklistWidget && (
+      {global.FEATURES?.sidebarOnboardingChecklist !== false && (
         <>
           {checklist.openItems.length === 0 ? (
             <center>Your work here is done!</center>

@@ -214,7 +214,7 @@ export const SimpleNoChecklist: Story = {
   },
   beforeEach: () => {
     const features = global.FEATURES;
-    global.FEATURES = { ...features, checklistWidget: false };
+    global.FEATURES = { ...features, sidebarOnboardingChecklist: false };
     return () => {
       global.FEATURES = features;
     };

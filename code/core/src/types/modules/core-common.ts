@@ -458,7 +458,7 @@ export interface StorybookConfigRaw {
      *
      * @default true
      */
-    checklistWidget?: boolean;
+    sidebarOnboardingChecklist?: boolean;
 
     /**
      * @temporary This feature flag is a migration assistant, and is scheduled to be removed.

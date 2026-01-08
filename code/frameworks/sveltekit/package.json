@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "10.2.0-alpha.9",
+  "version": "10.2.0-alpha.13",
   "description": "Storybook for SvelteKit: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

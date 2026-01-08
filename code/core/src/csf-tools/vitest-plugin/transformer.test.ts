@@ -5,6 +5,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { type RawSourceMap, SourceMapConsumer } from 'source-map';
 
+import { Tag } from '../../shared/constants/tags';
 import { vitestTransform as originalTransform } from './transformer';
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
@@ -24,7 +25,7 @@ const transform = async ({
   code = '',
   fileName = 'src/components/Button.stories.js',
   tagsFilter = {
-    include: ['test'],
+    include: [Tag.TEST] as string[],
     exclude: [] as string[],
     skip: [] as string[],
   },
@@ -456,7 +457,7 @@ describe('transformer', () => {
 
         const result = await transform({
           code,
-          tagsFilter: { include: ['test'], exclude: ['exclude-me'], skip: [] },
+          tagsFilter: { include: [Tag.TEST], exclude: ['exclude-me'], skip: [] },
         });
 
         expect(result.code).toMatchInlineSnapshot(`
@@ -485,7 +486,7 @@ describe('transformer', () => {
 
         const result = await transform({
           code,
-          tagsFilter: { include: ['test'], exclude: [], skip: ['skip-me'] },
+          tagsFilter: { include: [Tag.TEST], exclude: [], skip: ['skip-me'] },
         });
 
         expect(result.code).toMatchInlineSnapshot(`
@@ -896,7 +897,7 @@ describe('transformer', () => {
 
         const result = await transform({
           code,
-          tagsFilter: { include: ['test'], exclude: ['exclude-me'], skip: [] },
+          tagsFilter: { include: [Tag.TEST], exclude: ['exclude-me'], skip: [] },
         });
 
         expect(result.code).toMatchInlineSnapshot(`
@@ -926,7 +927,7 @@ describe('transformer', () => {
 
         const result = await transform({
           code,
-          tagsFilter: { include: ['test'], exclude: [], skip: ['skip-me'] },
+          tagsFilter: { include: [Tag.TEST], exclude: [], skip: ['skip-me'] },
         });
 
         expect(result.code).toMatchInlineSnapshot(`

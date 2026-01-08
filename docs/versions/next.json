@@ -1,1 +1,1 @@
-{"version":"10.2.0-alpha.9","info":{"plain":"- Core and Vite: Use story index as source of truth for Vite paths - [#30612](https://github.com/storybookjs/storybook/pull/30612), thanks @JReinhold!"}}
+{"version":"10.2.0-alpha.13","info":{"plain":"- Core: Fix onboarding visual bugs, survey telemetry and modal dismissal - [#33326](https://github.com/storybookjs/storybook/pull/33326), thanks @ghengeveld!\n- Core: Track vision simulator state through globals and apply styles in preview - [#33418](https://github.com/storybookjs/storybook/pull/33418), thanks @ghengeveld!"}}

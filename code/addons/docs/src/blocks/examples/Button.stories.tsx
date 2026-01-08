@@ -136,7 +136,7 @@ export const ErrorStory: Story = {
   },
   args: { label: 'Button' },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
   tags: ['!test', '!vitest'],
 };

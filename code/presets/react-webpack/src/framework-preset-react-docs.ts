@@ -40,7 +40,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
     };
   }
 
-  const { ReactDocgenTypeScriptPlugin } = await import('react-docgen-typescript-plugin');
+  const { ReactDocgenTypeScriptPlugin } = await import('@storybook/react-docgen-typescript-plugin');
 
   return {
     ...config,

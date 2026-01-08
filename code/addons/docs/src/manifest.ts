@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
 import { groupBy } from 'storybook/internal/common';
-import { Tag } from 'storybook/internal/core-server';
+import { Tag, analyzeMdx } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import type {
   ComponentManifest,
@@ -20,6 +20,7 @@ export interface DocsManifestEntry {
   path: Path;
   title: string;
   content?: string;
+  summary?: string;
   error?: { name: string; message: string };
 }
 
@@ -47,12 +48,21 @@ export async function createDocsManifestEntry(entry: DocsIndexEntry): Promise<Do
   const absolutePath = path.join(process.cwd(), entry.importPath);
   try {
     const content = await fs.readFile(absolutePath, 'utf-8');
+
+    /*
+      TODO: This isn't the most performant option, as we're already analyzing the MDX file
+      during story index generation, and analyzing it requires compiling the file.
+      We should find a way to only do it once and cache/access the analysis somehow
+    */
+    const { summary } = await analyzeMdx(content);
+
     return {
       id: entry.id,
       name: entry.name,
       path: entry.importPath,
       title: entry.title,
       content,
+      ...(summary && { summary }),
     };
   } catch (err) {
     return {

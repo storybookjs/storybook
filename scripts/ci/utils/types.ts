@@ -90,11 +90,11 @@ export function defineJob<K extends string, I extends JobImplementation>(
 }
 
 /**
- * A hub is a special type of job that is used to group other jobs together. It cannot contain any
- * steps/implementation.
+ * A NoOpJob is a special type of job that is used to group other jobs together. It cannot contain
+ * any steps/implementation.
  *
- * @param name - The name of the hub
- * @param requires - The jobs that this hub depends on
+ * @param name - The name of the NoOpJob
+ * @param requires - The jobs that this NoOpJob depends on
  */
 export function defineNoOpJob<K extends string>(name: K, requires = [] as JobOrNoOpJob[]): Job<K> {
   return {

@@ -23,6 +23,24 @@ import * as vueDocsAnnotations from './entry-preview-docs';
 import { type Args, type ComponentPropsAndSlots } from './public-types';
 import { type VueTypes } from './types';
 
+/**
+ * Creates a Vue3-specific preview configuration with CSF factories support.
+ *
+ * This function wraps the base `definePreview` and adds Vue3-specific annotations
+ * for rendering and documentation. It returns a `VuePreview` that provides
+ * type-safe `meta()` and `story()` factory methods.
+ *
+ * @example
+ * ```ts
+ * // .storybook/preview.ts
+ * import { definePreview } from '@storybook/vue3';
+ *
+ * export const preview = definePreview({
+ *   addons: [],
+ *   parameters: { layout: 'centered' },
+ * });
+ * ```
+ */
 export function __definePreview<Addons extends PreviewAddon<never>[]>(
   input: { addons: Addons } & ProjectAnnotations<VueTypes & InferTypes<Addons>>
 ): VuePreview<VueTypes & InferTypes<Addons>> {
@@ -41,7 +59,31 @@ type InferArgs<TArgs, T, Decorators> = Simplify<
 type InferVueTypes<T, TArgs, Decorators> = VueTypes &
   T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
 
+/**
+ * Vue3-specific Preview interface that provides type-safe CSF factory methods.
+ *
+ * Use `preview.meta()` to create a meta configuration for a component, and then
+ * `meta.story()` to create individual stories. The type system will infer args
+ * from the component props, slots, decorators, and any addon types.
+ *
+ * @example
+ * ```ts
+ * const meta = preview.meta({ component: Button });
+ * export const Primary = meta.story({ args: { label: 'Click me' } });
+ * ```
+ */
 export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> {
+  /**
+   * Narrows the type of the preview to include additional type information.
+   * This is useful when you need to add args that aren't inferred from the component.
+   *
+   * @example
+   * ```ts
+   * const meta = preview.type<{ args: { theme: 'light' | 'dark' } }>().meta({
+   *   component: Button,
+   * });
+   * ```
+   */
   type<R>(): VuePreview<T & R>;
 
   meta<
@@ -87,12 +129,23 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
   >;
 }
 
+/** Extracts and unions all args types from an array of decorators. */
 type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
 >;
 
+/**
+ * Vue3-specific Meta interface returned by `preview.meta()`.
+ *
+ * Provides the `story()` method to create individual stories with proper type inference.
+ * Args provided in meta become optional in stories, while missing required args must be
+ * provided at the story level.
+ */
 export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotations<T>>
-/** @ts-expect-error hard */
+  /**
+   * @ts-expect-error VueMeta requires two type parameters to track both inferred component
+   * types (T) and custom meta annotations (MetaInput), but Meta only accepts compatible params.
+   */
   extends Meta<T, MetaInput> {
   // meta.story(() => defineComponent())
   story<
@@ -130,5 +183,11 @@ export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotati
   ): VueStory<T, {}>;
 }
 
+/**
+ * Vue3-specific Story interface returned by `meta.story()`.
+ *
+ * Represents a single story with its configuration and provides access to
+ * the composed story for testing via `story.run()`.
+ */
 export interface VueStory<T extends VueTypes, TInput extends StoryAnnotations<T, T['args']>>
   extends Story<T, TInput> {}

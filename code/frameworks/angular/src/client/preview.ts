@@ -23,6 +23,24 @@ import * as angularDocsAnnotations from './docs/config';
 import type { TransformComponentType } from './public-types';
 import { type AngularRenderer } from './types';
 
+/**
+ * Creates an Angular-specific preview configuration with CSF factories support.
+ *
+ * This function wraps the base `definePreview` and adds Angular-specific annotations
+ * for rendering and documentation. It returns an `AngularPreview` that provides
+ * type-safe `meta()` and `story()` factory methods.
+ *
+ * @example
+ * ```ts
+ * // .storybook/preview.ts
+ * import { definePreview } from '@storybook/angular';
+ *
+ * export const preview = definePreview({
+ *   addons: [],
+ *   parameters: { layout: 'centered' },
+ * });
+ * ```
+ */
 export function __definePreview<Addons extends PreviewAddon<never>[]>(
   input: { addons: Addons } & ProjectAnnotations<AngularRenderer & InferTypes<Addons>>
 ): AngularPreview<AngularRenderer & InferTypes<Addons>> {
@@ -45,7 +63,31 @@ type InferComponentArgs<C extends abstract new (...args: any) => any> = Partial<
 type InferAngularTypes<T, TArgs, Decorators> = AngularRenderer &
   T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
 
+/**
+ * Angular-specific Preview interface that provides type-safe CSF factory methods.
+ *
+ * Use `preview.meta()` to create a meta configuration for a component, and then
+ * `meta.story()` to create individual stories. The type system will infer args
+ * from the component, decorators, and any addon types.
+ *
+ * @example
+ * ```ts
+ * const meta = preview.meta({ component: ButtonComponent });
+ * export const Primary = meta.story({ args: { label: 'Click me' } });
+ * ```
+ */
 export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRenderer & T> {
+  /**
+   * Narrows the type of the preview to include additional type information.
+   * This is useful when you need to add args that aren't inferred from the component.
+   *
+   * @example
+   * ```ts
+   * const meta = preview.type<{ args: { theme: 'light' | 'dark' } }>().meta({
+   *   component: ButtonComponent,
+   * });
+   * ```
+   */
   type<S>(): AngularPreview<T & S>;
 
   meta<
@@ -90,10 +132,18 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
   >;
 }
 
+/** Extracts and unions all args types from an array of decorators. */
 type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
 >;
 
+/**
+ * Angular-specific Meta interface returned by `preview.meta()`.
+ *
+ * Provides the `story()` method to create individual stories with proper type inference.
+ * Args provided in meta become optional in stories, while missing required args must be
+ * provided at the story level.
+ */
 export interface AngularMeta<T extends AngularRenderer, MetaInput extends ComponentAnnotations<T>>
   extends Meta<T, MetaInput> {
   // meta.story(() => ({ template: '<div></div>' }))
@@ -135,6 +185,12 @@ export interface AngularMeta<T extends AngularRenderer, MetaInput extends Compon
   ): AngularStory<T, {}>;
 }
 
+/**
+ * Angular-specific Story interface returned by `meta.story()`.
+ *
+ * Represents a single story with its configuration and provides access to
+ * the composed story for testing via `story.run()`.
+ */
 export interface AngularStory<
   T extends AngularRenderer,
   TInput extends StoryAnnotations<T, T['args']>,

@@ -22,6 +22,24 @@ import * as webComponentsAnnotations from './entry-preview';
 import * as webComponentsDocsAnnotations from './entry-preview-docs';
 import { type WebComponentsTypes } from './types';
 
+/**
+ * Creates a Web Components-specific preview configuration with CSF factories support.
+ *
+ * This function wraps the base `definePreview` and adds Web Components-specific annotations
+ * for rendering and documentation. It returns a `WebComponentsPreview` that provides
+ * type-safe `meta()` and `story()` factory methods.
+ *
+ * @example
+ * ```ts
+ * // .storybook/preview.ts
+ * import { definePreview } from '@storybook/web-components';
+ *
+ * export const preview = definePreview({
+ *   addons: [],
+ *   parameters: { layout: 'centered' },
+ * });
+ * ```
+ */
 export function __definePreview<Addons extends PreviewAddon<never>[]>(
   input: { addons: Addons } & ProjectAnnotations<WebComponentsTypes & InferTypes<Addons>>
 ): WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>> {
@@ -40,8 +58,32 @@ type InferArgs<TArgs, T, Decorators> = Simplify<
 type InferWebComponentsTypes<T, TArgs, Decorators> = WebComponentsTypes &
   T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
 
+/**
+ * Web Components-specific Preview interface that provides type-safe CSF factory methods.
+ *
+ * Use `preview.meta()` to create a meta configuration for a component, and then
+ * `meta.story()` to create individual stories. The type system will infer args
+ * from the HTMLElement type when using a tag name as the component.
+ *
+ * @example
+ * ```ts
+ * const meta = preview.meta({ component: 'my-button' });
+ * export const Primary = meta.story({ args: { label: 'Click me' } });
+ * ```
+ */
 export interface WebComponentsPreview<T extends AddonTypes>
   extends Preview<WebComponentsTypes & T> {
+  /**
+   * Narrows the type of the preview to include additional type information.
+   * This is useful when you need to add args that aren't inferred from the component.
+   *
+   * @example
+   * ```ts
+   * const meta = preview.type<{ args: { theme: 'light' | 'dark' } }>().meta({
+   *   component: 'my-button',
+   * });
+   * ```
+   */
   type<S>(): WebComponentsPreview<T & S>;
 
   meta<
@@ -92,14 +134,25 @@ export interface WebComponentsPreview<T extends AddonTypes>
   >;
 }
 
+/** Extracts and unions all args types from an array of decorators. */
 type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
 >;
 
+/**
+ * Web Components-specific Meta interface returned by `preview.meta()`.
+ *
+ * Provides the `story()` method to create individual stories with proper type inference.
+ * Args provided in meta become optional in stories, while missing required args must be
+ * provided at the story level.
+ */
 export interface WebComponentsMeta<
   T extends WebComponentsTypes,
   MetaInput extends ComponentAnnotations<T>,
-  /** @ts-expect-error hard */
+  /**
+   * @ts-expect-error WebComponentsMeta requires two type parameters to track both inferred
+   * component types (T) and custom meta annotations (MetaInput), but Meta only accepts compatible params.
+   */
 > extends Meta<T, MetaInput> {
   // meta.story(() => html`<div></div>`)
   story<
@@ -140,6 +193,12 @@ export interface WebComponentsMeta<
   ): WebComponentsStory<T, {}>;
 }
 
+/**
+ * Web Components-specific Story interface returned by `meta.story()`.
+ *
+ * Represents a single story with its configuration and provides access to
+ * the composed story for testing via `story.run()`.
+ */
 export interface WebComponentsStory<
   T extends WebComponentsTypes,
   TInput extends StoryAnnotations<T, T['args']>,

@@ -17,8 +17,10 @@ export const afterEach: AfterEach<any> = async ({
 }) => {
   const a11yParameter: A11yParameters | undefined = parameters.a11y;
   const a11yGlobals = globals.a11y;
+  const isGhostStories = !!globals.ghostStories;
 
   const shouldRunEnvironmentIndependent =
+    !isGhostStories &&
     a11yParameter?.disable !== true &&
     a11yParameter?.test !== 'off' &&
     a11yGlobals?.manual !== true;

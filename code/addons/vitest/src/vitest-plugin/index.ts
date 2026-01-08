@@ -101,33 +101,22 @@ const mdxStubPlugin: Plugin = {
 
 // Transforming components and extracting args can be expensive because of docgen
 // so we pass the paths via env variable and use as filter to only transform the files we need
-const getComponentTestPaths = (vitestRoot: string): string[] => {
+const getComponentTestPaths = (): string[] => {
   const envPaths = process.env.STORYBOOK_COMPONENT_PATHS;
 
   if (!envPaths) {
     return [];
   }
 
-  return (
-    envPaths
-      .split(';')
-      .filter(Boolean)
-      // TODO: check whether this is actually needed
-      .map((p) => path.relative(vitestRoot, path.resolve(process.cwd(), p)))
-  );
+  return envPaths.split(';').filter(Boolean);
 };
 
 const createComponentTestTransformPlugin = (presets: Presets, configDir: string): Plugin => {
-  let vitestRoot: string;
-  let storybookComponentTestPaths: string[] = [];
+  const storybookComponentTestPaths: string[] = getComponentTestPaths();
 
   return {
     name: 'storybook:component-test-transform-plugin',
     enforce: 'pre',
-    async config(config) {
-      vitestRoot = config.test?.dir || config.test?.root || config.root || process.cwd();
-      storybookComponentTestPaths = getComponentTestPaths(vitestRoot);
-    },
     async transform(code, id) {
       if (!optionalEnvToBoolean(process.env.VITEST) || storybookComponentTestPaths.length === 0) {
         return code;
@@ -342,7 +331,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
 
-          include: [...includeStories, ...getComponentTestPaths(finalOptions.vitestRoot)],
+          include: [...includeStories, ...getComponentTestPaths()],
           exclude: [
             ...(nonMutableInputConfig.test?.exclude ?? []),
             join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
@@ -366,12 +355,18 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                 const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
 
                 const shouldRunA11yTests = isVitestStorybook ? (envConfig.a11y ?? false) : true;
-
-                return {
-                  a11y: {
-                    manual: !shouldRunA11yTests,
-                  },
+                const globals: Record<string, unknown> = {};
+                globals.a11y = {
+                  manual: !shouldRunA11yTests,
                 };
+
+                if (process.env.STORYBOOK_COMPONENT_PATHS) {
+                  globals.ghostStories = {
+                    enabled: true,
+                  };
+                }
+
+                return globals;
               },
             },
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false

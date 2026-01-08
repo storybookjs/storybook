@@ -17,6 +17,7 @@ const ActionListItem = styled.li<{
     justifyContent: 'space-between',
     flex: '0 0 auto',
     overflow: 'hidden',
+    minHeight: 32,
     gap: 4,
 
     fontSize: theme.typography.size.s1,

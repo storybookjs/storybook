@@ -17,6 +17,7 @@ export interface CategorizedError {
 export interface ErrorCategorizationResult {
   totalErrors: number;
   categorizedErrors: CategorizedError[];
+  uniqueErrorCount: number;
 }
 
 export const ERROR_CATEGORIES = {
@@ -250,7 +251,7 @@ function getCategoryDescription(category: ErrorCategory): string {
  * - Return structured data about the run, with categorized errors instead of the actual error
  *   messages
  */
-export function extractUniqueCategorizedErrors(
+export function extractCategorizedErrors(
   testResults: StoryTestResult[]
 ): ErrorCategorizationResult {
   const failed = testResults.filter((r) => r.status === 'FAIL' && r.error);
@@ -259,6 +260,9 @@ export function extractUniqueCategorizedErrors(
     ErrorCategory,
     { count: number; examples: Set<string>; matchedDependencies: Set<string> }
   >();
+
+  // To count unique error messages (by their message, not by category)
+  const uniqueErrorMessages = new Set<string>();
 
   for (const r of failed) {
     const { category, matchedDependencies } = categorizeError(r.error!, r.stack);
@@ -272,6 +276,9 @@ export function extractUniqueCategorizedErrors(
     data.count++;
     data.examples.add(example);
     matchedDependencies.forEach((dep) => data.matchedDependencies.add(dep));
+
+    // Use the full error message for unique error message counting
+    uniqueErrorMessages.add(r.error!);
   }
 
   const categorizedErrors = Array.from(map.entries())
@@ -286,6 +293,7 @@ export function extractUniqueCategorizedErrors(
 
   return {
     totalErrors: failed.length,
+    uniqueErrorCount: uniqueErrorMessages.size,
     categorizedErrors,
   };
 }

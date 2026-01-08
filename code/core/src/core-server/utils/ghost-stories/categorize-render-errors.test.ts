@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { extractUniqueCategorizedErrors } from './categorize-render-errors';
+import { extractCategorizedErrors } from './categorize-render-errors';
 import type { StoryTestResult } from './types';
 
 describe('categorize-render-errors', () => {
@@ -15,7 +15,7 @@ describe('categorize-render-errors', () => {
         { storyId: 'story2', status: 'PASS' },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(0);
       expect(result.categorizedErrors).toEqual([]);
@@ -30,7 +30,7 @@ describe('categorize-render-errors', () => {
         },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
       expect(result.categorizedErrors[0].category).toBe('Unknown Error');
@@ -46,7 +46,7 @@ describe('categorize-render-errors', () => {
         },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
       expect(result.categorizedErrors[0].category).toBe('Missing Theme Provider');
@@ -66,7 +66,7 @@ describe('categorize-render-errors', () => {
         },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
       expect(result.categorizedErrors[0].category).toBe('Missing Theme Provider');
@@ -87,7 +87,7 @@ describe('categorize-render-errors', () => {
         },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
       expect(result.categorizedErrors[0].category).toBe('Missing State Provider');
@@ -115,7 +115,7 @@ describe('categorize-render-errors', () => {
         },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(2);
       expect(result.categorizedErrors[0].category).toBe('Missing Router Provider');
@@ -150,7 +150,7 @@ describe('categorize-render-errors', () => {
         },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(4);
       expect(result.categorizedErrors).toHaveLength(3);
@@ -173,7 +173,7 @@ describe('categorize-render-errors', () => {
         },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
       expect(result.categorizedErrors[0].category).toBe('Hook Usage Error');
@@ -189,7 +189,7 @@ describe('categorize-render-errors', () => {
         },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
       expect(result.categorizedErrors[0].category).toBe('Module Import Error');
@@ -205,7 +205,7 @@ describe('categorize-render-errors', () => {
         },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
       expect(result.categorizedErrors[0].category).toBe('Component Render Error');
@@ -222,7 +222,7 @@ describe('categorize-render-errors', () => {
         },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.categorizedErrors[0].examples[0]).toHaveLength(100);
       expect(result.categorizedErrors[0].examples[0]).toBe('A'.repeat(100));
@@ -241,14 +241,14 @@ describe('categorize-render-errors', () => {
         },
       ];
 
-      const result = extractUniqueCategorizedErrors(testResults);
+      const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
       expect(result.categorizedErrors[0].category).toBe('Missing Theme Provider');
     });
 
     it('should handle empty test results', () => {
-      const result = extractUniqueCategorizedErrors([]);
+      const result = extractCategorizedErrors([]);
 
       expect(result.totalErrors).toBe(0);
       expect(result.categorizedErrors).toEqual([]);

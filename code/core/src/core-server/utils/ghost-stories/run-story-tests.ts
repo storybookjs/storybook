@@ -4,7 +4,7 @@ import { existsSync } from 'fs';
 import { mkdir, readFile } from 'fs/promises';
 import { join } from 'path/posix';
 
-import { extractUniqueCategorizedErrors } from './categorize-render-errors';
+import { extractCategorizedErrors } from './categorize-render-errors';
 import { type GhostStoriesResponsePayload, type StoryTestResult } from './types';
 
 export async function runStoryTests(
@@ -114,9 +114,8 @@ export async function runStoryTests(
       total > 0 ? parseFloat(((passed - passedButEmptyRender) / total).toFixed(2)) : 0;
 
     // Extract and classify unique errors
-    const errorClassification = extractUniqueCategorizedErrors(storyTestResults);
+    const errorClassification = extractCategorizedErrors(storyTestResults);
     const classifiedErrors = errorClassification.categorizedErrors;
-    const uniqueErrorCount = classifiedErrors.length;
 
     const testSummary = {
       total,
@@ -126,7 +125,7 @@ export async function runStoryTests(
       successRate,
       successRateWithoutEmptyRender,
       failureRate,
-      uniqueErrorCount,
+      uniqueErrorCount: errorClassification.uniqueErrorCount,
       classifiedErrors,
     };
 

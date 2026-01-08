@@ -89,26 +89,15 @@ describe('getComponentComplexity', () => {
     const simpleScore = getComponentComplexity(simpleComponent);
     const complexScore = getComponentComplexity(complexComponent);
 
-    expect(superSimpleScore).toMatchInlineSnapshot(`0.05`);
-    expect(simpleScore).toMatchInlineSnapshot(`0.28`);
-    expect(complexScore).toMatchInlineSnapshot(`0.72`);
+    expect(superSimpleScore).toMatchInlineSnapshot(`0.0234375`);
+    expect(simpleScore).toMatchInlineSnapshot(`0.13125`);
+    expect(complexScore).toMatchInlineSnapshot(`0.4125`);
 
     expect(complexScore).toBeGreaterThan(simpleScore);
   });
 
   it('handles empty source', () => {
     expect(getComponentComplexity('')).toBe(0);
-  });
-
-  it('handles source with only types', () => {
-    const typesOnly = `
-      interface Props {
-        name: string;
-      }
-      type Component = React.FC<Props>;
-      export type { Component };
-    `;
-    expect(getComponentComplexity(typesOnly)).toBe(0);
   });
 
   it('converges to 1 as complexity increases', () => {

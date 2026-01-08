@@ -2,24 +2,26 @@ import type { Options } from 'storybook/internal/types';
 
 export type ManifestStatus = {
 	available: boolean;
-	hasGenerator: boolean;
+	hasManifests: boolean;
 	hasFeatureFlag: boolean;
 };
 
 export const getManifestStatus = async (
 	options: Options,
 ): Promise<ManifestStatus> => {
-	const [features, componentManifestGenerator] = await Promise.all([
+	const [features, manifests] = await Promise.all([
 		options.presets.apply('features') as any,
-		options.presets.apply('experimental_componentManifestGenerator'),
+		options.presets.apply('experimental_manifests', undefined, {
+			manifestEntries: [],
+		}),
 	]);
 
-	const hasGenerator = !!componentManifestGenerator;
+	const hasManifests = !!manifests;
 	const hasFeatureFlag = !!features?.experimentalComponentsManifest;
 
 	return {
-		available: hasFeatureFlag && hasGenerator,
-		hasGenerator,
+		available: hasFeatureFlag && hasManifests,
+		hasManifests,
 		hasFeatureFlag,
 	};
 };

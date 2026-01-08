@@ -54,7 +54,7 @@ describe('collectTelemetry', () => {
 		await collectTelemetry({
 			event: 'tool-called',
 			server: mockServer,
-			toolName: 'list-all-components',
+			toolName: 'list-all-documentation',
 			duration: 123,
 			success: true,
 		});
@@ -64,7 +64,7 @@ describe('collectTelemetry', () => {
 			mcpSessionId: 'test-session-123',
 			clientInfo: expect.any(Object),
 			clientCapabilities: expect.any(Object),
-			toolName: 'list-all-components',
+			toolName: 'list-all-documentation',
 			duration: 123,
 			success: true,
 		});

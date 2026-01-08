@@ -426,7 +426,7 @@ export type Props = {
 \`\`\`"
 `;
 
-exports[`MarkdownFormatter - formatComponentManifestMapToList > formats the full manifest fixture 1`] = `
+exports[`MarkdownFormatter - formatManifestsToLists > formats the full manifest fixture 1`] = `
 "# Components
 
 - Button (button): A versatile button component for user interactions

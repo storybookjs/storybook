@@ -5,8 +5,8 @@ import pkgJson from '../package.json' with { type: 'json' };
 import { addGetStoryUrlsTool } from './tools/get-story-urls.ts';
 import { addGetUIBuildingInstructionsTool } from './tools/get-ui-building-instructions.ts';
 import {
-	addListAllComponentsTool,
-	addGetComponentDocumentationTool,
+	addListAllDocumentationTool,
+	addGetDocumentationTool,
 } from '@storybook/mcp';
 import type { Options } from 'storybook/internal/types';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -57,8 +57,8 @@ const initializeMCPServer = async (options: Options) => {
 			'Experimental components manifest feature detected - registering component tools',
 		);
 		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;
-		await addListAllComponentsTool(server, contextAwareEnabled);
-		await addGetComponentDocumentationTool(server, contextAwareEnabled);
+		await addListAllDocumentationTool(server, contextAwareEnabled);
+		await addGetDocumentationTool(server, contextAwareEnabled);
 	}
 
 	transport = new HttpTransport(server, { path: null });
@@ -103,21 +103,23 @@ export const mcpServerHandler = async ({
 		request: webRequest,
 		// Telemetry handlers for component manifest tools
 		...(!disableTelemetry && {
-			onListAllComponents: async ({ manifest }) => {
+			onListAllDocumentation: async ({ manifests }) => {
 				await collectTelemetry({
-					event: 'tool:listAllComponents',
+					event: 'tool:listAllDocumentation',
 					server,
 					toolset: 'docs',
-					componentCount: Object.keys(manifest.components).length,
+					componentCount: Object.keys(manifests.componentManifest.components)
+						.length,
+					docsCount: Object.keys(manifests.docsManifest?.docs || {}).length,
 				});
 			},
-			onGetComponentDocumentation: async ({ input, foundComponent }) => {
+			onGetDocumentation: async ({ input, foundDocumentation }) => {
 				await collectTelemetry({
-					event: 'tool:getComponentDocumentation',
+					event: 'tool:getDocumentation',
 					server,
 					toolset: 'docs',
-					componentId: input.componentId,
-					found: !!foundComponent,
+					componentId: input.id,
+					found: !!foundDocumentation,
 				});
 			},
 		}),

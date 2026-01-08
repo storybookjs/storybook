@@ -1,14 +1,14 @@
 /**
  * This is a way to start the @storybook/mcp server as a stdio MCP server, which is sometimes easier for testing.
  * You can run it like this:
- *   node bin.ts --manifestPath ./path/to/manifest.json --format markdown
+ *   node bin.ts --manifestsDir ./path/to/manifests/dir/ --format markdown
  *
  * Or when configuring it as an MCP server:
  * {
  *   "storybook-mcp": {
  *     "type": "stdio",
  *     "command": "node",
- *     "args": ["bin.ts", "--manifestPath", "./path/to/manifest.json", "--format", "markdown"]
+ *     "args": ["bin.ts", "--manifestsDir", "./path/to/manifests/dir/", "--format", "markdown"]
  *   }
  * }
  */
@@ -16,11 +16,12 @@ import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { StdioTransport } from '@tmcp/transport-stdio';
 import pkgJson from './package.json' with { type: 'json' };
-import { addListAllComponentsTool } from './src/tools/list-all-components.ts';
-import { addGetComponentDocumentationTool } from './src/tools/get-component-documentation.ts';
+import { addListAllDocumentationTool } from './src/tools/list-all-documentation.ts';
+import { addGetDocumentationTool } from './src/tools/get-documentation.ts';
 import type { StorybookContext, OutputFormat } from './src/types.ts';
 import { parseArgs } from 'node:util';
 import * as fs from 'node:fs/promises';
+import { basename } from 'node:path';
 
 const adapter = new ValibotJsonSchemaAdapter();
 const server = new McpServer(
@@ -37,15 +38,15 @@ const server = new McpServer(
 	},
 ).withContext<StorybookContext>();
 
-await addListAllComponentsTool(server);
-await addGetComponentDocumentationTool(server);
+await addListAllDocumentationTool(server);
+await addGetDocumentationTool(server);
 
 const transport = new StdioTransport(server);
 const args = parseArgs({
 	options: {
-		manifestPath: {
+		manifestsDir: {
 			type: 'string',
-			default: './fixtures/full-manifest.fixture.json',
+			default: './fixtures/default',
 		},
 		format: {
 			type: 'string',
@@ -58,15 +59,17 @@ const format = args.values.format as OutputFormat;
 
 transport.listen({
 	format,
-	manifestProvider: async () => {
-		const { manifestPath } = args.values;
+	manifestProvider: async (_request, path) => {
+		const { manifestsDir } = args.values;
+		const fullPath = `${manifestsDir}/${basename(path)}`;
+
 		if (
-			manifestPath.startsWith('http://') ||
-			manifestPath.startsWith('https://')
+			manifestsDir.startsWith('http://') ||
+			manifestsDir.startsWith('https://')
 		) {
-			const res = await fetch(manifestPath);
+			const res = await fetch(fullPath);
 			return await res.text();
 		}
-		return await fs.readFile(manifestPath, 'utf-8');
+		return await fs.readFile(fullPath, 'utf-8');
 	},
 });

@@ -213,30 +213,30 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "UI Component Building Instructions",
 				  },
 				  {
-				    "description": "List all available UI components from the component library",
+				    "description": "List all available UI components and documentation entries from the Storybook",
 				    "inputSchema": {
 				      "properties": {},
 				      "type": "object",
 				    },
-				    "name": "list-all-components",
-				    "title": "List All Components",
+				    "name": "list-all-documentation",
+				    "title": "List All Documentation",
 				  },
 				  {
-				    "description": "Get detailed documentation for a specific UI component",
+				    "description": "Get detailed documentation for a specific UI component or docs entry",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
-				        "componentId": {
+				        "id": {
 				          "type": "string",
 				        },
 				      },
 				      "required": [
-				        "componentId",
+				        "id",
 				      ],
 				      "type": "object",
 				    },
-				    "name": "get-component-documentation",
-				    "title": "Get Documentation for Component",
+				    "name": "get-documentation",
+				    "title": "Get Documentation",
 				  },
 				]
 			`);
@@ -310,10 +310,10 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 	});
 
-	describe('Tool: list-all-components', () => {
-		it('should list all components from manifest', async () => {
+	describe('Tool: list-all-documentation', () => {
+		it('should list all documentation from manifest', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'list-all-components',
+				name: 'list-all-documentation',
 				arguments: {},
 			});
 
@@ -326,7 +326,11 @@ describe('MCP Endpoint E2E Tests', () => {
 				- Button (example-button): A customizable button component for user interactions.
 				- Header (header)
 				- Page (page)
-				- Card (other-ui-card): Card component with title, image, content, and action button",
+				- Card (other-ui-card): Card component with title, image, content, and action button
+
+				# Docs
+
+				- getting-started (getting-started--docs): # Getting Started This is the getting started documentation of this design system. ## Usag...",
 				      "type": "text",
 				    },
 				  ],
@@ -335,11 +339,11 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 	});
 
-	describe('Tool: get-component-documentation', () => {
+	describe('Tool: get-documentation', () => {
 		it('should return documentation for a specific component', async () => {
 			// First, get the list to find a valid component ID
 			const listResponse = await mcpRequest('tools/call', {
-				name: 'list-all-components',
+				name: 'list-all-documentation',
 				arguments: {},
 			});
 
@@ -351,9 +355,9 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			// Now get documentation for that component
 			const response = await mcpRequest('tools/call', {
-				name: 'get-component-documentation',
+				name: 'get-documentation',
 				arguments: {
-					componentId,
+					id: componentId,
 				},
 			});
 
@@ -374,7 +378,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				\`\`\`
 				import { Button } from "@my-org/my-component-library";
 
-				const Primary = () => <Button onClick={fn()} primary label="Button"></Button>;
+				const Primary = () => <Button onClick={fn()} primary label="Button" />;
 				\`\`\`
 
 				### Secondary
@@ -382,7 +386,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				\`\`\`
 				import { Button } from "@my-org/my-component-library";
 
-				const Secondary = () => <Button onClick={fn()} label="Button"></Button>;
+				const Secondary = () => <Button onClick={fn()} label="Button" />;
 				\`\`\`
 
 				### Large
@@ -390,7 +394,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				\`\`\`
 				import { Button } from "@my-org/my-component-library";
 
-				const Large = () => <Button onClick={fn()} size="large" label="Button"></Button>;
+				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
 				\`\`\`
 
 				### Small
@@ -398,7 +402,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				\`\`\`
 				import { Button } from "@my-org/my-component-library";
 
-				const Small = () => <Button onClick={fn()} size="small" label="Button"></Button>;
+				const Small = () => <Button onClick={fn()} size="small" label="Button" />;
 				\`\`\`
 
 				## Props
@@ -436,9 +440,9 @@ describe('MCP Endpoint E2E Tests', () => {
 
 		it('should return error for non-existent component', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-component-documentation',
+				name: 'get-documentation',
 				arguments: {
-					componentId: 'non-existent-component-id',
+					id: 'non-existent-component-id',
 				},
 			});
 
@@ -446,7 +450,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				{
 				  "content": [
 				    {
-				      "text": "Component not found: "non-existent-component-id". Use the list-all-components tool to see available components.",
+				      "text": "Component or Docs Entry not found: "non-existent-component-id". Use the list-all-documentation tool to see available components and documentation entries.",
 				      "type": "text",
 				    },
 				  ],
@@ -499,8 +503,8 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
-				  "list-all-components",
-				  "get-component-documentation",
+				  "list-all-documentation",
+				  "get-documentation",
 				]
 			`);
 		});

@@ -533,7 +533,7 @@ Callback function when the input value changes
 </component>"
 `;
 
-exports[`XmlFormatter - formatComponentManifestMapToList > formats the full manifest fixture 1`] = `
+exports[`XmlFormatter - formatManifestsToLists > formats the full manifest fixture 1`] = `
 "<components>
 <component>
 <id>button</id>

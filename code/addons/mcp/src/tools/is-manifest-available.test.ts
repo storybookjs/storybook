@@ -4,11 +4,11 @@ import type { Options } from 'storybook/internal/types';
 
 function createMockOptions({
 	featureFlag = false,
-	hasGenerator = false,
+	hasManifests = false,
 	hasFeaturesObject = true,
 }: {
 	featureFlag?: boolean;
-	hasGenerator?: boolean;
+	hasManifests?: boolean;
 	hasFeaturesObject?: boolean;
 } = {}): Options {
 	return {
@@ -19,8 +19,8 @@ function createMockOptions({
 						? { experimentalComponentsManifest: featureFlag }
 						: {};
 				}
-				if (key === 'experimental_componentManifestGenerator') {
-					return hasGenerator ? vi.fn() : undefined;
+				if (key === 'experimental_manifests') {
+					return hasManifests ? vi.fn() : undefined;
 				}
 				return undefined;
 			}),
@@ -32,32 +32,32 @@ describe('getManifestStatus', () => {
 	it.each([
 		{
 			description: 'both feature flag and generator are present',
-			options: { featureFlag: true, hasGenerator: true },
-			expected: { available: true, hasGenerator: true, hasFeatureFlag: true },
+			options: { featureFlag: true, hasManifests: true },
+			expected: { available: true, hasManifests: true, hasFeatureFlag: true },
 		},
 		{
 			description: 'missing generator (unsupported framework)',
-			options: { featureFlag: true, hasGenerator: false },
-			expected: { available: false, hasGenerator: false, hasFeatureFlag: true },
+			options: { featureFlag: true, hasManifests: false },
+			expected: { available: false, hasManifests: false, hasFeatureFlag: true },
 		},
 		{
 			description: 'missing feature flag',
-			options: { featureFlag: false, hasGenerator: true },
-			expected: { available: false, hasGenerator: true, hasFeatureFlag: false },
+			options: { featureFlag: false, hasManifests: true },
+			expected: { available: false, hasManifests: true, hasFeatureFlag: false },
 		},
 		{
 			description: 'both are missing',
-			options: { featureFlag: false, hasGenerator: false },
+			options: { featureFlag: false, hasManifests: false },
 			expected: {
 				available: false,
-				hasGenerator: false,
+				hasManifests: false,
 				hasFeatureFlag: false,
 			},
 		},
 		{
 			description: 'features object is missing the flag',
-			options: { hasGenerator: true, hasFeaturesObject: false },
-			expected: { available: false, hasGenerator: true, hasFeatureFlag: false },
+			options: { hasManifests: true, hasFeaturesObject: false },
+			expected: { available: false, hasManifests: true, hasFeatureFlag: false },
 		},
 	])(
 		'should return correct status when $description',

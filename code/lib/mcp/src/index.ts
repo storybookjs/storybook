@@ -2,22 +2,25 @@ import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
-import { addListAllComponentsTool } from './tools/list-all-components.ts';
-import { addGetComponentDocumentationTool } from './tools/get-component-documentation.ts';
+import { addListAllDocumentationTool } from './tools/list-all-documentation.ts';
+import { addGetDocumentationTool } from './tools/get-documentation.ts';
 import type { StorybookContext } from './types.ts';
 
 // Export tools for reuse by addon-mcp
 export {
-	addListAllComponentsTool,
+	addListAllDocumentationTool,
 	LIST_TOOL_NAME,
-} from './tools/list-all-components.ts';
+} from './tools/list-all-documentation.ts';
 export {
-	addGetComponentDocumentationTool,
+	addGetDocumentationTool,
 	GET_TOOL_NAME,
-} from './tools/get-component-documentation.ts';
+} from './tools/get-documentation.ts';
 
 // Export manifest constants
-export { MANIFEST_PATH } from './utils/get-manifest.ts';
+export {
+	COMPONENT_MANIFEST_PATH,
+	DOCS_MANIFEST_PATH,
+} from './utils/get-manifest.ts';
 
 // Export types for reuse
 export type { StorybookContext } from './types.ts';
@@ -90,8 +93,8 @@ export const createStorybookMcpHandler = async (
 		server.on('initialize', options.onSessionInitialize);
 	}
 
-	await addListAllComponentsTool(server);
-	await addGetComponentDocumentationTool(server);
+	await addListAllDocumentationTool(server);
+	await addGetDocumentationTool(server);
 
 	const transport = new HttpTransport(server, { path: null });
 
@@ -100,11 +103,10 @@ export const createStorybookMcpHandler = async (
 			request: req,
 			format: context?.format ?? options.format ?? 'markdown',
 			manifestProvider: context?.manifestProvider ?? options.manifestProvider,
-			onListAllComponents:
-				context?.onListAllComponents ?? options.onListAllComponents,
-			onGetComponentDocumentation:
-				context?.onGetComponentDocumentation ??
-				options.onGetComponentDocumentation,
+			onListAllDocumentation:
+				context?.onListAllDocumentation ?? options.onListAllDocumentation,
+			onGetDocumentation:
+				context?.onGetDocumentation ?? options.onGetDocumentation,
 		});
 	}) as Handler;
 };

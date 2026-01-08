@@ -3,8 +3,8 @@
 		"allow": [
 			"mcp__storybook-addon-mcp__get-ui-building-instructions",
 			"mcp__storybook-addon-mcp__get-story-urls",
-			"mcp__storybook-addon-mcp__list-all-components",
-			"mcp__storybook-addon-mcp__get-component-documentation"
+			"mcp__storybook-addon-mcp__list-all-documentation",
+			"mcp__storybook-addon-mcp__get-documentation"
 		]
 	},
 	"enabledMcpjsonServers": ["storybook-addon-mcp", "storybook-mcp"]

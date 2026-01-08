@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { xmlFormatter } from './xml.ts';
-import type { ComponentManifest, ComponentManifestMap } from '../../types.ts';
+import type {
+	AllManifests,
+	ComponentManifest,
+	ComponentManifestMap,
+} from '../../types.ts';
 import fullManifestFixture from '../../../fixtures/full-manifest.fixture.json' with { type: 'json' };
 import withErrorsFixture from '../../../fixtures/with-errors.fixture.json' with { type: 'json' };
 
@@ -467,27 +471,30 @@ describe('XmlFormatter - formatComponentManifest', () => {
 	});
 });
 
-describe('XmlFormatter - formatComponentManifestMapToList', () => {
+describe('XmlFormatter - formatManifestsToLists', () => {
 	it('formats the full manifest fixture', () => {
-		const result =
-			xmlFormatter.formatComponentManifestMapToList(fullManifestFixture);
+		const result = xmlFormatter.formatManifestsToLists({
+			componentManifest: fullManifestFixture as ComponentManifestMap,
+		});
 		expect(result).toMatchSnapshot();
 	});
 
 	describe('component list structure', () => {
 		it('should format a single component', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
 					},
 				},
 			};
 
-			const result = xmlFormatter.formatComponentManifestMapToList(manifest);
+			const result = xmlFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"<components>
@@ -500,28 +507,30 @@ describe('XmlFormatter - formatComponentManifestMapToList', () => {
 		});
 
 		it('should format multiple components', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-					},
-					card: {
-						id: 'card',
-						name: 'Card',
-						path: 'src/components/Card.tsx',
-					},
-					input: {
-						id: 'input',
-						name: 'Input',
-						path: 'src/components/Input.tsx',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+						card: {
+							id: 'card',
+							name: 'Card',
+							path: 'src/components/Card.tsx',
+						},
+						input: {
+							id: 'input',
+							name: 'Input',
+							path: 'src/components/Input.tsx',
+						},
 					},
 				},
 			};
 
-			const result = xmlFormatter.formatComponentManifestMapToList(manifest);
+			const result = xmlFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"<components>
@@ -544,19 +553,21 @@ describe('XmlFormatter - formatComponentManifestMapToList', () => {
 
 	describe('summary section', () => {
 		it('should include summary when provided', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-						summary: 'A versatile button component',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							summary: 'A versatile button component',
+						},
 					},
 				},
 			};
 
-			const result = xmlFormatter.formatComponentManifestMapToList(manifest);
+			const result = xmlFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"<components>
@@ -572,39 +583,44 @@ describe('XmlFormatter - formatComponentManifestMapToList', () => {
 		});
 
 		it('should prefer summary over description', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-						summary: 'Short summary',
-						description: 'This is a longer description that should be ignored',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							summary: 'Short summary',
+							description:
+								'This is a longer description that should be ignored',
+						},
 					},
 				},
 			};
 
-			const result = xmlFormatter.formatComponentManifestMapToList(manifest);
+			const result = xmlFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toContain('Short summary');
 			expect(result).not.toContain('longer description');
 		});
 
 		it('should use description when summary is not provided', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-						description: 'A simple button component',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							description: 'A simple button component',
+						},
 					},
 				},
 			};
 
-			const result = xmlFormatter.formatComponentManifestMapToList(manifest);
+			const result = xmlFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"<components>
@@ -620,20 +636,22 @@ describe('XmlFormatter - formatComponentManifestMapToList', () => {
 		});
 
 		it('should truncate long descriptions to 90 characters', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-						description:
-							'This is a very long description that exceeds ninety characters and should be truncated with ellipsis',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							description:
+								'This is a very long description that exceeds ninety characters and should be truncated with ellipsis',
+						},
 					},
 				},
 			};
 
-			const result = xmlFormatter.formatComponentManifestMapToList(manifest);
+			const result = xmlFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"<components>
@@ -649,20 +667,22 @@ describe('XmlFormatter - formatComponentManifestMapToList', () => {
 		});
 
 		it('should not truncate descriptions under 90 characters', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-						description:
-							'A description with exactly eighty characters is fine and should not be truncated',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							description:
+								'A description with exactly eighty characters is fine and should not be truncated',
+						},
 					},
 				},
 			};
 
-			const result = xmlFormatter.formatComponentManifestMapToList(manifest);
+			const result = xmlFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toContain(
 				'A description with exactly eighty characters is fine and should not be truncated',
@@ -671,18 +691,20 @@ describe('XmlFormatter - formatComponentManifestMapToList', () => {
 		});
 
 		it('should omit summary section when neither summary nor description provided', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
 					},
 				},
 			};
 
-			const result = xmlFormatter.formatComponentManifestMapToList(manifest);
+			const result = xmlFormatter.formatManifestsToLists(manifests);
 
 			expect(result).not.toContain('<summary>');
 			expect(result).toMatchInlineSnapshot(`
@@ -698,38 +720,40 @@ describe('XmlFormatter - formatComponentManifestMapToList', () => {
 
 	describe('complete manifest', () => {
 		it('should format a complete manifest with varied components', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-						summary: 'A versatile button component',
-					},
-					card: {
-						id: 'card',
-						name: 'Card',
-						path: 'src/components/Card.tsx',
-						description: 'A flexible container for grouping content',
-					},
-					input: {
-						id: 'input',
-						name: 'Input',
-						path: 'src/components/Input.tsx',
-						summary: 'Text input with validation',
-						description:
-							'A comprehensive input component with validation, error states, and accessibility features',
-					},
-					modal: {
-						id: 'modal',
-						name: 'Modal',
-						path: 'src/components/Modal.tsx',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							summary: 'A versatile button component',
+						},
+						card: {
+							id: 'card',
+							name: 'Card',
+							path: 'src/components/Card.tsx',
+							description: 'A flexible container for grouping content',
+						},
+						input: {
+							id: 'input',
+							name: 'Input',
+							path: 'src/components/Input.tsx',
+							summary: 'Text input with validation',
+							description:
+								'A comprehensive input component with validation, error states, and accessibility features',
+						},
+						modal: {
+							id: 'modal',
+							name: 'Modal',
+							path: 'src/components/Modal.tsx',
+						},
 					},
 				},
 			};
 
-			const result = xmlFormatter.formatComponentManifestMapToList(manifest);
+			const result = xmlFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"<components>
@@ -759,6 +783,211 @@ describe('XmlFormatter - formatComponentManifestMapToList', () => {
 				<name>Modal</name>
 				</component>
 				</components>"
+			`);
+		});
+	});
+
+	describe('docs manifest section', () => {
+		it('should include docs section when docsManifest is provided', () => {
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+					},
+				},
+				docsManifest: {
+					v: 1,
+					docs: {
+						'getting-started': {
+							id: 'getting-started',
+							name: 'Getting Started',
+							title: 'Getting Started Guide',
+							path: 'docs/getting-started.mdx',
+							content: 'Welcome to our component library.',
+						},
+					},
+				},
+			};
+
+			const result = xmlFormatter.formatManifestsToLists(manifests);
+
+			expect(result).toMatchInlineSnapshot(`
+				"<components>
+				<component>
+				<id>button</id>
+				<name>Button</name>
+				</component>
+				</components>
+				<docs>
+				<doc>
+				<id>getting-started</id>
+				<title>Getting Started Guide</title>
+				<summary>
+				Welcome to our component library.
+				</summary>
+				</doc>
+				</docs>"
+			`);
+		});
+
+		it('should format multiple docs entries', () => {
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+					},
+				},
+				docsManifest: {
+					v: 1,
+					docs: {
+						'getting-started': {
+							id: 'getting-started',
+							name: 'Getting Started',
+							title: 'Getting Started Guide',
+							path: 'docs/getting-started.mdx',
+							content: 'Welcome to our component library.',
+						},
+						theming: {
+							id: 'theming',
+							name: 'Theming',
+							title: 'Theming Guide',
+							path: 'docs/theming.mdx',
+							content: 'Learn how to customize the theme.',
+						},
+					},
+				},
+			};
+
+			const result = xmlFormatter.formatManifestsToLists(manifests);
+
+			expect(result).toContain('<components>');
+			expect(result).toContain('<docs>');
+			expect(result).toContain('<title>Getting Started Guide</title>');
+			expect(result).toContain('<title>Theming Guide</title>');
+		});
+
+		it('should omit docs section when docsManifest is not provided', () => {
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+					},
+				},
+			};
+
+			const result = xmlFormatter.formatManifestsToLists(manifests);
+
+			expect(result).not.toContain('<docs>');
+		});
+
+		it('should use doc.summary when provided instead of extracting from content', () => {
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+					},
+				},
+				docsManifest: {
+					v: 1,
+					docs: {
+						'custom-summary': {
+							id: 'custom-summary',
+							name: 'Custom Summary',
+							title: 'Custom Summary Doc',
+							path: 'docs/custom-summary.mdx',
+							content:
+								'This is a very long content that would normally be extracted and truncated.',
+							summary: 'This is a custom summary',
+						},
+					},
+				},
+			};
+
+			const result = xmlFormatter.formatManifestsToLists(manifests);
+
+			expect(result).toMatchInlineSnapshot(`
+				"<components>
+				<component>
+				<id>button</id>
+				<name>Button</name>
+				</component>
+				</components>
+				<docs>
+				<doc>
+				<id>custom-summary</id>
+				<title>Custom Summary Doc</title>
+				<summary>
+				This is a custom summary
+				</summary>
+				</doc>
+				</docs>"
+			`);
+		});
+
+		it('should extract summary from content when doc.summary is not provided', () => {
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+					},
+				},
+				docsManifest: {
+					v: 1,
+					docs: {
+						'auto-summary': {
+							id: 'auto-summary',
+							name: 'Auto Summary',
+							title: 'Auto Summary Doc',
+							path: 'docs/auto-summary.mdx',
+							content: 'This content will be extracted automatically.',
+						},
+					},
+				},
+			};
+
+			const result = xmlFormatter.formatManifestsToLists(manifests);
+
+			expect(result).toMatchInlineSnapshot(`
+				"<components>
+				<component>
+				<id>button</id>
+				<name>Button</name>
+				</component>
+				</components>
+				<docs>
+				<doc>
+				<id>auto-summary</id>
+				<title>Auto Summary Doc</title>
+				<summary>
+				This content will be extracted automatically.
+				</summary>
+				</doc>
+				</docs>"
 			`);
 		});
 	});
@@ -844,9 +1073,9 @@ describe('XmlFormatter - formatComponentManifestMapToList', () => {
 		});
 
 		it('should format list of components with errors', () => {
-			const result = xmlFormatter.formatComponentManifestMapToList(
-				withErrorsFixture as ComponentManifestMap,
-			);
+			const result = xmlFormatter.formatManifestsToLists({
+				componentManifest: withErrorsFixture as ComponentManifestMap,
+			});
 			expect(result).toMatchInlineSnapshot(`
 				"<components>
 				<component>

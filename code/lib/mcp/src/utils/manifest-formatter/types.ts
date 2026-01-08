@@ -1,4 +1,9 @@
-import type { ComponentManifest, ComponentManifestMap } from '../../types.ts';
+import type { AllManifests, ComponentManifest, Doc } from '../../types.ts';
+
+/**
+ * Maximum length for a summary before truncation.
+ */
+export const MAX_SUMMARY_LENGTH = 90;
 
 /**
  * Interface for manifest formatters.
@@ -8,15 +13,18 @@ import type { ComponentManifest, ComponentManifestMap } from '../../types.ts';
 export interface ManifestFormatter {
 	/**
 	 * Format a single component manifest into the target format.
-	 * @param componentManifest - The component manifest to format
-	 * @returns Formatted string representation of the component
 	 */
 	formatComponentManifest(componentManifest: ComponentManifest): string;
+
+	/**
+	 * Format a single doc manifest into the target format.
+	 */
+	formatDocsManifest(doc: Doc): string;
 
 	/**
 	 * Format a component manifest map into a list in the target format.
 	 * @param manifest - The component manifest map to format
 	 * @returns Formatted string representation of the component list
 	 */
-	formatComponentManifestMapToList(manifest: ComponentManifestMap): string;
+	formatManifestsToLists(manifests: AllManifests): string;
 }

@@ -1,0 +1,19 @@
+{
+	"v": 1,
+	"docs": {
+		"getting-started": {
+			"id": "getting-started",
+			"name": "Getting Started",
+			"title": "Getting Started Guide",
+			"path": "docs/getting-started.mdx",
+			"content": "# Getting Started\n\nWelcome to the component library. This guide will help you get up and running.\n\n## Installation\n\n```bash\nnpm install my-component-library\n```\n\n## Usage\n\nImport components and use them in your application."
+		},
+		"theming": {
+			"id": "theming",
+			"name": "Theming",
+			"title": "Theming and Customization",
+			"path": "docs/theming.mdx",
+			"content": "# Theming\n\nLearn how to customize the look and feel of components using our theming system.\n\n## Theme Provider\n\nWrap your app with the ThemeProvider."
+		}
+	}
+}

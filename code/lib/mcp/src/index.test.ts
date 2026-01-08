@@ -3,6 +3,36 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { createStorybookMcpHandler } from './index.ts';
 import smallManifestFixture from '../fixtures/small-manifest.fixture.json' with { type: 'json' };
+import smallDocsManifestFixture from '../fixtures/small-docs-manifest.fixture.json' with { type: 'json' };
+
+/**
+ * Creates a manifestProvider mock that returns component manifest for components.json
+ * and throws an error for docs.json (simulating no docs manifest available)
+ */
+function createManifestProviderMock() {
+	return vi.fn().mockImplementation((_request: Request, path: string) => {
+		if (path.includes('components.json')) {
+			return Promise.resolve(JSON.stringify(smallManifestFixture));
+		}
+		// Simulate docs.json not found
+		return Promise.reject(new Error('Not found'));
+	});
+}
+
+/**
+ * Creates a manifestProvider mock that returns both component and docs manifests
+ */
+function createManifestProviderMockWithDocs() {
+	return vi.fn().mockImplementation((_request: Request, path: string) => {
+		if (path.includes('components.json')) {
+			return Promise.resolve(JSON.stringify(smallManifestFixture));
+		}
+		if (path.includes('docs.json')) {
+			return Promise.resolve(JSON.stringify(smallDocsManifestFixture));
+		}
+		return Promise.reject(new Error('Not found'));
+	});
+}
 
 describe('createStorybookMcpHandler', () => {
 	let client: Client;
@@ -59,12 +89,12 @@ describe('createStorybookMcpHandler', () => {
 		expect(tools.tools).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
-					name: 'list-all-components',
-					title: 'List All Components',
+					name: 'list-all-documentation',
+					title: 'List All Documentation',
 				}),
 				expect.objectContaining({
-					name: 'get-component-documentation',
-					title: 'Get Documentation for Component',
+					name: 'get-documentation',
+					title: 'Get Documentation',
 				}),
 			]),
 		);
@@ -89,10 +119,8 @@ describe('createStorybookMcpHandler', () => {
 		);
 	});
 
-	it('should use manifestProvider when calling list-all-components', async () => {
-		const manifestProvider = vi
-			.fn()
-			.mockResolvedValue(JSON.stringify(smallManifestFixture));
+	it('should use manifestProvider when calling list-all-documentation', async () => {
+		const manifestProvider = createManifestProviderMock();
 
 		const handler = await createStorybookMcpHandler({
 			manifestProvider,
@@ -100,7 +128,7 @@ describe('createStorybookMcpHandler', () => {
 		await setupClient(handler);
 
 		const result = await client.callTool({
-			name: 'list-all-components',
+			name: 'list-all-documentation',
 			arguments: {},
 		});
 
@@ -115,58 +143,54 @@ describe('createStorybookMcpHandler', () => {
 		});
 	});
 
-	it('should call onListAllComponents handler when tool is invoked', async () => {
-		const onListAllComponents = vi.fn();
-		const manifestProvider = vi
-			.fn()
-			.mockResolvedValue(JSON.stringify(smallManifestFixture));
+	it('should call onListAllDocumentation handler when tool is invoked', async () => {
+		const onListAllDocumentation = vi.fn();
+		const manifestProvider = createManifestProviderMock();
 
 		const handler = await createStorybookMcpHandler({
 			manifestProvider,
-			onListAllComponents,
+			onListAllDocumentation,
 		});
 		await setupClient(handler);
 
 		await client.callTool({
-			name: 'list-all-components',
+			name: 'list-all-documentation',
 			arguments: {},
 		});
 
-		expect(onListAllComponents).toHaveBeenCalledTimes(1);
-		expect(onListAllComponents).toHaveBeenCalledWith({
+		expect(onListAllDocumentation).toHaveBeenCalledTimes(1);
+		expect(onListAllDocumentation).toHaveBeenCalledWith({
 			context: expect.objectContaining({
 				request: expect.any(Request),
 			}),
-			manifest: smallManifestFixture,
+			manifests: { componentManifest: smallManifestFixture },
 		});
 	});
 
-	it('should call onGetComponentDocumentation handler when tool is invoked', async () => {
-		const onGetComponentDocumentation = vi.fn();
-		const manifestProvider = vi
-			.fn()
-			.mockResolvedValue(JSON.stringify(smallManifestFixture));
+	it('should call onGetDocumentation handler when tool is invoked', async () => {
+		const onGetDocumentation = vi.fn();
+		const manifestProvider = createManifestProviderMock();
 
 		const handler = await createStorybookMcpHandler({
 			manifestProvider,
-			onGetComponentDocumentation,
+			onGetDocumentation,
 		});
 		await setupClient(handler);
 
 		const result = await client.callTool({
-			name: 'get-component-documentation',
+			name: 'get-documentation',
 			arguments: {
-				componentId: 'button',
+				id: 'button',
 			},
 		});
 
-		expect(onGetComponentDocumentation).toHaveBeenCalledTimes(1);
-		expect(onGetComponentDocumentation).toHaveBeenCalledWith({
+		expect(onGetDocumentation).toHaveBeenCalledTimes(1);
+		expect(onGetDocumentation).toHaveBeenCalledWith({
 			context: expect.objectContaining({
 				request: expect.any(Request),
 			}),
-			input: { componentId: 'button' },
-			foundComponent: expect.objectContaining({
+			input: { id: 'button' },
+			foundDocumentation: expect.objectContaining({
 				id: 'button',
 				name: 'Button',
 			}),
@@ -184,7 +208,7 @@ describe('createStorybookMcpHandler', () => {
 		await setupClient(handler);
 
 		const result = await client.callTool({
-			name: 'list-all-components',
+			name: 'list-all-documentation',
 			arguments: {},
 		});
 
@@ -195,38 +219,130 @@ describe('createStorybookMcpHandler', () => {
 		});
 	});
 
-	it('should handle non-existent component ID in get-component-documentation', async () => {
-		const onGetComponentDocumentation = vi.fn();
-		const manifestProvider = vi
-			.fn()
-			.mockResolvedValue(JSON.stringify(smallManifestFixture));
+	it('should handle non-existent component ID in get-documentation', async () => {
+		const onGetDocumentation = vi.fn();
+		const manifestProvider = createManifestProviderMock();
 
 		const handler = await createStorybookMcpHandler({
 			manifestProvider,
-			onGetComponentDocumentation,
+			onGetDocumentation,
 		});
 		await setupClient(handler);
 
 		const result = await client.callTool({
-			name: 'get-component-documentation',
+			name: 'get-documentation',
 			arguments: {
-				componentId: 'non-existent',
+				id: 'non-existent',
 			},
 		});
 
 		// Should still call the handler
-		expect(onGetComponentDocumentation).toHaveBeenCalledTimes(1);
-		expect(onGetComponentDocumentation).toHaveBeenCalledWith({
+		expect(onGetDocumentation).toHaveBeenCalledTimes(1);
+		expect(onGetDocumentation).toHaveBeenCalledWith({
 			context: expect.objectContaining({
 				request: expect.any(Request),
 			}),
-			input: { componentId: 'non-existent' },
+			input: { id: 'non-existent' },
 		});
 
 		expect(result.content).toHaveLength(1);
 		expect((result.content as any)[0]).toMatchObject({
 			type: 'text',
-			text: expect.stringContaining('Component not found'),
+			text: expect.stringContaining('not found'),
+		});
+	});
+
+	describe('with docs manifest', () => {
+		it('should return docs entries in list-all-documentation when docs manifest is available', async () => {
+			const manifestProvider = createManifestProviderMockWithDocs();
+
+			const handler = await createStorybookMcpHandler({
+				manifestProvider,
+			});
+			await setupClient(handler);
+
+			const result = await client.callTool({
+				name: 'list-all-documentation',
+				arguments: {},
+			});
+
+			expect(manifestProvider).toHaveBeenCalledWith(
+				expect.any(Request),
+				'./manifests/components.json',
+			);
+			expect(manifestProvider).toHaveBeenCalledWith(
+				expect.any(Request),
+				'./manifests/docs.json',
+			);
+
+			expect(result.content).toHaveLength(1);
+			const text = (result.content as any)[0].text;
+			expect(text).toContain('# Components');
+			expect(text).toContain('# Docs');
+			expect(text).toContain('Getting Started');
+		});
+
+		it('should include docs manifest in onListAllDocumentation handler', async () => {
+			const onListAllDocumentation = vi.fn();
+			const manifestProvider = createManifestProviderMockWithDocs();
+
+			const handler = await createStorybookMcpHandler({
+				manifestProvider,
+				onListAllDocumentation,
+			});
+			await setupClient(handler);
+
+			await client.callTool({
+				name: 'list-all-documentation',
+				arguments: {},
+			});
+
+			expect(onListAllDocumentation).toHaveBeenCalledTimes(1);
+			expect(onListAllDocumentation).toHaveBeenCalledWith({
+				context: expect.objectContaining({
+					request: expect.any(Request),
+				}),
+				manifests: {
+					componentManifest: smallManifestFixture,
+					docsManifest: smallDocsManifestFixture,
+				},
+			});
+		});
+
+		it('should return documentation for a docs entry', async () => {
+			const onGetDocumentation = vi.fn();
+			const manifestProvider = createManifestProviderMockWithDocs();
+
+			const handler = await createStorybookMcpHandler({
+				manifestProvider,
+				onGetDocumentation,
+			});
+			await setupClient(handler);
+
+			const result = await client.callTool({
+				name: 'get-documentation',
+				arguments: {
+					id: 'getting-started',
+				},
+			});
+
+			expect(onGetDocumentation).toHaveBeenCalledTimes(1);
+			expect(onGetDocumentation).toHaveBeenCalledWith({
+				context: expect.objectContaining({
+					request: expect.any(Request),
+				}),
+				input: { id: 'getting-started' },
+				foundDocumentation: expect.objectContaining({
+					id: 'getting-started',
+					name: 'Getting Started',
+				}),
+			});
+
+			expect(result.content).toHaveLength(1);
+			expect((result.content as any)[0]).toMatchObject({
+				type: 'text',
+				text: expect.stringContaining('Getting Started'),
+			});
 		});
 	});
 });

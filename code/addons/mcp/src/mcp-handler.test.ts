@@ -328,7 +328,7 @@ describe('mcpServerHandler', () => {
 			if (key === 'features') {
 				return { experimentalComponentsManifest: true };
 			}
-			if (key === 'experimental_componentManifestGenerator') {
+			if (key === 'experimental_manifests') {
 				return vi.fn();
 			}
 			return defaultValue;
@@ -386,8 +386,8 @@ describe('mcpServerHandler', () => {
 
 		// Verify component manifest tools are included
 		const toolNames = parsedResponse.result.tools.map((t: any) => t.name);
-		expect(toolNames).toContain('list-all-components');
-		expect(toolNames).toContain('get-component-documentation');
+		expect(toolNames).toContain('list-all-documentation');
+		expect(toolNames).toContain('get-documentation');
 	});
 });
 

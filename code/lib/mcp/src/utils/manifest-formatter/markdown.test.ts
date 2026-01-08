@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { markdownFormatter } from './markdown.ts';
-import type { ComponentManifest, ComponentManifestMap } from '../../types.ts';
+import type {
+	AllManifests,
+	ComponentManifest,
+	ComponentManifestMap,
+} from '../../types.ts';
 import fullManifestFixture from '../../../fixtures/full-manifest.fixture.json' with { type: 'json' };
 
 describe('MarkdownFormatter - formatComponentManifest', () => {
@@ -442,28 +446,30 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 	});
 });
 
-describe('MarkdownFormatter - formatComponentManifestMapToList', () => {
+describe('MarkdownFormatter - formatManifestsToLists', () => {
 	it('formats the full manifest fixture', () => {
-		const result =
-			markdownFormatter.formatComponentManifestMapToList(fullManifestFixture);
+		const result = markdownFormatter.formatManifestsToLists({
+			componentManifest: fullManifestFixture as ComponentManifestMap,
+		});
 		expect(result).toMatchSnapshot();
 	});
 
 	describe('component list structure', () => {
 		it('should format a single component', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
 					},
 				},
 			};
 
-			const result =
-				markdownFormatter.formatComponentManifestMapToList(manifest);
+			const result = markdownFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
@@ -473,29 +479,30 @@ describe('MarkdownFormatter - formatComponentManifestMapToList', () => {
 		});
 
 		it('should format multiple components', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-					},
-					card: {
-						id: 'card',
-						name: 'Card',
-						path: 'src/components/Card.tsx',
-					},
-					input: {
-						id: 'input',
-						name: 'Input',
-						path: 'src/components/Input.tsx',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+						card: {
+							id: 'card',
+							name: 'Card',
+							path: 'src/components/Card.tsx',
+						},
+						input: {
+							id: 'input',
+							name: 'Input',
+							path: 'src/components/Input.tsx',
+						},
 					},
 				},
 			};
 
-			const result =
-				markdownFormatter.formatComponentManifestMapToList(manifest);
+			const result = markdownFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
@@ -509,20 +516,21 @@ describe('MarkdownFormatter - formatComponentManifestMapToList', () => {
 
 	describe('summary section', () => {
 		it('should include summary when provided', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-						summary: 'A versatile button component',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							summary: 'A versatile button component',
+						},
 					},
 				},
 			};
 
-			const result =
-				markdownFormatter.formatComponentManifestMapToList(manifest);
+			const result = markdownFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
@@ -532,41 +540,43 @@ describe('MarkdownFormatter - formatComponentManifestMapToList', () => {
 		});
 
 		it('should prefer summary over description', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-						summary: 'Button summary',
-						description: 'Button description',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							summary: 'Button summary',
+							description: 'Button description',
+						},
 					},
 				},
 			};
 
-			const result =
-				markdownFormatter.formatComponentManifestMapToList(manifest);
+			const result = markdownFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toContain('Button summary');
 			expect(result).not.toContain('Button description');
 		});
 
 		it('should use description when summary is not provided', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-						description: 'A simple button component',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							description: 'A simple button component',
+						},
 					},
 				},
 			};
 
-			const result =
-				markdownFormatter.formatComponentManifestMapToList(manifest);
+			const result = markdownFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
@@ -576,21 +586,22 @@ describe('MarkdownFormatter - formatComponentManifestMapToList', () => {
 		});
 
 		it('should truncate long descriptions to 90 characters', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-						description:
-							'This is a very long description that exceeds ninety characters and should be truncated with ellipsis',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							description:
+								'This is a very long description that exceeds ninety characters and should be truncated with ellipsis',
+						},
 					},
 				},
 			};
 
-			const result =
-				markdownFormatter.formatComponentManifestMapToList(manifest);
+			const result = markdownFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toContain('...');
 			expect(result).toMatchInlineSnapshot(`
@@ -601,44 +612,227 @@ describe('MarkdownFormatter - formatComponentManifestMapToList', () => {
 		});
 
 		it('should not truncate descriptions under 90 characters', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
-						description: 'A button component for user interactions',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+							description: 'A button component for user interactions',
+						},
 					},
 				},
 			};
 
-			const result =
-				markdownFormatter.formatComponentManifestMapToList(manifest);
+			const result = markdownFormatter.formatManifestsToLists(manifests);
 
 			expect(result).not.toContain('...');
 			expect(result).toContain('A button component for user interactions');
 		});
 
 		it('should omit summary when neither summary nor description provided', () => {
-			const manifest: ComponentManifestMap = {
-				v: 1,
-				components: {
-					button: {
-						id: 'button',
-						name: 'Button',
-						path: 'src/components/Button.tsx',
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
 					},
 				},
 			};
 
-			const result =
-				markdownFormatter.formatComponentManifestMapToList(manifest);
+			const result = markdownFormatter.formatManifestsToLists(manifests);
 
 			expect(result).toMatchInlineSnapshot(`
 				"# Components
 
 				- Button (button)"
+			`);
+		});
+	});
+
+	describe('docs manifest section', () => {
+		it('should include docs section when docsManifest is provided', () => {
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+					},
+				},
+				docsManifest: {
+					v: 1,
+					docs: {
+						'getting-started': {
+							id: 'getting-started',
+							name: 'Getting Started',
+							title: 'Getting Started Guide',
+							path: 'docs/getting-started.mdx',
+							content: 'Welcome to our component library.',
+						},
+					},
+				},
+			};
+
+			const result = markdownFormatter.formatManifestsToLists(manifests);
+
+			expect(result).toMatchInlineSnapshot(`
+				"# Components
+
+				- Button (button)
+
+				# Docs
+
+				- Getting Started Guide (getting-started): Welcome to our component library."
+			`);
+		});
+
+		it('should format multiple docs entries', () => {
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+					},
+				},
+				docsManifest: {
+					v: 1,
+					docs: {
+						'getting-started': {
+							id: 'getting-started',
+							name: 'Getting Started',
+							title: 'Getting Started Guide',
+							path: 'docs/getting-started.mdx',
+							content: 'Welcome to our component library.',
+						},
+						theming: {
+							id: 'theming',
+							name: 'Theming',
+							title: 'Theming Guide',
+							path: 'docs/theming.mdx',
+							content: 'Learn how to customize the theme.',
+						},
+					},
+				},
+			};
+
+			const result = markdownFormatter.formatManifestsToLists(manifests);
+
+			expect(result).toContain('# Components');
+			expect(result).toContain('# Docs');
+			expect(result).toContain('- Getting Started Guide (getting-started)');
+			expect(result).toContain('- Theming Guide (theming)');
+		});
+
+		it('should omit docs section when docsManifest is not provided', () => {
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+					},
+				},
+			};
+
+			const result = markdownFormatter.formatManifestsToLists(manifests);
+
+			expect(result).not.toContain('# Docs');
+		});
+
+		it('should use doc.summary when provided instead of extracting from content', () => {
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+					},
+				},
+				docsManifest: {
+					v: 1,
+					docs: {
+						'custom-summary': {
+							id: 'custom-summary',
+							name: 'Custom Summary',
+							title: 'Custom Summary Doc',
+							path: 'docs/custom-summary.mdx',
+							content:
+								'This is a very long content that would normally be extracted and truncated.',
+							summary: 'This is a custom summary',
+						},
+					},
+				},
+			};
+
+			const result = markdownFormatter.formatManifestsToLists(manifests);
+
+			expect(result).toMatchInlineSnapshot(`
+				"# Components
+
+				- Button (button)
+
+				# Docs
+
+				- Custom Summary Doc (custom-summary): This is a custom summary"
+			`);
+		});
+
+		it('should extract summary from content when doc.summary is not provided', () => {
+			const manifests: AllManifests = {
+				componentManifest: {
+					v: 1,
+					components: {
+						button: {
+							id: 'button',
+							name: 'Button',
+							path: 'src/components/Button.tsx',
+						},
+					},
+				},
+				docsManifest: {
+					v: 1,
+					docs: {
+						'auto-summary': {
+							id: 'auto-summary',
+							name: 'Auto Summary',
+							title: 'Auto Summary Doc',
+							path: 'docs/auto-summary.mdx',
+							content: 'This content will be extracted automatically.',
+						},
+					},
+				},
+			};
+
+			const result = markdownFormatter.formatManifestsToLists(manifests);
+
+			expect(result).toMatchInlineSnapshot(`
+				"# Components
+
+				- Button (button)
+
+				# Docs
+
+				- Auto Summary Doc (auto-summary): This content will be extracted automatically."
 			`);
 		});
 	});

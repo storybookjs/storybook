@@ -40,7 +40,7 @@ export const experimental_devServer: PresetProperty<
 		res.writeHead(200, { 'Content-Type': 'text/html' });
 
 		let docsNotice = '';
-		if (!manifestStatus.hasGenerator) {
+		if (!manifestStatus.hasManifests) {
 			docsNotice = `<div class="toolset-notice">
 				This toolset is only supported in React-based setups.
 			</div>`;

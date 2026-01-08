@@ -147,11 +147,27 @@ export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotati
    * types (T) and custom meta annotations (MetaInput), but Meta only accepts compatible params.
    */
   extends Meta<T, MetaInput> {
-  // meta.story(() => defineComponent())
+  /**
+   * Creates a story with a custom render function that takes no args.
+   *
+   * This overload allows you to define a story using just a render function or an object
+   * with a render function that doesn't depend on args. Since the render function doesn't
+   * use args, no args need to be provided regardless of what's required by the component.
+   *
+   * @example
+   * ```ts
+   * // Using just a render function
+   * export const CustomRender = meta.story(() => h('div', 'Custom content'));
+   *
+   * // Using defineComponent
+   * export const WithDefineComponent = meta.story(() => defineComponent({
+   *   template: '<div>Static component</div>'
+   * }));
+   * ```
+   */
   story<
     TInput extends
       | (() => VueTypes['storyResult'])
-      // Required args don't need to be provided when the user uses an empty render
       | (StoryAnnotations<T, T['args']> & {
           render: () => VueTypes['storyResult'];
         }),
@@ -159,7 +175,26 @@ export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotati
     story: TInput
   ): VueStory<T, TInput extends () => VueTypes['storyResult'] ? { render: TInput } : TInput>;
 
-  // meta.story({ args: {} })
+  /**
+   * Creates a story with custom configuration including args, decorators, or other annotations.
+   *
+   * This is the primary overload for defining stories. Args that were already provided in meta
+   * become optional, while any remaining required args must be specified here.
+   *
+   * @example
+   * ```ts
+   * // Provide required args not in meta
+   * export const Primary = meta.story({
+   *   args: { label: 'Click me', disabled: false }
+   * });
+   *
+   * // Override meta args and add story-specific configuration
+   * export const Disabled = meta.story({
+   *   args: { disabled: true },
+   *   decorators: [withCustomWrapper],
+   * });
+   * ```
+   */
   story<
     TInput extends Simplify<
       StoryAnnotations<

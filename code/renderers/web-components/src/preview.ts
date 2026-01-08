@@ -154,11 +154,27 @@ export interface WebComponentsMeta<
    * component types (T) and custom meta annotations (MetaInput), but Meta only accepts compatible params.
    */
 > extends Meta<T, MetaInput> {
-  // meta.story(() => html`<div></div>`)
+  /**
+   * Creates a story with a custom render function that takes no args.
+   *
+   * This overload allows you to define a story using just a render function or an object
+   * with a render function that doesn't depend on args. Since the render function doesn't
+   * use args, no args need to be provided regardless of what's required by the component.
+   *
+   * @example
+   * ```ts
+   * // Using just a render function with lit-html
+   * export const CustomTemplate = meta.story(() => html`<div>Custom content</div>`);
+   *
+   * // Using an object with render
+   * export const WithRender = meta.story({
+   *   render: () => html`<my-element></my-element>`
+   * });
+   * ```
+   */
   story<
     TInput extends
       | (() => WebComponentsTypes['storyResult'])
-      // Required args don't need to be provided when the user uses an empty render
       | (StoryAnnotations<T, T['args']> & {
           render: () => WebComponentsTypes['storyResult'];
         }),
@@ -169,7 +185,26 @@ export interface WebComponentsMeta<
     TInput extends () => WebComponentsTypes['storyResult'] ? { render: TInput } : TInput
   >;
 
-  // meta.story({ args: {} })
+  /**
+   * Creates a story with custom configuration including args, decorators, or other annotations.
+   *
+   * This is the primary overload for defining stories. Args that were already provided in meta
+   * become optional, while any remaining required args must be specified here.
+   *
+   * @example
+   * ```ts
+   * // Provide required args not in meta
+   * export const Primary = meta.story({
+   *   args: { label: 'Click me', disabled: false }
+   * });
+   *
+   * // Override meta args and add story-specific configuration
+   * export const Disabled = meta.story({
+   *   args: { disabled: true },
+   *   decorators: [withCustomWrapper],
+   * });
+   * ```
+   */
   story<
     TInput extends Simplify<
       StoryAnnotations<

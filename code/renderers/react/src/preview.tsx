@@ -36,11 +36,12 @@ type InferReactTypes<T, TArgs, Decorators> = ReactTypes &
 /**
  * Creates a React-specific preview configuration with CSF factories support.
  *
- * This function wraps the base `definePreview` and adds React-specific annotations
- * for rendering and documentation. It returns a `ReactPreview` that provides
- * type-safe `meta()` and `story()` factory methods.
+ * This function wraps the base `definePreview` and adds React-specific annotations for rendering
+ * and documentation. It returns a `ReactPreview` that provides type-safe `meta()` and `story()`
+ * factory methods.
  *
  * @example
+ *
  * ```ts
  * // .storybook/preview.ts
  * import { definePreview } from '@storybook/react';
@@ -86,11 +87,12 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 /**
  * React-specific Preview interface that provides type-safe CSF factory methods.
  *
- * Use `preview.meta()` to create a meta configuration for a component, and then
- * `meta.story()` to create individual stories. The type system will infer args
- * from the component props, decorators, and any addon types.
+ * Use `preview.meta()` to create a meta configuration for a component, and then `meta.story()` to
+ * create individual stories. The type system will infer args from the component props, decorators,
+ * and any addon types.
  *
  * @example
+ *
  * ```ts
  * const meta = preview.meta({ component: Button });
  * export const Primary = meta.story({ args: { label: 'Click me' } });
@@ -99,10 +101,11 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 /** @ts-expect-error We cannot implement the meta faithfully here, but that is okay. */
 export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes & T> {
   /**
-   * Narrows the type of the preview to include additional type information.
-   * This is useful when you need to add args that aren't inferred from the component.
+   * Narrows the type of the preview to include additional type information. This is useful when you
+   * need to add args that aren't inferred from the component.
    *
    * @example
+   *
    * ```ts
    * const meta = preview.type<{ args: { theme: 'light' | 'dark' } }>().meta({
    *   component: Button,
@@ -137,9 +140,9 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
 /**
  * React-specific Meta interface returned by `preview.meta()`.
  *
- * Provides the `story()` method to create individual stories with proper type inference.
- * Args provided in meta become optional in stories, while missing required args must be
- * provided at the story level.
+ * Provides the `story()` method to create individual stories with proper type inference. Args
+ * provided in meta become optional in stories, while missing required args must be provided at the
+ * story level.
  */
 export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
   // @ts-expect-error ReactMeta requires two type parameters, but Meta's constraints differ
@@ -147,18 +150,19 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
   /**
    * Creates a story with a custom render function that takes no args.
    *
-   * This overload allows you to define a story using just a render function or an object
-   * with a render function that doesn't depend on args. Since the render function doesn't
-   * use args, no args need to be provided regardless of what's required by the component.
+   * This overload allows you to define a story using just a render function or an object with a
+   * render function that doesn't depend on args. Since the render function doesn't use args, no
+   * args need to be provided regardless of what's required by the component.
    *
    * @example
+   *
    * ```ts
    * // Using just a render function
    * export const CustomRender = meta.story(() => <div>Custom content</div>);
    *
    * // Using an object with render
    * export const WithRender = meta.story({
-   *   render: () => <MyComponent prop="static" />
+   *   render: () => <MyComponent prop="static" />,
    * });
    * ```
    */
@@ -179,10 +183,11 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
    * become optional, while any remaining required args must be specified here.
    *
    * @example
+   *
    * ```ts
    * // Provide required args not in meta
    * export const Primary = meta.story({
-   *   args: { label: 'Click me', disabled: false }
+   *   args: { label: 'Click me', disabled: false },
    * });
    *
    * // Override meta args and add story-specific configuration
@@ -209,13 +214,14 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
   /**
    * Creates a story with no additional configuration.
    *
-   * This overload is only available when all required args have been provided in meta.
-   * The conditional type `Partial<T['args']> extends SetOptional<...>` checks if the
-   * remaining required args (after accounting for args provided in meta) are all optional.
-   * If so, the function accepts zero arguments `[]`. Otherwise, it requires `[never]`
-   * which makes this overload unmatchable, forcing the user to provide args.
+   * This overload is only available when all required args have been provided in meta. The
+   * conditional type `Partial<T['args']> extends SetOptional<...>` checks if the remaining required
+   * args (after accounting for args provided in meta) are all optional. If so, the function accepts
+   * zero arguments `[]`. Otherwise, it requires `[never]` which makes this overload unmatchable,
+   * forcing the user to provide args.
    *
    * @example
+   *
    * ```ts
    * // When meta provides all required args, story() can be called with no arguments
    * const meta = preview.meta({ component: Button, args: { label: 'Hi', disabled: false } });
@@ -235,8 +241,8 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
 /**
  * React-specific Story interface returned by `meta.story()`.
  *
- * Represents a single story with its configuration and provides access to
- * the composed story for testing via `story.run()`.
+ * Represents a single story with its configuration and provides access to the composed story for
+ * testing via `story.run()`.
  *
  * Also includes a `Component` property for portable story compatibility.
  */

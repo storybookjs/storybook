@@ -3,6 +3,8 @@ import type { Options } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 import type { InlineConfig } from 'vite';
+import type { RollupWatcher, RollupWatcherEvent } from 'rollup'
+
 
 import { sanitizeEnvVars } from './envs';
 import { createViteLogger } from './logger';
@@ -87,11 +89,22 @@ export async function build(options: Options) {
 
     finalConfig.plugins = await withoutVitePlugins(finalConfig.plugins, [turbosnapPluginName]);
   }
+  logger.info('Building storybook with Vite...');
 
   finalConfig.customLogger ??= await createViteLogger();
+  const result = await viteBuild(await sanitizeEnvVars(options, finalConfig));
 
-  await viteBuild(await sanitizeEnvVars(options, finalConfig));
-
+  // Narrow by feature, not instanceof
+  if (finalConfig.build?.watch && 'on' in result) {
+    const watcher = result as RollupWatcher
+    logger.info('Watching for changes...');
+    watcher.on('event', (event: RollupWatcherEvent) => {
+      if (event.code === 'ERROR') {
+        logger.error('Error during build:');
+        logger.error(event.error);
+      }
+    })
+  }
   const statsPlugin = findPlugin(
     finalConfig,
     'storybook:rollup-plugin-webpack-stats'

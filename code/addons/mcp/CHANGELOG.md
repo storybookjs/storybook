@@ -1,5 +1,14 @@
 # @storybook/addon-mcp
 
+## 0.1.8
+
+### Patch Changes
+
+- [#122](https://github.com/storybookjs/mcp/pull/122) [`0254c09`](https://github.com/storybookjs/mcp/commit/0254c091f60ac8b1c69116c936bcb7a1540dc916) Thanks [@JReinhold](https://github.com/JReinhold)! - Log output token count of tool calls to telemetry
+
+- Updated dependencies [[`0254c09`](https://github.com/storybookjs/mcp/commit/0254c091f60ac8b1c69116c936bcb7a1540dc916)]:
+  - @storybook/mcp@0.2.1
+
 ## 0.1.7
 
 ### Patch Changes

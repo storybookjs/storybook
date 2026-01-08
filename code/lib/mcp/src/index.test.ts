@@ -164,6 +164,7 @@ describe('createStorybookMcpHandler', () => {
 				request: expect.any(Request),
 			}),
 			manifests: { componentManifest: smallManifestFixture },
+			resultText: expect.any(String),
 		});
 	});
 
@@ -194,6 +195,7 @@ describe('createStorybookMcpHandler', () => {
 				id: 'button',
 				name: 'Button',
 			}),
+			resultText: expect.any(String),
 		});
 
 		expect(result.content).toHaveLength(1);
@@ -306,6 +308,7 @@ describe('createStorybookMcpHandler', () => {
 					componentManifest: smallManifestFixture,
 					docsManifest: smallDocsManifestFixture,
 				},
+				resultText: expect.any(String),
 			});
 		});
 
@@ -336,6 +339,7 @@ describe('createStorybookMcpHandler', () => {
 					id: 'getting-started',
 					name: 'Getting Started',
 				}),
+				resultText: expect.any(String),
 			});
 
 			expect(result.content).toHaveLength(1);

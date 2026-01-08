@@ -15,6 +15,7 @@ import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
+import { estimateTokens } from './utils/estimate-tokens.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -103,7 +104,7 @@ export const mcpServerHandler = async ({
 		request: webRequest,
 		// Telemetry handlers for component manifest tools
 		...(!disableTelemetry && {
-			onListAllDocumentation: async ({ manifests }) => {
+			onListAllDocumentation: async ({ manifests, resultText }) => {
 				await collectTelemetry({
 					event: 'tool:listAllDocumentation',
 					server,
@@ -111,15 +112,17 @@ export const mcpServerHandler = async ({
 					componentCount: Object.keys(manifests.componentManifest.components)
 						.length,
 					docsCount: Object.keys(manifests.docsManifest?.docs || {}).length,
+					resultTokenCount: estimateTokens(resultText),
 				});
 			},
-			onGetDocumentation: async ({ input, foundDocumentation }) => {
+			onGetDocumentation: async ({ input, foundDocumentation, resultText }) => {
 				await collectTelemetry({
 					event: 'tool:getDocumentation',
 					server,
 					toolset: 'docs',
 					componentId: input.id,
 					found: !!foundDocumentation,
+					resultTokenCount: estimateTokens(resultText ?? ''),
 				});
 			},
 		}),

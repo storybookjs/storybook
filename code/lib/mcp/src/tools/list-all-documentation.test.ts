@@ -180,6 +180,7 @@ describe('listAllDocumentationTool', () => {
 			manifests: {
 				componentManifest: smallManifestFixture,
 			},
+			resultText: expect.any(String),
 		});
 	});
 
@@ -372,6 +373,7 @@ describe('listAllDocumentationTool', () => {
 					componentManifest: smallManifestFixture,
 					docsManifest: smallDocsManifestFixture,
 				},
+				resultText: expect.any(String),
 			});
 		});
 	});

@@ -17,20 +17,16 @@ export interface ClassifiedError {
 export interface GhostStoriesResponsePayload {
   success: boolean;
   duration: number;
-  // Final test summary
-  testSummary: {
+  testSummary?: {
     total: number;
     passed: number;
+    passedButEmptyRender: number;
     failed: number;
-    failureRate: number;
     successRate: number;
     successRateWithoutEmptyRender: number;
-    classifiedErrors: ClassifiedError[];
+    failureRate: number;
     uniqueErrorCount: number;
-    passingCount: number;
-    failingCount: number;
-    passedButEmptyRenderCount: number;
-    pending?: number;
+    classifiedErrors: ClassifiedError[];
   };
   // Error message if the operation failed
   error?: string;

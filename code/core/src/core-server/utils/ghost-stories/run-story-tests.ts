@@ -57,19 +57,6 @@ export async function runStoryTests(
         success: false,
         duration: 0,
         error: testFailureMessage,
-        testSummary: {
-          total: 0,
-          passed: 0,
-          failed: 0,
-          failureRate: 0,
-          successRate: 0,
-          successRateWithoutEmptyRender: 0,
-          classifiedErrors: [],
-          uniqueErrorCount: 0,
-          passingCount: 0,
-          failingCount: 0,
-          passedButEmptyRenderCount: 0,
-        },
       };
     }
 
@@ -78,9 +65,7 @@ export async function runStoryTests(
 
     // Transform the Vitest test results to our expected format
     const storyTestResults: StoryTestResult[] = [];
-    let passingCount = 0;
-    let failingCount = 0;
-    let passedButEmptyRenderCount = 0;
+    let passedButEmptyRender = 0;
 
     for (const testSuite of testResults.testResults) {
       for (const assertion of testSuite.assertionResults) {
@@ -99,13 +84,8 @@ export async function runStoryTests(
             report.type === 'render-analysis' && report.result?.emptyRender === true
         );
 
-        if (status === 'PASS') {
-          passingCount++;
-          if (hasEmptyRender) {
-            passedButEmptyRenderCount++;
-          }
-        } else if (status === 'FAIL') {
-          failingCount++;
+        if (status === 'PASS' && hasEmptyRender) {
+          passedButEmptyRender++;
         }
 
         // Extract error message (first line of failureMessages)
@@ -131,7 +111,7 @@ export async function runStoryTests(
     const successRate = total > 0 ? parseFloat((passed / total).toFixed(2)) : 0;
     const failureRate = total > 0 ? parseFloat((failed / total).toFixed(2)) : 0;
     const successRateWithoutEmptyRender =
-      total > 0 ? parseFloat(((passed - passedButEmptyRenderCount) / total).toFixed(2)) : 0;
+      total > 0 ? parseFloat(((passed - passedButEmptyRender) / total).toFixed(2)) : 0;
 
     // Extract and classify unique errors
     const errorClassification = extractUniqueCategorizedErrors(storyTestResults);
@@ -141,15 +121,13 @@ export async function runStoryTests(
     const testSummary = {
       total,
       passed,
+      passedButEmptyRender,
       failed,
-      failureRate,
       successRate,
       successRateWithoutEmptyRender,
-      classifiedErrors,
+      failureRate,
       uniqueErrorCount,
-      passingCount,
-      failingCount,
-      passedButEmptyRenderCount,
+      classifiedErrors,
     };
 
     const enhancedResponse: GhostStoriesResponsePayload = {
@@ -164,19 +142,6 @@ export async function runStoryTests(
 
     return {
       success: false,
-      testSummary: {
-        total: 0,
-        passed: 0,
-        failed: 0,
-        failureRate: 0,
-        successRate: 0,
-        successRateWithoutEmptyRender: 0,
-        classifiedErrors: [],
-        uniqueErrorCount: 0,
-        passingCount: 0,
-        failingCount: 0,
-        passedButEmptyRenderCount: 0,
-      },
       error: error instanceof Error ? error.message : String(error),
       duration: 0,
     };

@@ -88,13 +88,13 @@ export function initGhostStoriesChannel(
       logger.debug('Test results: ' + JSON.stringify(testRunResult, null, 2));
 
       telemetry('ghost-stories', {
+        ...(testRunResult.error !== undefined ? { error: testRunResult.error } : {}),
         success: testRunResult.success,
-        error: testRunResult.error,
+        matchCount: candidatesResult.matchCount,
         generatedCount: candidatesResult.candidates.length,
         testDuration: testRunResult.duration,
         analysisDuration,
-        testResults: testRunResult.testSummary,
-        matchCount: candidatesResult.matchCount,
+        testSummary: testRunResult.testSummary,
       });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);

@@ -1,5 +1,5 @@
 import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR } from './constants';
-import { type JobOrNoOpJob } from './types';
+import { type JobOrNoOpJob, type Workflow } from './types';
 
 export const workspace = {
   attach: (at = LINUX_ROOT_DIR) => {
@@ -204,7 +204,7 @@ export const workflow = {
       },
     ];
   },
-  reportOnFailure: () => {
+  reportOnFailure: (workflow: Workflow, template: string = 'none') => {
     return [
       {
         run: {
@@ -218,6 +218,13 @@ export const workflow = {
           name: 'Report failure',
           when: 'on_fail',
           command: 'echo "Workflow failed"',
+        },
+      },
+      {
+        'discord/status': {
+          only_for_branches: ['main', 'next', 'next-release', 'latest-release'],
+          fail_only: true,
+          failure_message: `yarn get-report-message ${workflow} ${template}`,
         },
       },
     ];

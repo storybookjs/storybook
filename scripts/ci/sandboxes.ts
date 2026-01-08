@@ -30,7 +30,7 @@ function defineSandboxJob_build({
 }) {
   return defineJob(
     name,
-    {
+    () => ({
       executor: {
         name: 'sb_node_22_classic',
         class: 'large',
@@ -45,7 +45,7 @@ function defineSandboxJob_build({
         },
         workspace.persist([`${SANDBOX_DIR}/${directory}/storybook-static`]),
       ],
-    },
+    }),
     requires
   );
 }
@@ -64,7 +64,7 @@ function defineSandboxJob_dev({
 }) {
   return defineJob(
     name,
-    {
+    () => ({
       executor: options.e2e
         ? {
             name: 'sb_playwright',
@@ -110,7 +110,7 @@ function defineSandboxJob_dev({
               },
             ]),
       ],
-    },
+    }),
     requires
   );
 }
@@ -124,7 +124,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
 
   const createJob = defineJob(
     `${name} (create)`,
-    {
+    () => ({
       executor: {
         name: 'sb_node_22_browsers',
         class: 'large',
@@ -196,7 +196,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         artifact.persist(`${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
         workspace.persist([`${SANDBOX_DIR}/${id}`]),
       ],
-    },
+    }),
     [sandboxesNoOpJob]
   );
   const buildJob = defineSandboxJob_build({
@@ -213,7 +213,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
   });
   const chromaticJob = defineJob(
     `${name} (chromatic)`,
-    {
+    () => ({
       executor: {
         name: 'sb_node_22_classic',
         class: 'medium',
@@ -239,12 +239,12 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           },
         },
       ],
-    },
+    }),
     [buildJob]
   );
   const vitestJob = defineJob(
     `${name} (vitest)`,
-    {
+    () => ({
       executor: {
         name: 'sb_playwright',
         class: 'medium',
@@ -259,12 +259,12 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         },
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
-    },
+    }),
     [buildJob]
   );
   const e2eJob = defineJob(
     `${name} (e2e)`,
-    {
+    () => ({
       executor: {
         name: 'sb_playwright',
         class: 'xlarge',
@@ -291,12 +291,12 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
-    },
+    }),
     [buildJob]
   );
   const testRunnerJob = defineJob(
     `${name} (test-runner)`,
-    {
+    () => ({
       executor: {
         name: 'sb_playwright',
         class: 'medium',
@@ -311,7 +311,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         },
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
-    },
+    }),
     [buildJob]
   );
 
@@ -345,7 +345,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
 export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
     `${sandbox.jobs[1].id}-test-runner`,
-    {
+    () => ({
       executor: {
         name: 'sb_playwright',
         class: 'medium',
@@ -360,7 +360,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
         },
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
       ],
-    },
+    }),
     [sandbox.jobs[1]]
   );
 }
@@ -368,7 +368,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
 export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
     `${sandbox.jobs[2].id}-windows`,
-    {
+    () => ({
       executor: {
         name: 'win/default',
         size: 'xlarge',
@@ -409,7 +409,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
         },
         testResults.persist(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}\\test-results`),
       ],
-    },
+    }),
     [sandbox.jobs[0]]
   );
 }
@@ -417,7 +417,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
 export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
     `${sandbox.jobs[1].id}-windows`,
-    {
+    () => ({
       executor: {
         name: 'win/default',
         size: 'xlarge',
@@ -462,7 +462,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
           },
         },
       ],
-    },
+    }),
     [sandbox.jobs[0]]
   );
 }

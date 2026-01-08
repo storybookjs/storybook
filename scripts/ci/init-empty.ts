@@ -12,7 +12,7 @@ import {
 export const defineEmptyInitFlow = (template: string) =>
   defineJob(
     `init-empty-${template}`,
-    {
+    () => ({
       executor: {
         name: 'sb_node_22_classic',
         class: 'medium',
@@ -46,7 +46,7 @@ export const defineEmptyInitFlow = (template: string) =>
           },
         },
       ],
-    },
+    }),
 
     [initEmptyNoOpJob]
   );
@@ -54,7 +54,7 @@ export const defineEmptyInitFlow = (template: string) =>
 export function defineEmptyInitFeatures() {
   return defineJob(
     'init-features',
-    {
+    () => ({
       executor: {
         name: 'sb_node_22_classic',
         class: 'medium',
@@ -88,7 +88,7 @@ export function defineEmptyInitFeatures() {
           },
         },
       ],
-    },
+    }),
     [initEmptyNoOpJob]
   );
 }
@@ -96,7 +96,7 @@ export function defineEmptyInitFeatures() {
 export function defineEmptyInitWindows() {
   return defineJob(
     'init-empty-windows',
-    {
+    () => ({
       executor: {
         name: 'win/default',
         size: 'medium',
@@ -131,7 +131,7 @@ export function defineEmptyInitWindows() {
           },
         },
       ],
-    },
+    }),
     [initEmptyNoOpJob]
   );
 }

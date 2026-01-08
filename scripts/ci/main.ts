@@ -25,7 +25,12 @@ import { executors } from './utils/executors';
 import { ensureRequiredJobs } from './utils/helpers';
 import { orbs } from './utils/orbs';
 import { parameters } from './utils/parameters';
-import type { JobOrNoOpJob, NoOpJobImplementation } from './utils/types';
+import type {
+  JobImplementationObj,
+  JobOrNoOpJob,
+  NoOpJobImplementation,
+  NoOpJobImplementationObj,
+} from './utils/types';
 import { type JobImplementation, type Workflow, isWorkflowOrAbove } from './utils/types';
 
 const dirname = import.meta.dirname;
@@ -118,10 +123,13 @@ function generateConfig(workflow: Workflow) {
 
     jobs: sortedJobs.reduce(
       (acc, job) => {
-        acc[job.id] = job.implementation;
+        acc[job.id] =
+          typeof job.implementation === 'function'
+            ? job.implementation(workflow)
+            : job.implementation;
         return acc;
       },
-      {} as Record<string, JobImplementation | NoOpJobImplementation>
+      {} as Record<string, JobImplementationObj | NoOpJobImplementationObj>
     ),
     workflows: {
       [`${workflow}-generated${isDebugging ? '-debug' : ''}`]: {

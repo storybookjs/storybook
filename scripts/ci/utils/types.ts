@@ -13,11 +13,13 @@ export type NoOpJob<K extends string> = Job<K, NoOpJobImplementation>;
 
 export type JobOrNoOpJob = Job<string, JobImplementation | NoOpJobImplementation>;
 
-export type NoOpJobImplementation = {
+export type NoOpJobImplementationObj = {
   type: 'no-op';
 };
 
-export type JobImplementation = {
+export type NoOpJobImplementation = (workflow: Workflow) => NoOpJobImplementationObj;
+
+export type JobImplementationObj = {
   executor:
     | {
         name: keyof typeof executors;
@@ -61,6 +63,8 @@ export type JobImplementation = {
   parallelism?: number;
 };
 
+export type JobImplementation = (workflow: Workflow) => JobImplementationObj;
+
 /**
  * This function ensures the jobs adhere to the expected interface and that the job's ID is valid.
  * (i.e. no special characters, no spaces, etc.) Thus the ID can be referenced by other jobs in the
@@ -101,9 +105,10 @@ export function defineNoOpJob<K extends string>(
   return {
     id: toId(name),
     name,
-    implementation: {
-      type: 'no-op',
-    } as const,
+    implementation: () =>
+      ({
+        type: 'no-op',
+      }) as const,
     requires,
   };
 }

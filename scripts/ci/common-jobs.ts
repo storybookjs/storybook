@@ -21,7 +21,7 @@ import { defineJob, defineNoOpJob } from './utils/types';
 
 const dirname = import.meta.dirname;
 
-export const build_linux = defineJob('Build (linux)', {
+export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   executor: {
     name: 'sb_node_22_classic',
     class: 'xlarge',
@@ -46,7 +46,7 @@ export const build_linux = defineJob('Build (linux)', {
         command: 'yarn local-registry --publish',
       },
     },
-    ...workflow.reportOnFailure(),
+    ...workflow.reportOnFailure(workflowName),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.persist([
       ...glob
@@ -62,9 +62,9 @@ export const build_linux = defineJob('Build (linux)', {
       `${WORKING_DIR}/code/bench`,
     ]),
   ],
-});
+}));
 
-export const prettyDocs = defineJob('Prettify docs', {
+export const prettyDocs = defineJob('Prettify docs', () => ({
   executor: {
     name: 'sb_node_22_classic',
     class: 'medium+',
@@ -80,9 +80,9 @@ export const prettyDocs = defineJob('Prettify docs', {
       },
     },
   ],
-});
+}));
 
-export const build_windows = defineJob('Build (windows)', {
+export const build_windows = defineJob('Build (windows)', () => ({
   executor: {
     name: 'win/default',
     size: 'xlarge',
@@ -117,13 +117,13 @@ export const build_windows = defineJob('Build (windows)', {
       `${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`
     ),
   ],
-});
+}));
 
 export const commonJobsNoOpJob = defineNoOpJob('Common Jobs', [build_linux]);
 
 export const storybookChromatic = defineJob(
   'Local storybook & chromatic',
-  {
+  () => ({
     executor: {
       name: 'sb_node_22_classic',
       class: 'medium+',
@@ -145,13 +145,13 @@ export const storybookChromatic = defineJob(
         },
       },
     ],
-  },
+  }),
   [commonJobsNoOpJob]
 );
 
 export const check = defineJob(
   'TypeScript validation',
-  {
+  (workflowName) => ({
     executor: {
       name: 'sb_node_22_classic',
       class: 'xlarge',
@@ -172,16 +172,16 @@ export const check = defineJob(
           command: 'yarn check',
         },
       },
-      ...workflow.reportOnFailure(),
+      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
-  },
+  }),
   [commonJobsNoOpJob]
 );
 
 export const lint = defineJob(
   'EsLint & Prettier validation',
-  {
+  () => ({
     executor: {
       name: 'sb_node_22_classic',
       class: 'xlarge',
@@ -203,13 +203,13 @@ export const lint = defineJob(
         },
       },
     ],
-  },
+  }),
   [commonJobsNoOpJob]
 );
 
 export const knip = defineJob(
   'Knip validation',
-  {
+  () => ({
     executor: {
       name: 'sb_node_22_classic',
       class: 'medium',
@@ -224,13 +224,13 @@ export const knip = defineJob(
         },
       },
     ],
-  },
+  }),
   [commonJobsNoOpJob]
 );
 
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
-  {
+  (workflowName) => ({
     executor: {
       name: 'sb_node_22_classic',
       class: 'large',
@@ -250,16 +250,16 @@ export const testsUnit_linux = defineJob(
       testResults.persist(`code/test-results`),
 
       git.check(),
-      ...workflow.reportOnFailure(),
+      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
-  },
+  }),
   [commonJobsNoOpJob]
 );
 
 export const testsStories_linux = defineJob(
   'Tests stories (linux)',
-  {
+  (workflowName) => ({
     executor: {
       name: 'sb_playwright',
       class: 'xlarge',
@@ -279,16 +279,16 @@ export const testsStories_linux = defineJob(
       testResults.persist(`code/test-results`),
 
       git.check(),
-      ...workflow.reportOnFailure(),
+      ...workflow.reportOnFailure(workflowName),
       ...workflow.cancelOnFailure(),
     ],
-  },
+  }),
   [commonJobsNoOpJob]
 );
 
 export const testUnit_windows = defineJob(
   'Tests unit (windows)',
-  {
+  () => ({
     executor: {
       name: 'win/default',
       size: 'large',
@@ -312,13 +312,13 @@ export const testUnit_windows = defineJob(
       },
       testResults.persist(`code/test-results`),
     ],
-  },
+  }),
   [build_windows]
 );
 
 export const benchmarkPackages = defineJob(
   'Benchmark packages',
-  {
+  () => ({
     executor: {
       name: 'sb_node_22_classic',
       class: 'large',
@@ -336,6 +336,6 @@ export const benchmarkPackages = defineJob(
         },
       },
     ],
-  },
+  }),
   [commonJobsNoOpJob]
 );

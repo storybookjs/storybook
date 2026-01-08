@@ -20,7 +20,7 @@ export function definePortableStoryTest(directory: string) {
 
   return defineJob(
     `test-storybooks-portable-${directory}`,
-    {
+    () => ({
       executor: {
         name: 'sb_playwright',
         class: 'medium',
@@ -78,7 +78,7 @@ export function definePortableStoryTest(directory: string) {
           },
         },
       ],
-    },
+    }),
     [testStorybooksNoOpJob]
   );
 }
@@ -86,7 +86,7 @@ export function definePortableStoryTest(directory: string) {
 export function definePortableStoryTestPNP() {
   return defineJob(
     'test-storybooks-pnp',
-    {
+    () => ({
       executor: {
         name: 'sb_node_22_classic',
         class: 'medium',
@@ -111,7 +111,7 @@ export function definePortableStoryTestPNP() {
           },
         },
       ],
-    },
+    }),
     [testStorybooksNoOpJob]
   );
 }
@@ -119,7 +119,7 @@ export function definePortableStoryTestPNP() {
 export function definePortableStoryTestVitest3() {
   return defineJob(
     'test-storybooks-portable-vitest3',
-    {
+    () => ({
       executor: {
         name: 'sb_playwright',
         class: 'medium',
@@ -144,7 +144,7 @@ export function definePortableStoryTestVitest3() {
           },
         },
       ],
-    },
+    }),
     [testStorybooksNoOpJob]
   );
 }

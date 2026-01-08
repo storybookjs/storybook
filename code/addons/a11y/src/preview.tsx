@@ -5,8 +5,11 @@ import { expect } from 'storybook/test';
 import { run } from './a11yRunner';
 import type { A11yParameters } from './params';
 import { getIsVitestStandaloneRun } from './utils';
+import { withVisionSimulator } from './withVisionSimulator';
 
 let vitestMatchersExtended = false;
+
+export const decorators = [withVisionSimulator];
 
 export const afterEach: AfterEach<any> = async ({
   id: storyId,
@@ -94,6 +97,7 @@ export const initialGlobals = {
   a11y: {
     manual: false,
   },
+  vision: undefined,
 };
 
 export const parameters = {

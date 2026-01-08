@@ -72,10 +72,11 @@ export const Zoom = memo<{
           <ActionList>
             <ActionList.Item>
               <ZoomInput
+                aria-label="Zoom percentage"
                 ref={inputRef}
                 unit="%"
                 before={
-                  <ActionList.Button size="small" padding="small" readOnly>
+                  <ActionList.Button size="small" padding="small" readOnly aria-hidden>
                     <ZoomIcon />
                   </ActionList.Button>
                 }

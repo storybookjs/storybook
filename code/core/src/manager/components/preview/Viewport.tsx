@@ -291,6 +291,7 @@ export const Viewport = ({
         <ViewportControls>
           <ViewportDimensions>
             <SizeInput
+              aria-label="Viewport width"
               data-size-input="width"
               label="Viewport width:"
               before={
@@ -311,6 +312,7 @@ export const Viewport = ({
               <TransferIcon />
             </ActionList.Button>
             <SizeInput
+              aria-label="Viewport height"
               data-size-input="height"
               label="Viewport height:"
               before={

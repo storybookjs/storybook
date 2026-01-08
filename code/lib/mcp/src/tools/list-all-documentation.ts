@@ -30,6 +30,7 @@ export async function addListAllDocumentationTool(
 				await server.ctx.custom?.onListAllDocumentation?.({
 					context: server.ctx.custom,
 					manifests,
+					resultText: lists,
 				});
 
 				return {

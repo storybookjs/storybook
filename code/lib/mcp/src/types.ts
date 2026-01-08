@@ -40,16 +40,21 @@ export type StorybookContext = {
 	onListAllDocumentation?: (params: {
 		context: StorybookContext;
 		manifests: AllManifests;
+		resultText: string;
 	}) => void | Promise<void>;
 	/**
 	 * Optional handler called when get-component-documentation tool is invoked.
 	 * Receives the context, input parameters, and the found component (if any).
 	 */
-	onGetDocumentation?: (params: {
-		context: StorybookContext;
-		input: { id: string };
-		foundDocumentation?: ComponentManifest | Doc;
-	}) => void | Promise<void>;
+	onGetDocumentation?: (
+		params: {
+			context: StorybookContext;
+			input: { id: string };
+		} & (
+			| { foundDocumentation: ComponentManifest | Doc; resultText: string }
+			| { foundDocumentation?: never; resultText?: never }
+		),
+	) => void | Promise<void>;
 };
 
 const JSDocTag = v.record(v.string(), v.array(v.string()));

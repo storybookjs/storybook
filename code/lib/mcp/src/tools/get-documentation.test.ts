@@ -196,6 +196,7 @@ describe('getDocumentationTool', () => {
 				id: 'button',
 				name: 'Button',
 			}),
+			resultText: expect.any(String),
 		});
 	});
 
@@ -502,6 +503,7 @@ describe('getDocumentationTool', () => {
 					id: 'getting-started',
 					name: 'Getting Started',
 				}),
+				resultText: expect.any(String),
 			});
 		});
 	});

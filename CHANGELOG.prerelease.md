@@ -1,3 +1,7 @@
+## 10.2.0-alpha.14
+
+- ReactDocgen: Swap `@storybook/react-docgen-typescript-plugin` to `react-docgen-typescript-plugin` - [#33454](https://github.com/storybookjs/storybook/pull/33454), thanks @ndelangen!
+
 ## 10.2.0-alpha.13
 
 - Core: Fix onboarding visual bugs, survey telemetry and modal dismissal - [#33326](https://github.com/storybookjs/storybook/pull/33326), thanks @ghengeveld!

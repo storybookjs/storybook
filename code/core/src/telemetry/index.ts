@@ -33,6 +33,9 @@ export const telemetry = async (
   payload: Payload = {},
   options: Partial<Options> = {}
 ) => {
+  // TODO: DO NOT MERGE WITH THIS! IT'S FOR DEBUGGING PURPOSES ONLY!
+  console.log('telemetry ', { eventType, payload, options });
+  return;
   // Don't notify on boot since it can lead to double notification in `sb init`.
   // The notification will happen when the actual command runs.
   if (eventType !== 'boot' && options.notify !== false) {

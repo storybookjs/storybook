@@ -39,7 +39,8 @@ export type EventType =
   | 'automigrate'
   | 'migrate'
   | 'preview-first-load'
-  | 'doctor';
+  | 'doctor'
+  | 'ghost-stories';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;

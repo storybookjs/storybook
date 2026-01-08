@@ -1,7 +1,6 @@
 ## 10.2.0-alpha.14
 
-- ReactDocgen: Try using the latest version of the original - [#33454](https://github.com/storybookjs/storybook/pull/33454), thanks @ndelangen!
-- ReactDocgen: Try using the latest version of the original - [#33487](https://github.com/storybookjs/storybook/pull/33487), thanks @ndelangen!
+- ReactDocgen: Swap `@storybook/react-docgen-typescript-plugin` to `react-docgen-typescript-plugin` - [#33454](https://github.com/storybookjs/storybook/pull/33454), thanks @ndelangen!
 
 ## 10.2.0-alpha.13
 

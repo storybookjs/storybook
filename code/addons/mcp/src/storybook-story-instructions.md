@@ -81,6 +81,12 @@ import { sb } from 'storybook/test';
 sb.mock(import('some-library'), { spy: true });
 ```
 
+**Important: Use file extensions when referring to relative files!**
+
+```js
+sb.mock(import('./relative/module.ts'), { spy: true });
+```
+
 2. **Specify mock values in stories**:
    You can override the behaviour of the mocks per-story using `beforeEach` and the `mocked()` type function:
 

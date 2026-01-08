@@ -30,34 +30,38 @@ const style: CSSProperties = {
   height: '700px',
 };
 
-export const WorkingStory = () => (
-  <IFrame
-    active
-    id="iframe"
-    title="Missing"
-    src="/iframe.html?id=components-loader--infinite-state"
-    allowFullScreen
-    style={style}
-    scale={1.0}
-  />
-);
-WorkingStory.parameters = {
-  chromatic: { disable: true },
+export const WorkingStory = {
+  render: () => (
+    <IFrame
+      active
+      id="iframe"
+      title="Missing"
+      src="/iframe.html?id=components-loader--infinite-state"
+      allowFullScreen
+      style={style}
+      scale={1.0}
+    />
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
 };
 
-export const WorkingDocs = () => (
-  <IFrame
-    active
-    id="iframe"
-    title="Missing"
-    src="/iframe.html?id=brand-colorpalette--docs"
-    allowFullScreen
-    style={style}
-    scale={1.0}
-  />
-);
-WorkingStory.parameters = {
-  chromatic: { disable: true },
+export const WorkingDocs = {
+  render: () => (
+    <IFrame
+      active
+      id="iframe"
+      title="Missing"
+      src="/iframe.html?id=brand-colorpalette--docs"
+      allowFullScreen
+      style={style}
+      scale={1.0}
+    />
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
 };
 
 export const MissingStory = {
@@ -78,32 +82,36 @@ export const MissingStory = {
   },
 };
 
-export const PreparingStory = () => (
-  <IFrame
-    active
-    id="iframe"
-    title="Preparing Story"
-    src="/iframe.html?__SPECIAL_TEST_PARAMETER__=preparing-story"
-    allowFullScreen
-    style={style}
-    scale={1.0}
-  />
-);
-PreparingStory.parameters = {
-  chromatic: { disable: true },
+export const PreparingStory = {
+  render: () => (
+    <IFrame
+      active
+      id="iframe"
+      title="Preparing Story"
+      src="/iframe.html?__SPECIAL_TEST_PARAMETER__=preparing-story"
+      allowFullScreen
+      style={style}
+      scale={1.0}
+    />
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
 };
 
-export const PreparingDocs = () => (
-  <IFrame
-    active
-    id="iframe"
-    title="Preparing Docs"
-    src="/iframe.html?__SPECIAL_TEST_PARAMETER__=preparing-docs"
-    allowFullScreen
-    style={style}
-    scale={1.0}
-  />
-);
-PreparingDocs.parameters = {
-  chromatic: { disable: true },
+export const PreparingDocs = {
+  render: () => (
+    <IFrame
+      active
+      id="iframe"
+      title="Preparing Docs"
+      src="/iframe.html?__SPECIAL_TEST_PARAMETER__=preparing-docs"
+      allowFullScreen
+      style={style}
+      scale={1.0}
+    />
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
 };

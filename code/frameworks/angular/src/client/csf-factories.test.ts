@@ -1,4 +1,4 @@
-// this file tests Typescript types that's why there are no assertions
+// this file primarily tests TypeScript types with some runtime assertions
 import { Component, EventEmitter, input, Input, output, Output } from '@angular/core';
 import { describe, expect, it, test } from 'vitest';
 

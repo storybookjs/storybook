@@ -100,9 +100,8 @@ describe('bootTestRunner', () => {
   } as Options;
 
   beforeEach(async () => {
-    const { experimental_MockUniversalStore: MockUniversalStore } = await import(
-      'storybook/internal/core-server'
-    );
+    const { experimental_MockUniversalStore: MockUniversalStore } =
+      await import('storybook/internal/core-server');
     mockStore = new MockUniversalStore<StoreState, StoreEvent>(storeOptions);
     vi.mocked(executeNodeCommand).mockClear();
     vi.mocked(log).mockClear();

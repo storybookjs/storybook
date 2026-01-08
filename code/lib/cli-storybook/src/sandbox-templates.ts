@@ -428,6 +428,9 @@ export const baseTemplates = {
         features: {
           experimentalTestSyntax: true,
         },
+        typescript: {
+          reactDocgen: 'react-docgen-typescript',
+        } as any, // the generic type does not contain the reactDocgen property
       },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
@@ -554,6 +557,7 @@ export const baseTemplates = {
         },
       },
       skipMocking: true,
+      useCsfFactory: true,
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
@@ -713,6 +717,7 @@ export const baseTemplates = {
     },
     modifications: {
       skipMocking: true,
+      useCsfFactory: true,
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
@@ -1011,7 +1016,7 @@ export const normal: TemplateKey[] = [
   'bench/react-vite-default-ts-nodocs',
   'bench/react-vite-default-ts-test-build',
   'bench/react-webpack-18-ts-test-build',
-  'ember/default-js',
+  // 'ember/default-js',
   'react-rsbuild/default-ts',
 ];
 

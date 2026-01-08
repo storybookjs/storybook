@@ -90,11 +90,7 @@ export default function Onboarding({
           userAgent,
         });
       }
-      // remove onboarding query parameter from current url
-      const url = new URL(window.location.href);
-      url.searchParams.set('onboarding', 'false');
-      history.replaceState({}, '', url.href);
-      api.setQueryParams({ onboarding: 'false' });
+      api.applyQueryParams({ onboarding: undefined }, { replace: true });
       setEnabled(false);
     },
     [api, setEnabled, userAgent]
@@ -114,11 +110,22 @@ export default function Onboarding({
   );
 
   useEffect(() => {
+    if (step === '6:IntentSurvey' && !hasCompletedSurvey) {
+      api.emit(ADDON_ONBOARDING_CHANNEL, {
+        from: 'onboarding',
+        type: 'openSurvey',
+        userAgent,
+      });
+    }
+  }, [api, hasCompletedSurvey, step, userAgent]);
+
+  useEffect(() => {
     api.setQueryParams({ onboarding: 'true' });
     selectStory('example-button--primary');
     api.togglePanel(true);
     api.togglePanelPosition('bottom');
     api.setSelectedPanel(ADDON_CONTROLS_ID);
+    api.setSizes({ bottomPanelHeight: 300 });
   }, [api, selectStory]);
 
   useEffect(() => {
@@ -304,6 +311,7 @@ export default function Onboarding({
         <SplashScreen onDismiss={() => setStep('2:Controls')} />
       ) : step === '6:IntentSurvey' ? (
         <IntentSurvey
+          isOpen={enabled}
           onComplete={completeSurvey}
           onDismiss={() => disableOnboarding('6:IntentSurvey')}
         />

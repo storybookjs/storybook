@@ -1,11 +1,13 @@
 import type { FC, SyntheticEvent } from 'react';
 import React from 'react';
 
-import { Button, Toolbar as SharedToolbar, getStoryHref } from 'storybook/internal/components';
+import { Button, Toolbar as SharedToolbar } from 'storybook/internal/components';
 
 import { ShareAltIcon, ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
+
+import { getStoryHref } from '../getStoryHref';
 
 interface ZoomProps {
   zoom: (val: number) => void;
@@ -14,7 +16,6 @@ interface ZoomProps {
 
 interface EjectProps {
   storyId?: string;
-  baseUrl?: string;
 }
 
 interface BarProps {
@@ -52,14 +53,7 @@ const IconPlaceholder = styled.div(({ theme }) => ({
   animation: `${theme.animation.glow} 1.5s ease-in-out infinite`,
 }));
 
-export const Toolbar: FC<ToolbarProps> = ({
-  isLoading,
-  storyId,
-  baseUrl,
-  zoom,
-  resetZoom,
-  ...rest
-}) => (
+export const Toolbar: FC<ToolbarProps> = ({ isLoading, storyId, zoom, resetZoom, ...rest }) => (
   <AbsoluteBar innerStyle={{ gap: 4, paddingInline: 7, justifyContent: 'space-between' }} {...rest}>
     <Wrapper key="left">
       {isLoading ? (
@@ -111,7 +105,6 @@ export const Toolbar: FC<ToolbarProps> = ({
         <IconPlaceholder />
       </Wrapper>
     ) : (
-      baseUrl &&
       storyId && (
         <Wrapper key="right">
           <Button
@@ -121,7 +114,7 @@ export const Toolbar: FC<ToolbarProps> = ({
             key="opener"
             ariaLabel="Open canvas in new tab"
           >
-            <a href={getStoryHref(baseUrl, storyId)} target="_blank" rel="noopener noreferrer">
+            <a href={getStoryHref(storyId)} target="_blank" rel="noopener noreferrer">
               <ShareAltIcon />
             </a>
           </Button>

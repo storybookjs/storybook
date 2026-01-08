@@ -1,3 +1,9 @@
+import {
+  isI18nPackage,
+  isRouterPackage,
+  isStateManagementPackage,
+  isStylingPackage,
+} from '../../../telemetry/ecosystem-identifier';
 import type { StoryTestResult } from './types';
 
 export interface CategorizedError {
@@ -43,51 +49,6 @@ interface CategorizationRule {
   priority: number;
   match: (ctx: ErrorContext) => boolean;
 }
-
-// TODO: Reuse variables from a constant with the telemetry one
-const STATE_MANAGEMENT_DEPS = new Set([
-  'react-redux',
-  'redux',
-  'zustand',
-  'jotai',
-  'mobx',
-  'mobx-react',
-  'valtio',
-  'recoil',
-  'xstate',
-]);
-
-const THEME_DEPS = new Set([
-  'styled-components',
-  '@emotion/react',
-  '@emotion/styled',
-  'emotion',
-  'theme-ui',
-  'mantine',
-  'chakra-ui',
-  'mui',
-  '@mui/material',
-  'antd',
-  'react-bootstrap',
-]);
-
-const ROUTER_DEPS = new Set([
-  'react-router',
-  'react-router-dom',
-  'react-easy-router',
-  '@remix-run/router',
-  '@tanstack/react-router',
-  'wouter',
-  '@reach/router',
-]);
-
-const I18N_DEPS = new Set([
-  'i18next',
-  'react-i18next',
-  'next-i18next',
-  '@lingui/react',
-  'react-intl',
-]);
 
 // From a message and stack, return a context for each category matchers
 function buildErrorContext(message: string, stack?: string): ErrorContext {
@@ -148,7 +109,7 @@ const DEFAULT_RULES: CategorizationRule[] = [
     category: ERROR_CATEGORIES.MISSING_STATE_PROVIDER,
     priority: 85,
     match: (ctx) =>
-      [...STATE_MANAGEMENT_DEPS].some((dep) => ctx.stackDeps.has(dep)) &&
+      Array.from(ctx.stackDeps).some(isStateManagementPackage) &&
       (ctx.normalizedMessage.includes('context') ||
         ctx.normalizedMessage.includes('undefined') ||
         ctx.normalizedMessage.includes('null')),
@@ -158,7 +119,7 @@ const DEFAULT_RULES: CategorizationRule[] = [
     category: ERROR_CATEGORIES.MISSING_ROUTER_PROVIDER,
     priority: 85,
     match: (ctx) =>
-      [...ROUTER_DEPS].some((dep) => ctx.stackDeps.has(dep)) ||
+      Array.from(ctx.stackDeps).some(isRouterPackage) ||
       ctx.normalizedMessage.includes('usenavigate') ||
       ctx.normalizedMessage.includes('router'),
   },
@@ -167,7 +128,7 @@ const DEFAULT_RULES: CategorizationRule[] = [
     category: ERROR_CATEGORIES.MISSING_THEME_PROVIDER,
     priority: 80,
     match: (ctx) =>
-      ([...THEME_DEPS].some((dep) => ctx.stackDeps.has(dep)) &&
+      (Array.from(ctx.stackDeps).some(isStylingPackage) &&
         (ctx.normalizedMessage.includes('theme') || ctx.normalizedMessage.includes('undefined'))) ||
       ctx.normalizedMessage.includes('usetheme') ||
       (ctx.normalizedMessage.includes('theme') && ctx.normalizedMessage.includes('provider')),
@@ -177,7 +138,7 @@ const DEFAULT_RULES: CategorizationRule[] = [
     category: ERROR_CATEGORIES.MISSING_TRANSLATION_PROVIDER,
     priority: 80,
     match: (ctx) =>
-      [...I18N_DEPS].some((dep) => ctx.stackDeps.has(dep)) ||
+      Array.from(ctx.stackDeps).some(isI18nPackage) ||
       ctx.normalizedMessage.includes('i18n') ||
       ctx.normalizedMessage.includes('translation') ||
       ctx.normalizedMessage.includes('locale'),
@@ -234,13 +195,13 @@ export function categorizeError(
 function getMatchedDependencies(category: ErrorCategory, ctx: ErrorContext): string[] {
   switch (category) {
     case ERROR_CATEGORIES.MISSING_STATE_PROVIDER:
-      return [...STATE_MANAGEMENT_DEPS].filter((dep) => ctx.stackDeps.has(dep));
+      return Array.from(ctx.stackDeps).filter(isStateManagementPackage);
     case ERROR_CATEGORIES.MISSING_ROUTER_PROVIDER:
-      return [...ROUTER_DEPS].filter((dep) => ctx.stackDeps.has(dep));
+      return Array.from(ctx.stackDeps).filter(isRouterPackage);
     case ERROR_CATEGORIES.MISSING_THEME_PROVIDER:
-      return [...THEME_DEPS].filter((dep) => ctx.stackDeps.has(dep));
+      return Array.from(ctx.stackDeps).filter(isStylingPackage);
     case ERROR_CATEGORIES.MISSING_TRANSLATION_PROVIDER:
-      return [...I18N_DEPS].filter((dep) => ctx.stackDeps.has(dep));
+      return Array.from(ctx.stackDeps).filter(isI18nPackage);
     default:
       return [];
   }

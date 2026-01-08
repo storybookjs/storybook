@@ -173,7 +173,7 @@ const ActionListLink = (
   props: ComponentProps<typeof ActionListAction> & React.AnchorHTMLAttributes<HTMLAnchorElement>
 ) => <ActionListAction as="a" {...props} />;
 
-const ActionListText = styled.div<{ muted?: boolean }>(({ theme }) => ({
+const ActionListText = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',

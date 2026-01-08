@@ -1,6 +1,6 @@
 {
   "name": "@storybook/ember",
-  "version": "10.2.0-alpha.8",
+  "version": "10.2.0-alpha.13",
   "description": "Storybook for Ember: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -53,7 +53,7 @@
   },
   "devDependencies": {
     "ember-source": "~3.28.1",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "@babel/core": "*",

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "10.2.0-alpha.8",
+  "version": "10.2.0-alpha.13",
   "description": "Storybook for SvelteKit: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -60,8 +60,8 @@
     "@storybook/svelte-vite": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.8.3",
+    "@types/node": "^22.19.1",
+    "typescript": "^5.9.3",
     "vite": "^7.0.4"
   },
   "peerDependencies": {

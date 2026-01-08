@@ -22,9 +22,9 @@ const findProto = (obj: unknown, callback: (proto: any) => boolean): Function | 
 const isReactSyntheticEvent = (e: unknown): e is SyntheticEvent =>
   Boolean(
     typeof e === 'object' &&
-      e &&
-      findProto(e, (proto) => /^Synthetic(?:Base)?Event$/.test(proto.constructor.name)) &&
-      typeof (e as SyntheticEvent).persist === 'function'
+    e &&
+    findProto(e, (proto) => /^Synthetic(?:Base)?Event$/.test(proto.constructor.name)) &&
+    typeof (e as SyntheticEvent).persist === 'function'
   );
 const serializeArg = <T extends object>(a: T) => {
   if (isReactSyntheticEvent(a)) {

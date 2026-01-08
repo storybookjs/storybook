@@ -1,1 +1,1 @@
-{"version":"10.2.0-alpha.8","info":{"plain":"- React: Fix several CSF factory bugs  - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!"}}
+{"version":"10.2.0-alpha.13","info":{"plain":"- Core: Fix onboarding visual bugs, survey telemetry and modal dismissal - [#33326](https://github.com/storybookjs/storybook/pull/33326), thanks @ghengeveld!\n- Core: Track vision simulator state through globals and apply styles in preview - [#33418](https://github.com/storybookjs/storybook/pull/33418), thanks @ghengeveld!"}}

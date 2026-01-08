@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from 'react';
 import React, { useMemo } from 'react';
 
-import initHeadManager from 'next/dist/client/head-manager';
-import { HeadManagerContext } from 'next/dist/shared/lib/head-manager-context.shared-runtime';
+import initHeadManager from 'next/dist/client/head-manager.js';
+import { HeadManagerContext } from 'next/dist/shared/lib/head-manager-context.shared-runtime.js';
 
 type HeadManagerValue = {
   updateHead?: ((state: JSX.Element[]) => void) | undefined;

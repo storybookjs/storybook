@@ -26,11 +26,12 @@ import { type VueTypes } from './types';
 /**
  * Creates a Vue3-specific preview configuration with CSF factories support.
  *
- * This function wraps the base `definePreview` and adds Vue3-specific annotations
- * for rendering and documentation. It returns a `VuePreview` that provides
- * type-safe `meta()` and `story()` factory methods.
+ * This function wraps the base `definePreview` and adds Vue3-specific annotations for rendering and
+ * documentation. It returns a `VuePreview` that provides type-safe `meta()` and `story()` factory
+ * methods.
  *
  * @example
+ *
  * ```ts
  * // .storybook/preview.ts
  * import { definePreview } from '@storybook/vue3';
@@ -62,11 +63,12 @@ type InferVueTypes<T, TArgs, Decorators> = VueTypes &
 /**
  * Vue3-specific Preview interface that provides type-safe CSF factory methods.
  *
- * Use `preview.meta()` to create a meta configuration for a component, and then
- * `meta.story()` to create individual stories. The type system will infer args
- * from the component props, slots, decorators, and any addon types.
+ * Use `preview.meta()` to create a meta configuration for a component, and then `meta.story()` to
+ * create individual stories. The type system will infer args from the component props, slots,
+ * decorators, and any addon types.
  *
  * @example
+ *
  * ```ts
  * const meta = preview.meta({ component: Button });
  * export const Primary = meta.story({ args: { label: 'Click me' } });
@@ -74,10 +76,11 @@ type InferVueTypes<T, TArgs, Decorators> = VueTypes &
  */
 export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> {
   /**
-   * Narrows the type of the preview to include additional type information.
-   * This is useful when you need to add args that aren't inferred from the component.
+   * Narrows the type of the preview to include additional type information. This is useful when you
+   * need to add args that aren't inferred from the component.
    *
    * @example
+   *
    * ```ts
    * const meta = preview.type<{ args: { theme: 'light' | 'dark' } }>().meta({
    *   component: Button,
@@ -137,32 +140,35 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
 /**
  * Vue3-specific Meta interface returned by `preview.meta()`.
  *
- * Provides the `story()` method to create individual stories with proper type inference.
- * Args provided in meta become optional in stories, while missing required args must be
- * provided at the story level.
+ * Provides the `story()` method to create individual stories with proper type inference. Args
+ * provided in meta become optional in stories, while missing required args must be provided at the
+ * story level.
  */
 export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotations<T>>
-  /**
-   * @ts-expect-error VueMeta requires two type parameters to track both inferred component
-   * types (T) and custom meta annotations (MetaInput), but Meta only accepts compatible params.
-   */
+/**
+ * @ts-expect-error VueMeta requires two type parameters to track both inferred component
+ * types (T) and custom meta annotations (MetaInput), but Meta only accepts compatible params.
+ */
   extends Meta<T, MetaInput> {
   /**
    * Creates a story with a custom render function that takes no args.
    *
-   * This overload allows you to define a story using just a render function or an object
-   * with a render function that doesn't depend on args. Since the render function doesn't
-   * use args, no args need to be provided regardless of what's required by the component.
+   * This overload allows you to define a story using just a render function or an object with a
+   * render function that doesn't depend on args. Since the render function doesn't use args, no
+   * args need to be provided regardless of what's required by the component.
    *
    * @example
+   *
    * ```ts
    * // Using just a render function
    * export const CustomRender = meta.story(() => h('div', 'Custom content'));
    *
    * // Using defineComponent
-   * export const WithDefineComponent = meta.story(() => defineComponent({
-   *   template: '<div>Static component</div>'
-   * }));
+   * export const WithDefineComponent = meta.story(() =>
+   *   defineComponent({
+   *     template: '<div>Static component</div>',
+   *   })
+   * );
    * ```
    */
   story<
@@ -182,10 +188,11 @@ export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotati
    * become optional, while any remaining required args must be specified here.
    *
    * @example
+   *
    * ```ts
    * // Provide required args not in meta
    * export const Primary = meta.story({
-   *   args: { label: 'Click me', disabled: false }
+   *   args: { label: 'Click me', disabled: false },
    * });
    *
    * // Override meta args and add story-specific configuration
@@ -210,13 +217,14 @@ export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotati
   /**
    * Creates a story with no additional configuration.
    *
-   * This overload is only available when all required args have been provided in meta.
-   * The conditional type `Partial<T['args']> extends SetOptional<...>` checks if the
-   * remaining required args (after accounting for args provided in meta) are all optional.
-   * If so, the function accepts zero arguments `[]`. Otherwise, it requires `[never]`
-   * which makes this overload unmatchable, forcing the user to provide args.
+   * This overload is only available when all required args have been provided in meta. The
+   * conditional type `Partial<T['args']> extends SetOptional<...>` checks if the remaining required
+   * args (after accounting for args provided in meta) are all optional. If so, the function accepts
+   * zero arguments `[]`. Otherwise, it requires `[never]` which makes this overload unmatchable,
+   * forcing the user to provide args.
    *
    * @example
+   *
    * ```ts
    * // When meta provides all required args, story() can be called with no arguments
    * const meta = preview.meta({ component: Button, args: { label: 'Hi', disabled: false } });
@@ -236,8 +244,8 @@ export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotati
 /**
  * Vue3-specific Story interface returned by `meta.story()`.
  *
- * Represents a single story with its configuration and provides access to
- * the composed story for testing via `story.run()`.
+ * Represents a single story with its configuration and provides access to the composed story for
+ * testing via `story.run()`.
  */
 export interface VueStory<T extends VueTypes, TInput extends StoryAnnotations<T, T['args']>>
   extends Story<T, TInput> {}

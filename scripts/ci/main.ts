@@ -25,13 +25,8 @@ import { executors } from './utils/executors';
 import { ensureRequiredJobs } from './utils/helpers';
 import { orbs } from './utils/orbs';
 import { parameters } from './utils/parameters';
-import type {
-  JobImplementationObj,
-  JobOrNoOpJob,
-  NoOpJobImplementation,
-  NoOpJobImplementationObj,
-} from './utils/types';
-import { type JobImplementation, type Workflow, isWorkflowOrAbove } from './utils/types';
+import type { JobImplementationObj, JobOrNoOpJob, NoOpJobImplementationObj } from './utils/types';
+import { type Workflow, isWorkflowOrAbove } from './utils/types';
 
 const dirname = import.meta.dirname;
 

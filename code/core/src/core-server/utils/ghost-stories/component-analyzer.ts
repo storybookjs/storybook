@@ -43,14 +43,28 @@ function countNonEmptyRuntimeLines(lines: string[]): number {
       inTypeBlock = true;
       typeBraceDepth += braceDelta(trimmed);
 
+      // Check for conditional types (T extends X ? Y : Z)
+      const isConditionalType = /\bextends\s+/.test(trimmed);
+
       // End immediately for one-liners like:
       // - interface X {}
       // - type X = { ... }
       // - type X = Foo | Bar;
+      // - type X = 'a' | 'b' | 'c'
       const endsWithSemicolon = /;\s*$/.test(trimmed);
       const endsWithClosingBrace = /}\s*;?\s*$/.test(trimmed);
       const oneLineBraceBlock = trimmed.includes('{') && trimmed.includes('}');
-      if (typeBraceDepth <= 0 && (endsWithSemicolon || endsWithClosingBrace || oneLineBraceBlock)) {
+      // Type declarations without braces or semicolons end at line end (but not conditional types)
+      const isSimpleTypeDecl =
+        !trimmed.includes('{') &&
+        !trimmed.includes('}') &&
+        !endsWithSemicolon &&
+        !isConditionalType;
+
+      if (
+        typeBraceDepth <= 0 &&
+        (endsWithSemicolon || endsWithClosingBrace || oneLineBraceBlock || isSimpleTypeDecl)
+      ) {
         inTypeBlock = false;
         typeBraceDepth = 0;
       }
@@ -58,6 +72,45 @@ function countNonEmptyRuntimeLines(lines: string[]): number {
     }
 
     if (inTypeBlock) {
+      // Check if we're starting a new type declaration while still in a type block
+      if (TYPE_OR_INTERFACE_DECL_RE.test(trimmed)) {
+        // This means the previous type block ended and a new one started
+        inTypeBlock = false;
+        typeBraceDepth = 0;
+        // Fall through to process this as a new type declaration
+        // We need to re-process this line, so we'll handle it in the next iteration
+        // But since we're in a for...of loop, we can't easily go back, so let's handle it here
+        inTypeBlock = true;
+        typeBraceDepth += braceDelta(trimmed);
+
+        // Check for conditional types (T extends X ? Y : Z)
+        const isConditionalType = /\bextends\s+/.test(trimmed);
+
+        // End immediately for one-liners like:
+        // - interface X {}
+        // - type X = { ... }
+        // - type X = Foo | Bar;
+        // - type X = 'a' | 'b' | 'c'
+        const endsWithSemicolon = /;\s*$/.test(trimmed);
+        const endsWithClosingBrace = /}\s*;?\s*$/.test(trimmed);
+        const oneLineBraceBlock = trimmed.includes('{') && trimmed.includes('}');
+        // Type declarations without braces or semicolons end at line end (but not conditional types)
+        const isSimpleTypeDecl =
+          !trimmed.includes('{') &&
+          !trimmed.includes('}') &&
+          !endsWithSemicolon &&
+          !isConditionalType;
+
+        if (
+          typeBraceDepth <= 0 &&
+          (endsWithSemicolon || endsWithClosingBrace || oneLineBraceBlock || isSimpleTypeDecl)
+        ) {
+          inTypeBlock = false;
+          typeBraceDepth = 0;
+        }
+        continue;
+      }
+
       typeBraceDepth += braceDelta(trimmed);
       const endsWithSemicolon = /;\s*$/.test(trimmed);
       const endsWithClosingBrace = /}\s*;?\s*$/.test(trimmed);
@@ -96,6 +149,7 @@ export const getComponentComplexity = (fileContent: string): number => {
   const lines = fileContent.split('\n');
 
   const nonEmptyRuntimeLines = countNonEmptyRuntimeLines(lines);
+  console.log('nonEmptyRuntimeLines', nonEmptyRuntimeLines);
 
   const importCount = lines.filter((line) => line.trim().startsWith('import')).length;
 

@@ -191,18 +191,15 @@ export default {
 };
 ```
 
-#### 3. List All Components (`list-all-components`)
+#### 3. List All Documentation (`list-all-documentation`)
 
-Returns a list of all available UI components in your component library. Useful for the LLM as discovery and understanding what components are available to use.
+Returns a list of all available UI components as well as standalone docs in your component library. Useful for the LLM as discovery and understanding what components are available to use.
 
-#### 4. Get Component Documentation (`get-component-documentation`)
+#### 4. Get Documentation (`get-documentation`)
 
-Retrieves detailed documentation for a specific component, including:
+Retrieves detailed documentation for a specific component or docs entry.
 
-- Component documentation
-- Usage examples
-
-The agent provides a component ID to retrieve its documentation. To get documentation for multiple components, call this tool multiple times.
+The agent provides a component/docs ID to retrieve its documentation. To get documentation for multiple entries, call this tool multiple times.
 
 ## Contributing
 

@@ -1,8 +1,8 @@
-import type { ComponentManifest, ComponentManifestMap } from '../../types.ts';
-import type { ManifestFormatter } from './types.ts';
+import type { ComponentManifest } from '../../types.ts';
+import { MAX_SUMMARY_LENGTH, type ManifestFormatter } from './types.ts';
 import { parseReactDocgen } from '../parse-react-docgen.ts';
-
-const MAX_SUMMARY_LENGTH = 90;
+import { dedent } from '../dedent.ts';
+import { extractDocsSummary } from './extract-docs-summary.ts';
 
 /**
  * Markdown formatter for component manifests.
@@ -108,13 +108,21 @@ export const markdownFormatter: ManifestFormatter = {
 		return parts.join('\n').trim();
 	},
 
-	formatComponentManifestMapToList(manifest: ComponentManifestMap): string {
+	formatDocsManifest(doc) {
+		return dedent`# ${doc.title}
+
+			${doc.content}`;
+	},
+
+	formatManifestsToLists(manifests) {
 		const parts: string[] = [];
 
 		parts.push('# Components');
 		parts.push('');
 
-		for (const component of Object.values(manifest.components)) {
+		for (const component of Object.values(
+			manifests.componentManifest.components,
+		)) {
 			const summary =
 				component.summary ??
 				(component.description
@@ -131,6 +139,18 @@ export const markdownFormatter: ManifestFormatter = {
 		}
 
 		parts.push('');
+
+		if (!manifests.docsManifest) {
+			return parts.join('\n').trim();
+		}
+
+		parts.push('# Docs');
+		parts.push('');
+
+		for (const doc of Object.values(manifests.docsManifest.docs)) {
+			const summary = doc.summary ?? extractDocsSummary(doc.content);
+			parts.push(`- ${doc.title} (${doc.id})${summary ? `: ${summary}` : ''}`);
+		}
 
 		return parts.join('\n').trim();
 	},

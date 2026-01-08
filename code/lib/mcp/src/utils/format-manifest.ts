@@ -1,6 +1,7 @@
 import type {
+	AllManifests,
 	ComponentManifest,
-	ComponentManifestMap,
+	Doc,
 	OutputFormat,
 } from '../types.ts';
 import type { ManifestFormatter } from './manifest-formatter/types.ts';
@@ -14,9 +15,6 @@ const formatters: Record<OutputFormat, ManifestFormatter> = {
 
 /**
  * Format a single component manifest.
- * @param componentManifest - The component manifest to format
- * @param format - The desired output format (defaults to 'markdown')
- * @returns Formatted string representation of the component
  */
 export function formatComponentManifest(
 	componentManifest: ComponentManifest,
@@ -26,14 +24,21 @@ export function formatComponentManifest(
 }
 
 /**
- * Format a component manifest map into a list.
- * @param manifest - The component manifest map to format
- * @param format - The desired output format (defaults to 'markdown')
- * @returns Formatted string representation of the component list
+ * Format a single docs manifest.
  */
-export function formatComponentManifestMapToList(
-	manifest: ComponentManifestMap,
+export function formatDocsManifest(
+	doc: Doc,
 	format: OutputFormat = 'markdown',
 ): string {
-	return formatters[format].formatComponentManifestMapToList(manifest);
+	return formatters[format].formatDocsManifest(doc);
+}
+
+/**
+ * Format a component manifest and optionally a docs manifest into lists.
+ */
+export function formatManifestsToLists(
+	manifests: AllManifests,
+	format: OutputFormat = 'markdown',
+): string {
+	return formatters[format].formatManifestsToLists(manifests);
 }

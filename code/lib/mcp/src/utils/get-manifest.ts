@@ -1,10 +1,15 @@
-import { ComponentManifestMap } from '../types.ts';
+import {
+	ComponentManifestMap,
+	DocsManifestMap,
+	type AllManifests,
+} from '../types.ts';
 import * as v from 'valibot';
 
 /**
- * The path to the component manifest file relative to the Storybook build
+ * The paths to the manifest files relative to the Storybook build
  */
-export const MANIFEST_PATH = './manifests/components.json';
+export const COMPONENT_MANIFEST_PATH = './manifests/components.json';
+export const DOCS_MANIFEST_PATH = './manifests/docs.json';
 
 /**
  * Error thrown when getting or parsing a manifest fails
@@ -62,53 +67,97 @@ export const errorToMCPContent = (error: unknown): MCPErrorResult => {
 };
 
 /**
- * Gets a component manifest from a request or using a custom provider
+ * Parses a JSON string and validates it against a Valibot schema
+ */
+function parseManifest<
+	T extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
+>({
+	jsonString,
+	schema,
+	name,
+	url,
+}: {
+	jsonString: string;
+	schema: T;
+	name: string;
+	url: string;
+}): v.InferOutput<T> {
+	try {
+		return v.parse(v.pipe(v.string(), v.parseJson(), schema), jsonString);
+	} catch (error) {
+		throw new ManifestGetError(
+			`Failed to parse ${name} manifest:
+${error instanceof v.ValiError ? error.issues.map((i) => i.message).join('\n') : String(error)}`,
+			url,
+		);
+	}
+}
+
+/**
+ * Gets component and docs manifest from a request or using a custom provider
  *
  * @param request - The HTTP request to get the manifest for (optional when using custom manifestProvider)
  * @param manifestProvider - Optional custom function to get the manifest
  * @returns A promise that resolves to the parsed ComponentManifestMap
  * @throws {ManifestGetError} If getting the manifest fails or the response is invalid
  */
-export async function getManifest(
+export async function getManifests(
 	request?: Request,
 	manifestProvider?: (
 		request: Request | undefined,
 		path: string,
 	) => Promise<string>,
-): Promise<ComponentManifestMap> {
-	try {
-		// Use custom manifestProvider if provided, otherwise fallback to default
-		const manifestString = await (manifestProvider ?? defaultManifestProvider)(
-			request,
-			MANIFEST_PATH,
-		);
-		const manifestData: unknown = JSON.parse(manifestString);
+): Promise<AllManifests> {
+	const provider = manifestProvider ?? defaultManifestProvider;
 
-		const manifest = v.parse(ComponentManifestMap, manifestData);
+	// Fetch both component and docs manifests in parallel
+	const [componentResult, docsResult] = await Promise.allSettled([
+		provider(request, COMPONENT_MANIFEST_PATH),
+		provider(request, DOCS_MANIFEST_PATH),
+	]);
 
-		if (Object.keys(manifest.components).length === 0) {
-			const url = request
-				? getManifestUrlFromRequest(request, MANIFEST_PATH)
-				: 'Unknown manifest source';
-			throw new ManifestGetError(`No components found in the manifest`, url);
-		}
-
-		return manifest;
-	} catch (error) {
-		if (error instanceof ManifestGetError) {
-			throw error;
-		}
-
-		// Wrap network errors and other unexpected errors
-		const url = request
-			? getManifestUrlFromRequest(request, MANIFEST_PATH)
+	const getUrl = (path: string) =>
+		request
+			? getManifestUrlFromRequest(request, path)
 			: 'Unknown manifest source';
+
+	if (componentResult.status === 'rejected') {
 		throw new ManifestGetError(
-			`Failed to get manifest: ${error instanceof Error ? error.message : String(error)}`,
-			url,
-			error instanceof Error ? error : undefined,
+			`Failed to get component manifest: ${componentResult.reason instanceof Error ? componentResult.reason.message : String(componentResult.reason)}`,
+			getUrl(COMPONENT_MANIFEST_PATH),
+			componentResult.reason instanceof Error
+				? componentResult.reason
+				: undefined,
 		);
 	}
+
+	const componentManifest = parseManifest({
+		jsonString: componentResult.value,
+		schema: ComponentManifestMap,
+		name: 'component',
+		url: getUrl(COMPONENT_MANIFEST_PATH),
+	});
+
+	if (Object.keys(componentManifest.components).length === 0) {
+		throw new ManifestGetError(
+			`No components found in the manifest`,
+			getUrl(COMPONENT_MANIFEST_PATH),
+		);
+	}
+
+	if (docsResult.status === 'rejected') {
+		return { componentManifest };
+	}
+
+	// Handle docs manifest result (optional - only exists when addon-docs is used)
+	const docsManifest = parseManifest({
+		jsonString: docsResult.value,
+		schema: DocsManifestMap,
+		name: 'docs',
+		url: getUrl(DOCS_MANIFEST_PATH),
+	});
+
+	return { componentManifest, docsManifest };
 }
 
 /**

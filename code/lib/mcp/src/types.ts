@@ -34,42 +34,57 @@ export type StorybookContext = {
 		path: string,
 	) => Promise<string>;
 	/**
-	 * Optional handler called when list-all-components tool is invoked.
+	 * Optional handler called when list-all-documentation tool is invoked.
 	 * Receives the context and the component manifest.
 	 */
-	onListAllComponents?: (params: {
+	onListAllDocumentation?: (params: {
 		context: StorybookContext;
-		manifest: ComponentManifestMap;
+		manifests: AllManifests;
 	}) => void | Promise<void>;
 	/**
 	 * Optional handler called when get-component-documentation tool is invoked.
 	 * Receives the context, input parameters, and the found component (if any).
 	 */
-	onGetComponentDocumentation?: (params: {
+	onGetDocumentation?: (params: {
 		context: StorybookContext;
-		input: { componentId: string };
-		foundComponent?: ComponentManifest;
+		input: { id: string };
+		foundDocumentation?: ComponentManifest | Doc;
 	}) => void | Promise<void>;
 };
 
 const JSDocTag = v.record(v.string(), v.array(v.string()));
 
+const Error = v.object({
+	name: v.string(),
+	message: v.string(),
+});
+
 const BaseManifest = v.object({
 	name: v.string(),
 	description: v.optional(v.string()),
 	jsDocTags: v.optional(JSDocTag),
-	error: v.optional(
-		v.object({
-			name: v.string(),
-			message: v.string(),
-		}),
-	),
+	error: v.optional(Error),
 });
 
 const Story = v.object({
 	...BaseManifest.entries,
 	snippet: v.optional(v.string()),
 });
+
+/**
+ * A docs entry represents MDX documentation that can be attached to a component
+ * or standalone (unattached).
+ */
+const Doc = v.object({
+	id: v.string(),
+	name: v.string(),
+	title: v.string(),
+	path: v.string(),
+	content: v.string(),
+	summary: v.optional(v.string()),
+	error: v.optional(Error),
+});
+export type Doc = v.InferOutput<typeof Doc>;
 
 export const ComponentManifest = v.object({
 	...BaseManifest.entries,
@@ -80,6 +95,7 @@ export const ComponentManifest = v.object({
 	stories: v.optional(v.array(Story)),
 	// loose schema for react-docgen types, as they are pretty complex
 	reactDocgen: v.optional(v.custom<Documentation>(() => true)),
+	docs: v.optional(v.record(v.string(), Doc)),
 });
 export type ComponentManifest = v.InferOutput<typeof ComponentManifest>;
 
@@ -88,3 +104,18 @@ export const ComponentManifestMap = v.object({
 	components: v.record(v.string(), ComponentManifest),
 });
 export type ComponentManifestMap = v.InferOutput<typeof ComponentManifestMap>;
+
+/**
+ * Manifest for unattached/standalone documentation entries.
+ * Served at /manifests/docs.json
+ */
+export const DocsManifestMap = v.object({
+	v: v.number(),
+	docs: v.record(v.string(), Doc),
+});
+export type DocsManifestMap = v.InferOutput<typeof DocsManifestMap>;
+
+export type AllManifests = {
+	componentManifest: ComponentManifestMap;
+	docsManifest?: DocsManifestMap;
+};

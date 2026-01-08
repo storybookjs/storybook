@@ -1,16 +1,14 @@
-import type { ComponentManifest, ComponentManifestMap } from '../../types.ts';
-import type { ManifestFormatter } from './types.ts';
+import { MAX_SUMMARY_LENGTH, type ManifestFormatter } from './types.ts';
+import { extractDocsSummary } from './extract-docs-summary.ts';
 import { dedent } from '../dedent.ts';
 import { parseReactDocgen } from '../parse-react-docgen.ts';
-
-const MAX_SUMMARY_LENGTH = 90;
 
 /**
  * XML formatter for component manifests.
  * Formats component data into XML structure with tags like <component>, <props>, etc.
  */
 export const xmlFormatter: ManifestFormatter = {
-	formatComponentManifest(componentManifest: ComponentManifest): string {
+	formatComponentManifest(componentManifest) {
 		const parts: string[] = [];
 
 		// Component opening tag
@@ -98,12 +96,23 @@ export const xmlFormatter: ManifestFormatter = {
 		return parts.join('\n');
 	},
 
-	formatComponentManifestMapToList(manifest: ComponentManifestMap): string {
+	formatDocsManifest(doc) {
+		return dedent`<doc>
+			<title>${doc.title}</title>
+			<content>
+			${doc.content}
+			</content>
+			</doc>`;
+	},
+
+	formatManifestsToLists(manifests) {
 		const parts: string[] = [];
 
 		parts.push('<components>');
 
-		for (const component of Object.values(manifest.components)) {
+		for (const component of Object.values(
+			manifests.componentManifest.components,
+		)) {
 			parts.push(dedent`<component>
 				<id>${component.id}</id>
 				<name>${component.name}</name>`);
@@ -126,6 +135,29 @@ export const xmlFormatter: ManifestFormatter = {
 		}
 
 		parts.push('</components>');
+
+		if (!manifests.docsManifest) {
+			return parts.join('\n');
+		}
+
+		parts.push('<docs>');
+
+		for (const doc of Object.values(manifests.docsManifest.docs)) {
+			const summary = doc.summary ?? extractDocsSummary(doc.content);
+			parts.push(dedent`<doc>
+				<id>${doc.id}</id>
+				<title>${doc.title}</title>`);
+
+			if (summary) {
+				parts.push(dedent`<summary>
+					${summary}
+					</summary>`);
+			}
+
+			parts.push('</doc>');
+		}
+
+		parts.push('</docs>');
 
 		return parts.join('\n');
 	},

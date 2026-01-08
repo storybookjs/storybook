@@ -2,16 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import {
-	addListAllComponentsTool,
+	addListAllDocumentationTool,
 	LIST_TOOL_NAME,
-} from './list-all-components.ts';
+} from './list-all-documentation.ts';
 import type { StorybookContext } from '../types.ts';
 import smallManifestFixture from '../../fixtures/small-manifest.fixture.json' with { type: 'json' };
+import smallDocsManifestFixture from '../../fixtures/small-docs-manifest.fixture.json' with { type: 'json' };
 import * as getManifest from '../utils/get-manifest.ts';
 
-describe('listAllComponentsTool', () => {
+describe('listAllDocumentationTool', () => {
 	let server: McpServer<any, StorybookContext>;
-	let getManifestSpy: any;
+	let getManifestsSpy: any;
 
 	beforeEach(async () => {
 		const adapter = new ValibotJsonSchemaAdapter();
@@ -43,11 +44,13 @@ describe('listAllComponentsTool', () => {
 			},
 			{ sessionId: 'test-session' },
 		);
-		await addListAllComponentsTool(server);
+		await addListAllDocumentationTool(server);
 
-		// Mock getManifest to return the fixture
-		getManifestSpy = vi.spyOn(getManifest, 'getManifest');
-		getManifestSpy.mockResolvedValue(smallManifestFixture);
+		// Mock getManifests to return the fixture
+		getManifestsSpy = vi.spyOn(getManifest, 'getManifests');
+		getManifestsSpy.mockResolvedValue({
+			componentManifest: smallManifestFixture,
+		});
 	});
 
 	it('should return a list of all components', async () => {
@@ -83,7 +86,7 @@ describe('listAllComponentsTool', () => {
 	});
 
 	it('should handle fetch errors gracefully', async () => {
-		getManifestSpy.mockRejectedValue(
+		getManifestsSpy.mockRejectedValue(
 			new getManifest.ManifestGetError(
 				'Failed to fetch manifest: 404 Not Found',
 				'https://example.com/manifest.json',
@@ -119,7 +122,7 @@ describe('listAllComponentsTool', () => {
 	});
 
 	it('should handle unexpected errors gracefully', async () => {
-		getManifestSpy.mockRejectedValue(new Error('Network timeout'));
+		getManifestsSpy.mockRejectedValue(new Error('Network timeout'));
 
 		const request = {
 			jsonrpc: '2.0' as const,
@@ -149,7 +152,7 @@ describe('listAllComponentsTool', () => {
 		`);
 	});
 
-	it('should call onListAllComponents handler when provided', async () => {
+	it('should call onListAllDocumentation handler when provided', async () => {
 		const handler = vi.fn();
 
 		const request = {
@@ -165,16 +168,18 @@ describe('listAllComponentsTool', () => {
 		const mockHttpRequest = new Request('https://example.com/mcp');
 		// Pass the handler and request in the context for this specific request
 		await server.receive(request, {
-			custom: { request: mockHttpRequest, onListAllComponents: handler },
+			custom: { request: mockHttpRequest, onListAllDocumentation: handler },
 		});
 
 		expect(handler).toHaveBeenCalledTimes(1);
 		expect(handler).toHaveBeenCalledWith({
 			context: expect.objectContaining({
 				request: mockHttpRequest,
-				onListAllComponents: handler,
+				onListAllDocumentation: handler,
 			}),
-			manifest: smallManifestFixture,
+			manifests: {
+				componentManifest: smallManifestFixture,
+			},
 		});
 	});
 
@@ -226,5 +231,148 @@ describe('listAllComponentsTool', () => {
 			  ],
 			}
 		`);
+	});
+
+	describe('with docs manifest', () => {
+		beforeEach(() => {
+			getManifestsSpy.mockResolvedValue({
+				componentManifest: smallManifestFixture,
+				docsManifest: smallDocsManifestFixture,
+			});
+		});
+
+		it('should return both components and docs entries', async () => {
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: LIST_TOOL_NAME,
+					arguments: {},
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest },
+			});
+
+			expect(response.result).toMatchInlineSnapshot(`
+				{
+				  "content": [
+				    {
+				      "text": "# Components
+
+				- Button (button): A simple button component
+				- Card (card): A container component for grouping related content.
+				- Input (input): A text input component with validation support.
+
+				# Docs
+
+				- Getting Started Guide (getting-started): # Getting Started Welcome to the component library. This guide will help you get up and ru...
+				- Theming and Customization (theming): # Theming Learn how to customize the look and feel of components using our theming system....",
+				      "type": "text",
+				    },
+				  ],
+				}
+			`);
+		});
+
+		it('should format both components and docs entries as XML when format is "xml"', async () => {
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: LIST_TOOL_NAME,
+					arguments: {},
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			const response = await server.receive(request, {
+				custom: { request: mockHttpRequest, format: 'xml' as const },
+			});
+
+			expect(response.result).toMatchInlineSnapshot(`
+				{
+				  "content": [
+				    {
+				      "text": "<components>
+				<component>
+				<id>button</id>
+				<name>Button</name>
+				<summary>
+				A simple button component
+				</summary>
+				</component>
+				<component>
+				<id>card</id>
+				<name>Card</name>
+				<summary>
+				A container component for grouping related content.
+				</summary>
+				</component>
+				<component>
+				<id>input</id>
+				<name>Input</name>
+				<summary>
+				A text input component with validation support.
+				</summary>
+				</component>
+				</components>
+				<docs>
+				<doc>
+				<id>getting-started</id>
+				<title>Getting Started Guide</title>
+				<summary>
+				# Getting Started Welcome to the component library. This guide will help you get up and ru...
+				</summary>
+				</doc>
+				<doc>
+				<id>theming</id>
+				<title>Theming and Customization</title>
+				<summary>
+				# Theming Learn how to customize the look and feel of components using our theming system....
+				</summary>
+				</doc>
+				</docs>",
+				      "type": "text",
+				    },
+				  ],
+				}
+			`);
+		});
+
+		it('should include docs manifest in onListAllDocumentation handler call', async () => {
+			const handler = vi.fn();
+
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 2,
+				method: 'tools/call',
+				params: {
+					name: LIST_TOOL_NAME,
+					arguments: {},
+				},
+			};
+
+			const mockHttpRequest = new Request('https://example.com/mcp');
+			await server.receive(request, {
+				custom: { request: mockHttpRequest, onListAllDocumentation: handler },
+			});
+
+			expect(handler).toHaveBeenCalledTimes(1);
+			expect(handler).toHaveBeenCalledWith({
+				context: expect.objectContaining({
+					request: mockHttpRequest,
+					onListAllDocumentation: handler,
+				}),
+				manifests: {
+					componentManifest: smallManifestFixture,
+					docsManifest: smallDocsManifestFixture,
+				},
+			});
+		});
 	});
 });

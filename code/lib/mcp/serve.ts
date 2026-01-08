@@ -3,24 +3,25 @@ import { serve } from 'srvx';
 import fs from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import type { OutputFormat } from './src/types.ts';
+import { basename } from 'node:path';
 
 async function serveMcp(
 	port: number,
-	manifestPath: string,
+	manifestsDir: string,
 	format: OutputFormat,
 ) {
 	const storybookMcpHandler = await createStorybookMcpHandler({
 		format,
 		// Use the local fixture file via manifestProvider
-		manifestProvider: async () => {
+		manifestProvider: async (_request, path) => {
 			if (
-				manifestPath.startsWith('http://') ||
-				manifestPath.startsWith('https://')
+				manifestsDir.startsWith('http://') ||
+				manifestsDir.startsWith('https://')
 			) {
-				const res = await fetch(manifestPath);
+				const res = await fetch(`${manifestsDir}/${basename(path)}`);
 				return await res.text();
 			}
-			return await fs.readFile(manifestPath, 'utf-8');
+			return await fs.readFile(`${manifestsDir}/${basename(path)}`, 'utf-8');
 		},
 	});
 
@@ -46,9 +47,9 @@ if (import.meta.main) {
 				type: 'string',
 				default: '13316',
 			},
-			manifestPath: {
+			manifestsDir: {
 				type: 'string',
-				default: './fixtures/full-manifest.fixture.json',
+				default: './fixtures/default',
 			},
 			format: {
 				type: 'string',
@@ -58,7 +59,7 @@ if (import.meta.main) {
 	});
 	await serveMcp(
 		Number(args.values.port),
-		args.values.manifestPath,
+		args.values.manifestsDir,
 		args.values.format as OutputFormat,
 	);
 }

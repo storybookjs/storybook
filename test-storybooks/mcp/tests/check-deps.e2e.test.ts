@@ -1,5 +1,6 @@
 import { describe, it } from 'vitest';
 import { x } from 'tinyexec';
+import path from 'node:path';
 
 const PACKAGES_TO_CHECK = [
 	'@storybook/addon-docs',
@@ -15,16 +16,13 @@ describe('Storybook Dependencies', () => {
 		for (const pkg of PACKAGES_TO_CHECK) {
 			// Get local version
 			const listResult = await x('pnpm', ['list', pkg, '--json'], {
-				nodeOptions: { cwd: process.cwd() },
+				nodeOptions: { cwd: path.join(import.meta.dirname, '..') },
 			});
+
 			const listData = JSON.parse(listResult.stdout);
 			const currentVersion =
 				listData[0]?.devDependencies?.[pkg]?.version ||
 				listData[0]?.dependencies?.[pkg]?.version;
-
-			if (!currentVersion) {
-				continue;
-			}
 
 			// Get registry version for @next tag
 			const viewResult = await x('pnpm', ['view', `${pkg}@next`, 'version'], {

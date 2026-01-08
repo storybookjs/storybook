@@ -149,14 +149,9 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
  * provided in meta become optional in stories, while missing required args must be provided at the
  * story level.
  */
-export interface WebComponentsMeta<
-  T extends WebComponentsTypes,
-  MetaInput extends ComponentAnnotations<T>,
-  /**
-   * @ts-expect-error WebComponentsMeta requires two type parameters to track both inferred
-   * component types (T) and custom meta annotations (MetaInput), but Meta only accepts compatible params.
-   */
-> extends Meta<T, MetaInput> {
+export interface WebComponentsMeta<T extends WebComponentsTypes, MetaInput extends ComponentAnnotations<T>>
+  // @ts-expect-error WebComponentsMeta requires two type parameters, but Meta's constraints differ
+  extends Meta<T, MetaInput> {
   /**
    * Creates a story with a custom render function that takes no args.
    *

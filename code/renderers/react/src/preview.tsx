@@ -142,10 +142,7 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
  * provided at the story level.
  */
 export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
-  /**
-   * @ts-expect-error ReactMeta requires two type parameters to track both inferred component
-   * types (T) and custom meta annotations (MetaInput), but Meta only accepts compatible params.
-   */
+  // @ts-expect-error ReactMeta requires two type parameters, but Meta's constraints differ
   extends Meta<T, MetaInput> {
   /**
    * Creates a story with a custom render function that takes no args.

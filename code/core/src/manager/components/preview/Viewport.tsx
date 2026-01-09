@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ActionList } from 'storybook/internal/components';
 
@@ -12,7 +12,7 @@ import {
   useViewport,
 } from '../../../viewport/useViewport';
 import { IFrame } from './Iframe';
-import { SizeInput } from './SizeInput';
+import { NumericInput } from './NumericInput';
 
 type DragSide = 'none' | 'both' | 'bottom' | 'right';
 
@@ -110,14 +110,13 @@ const FrameWrapper = styled.div<{
       rgba(0,0,0,0) 100%)`,
   },
   iframe: {
-    borderRadius: 'inherit',
     pointerEvents: dragging === 'none' ? 'auto' : 'none',
   },
 }));
 
 const DragHandle = styled.div<{
-  'data-side': DragSide;
   isDefault: boolean;
+  'data-side': DragSide;
 }>(
   { display: 'none' },
   ({ theme, isDefault }) =>
@@ -192,6 +191,17 @@ const ScrollEdge = styled.div<{ 'data-edge': DragSide }>({
   },
 });
 
+const SizeInput = styled(NumericInput)({
+  width: 85,
+  height: 28,
+  minHeight: 28,
+});
+
+const parseNumber = (value: string) => {
+  const [match, number, unit] = value.match(/^(\d+(?:\.\d+)?)(\%|[a-z]{0,4})?$/) || [];
+  return match ? { number: Number(number), unit } : undefined;
+};
+
 export const Viewport = ({
   active,
   id,
@@ -215,6 +225,10 @@ export const Viewport = ({
   const dragStart = useRef<[number, number] | undefined>();
 
   useEffect(() => {
+    const scrollRight = targetRef.current?.querySelector('[data-edge="right"]');
+    const scrollBottom = targetRef.current?.querySelector('[data-edge="bottom"]');
+    const scrollBoth = targetRef.current?.querySelector('[data-edge="both"]');
+
     const onDrag = (e: MouseEvent) => {
       if (dragSide.current === 'both' || dragSide.current === 'right') {
         targetRef.current!.style.width = `${dragStart.current![0] + e.clientX}px`;
@@ -224,13 +238,24 @@ export const Viewport = ({
         targetRef.current!.style.height = `${dragStart.current![1] + e.clientY}px`;
         dragRefY.current!.dataset.value = `${dragStart.current![1] + e.clientY}`;
       }
+      if (dragSide.current === 'both') {
+        scrollBoth?.scrollIntoView({ block: 'center', inline: 'center' });
+      }
+      if (dragSide.current === 'right') {
+        scrollRight?.scrollIntoView({ block: 'center', inline: 'center' });
+      }
+      if (dragSide.current === 'bottom') {
+        scrollBottom?.scrollIntoView({ block: 'center', inline: 'center' });
+      }
     };
 
     const onEnd = () => {
       window.removeEventListener('mouseup', onEnd);
       window.removeEventListener('mousemove', onDrag);
       setDragging('none');
-      resize(`${targetRef.current!.clientWidth}px`, `${targetRef.current!.clientHeight}px`);
+      const { clientWidth, clientHeight } = targetRef.current!;
+      const scale = Number(targetRef.current!.dataset.scale) || 1;
+      resize(`${Math.round(clientWidth / scale)}px`, `${Math.round(clientHeight / scale)}px`);
       dragStart.current = undefined;
     };
 
@@ -251,16 +276,31 @@ export const Viewport = ({
     return () => handles.forEach((el) => el?.removeEventListener('mousedown', onStart));
   }, [resize]);
 
+  const frameStyles = useMemo(() => {
+    const { number: nx, unit: ux = 'px' } = parseNumber(width) ?? { number: 0, unit: 'px' };
+    const { number: ny, unit: uy = 'px' } = parseNumber(height) ?? { number: 0, unit: 'px' };
+    return {
+      width: `${nx * scale}${ux}`,
+      height: `${ny * scale}${uy}`,
+    };
+  }, [width, height, scale]);
+
   return (
     <ViewportWrapper key={id} active={active} isDefault={isDefault}>
       {!isDefault && (
         <ViewportControls>
           <ViewportDimensions>
             <SizeInput
+              aria-label="Viewport width"
               data-size-input="width"
               label="Viewport width"
-              prefix="W"
+              before={
+                <ActionList.Action size="small" readOnly aria-hidden>
+                  W
+                </ActionList.Action>
+              }
               value={width}
+              minValue={0}
               setValue={(value) => resize(value, height)}
             />
             <ActionList.Button
@@ -273,10 +313,16 @@ export const Viewport = ({
               <TransferIcon />
             </ActionList.Button>
             <SizeInput
+              aria-label="Viewport height"
               data-size-input="height"
               label="Viewport height"
-              prefix="H"
+              before={
+                <ActionList.Action size="small" readOnly aria-hidden>
+                  H
+                </ActionList.Action>
+              }
               value={height}
+              minValue={0}
               setValue={(value) => resize(width, value)}
             />
             {isCustom && lastSelectedOption && (
@@ -296,25 +342,27 @@ export const Viewport = ({
       <FrameWrapper
         isDefault={isDefault}
         data-dragging={dragging}
-        style={{ width, height }}
+        data-scale={scale}
+        style={isDefault ? { height: '100%', width: '100%' } : frameStyles}
         ref={targetRef}
       >
-        <IFrame
-          allowFullScreen
-          active={active}
-          key={id}
-          id={id}
-          title={id}
-          src={src}
-          scale={scale}
-        />
-        {!isDefault && (
-          <>
-            <ScrollEdge data-edge="right" />
-            <ScrollEdge data-edge="bottom" />
-            <ScrollEdge data-edge="both" />
-          </>
-        )}
+        <div
+          style={{
+            height: `${(1 / scale) * 100}%`,
+            width: `${(1 / scale) * 100}%`,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+          }}
+        >
+          <IFrame allowFullScreen active={active} key={id} id={id} title={id} src={src} scale={1} />
+          {!isDefault && (
+            <>
+              <ScrollEdge data-edge="right" />
+              <ScrollEdge data-edge="bottom" />
+              <ScrollEdge data-edge="both" />
+            </>
+          )}
+        </div>
         <DragHandle
           ref={dragRefX}
           isDefault={isDefault}

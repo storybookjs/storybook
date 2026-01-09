@@ -8,7 +8,7 @@ import { Consumer } from 'storybook/manager-api';
 import { Global, styled } from 'storybook/theming';
 import type { CSSObject } from 'storybook/theming';
 
-import { IFrame } from './Iframe';
+import { Viewport } from './Viewport';
 import type { FramesRendererProps } from './utils/types';
 
 const getActive = (refId: FramesRendererProps['refId'], refs: FramesRendererProps['refs']) => {
@@ -104,21 +104,9 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
           );
         }}
       </Consumer>
-      {Object.entries(frames).map(([id, src]) => {
-        return (
-          <Fragment key={id}>
-            <IFrame
-              active={id === active}
-              key={id}
-              id={id}
-              title={id}
-              src={src}
-              allowFullScreen
-              scale={scale}
-            />
-          </Fragment>
-        );
-      })}
+      {Object.entries(frames).map(([id, src]) => (
+        <Viewport key={id} id={id} src={src} active={id === active} scale={scale} />
+      ))}
     </Fragment>
   );
 };

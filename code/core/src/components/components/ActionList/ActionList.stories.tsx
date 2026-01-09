@@ -62,7 +62,9 @@ export const Default = meta.story({
       </ActionList.Item>
       <ActionList.Item active>
         <ActionList.Action>
-          <CheckIcon />
+          <ActionList.Icon>
+            <CheckIcon />
+          </ActionList.Icon>
           <ActionList.Text>Active with an icon</ActionList.Text>
           <Shortcut keys={['⌘', 'A']} />
         </ActionList.Action>
@@ -77,7 +79,56 @@ export const Default = meta.story({
           <span>Some very long text which will ellipsize when the container is too narrow</span>
         </ActionList.Text>
       </ActionList.Item>
+      <ActionList.Item>
+        <ActionList.Action>
+          <ActionList.Icon>
+            <CheckIcon />
+          </ActionList.Icon>
+          <ActionList.Text>
+            <p>Title</p>
+            <small>Description</small>
+          </ActionList.Text>
+        </ActionList.Action>
+      </ActionList.Item>
+      <ActionList.Item active>
+        <ActionList.Action>
+          <ActionList.Icon>
+            <CheckIcon />
+          </ActionList.Icon>
+          <ActionList.Text>
+            <p>Some very long text which is going to wrap around</p>
+            <small>Here is a very long description which is also going to wrap around</small>
+          </ActionList.Text>
+        </ActionList.Action>
+      </ActionList.Item>
     </ActionList>
+  ),
+});
+
+export const Listbox = meta.story({
+  render: () => (
+    <>
+      <ActionList role="listbox" aria-label="Sample listbox">
+        <ActionList.Item role="option">
+          <ActionList.Icon>
+            <CheckIcon />
+          </ActionList.Icon>
+          <ActionList.Text>Option</ActionList.Text>
+        </ActionList.Item>
+        <ActionList.Item role="option" aria-selected="true">
+          <ActionList.Icon>
+            <CheckIcon />
+          </ActionList.Icon>
+          <ActionList.Text>Selected</ActionList.Text>
+        </ActionList.Item>
+        <ActionList.Item role="option" aria-disabled="true">
+          <ActionList.Icon>
+            <CheckIcon />
+          </ActionList.Icon>
+          <ActionList.Text>Visually disabled</ActionList.Text>
+        </ActionList.Item>
+      </ActionList>
+    </>
   ),
 });
 

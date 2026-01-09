@@ -69,7 +69,7 @@ export default {
     return (
       <iframe
         src="/bundle-analyzer/index.html"
-        style={{ border: 'none', width: '100%', height: '100vh' }}
+        style={{ position: 'fixed', width: '100vw', height: '100vh', border: 'none' }}
         key={args.metafile} // force re-render on args change
       />
     );

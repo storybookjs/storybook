@@ -116,37 +116,39 @@ const createComponentTestTransformPlugin = (presets: Presets, configDir: string)
 
   return {
     name: 'storybook:component-test-transform-plugin',
-    enforce: 'pre',
-    async transform(code, id) {
-      if (!optionalEnvToBoolean(process.env.VITEST) || storybookComponentTestPaths.length === 0) {
-        return code;
-      }
+    transform: {
+      order: 'pre',
+      async handler(code, id) {
+        if (!optionalEnvToBoolean(process.env.VITEST) || storybookComponentTestPaths.length === 0) {
+          return code;
+        }
 
-      const resolvedId = path.resolve(id);
-      const matches = storybookComponentTestPaths.some(
-        (testPath) =>
-          resolvedId === testPath ||
-          resolvedId.startsWith(testPath + path.sep) ||
-          resolvedId.endsWith(testPath)
-      );
+        const resolvedId = path.resolve(id);
+        const matches = storybookComponentTestPaths.some(
+          (testPath) =>
+            resolvedId === testPath ||
+            resolvedId.startsWith(testPath + path.sep) ||
+            resolvedId.endsWith(testPath)
+        );
 
-      // We only transform paths included in STORYBOOK_COMPONENT_PATHS
-      if (!matches) {
-        return code;
-      }
+        // We only transform paths included in STORYBOOK_COMPONENT_PATHS
+        if (!matches) {
+          return code;
+        }
 
-      const result = await componentTransform({
-        code,
-        fileName: id,
-        getComponentArgTypes: async ({ componentName, fileName }) =>
-          presets.apply('experimental_getArgTypesData', null, {
-            componentFilePath: fileName,
-            componentExportName: componentName,
-            configDir,
-          }),
-      });
+        const result = await componentTransform({
+          code,
+          fileName: id,
+          getComponentArgTypes: async ({ componentName, fileName }) =>
+            presets.apply('experimental_getArgTypesData', null, {
+              componentFilePath: fileName,
+              componentExportName: componentName,
+              configDir,
+            }),
+        });
 
-      return result.code;
+        return result.code;
+      },
     },
   };
 };

@@ -91,7 +91,6 @@ export const UI_LIBRARY_PACKAGES = [
   'react-aria*',
   '@react-aria/*',
   '@heroui/*',
-  'primereact',
   '@carbon/*',
   'theme-ui',
   'rebass',

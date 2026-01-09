@@ -33,9 +33,12 @@ export const telemetry = async (
   payload: Payload = {},
   options: Partial<Options> = {}
 ) => {
-  // TODO: DO NOT MERGE WITH THIS! IT'S FOR DEBUGGING PURPOSES ONLY!
-  console.log('telemetry ', { eventType, payload, options });
-  return;
+  if (eventType === 'ghost-stories') {
+    // TODO: DO NOT MERGE WITH THIS! IT'S FOR DEBUGGING PURPOSES ONLY!
+    console.log('Ghost stories data:', JSON.stringify(payload, null, 2));
+    return;
+  }
+
   // Don't notify on boot since it can lead to double notification in `sb init`.
   // The notification will happen when the actual command runs.
   if (eventType !== 'boot' && options.notify !== false) {

@@ -3,8 +3,6 @@ import React from 'react';
 
 import { Modal } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
-
 import { MOBILE_TRANSITION_DURATION } from '../../../constants';
 
 interface MobileAddonsDrawerProps {
@@ -14,12 +12,6 @@ interface MobileAddonsDrawerProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const StyledModal = styled(Modal)(({ theme }) => ({
-  background: theme.background.content,
-  borderRadius: '10px 10px 0 0',
-  border: 'none',
-}));
-
 export const MobileAddonsDrawer: FC<MobileAddonsDrawerProps> = ({
   children,
   id,
@@ -27,7 +19,7 @@ export const MobileAddonsDrawer: FC<MobileAddonsDrawerProps> = ({
   onOpenChange,
 }) => {
   return (
-    <StyledModal
+    <Modal
       ariaLabel="Addon panel"
       transitionDuration={MOBILE_TRANSITION_DURATION}
       variant="bottom-drawer"
@@ -37,6 +29,6 @@ export const MobileAddonsDrawer: FC<MobileAddonsDrawerProps> = ({
       onOpenChange={onOpenChange}
     >
       {children}
-    </StyledModal>
+    </Modal>
   );
 };

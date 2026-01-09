@@ -15,14 +15,14 @@ export interface CategorizedError {
 
 export interface ErrorCategorizationResult {
   totalErrors: number;
-  categorizedErrors: CategorizedError[];
+  categorizedErrors: Record<string, CategorizedError>;
   uniqueErrorCount: number;
 }
 
-export interface GhostStoriesResponsePayload {
+export interface TestRunSummary {
   success: boolean;
   duration: number;
-  testSummary?: {
+  summary?: {
     total: number;
     passed: number;
     passedButEmptyRender: number;
@@ -31,7 +31,7 @@ export interface GhostStoriesResponsePayload {
     successRateWithoutEmptyRender: number;
     failureRate: number;
     uniqueErrorCount: number;
-    categorizedErrors: CategorizedError[];
+    categorizedErrors: Record<string, CategorizedError>;
   };
   // Error message if the operation failed
   error?: string;

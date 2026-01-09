@@ -64,7 +64,11 @@ function isValidCandidate(source: string): boolean {
 export async function getCandidatesForStorybook(
   files: string[],
   sampleCount: number
-): Promise<string[]> {
+): Promise<{
+  candidates: string[];
+  analyzedCount: number;
+  avgComplexity: number;
+}> {
   const simpleCandidates: { file: string; complexity: number }[] = [];
   const analyzedCandidates: { file: string; complexity: number }[] = [];
 
@@ -90,25 +94,37 @@ export async function getCandidatesForStorybook(
       }
     }
   }
-  // If we have enough simple candidates, return them
+
+  let selectedCandidates: { file: string; complexity: number }[] = [];
+
+  // If we have enough simple candidates, use those
   if (simpleCandidates.length >= sampleCount) {
     logger.debug(
       `Found ${simpleCandidates.length} enough simple candidates after analyzing ${analyzedCandidates.length} out of ${files.length} files`
     );
-    return simpleCandidates
+    selectedCandidates = simpleCandidates
       .sort((a, b) => a.complexity - b.complexity)
-      .map(({ file }) => file)
+      .slice(0, sampleCount);
+  } else {
+    logger.debug(
+      `Found ${simpleCandidates.length} simple and ${analyzedCandidates.length - simpleCandidates.length} complex candidates after analyzing ${analyzedCandidates.length} out of ${files.length} files`
+    );
+    selectedCandidates = analyzedCandidates
+      .sort((a, b) => a.complexity - b.complexity)
       .slice(0, sampleCount);
   }
 
-  logger.debug(
-    `Found ${simpleCandidates.length} simple and ${analyzedCandidates.length - simpleCandidates.length} complex candidates after analyzing ${analyzedCandidates.length} out of ${files.length} files`
-  );
-  // Otherwise, return all analyzed candidates
-  return analyzedCandidates
-    .sort((a, b) => a.complexity - b.complexity)
-    .map(({ file }) => file)
-    .slice(0, sampleCount);
+  const avgComplexity =
+    selectedCandidates.length > 0
+      ? selectedCandidates.reduce((acc, curr) => acc + curr.complexity, 0) /
+        selectedCandidates.length
+      : 0;
+
+  return {
+    candidates: selectedCandidates.map(({ file }) => file),
+    analyzedCount: analyzedCandidates.length,
+    avgComplexity,
+  };
 }
 
 export async function getComponentCandidates({
@@ -120,11 +136,13 @@ export async function getComponentCandidates({
 } = {}): Promise<{
   candidates: string[];
   error?: string;
-  matchCount: number;
+  globMatchCount: number;
+  analyzedCount?: number;
+  avgComplexity?: number;
 }> {
   logger.debug(`Starting story sampling with glob: ${globPattern}`);
   logger.debug(`Sample size: ${sampleSize}`);
-  let matchCount = 0;
+  let globMatchCount = 0;
 
   try {
     let files: string[] = [];
@@ -151,22 +169,27 @@ export async function getComponentCandidates({
 
     logger.debug(`Found ${files.length} files matching glob pattern`);
 
-    matchCount = files.length;
+    globMatchCount = files.length;
 
-    if (matchCount === 0) {
+    if (globMatchCount === 0) {
       logger.warn(`No files found matching glob pattern: ${globPattern}`);
       return {
         candidates: [],
-        matchCount,
+        globMatchCount,
       };
     }
 
-    const candidates = await getCandidatesForStorybook(files, sampleSize);
+    const { analyzedCount, avgComplexity, candidates } = await getCandidatesForStorybook(
+      files,
+      sampleSize
+    );
     logger.debug('candidates files:' + files.length);
 
     return {
+      analyzedCount,
+      avgComplexity,
       candidates,
-      matchCount,
+      globMatchCount,
     };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -174,8 +197,8 @@ export async function getComponentCandidates({
     logger.debug(`Full error: ${error}`);
     return {
       candidates: [],
-      error: errorMessage,
-      matchCount,
+      error: 'Failed to find candidates',
+      globMatchCount,
     };
   }
 }

@@ -7,16 +7,16 @@ import {
 import type { ErrorCategorizationResult, StoryTestResult } from './types';
 
 export const ERROR_CATEGORIES = {
-  MISSING_PROVIDER: 'Missing Provider',
-  MISSING_STATE_PROVIDER: 'Missing State Provider',
-  MISSING_ROUTER_PROVIDER: 'Missing Router Provider',
-  MISSING_THEME_PROVIDER: 'Missing Theme Provider',
-  MISSING_TRANSLATION_PROVIDER: 'Missing Translation Provider',
-  MISSING_PORTAL_ROOT: 'Missing Portal Root',
-  HOOK_USAGE_ERROR: 'Hook Usage Error',
-  MODULE_IMPORT_ERROR: 'Module Import Error',
-  COMPONENT_RENDER_ERROR: 'Component Render Error',
-  UNKNOWN_ERROR: 'Unknown Error',
+  MISSING_PROVIDER: 'MISSING_PROVIDER',
+  MISSING_STATE_PROVIDER: 'MISSING_STATE_PROVIDER',
+  MISSING_ROUTER_PROVIDER: 'MISSING_ROUTER_PROVIDER',
+  MISSING_THEME_PROVIDER: 'MISSING_THEME_PROVIDER',
+  MISSING_TRANSLATION_PROVIDER: 'MISSING_TRANSLATION_PROVIDER',
+  MISSING_PORTAL_ROOT: 'MISSING_PORTAL_ROOT',
+  HOOK_USAGE_ERROR: 'HOOK_USAGE_ERROR',
+  MODULE_IMPORT_ERROR: 'MODULE_IMPORT_ERROR',
+  COMPONENT_RENDER_ERROR: 'COMPONENT_RENDER_ERROR',
+  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
 } as const;
 
 export type ErrorCategory = (typeof ERROR_CATEGORIES)[keyof typeof ERROR_CATEGORIES];
@@ -73,7 +73,7 @@ function buildErrorContext(message: string, stack?: string): ErrorContext {
  *
  * E.g. "Cannot read properties of undefined (reading 'theme')" at /deps/styled-components.js
  */
-const DEFAULT_RULES: CategorizationRule[] = [
+const CATEGORIZATION_RULES: CategorizationRule[] = [
   {
     category: ERROR_CATEGORIES.MODULE_IMPORT_ERROR,
     priority: 100,
@@ -166,7 +166,7 @@ export function categorizeError(
   message: string,
   stack?: string
 ): { category: ErrorCategory; matchedDependencies: string[] } {
-  const rules = DEFAULT_RULES.sort((a, b) => b.priority - a.priority);
+  const rules = CATEGORIZATION_RULES.sort((a, b) => b.priority - a.priority);
   const ctx = buildErrorContext(message, stack);
   const rule = rules.find((r) => r.match(ctx));
 
@@ -267,15 +267,18 @@ export function extractCategorizedErrors(
     uniqueErrorMessages.add(r.error!);
   }
 
-  const categorizedErrors = Array.from(map.entries())
-    .map(([category, data]) => ({
-      category,
-      description: getCategoryDescription(category),
-      count: data.count,
-      examples: Array.from(data.examples).slice(0, 3),
-      matchedDependencies: Array.from(data.matchedDependencies).sort(),
-    }))
-    .sort((a, b) => b.count - a.count);
+  const categorizedErrors = Array.from(map.entries()).reduce<Record<string, any>>(
+    (acc, [category, data]) => {
+      acc[category] = {
+        description: getCategoryDescription(category),
+        count: data.count,
+        examples: Array.from(data.examples).slice(0, 3),
+        matchedDependencies: Array.from(data.matchedDependencies).sort(),
+      };
+      return acc;
+    },
+    {}
+  );
 
   return {
     totalErrors: failed.length,

@@ -33,7 +33,11 @@ describe('getCandidatesForStorybook', () => {
 
     const result = await getCandidatesForStorybook(files, sampleCount);
 
-    expect(result).toEqual(['/path/to/SimpleComponent.tsx']);
+    expect(result).toEqual({
+      candidates: ['/path/to/SimpleComponent.tsx'],
+      analyzedCount: 1,
+      avgComplexity: 0.1,
+    });
     // Should only read the first file since it found a simple candidate and sampleCount=1
     expect(readFile).toHaveBeenCalledTimes(1);
     expect(readFile).toHaveBeenCalledWith('/path/to/SimpleComponent.tsx', 'utf-8');
@@ -57,7 +61,11 @@ describe('getCandidatesForStorybook', () => {
 
     const result = await getCandidatesForStorybook(files, sampleCount);
 
-    expect(result).toEqual(['/path/to/ComplexComponent1.tsx', '/path/to/ComplexComponent2.tsx']);
+    expect(result).toEqual({
+      candidates: ['/path/to/ComplexComponent1.tsx', '/path/to/ComplexComponent2.tsx'],
+      analyzedCount: 2,
+      avgComplexity: 0.55,
+    });
     expect(readFile).toHaveBeenCalledTimes(2);
     expect(getComponentComplexity).toHaveBeenCalledTimes(2);
   });
@@ -78,7 +86,11 @@ describe('getCandidatesForStorybook', () => {
     const result = await getCandidatesForStorybook(files, sampleCount);
 
     // Even though the sample count is 2, only one is returned as the invalid component is filtered out
-    expect(result).toEqual(['/path/to/ValidComponent.tsx']);
+    expect(result).toEqual({
+      candidates: ['/path/to/ValidComponent.tsx'],
+      analyzedCount: 1,
+      avgComplexity: 0.1,
+    });
     expect(readFile).toHaveBeenCalledTimes(2);
     expect(getComponentComplexity).toHaveBeenCalledTimes(1);
   });
@@ -101,7 +113,11 @@ describe('getCandidatesForStorybook', () => {
     const result = await getCandidatesForStorybook(files, sampleCount);
 
     // Should attempt to read both files and still proceed correctly with the valid ones
-    expect(result).toEqual(['/path/to/ValidComponent.tsx']);
+    expect(result).toEqual({
+      candidates: ['/path/to/ValidComponent.tsx'],
+      analyzedCount: 1,
+      avgComplexity: 0.1,
+    });
     expect(readFile).toHaveBeenCalledTimes(2);
     expect(getComponentComplexity).toHaveBeenCalledTimes(1);
   });
@@ -124,7 +140,11 @@ describe('getCandidatesForStorybook', () => {
 
     const result = await getCandidatesForStorybook(files, sampleCount);
 
-    expect(result).toEqual(['/path/to/Simple.tsx']);
+    expect(result).toEqual({
+      candidates: ['/path/to/Simple.tsx'],
+      analyzedCount: 2,
+      avgComplexity: 0.1,
+    });
     // Should stop after the second file as the sample count was already fulfilled
     expect(readFile).toHaveBeenCalledTimes(2);
     expect(getComponentComplexity).toHaveBeenCalledTimes(2);
@@ -149,7 +169,11 @@ describe('getCandidatesForStorybook', () => {
 
     const result = await getCandidatesForStorybook(files, sampleCount);
 
-    expect(result).toEqual(['/path/to/Component1.tsx', '/path/to/Component2.tsx']);
+    expect(result).toEqual({
+      candidates: ['/path/to/Component1.tsx', '/path/to/Component2.tsx'],
+      analyzedCount: 2,
+      avgComplexity: 0.25,
+    });
     expect(readFile).toHaveBeenCalledTimes(2);
     expect(getComponentComplexity).toHaveBeenCalledTimes(2);
   });

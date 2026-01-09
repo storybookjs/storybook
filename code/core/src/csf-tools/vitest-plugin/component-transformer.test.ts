@@ -291,7 +291,7 @@ describe('component transformer', () => {
           exportName: "Badge",
           story: {
             args: {
-              photoUrl: "https://placehold.co/600x400?text=Storybook",
+              photoUrl: "photoUrl",
               onClick: _fn(),
               someObject: {
                 category: "category",

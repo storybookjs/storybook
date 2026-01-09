@@ -6,11 +6,9 @@ import { executeCommand, resolvePathInStorybookCache } from 'storybook/internal/
 import { join } from 'pathe';
 
 import { extractCategorizedErrors } from './categorize-render-errors';
-import { type GhostStoriesResponsePayload, type StoryTestResult } from './types';
+import { type StoryTestResult, type TestRunSummary } from './types';
 
-export async function runStoryTests(
-  componentFilePaths: string[]
-): Promise<GhostStoriesResponsePayload> {
+export async function runStoryTests(componentFilePaths: string[]): Promise<TestRunSummary> {
   try {
     // Create the cache directory for story discovery tests
     const cacheDir = resolvePathInStorybookCache('ghost-stories-tests');
@@ -140,7 +138,7 @@ export async function runStoryTests(
     const errorClassification = extractCategorizedErrors(storyTestResults);
     const categorizedErrors = errorClassification.categorizedErrors;
 
-    const testSummary = {
+    const summary = {
       total,
       passed,
       passedButEmptyRender,
@@ -152,9 +150,9 @@ export async function runStoryTests(
       categorizedErrors,
     };
 
-    const enhancedResponse: GhostStoriesResponsePayload = {
+    const enhancedResponse: TestRunSummary = {
       success: testResults.success,
-      testSummary,
+      summary,
       duration,
     };
 

@@ -300,6 +300,7 @@ export const Viewport = ({
                 </ActionList.Action>
               }
               value={width}
+              minValue={0}
               setValue={(value) => resize(value, height)}
             />
             <ActionList.Button
@@ -321,6 +322,7 @@ export const Viewport = ({
                 </ActionList.Action>
               }
               value={height}
+              minValue={0}
               setValue={(value) => resize(width, value)}
             />
             {isCustom && lastSelectedOption && (

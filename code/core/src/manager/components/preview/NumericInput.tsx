@@ -60,12 +60,27 @@ interface NumericInputProps extends Omit<ComponentProps<typeof Form.Input>, 'val
   after?: ReactNode;
   value: string;
   setValue: (value: string) => void;
+  minValue?: number;
+  maxValue?: number;
   unit?: string;
   baseUnit?: string;
 }
 
 export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(function NumericInput(
-  { label, before, after, value, setValue, unit, baseUnit, className, style, ...props },
+  {
+    label,
+    before,
+    after,
+    value,
+    setValue,
+    minValue = -Infinity,
+    maxValue = Infinity,
+    unit,
+    baseUnit,
+    className,
+    style,
+    ...props
+  },
   forwardedRef
 ) {
   const baseUnitRegex = useMemo(() => baseUnit && new RegExp(`${baseUnit}$`), [baseUnit]);
@@ -78,22 +93,38 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
 
   useImperativeHandle(forwardedRef, () => inputRef.current!);
 
-  const onChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      setInputValue(e.target.value);
-      setValue(
-        !baseUnit || Number.isNaN(Number(e.target.value))
-          ? e.target.value
-          : `${e.target.value}${baseUnit}`
-      );
+  const parseValue = useCallback(
+    (value: string) => {
+      const [, inputValue, inputUnit = unit || baseUnit || ''] =
+        value.match(/(-?\d+(?:\.\d+)?)(\%|[a-z]{0,4})?$/) || [];
+      const number = Math.max(minValue, Math.min(parseFloat(inputValue), maxValue));
+      return { number, unit: inputUnit };
     },
-    [setValue, baseUnit]
+    [minValue, maxValue, unit, baseUnit]
+  );
+
+  const updateValue = useCallback(
+    (value: string) => {
+      const { number, unit } = parseValue(value);
+      if (Number.isNaN(number)) {
+        setInputValue(value);
+      } else {
+        setInputValue(`${number}${unit === baseUnit ? '' : unit}`);
+        setValue(`${number}${unit}`);
+      }
+    },
+    [parseValue, setValue, baseUnit]
+  );
+
+  const onChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => updateValue(e.target.value),
+    [updateValue]
   );
 
   const setInputSelection = useCallback(() => {
     requestAnimationFrame(() => {
       const input = inputRef.current;
-      const index = input?.value.search(/[^\d.]/) ?? -1;
+      const index = input?.value.search(/[^-\d.]/) ?? -1;
       if (input && index >= 0) {
         input.setSelectionRange(index, index);
       }
@@ -118,17 +149,9 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
       }
       e.preventDefault();
 
-      const num = parseInt(inputValue, 10);
-      if (Number.isNaN(num)) {
-        return;
-      }
-
-      const update = e.key === 'ArrowUp' ? num + 1 : num - 1;
-      if (update >= 0) {
-        const inputUnit =
-          inputValue.match(/(\d+(?:\.\d+)?)(\%|[a-z]{0,4})?$/)?.[2] || unit || baseUnit || '';
-        setInputValue(`${update}${inputUnit === baseUnit ? '' : inputUnit}`);
-        setValue(`${update}${inputUnit}`);
+      const { number, unit } = parseValue(inputValue);
+      if (!Number.isNaN(number)) {
+        updateValue(`${e.key === 'ArrowUp' ? number + 1 : number - 1}${unit}`);
         setInputSelection();
       }
     };
@@ -138,7 +161,7 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
       input.addEventListener('keydown', handleKeyDown);
       return () => input.removeEventListener('keydown', handleKeyDown);
     }
-  }, [inputValue, setValue, unit, baseUnit, inputRef, setInputSelection]);
+  }, [inputValue, parseValue, updateValue, setInputSelection]);
 
   return (
     <Wrapper after={after} before={before} className={className} style={style}>

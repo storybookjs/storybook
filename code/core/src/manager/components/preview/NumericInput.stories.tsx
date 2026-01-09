@@ -29,7 +29,7 @@ export const Default = meta.story({
   },
 });
 
-export const WithImplicitUnit = meta.story({
+export const WithParsedUnit = meta.story({
   args: {
     value: '10em',
   },
@@ -76,5 +76,30 @@ export const WithBaseUnit = meta.story({
     expect(args.setValue).toHaveBeenNthCalledWith(1, '11em');
     expect(args.setValue).toHaveBeenNthCalledWith(2, '12em');
     expect(args.setValue).toHaveBeenNthCalledWith(3, '11em');
+  },
+});
+
+export const WithMinAndMax = meta.story({
+  args: {
+    value: '10em',
+    minValue: 9,
+    maxValue: 11,
+  },
+  play: async ({ args, canvas }) => {
+    const input = await canvas.findByRole('textbox');
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input).toHaveValue('11em');
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(input).toHaveValue('9em');
+    expect(args.setValue).toHaveBeenNthCalledWith(1, '11em');
+    expect(args.setValue).toHaveBeenNthCalledWith(2, '11em');
+    expect(args.setValue).toHaveBeenNthCalledWith(3, '11em');
+    expect(args.setValue).toHaveBeenNthCalledWith(4, '10em');
+    expect(args.setValue).toHaveBeenNthCalledWith(5, '9em');
+    expect(args.setValue).toHaveBeenNthCalledWith(6, '9em');
   },
 });

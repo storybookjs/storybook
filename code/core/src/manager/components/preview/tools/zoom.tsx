@@ -91,6 +91,8 @@ export const Zoom = memo<{
                   </ActionList.Button>
                 }
                 value={`${Math.round(value * 100)}%`}
+                minValue={1}
+                maxValue={1000}
                 setValue={(value: string) => {
                   const zoomLevel = parseInt(value, 10) / 100;
                   if (!Number.isNaN(zoomLevel)) {

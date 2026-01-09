@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { componentTransform } from './component-transformer';
 
@@ -211,5 +211,77 @@ describe('component transformer', () => {
     const result = await transform({ code, fileName: 'src/constants.ts' });
 
     expect(result.code).toBe(code);
+  });
+
+  it('generates test with args from getComponentArgTypes', async () => {
+    const code = `
+      import { Body } from '../typography';
+
+      export const Badge = ({ text }: { text: string }) => (
+        <div>
+          <Body>{text}</Body>
+        </div>
+      );
+    `;
+
+    const mockGetComponentArgTypes = vi.fn().mockResolvedValue({
+      rating: { name: 'rating', type: { name: 'number' } },
+      photoUrl: { name: 'photoUrl', type: { name: 'string', required: true } },
+      onClick: { name: 'onClick', type: { name: 'function', required: true } },
+      someObject: {
+        name: 'someObject',
+        type: {
+          name: 'object',
+          value: {
+            category: { name: 'string' },
+            onClick: { name: 'function' },
+          },
+          required: true,
+        },
+      },
+    });
+
+    const result = await componentTransform({
+      code,
+      fileName: 'src/components/Badge.tsx',
+      getComponentArgTypes: mockGetComponentArgTypes,
+    });
+
+    expect(result.code).toMatchInlineSnapshot(`
+      "import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+      import { test as _test, expect as _expect } from "vitest";
+      import { Body } from '../typography';
+      export const Badge = ({
+        text
+      }: {
+        text: string;
+      }) => <div>
+                <Body>{text}</Body>
+              </div>;
+      const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+      if (_isRunningFromThisFile) {
+        _test("Badge", _testStory({
+          exportName: "Badge",
+          story: {
+            args: {
+              photoUrl: "https://placehold.co/600x400?text=Storybook",
+              onClick: () => {},
+              someObject: {
+                category: "category",
+                onClick: () => {}
+              }
+            }
+          },
+          meta: {
+            title: "generated/tests/Badge",
+            component: Badge
+          },
+          skipTags: [],
+          storyId: "generated-Badge",
+          componentPath: "src/components/Badge.tsx",
+          componentName: "Badge"
+        }));
+      }"
+    `);
   });
 });

@@ -10,7 +10,10 @@ import {
 } from 'storybook/internal/babel';
 import type { ArgTypes } from 'storybook/internal/csf';
 
-import { generateDummyPropsFromArgTypes } from '../../core-server/utils/get-dummy-props-for-args';
+import {
+  STORYBOOK_FN_PLACEHOLDER,
+  generateDummyPropsFromArgTypes,
+} from '../../core-server/utils/get-dummy-props-for-args';
 import { createTestGuardDeclaration } from './transformer';
 
 const VITEST_IMPORT_SOURCE = 'vitest';
@@ -297,15 +300,36 @@ export const componentTransform = async ({
 
   const testStatements: t.ExpressionStatement[] = [];
 
+  // Helper to recursively convert values to AST nodes, replacing STORYBOOK_FN_PLACEHOLDER
+  const valueToNodeRecursive = (value: unknown): t.Expression => {
+    if (value === STORYBOOK_FN_PLACEHOLDER) {
+      return t.arrowFunctionExpression([], t.blockStatement([]));
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      if (Array.isArray(value)) {
+        return t.arrayExpression(value.map(valueToNodeRecursive));
+      }
+
+      // For objects, create a new object with recursively processed values
+      const properties = Object.entries(value).map(([key, val]) =>
+        t.objectProperty(t.identifier(key), valueToNodeRecursive(val))
+      );
+      return t.objectExpression(properties);
+    }
+
+    return t.valueToNode(value) as t.Expression;
+  };
+
   // Helper to convert a props object to an AST object expression
   const buildArgsExpression = (args?: Record<string, unknown>) => {
     if (!args || Object.keys(args).length === 0) {
       return t.objectExpression([]);
     }
 
-    const properties = Object.entries(args).map(([key, value]) =>
-      t.objectProperty(t.identifier(key), t.valueToNode(value))
-    );
+    const properties = Object.entries(args).map(([key, value]) => {
+      return t.objectProperty(t.identifier(key), valueToNodeRecursive(value));
+    });
     return t.objectExpression(properties);
   };
 

@@ -258,7 +258,7 @@ export const Viewport = ({
           <ViewportDimensions>
             <SizeInput
               data-size-input="width"
-              label="Viewport width:"
+              label="Viewport width"
               prefix="W"
               value={width}
               setValue={(value) => resize(value, height)}
@@ -274,7 +274,7 @@ export const Viewport = ({
             </ActionList.Button>
             <SizeInput
               data-size-input="height"
-              label="Viewport height:"
+              label="Viewport height"
               prefix="H"
               value={height}
               setValue={(value) => resize(width, value)}

@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Form } from 'storybook/internal/components';
 
+import { useId } from '@react-aria/utils';
 import { styled } from 'storybook/theming';
 
 const Wrapper = styled.span<{ prefix?: string }>(({ theme, prefix }) => ({
@@ -50,8 +51,10 @@ export const SizeInput = ({
   value: string;
   setValue: (value: string) => void;
 } & Omit<ComponentProps<typeof Form.Input>, 'value'>) => {
+  const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState(value.replace(/px$/, ''));
+  const id = props.id || inputId;
 
   useEffect(() => setInputValue(value.replace(/px$/, '')), [value]);
 
@@ -87,8 +90,12 @@ export const SizeInput = ({
 
   return (
     <Wrapper prefix={prefix}>
-      {label && <span className="sb-sr-only">{label}</span>}
-      <Form.Input {...props} ref={inputRef} value={inputValue} onChange={onChange} />
+      {label && (
+        <label htmlFor={id} className="sb-sr-only">
+          {label}
+        </label>
+      )}
+      <Form.Input {...props} id={id} ref={inputRef} value={inputValue} onChange={onChange} />
     </Wrapper>
   );
 };

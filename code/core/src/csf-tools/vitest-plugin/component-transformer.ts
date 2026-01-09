@@ -10,11 +10,15 @@ import {
 } from 'storybook/internal/babel';
 import type { ArgTypes } from 'storybook/internal/csf';
 
-import { generateDummyPropsFromArgTypes } from '../../core-server/utils/get-dummy-props-for-args';
+import {
+  STORYBOOK_FN_PLACEHOLDER,
+  generateDummyPropsFromArgTypes,
+} from '../../core-server/utils/get-dummy-props-for-args';
 import { createTestGuardDeclaration } from './transformer';
 
 const VITEST_IMPORT_SOURCE = 'vitest';
 const TEST_UTILS_IMPORT_SOURCE = '@storybook/addon-vitest/internal/test-utils';
+const STORYBOOK_TEST_IMPORT_SOURCE = 'storybook/test';
 
 type ComponentExport = {
   exportedName: string;
@@ -285,6 +289,7 @@ export const componentTransform = async ({
   const vitestExpectId = file.path.scope.generateUidIdentifier('expect');
   const testStoryId = file.path.scope.generateUidIdentifier('testStory');
   const convertToFilePathId = t.identifier('convertToFilePath');
+  const fnId = file.path.scope.generateUidIdentifier('fn');
 
   dedupeImports(ast.program, VITEST_IMPORT_SOURCE, [
     t.importSpecifier(vitestTestId, t.identifier('test')),
@@ -297,24 +302,66 @@ export const componentTransform = async ({
 
   const testStatements: t.ExpressionStatement[] = [];
 
+  // Detect whether argTypes contains fn placeholders that need replacing with an actual function expression. Done ahead of time for performance reasons.
+  const hasFunctionPlaceholder = (value: unknown): boolean => {
+    return JSON.stringify(value).includes(STORYBOOK_FN_PLACEHOLDER);
+  };
+
+  /**
+   * When argTypes relate to handlers like onClick, they will have a string value like
+   * [[STORYBOOK_FN_PLACEHOLDER]] In those cases we need to replace them with an actual fn() call
+   * from storybook/test
+   */
+  const valueToNodeRecursive = (value: unknown, replaceFnCalls: boolean): t.Expression => {
+    // When there are no function placeholders, no need to recurse - just use valueToNode
+    if (!replaceFnCalls) {
+      return t.valueToNode(value) as t.Expression;
+    }
+
+    if (value === STORYBOOK_FN_PLACEHOLDER) {
+      return t.callExpression(fnId, []);
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      if (Array.isArray(value)) {
+        return t.arrayExpression(value.map((val) => valueToNodeRecursive(val, replaceFnCalls)));
+      }
+
+      // For objects, create a new object with recursively processed values
+      const properties = Object.entries(value).map(([key, val]) =>
+        t.objectProperty(t.identifier(key), valueToNodeRecursive(val, replaceFnCalls))
+      );
+      return t.objectExpression(properties);
+    }
+
+    return t.valueToNode(value) as t.Expression;
+  };
+
   // Helper to convert a props object to an AST object expression
-  const buildArgsExpression = (args?: Record<string, unknown>) => {
+  const buildArgsExpression = (args?: Record<string, unknown>, useFnImport = false) => {
     if (!args || Object.keys(args).length === 0) {
       return t.objectExpression([]);
     }
 
-    const properties = Object.entries(args).map(([key, value]) =>
-      t.objectProperty(t.identifier(key), t.valueToNode(value))
-    );
+    const properties = Object.entries(args).map(([key, value]) => {
+      return t.objectProperty(t.identifier(key), valueToNodeRecursive(value, useFnImport));
+    });
     return t.objectExpression(properties);
   };
 
-  // For each discovered component, generate a test case
+  // Check if any component has function placeholders and add import if needed
+  let hasAnyFunctionPlaceholders = false;
+
+  // Each collected component becomes a test case
   for (const component of components) {
     const argTypes = getComponentArgTypes
       ? await getComponentArgTypes({ componentName: component.exportedName, fileName })
       : undefined;
     const generatedArgs = argTypes ? generateDummyPropsFromArgTypes(argTypes).required : undefined;
+
+    if (!hasAnyFunctionPlaceholders && generatedArgs && hasFunctionPlaceholder(generatedArgs)) {
+      hasAnyFunctionPlaceholders = true;
+    }
 
     // Each component export is passed as component in an inline meta
     // this allows for multiple component metas in a single test file
@@ -333,7 +380,10 @@ export const componentTransform = async ({
       t.objectProperty(
         t.identifier('story'),
         t.objectExpression([
-          t.objectProperty(t.identifier('args'), buildArgsExpression(generatedArgs)),
+          t.objectProperty(
+            t.identifier('args'),
+            buildArgsExpression(generatedArgs, hasAnyFunctionPlaceholders)
+          ),
         ])
       ),
       t.objectProperty(t.identifier('meta'), meta),
@@ -357,6 +407,12 @@ export const componentTransform = async ({
     );
 
     testStatements.push(testCall);
+  }
+
+  if (hasAnyFunctionPlaceholders) {
+    dedupeImports(ast.program, STORYBOOK_TEST_IMPORT_SOURCE, [
+      t.importSpecifier(fnId, t.identifier('fn')),
+    ]);
   }
 
   // Wrap the code in a guard to avoid side effects when running tests

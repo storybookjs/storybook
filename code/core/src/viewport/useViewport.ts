@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import type { Globals, ViewMode } from 'storybook/internal/csf';
+import type { Globals } from 'storybook/internal/csf';
 
 import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api';
 
@@ -35,10 +35,10 @@ const cycle = (
       : keys[nextIndex];
 };
 
-const normalizeValue = (value: string | GlobalState): GlobalState =>
+const normalizeGlobal = (value: string | GlobalState, defaultIsRotated?: boolean): GlobalState =>
   typeof value === 'string'
-    ? { value, isRotated: false }
-    : { value: value?.value, isRotated: value?.isRotated };
+    ? { value, isRotated: defaultIsRotated }
+    : { value: value?.value, isRotated: value?.isRotated ?? defaultIsRotated };
 
 const parseGlobals = (
   globals: Globals,
@@ -47,7 +47,7 @@ const parseGlobals = (
   options: ViewportMap,
   lastSelectedOption: string | undefined,
   disable: boolean,
-  viewMode: ViewMode
+  viewMode: string | undefined
 ): {
   name: string;
   type: ViewportType;
@@ -77,9 +77,9 @@ const parseGlobals = (
 
   // Ensure URL-defined viewports (user globals) override story globals.
   // Spreading is not sufficient here, because undefined would still override defined values.
-  const global = normalizeValue(globals?.[PARAM_KEY]);
-  const userGlobal = normalizeValue(userGlobals?.[PARAM_KEY]);
-  const storyGlobal = normalizeValue(storyGlobals?.[PARAM_KEY]);
+  const global = normalizeGlobal(globals?.[PARAM_KEY]);
+  const userGlobal = normalizeGlobal(userGlobals?.[PARAM_KEY]);
+  const storyGlobal = normalizeGlobal(storyGlobals?.[PARAM_KEY]);
   const value = userGlobal?.value ?? storyGlobal?.value ?? global?.value;
   const isRotated = userGlobal?.isRotated ?? storyGlobal?.isRotated ?? global?.isRotated ?? false;
 
@@ -185,7 +185,7 @@ export const useViewport = () => {
   useEffect(() => {
     // Reset the viewport to the story global value if the story defines one, regardless of URL state
     if (PARAM_KEY in storyGlobals) {
-      update(normalizeValue(storyGlobals?.[PARAM_KEY]));
+      update(normalizeGlobal(storyGlobals?.[PARAM_KEY], false));
       lastSelectedOption.current = undefined;
     }
   }, [storyGlobals, update]);
@@ -197,7 +197,7 @@ export const useViewport = () => {
         lastSelectedOption.current = option;
       } else {
         lastSelectedOption.current = undefined;
-        update(normalizeValue(storyGlobals?.[PARAM_KEY]));
+        update(normalizeGlobal(storyGlobals?.[PARAM_KEY], false));
       }
     }
   }, [storyGlobals, options, option, update]);

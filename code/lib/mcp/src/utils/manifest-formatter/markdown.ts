@@ -1,5 +1,9 @@
 import type { ComponentManifest } from '../../types.ts';
-import { MAX_SUMMARY_LENGTH, type ManifestFormatter } from './types.ts';
+import {
+	MAX_SUMMARY_LENGTH,
+	MAX_STORIES_TO_SHOW,
+	type ManifestFormatter,
+} from './types.ts';
 import { parseReactDocgen } from '../parse-react-docgen.ts';
 import { dedent } from '../dedent.ts';
 import { extractDocsSummary } from './extract-docs-summary.ts';
@@ -30,11 +34,14 @@ export const markdownFormatter: ManifestFormatter = {
 			parts.push('## Stories');
 			parts.push('');
 
-			for (const story of componentManifest.stories) {
-				if (!story.snippet) {
-					continue;
-				}
+			const storiesWithSnippets = componentManifest.stories.filter(
+				(s) => s.snippet,
+			);
+			const storiesToShow = storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW);
+			const remainingStories = storiesWithSnippets.slice(MAX_STORIES_TO_SHOW);
 
+			// Show first X stories in full detail
+			for (const story of storiesToShow) {
 				// Convert PascalCase to Human Readable Case
 				const storyName = story.name.replace(/([A-Z])/g, ' $1').trim();
 				parts.push(`### ${storyName}`);
@@ -50,8 +57,21 @@ export const markdownFormatter: ManifestFormatter = {
 					parts.push(componentManifest.import);
 					parts.push('');
 				}
-				parts.push(story.snippet);
+				parts.push(story.snippet ?? '');
 				parts.push('```');
+				parts.push('');
+			}
+
+			// Show remaining stories as names only
+			if (remainingStories.length > 0) {
+				if (storiesToShow.length > 0) {
+					parts.push('### Other Stories');
+				}
+				parts.push('');
+				for (const story of remainingStories) {
+					const storyName = story.name.replace(/([A-Z])/g, ' $1').trim();
+					parts.push(`- ${storyName}`);
+				}
 				parts.push('');
 			}
 		}
@@ -151,6 +171,38 @@ export const markdownFormatter: ManifestFormatter = {
 			const summary = doc.summary ?? extractDocsSummary(doc.content);
 			parts.push(`- ${doc.title} (${doc.id})${summary ? `: ${summary}` : ''}`);
 		}
+
+		return parts.join('\n').trim();
+	},
+
+	formatStoryDocumentation(componentManifest, storyName) {
+		const story = componentManifest.stories?.find((s) => s.name === storyName);
+
+		if (!story || !story.snippet) {
+			return '';
+		}
+
+		const parts: string[] = [];
+
+		// Component name - Story name header
+		const displayStoryName = story.name.replace(/([A-Z])/g, ' $1').trim();
+		parts.push(`# ${componentManifest.name} - ${displayStoryName}`);
+		parts.push('');
+
+		// Story description
+		if (story.description) {
+			parts.push(story.description);
+			parts.push('');
+		}
+
+		// Code snippet
+		parts.push('```');
+		if (componentManifest.import) {
+			parts.push(componentManifest.import);
+			parts.push('');
+		}
+		parts.push(story.snippet);
+		parts.push('```');
 
 		return parts.join('\n').trim();
 	},

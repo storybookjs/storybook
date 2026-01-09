@@ -43,7 +43,7 @@ export type StorybookContext = {
 		resultText: string;
 	}) => void | Promise<void>;
 	/**
-	 * Optional handler called when get-component-documentation tool is invoked.
+	 * Optional handler called when get-documentation tool is invoked.
 	 * Receives the context, input parameters, and the found component (if any).
 	 */
 	onGetDocumentation?: (

@@ -3,6 +3,7 @@ import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
 import { addListAllDocumentationTool } from './tools/list-all-documentation.ts';
+import { addGetComponentStoryDocumentationTool } from './tools/get-documentation-for-story.ts';
 import { addGetDocumentationTool } from './tools/get-documentation.ts';
 import type { StorybookContext } from './types.ts';
 
@@ -15,6 +16,10 @@ export {
 	addGetDocumentationTool,
 	GET_TOOL_NAME,
 } from './tools/get-documentation.ts';
+export {
+	addGetComponentStoryDocumentationTool,
+	GET_STORY_TOOL_NAME,
+} from './tools/get-documentation-for-story.ts';
 
 // Export manifest constants
 export {
@@ -94,6 +99,7 @@ export const createStorybookMcpHandler = async (
 	}
 
 	await addListAllDocumentationTool(server);
+	await addGetComponentStoryDocumentationTool(server);
 	await addGetDocumentationTool(server);
 
 	const transport = new HttpTransport(server, { path: null });

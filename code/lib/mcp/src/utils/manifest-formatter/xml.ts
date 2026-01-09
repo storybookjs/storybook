@@ -1,4 +1,8 @@
-import { MAX_SUMMARY_LENGTH, type ManifestFormatter } from './types.ts';
+import {
+	MAX_SUMMARY_LENGTH,
+	MAX_STORIES_TO_SHOW,
+	type ManifestFormatter,
+} from './types.ts';
 import { extractDocsSummary } from './extract-docs-summary.ts';
 import { dedent } from '../dedent.ts';
 import { parseReactDocgen } from '../parse-react-docgen.ts';
@@ -25,10 +29,14 @@ export const xmlFormatter: ManifestFormatter = {
 
 		// Stories section - only if there are stories
 		if (componentManifest.stories && componentManifest.stories.length > 0) {
-			for (const story of componentManifest.stories) {
-				if (!story.snippet) {
-					continue;
-				}
+			const storiesWithSnippets = componentManifest.stories.filter(
+				(s) => s.snippet,
+			);
+			const storiesToShow = storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW);
+			const remainingStories = storiesWithSnippets.slice(MAX_STORIES_TO_SHOW);
+
+			// Show first X stories in full detail
+			for (const story of storiesToShow) {
 				const storyParts: string[] = [];
 				// Convert PascalCase to Human Readable Case
 				// "WithSizes" -> "With Sizes"
@@ -50,6 +58,16 @@ export const xmlFormatter: ManifestFormatter = {
 					</story>`);
 
 				parts.push(storyParts.join('\n'));
+			}
+
+			// Show remaining stories as names only
+			if (remainingStories.length > 0) {
+				parts.push('<other_stories>');
+				for (const story of remainingStories) {
+					const storyName = story.name.replace(/([A-Z])/g, ' $1').trim();
+					parts.push(dedent`<story_name>${storyName}</story_name>`);
+				}
+				parts.push('</other_stories>');
 			}
 		}
 
@@ -158,6 +176,39 @@ export const xmlFormatter: ManifestFormatter = {
 		}
 
 		parts.push('</docs>');
+
+		return parts.join('\n');
+	},
+
+	formatStoryDocumentation(componentManifest, storyName) {
+		const story = componentManifest.stories?.find((s) => s.name === storyName);
+
+		if (!story || !story.snippet) {
+			return '';
+		}
+
+		const parts: string[] = [];
+
+		// Convert PascalCase to Human Readable Case
+		const displayStoryName = story.name.replace(/([A-Z])/g, ' $1').trim();
+
+		parts.push(dedent`<story_documentation>
+			<component_name>${componentManifest.name}</component_name>
+			<story_name>${displayStoryName}</story_name>`);
+
+		if (story.description) {
+			parts.push(dedent`<story_description>
+				${story.description}
+				</story_description>`);
+		}
+
+		parts.push('<story_code>');
+		if (componentManifest.import) {
+			parts.push(`${componentManifest.import}\n`);
+		}
+		parts.push(dedent`${story.snippet}
+			</story_code>
+			</story_documentation>`);
 
 		return parts.join('\n');
 	},

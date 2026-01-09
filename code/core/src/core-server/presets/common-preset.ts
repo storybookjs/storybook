@@ -120,7 +120,6 @@ export const babel = async (_: unknown, options: Options) => {
           [
             '@babel/preset-env',
             {
-              bugfixes: true,
               targets: {
                 // This is the same browser supports that we use to bundle our manager and preview code.
                 chrome: 100,
@@ -209,6 +208,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   backgrounds: true,
   outline: true,
   measure: true,
+  sidebarOnboardingChecklist: true,
 });
 
 export const csfIndexer: Indexer = {

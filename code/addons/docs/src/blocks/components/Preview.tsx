@@ -266,7 +266,6 @@ export const Preview: FC<PreviewProps> = ({
           zoom={(z: number) => setScale(scale * z)}
           resetZoom={() => setScale(1)}
           storyId={!isLoading && childProps ? getStoryId(childProps, context) : undefined}
-          baseUrl="./iframe.html"
         />
       )}
       <ZoomContext.Provider value={{ scale }}>

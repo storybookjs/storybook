@@ -316,6 +316,7 @@ export default {
     'ManagerContext',
     'Provider',
     'RequestResponseError',
+    'Tag',
     'addons',
     'combineParameters',
     'controlOrMetaKey',

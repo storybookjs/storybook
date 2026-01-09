@@ -3,7 +3,8 @@ import type {
   TypescriptOptions as TypescriptOptionsBase,
   WebpackConfiguration as WebpackConfigurationBase,
 } from '@storybook/core-webpack';
-import type { PluginOptions as ReactDocgenTypescriptOptions } from '@storybook/react-docgen-typescript-plugin';
+
+import type { PluginOptions as ReactDocgenTypescriptOptions } from 'react-docgen-typescript-plugin';
 
 export type { BuilderResult } from '@storybook/core-webpack';
 

@@ -751,10 +751,7 @@ export const Tree = React.memo<{
   ]);
   return (
     <StatusContext.Provider value={{ data, allStatuses, groupStatus }}>
-      <div ref={containerRef}>
-        <IconSymbols />
-        {treeItems}
-      </div>
+      <div ref={containerRef}>{treeItems}</div>
     </StatusContext.Provider>
   );
 });

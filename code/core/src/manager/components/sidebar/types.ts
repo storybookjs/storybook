@@ -54,7 +54,16 @@ export type DownshiftItem = SearchResult | ExpandType;
 export type SearchChildrenFn = (args: {
   query: string;
   results: DownshiftItem[];
-  isBrowsing: boolean;
+  // Whether the nav explorer should be visible in the UI. When the search input is
+  // focused, it gets replaced with a list of recently viewed stories. When there
+  // is a search query, it gets replaced by the search results.
+  isNavVisible: boolean;
+  // Whether the nav explorer should be reachable in the document. When the search
+  // input is focused, we keep the nav rendered in the document and reachable by
+  // keyboard, so keyboard shortcuts to navigate to it still work.
+  isNavRendered: boolean;
+  // Whether the UI with search results or recently viewed pages is visible.
+  isSearchResultRendered: boolean;
   closeMenu: (cb?: () => void) => void;
   getMenuProps: ControllerStateAndHelpers<DownshiftItem>['getMenuProps'];
   getItemProps: ControllerStateAndHelpers<DownshiftItem>['getItemProps'];

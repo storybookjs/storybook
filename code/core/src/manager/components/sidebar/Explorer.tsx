@@ -8,6 +8,7 @@ import type { CombinedDataset, Selection } from './types';
 import { useHighlighted } from './useHighlighted';
 
 export interface ExplorerProps {
+  className?: string;
   isLoading: boolean;
   isBrowsing: boolean;
   hasEntries: boolean;
@@ -21,6 +22,7 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
   isBrowsing,
   dataset,
   selected,
+  ...restProps
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +49,7 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
       data-highlighted-ref-id={highlighted?.refId}
       data-highlighted-item-id={highlighted?.itemId}
       {...landmarkProps}
+      {...restProps}
     >
       <h2 id="storybook-explorer-tree-heading" className="sb-sr-only">
         Stories

@@ -18,6 +18,7 @@ import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
 import { Explorer } from './Explorer';
 import type { HeadingProps } from './Heading';
 import { Heading } from './Heading';
+import { IconSymbols } from './IconSymbols';
 import { Search } from './Search';
 import { SearchResults } from './SearchResults';
 import { SidebarBottom } from './SidebarBottom';
@@ -58,22 +59,6 @@ const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isM
   height: isMobile ? 36 : 32,
   borderRadius: theme.appBorderRadius + 2,
 }));
-
-const Swap = React.memo(function Swap({
-  children,
-  condition,
-}: {
-  children: React.ReactNode;
-  condition: boolean;
-}) {
-  const [a, b] = React.Children.toArray(children);
-  return (
-    <>
-      <div style={{ display: condition ? 'block' : 'none' }}>{a}</div>
-      <div style={{ display: condition ? 'none' : 'block' }}>{b}</div>
-    </>
-  );
-});
 
 const useCombination = (
   index: SidebarProps['index'],
@@ -168,6 +153,7 @@ export const Sidebar = React.memo(function Sidebar({
       <h1 id="global-site-h1" className="sb-sr-only">
         Storybook
       </h1>
+      <IconSymbols />
       <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
         <Stack>
           <div>
@@ -215,32 +201,39 @@ export const Sidebar = React.memo(function Sidebar({
             {({
               query,
               results,
-              isBrowsing,
+              isNavVisible,
+              isNavRendered,
+              isSearchResultRendered,
               closeMenu,
               getMenuProps,
               getItemProps,
               highlightedIndex,
             }) => (
-              <Swap condition={isBrowsing}>
-                <Explorer
-                  dataset={dataset}
-                  selected={selected}
-                  isLoading={isLoading}
-                  isBrowsing={isBrowsing}
-                  hasEntries={hasEntries}
-                />
-                <SearchResults
-                  query={query}
-                  results={results}
-                  closeMenu={closeMenu}
-                  getMenuProps={getMenuProps}
-                  getItemProps={getItemProps}
-                  highlightedIndex={highlightedIndex}
-                  enableShortcuts={enableShortcuts}
-                  isLoading={isLoading}
-                  clearLastViewed={lastViewedProps.clearLastViewed}
-                />
-              </Swap>
+              <>
+                {isNavRendered && (
+                  <Explorer
+                    className={isNavVisible ? undefined : 'sb-sr-only'}
+                    dataset={dataset}
+                    selected={selected}
+                    isLoading={isLoading}
+                    isBrowsing={isNavVisible}
+                    hasEntries={hasEntries}
+                  />
+                )}
+                {isSearchResultRendered && (
+                  <SearchResults
+                    query={query}
+                    results={results}
+                    closeMenu={closeMenu}
+                    getMenuProps={getMenuProps}
+                    getItemProps={getItemProps}
+                    highlightedIndex={highlightedIndex}
+                    enableShortcuts={enableShortcuts}
+                    isLoading={isLoading}
+                    clearLastViewed={lastViewedProps.clearLastViewed}
+                  />
+                )}
+              </>
             )}
           </Search>
         </Stack>

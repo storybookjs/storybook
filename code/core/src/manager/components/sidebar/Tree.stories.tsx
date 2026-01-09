@@ -12,6 +12,7 @@ import { action } from 'storybook/actions';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
+import { IconSymbols } from './IconSymbols';
 import { DEFAULT_REF_ID } from './Sidebar';
 import { Tree } from './Tree';
 import { index } from './mockdata.large';
@@ -77,7 +78,10 @@ const meta = {
   },
   decorators: [
     (storyFn) => (
-      <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
+      <ManagerContext.Provider value={managerContext}>
+        <IconSymbols />
+        {storyFn()}
+      </ManagerContext.Provider>
     ),
   ],
 } as Meta<typeof Tree>;

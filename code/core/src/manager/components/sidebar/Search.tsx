@@ -442,7 +442,9 @@ export const Search = React.memo<SearchProps>(function Search({
               {children({
                 query: input,
                 results,
-                isBrowsing: !isOpen && document.activeElement !== inputRef.current,
+                isNavVisible: !isOpen && document.activeElement !== inputRef.current,
+                isNavRendered: input.length === 0,
+                isSearchResultRendered: isOpen,
                 closeMenu,
                 getMenuProps,
                 getItemProps,

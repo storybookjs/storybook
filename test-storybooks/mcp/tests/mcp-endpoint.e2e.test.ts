@@ -201,7 +201,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get stories' URLs",
 				  },
 				  {
-				    "description": "Get comprehensive instructions for writing and updating Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js files).
+				    "description": "Get comprehensive instructions for writing and updating Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
 
 				CRITICAL: You MUST call this tool before:
 				- Creating new Storybook stories or story files

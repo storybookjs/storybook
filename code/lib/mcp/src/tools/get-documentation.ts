@@ -22,8 +22,11 @@ export async function addGetDocumentationTool(
 		{
 			name: GET_TOOL_NAME,
 			title: 'Get Documentation',
-			description:
-				'Get detailed documentation for a specific UI component or docs entry',
+			description: `Get documentation for a UI component or docs entry.
+
+Returns all story variants with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show.
+
+Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`,
 			schema: GetDocumentationInput,
 			enabled,
 		},

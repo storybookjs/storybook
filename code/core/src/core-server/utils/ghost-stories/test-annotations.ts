@@ -1,7 +1,7 @@
 import type { AfterEach } from 'storybook/internal/csf';
 import { definePreviewAddon } from 'storybook/internal/csf';
 
-const isEmptyRender = (element: HTMLElement) => {
+const isEmptyRender = (element: Element) => {
   const style = getComputedStyle(element);
   const rect = element.getBoundingClientRect();
 
@@ -9,7 +9,7 @@ const isEmptyRender = (element: HTMLElement) => {
     rect.width > 0 &&
     rect.height > 0 &&
     style.visibility !== 'hidden' &&
-    style.opacity !== '0' &&
+    Number(style.opacity) > 0 &&
     style.display !== 'none';
 
   return !rendersContent;

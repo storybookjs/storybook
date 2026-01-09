@@ -12,7 +12,7 @@ import { Consumer, types } from 'storybook/manager-api';
 import type { API, Combo } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { Shortcut } from '../../../container/Menu';
+import { Shortcut } from '../../Shortcut';
 
 const mapper = ({ api, state }: Combo) => {
   const { storyId, refId } = state;

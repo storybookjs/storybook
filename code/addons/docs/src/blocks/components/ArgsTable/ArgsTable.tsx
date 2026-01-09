@@ -37,7 +37,7 @@ export const TableWrapper = styled.table<{
     // End Resets
 
     fontSize: theme.typography.size.s2 - 1,
-    lineHeight: '20px',
+    lineHeight: '19px',
     textAlign: 'left',
     width: '100%',
 

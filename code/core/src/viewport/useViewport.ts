@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import type { Globals } from 'storybook/internal/csf';
+import type { Globals, ViewMode } from 'storybook/internal/csf';
 
 import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api';
 
@@ -37,7 +37,7 @@ const cycle = (
 
 const normalizeValue = (value: string | GlobalState): GlobalState =>
   typeof value === 'string'
-    ? { value, isRotated: undefined }
+    ? { value, isRotated: false }
     : { value: value?.value, isRotated: value?.isRotated };
 
 const parseGlobals = (
@@ -46,7 +46,8 @@ const parseGlobals = (
   userGlobals: Globals,
   options: ViewportMap,
   lastSelectedOption: string | undefined,
-  disable: boolean
+  disable: boolean,
+  viewMode: ViewMode
 ): {
   name: string;
   type: ViewportType;
@@ -59,6 +60,21 @@ const parseGlobals = (
   isLocked: boolean;
   isRotated: boolean;
 } => {
+  if (viewMode !== 'story') {
+    return {
+      name: 'Responsive',
+      type: 'desktop',
+      width: '100%',
+      height: '100%',
+      value: '100pct-100pct',
+      option: undefined,
+      isCustom: false,
+      isDefault: true,
+      isLocked: true,
+      isRotated: false,
+    };
+  }
+
   // Ensure URL-defined viewports (user globals) override story globals.
   // Spreading is not sufficient here, because undefined would still override defined values.
   const global = normalizeValue(globals?.[PARAM_KEY]);
@@ -127,6 +143,8 @@ const parseGlobals = (
 
 export const useViewport = () => {
   const api = useStorybookApi();
+  const { viewMode } = api.getUrlState();
+
   const lastSelectedOption = useRef<string | undefined>();
 
   const parameter = useParameter<ViewportParameters['viewport']>(PARAM_KEY);
@@ -134,7 +152,15 @@ export const useViewport = () => {
 
   const { options = MINIMAL_VIEWPORTS, disable = false } = parameter || {};
   const { name, type, width, height, value, option, isCustom, isDefault, isLocked, isRotated } =
-    parseGlobals(globals, storyGlobals, userGlobals, options, lastSelectedOption.current, disable);
+    parseGlobals(
+      globals,
+      storyGlobals,
+      userGlobals,
+      options,
+      lastSelectedOption.current,
+      disable,
+      viewMode
+    );
 
   const update = useCallback(
     (input: GlobalStateUpdate) => updateGlobals({ [PARAM_KEY]: input }),

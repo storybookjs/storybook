@@ -27,7 +27,7 @@ const WithPopoverDecorator: DecoratorFunction = (storyFn) => (
       height: '300px',
     }}
   >
-    <PopoverProvider placement="top" visible padding={0} popover={storyFn()}>
+    <PopoverProvider ariaLabel="Tooltip message" placement="top" visible padding={0} popover={storyFn()}>
       <Button ariaLabel={false}>Popover</Button>
     </PopoverProvider>
   </div>

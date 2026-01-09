@@ -47,7 +47,9 @@ describe('getComponentStoryDocumentationTool', () => {
 
 		// Mock getManifest to return the fixture
 		getManifestSpy = vi.spyOn(getManifest, 'getManifests');
-		getManifestSpy.mockResolvedValue(smallManifestFixture);
+		getManifestSpy.mockResolvedValue({
+			componentManifest: smallManifestFixture,
+		});
 	});
 
 	it('should return formatted story documentation for a specific story', async () => {
@@ -211,7 +213,7 @@ describe('getComponentStoryDocumentationTool', () => {
 			},
 		};
 
-		getManifestSpy.mockResolvedValue(manifestWithImport);
+		getManifestSpy.mockResolvedValue({ componentManifest: manifestWithImport });
 
 		const request = {
 			jsonrpc: '2.0' as const,

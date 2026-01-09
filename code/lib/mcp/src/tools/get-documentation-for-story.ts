@@ -36,7 +36,7 @@ export async function addGetComponentStoryDocumentationTool(
 				);
 
 				const component =
-					manifest.componentManifest.components[input.componentId];
+					manifest.componentManifest?.components[input.componentId];
 
 				if (!component) {
 					return {

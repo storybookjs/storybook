@@ -412,13 +412,9 @@ describe('MCP Endpoint E2E Tests', () => {
 				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
 				\`\`\`
 
-				### Small
+				### Other Stories
 
-				\`\`\`
-				import { Button } from "@my-org/my-component-library";
-
-				const Small = () => <Button onClick={fn()} size="small" label="Button" />;
-				\`\`\`
+				- Small
 
 				## Props
 

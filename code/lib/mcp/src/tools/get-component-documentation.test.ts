@@ -73,7 +73,9 @@ describe('getDocumentationTool', () => {
 			    {
 			      "text": "# Button
 
-			## Usage Example
+			ID: button
+
+			## Stories
 
 			### Primary
 
@@ -260,12 +262,24 @@ describe('getDocumentationTool', () => {
 			    {
 			      "text": "# Button
 
+			ID: button
+
+			A button component
+
 			## Props
 
-			| Prop | Type | Default |
-			|------|------|---------|
-			| variant | "primary" | "secondary" | "primary" |
-			| disabled | boolean | - |",
+			\`\`\`
+			export type Props = {
+			  /**
+			    Button style variant
+			  */
+			  variant?: "primary" | "secondary" = "primary";
+			  /**
+			    Disable the button
+			  */
+			  disabled?: boolean;
+			}
+			\`\`\`",
 			      "type": "text",
 			    },
 			  ],

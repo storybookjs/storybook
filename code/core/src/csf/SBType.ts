@@ -14,7 +14,7 @@ export type SBArrayType = SBBaseType & {
 export type SBNodeType = SBBaseType & {
   // Framework-specific “renderable node” (e.g. ReactNode, Vue VNode).
   name: 'node';
-  renderer: 'react'; // TODO: add other frameworks once we have support for them
+  renderer: string;
 };
 export type SBObjectType = SBBaseType & {
   name: 'object';

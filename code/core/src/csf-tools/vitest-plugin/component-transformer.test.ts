@@ -213,6 +213,31 @@ describe('component transformer', () => {
     expect(result.code).toBe(code);
   });
 
+  it('does not add fn import when no function placeholders exist', async () => {
+    const code = `
+      import { Body } from '../typography';
+
+      export const Badge = ({ text }: { text: string }) => (
+        <div>
+          <Body>{text}</Body>
+        </div>
+      );
+    `;
+
+    const mockGetComponentArgTypes = vi.fn().mockResolvedValue({
+      rating: { name: 'rating', type: { name: 'number' } },
+      photoUrl: { name: 'photoUrl', type: { name: 'string', required: true } },
+    });
+
+    const result = await componentTransform({
+      code,
+      fileName: 'src/components/Badge.tsx',
+      getComponentArgTypes: mockGetComponentArgTypes,
+    });
+
+    expect(result.code).not.toContain('import { fn as _fn } from "storybook/test"');
+  });
+
   it('generates test with args from getComponentArgTypes', async () => {
     const code = `
       import { Body } from '../typography';
@@ -247,8 +272,10 @@ describe('component transformer', () => {
       getComponentArgTypes: mockGetComponentArgTypes,
     });
 
+    expect(result.code).toContain('import { fn as _fn } from "storybook/test"');
     expect(result.code).toMatchInlineSnapshot(`
-      "import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+      "import { fn as _fn } from "storybook/test";
+      import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
       import { test as _test, expect as _expect } from "vitest";
       import { Body } from '../typography';
       export const Badge = ({
@@ -265,10 +292,10 @@ describe('component transformer', () => {
           story: {
             args: {
               photoUrl: "https://placehold.co/600x400?text=Storybook",
-              onClick: () => {},
+              onClick: _fn(),
               someObject: {
                 category: "category",
-                onClick: () => {}
+                onClick: _fn()
               }
             }
           },

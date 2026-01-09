@@ -10,6 +10,7 @@ import type { Options } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
 
+import { STORYBOOK_FN_PLACEHOLDER } from './get-dummy-props-for-args';
 import { getNewStoryFile } from './get-new-story-file';
 
 vi.mock('storybook/internal/common', { spy: true });
@@ -141,7 +142,7 @@ describe('get-new-story-file', () => {
     expect(storyFilePath).toBe(join(__dirname, 'src', 'components', 'Page.stories.jsx'));
   });
 
-  it('replaces __function__ placeholder via AST and adds fn import', async () => {
+  it.only('replaces function placeholder via AST and adds fn import', async () => {
     const { storyFileContent } = await getNewStoryFile(
       {
         componentFilePath: 'src/components/Page.tsx',
@@ -155,7 +156,7 @@ describe('get-new-story-file', () => {
             if (val === 'framework') {
               return Promise.resolve('@storybook/nextjs');
             }
-            if (val === 'experimental_getArgTypesData') {
+            if (val === 'internal_getArgTypesData') {
               return Promise.resolve({
                 onClick: { name: 'onClick', type: { name: 'function', required: true } },
               });
@@ -167,7 +168,7 @@ describe('get-new-story-file', () => {
 
     expect(storyFileContent).toContain("import { fn } from 'storybook/test';");
     expect(storyFileContent).toContain('fn()');
-    expect(storyFileContent).not.toContain('__function__');
+    expect(storyFileContent).not.toContain(STORYBOOK_FN_PLACEHOLDER);
   });
 
   it('should create a new story file (CSF factory)', async () => {
@@ -207,7 +208,7 @@ describe('get-new-story-file', () => {
             if (val === 'framework') {
               return Promise.resolve('@storybook/nextjs');
             }
-            if (val === 'experimental_getArgTypesData') {
+            if (val === 'internal_getArgTypesData') {
               return Promise.resolve({
                 label: { name: 'label', type: { name: 'string', required: true } },
                 answer: { name: 'answer', type: { name: 'number', required: true } },

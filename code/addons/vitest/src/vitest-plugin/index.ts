@@ -140,7 +140,7 @@ const createComponentTestTransformPlugin = (presets: Presets, configDir: string)
           code,
           fileName: id,
           getComponentArgTypes: async ({ componentName, fileName }) =>
-            presets.apply('experimental_getArgTypesData', null, {
+            presets.apply('internal_getArgTypesData', null, {
               componentFilePath: fileName,
               componentExportName: componentName,
               configDir,

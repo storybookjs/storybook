@@ -155,7 +155,7 @@ export function generateDummyValueFromSBType(sbType: SBType, propName?: string):
       }
 
       if (hasAny(tokens, DATE_TOKENS)) {
-        return '2025-01-01';
+        return new Date().toLocaleDateString();
       }
 
       const mostLikelyType = getMostLikelyTypeFromTokens(tokens);
@@ -179,7 +179,7 @@ export function generateDummyValueFromSBType(sbType: SBType, propName?: string):
     }
 
     case 'date':
-      return new Date('2025-01-01');
+      return new Date();
 
     case 'node':
       return propName ?? 'Hello world';

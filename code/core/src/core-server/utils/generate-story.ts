@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { relative } from 'node:path';
 
-import { getStoryId } from 'storybook/internal/common';
+import { getProjectRoot, getStoryId } from 'storybook/internal/common';
 import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
 import type { Options } from 'storybook/internal/types';
 
@@ -74,7 +74,7 @@ export async function generateStoryFile(
       options
     );
 
-    const relativeStoryFilePath = relative(process.cwd(), storyFilePath);
+    const relativeStoryFilePath = relative(getProjectRoot(), storyFilePath);
 
     const { storyId, kind } = await getStoryId({ storyFilePath, exportedStoryName }, options);
 

@@ -201,16 +201,31 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get stories' URLs",
 				  },
 				  {
-				    "description": "Instructions on how to do UI component development. 
-				      
-				      ALWAYS call this tool before doing any UI/frontend/React/component development, including but not
-				      limited to adding or updating new components, pages, screens or layouts.",
+				    "description": "Get comprehensive instructions for writing and updating Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
+
+				CRITICAL: You MUST call this tool before:
+				- Creating new Storybook stories or story files
+				- Updating or modifying existing Storybook stories
+				- Adding new story variants or exports to story files
+				- Editing any file matching *.stories.* patterns
+				- Writing components that will need stories
+
+				This tool provides essential Storybook-specific guidance including:
+				- How to structure stories correctly for Storybook 9
+				- Required imports (Meta, StoryObj from framework package)
+				- Test utility imports (from 'storybook/test')
+				- Story naming conventions and best practices
+				- Play function patterns for interactive testing
+				- Mocking strategies for external dependencies
+				- Story variants and coverage requirements
+
+				Even if you're familiar with Storybook, call this tool to ensure you're following the correct patterns, import paths, and conventions for this specific Storybook setup.",
 				    "inputSchema": {
 				      "properties": {},
 				      "type": "object",
 				    },
-				    "name": "get-ui-building-instructions",
-				    "title": "UI Component Building Instructions",
+				    "name": "get-storybook-story-instructions",
+				    "title": "Storybook Story Development Instructions",
 				  },
 				  {
 				    "description": "List all available UI components and documentation entries from the Storybook",
@@ -294,10 +309,10 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(response.result.content[0].text).toContain('NonExistent');
 		});
 	});
-	describe('Tool: get-ui-building-instructions', () => {
+	describe('Tool: get-storybook-story-instructions', () => {
 		it('should return UI building instructions', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-ui-building-instructions',
+				name: 'get-storybook-story-instructions',
 				arguments: {},
 			});
 
@@ -480,7 +495,7 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
 				  "get-story-urls",
-				  "get-ui-building-instructions",
+				  "get-storybook-story-instructions",
 				]
 			`);
 		});

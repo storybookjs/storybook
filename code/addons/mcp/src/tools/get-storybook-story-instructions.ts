@@ -1,12 +1,12 @@
 import type { McpServer } from 'tmcp';
 import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls.ts';
 import { collectTelemetry } from '../telemetry.ts';
-import uiInstructionsTemplate from '../ui-building-instructions.md';
+import storyInstructionsTemplate from '../storybook-story-instructions.md';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 
 export const GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME =
-	'get-ui-building-instructions';
+	'get-storybook-story-instructions';
 
 export async function addGetUIBuildingInstructionsTool(
 	server: McpServer<any, AddonContext>,
@@ -14,11 +14,26 @@ export async function addGetUIBuildingInstructionsTool(
 	server.tool(
 		{
 			name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-			title: 'UI Component Building Instructions',
-			description: `Instructions on how to do UI component development. 
-      
-      ALWAYS call this tool before doing any UI/frontend/React/component development, including but not
-      limited to adding or updating new components, pages, screens or layouts.`,
+			title: 'Storybook Story Development Instructions',
+			description: `Get comprehensive instructions for writing and updating Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
+
+CRITICAL: You MUST call this tool before:
+- Creating new Storybook stories or story files
+- Updating or modifying existing Storybook stories
+- Adding new story variants or exports to story files
+- Editing any file matching *.stories.* patterns
+- Writing components that will need stories
+
+This tool provides essential Storybook-specific guidance including:
+- How to structure stories correctly for Storybook 9
+- Required imports (Meta, StoryObj from framework package)
+- Test utility imports (from 'storybook/test')
+- Story naming conventions and best practices
+- Play function patterns for interactive testing
+- Mocking strategies for external dependencies
+- Story variants and coverage requirements
+
+Even if you're familiar with Storybook, call this tool to ensure you're following the correct patterns, import paths, and conventions for this specific Storybook setup.`,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
 		},
 		async () => {
@@ -43,7 +58,7 @@ export async function addGetUIBuildingInstructionsTool(
 						: frameworkPreset?.name;
 				const renderer = frameworkToRendererMap[framework!];
 
-				const uiInstructions = uiInstructionsTemplate
+				const uiInstructions = storyInstructionsTemplate
 					.replace('{{FRAMEWORK}}', framework)
 					.replace('{{RENDERER}}', renderer ?? framework)
 					.replace('{{GET_STORY_URLS_TOOL_NAME}}', GET_STORY_URLS_TOOL_NAME);

@@ -4,7 +4,7 @@ import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import {
 	addGetUIBuildingInstructionsTool,
 	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-} from './get-ui-building-instructions.ts';
+} from './get-storybook-story-instructions.ts';
 import type { AddonContext } from '../types.ts';
 import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls.ts';
 
@@ -17,7 +17,7 @@ describe('getUIBuildingInstructionsTool', () => {
 			{
 				name: 'test-server',
 				version: '1.0.0',
-				description: 'Test server for get-ui-building-instructions tool',
+				description: 'Test server for get-storybook-story-instructions tool',
 			},
 			{
 				adapter,

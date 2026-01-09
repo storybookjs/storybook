@@ -627,6 +627,20 @@ The PopoverProvider component acts as a counterpoint to WithTooltip. When you wa
 
 PopoverProvider is based on react-aria. It must have a single child that acts as a trigger. This child must have a pressable role (can be clicked or pressed) and must be able to receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your popover.
 
+##### Added: ariaLabel
+
+The `ariaLabel` prop was added to provide an accessible label for the popover dialog. This label is announced by screen readers when the popover opens. **This prop will become mandatory in Storybook 11.** Provide a concise description of the popover's purpose.
+
+```tsx
+<PopoverProvider ariaLabel="Share options" popover={<ShareMenu />}>
+  <Button ariaLabel="Share">Share</Button>
+</PopoverProvider>
+```
+
+##### Automatic aria-haspopup
+
+PopoverProvider now automatically sets `aria-haspopup="dialog"` on the trigger element. You no longer need to manually add this attribute to your trigger buttons.
+
 #### WithTooltip Component API Changes
 
 The WithTooltip component has been reimplemented from the ground up, under the new name `TooltipProvider`. The new implementation will replace `WithTooltip` entirely in Storybook 11. Below is a summary of the changes between both APIs, which will take full effect in Storybook 11.

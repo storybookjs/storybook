@@ -255,6 +255,7 @@ export const ChecklistWidget = () => {
                   </CollapseToggle>
                   {loaded && (
                     <PopoverProvider
+                      ariaLabel="Checklist options"
                       padding={0}
                       popover={({ onHide }) => (
                         <ActionList>

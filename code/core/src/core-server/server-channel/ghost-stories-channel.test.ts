@@ -446,7 +446,7 @@ describe('ghostStoriesChannel', () => {
         });
       });
 
-      it('should handle test execution error', async () => {
+      it('should handle JSON report not found', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
         vi.mocked(mockCommon.cache.get).mockResolvedValue(null);
         vi.mocked(mockCommon.cache.set).mockResolvedValue();
@@ -478,7 +478,53 @@ describe('ghostStoriesChannel', () => {
           testDuration: expect.any(Number),
           analysisDuration: expect.any(Number),
           matchCount: 5,
-          error: 'Error: Test execution failed',
+          error: 'JSON report not found',
+          testSummary: undefined,
+        });
+      });
+
+      it('should handle test startup error', async () => {
+        mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
+        vi.mocked(mockCommon.cache.get).mockResolvedValue(null);
+        vi.mocked(mockCommon.cache.set).mockResolvedValue();
+        vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
+          renderer: '@storybook/react',
+          addons: { '@storybook/addon-vitest': {} },
+        } as any);
+        vi.mocked(mockStoryGeneration.getComponentCandidates).mockResolvedValue({
+          candidates: ['component1.tsx'],
+          matchCount: 5,
+        });
+        vi.mocked(mockCommon.resolvePathInStorybookCache).mockReturnValue(
+          '/cache/ghost-stories-tests'
+        );
+        vi.mocked(mockCommon.executeCommand).mockRejectedValue(new Error('Startup Error'));
+        mockFs.existsSync.mockReturnValue(true);
+        mockFs.readFile.mockResolvedValue(
+          JSON.stringify({
+            success: false,
+            numTotalTests: 2,
+            numPassedTests: 0,
+            numFailedTests: 2,
+            testResults: [],
+          })
+        );
+
+        initGhostStoriesChannel(mockChannel, {} as Options, { disableTelemetry: false });
+
+        mockChannel.emit(GHOST_STORIES_REQUEST);
+
+        await vi.waitFor(() => {
+          expect(ghostStoriesEventListener).toHaveBeenCalled();
+        });
+
+        expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
+          success: false,
+          generatedCount: 1,
+          testDuration: expect.any(Number),
+          analysisDuration: expect.any(Number),
+          matchCount: 5,
+          error: 'Startup Error',
           testSummary: undefined,
         });
       });

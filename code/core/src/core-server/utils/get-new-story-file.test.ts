@@ -142,7 +142,7 @@ describe('get-new-story-file', () => {
     expect(storyFilePath).toBe(join(__dirname, 'src', 'components', 'Page.stories.jsx'));
   });
 
-  it.only('replaces function placeholder via AST and adds fn import', async () => {
+  it('replaces function placeholder via AST and adds fn import', async () => {
     const { storyFileContent } = await getNewStoryFile(
       {
         componentFilePath: 'src/components/Page.tsx',

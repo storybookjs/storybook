@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   type ComponentArgTypesData,
@@ -7,6 +7,15 @@ import {
 } from './get-dummy-props-for-args';
 
 describe('new-story-docgen', () => {
+  const MOCK_DATE = new Date('2025-01-01T00:00:00.000Z');
+  beforeEach(() => {
+    vi.setSystemTime(MOCK_DATE);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('generateDummyValueFromSBType', () => {
     it('generates primitives', () => {
       expect(generateDummyValueFromSBType({ name: 'boolean' })).toBe(true);
@@ -18,12 +27,14 @@ describe('new-story-docgen', () => {
     });
 
     it('generates date', () => {
-      expect(generateDummyValueFromSBType({ name: 'date' })).toEqual(new Date('2025-01-01'));
+      expect(generateDummyValueFromSBType({ name: 'date' })).toEqual(MOCK_DATE);
     });
 
     it('generates string values using token heuristics', () => {
       expect(generateDummyValueFromSBType({ name: 'string' }, 'backgroundColor')).toBe('#ff0000');
-      expect(generateDummyValueFromSBType({ name: 'string' }, 'createdAt')).toBe('2025-01-01');
+      expect(generateDummyValueFromSBType({ name: 'string' }, 'createdAt')).toBe(
+        MOCK_DATE.toLocaleDateString()
+      );
       expect(generateDummyValueFromSBType({ name: 'string' }, 'imageUrl')).toBe(
         'https://placehold.co/600x400?text=Storybook'
       );
@@ -114,7 +125,7 @@ describe('new-story-docgen', () => {
     });
   });
 
-  describe('generateMockPropsFromDocgen', () => {
+  describe('generateDummyPropsFromDocgen', () => {
     it('returns empty objects when docgen is missing', () => {
       expect(generateDummyPropsFromDocgen(null)).toEqual({ required: {}, optional: {} });
       expect(generateDummyPropsFromDocgen({})).toEqual({ required: {}, optional: {} });

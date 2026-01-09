@@ -45,15 +45,18 @@ export async function runStoryTests(
       await testProcess;
     } catch (error) {
       const execaError = error as { stdout?: string; stderr?: string };
-      const errorMessage = execaError.stderr || String(error);
-      testFailureMessage = errorMessage;
+      const errorMessage = (execaError.stderr || String(error) || '').toLowerCase();
+      if (errorMessage.includes('browsertype.launch')) {
+        testFailureMessage = 'Playwright is not installed';
+      } else if (errorMessage.includes('startup error')) {
+        testFailureMessage = 'Startup Error';
+      }
     }
 
     // Calculate duration of the command execution
     const duration = Date.now() - startTime;
 
-    // Read and parse the JSON results
-    if (!existsSync(outputFile)) {
+    if (testFailureMessage) {
       return {
         success: false,
         duration,
@@ -61,8 +64,27 @@ export async function runStoryTests(
       };
     }
 
-    const resultsJson = await readFile(outputFile, 'utf8');
-    const testResults = JSON.parse(resultsJson);
+    if (!existsSync(outputFile)) {
+      return {
+        success: false,
+        duration,
+        error: 'JSON report not found',
+      };
+    }
+
+    // Type is the return Vitest JSON report structure
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let testResults: any;
+    try {
+      const resultsJson = await readFile(outputFile, 'utf8');
+      testResults = JSON.parse(resultsJson);
+    } catch {
+      return {
+        success: false,
+        duration,
+        error: 'Failed to read or parse JSON report',
+      };
+    }
 
     // Transform the Vitest test results to our expected format
     const storyTestResults: StoryTestResult[] = [];
@@ -114,7 +136,7 @@ export async function runStoryTests(
     const successRateWithoutEmptyRender =
       total > 0 ? parseFloat(((passed - passedButEmptyRender) / total).toFixed(2)) : 0;
 
-    // Extract and classify unique errors
+    // Extract and categorize unique errors
     const errorClassification = extractCategorizedErrors(storyTestResults);
     const categorizedErrors = errorClassification.categorizedErrors;
 
@@ -137,12 +159,10 @@ export async function runStoryTests(
     };
 
     return enhancedResponse;
-  } catch (error) {
-    console.error('Error running story tests:', error);
-
+  } catch {
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: 'Uncaught error running story tests',
       duration: 0,
     };
   }

@@ -110,6 +110,28 @@ export const LoggedIn: Story = {
 
 Before doing this ensure you have mocked the import in the preview file.
 
+### Play Function Parameters
+
+Use `canvas` directly (it has query methods) or `canvasElement` with `within()`. **DO NOT** use `within(canvas)` - `canvas` is not a DOM element.
+
+```ts
+// ✅ Correct: Use canvas directly
+play: async ({ canvas }) => {
+	await canvas.getByLabelText('Submit').click();
+};
+
+// ✅ Correct: Use canvasElement with within
+play: async ({ canvasElement }) => {
+	const screen = within(canvasElement);
+	await screen.getByLabelText('Submit').click();
+};
+
+// ❌ Wrong: Don't use within(canvas)
+play: async ({ canvas }) => {
+	const screen = within(canvas); // Error!
+};
+```
+
 ### Key Requirements
 
 - **Node.js 20+**, **TypeScript 4.9+**, **Vite 5+**

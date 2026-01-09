@@ -120,7 +120,6 @@ export const babel = async (_: unknown, options: Options) => {
           [
             '@babel/preset-env',
             {
-              bugfixes: true,
               targets: {
                 // This is the same browser supports that we use to bundle our manager and preview code.
                 chrome: 100,

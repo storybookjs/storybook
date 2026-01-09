@@ -97,7 +97,7 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
           }
           return (
             <SkipToSidebarLink ariaLabel={false} asChild>
-              <a href={`#${selectedStoryId}`} tabIndex={0} title="Skip to sidebar">
+              <a href={`#${selectedStoryId}`} tabIndex={0}>
                 Skip to sidebar
               </a>
             </SkipToSidebarLink>

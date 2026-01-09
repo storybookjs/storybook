@@ -276,7 +276,7 @@ export const SkipToCanvasLinkFocused: Story = {
   },
   play: async ({ canvasElement }) => {
     const screen = await within(canvasElement);
-    const link = await screen.findByText('Skip to canvas');
+    const link = await screen.findByText('Skip to content');
 
     await link.focus();
 

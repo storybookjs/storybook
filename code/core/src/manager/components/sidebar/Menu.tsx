@@ -91,41 +91,9 @@ const SidebarMenuList: FC<{
       .filter((links) => links.length)
       .flatMap((links) => (
         <ActionList key={links.map((link) => link.id).join('_')}>
-          {links.map((link) => (
-            <ActionList.Item key={link.id} active={link.active}>
-              <ActionList.Action
-                {...(link.href && {
-                  as: 'a',
-                  href: link.href,
-                  target: link.internal ? undefined : '_blank',
-                  rel: link.internal ? 'canonical' : undefined,
-                })}
-                ariaLabel={false}
-                id={`list-item-${link.id}`}
-                disabled={link.disabled}
-                onClick={(e) => {
-                  // Prevent interaction with disabled links
-                  if (link.disabled) {
-                    e.preventDefault();
-                    return;
-                  }
-                  // Prevent browser navigation for internal links, where we'll use our
-                  // router API instead, but want to show an `href` for UX/SEO purposes.
-                  if (link.href && link.internal) {
-                    e.preventDefault();
-                  }
-                  link.onClick?.(e, {
-                    id: link.id,
-                    active: link.active,
-                    disabled: link.disabled,
-                    title: link.title,
-                    href: link.href,
-                  });
-                  if (link.closeOnClick) {
-                    onHide();
-                  }
-                }}
-              >
+          {links.map((link) => {
+            const linkContent = (
+              <>
                 {(link.icon || link.input) && (
                   <ActionList.Icon>{link.icon || link.input}</ActionList.Icon>
                 )}
@@ -133,9 +101,54 @@ const SidebarMenuList: FC<{
                   <ActionList.Text>{link.title || link.center}</ActionList.Text>
                 )}
                 {link.right}
-              </ActionList.Action>
-            </ActionList.Item>
-          ))}
+              </>
+            );
+
+            return (
+              <ActionList.Item key={link.id} active={link.active}>
+                <ActionList.Action
+                  asChild={!!link.href}
+                  ariaLabel={false}
+                  id={`list-item-${link.id}`}
+                  disabled={link.disabled}
+                  onClick={(e) => {
+                    // Prevent interaction with disabled links
+                    if (link.disabled) {
+                      e.preventDefault();
+                      return;
+                    }
+                    // Prevent browser navigation for internal links, where we'll use our
+                    // router API instead, but want to show an `href` for UX/SEO purposes.
+                    if (link.href && link.internal) {
+                      e.preventDefault();
+                    }
+                    link.onClick?.(e, {
+                      id: link.id,
+                      active: link.active,
+                      disabled: link.disabled,
+                      title: link.title,
+                      href: link.href,
+                    });
+                    if (link.closeOnClick) {
+                      onHide();
+                    }
+                  }}
+                >
+                  {link.href ? (
+                    <a
+                      href={link.href}
+                      target={link.internal ? undefined : '_blank'}
+                      rel={link.internal ? 'canonical' : 'noreferrer'}
+                    >
+                      {linkContent}
+                    </a>
+                  ) : (
+                    linkContent
+                  )}
+                </ActionList.Action>
+              </ActionList.Item>
+            );
+          })}
         </ActionList>
       ))}
   </Container>

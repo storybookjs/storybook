@@ -211,6 +211,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     ref
   ) => {
     const [isOpen, setIsOpen] = useState(props.defaultOpen || false);
+    const [shouldRefocusTrigger, setShouldRefocusTrigger] = useState(false);
     const triggerRef = useObjectRef(ref);
 
     const id = useMemo(() => {
@@ -226,8 +227,17 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
 
     const handleClose = useCallback(() => {
       setIsOpen(false);
-      triggerRef.current?.focus();
-    }, [triggerRef]);
+      setShouldRefocusTrigger(true);
+    }, []);
+
+    // We must delay refocusing the trigger because we first need the listbox to close,
+    // and @react-aria/overlays to remove the inert attribute set up by MinimalistPopover.
+    useEffect(() => {
+      if (!otState.isOpen && shouldRefocusTrigger) {
+        triggerRef.current?.focus();
+        setShouldRefocusTrigger(false);
+      }
+    }, [otState.isOpen, shouldRefocusTrigger, triggerRef]);
 
     // The last selected option(s), which will be used by the app.
     const [selectedOptions, setSelectedOptions] = useState<InternalOption[]>(

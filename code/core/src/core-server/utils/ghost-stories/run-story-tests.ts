@@ -5,8 +5,8 @@ import { executeCommand, resolvePathInStorybookCache } from 'storybook/internal/
 
 import { join } from 'pathe';
 
-import { extractCategorizedErrors } from './categorize-render-errors';
-import { type StoryTestResult, type TestRunSummary } from './types';
+import { parseVitestResults } from './parse-vitest-report';
+import type { TestRunSummary } from './types';
 
 export async function runStoryTests(componentFilePaths: string[]): Promise<TestRunSummary> {
   try {
@@ -84,79 +84,7 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
       };
     }
 
-    // Transform the Vitest test results to our expected format
-    const storyTestResults: StoryTestResult[] = [];
-    let passedButEmptyRender = 0;
-
-    for (const testSuite of testResults.testResults) {
-      for (const assertion of testSuite.assertionResults) {
-        const storyId = assertion.meta?.storyId || assertion.fullName;
-
-        const status =
-          assertion.status === 'passed'
-            ? 'PASS'
-            : assertion.status === 'failed'
-              ? 'FAIL'
-              : 'PENDING';
-
-        // Check for empty render in reports
-        const hasEmptyRender = assertion.meta?.reports?.some(
-          (report: { type: string; result?: { emptyRender?: boolean } }) =>
-            report.type === 'render-analysis' && report.result?.emptyRender === true
-        );
-
-        if (status === 'PASS' && hasEmptyRender) {
-          passedButEmptyRender++;
-        }
-
-        // Extract error message (first line of failureMessages)
-        let error: string | undefined;
-        let stack: string | undefined;
-        if (assertion.failureMessages && assertion.failureMessages.length > 0) {
-          stack = assertion.failureMessages[0];
-          error = stack?.split('\n')[0]; // Take only the first line
-        }
-
-        storyTestResults.push({
-          storyId,
-          status,
-          error,
-          stack,
-        });
-      }
-    }
-
-    const total = testResults.numTotalTests;
-    const passed = testResults.numPassedTests;
-    const failed = testResults.numFailedTests;
-    const successRate = total > 0 ? parseFloat((passed / total).toFixed(2)) : 0;
-    const failureRate = total > 0 ? parseFloat((failed / total).toFixed(2)) : 0;
-    const successRateWithoutEmptyRender =
-      total > 0 ? parseFloat(((passed - passedButEmptyRender) / total).toFixed(2)) : 0;
-
-    // Extract and categorize unique errors
-    const errorClassification = extractCategorizedErrors(storyTestResults);
-    const categorizedErrors = errorClassification.categorizedErrors;
-
-    const summary = {
-      total,
-      passed,
-      passedButEmptyRender,
-      failed,
-      successRate,
-      successRateWithoutEmptyRender,
-      failureRate,
-      uniqueErrorCount: errorClassification.uniqueErrorCount,
-      categorizedErrors,
-    };
-
-    const enhancedResponse: TestRunSummary = {
-      success: testResults.success,
-      summary,
-      duration,
-    };
-
-    return enhancedResponse;
+    return parseVitestResults(testResults, duration);
   } catch {
     return {
       success: false,

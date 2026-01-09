@@ -3,8 +3,7 @@ import {
   isRouterPackage,
   isStateManagementPackage,
   isStylingPackage,
-} from '../../../telemetry/ecosystem-identifier';
-import type { ErrorCategorizationResult, StoryTestResult } from './types';
+} from './ecosystem-identifier';
 
 export const ERROR_CATEGORIES = {
   MISSING_PROVIDER: 'MISSING_PROVIDER',
@@ -43,9 +42,14 @@ function buildErrorContext(message: string, stack?: string): ErrorContext {
   const normalizedStack = (stack ?? '').toLowerCase();
 
   const stackDeps = new Set<string>();
+  const stackLines = normalizedStack.split('\n').filter(Boolean);
 
-  for (const line of normalizedStack.split('\n')) {
-    const depMatch = line.match(/\/deps\/([^/.]+)\.js/);
+  for (const line of stackLines) {
+    // Extracts any module name between '/deps/' and '.js'
+    // e.g. http://localhost:63315/node_modules/.cache/storybook/490ab5/sb-vitest/deps/@emotion/react.js:500:10
+    // would become '@emotion/react'
+    // NOTE this is Vite dependent for now.
+    const depMatch = line.match(/\/deps\/([^:]+)\.js/);
     if (depMatch) {
       stackDeps.add(depMatch[1]);
     }
@@ -144,8 +148,12 @@ const CATEGORIZATION_RULES: CategorizationRule[] = [
     category: ERROR_CATEGORIES.MISSING_PROVIDER,
     priority: 60,
     match: (ctx) =>
-      ctx.normalizedMessage.includes('usecontext') &&
-      (ctx.normalizedMessage.includes('null') || ctx.normalizedMessage.includes('undefined')),
+      ctx.normalizedMessage.includes('<provider>') ||
+      ((ctx.normalizedMessage.includes('could not find') ||
+        ctx.normalizedMessage.includes('missing')) &&
+        ctx.normalizedMessage.includes('context')) ||
+      (ctx.normalizedMessage.includes('usecontext') &&
+        (ctx.normalizedMessage.includes('null') || ctx.normalizedMessage.includes('undefined'))),
   },
 
   {
@@ -196,7 +204,7 @@ function getMatchedDependencies(category: ErrorCategory, ctx: ErrorContext): str
 }
 
 /** For a given category, return a description of the error for better legibility. */
-function getCategoryDescription(category: ErrorCategory): string {
+export function getCategoryDescription(category: ErrorCategory): string {
   switch (category) {
     case ERROR_CATEGORIES.MISSING_STATE_PROVIDER:
       return 'Component attempted to access shared state without a state management provider';
@@ -228,62 +236,4 @@ function getCategoryDescription(category: ErrorCategory): string {
     default:
       return 'Error could not be categorized';
   }
-}
-
-/**
- * For a given list of test results:
- *
- * - Go through failures
- * - Categorize errors into categories
- * - Return structured data about the run, with categorized errors instead of the actual error
- *   messages
- */
-export function extractCategorizedErrors(
-  testResults: StoryTestResult[]
-): ErrorCategorizationResult {
-  const failed = testResults.filter((r) => r.status === 'FAIL' && r.error);
-
-  const map = new Map<
-    ErrorCategory,
-    { count: number; examples: Set<string>; matchedDependencies: Set<string> }
-  >();
-
-  // To count unique error messages (by their message, not by category)
-  const uniqueErrorMessages = new Set<string>();
-
-  for (const r of failed) {
-    const { category, matchedDependencies } = categorizeError(r.error!, r.stack);
-    const example = r.error!.slice(0, 100);
-
-    if (!map.has(category)) {
-      map.set(category, { count: 0, examples: new Set(), matchedDependencies: new Set() });
-    }
-
-    const data = map.get(category)!;
-    data.count++;
-    data.examples.add(example);
-    matchedDependencies.forEach((dep) => data.matchedDependencies.add(dep));
-
-    // Use the full error message for unique error message counting
-    uniqueErrorMessages.add(r.error!);
-  }
-
-  const categorizedErrors = Array.from(map.entries()).reduce<Record<string, any>>(
-    (acc, [category, data]) => {
-      acc[category] = {
-        description: getCategoryDescription(category),
-        count: data.count,
-        examples: Array.from(data.examples).slice(0, 3),
-        matchedDependencies: Array.from(data.matchedDependencies).sort(),
-      };
-      return acc;
-    },
-    {}
-  );
-
-  return {
-    totalErrors: failed.length,
-    uniqueErrorCount: uniqueErrorMessages.size,
-    categorizedErrors,
-  };
 }

@@ -33,10 +33,10 @@ describe('categorize-render-errors', () => {
       const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
-      expect(result.categorizedErrors['UNKNOWN_ERROR'].description).toBe(
+      expect(result.categorizedErrors.UNKNOWN_ERROR.description).toBe(
         'Error could not be categorized'
       );
-      expect(result.categorizedErrors['UNKNOWN_ERROR'].count).toBe(1);
+      expect(result.categorizedErrors.UNKNOWN_ERROR.count).toBe(1);
     });
 
     it('should categorize theme provider errors from explicit error message', () => {
@@ -51,10 +51,10 @@ describe('categorize-render-errors', () => {
       const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
-      expect(result.categorizedErrors['MISSING_THEME_PROVIDER'].description).toBe(
+      expect(result.categorizedErrors.MISSING_THEME_PROVIDER.description).toBe(
         'Component attempted to access theme values without a theme provider'
       );
-      expect(result.categorizedErrors['MISSING_THEME_PROVIDER'].count).toBe(1);
+      expect(result.categorizedErrors.MISSING_THEME_PROVIDER.count).toBe(1);
     });
 
     it('should categorize missing theme provider errors from hints in the stack', () => {
@@ -73,11 +73,11 @@ describe('categorize-render-errors', () => {
       const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
-      expect(result.categorizedErrors['MISSING_THEME_PROVIDER'].description).toBe(
+      expect(result.categorizedErrors.MISSING_THEME_PROVIDER.description).toBe(
         'Component attempted to access theme values without a theme provider'
       );
-      expect(result.categorizedErrors['MISSING_THEME_PROVIDER'].count).toBe(1);
-      expect(result.categorizedErrors['MISSING_THEME_PROVIDER'].matchedDependencies).toEqual([
+      expect(result.categorizedErrors.MISSING_THEME_PROVIDER.count).toBe(1);
+      expect(result.categorizedErrors.MISSING_THEME_PROVIDER.matchedDependencies).toEqual([
         'styled-components',
       ]);
     });
@@ -98,11 +98,11 @@ describe('categorize-render-errors', () => {
       const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
-      expect(result.categorizedErrors['MISSING_STATE_PROVIDER'].description).toBe(
+      expect(result.categorizedErrors.MISSING_STATE_PROVIDER.description).toBe(
         'Component attempted to access shared state without a state management provider'
       );
-      expect(result.categorizedErrors['MISSING_STATE_PROVIDER'].count).toBe(1);
-      expect(result.categorizedErrors['MISSING_STATE_PROVIDER'].matchedDependencies).toEqual([
+      expect(result.categorizedErrors.MISSING_STATE_PROVIDER.count).toBe(1);
+      expect(result.categorizedErrors.MISSING_STATE_PROVIDER.matchedDependencies).toEqual([
         'react-redux',
       ]);
     });
@@ -130,10 +130,10 @@ describe('categorize-render-errors', () => {
       const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(2);
-      expect(result.categorizedErrors['MISSING_ROUTER_PROVIDER'].description).toBe(
+      expect(result.categorizedErrors.MISSING_ROUTER_PROVIDER.description).toBe(
         'Component attempted to access routing context without a router provider'
       );
-      expect(result.categorizedErrors['MISSING_ROUTER_PROVIDER'].count).toBe(2);
+      expect(result.categorizedErrors.MISSING_ROUTER_PROVIDER.count).toBe(2);
     });
 
     it('should aggregate multiple different error types', () => {
@@ -170,18 +170,18 @@ describe('categorize-render-errors', () => {
       expect(Object.keys(result.categorizedErrors)).toHaveLength(3);
 
       // Check individual error categories and their counts
-      expect(result.categorizedErrors['MISSING_THEME_PROVIDER'].description).toBe(
+      expect(result.categorizedErrors.MISSING_THEME_PROVIDER.description).toBe(
         'Component attempted to access theme values without a theme provider'
       );
-      expect(result.categorizedErrors['MISSING_THEME_PROVIDER'].count).toBe(2);
-      expect(result.categorizedErrors['MISSING_STATE_PROVIDER'].description).toBe(
+      expect(result.categorizedErrors.MISSING_THEME_PROVIDER.count).toBe(2);
+      expect(result.categorizedErrors.MISSING_STATE_PROVIDER.description).toBe(
         'Component attempted to access shared state without a state management provider'
       );
-      expect(result.categorizedErrors['MISSING_STATE_PROVIDER'].count).toBe(1);
-      expect(result.categorizedErrors['MISSING_ROUTER_PROVIDER'].description).toBe(
+      expect(result.categorizedErrors.MISSING_STATE_PROVIDER.count).toBe(1);
+      expect(result.categorizedErrors.MISSING_ROUTER_PROVIDER.description).toBe(
         'Component attempted to access routing context without a router provider'
       );
-      expect(result.categorizedErrors['MISSING_ROUTER_PROVIDER'].count).toBe(1);
+      expect(result.categorizedErrors.MISSING_ROUTER_PROVIDER.count).toBe(1);
     });
 
     it('should categorize hook usage errors', () => {
@@ -196,10 +196,10 @@ describe('categorize-render-errors', () => {
       const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
-      expect(result.categorizedErrors['HOOK_USAGE_ERROR'].description).toBe(
+      expect(result.categorizedErrors.HOOK_USAGE_ERROR.description).toBe(
         'React hook was used incorrectly'
       );
-      expect(result.categorizedErrors['HOOK_USAGE_ERROR'].count).toBe(1);
+      expect(result.categorizedErrors.HOOK_USAGE_ERROR.count).toBe(1);
     });
 
     it('should categorize module import errors', () => {
@@ -214,10 +214,10 @@ describe('categorize-render-errors', () => {
       const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
-      expect(result.categorizedErrors['MODULE_IMPORT_ERROR'].description).toBe(
+      expect(result.categorizedErrors.MODULE_IMPORT_ERROR.description).toBe(
         'A required dependency could not be resolved'
       );
-      expect(result.categorizedErrors['MODULE_IMPORT_ERROR'].count).toBe(1);
+      expect(result.categorizedErrors.MODULE_IMPORT_ERROR.count).toBe(1);
     });
 
     it('should categorize component render errors', () => {
@@ -232,10 +232,10 @@ describe('categorize-render-errors', () => {
       const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
-      expect(result.categorizedErrors['COMPONENT_RENDER_ERROR'].description).toBe(
+      expect(result.categorizedErrors.COMPONENT_RENDER_ERROR.description).toBe(
         'Component failed during render due to a runtime error'
       );
-      expect(result.categorizedErrors['COMPONENT_RENDER_ERROR'].count).toBe(1);
+      expect(result.categorizedErrors.COMPONENT_RENDER_ERROR.count).toBe(1);
     });
 
     it('should truncate long error messages in examples', () => {
@@ -250,8 +250,8 @@ describe('categorize-render-errors', () => {
 
       const result = extractCategorizedErrors(testResults);
 
-      expect(result.categorizedErrors['UNKNOWN_ERROR'].examples[0]).toHaveLength(100);
-      expect(result.categorizedErrors['UNKNOWN_ERROR'].examples[0]).toBe('A'.repeat(100));
+      expect(result.categorizedErrors.UNKNOWN_ERROR.examples[0]).toHaveLength(100);
+      expect(result.categorizedErrors.UNKNOWN_ERROR.examples[0]).toBe('A'.repeat(100));
     });
 
     it('should ignore passing and pending tests', () => {
@@ -270,7 +270,7 @@ describe('categorize-render-errors', () => {
       const result = extractCategorizedErrors(testResults);
 
       expect(result.totalErrors).toBe(1);
-      expect(result.categorizedErrors['MISSING_THEME_PROVIDER'].description).toBe(
+      expect(result.categorizedErrors.MISSING_THEME_PROVIDER.description).toBe(
         'Component attempted to access theme values without a theme provider'
       );
     });

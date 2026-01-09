@@ -11,7 +11,7 @@ import {
   TEST_PACKAGES,
   UI_LIBRARY_PACKAGES,
   matchesPackagePattern,
-} from './ecosystem-identifier';
+} from '../shared/utils/ecosystem-identifier';
 import { getActualPackageVersion } from './package-json';
 
 type PackageGroupResult = Record<string, string | undefined>;

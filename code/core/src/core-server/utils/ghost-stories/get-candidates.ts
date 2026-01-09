@@ -116,8 +116,12 @@ export async function getCandidatesForStorybook(
 
   const avgComplexity =
     selectedCandidates.length > 0
-      ? selectedCandidates.reduce((acc, curr) => acc + curr.complexity, 0) /
-        selectedCandidates.length
+      ? Number(
+          (
+            selectedCandidates.reduce((acc, curr) => acc + curr.complexity, 0) /
+            selectedCandidates.length
+          ).toFixed(2)
+        )
       : 0;
 
   return {
@@ -183,7 +187,7 @@ export async function getComponentCandidates({
       files,
       sampleSize
     );
-    logger.debug('candidates files:' + files.length);
+    logger.debug('candidates files:' + candidates.length);
 
     return {
       analyzedCount,

@@ -498,7 +498,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
   };
 
-  if (optionalEnvToBoolean(process.env.STORYBOOK_COMPONENT_PATHS)) {
+  if (getComponentTestPaths().length > 0) {
     plugins.push(createComponentTestTransformPlugin(presets, finalOptions.configDir));
   }
 

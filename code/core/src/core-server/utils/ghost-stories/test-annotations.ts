@@ -22,7 +22,7 @@ const afterEach: AfterEach = async ({ reporting, canvasElement, globals }) => {
       return;
     }
 
-    const emptyRender = isEmptyRender(canvasElement.firstChild ?? canvasElement);
+    const emptyRender = isEmptyRender(canvasElement.firstElementChild ?? canvasElement);
 
     if (emptyRender) {
       reporting.addReport({

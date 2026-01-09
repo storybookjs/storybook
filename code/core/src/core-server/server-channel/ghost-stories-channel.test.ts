@@ -101,6 +101,11 @@ describe('ghostStoriesChannel', () => {
     mockFs.readFile.mockReset();
   });
 
+  afterAll(() => {
+    consoleErrorSpy.mockRestore();
+    consoleLogSpy.mockRestore();
+  });
+
   describe('initGhostStoriesChannel', { retry: 3 }, () => {
     it('should execute successful discovery run', async () => {
       mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
@@ -185,7 +190,7 @@ describe('ghostStoriesChannel', () => {
         stats: {
           globMatchCount: 10,
           candidateAnalysisDuration: expect.any(Number),
-          ghostRunDuration: expect.any(Number),
+          totalRunDuration: expect.any(Number),
           analyzedCount: 5,
           avgComplexity: 2.5,
           candidateCount: 2,
@@ -290,7 +295,7 @@ describe('ghostStoriesChannel', () => {
           stats: {
             globMatchCount: 10,
             candidateAnalysisDuration: expect.any(Number),
-            ghostRunDuration: expect.any(Number),
+            totalRunDuration: expect.any(Number),
             analyzedCount: expect.any(Number),
             avgComplexity: expect.any(Number),
             candidateCount: 2,
@@ -437,7 +442,7 @@ describe('ghostStoriesChannel', () => {
           stats: {
             globMatchCount: 0,
             candidateAnalysisDuration: 0,
-            ghostRunDuration: 0,
+            totalRunDuration: 0,
             analyzedCount: 0,
             avgComplexity: 0,
             candidateCount: 0,
@@ -478,7 +483,7 @@ describe('ghostStoriesChannel', () => {
           stats: {
             globMatchCount: 5,
             candidateAnalysisDuration: expect.any(Number),
-            ghostRunDuration: expect.any(Number),
+            totalRunDuration: expect.any(Number),
             analyzedCount: 3,
             avgComplexity: 1.5,
             candidateCount: 0,
@@ -523,7 +528,7 @@ describe('ghostStoriesChannel', () => {
           stats: {
             globMatchCount: 5,
             candidateAnalysisDuration: 0,
-            ghostRunDuration: 0,
+            totalRunDuration: 0,
             analyzedCount: 2,
             avgComplexity: 1.0,
             candidateCount: 1,
@@ -578,7 +583,7 @@ describe('ghostStoriesChannel', () => {
           stats: {
             globMatchCount: 5,
             candidateAnalysisDuration: 0,
-            ghostRunDuration: 0,
+            totalRunDuration: 0,
             analyzedCount: 2,
             avgComplexity: 1.0,
             candidateCount: 1,

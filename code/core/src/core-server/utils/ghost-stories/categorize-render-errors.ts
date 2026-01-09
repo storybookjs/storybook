@@ -158,6 +158,8 @@ const CATEGORIZATION_RULES: CategorizationRule[] = [
   },
 ];
 
+const RULES = CATEGORIZATION_RULES.sort((a, b) => b.priority - a.priority);
+
 /**
  * For a given error, return which category and which whitelisted dependencies of that category were
  * matched in the stack trace
@@ -166,9 +168,8 @@ export function categorizeError(
   message: string,
   stack?: string
 ): { category: ErrorCategory; matchedDependencies: string[] } {
-  const rules = CATEGORIZATION_RULES.sort((a, b) => b.priority - a.priority);
   const ctx = buildErrorContext(message, stack);
-  const rule = rules.find((r) => r.match(ctx));
+  const rule = RULES.find((r) => r.match(ctx));
 
   if (!rule) {
     return { category: ERROR_CATEGORIES.UNKNOWN_ERROR, matchedDependencies: [] };

@@ -234,7 +234,7 @@ describe('get-new-story-file', () => {
       export const Default = meta.story({
         args: {
           label: 'label',
-          answer: 42,
+          answer: 0,
           onClick: fn(),
         },
       });

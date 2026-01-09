@@ -311,4 +311,65 @@ describe('component transformer', () => {
       }"
     `);
   });
+
+  it('uses string literals for non-identifier object property keys', async () => {
+    const code = `
+      export const Badge = () => <div />;
+    `;
+
+    const mockGetComponentArgTypes = vi.fn().mockImplementation(({ componentName }) => {
+      if (componentName === 'Badge') {
+        return Promise.resolve({
+          'data-testid': { name: 'data-testid', type: { name: 'string' } },
+          'aria-label': { name: 'aria-label', type: { name: 'string' } },
+          '2invalid': { name: '2invalid', type: { name: 'string' } },
+          validKey: { name: 'validKey', type: { name: 'string' } },
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await componentTransform({
+      code,
+      fileName: 'src/components/Badge.tsx',
+      getComponentArgTypes: mockGetComponentArgTypes,
+    });
+
+    // Check that the mock was called with the correct component name
+    expect(mockGetComponentArgTypes).toHaveBeenCalledWith({
+      componentName: 'Badge',
+      fileName: 'src/components/Badge.tsx',
+    });
+
+    // Check that non-identifier keys use string literals
+    expect(result.code).toContain('"data-testid": "data-testid"');
+    expect(result.code).toContain('"aria-label": "aria-label"');
+    expect(result.code).toContain('"2invalid": "2invalid"');
+    // Check that valid identifiers still use identifier syntax
+    expect(result.code).toContain('validKey: "validKey"');
+  });
+
+  it('correctly handles aliased function and class exports', async () => {
+    const code = `
+      function MyComponent() {
+        return <div />;
+      }
+
+      class MyClassComponent {
+        render() {
+          return <div />;
+        }
+      }
+
+      export { MyComponent as RenamedComponent, MyClassComponent as RenamedClass };
+    `;
+
+    const result = await transform({ code, fileName: 'src/components/Test.tsx' });
+
+    // Should use the exported names, not the original names
+    expect(result.code).toContain('_test("RenamedComponent", _testStory({');
+    expect(result.code).toContain('exportName: "RenamedComponent"');
+    expect(result.code).toContain('_test("RenamedClass", _testStory({');
+    expect(result.code).toContain('exportName: "RenamedClass"');
+  });
 });

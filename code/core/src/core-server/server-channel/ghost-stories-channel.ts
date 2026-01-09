@@ -27,7 +27,7 @@ export function initGhostStoriesChannel(
     const stats: {
       globMatchCount?: number;
       candidateAnalysisDuration?: number;
-      ghostRunDuration?: number;
+      totalRunDuration?: number;
       analyzedCount?: number;
       avgComplexity?: number;
       candidateCount?: number;
@@ -41,7 +41,10 @@ export function initGhostStoriesChannel(
       const sessionId = await getSessionId();
       const lastInit = lastEvents?.init;
       const lastGhostStoriesRun = lastEvents['ghost-stories'];
-      if (lastGhostStoriesRun || lastInit.body.sessionId !== sessionId) {
+      if (
+        lastGhostStoriesRun ||
+        (lastInit?.body?.sessionId && lastInit?.body?.sessionId !== sessionId)
+      ) {
         logger.debug('Would normally skip ghost run');
         // TODO: uncomment this later, it's commented out for debugging purposes DO NOT MERGE WITH THIS
         // return;
@@ -70,7 +73,7 @@ export function initGhostStoriesChannel(
 
       logger.debug('Candidates found: ' + JSON.stringify(candidatesResult, null, 2));
       if (candidatesResult.error) {
-        stats.ghostRunDuration = Date.now() - ghostRunStart;
+        stats.totalRunDuration = Date.now() - ghostRunStart;
         telemetry('ghost-stories', {
           success: false,
           error: candidatesResult.error,
@@ -80,7 +83,7 @@ export function initGhostStoriesChannel(
       }
 
       if (candidatesResult.candidates.length === 0) {
-        stats.ghostRunDuration = Date.now() - ghostRunStart;
+        stats.totalRunDuration = Date.now() - ghostRunStart;
         logger.debug('No candidates found');
         telemetry('ghost-stories', {
           success: false,
@@ -93,7 +96,7 @@ export function initGhostStoriesChannel(
       // Phase 2: Run tests on generated stories using Vitest
       const testRunResult = await runStoryTests(candidatesResult.candidates);
       logger.debug('Test results: ' + JSON.stringify(testRunResult, null, 2));
-      stats.ghostRunDuration = Date.now() - ghostRunStart;
+      stats.totalRunDuration = Date.now() - ghostRunStart;
       stats.testRunDuration = testRunResult.duration;
       telemetry('ghost-stories', {
         ...(testRunResult.error !== undefined ? { error: testRunResult.error } : {}),

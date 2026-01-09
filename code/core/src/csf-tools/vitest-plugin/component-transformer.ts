@@ -176,7 +176,7 @@ const collectComponentExports = (program: t.Program, fileName: string) => {
         } else if (bindingPath.isFunctionDeclaration() || bindingPath.isClassDeclaration()) {
           const bindingNodeId = bindingPath.node.id;
           if (t.isIdentifier(bindingNodeId)) {
-            addComponent(bindingNodeId.name, localIdentifier, bindingPath);
+            addComponent(exported.name, localIdentifier, bindingPath);
           }
         }
       });
@@ -328,9 +328,10 @@ export const componentTransform = async ({
       }
 
       // For objects, create a new object with recursively processed values
-      const properties = Object.entries(value).map(([key, val]) =>
-        t.objectProperty(t.identifier(key), valueToNodeRecursive(val, replaceFnCalls))
-      );
+      const properties = Object.entries(value).map(([key, val]) => {
+        const keyNode = t.isValidIdentifier(key) ? t.identifier(key) : t.stringLiteral(key);
+        return t.objectProperty(keyNode, valueToNodeRecursive(val, replaceFnCalls));
+      });
       return t.objectExpression(properties);
     }
 
@@ -344,7 +345,8 @@ export const componentTransform = async ({
     }
 
     const properties = Object.entries(args).map(([key, value]) => {
-      return t.objectProperty(t.identifier(key), valueToNodeRecursive(value, useFnImport));
+      const keyNode = t.isValidIdentifier(key) ? t.identifier(key) : t.stringLiteral(key);
+      return t.objectProperty(keyNode, valueToNodeRecursive(value, useFnImport));
     });
     return t.objectExpression(properties);
   };

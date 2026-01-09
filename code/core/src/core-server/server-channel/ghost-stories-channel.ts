@@ -51,8 +51,12 @@ export function initGhostStoriesChannel(
       }
 
       const metadata = await getStorybookMetadata(options.configDir);
-      const isReactStorybook = metadata?.renderer === '@storybook/react';
-      const hasVitestAddon = metadata?.addons && '@storybook/addon-vitest' in metadata.addons;
+      const isReactStorybook = metadata?.renderer?.includes('@storybook/react');
+      const hasVitestAddon =
+        !!metadata?.addons &&
+        Object.keys(metadata.addons).some((addonKey) =>
+          addonKey.includes('@storybook/addon-vitest')
+        );
 
       // For now this is gated by React + Vitest
       if (!isReactStorybook || !hasVitestAddon) {

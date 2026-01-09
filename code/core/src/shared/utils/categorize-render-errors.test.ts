@@ -166,6 +166,22 @@ describe('categorize-render-errors', () => {
         });
       });
 
+      describe('SERVER_COMPONENTS_ERROR', () => {
+        it('should categorize render-related errors', () => {
+          expect(
+            categorizeError(
+              'Error: async/await is not yet supported in Client Components, only Server Components.'
+            ).category
+          ).toBe(ERROR_CATEGORIES.SERVER_COMPONENTS_ERROR);
+
+          expect(
+            categorizeError(
+              "This error is often caused by accidentally adding `'use client'` to a module that was originally written for the server"
+            ).category
+          ).toBe(ERROR_CATEGORIES.SERVER_COMPONENTS_ERROR);
+        });
+      });
+
       describe('COMPONENT_RENDER_ERROR', () => {
         it('should categorize render-related errors', () => {
           expect(categorizeError('undefined is not a function').category).toBe(

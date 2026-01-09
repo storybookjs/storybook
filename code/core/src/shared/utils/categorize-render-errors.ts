@@ -15,6 +15,7 @@ export const ERROR_CATEGORIES = {
   HOOK_USAGE_ERROR: 'HOOK_USAGE_ERROR',
   MODULE_IMPORT_ERROR: 'MODULE_IMPORT_ERROR',
   COMPONENT_RENDER_ERROR: 'COMPONENT_RENDER_ERROR',
+  SERVER_COMPONENTS_ERROR: 'SERVER_COMPONENTS_ERROR',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
 } as const;
 
@@ -113,6 +114,16 @@ const CATEGORIZATION_RULES: CategorizationRule[] = [
       Array.from(ctx.stackDeps).some(isRouterPackage) ||
       ctx.normalizedMessage.includes('usenavigate') ||
       ctx.normalizedMessage.includes('router'),
+  },
+
+  {
+    category: ERROR_CATEGORIES.SERVER_COMPONENTS_ERROR,
+    priority: 85,
+    match: (ctx) =>
+      ctx.normalizedMessage.includes('server components') ||
+      ctx.normalizedMessage.includes('use client') ||
+      (ctx.normalizedMessage.includes('async/await') &&
+        ctx.normalizedMessage.includes('not supported')),
   },
 
   {

@@ -159,10 +159,16 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
           variant="ghost"
           ariaLabel="About Storybook"
           highlighted={!!isHighlighted}
-          onClick={onClick}
+          onClick={(e) => {
+            onClick?.(e);
+            e.preventDefault();
+          }}
           isMobile={true}
+          asChild
         >
-          <CogIcon />
+          <a href="./?path=/settings/about" rel="canonical">
+            <CogIcon />
+          </a>
         </SidebarButton>
         <SidebarButton
           padding="small"

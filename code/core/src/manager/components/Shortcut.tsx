@@ -18,7 +18,7 @@ const Wrapper = styled.span(({ theme }) => ({
   padding: '0 4px',
 }));
 
-const Key = styled.code(({ theme }) => ({
+const Key = styled.kbd(({ theme }) => ({
   padding: 0,
   fontFamily: theme.typography.fonts.base,
   verticalAlign: 'middle',

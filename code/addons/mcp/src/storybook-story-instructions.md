@@ -112,7 +112,11 @@ Before doing this ensure you have mocked the import in the preview file.
 
 ### Play Function Parameters
 
-Use `canvas` directly (it has query methods) or `canvasElement` with `within()`. **DO NOT** use `within(canvas)` - `canvas` is not a DOM element.
+- The play function has a `canvas` parameter that can be used directly with testing-library-like query methods.
+- It also has a `canvasElement` which is the actual DOM element.
+- The `within`-function imported from `storybook/test` transforms a DOM element to an object with query methods, similar to `canvas`.
+
+**DO NOT** use `within(canvas)` - it is redundant because `canvas` already has the query methods, `canvas` is not a DOM element.
 
 ```ts
 // ✅ Correct: Use canvas directly
@@ -120,17 +124,18 @@ play: async ({ canvas }) => {
 	await canvas.getByLabelText('Submit').click();
 };
 
-// ✅ Correct: Use canvasElement with within
+// ⚠️ Also acceptable: Use `canvasElement` with `within`
+import { within } from 'storybook/test';
+
 play: async ({ canvasElement }) => {
-	const screen = within(canvasElement);
-	await screen.getByLabelText('Submit').click();
+	const canvas = within(canvasElement);
+	await canvas.getByLabelText('Submit').click();
 };
 
-// ❌ Wrong: Don't use within(canvas)
+// ❌ Wrong: Do NOT use within(canvas)
 play: async ({ canvas }) => {
 	const screen = within(canvas); // Error!
 };
-```
 
 ### Key Requirements
 

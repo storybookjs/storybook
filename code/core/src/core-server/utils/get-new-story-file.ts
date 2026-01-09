@@ -66,7 +66,7 @@ export async function getNewStoryFile(
   let args: Record<string, unknown> | undefined = undefined;
 
   try {
-    const argTypes = (await options.presets.apply('experimental_getArgTypesData', null, {
+    const argTypes = (await options.presets.apply('internal_getArgTypesData', null, {
       ...options,
       componentFilePath,
       componentExportName,
@@ -189,8 +189,8 @@ async function checkForImportsMap(configDir: string): Promise<boolean> {
 }
 
 /**
- * Replaces non-primitive args placeholders like `__function__` where it needs more involved changes
- * like adding imports, etc.
+ * Replaces non-primitive args placeholders like `[[STORYBOOK_FN_PLACEHOLDER]]` where it needs more
+ * involved changes like adding imports, etc.
  */
 function replaceArgsPlaceholders(storyFileContent: string) {
   // Avoid parsing unless we actually have placeholders to replace.

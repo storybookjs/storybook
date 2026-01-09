@@ -18,7 +18,7 @@ import {
   experimental_loadStorybook,
   mapStaticDir,
 } from 'storybook/internal/core-server';
-import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
+import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 import { oneWayHash } from 'storybook/internal/telemetry';
@@ -26,6 +26,7 @@ import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
 import { join, normalize, relative, resolve, sep } from 'pathe';
+import path from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
@@ -98,11 +99,73 @@ const mdxStubPlugin: Plugin = {
   },
 };
 
+// Transforming components and extracting args can be expensive because of docgen
+// so we pass the paths via env variable and use as filter to only transform the files we need
+const getComponentTestPaths = (vitestRoot: string): string[] => {
+  const envPaths = process.env.STORYBOOK_COMPONENT_PATHS;
+
+  if (!envPaths) {
+    return [];
+  }
+
+  return (
+    envPaths
+      .split(';')
+      .filter(Boolean)
+      // TODO: check whether this is actually needed
+      .map((p) => path.relative(vitestRoot, path.resolve(process.cwd(), p)))
+  );
+};
+
+const createComponentTestTransformPlugin = (presets: Presets, configDir: string): Plugin => {
+  let vitestRoot: string;
+  let storybookComponentTestPaths: string[] = [];
+
+  return {
+    name: 'storybook:component-test-transform-plugin',
+    enforce: 'pre',
+    async config(config) {
+      vitestRoot = config.test?.dir || config.test?.root || config.root || process.cwd();
+      storybookComponentTestPaths = getComponentTestPaths(vitestRoot);
+    },
+    async transform(code, id) {
+      if (!optionalEnvToBoolean(process.env.VITEST) || storybookComponentTestPaths.length === 0) {
+        return code;
+      }
+
+      const resolvedId = path.resolve(id);
+      const matches = storybookComponentTestPaths.some(
+        (testPath) =>
+          resolvedId === testPath ||
+          resolvedId.startsWith(testPath + path.sep) ||
+          resolvedId.endsWith(testPath)
+      );
+
+      // We only transform paths included in STORYBOOK_COMPONENT_PATHS
+      if (!matches) {
+        return code;
+      }
+
+      const result = await componentTransform({
+        code,
+        fileName: id,
+        getComponentArgTypes: async ({ componentName, fileName }) =>
+          presets.apply('internal_getArgTypesData', null, {
+            componentFilePath: fileName,
+            componentExportName: componentName,
+            configDir,
+          }),
+      });
+
+      return result.code;
+    },
+  };
+};
+
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   if (!optionalEnvToBoolean(process.env.VITEST)) {
     return [];
   }
-
   const finalOptions = {
     ...defaultOptions,
     ...options,
@@ -203,7 +266,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // ! see https://vite.dev/guide/api-plugin.html#config
       try {
         await validateConfigurationFiles(finalOptions.configDir);
-      } catch (err) {
+      } catch {
         throw new MainFileMissingError({
           location: finalOptions.configDir,
           source: 'vitest',
@@ -279,7 +342,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
 
-          include: includeStories,
+          include: [...includeStories, ...getComponentTestPaths(finalOptions.vitestRoot)],
           exclude: [
             ...(nonMutableInputConfig.test?.exclude ?? []),
             join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
@@ -437,6 +500,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       }
     },
   };
+
+  if (optionalEnvToBoolean(process.env.STORYBOOK_COMPONENT_PATHS)) {
+    plugins.push(createComponentTestTransformPlugin(presets, finalOptions.configDir));
+  }
 
   plugins.push(storybookTestPlugin);
 

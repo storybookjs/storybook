@@ -43,6 +43,68 @@ const DOUBLE_SPACES = '  ';
 const getLiteralWithZeroWidthSpace = (testTitle: string) =>
   t.stringLiteral(`${testTitle}${DOUBLE_SPACES}`);
 
+/**
+ * In Storybook users might be importing stories from other story files. As a side effect, tests can
+ * get re-triggered. To avoid this, we add a guard to only run tests if the current file is the one
+ * running the test.
+ *
+ * Const isRunningFromThisFile = import.meta.url.includes(expect.getState().testPath ??
+ * globalThis.**vitest_worker**.filepath) if(isRunningFromThisFile) { ... }
+ */
+export function createTestGuardDeclaration(
+  scope: { generateUidIdentifier: (name: string) => t.Identifier },
+  expectId: t.Identifier,
+  convertToFilePathId: t.Identifier
+): { declaration: t.VariableDeclaration; identifier: t.Identifier } {
+  const isRunningFromThisFileId = scope.generateUidIdentifier('isRunningFromThisFile');
+
+  // expect.getState().testPath
+  const testPathProperty = t.memberExpression(
+    t.callExpression(t.memberExpression(expectId, t.identifier('getState')), []),
+    t.identifier('testPath')
+  );
+
+  // There is a bug in Vitest where expect.getState().testPath is undefined when called outside of a test function so we add this fallback in the meantime
+  // https://github.com/vitest-dev/vitest/issues/6367
+  // globalThis.__vitest_worker__.filepath
+  const filePathProperty = t.memberExpression(
+    t.memberExpression(t.identifier('globalThis'), t.identifier('__vitest_worker__')),
+    t.identifier('filepath')
+  );
+
+  // Combine testPath and filepath using the ?? operator
+  const nullishCoalescingExpression = t.logicalExpression(
+    '??',
+    // TODO: switch order of testPathProperty and filePathProperty when the bug is fixed
+    // https://github.com/vitest-dev/vitest/issues/6367 (or probably just use testPathProperty)
+    filePathProperty,
+    testPathProperty
+  );
+
+  // Create the final expression: import.meta.url.includes(...)
+  const includesCall = t.callExpression(
+    t.memberExpression(
+      t.callExpression(convertToFilePathId, [
+        t.memberExpression(
+          t.memberExpression(t.identifier('import'), t.identifier('meta')),
+          t.identifier('url')
+        ),
+      ]),
+      t.identifier('includes')
+    ),
+    [nullishCoalescingExpression]
+  );
+
+  const isRunningFromThisFileDeclaration = t.variableDeclaration('const', [
+    t.variableDeclarator(isRunningFromThisFileId, includesCall),
+  ]);
+
+  return {
+    declaration: isRunningFromThisFileDeclaration,
+    identifier: isRunningFromThisFileId,
+  };
+}
+
 export async function vitestTransform({
   code,
   fileName,
@@ -165,62 +227,12 @@ export async function vitestTransform({
     componentNameLiteral = t.stringLiteral(parsed._componentImportSpecifier.local.name);
   }
 
-  /**
-   * In Storybook users might be importing stories from other story files. As a side effect, tests
-   * can get re-triggered. To avoid this, we add a guard to only run tests if the current file is
-   * the one running the test.
-   *
-   * Const isRunningFromThisFile = import.meta.url.includes(expect.getState().testPath ??
-   * globalThis.**vitest_worker**.filepath) if(isRunningFromThisFile) { ... }
-   */
-  function getTestGuardDeclaration() {
-    const isRunningFromThisFileId =
-      parsed._file.path.scope.generateUidIdentifier('isRunningFromThisFile');
-
-    // expect.getState().testPath
-    const testPathProperty = t.memberExpression(
-      t.callExpression(t.memberExpression(vitestExpectId, t.identifier('getState')), []),
-      t.identifier('testPath')
+  const { declaration: isRunningFromThisFileDeclaration, identifier: isRunningFromThisFileId } =
+    createTestGuardDeclaration(
+      parsed._file.path.scope,
+      vitestExpectId,
+      t.identifier('convertToFilePath')
     );
-
-    // There is a bug in Vitest where expect.getState().testPath is undefined when called outside of a test function so we add this fallback in the meantime
-    // https://github.com/vitest-dev/vitest/issues/6367
-    // globalThis.__vitest_worker__.filepath
-    const filePathProperty = t.memberExpression(
-      t.memberExpression(t.identifier('globalThis'), t.identifier('__vitest_worker__')),
-      t.identifier('filepath')
-    );
-
-    // Combine testPath and filepath using the ?? operator
-    const nullishCoalescingExpression = t.logicalExpression(
-      '??',
-      // TODO: switch order of testPathProperty and filePathProperty when the bug is fixed
-      // https://github.com/vitest-dev/vitest/issues/6367 (or probably just use testPathProperty)
-      filePathProperty,
-      testPathProperty
-    );
-
-    // Create the final expression: import.meta.url.includes(...)
-    const includesCall = t.callExpression(
-      t.memberExpression(
-        t.callExpression(t.identifier('convertToFilePath'), [
-          t.memberExpression(
-            t.memberExpression(t.identifier('import'), t.identifier('meta')),
-            t.identifier('url')
-          ),
-        ]),
-        t.identifier('includes')
-      ),
-      [nullishCoalescingExpression]
-    );
-
-    const isRunningFromThisFileDeclaration = t.variableDeclaration('const', [
-      t.variableDeclarator(isRunningFromThisFileId, includesCall),
-    ]);
-    return { isRunningFromThisFileDeclaration, isRunningFromThisFileId };
-  }
-
-  const { isRunningFromThisFileDeclaration, isRunningFromThisFileId } = getTestGuardDeclaration();
 
   ast.program.body.push(isRunningFromThisFileDeclaration);
 

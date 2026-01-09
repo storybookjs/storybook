@@ -396,7 +396,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const result = api.findSiblingStoryId(storyId, hash, direction, true);
 
       if (result) {
-        const { refId } = store.getState();
         api.selectStory(result, undefined, { ref: refId });
       }
     },

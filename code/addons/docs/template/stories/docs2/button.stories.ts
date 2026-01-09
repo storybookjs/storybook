@@ -3,7 +3,7 @@ export default {
   tags: ['autodocs'],
   args: { onClick: () => console.log('clicked!') },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
 };
 

@@ -7,6 +7,7 @@ import { join } from 'pathe';
 import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
+import { Tag } from '../../../shared/constants/tags';
 import { renderComponentsManifest } from './render-components-manifest';
 
 async function getManifests(presets: Presets) {
@@ -14,7 +15,7 @@ async function getManifests(presets: Presets) {
   invariant(generator, 'storyIndexGenerator must be configured');
   const index = await generator.getIndex();
   const manifestEntries = Object.values(index.entries).filter(
-    (entry) => entry.tags?.includes('manifest') ?? false
+    (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
   );
 
   return (

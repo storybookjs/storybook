@@ -1,5 +1,3 @@
-import picomatch from 'picomatch';
-
 export const TEST_PACKAGES = [
   '*playwright*',
   '@playwright/*',
@@ -109,11 +107,20 @@ export const ROUTER_PACKAGES = [
   'wouter',
 ] as const;
 
+export function globToRegex(pattern: string): RegExp {
+  // Escape special regex characters except *
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+  // Replace * with .* to match any sequence of characters
+  const regexPattern = escaped.replace(/\*/g, '.*');
+  // Anchor the pattern to match the entire string
+  return new RegExp(`^${regexPattern}$`);
+}
+
 export function matchesPackagePattern(
   dependencyName: string,
   patterns: readonly string[]
 ): boolean {
-  return patterns.some((pattern) => picomatch.isMatch(dependencyName, pattern));
+  return patterns.some((pattern) => globToRegex(pattern).test(dependencyName));
 }
 
 export function isStateManagementPackage(dependencyName: string): boolean {

@@ -38,6 +38,7 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
     flexWrap: 'wrap',
     overflow: 'auto',
     flexDirection: isColumn ? 'column' : 'row',
+    width: 'fit-content',
 
     '& .innerZoomElementWrapper > *': isColumn
       ? {
@@ -172,15 +173,20 @@ const PositionedToolbar = styled(Toolbar)({
   height: 40,
 });
 
-const Relative = styled.div({
+const Relative = styled.div(({ theme }) => ({
   overflow: 'hidden',
   position: 'relative',
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: theme.layoutMargin,
+}));
+
+const RelativeActionBar = styled(ActionBar)({
+  position: 'relative',
+  marginLeft: 'auto',
+  alignSelf: 'flex-end',
 });
 
-/**
- * A preview component for showing one or more component `Story` items. The preview also shows the
- * source for the component as a drop-down.
- */
 export const Preview: FC<PreviewProps> = ({
   isLoading,
   isColumn,
@@ -279,7 +285,7 @@ export const Preview: FC<PreviewProps> = ({
               )}
             </Zoom.Element>
           </ChildrenContainer>
-          <ActionBar actionItems={actionItems} />
+          <RelativeActionBar actionItems={actionItems} />
         </Relative>
       </ZoomContext.Provider>
       {withSource && expanded && source}

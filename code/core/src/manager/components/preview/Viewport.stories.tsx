@@ -12,6 +12,7 @@ const managerContext: any = {
     getGlobals: fn(() => ({})),
     getStoryGlobals: fn(() => ({})),
     getUserGlobals: fn(() => ({})),
+    getUrlState: fn(() => ({ viewMode: 'story' })),
     updateGlobals: fn(),
     setAddonShortcut: fn(),
     on: fn(),

@@ -197,6 +197,11 @@ const SizeInput = styled(NumericInput)({
   minHeight: 28,
 });
 
+const parseNumber = (value: string) => {
+  const [match, number, unit] = value.match(/^(\d+(?:\.\d+)?)(\%|[a-z]{0,4})?$/) || [];
+  return match ? { number: Number(number), unit } : undefined;
+};
+
 export const Viewport = ({
   active,
   id,
@@ -271,11 +276,6 @@ export const Viewport = ({
     return () => handles.forEach((el) => el?.removeEventListener('mousedown', onStart));
   }, [resize]);
 
-  const parseNumber = (value: string) => {
-    const [match, number, unit] = value.match(/^(\d+(?:\.\d+)?)(\%|[a-z]{0,4})?$/) || [];
-    return match ? { number: Number(number), unit } : undefined;
-  };
-
   const frameStyles = useMemo(() => {
     const { number: nx, unit: ux = 'px' } = parseNumber(width) ?? { number: 0, unit: 'px' };
     const { number: ny, unit: uy = 'px' } = parseNumber(height) ?? { number: 0, unit: 'px' };
@@ -293,7 +293,7 @@ export const Viewport = ({
             <SizeInput
               aria-label="Viewport width"
               data-size-input="width"
-              label="Viewport width:"
+              label="Viewport width"
               before={
                 <ActionList.Action size="small" readOnly aria-hidden>
                   W
@@ -314,7 +314,7 @@ export const Viewport = ({
             <SizeInput
               aria-label="Viewport height"
               data-size-input="height"
-              label="Viewport height:"
+              label="Viewport height"
               before={
                 <ActionList.Action size="small" readOnly aria-hidden>
                   H

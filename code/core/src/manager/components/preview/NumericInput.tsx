@@ -11,6 +11,7 @@ import React, {
 
 import { Form } from 'storybook/internal/components';
 
+import { useId } from '@react-aria/utils';
 import { styled } from 'storybook/theming';
 
 const Wrapper = styled.div<{ after?: ReactNode; before?: ReactNode }>(
@@ -63,90 +64,100 @@ interface NumericInputProps extends Omit<ComponentProps<typeof Form.Input>, 'val
   baseUnit?: string;
 }
 
-export const NumericInput = forwardRef<{ select: () => void }, NumericInputProps>(
-  function NumericInput(
-    { label, before, after, value, setValue, unit, baseUnit, className, style, ...props },
-    forwardedRef
-  ) {
-    const baseUnitRegex = useMemo(() => baseUnit && new RegExp(`${baseUnit}$`), [baseUnit]);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const [inputValue, setInputValue] = useState(
-      baseUnitRegex ? value.replace(baseUnitRegex, '') : value
-    );
+export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(function NumericInput(
+  { label, before, after, value, setValue, unit, baseUnit, className, style, ...props },
+  forwardedRef
+) {
+  const baseUnitRegex = useMemo(() => baseUnit && new RegExp(`${baseUnit}$`), [baseUnit]);
+  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [inputValue, setInputValue] = useState(
+    baseUnitRegex ? value.replace(baseUnitRegex, '') : value
+  );
+  const id = props.id || inputId;
 
-    useImperativeHandle(forwardedRef, () => inputRef.current!);
+  useImperativeHandle(forwardedRef, () => inputRef.current!);
 
-    const onChange = useCallback(
-      (e: ChangeEvent<HTMLInputElement>) => {
-        setInputValue(e.target.value);
-        setValue(
-          !baseUnit || Number.isNaN(Number(e.target.value))
-            ? e.target.value
-            : `${e.target.value}${baseUnit}`
-        );
-      },
-      [setValue, baseUnit]
-    );
+  const onChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setInputValue(e.target.value);
+      setValue(
+        !baseUnit || Number.isNaN(Number(e.target.value))
+          ? e.target.value
+          : `${e.target.value}${baseUnit}`
+      );
+    },
+    [setValue, baseUnit]
+  );
 
-    const setInputSelection = useCallback(() => {
-      requestAnimationFrame(() => {
-        const input = inputRef.current;
-        const index = input?.value.search(/[^\d.]/) ?? -1;
-        if (input && index > 0) {
-          input.setSelectionRange(index, index);
-        }
-      });
-    }, []);
-
-    const updateInputValue = useCallback(
-      () => setInputValue(baseUnitRegex ? value.replace(baseUnitRegex, '') : value),
-      [value, baseUnitRegex]
-    );
-
-    useEffect(() => {
-      if (inputRef.current !== document.activeElement) {
-        updateInputValue();
-      }
-    }, [updateInputValue]);
-
-    useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
-          return;
-        }
-        e.preventDefault();
-        const num = parseInt(inputValue, 10);
-        const update = e.key === 'ArrowUp' ? num + 1 : num - 1;
-        if (!Number.isNaN(num) && update >= 0) {
-          const inputUnit =
-            inputValue.match(/(\d+(?:\.\d+)?)(\%|[a-z]{0,4})?$/)?.[2] || unit || baseUnit || '';
-          setInputValue(`${update}${inputUnit === baseUnit ? '' : inputUnit}`);
-          setValue(`${update}${inputUnit}`);
-          setInputSelection();
-        }
-      };
-
+  const setInputSelection = useCallback(() => {
+    requestAnimationFrame(() => {
       const input = inputRef.current;
-      if (input) {
-        input.addEventListener('keydown', handleKeyDown);
-        return () => input.removeEventListener('keydown', handleKeyDown);
+      const index = input?.value.search(/[^\d.]/) ?? -1;
+      if (input && index >= 0) {
+        input.setSelectionRange(index, index);
       }
-    }, [inputValue, setValue, unit, baseUnit, inputRef, setInputSelection]);
+    });
+  }, []);
 
-    return (
-      <Wrapper after={after} before={before} className={className} style={style}>
-        {before && <div>{before}</div>}
-        {label && <span className="sb-sr-only">{label}</span>}
-        <Form.Input
-          {...props}
-          ref={inputRef}
-          value={inputValue}
-          onChange={onChange}
-          onFocus={setInputSelection}
-          onBlur={updateInputValue}
-        />
-        {after && <div>{after}</div>}
-      </Wrapper>
-    );
-  }
-);
+  const updateInputValue = useCallback(
+    () => setInputValue(baseUnitRegex ? value.replace(baseUnitRegex, '') : value),
+    [value, baseUnitRegex]
+  );
+
+  useEffect(() => {
+    if (inputRef.current !== document.activeElement) {
+      updateInputValue();
+    }
+  }, [updateInputValue]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
+        return;
+      }
+      e.preventDefault();
+
+      const num = parseInt(inputValue, 10);
+      if (Number.isNaN(num)) {
+        return;
+      }
+
+      const update = e.key === 'ArrowUp' ? num + 1 : num - 1;
+      if (update >= 0) {
+        const inputUnit =
+          inputValue.match(/(\d+(?:\.\d+)?)(\%|[a-z]{0,4})?$/)?.[2] || unit || baseUnit || '';
+        setInputValue(`${update}${inputUnit === baseUnit ? '' : inputUnit}`);
+        setValue(`${update}${inputUnit}`);
+        setInputSelection();
+      }
+    };
+
+    const input = inputRef.current;
+    if (input) {
+      input.addEventListener('keydown', handleKeyDown);
+      return () => input.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [inputValue, setValue, unit, baseUnit, inputRef, setInputSelection]);
+
+  return (
+    <Wrapper after={after} before={before} className={className} style={style}>
+      {before && <div>{before}</div>}
+      {label && (
+        <label htmlFor={id} className="sb-sr-only">
+          {label}
+        </label>
+      )}
+      <Form.Input
+        {...props}
+        id={id}
+        ref={inputRef}
+        value={inputValue}
+        onChange={onChange}
+        onFocus={setInputSelection}
+        onBlur={updateInputValue}
+      />
+      {after && <div>{after}</div>}
+    </Wrapper>
+  );
+});

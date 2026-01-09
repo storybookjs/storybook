@@ -35,10 +35,10 @@ const cycle = (
       : keys[nextIndex];
 };
 
-const normalizeValue = (value: string | GlobalState): GlobalState =>
+const normalizeGlobal = (value: string | GlobalState, defaultIsRotated?: boolean): GlobalState =>
   typeof value === 'string'
-    ? { value, isRotated: undefined }
-    : { value: value?.value, isRotated: value?.isRotated };
+    ? { value, isRotated: defaultIsRotated }
+    : { value: value?.value, isRotated: value?.isRotated ?? defaultIsRotated };
 
 const parseGlobals = (
   globals: Globals,
@@ -46,7 +46,8 @@ const parseGlobals = (
   userGlobals: Globals,
   options: ViewportMap,
   lastSelectedOption: string | undefined,
-  disable: boolean
+  disable: boolean,
+  viewMode: string | undefined
 ): {
   name: string;
   type: ViewportType;
@@ -59,11 +60,26 @@ const parseGlobals = (
   isLocked: boolean;
   isRotated: boolean;
 } => {
+  if (viewMode !== 'story') {
+    return {
+      name: 'Responsive',
+      type: 'desktop',
+      width: '100%',
+      height: '100%',
+      value: '100pct-100pct',
+      option: undefined,
+      isCustom: false,
+      isDefault: true,
+      isLocked: true,
+      isRotated: false,
+    };
+  }
+
   // Ensure URL-defined viewports (user globals) override story globals.
   // Spreading is not sufficient here, because undefined would still override defined values.
-  const global = normalizeValue(globals?.[PARAM_KEY]);
-  const userGlobal = normalizeValue(userGlobals?.[PARAM_KEY]);
-  const storyGlobal = normalizeValue(storyGlobals?.[PARAM_KEY]);
+  const global = normalizeGlobal(globals?.[PARAM_KEY]);
+  const userGlobal = normalizeGlobal(userGlobals?.[PARAM_KEY]);
+  const storyGlobal = normalizeGlobal(storyGlobals?.[PARAM_KEY]);
   const value = userGlobal?.value ?? storyGlobal?.value ?? global?.value;
   const isRotated = userGlobal?.isRotated ?? storyGlobal?.isRotated ?? global?.isRotated ?? false;
 
@@ -127,6 +143,8 @@ const parseGlobals = (
 
 export const useViewport = () => {
   const api = useStorybookApi();
+  const { viewMode } = api.getUrlState();
+
   const lastSelectedOption = useRef<string | undefined>();
 
   const parameter = useParameter<ViewportParameters['viewport']>(PARAM_KEY);
@@ -134,7 +152,15 @@ export const useViewport = () => {
 
   const { options = MINIMAL_VIEWPORTS, disable = false } = parameter || {};
   const { name, type, width, height, value, option, isCustom, isDefault, isLocked, isRotated } =
-    parseGlobals(globals, storyGlobals, userGlobals, options, lastSelectedOption.current, disable);
+    parseGlobals(
+      globals,
+      storyGlobals,
+      userGlobals,
+      options,
+      lastSelectedOption.current,
+      disable,
+      viewMode
+    );
 
   const update = useCallback(
     (input: GlobalStateUpdate) => updateGlobals({ [PARAM_KEY]: input }),
@@ -159,7 +185,7 @@ export const useViewport = () => {
   useEffect(() => {
     // Reset the viewport to the story global value if the story defines one, regardless of URL state
     if (PARAM_KEY in storyGlobals) {
-      update(normalizeValue(storyGlobals?.[PARAM_KEY]));
+      update(normalizeGlobal(storyGlobals?.[PARAM_KEY], false));
       lastSelectedOption.current = undefined;
     }
   }, [storyGlobals, update]);
@@ -171,7 +197,7 @@ export const useViewport = () => {
         lastSelectedOption.current = option;
       } else {
         lastSelectedOption.current = undefined;
-        update(normalizeValue(storyGlobals?.[PARAM_KEY]));
+        update(normalizeGlobal(storyGlobals?.[PARAM_KEY], false));
       }
     }
   }, [storyGlobals, options, option, update]);

@@ -137,6 +137,7 @@ play: async ({ canvas }) => {
 	const screen = within(canvas); // Error!
 };
 ```
+
 ### Key Requirements
 
 - **Node.js 20+**, **TypeScript 4.9+**, **Vite 5+**

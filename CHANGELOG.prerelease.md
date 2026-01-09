@@ -1,3 +1,23 @@
+## 10.2.0-alpha.14
+
+- ReactDocgen: Swap `@storybook/react-docgen-typescript-plugin` to `react-docgen-typescript-plugin` - [#33454](https://github.com/storybookjs/storybook/pull/33454), thanks @ndelangen!
+
+## 10.2.0-alpha.13
+
+- Core: Fix onboarding visual bugs, survey telemetry and modal dismissal - [#33326](https://github.com/storybookjs/storybook/pull/33326), thanks @ghengeveld!
+- Core: Track vision simulator state through globals and apply styles in preview - [#33418](https://github.com/storybookjs/storybook/pull/33418), thanks @ghengeveld!
+
+## 10.2.0-alpha.12
+
+- Addon-docs: Add MDX manifest generation - [#33408](https://github.com/storybookjs/storybook/pull/33408), thanks @copilot-swe-agent!
+- AddonVitest: Improve perf & fix loading incorrect `.env` file - [#33469](https://github.com/storybookjs/storybook/pull/33469), thanks @ndelangen!
+- Core: Add `getStoryHrefs` manager API and add hotkey for "open in isolation" - [#33416](https://github.com/storybookjs/storybook/pull/33416), thanks @ghengeveld!
+
+## 10.2.0-alpha.11
+
+- Core: Add try-catch for cross-origin access in Storybook hooks - [#33448](https://github.com/storybookjs/storybook/pull/33448), thanks @ndelangen!
+- UI: Keep preview frame stable in overall layout - [#33447](https://github.com/storybookjs/storybook/pull/33447), thanks @Sidnioulz!
+
 ## 10.2.0-alpha.10
 
 - Dependencies: Bump various packages - [#33412](https://github.com/storybookjs/storybook/pull/33412), thanks @ndelangen!

@@ -20,6 +20,7 @@ import * as S from './utils/components';
 import type { PreviewProps } from './utils/types';
 
 const canvasMapper = ({ state, api }: Combo) => ({
+  api,
   storyId: state.storyId,
   refId: state.refId,
   viewMode: state.viewMode,
@@ -153,6 +154,7 @@ const Canvas: FC<{
   return (
     <Consumer filter={canvasMapper}>
       {({
+        api,
         entry,
         refs,
         customCanvas,
@@ -202,7 +204,7 @@ const Canvas: FC<{
                       customCanvas(storyId, viewMode, id, baseUrl, scale, queryParams)
                     ) : (
                       <FramesRenderer
-                        baseUrl={baseUrl}
+                        api={api}
                         refs={refs}
                         scale={scale}
                         entry={entry}

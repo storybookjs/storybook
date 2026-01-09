@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   type ComponentArgTypesData,
+  generateDummyPropsFromArgTypes,
   generateDummyPropsFromDocgen,
   generateDummyValueFromSBType,
 } from './get-dummy-props-for-args';
@@ -19,7 +20,7 @@ describe('new-story-docgen', () => {
   describe('generateDummyValueFromSBType', () => {
     it('generates primitives', () => {
       expect(generateDummyValueFromSBType({ name: 'boolean' })).toBe(true);
-      expect(generateDummyValueFromSBType({ name: 'number' })).toBe(42);
+      expect(generateDummyValueFromSBType({ name: 'number' })).toBe(0);
       expect(generateDummyValueFromSBType({ name: 'other', value: 'null' })).toBeNull();
       expect(generateDummyValueFromSBType({ name: 'other', value: 'void' })).toBeUndefined();
       expect(generateDummyValueFromSBType({ name: 'other', value: 'any' })).toBe('any');
@@ -31,7 +32,7 @@ describe('new-story-docgen', () => {
     });
 
     it('generates string values using token heuristics', () => {
-      expect(generateDummyValueFromSBType({ name: 'string' }, 'backgroundColor')).toBe('#ff0000');
+      expect(generateDummyValueFromSBType({ name: 'string' }, 'backgroundColor')).toBe('#ff4785');
       expect(generateDummyValueFromSBType({ name: 'string' }, 'createdAt')).toBe(
         MOCK_DATE.toLocaleDateString()
       );
@@ -75,7 +76,7 @@ describe('new-story-docgen', () => {
       };
 
       expect(generateDummyValueFromSBType(type)).toEqual({
-        count: 42,
+        count: 0,
         onClick: '[[STORYBOOK_FN_PLACEHOLDER]]',
       });
     });
@@ -103,7 +104,7 @@ describe('new-story-docgen', () => {
         generateDummyValueFromSBType({ name: 'array', value: { name: 'other', value: 'X' } })
       ).toEqual([]);
       expect(generateDummyValueFromSBType({ name: 'array', value: { name: 'number' } })).toEqual([
-        42,
+        0,
       ]);
     });
 
@@ -113,7 +114,7 @@ describe('new-story-docgen', () => {
           name: 'tuple',
           value: [{ name: 'string' }, { name: 'number' }],
         })
-      ).toEqual(['', 42]);
+      ).toEqual(['', 0]);
     });
 
     it('generates other values conservatively', () => {
@@ -144,7 +145,7 @@ describe('new-story-docgen', () => {
 
       expect(generateDummyPropsFromDocgen(docgen)).toEqual({
         required: {
-          backgroundColor: '#ff0000',
+          backgroundColor: '#ff4785',
           onClick: '[[STORYBOOK_FN_PLACEHOLDER]]',
         },
         optional: {
@@ -152,6 +153,31 @@ describe('new-story-docgen', () => {
           children: 'children',
         },
       });
+    });
+  });
+
+  describe('generateDummyPropsFromArgTypes', () => {
+    it('skips URL generation when skipUrlGeneration option is true', () => {
+      const argTypes = {
+        imageUrl: {
+          type: { name: 'string' },
+        },
+        websiteUrl: {
+          type: { name: 'string' },
+        },
+      } as any;
+
+      // With skipUrlGeneration: false (default behavior)
+      const resultWithUrls = generateDummyPropsFromArgTypes(argTypes, { skipUrlGeneration: false });
+      expect(resultWithUrls.optional.imageUrl).toBe('https://placehold.co/600x400?text=Storybook');
+      expect(resultWithUrls.optional.websiteUrl).toBe('https://example.com');
+
+      // With skipUrlGeneration: true
+      const resultWithoutUrls = generateDummyPropsFromArgTypes(argTypes, {
+        skipUrlGeneration: true,
+      });
+      expect(resultWithoutUrls.optional.imageUrl).toBe('imageUrl');
+      expect(resultWithoutUrls.optional.websiteUrl).toBe('websiteUrl');
     });
   });
 });

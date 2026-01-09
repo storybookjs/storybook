@@ -357,7 +357,9 @@ export const componentTransform = async ({
     const argTypes = getComponentArgTypes
       ? await getComponentArgTypes({ componentName: component.exportedName, fileName })
       : undefined;
-    const generatedArgs = argTypes ? generateDummyPropsFromArgTypes(argTypes).required : undefined;
+    const generatedArgs = argTypes
+      ? generateDummyPropsFromArgTypes(argTypes, { skipUrlGeneration: true }).required
+      : undefined;
 
     if (!hasAnyFunctionPlaceholders && generatedArgs && hasFunctionPlaceholder(generatedArgs)) {
       hasAnyFunctionPlaceholders = true;

@@ -9,13 +9,17 @@ export type ComponentArgTypesData = {
   props?: Record<string, ComponentArgTypesInfo>;
 };
 
+export type Options = {
+  skipUrlGeneration?: boolean;
+};
+
 export const STORYBOOK_FN_PLACEHOLDER = '[[STORYBOOK_FN_PLACEHOLDER]]';
 
 /**
  * Generate dummy props using ArgTypes instead of ComponentArgTypesData This provides more accurate
  * dummy generation by leveraging ArgTypes structure
  */
-export function generateDummyPropsFromArgTypes(argTypes: ArgTypes) {
+export function generateDummyPropsFromArgTypes(argTypes: ArgTypes, options: Options = {}) {
   const required: Record<string, unknown> = {};
   const optional: Record<string, unknown> = {};
 
@@ -28,10 +32,10 @@ export function generateDummyPropsFromArgTypes(argTypes: ArgTypes) {
     if (typeof argType.type === 'string') {
       // Handle scalar type strings - convert to SBType
       const sbType: SBType = { name: argType.type };
-      dummyValue = generateDummyValueFromSBType(sbType, propName);
+      dummyValue = generateDummyValueFromSBType(sbType, propName, options);
     } else if (argType.type && typeof argType.type === 'object') {
       // Handle SBType objects directly
-      dummyValue = generateDummyValueFromSBType(argType.type, propName);
+      dummyValue = generateDummyValueFromSBType(argType.type, propName, options);
     } else {
       // Fallback as we don't know what the type is
       dummyValue = undefined;
@@ -139,19 +143,23 @@ function normalizeStringLiteral(value: unknown) {
   return value;
 }
 
-export function generateDummyValueFromSBType(sbType: SBType, propName?: string): unknown {
+export function generateDummyValueFromSBType(
+  sbType: SBType,
+  propName?: string,
+  options?: Options
+): unknown {
   switch (sbType.name) {
     case 'boolean':
       return true;
 
     case 'number':
-      return 42;
+      return 0;
 
     case 'string': {
       const name = propName ?? '';
       const tokens = tokenize(name);
       if (hasAny(tokens, COLOR_TOKENS)) {
-        return '#ff0000';
+        return '#ff4785';
       }
 
       if (hasAny(tokens, DATE_TOKENS)) {
@@ -159,6 +167,10 @@ export function generateDummyValueFromSBType(sbType: SBType, propName?: string):
       }
 
       const mostLikelyType = getMostLikelyTypeFromTokens(tokens);
+
+      if (options?.skipUrlGeneration && (mostLikelyType === 'image' || mostLikelyType === 'url')) {
+        return name;
+      }
 
       switch (mostLikelyType) {
         case 'image':
@@ -194,7 +206,7 @@ export function generateDummyValueFromSBType(sbType: SBType, propName?: string):
       const result: Record<string, unknown> = {};
 
       for (const [key, valueType] of Object.entries(sbType.value)) {
-        result[key] = generateDummyValueFromSBType(valueType, key);
+        result[key] = generateDummyValueFromSBType(valueType, key, options);
       }
 
       return result;
@@ -211,7 +223,7 @@ export function generateDummyValueFromSBType(sbType: SBType, propName?: string):
         return normalizeStringLiteral(literalType.value);
       }
 
-      return generateDummyValueFromSBType(sbType.value[0], propName);
+      return generateDummyValueFromSBType(sbType.value[0], propName, options);
     }
 
     case 'array': {
@@ -219,11 +231,11 @@ export function generateDummyValueFromSBType(sbType: SBType, propName?: string):
       if (sbType.value.name === 'other') {
         return [];
       }
-      return [generateDummyValueFromSBType(sbType.value, propName)];
+      return [generateDummyValueFromSBType(sbType.value, propName, options)];
     }
 
     case 'tuple':
-      return sbType.value.map((el) => generateDummyValueFromSBType(el));
+      return sbType.value.map((el) => generateDummyValueFromSBType(el, undefined, options));
 
     case 'enum':
       return sbType.value[0] ?? propName;
@@ -236,7 +248,7 @@ export function generateDummyValueFromSBType(sbType: SBType, propName?: string):
         objectTypes.forEach((objType) => {
           if (objType.name === 'object') {
             Object.entries(objType.value).forEach(([key, type]) => {
-              result[key] = generateDummyValueFromSBType(type, key);
+              result[key] = generateDummyValueFromSBType(type, key, options);
             });
           }
         });

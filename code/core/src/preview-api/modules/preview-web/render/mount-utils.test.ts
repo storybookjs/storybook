@@ -71,6 +71,58 @@ const LateDestructuring = {
   },
 };
 
+const WithComment = {
+  play: async (context: any) => {
+    const {
+      // a comment
+      mount,
+    } = context;
+    await mount();
+  },
+};
+
+const WithTrailingComment = {
+  play: async (context: any) => {
+    const {
+      mount, // a comment
+    } = context;
+    await mount();
+  },
+};
+
+const WithMultipleComments = {
+  play: async (context: any) => {
+    const {
+      mount, // a comment
+      // another comment
+    } = context;
+    await mount();
+  },
+};
+
+const WithBlockComments = {
+  play: async (context: any) => {
+    const { mount /* a comment */ } = context;
+    /* another comment */
+    await mount();
+    /* third comment */
+  },
+};
+
+const testingScope = {
+  mount: async (m: any) => {
+    return 'testingScope.mount';
+  },
+};
+
+const IncorrectMount = {
+  play: async (context: any) => {
+    const { mount } = testingScope;
+    const { mount: sbMount } = context;
+    mount(await sbMount());
+  },
+};
+
 test('Detect basic destructuring', () => {
   expect(getUsedProps(StoryWithContext.play)).toMatchInlineSnapshot(`[]`);
   expect(getUsedProps(StoryWitCanvasElement.play)).toMatchInlineSnapshot(`
@@ -108,14 +160,50 @@ test('Detect multiline destructuring', () => {
 
 test('Detect transpiled destructuring', () => {
   expect(getUsedProps(TranspiledDefinition.play)).toMatchInlineSnapshot(`
-    [
-      "mount",
-      "veryLongTranspiledDefinitionnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
-      "over",
-      "multiple",
-      "lines",
-    ]
-  `);
+      [
+        "mount",
+        "veryLongTranspiledDefinitionnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+        "over",
+        "multiple",
+        "lines",
+      ]
+    `);
 
   expect(getUsedProps(LateDestructuring.play)).toMatchInlineSnapshot(`[]`);
+});
+
+test('Detect with comment', () => {
+  expect(getUsedProps(WithComment.play)).toMatchInlineSnapshot(`
+      [
+        "mount",
+      ]
+    `);
+});
+
+test('Detect with trailing comment', () => {
+  expect(getUsedProps(WithTrailingComment.play)).toMatchInlineSnapshot(`
+    [
+      "mount",
+    ]
+  `);
+});
+
+test('Detect with multiple comments', () => {
+  expect(getUsedProps(WithMultipleComments.play)).toMatchInlineSnapshot(`
+    [
+      "mount",
+    ]
+  `);
+});
+
+test('Detect with block comments', () => {
+  expect(getUsedProps(WithBlockComments.play)).toMatchInlineSnapshot(`
+    [
+      "mount",
+    ]
+  `);
+});
+
+test('Detect incorrect mount', () => {
+  expect(getUsedProps(IncorrectMount.play)).toMatchInlineSnapshot(`[]`);
 });

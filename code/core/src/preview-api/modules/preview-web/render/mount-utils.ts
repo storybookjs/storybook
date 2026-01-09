@@ -24,7 +24,9 @@ export function getUsedProps(fn: (...args: unknown[]) => unknown) {
 
   const [, destructuredProps] = firstArg.match(/^{([^]+)}$/) || [];
   if (destructuredProps) {
-    return splitByComma(destructuredProps).map((prop) => prop.replace(/:.*|=.*/g, ''));
+    return splitByComma(stripComments(destructuredProps)).map((prop) =>
+      prop.replace(/:.*|=.*/g, '').trim()
+    );
   }
 
   if (!firstArg.match(/^[a-z_$][0-9a-z_$]*$/i)) {
@@ -35,10 +37,26 @@ export function getUsedProps(fn: (...args: unknown[]) => unknown) {
   const [, destructuredArg] =
     body?.trim()?.match(new RegExp(`^(?:const|let|var)\\s*{([^}]+)}\\s*=\\s*${escapedArg};`)) || [];
   if (destructuredArg) {
-    return splitByComma(destructuredArg).map((prop) => prop.replace(/:.*|=.*/g, ''));
+    return splitByComma(stripComments(destructuredArg)).map((prop) =>
+      prop.replace(/:.*|=.*/g, '').trim()
+    );
   }
 
   return [];
+}
+
+/**
+ * Strips JavaScript comments from a string.
+ *
+ * @param s - The string to strip comments from.
+ * @returns The string with comments removed.
+ */
+function stripComments(s: string): string {
+  // Remove single-line comments (// ...)
+  s = s.replace(/\/\/.*$/gm, '');
+  // Remove multi-line comments (/* ... */)
+  s = s.replace(/\/\*[\s\S]*?\*\//g, '');
+  return s;
 }
 
 /**

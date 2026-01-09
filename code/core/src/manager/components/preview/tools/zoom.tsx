@@ -84,7 +84,8 @@ export const Zoom = memo<{
                   <ActionList.Button
                     size="small"
                     padding="small"
-                    onClick={() => zoomTo(1)}
+                    disabled={value === INITIAL_ZOOM_LEVEL}
+                    onClick={() => zoomTo(INITIAL_ZOOM_LEVEL)}
                     ariaLabel="Reset zoom"
                   >
                     <UndoIcon />
@@ -123,18 +124,18 @@ export const Zoom = memo<{
                 <Shortcut keys={['alt', '-']} />
               </ActionList.Action>
             </ActionList.Item>
-            <ActionList.Item>
+            <ActionList.Item active={value === 0.5}>
               <ActionList.Action onClick={() => zoomTo(0.5)} ariaLabel="Zoom to 50%">
                 <ActionList.Text>50%</ActionList.Text>
               </ActionList.Action>
             </ActionList.Item>
-            <ActionList.Item>
+            <ActionList.Item active={value === 1}>
               <ActionList.Action onClick={() => zoomTo(1)} ariaLabel="Zoom to 100%">
                 <ActionList.Text>100%</ActionList.Text>
                 <Shortcut keys={['alt', '0']} />
               </ActionList.Action>
             </ActionList.Item>
-            <ActionList.Item>
+            <ActionList.Item active={value === 2}>
               <ActionList.Action onClick={() => zoomTo(2)} ariaLabel="Zoom to 200%">
                 200%
               </ActionList.Action>

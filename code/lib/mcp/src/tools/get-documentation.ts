@@ -54,25 +54,25 @@ export async function addGetDocumentationTool(
 					};
 				}
 
-				const documentation = component ?? docsEntry;
+				const documentation = component ?? docsEntry!;
+
+				const format = server.ctx.custom?.format ?? 'markdown';
+				const text = component
+					? formatComponentManifest(documentation as ComponentManifest, format)
+					: formatDocsManifest(documentation as Doc, format);
 
 				await server.ctx.custom?.onGetDocumentation?.({
 					context: server.ctx.custom,
 					input,
 					foundDocumentation: documentation,
+					resultText: text,
 				});
 
-				const format = server.ctx.custom?.format ?? 'markdown';
 				return {
 					content: [
 						{
 							type: 'text' as const,
-							text: component
-								? formatComponentManifest(
-										documentation as ComponentManifest,
-										format,
-									)
-								: formatDocsManifest(documentation as Doc, format),
+							text,
 						},
 					],
 				};

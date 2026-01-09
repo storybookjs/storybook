@@ -195,6 +195,7 @@ describe('getDocumentationTool', () => {
 				id: 'button',
 				name: 'Button',
 			}),
+			resultText: expect.any(String),
 		});
 	});
 

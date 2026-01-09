@@ -1,5 +1,11 @@
 # @storybook/mcp
 
+## 0.2.1
+
+### Patch Changes
+
+- [#122](https://github.com/storybookjs/mcp/pull/122) [`0254c09`](https://github.com/storybookjs/mcp/commit/0254c091f60ac8b1c69116c936bcb7a1540dc916) Thanks [@JReinhold](https://github.com/JReinhold)! - Add resultText to args of onListAllDocumentation and onGetDocumentation
+
 ## 0.2.0
 
 ### Minor Changes

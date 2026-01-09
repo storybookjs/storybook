@@ -46,7 +46,7 @@ describe('getComponentStoryDocumentationTool', () => {
 		await addGetComponentStoryDocumentationTool(server);
 
 		// Mock getManifest to return the fixture
-		getManifestSpy = vi.spyOn(getManifest, 'getManifest');
+		getManifestSpy = vi.spyOn(getManifest, 'getManifests');
 		getManifestSpy.mockResolvedValue(smallManifestFixture);
 	});
 

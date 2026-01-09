@@ -16,11 +16,11 @@ export interface SelectOptionProps {
   /** Secondary text or description not necessary to identify the option. */
   description?: string;
 
-  /** Decorative icon. */
+  /** Decorative icon, displayed to the left of the title and description. */
   icon?: React.ReactNode;
 
-  /** Right-aligned content. */
-  right?: React.ReactNode;
+  /** Extra content, displayed to the right of the title and description. */
+  aside?: React.ReactNode;
 
   /** Optional rendering of the option. Use sparingly. */
   children?: React.ReactNode;
@@ -47,7 +47,7 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
   title,
   description,
   icon,
-  right,
+  aside,
   children,
   isSelected,
   isActive,
@@ -76,7 +76,7 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
             <p>{title}</p>
             {description && <small>{description}</small>}
           </ActionList.Text>
-          {right}
+          {aside}
         </>
       )}
     </ActionList.Item>

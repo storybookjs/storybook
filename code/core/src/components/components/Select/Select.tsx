@@ -559,7 +559,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                       key={option.value === undefined ? 'sb-reset' : String(option.value)}
                       title={option.title}
                       description={option.description}
-                      right={option.right}
+                      aside={option.aside}
                       icon={
                         !isReset && multiSelect ? (
                           // Purely decorative.

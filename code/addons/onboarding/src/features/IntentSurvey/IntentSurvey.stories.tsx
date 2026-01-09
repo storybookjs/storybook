@@ -7,6 +7,7 @@ import { IntentSurvey } from './IntentSurvey';
 const meta = {
   component: IntentSurvey,
   args: {
+    isOpen: true,
     onComplete: fn(),
     onDismiss: fn(),
   },

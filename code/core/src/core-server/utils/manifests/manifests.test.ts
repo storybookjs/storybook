@@ -6,6 +6,7 @@ import type { ComponentsManifest, Manifests, Presets, StoryIndex } from 'storybo
 import { vol } from 'memfs';
 import type { Polka, Request, Response } from 'polka';
 
+import { Tag } from '../../../shared/constants/tags';
 import { registerManifests, writeManifests } from './manifests';
 
 // Mock dependencies
@@ -130,7 +131,7 @@ describe('manifests', () => {
             name: 'Story',
             title: 'Example',
             importPath: './Example.stories.tsx',
-            tags: ['manifest', 'other'],
+            tags: [Tag.MANIFEST, 'other'],
           },
           'story-without-manifest': {
             type: 'story',
@@ -147,7 +148,7 @@ describe('manifests', () => {
             name: 'Docs',
             title: 'Docs',
             importPath: './Docs.mdx',
-            tags: ['manifest'],
+            tags: [Tag.MANIFEST],
             storiesImports: [],
           },
         },

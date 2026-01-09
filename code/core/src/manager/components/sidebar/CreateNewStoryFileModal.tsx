@@ -1,18 +1,12 @@
 import React, { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
 
 import {
-  ARGTYPES_INFO_REQUEST,
-  ARGTYPES_INFO_RESPONSE,
   CREATE_NEW_STORYFILE_REQUEST,
   CREATE_NEW_STORYFILE_RESPONSE,
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
-  SAVE_STORY_REQUEST,
-  SAVE_STORY_RESPONSE,
 } from 'storybook/internal/core-events';
 import type {
-  ArgTypesRequestPayload,
-  ArgTypesResponsePayload,
   CreateNewStoryErrorPayload,
   CreateNewStoryRequestPayload,
   CreateNewStoryResponsePayload,
@@ -20,8 +14,6 @@ import type {
   FileComponentSearchResponsePayload,
   RequestData,
   ResponseData,
-  SaveStoryRequestPayload,
-  SaveStoryResponsePayload,
 } from 'storybook/internal/core-events';
 
 import { CheckIcon } from '@storybook/icons';
@@ -32,22 +24,13 @@ import { addons, experimental_requestResponse, useStorybookApi } from 'storybook
 import { useDebounce } from '../../hooks/useDebounce';
 import type { NewStoryPayload, SearchResult } from './FileSearchList';
 import { FileSearchModal } from './FileSearchModal';
-import { extractSeededRequiredArgs, trySelectNewStory } from './FileSearchModal.utils';
+import { trySelectNewStory } from './FileSearchModal.utils';
 
 interface CreateNewStoryFileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const stringifyArgs = (args: Record<string, any>) =>
-  JSON.stringify(args, (_, value) => {
-    if (typeof value === 'function') {
-      return '__sb_empty_function_arg__';
-    }
-    return value;
-  });
-
-// TODO: Remove this comment. This will be modified throughout the project.
 export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFileModalProps) => {
   const [isLoading, setLoading] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
@@ -157,30 +140,6 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
         const storyId = createNewStoryResult.storyId;
 
         await trySelectNewStory(api.selectStory, storyId);
-
-        try {
-          const argTypesInfoResult = await experimental_requestResponse<
-            ArgTypesRequestPayload,
-            ArgTypesResponsePayload
-          >(channel, ARGTYPES_INFO_REQUEST, ARGTYPES_INFO_RESPONSE, {
-            storyId,
-          });
-
-          const argTypes = argTypesInfoResult.argTypes;
-
-          const requiredArgs = extractSeededRequiredArgs(argTypes);
-
-          await experimental_requestResponse<SaveStoryRequestPayload, SaveStoryResponsePayload>(
-            channel,
-            SAVE_STORY_REQUEST,
-            SAVE_STORY_RESPONSE,
-            {
-              args: stringifyArgs(requiredArgs),
-              importPath: createNewStoryResult.storyFilePath,
-              csfId: storyId,
-            }
-          );
-        } catch (e) {}
 
         handleSuccessfullyCreatedStory(componentExportName);
         handleFileSearch();

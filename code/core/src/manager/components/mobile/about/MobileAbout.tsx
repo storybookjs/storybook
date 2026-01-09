@@ -119,6 +119,7 @@ const Container = styled.div<{ $status: string; $transitionDuration: number }>(
     position: 'absolute',
     width: '100%',
     height: '100%',
+    borderRadius: '10px 10px 0 0',
     top: 0,
     left: 0,
     zIndex: 11,

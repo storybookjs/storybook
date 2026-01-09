@@ -21,6 +21,8 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
+import { analyze } from '@storybook/docs-mdx';
+
 import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 // eslint-disable-next-line depend/ban-dependencies
@@ -526,8 +528,6 @@ export class StoryIndexGenerator {
       const importPath = slash(normalizedPath);
 
       const content = await readFile(absolutePath, { encoding: 'utf8' });
-
-      const { analyze } = await import('@storybook/docs-mdx');
       const result = await analyze(content);
 
       // Templates are not indexed

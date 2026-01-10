@@ -32,19 +32,17 @@ export const StatusLabel = styled.div<{ status: StatusValue }>(withStatusColor, 
 export type StatusButtonProps = ComponentProps<typeof StyledButton>;
 
 const StyledButton = styled(Button)<{
-  height?: number;
-  width?: number;
   status: StatusValue;
   selectedItem?: boolean;
 }>(
   withStatusColor,
-  ({ theme, height, width }) => ({
+  ({ theme }) => ({
     transition: 'none',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: width || 28,
-    height: height || 28,
+    width: 28,
+    height: 28,
 
     '&:hover': {
       color: theme.color.secondary,

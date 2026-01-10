@@ -1,5 +1,7 @@
 import type { ReactElement } from 'react';
 
+import type { is } from '@babel/types';
+
 import type { Channel } from '../../channels';
 import type { State } from '../../manager-api';
 import type { RenderData } from '../../router/types';
@@ -107,7 +109,22 @@ export interface API_SidebarOptions<API = any> {
   showRoots?: boolean;
   filters?: Record<string, API_FilterFunction>;
   collapsedRoots?: string[];
-  renderLabel?: (item: API_HashEntry, api: API) => any;
+  renderAriaLabel?: (
+    item: API_HashEntry,
+    api: API,
+    context: {
+      isMobile: boolean;
+      location: 'sidebar' | 'bottom-bar';
+    }
+  ) => any;
+  renderLabel?: (
+    item: API_HashEntry,
+    api: API,
+    context: {
+      isMobile: boolean;
+      location: 'sidebar' | 'bottom-bar';
+    }
+  ) => any;
 }
 
 interface OnClearOptions {

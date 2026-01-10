@@ -318,7 +318,12 @@ const rewriteRuleContainer = (
   // This ensures pseudo-state selectors work even when @media (hover: hover) doesn't match
   for (const rule of rulesToAddAtRoot) {
     try {
-      rootSheet.insertRule(rule, rootSheet.cssRules.length);
+      const insertedIndex = rootSheet.insertRule(rule, rootSheet.cssRules.length);
+      // Mark the inserted rule as processed to prevent re-insertion on subsequent rewrites
+      // @ts-expect-error Adding custom property to track processed rules
+      rootSheet.cssRules[insertedIndex].__processed = true;
+      // @ts-expect-error Adding custom property to track rewrite count
+      rootSheet.cssRules[insertedIndex].__pseudoStatesRewrittenCount = 0;
     } catch {
       // Rule insertion can fail for various reasons (invalid syntax, etc.)
       // Silently ignore as this is a best-effort enhancement
@@ -333,18 +338,18 @@ const rewriteRuleContainer = (
  * ensuring they apply even when the hover media query doesn't match.
  */
 const extractPseudoStateRulesFromHoverMedia = (
-  mediaRule: CSSMediaRule,
+  groupingRule: CSSGroupingRule,
   forShadowDOM: boolean
 ): string[] => {
   const extractedRules: string[] = [];
 
-  for (const cssRule of mediaRule.cssRules) {
+  for (const cssRule of groupingRule.cssRules) {
     // Handle nested grouping rules (e.g., @layer inside @media)
     if ('cssRules' in cssRule && (cssRule.cssRules as CSSRuleList).length) {
       // For nested grouping rules, we need to wrap extracted rules in the same grouping context
       // But for simplicity and common use cases, we focus on direct style rules
       const nestedRules = extractPseudoStateRulesFromHoverMedia(
-        cssRule as CSSMediaRule,
+        cssRule as CSSGroupingRule,
         forShadowDOM
       );
       extractedRules.push(...nestedRules);

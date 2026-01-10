@@ -9,6 +9,24 @@ const pseudoStates = Object.values(PSEUDO_STATES);
 const pseudoStatesPattern = `${EXCLUDED_PSEUDO_ESCAPE_SEQUENCE}:(${pseudoStates.join('|')})`;
 const matchOne = new RegExp(pseudoStatesPattern);
 const matchAll = new RegExp(pseudoStatesPattern, 'g');
+/**
+ * Checks if a CSSMediaRule is a hover capability media query like `@media (hover: hover)`.
+ * Tailwind CSS v4 wraps hover styles in this media query to only apply on hover-capable devices.
+ * This causes issues with pseudo-state simulation since the media query won't match during testing.
+ */
+const isHoverMediaRule = (rule: CSSRule): rule is CSSMediaRule => {
+  if (rule.type !== CSSRule.MEDIA_RULE) {
+    return false;
+  }
+  const mediaRule = rule as CSSMediaRule;
+  // Match various forms of hover media queries:
+  // @media (hover: hover)
+  // @media (hover)
+  // @media (any-hover: hover)
+  // Also handle combined queries like @media (hover: hover) and (pointer: fine)
+  const mediaText = mediaRule.conditionText || mediaRule.media.mediaText;
+  return /\(\s*(any-)?hover\s*(:\s*hover\s*)?\)/.test(mediaText);
+};
 
 const warnings = new Set();
 const warnOnce = (message: string) => {
@@ -157,12 +175,68 @@ const rewriteRule = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: bool
   );
 };
 
+
+/**
+ * Generates pseudo-state only selectors for a rule (without the original pseudo-class selectors).
+ * Used for extracting rules from @media (hover: hover) blocks to work outside the media query.
+ */
+const generatePseudoStateOnlyRule = (
+  { cssText, selectorText }: CSSStyleRule,
+  forShadowDOM: boolean
+): string | null => {
+  const pseudoStateSelectors = splitSelectors(selectorText)
+    .flatMap((selector) => {
+      if (selector.includes('.pseudo-') || !matchOne.test(selector)) {
+        return [];
+      }
+
+      const result: string[] = [];
+
+      const classSelector = replacePseudoStates(selector);
+      if (classSelector !== selector) {
+        result.push(classSelector);
+      }
+
+      let ancestorSelector = '';
+
+      if (selector.startsWith(':host(')) {
+        const matches = selector.match(/^:host\((\S+)\)\s+(.+)$/);
+        if (matches && matchOne.test(matches[2])) {
+          let hostInnerSelector = matches[1];
+          let descendantSelector = matches[2];
+          hostInnerSelector = replacePseudoStates(hostInnerSelector, true);
+          descendantSelector = rewriteNotSelectors(descendantSelector, true);
+          ancestorSelector = replacePseudoStatesWithAncestorSelector(
+            descendantSelector,
+            true,
+            hostInnerSelector
+          );
+        } else {
+          ancestorSelector = replacePseudoStates(selector, true);
+        }
+      } else {
+        const withNotsReplaced = rewriteNotSelectors(selector, forShadowDOM);
+        ancestorSelector = replacePseudoStatesWithAncestorSelector(withNotsReplaced, forShadowDOM);
+      }
+      result.push(ancestorSelector);
+
+      return result;
+    })
+    .filter(Boolean);
+
+  if (pseudoStateSelectors.length === 0) {
+    return null;
+  }
+
+  return cssText.replace(selectorText, pseudoStateSelectors.join(', '));
+};
+
 // Rewrites the style sheet to add alternative selectors for any rule that targets a pseudo state.
 // A sheet can only be rewritten once, and may carry over between stories.
 export const rewriteStyleSheet = (sheet: CSSStyleSheet, forShadowDOM = false): boolean => {
   try {
     const maximumRulesToRewrite = 1000;
-    const count = rewriteRuleContainer(sheet, maximumRulesToRewrite, forShadowDOM);
+    const count = rewriteRuleContainer(sheet, maximumRulesToRewrite, forShadowDOM, sheet);
 
     if (count >= maximumRulesToRewrite) {
       warnOnce('Reached maximum of 1000 pseudo selectors per sheet, skipping the rest.');
@@ -182,10 +256,14 @@ export const rewriteStyleSheet = (sheet: CSSStyleSheet, forShadowDOM = false): b
 const rewriteRuleContainer = (
   ruleContainer: CSSStyleSheet | CSSGroupingRule,
   rewriteLimit: number,
-  forShadowDOM: boolean
+  forShadowDOM: boolean,
+  rootSheet: CSSStyleSheet
 ): number => {
   let count = 0;
   let index = -1;
+  // Collect rules to add at root level (for hover media query extraction)
+  const rulesToAddAtRoot: string[] = [];
+
   for (const cssRule of ruleContainer.cssRules) {
     index++;
     let numRewritten = 0;
@@ -196,10 +274,21 @@ const rewriteRuleContainer = (
       numRewritten = cssRule.__pseudoStatesRewrittenCount;
     } else {
       if ('cssRules' in cssRule && (cssRule.cssRules as CSSRuleList).length) {
+        // Check if this is a @media (hover: hover) rule (Tailwind CSS v4 pattern)
+        // If so, we need to extract pseudo-state rules and add them outside the media query
+        if (isHoverMediaRule(cssRule)) {
+          const extractedRules = extractPseudoStateRulesFromHoverMedia(
+            cssRule as CSSMediaRule,
+            forShadowDOM
+          );
+          rulesToAddAtRoot.push(...extractedRules);
+        }
+
         numRewritten = rewriteRuleContainer(
           cssRule as CSSGroupingRule,
           rewriteLimit - count,
-          forShadowDOM
+          forShadowDOM,
+          rootSheet
         );
       } else {
         if (!('selectorText' in cssRule)) {
@@ -225,5 +314,51 @@ const rewriteRuleContainer = (
     }
   }
 
+  // Add extracted hover media rules at the root stylesheet level
+  // This ensures pseudo-state selectors work even when @media (hover: hover) doesn't match
+  for (const rule of rulesToAddAtRoot) {
+    try {
+      rootSheet.insertRule(rule, rootSheet.cssRules.length);
+    } catch {
+      // Rule insertion can fail for various reasons (invalid syntax, etc.)
+      // Silently ignore as this is a best-effort enhancement
+    }
+  }
+
   return count;
 };
+/**
+ * Extracts pseudo-state rules from a @media (hover: hover) block.
+ * These rules are returned so they can be added at the root stylesheet level,
+ * ensuring they apply even when the hover media query doesn't match.
+ */
+const extractPseudoStateRulesFromHoverMedia = (
+  mediaRule: CSSMediaRule,
+  forShadowDOM: boolean
+): string[] => {
+  const extractedRules: string[] = [];
+
+  for (const cssRule of mediaRule.cssRules) {
+    // Handle nested grouping rules (e.g., @layer inside @media)
+    if ('cssRules' in cssRule && (cssRule.cssRules as CSSRuleList).length) {
+      // For nested grouping rules, we need to wrap extracted rules in the same grouping context
+      // But for simplicity and common use cases, we focus on direct style rules
+      const nestedRules = extractPseudoStateRulesFromHoverMedia(
+        cssRule as CSSMediaRule,
+        forShadowDOM
+      );
+      extractedRules.push(...nestedRules);
+    } else if ('selectorText' in cssRule) {
+      const styleRule = cssRule as CSSStyleRule;
+      if (matchOne.test(styleRule.selectorText)) {
+        const pseudoStateRule = generatePseudoStateOnlyRule(styleRule, forShadowDOM);
+        if (pseudoStateRule) {
+          extractedRules.push(pseudoStateRule);
+        }
+      }
+    }
+  }
+
+  return extractedRules;
+};
+

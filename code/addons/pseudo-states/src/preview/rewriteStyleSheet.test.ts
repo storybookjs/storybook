@@ -58,10 +58,32 @@ class StyleRule extends Rule {
 class GroupingRule extends Rule {
   cssRules: Rule[];
 
+  // For CSSMediaRule type detection
+  type: number;
+
+  conditionText: string;
+
+  media: { mediaText: string };
+
   constructor(cssText: string) {
     super(cssText);
     const innerCssText = cssText.substring(cssText.indexOf('{') + 1, cssText.lastIndexOf('}'));
     this.cssRules = splitRules(innerCssText).map((x) => Rule.parse(x));
+
+    // Extract the at-rule condition (e.g., "(hover: hover)" from "@media (hover: hover)")
+    const atRuleMatch = cssText.match(/^@(\w+)\s*([^{]*)/);
+    if (atRuleMatch) {
+      const atRuleType = atRuleMatch[1];
+      const condition = atRuleMatch[2].trim();
+      // CSSRule.MEDIA_RULE = 4
+      this.type = atRuleType === 'media' ? 4 : 0;
+      this.conditionText = condition;
+      this.media = { mediaText: condition };
+    } else {
+      this.type = 0;
+      this.conditionText = '';
+      this.media = { mediaText: '' };
+    }
   }
 
   deleteRule(index: number) {
@@ -543,4 +565,84 @@ describe('rewriteStyleSheet', () => {
       );
     }
   });
+
+  // Tailwind CSS v4 compatibility tests
+  describe('Tailwind CSS v4 @media (hover: hover) support', () => {
+    it('extracts pseudo-state rules from @media (hover: hover) to root level', () => {
+      const sheet = new Sheet(
+        `@media (hover: hover) {
+          .btn:hover {
+            background-color: blue;
+          }
+        }`
+      );
+      rewriteStyleSheet(sheet as any);
+      // The original media rule should still be there with rewritten selectors
+      expect((sheet.cssRules[0] as GroupingRule).cssRules[0].getSelectors()).toContain('.btn:hover');
+      expect((sheet.cssRules[0] as GroupingRule).cssRules[0].getSelectors()).toContain('.btn.pseudo-hover');
+      // A new rule should be added at the root level for pseudo-state selectors
+      expect(sheet.cssRules.length).toBeGreaterThan(1);
+      const lastRule = sheet.cssRules[sheet.cssRules.length - 1];
+      expect(lastRule.getSelectors()).toContain('.btn.pseudo-hover');
+      expect(lastRule.getSelectors()).toContain('.pseudo-hover-all .btn');
+    });
+
+    it('handles @media (hover: hover) with multiple rules', () => {
+      const sheet = new Sheet(
+        `@media (hover: hover) {
+          .btn:hover {
+            background-color: blue;
+          }
+          .link:hover {
+            text-decoration: underline;
+          }
+        }`
+      );
+      rewriteStyleSheet(sheet as any);
+      // Should extract both rules
+      expect(sheet.cssRules.length).toBeGreaterThan(1);
+    });
+
+    it('handles @media (hover: hover) combined with other conditions', () => {
+      const sheet = new Sheet(
+        `@media (hover: hover) and (pointer: fine) {
+          .btn:hover {
+            background-color: blue;
+          }
+        }`
+      );
+      rewriteStyleSheet(sheet as any);
+      // Should still detect and extract from hover media queries with additional conditions
+      expect(sheet.cssRules.length).toBeGreaterThan(1);
+    });
+
+    it('does not extract from non-hover media queries', () => {
+      const sheet = new Sheet(
+        `@media (max-width: 790px) {
+          .btn:hover {
+            background-color: blue;
+          }
+        }`
+      );
+      const initialLength = sheet.cssRules.length;
+      rewriteStyleSheet(sheet as any);
+      // Should not add extra rules at root level for non-hover media queries
+      expect(sheet.cssRules.length).toEqual(initialLength);
+    });
+
+    it('handles Tailwind v4 style escaped selectors in hover media', () => {
+      const sheet = new Sheet(
+        `@media (hover: hover) {
+          .hover\\:bg-blue-500:hover {
+            background-color: blue;
+          }
+        }`
+      );
+      rewriteStyleSheet(sheet as any);
+      // Should extract pseudo-state rules for Tailwind escaped selectors
+      expect(sheet.cssRules.length).toBeGreaterThan(1);
+    });
+  });
+
+
 });

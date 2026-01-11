@@ -48,7 +48,14 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
         testFailureMessage = 'Playwright is not installed';
       } else if (errorMessage.includes('startup error')) {
         testFailureMessage = 'Startup Error';
+      } else if (errorMessage.includes('no tests found')) {
+        testFailureMessage = 'No tests found';
+      } else if (errorMessage.includes('test timeout')) {
+        testFailureMessage = 'Test timeout';
+      } else if (errorMessage.includes('Unhandled Rejection')) {
+        testFailureMessage = 'Unhandled Rejection';
       }
+      // TODO: See if we can categorize error and get eror info with stripped data
     }
 
     // Calculate duration of the command execution

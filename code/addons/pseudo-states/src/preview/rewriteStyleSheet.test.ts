@@ -390,11 +390,11 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
-  it('supports ":has" inside of ":not"', () => {
-    const sheet = new Sheet(':not(:hover, :has(:focus), :has(:active)) { color: red }');
+  it('supports ":has" inside and outside of ":not"', () => {
+    const sheet = new Sheet(':has(:not(:hover, :has(:focus), :has(:active))) { color: red }');
     rewriteStyleSheet(sheet as any);
     expect(sheet.cssRules[0].cssText).toEqual(
-      ':not(:hover, :has(:focus), :has(:active)), :not(.pseudo-hover, :has(.pseudo-focus), :has(.pseudo-active)), :not(.pseudo-hover-all *, .pseudo-focus-all :has(*), .pseudo-active-all :has(*)) { color: red }'
+      ':has(:not(:hover, :has(:focus), :has(:active))), :has(:not(.pseudo-hover, :has(.pseudo-focus), :has(.pseudo-active))), :has(:not(.pseudo-hover-all *, .pseudo-focus-all :has(*), .pseudo-active-all :has(*))) { color: red }'
     );
   });
 

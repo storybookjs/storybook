@@ -231,12 +231,21 @@ const generatePseudoStateOnlyRule = (
   return cssText.replace(selectorText, pseudoStateSelectors.join(', '));
 };
 
+// Track inserted rules per stylesheet to prevent duplicate insertion across multiple rewriteStyleSheet calls
+const insertedRulesCache = new WeakMap<CSSStyleSheet, Set<string>>();
+
 // Rewrites the style sheet to add alternative selectors for any rule that targets a pseudo state.
 // A sheet can only be rewritten once, and may carry over between stories.
 export const rewriteStyleSheet = (sheet: CSSStyleSheet, forShadowDOM = false): boolean => {
   try {
+    // Get or create the set of inserted rules for this stylesheet
+    if (!insertedRulesCache.has(sheet)) {
+      insertedRulesCache.set(sheet, new Set<string>());
+    }
+    const insertedRules = insertedRulesCache.get(sheet)!;
+
     const maximumRulesToRewrite = 1000;
-    const count = rewriteRuleContainer(sheet, maximumRulesToRewrite, forShadowDOM, sheet);
+    const count = rewriteRuleContainer(sheet, maximumRulesToRewrite, forShadowDOM, sheet, insertedRules);
 
     if (count >= maximumRulesToRewrite) {
       warnOnce('Reached maximum of 1000 pseudo selectors per sheet, skipping the rest.');
@@ -257,7 +266,8 @@ const rewriteRuleContainer = (
   ruleContainer: CSSStyleSheet | CSSGroupingRule,
   rewriteLimit: number,
   forShadowDOM: boolean,
-  rootSheet: CSSStyleSheet
+  rootSheet: CSSStyleSheet,
+  insertedRules: Set<string>
 ): number => {
   let count = 0;
   let index = -1;
@@ -278,7 +288,7 @@ const rewriteRuleContainer = (
         // If so, we need to extract pseudo-state rules and add them outside the media query
         if (isHoverMediaRule(cssRule)) {
           const extractedRules = extractPseudoStateRulesFromHoverMedia(
-            cssRule as CSSMediaRule,
+            cssRule as CSSGroupingRule,
             forShadowDOM
           );
           rulesToAddAtRoot.push(...extractedRules);
@@ -288,7 +298,8 @@ const rewriteRuleContainer = (
           cssRule as CSSGroupingRule,
           rewriteLimit - count,
           forShadowDOM,
-          rootSheet
+          rootSheet,
+          insertedRules
         );
       } else {
         if (!('selectorText' in cssRule)) {
@@ -317,9 +328,16 @@ const rewriteRuleContainer = (
   // Add extracted hover media rules at the root stylesheet level
   // This ensures pseudo-state selectors work even when @media (hover: hover) doesn't match
   for (const rule of rulesToAddAtRoot) {
+    // Skip if this rule has already been inserted (prevents duplicates on subsequent rewrites)
+    if (insertedRules.has(rule)) {
+      continue;
+    }
+
     try {
       const insertedIndex = rootSheet.insertRule(rule, rootSheet.cssRules.length);
-      // Mark the inserted rule as processed to prevent re-insertion on subsequent rewrites
+      // Track this rule to prevent duplicate insertion
+      insertedRules.add(rule);
+      // Mark the inserted rule as processed to prevent re-processing
       // @ts-expect-error Adding custom property to track processed rules
       rootSheet.cssRules[insertedIndex].__processed = true;
       // @ts-expect-error Adding custom property to track rewrite count

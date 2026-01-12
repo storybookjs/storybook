@@ -194,7 +194,7 @@ export const ResetHighlight: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
@@ -220,7 +220,7 @@ export const ResetHighlight = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { useChannel } from 'storybook/preview-api';
@@ -298,6 +298,64 @@ export const ResetHighlight: Story = {
     },
   ],
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ResetHighlight = meta.story({
+  decorators: [
+    () => {
+      const emit = useChannel({});
+      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
+      emit(HIGHLIGHT, {
+        selectors: ['header', 'section', 'footer'],
+      });
+      return {
+        template: '<story />',
+      };
+    },
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ResetHighlight = meta.story({
+  decorators: [
+    () => {
+      const emit = useChannel({});
+      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
+      emit(HIGHLIGHT, {
+        selectors: ['header', 'section', 'footer'],
+      });
+      return {
+        template: '<story />',
+      };
+    },
+  ],
+});
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

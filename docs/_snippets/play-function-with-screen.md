@@ -239,3 +239,47 @@ export const Open = meta.story({
   },
 });
 ```
+
+```ts filename="Dialog.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { screen } from 'storybook/test';
+
+import Dialog from './Dialog.vue';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Open = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Open dialog' }));
+
+    // Starts querying from the document
+    const dialog = screen.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Dialog.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { screen } from 'storybook/test';
+
+import Dialog from './Dialog.vue';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Open = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Open dialog' }));
+
+    // Starts querying from the document
+    const dialog = screen.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+  },
+});
+```

@@ -178,3 +178,37 @@ const meta = preview.meta({
   },
 });
 ```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { action } from 'storybook/actions';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { action } from 'storybook/actions';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
+```

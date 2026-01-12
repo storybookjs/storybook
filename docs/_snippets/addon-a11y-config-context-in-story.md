@@ -189,3 +189,57 @@ export const ExampleStory = meta.story({
   },
 });
 ```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const ExampleStory = meta.story({
+  parameters: {
+    a11y: {
+      /*
+       * Axe's context parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter
+       * to learn more.
+       */
+      context: {
+        include: ['body'],
+        exclude: ['.no-a11y-check'],
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const ExampleStory = meta.story({
+  parameters: {
+    a11y: {
+      /*
+       * Axe's context parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter
+       * to learn more.
+       */
+      context: {
+        include: ['body'],
+        exclude: ['.no-a11y-check'],
+      },
+    },
+  },
+});
+```

@@ -56,3 +56,29 @@ export default defineMain({
   staticDirs: ['../public'],
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  // Required
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  // Optional
+  addons: ['@storybook/addon-docs'],
+  staticDirs: ['../public'],
+});
+```
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  // Required
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  // Optional
+  addons: ['@storybook/addon-docs'],
+  staticDirs: ['../public'],
+});
+```

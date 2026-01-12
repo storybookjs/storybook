@@ -369,7 +369,7 @@ export const ExampleStory: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="vue" language="js"
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import YourComponent from './YourComponent.vue';
 
 export default {
@@ -415,7 +415,7 @@ export const ExampleStory = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import YourComponent from './YourComponent.vue';
@@ -551,6 +551,104 @@ export const ExampleStory: Story = {
     propertyB: 'Another Item One',
   },
 };
+```
+
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
+
+const meta = preview.meta({
+  component: YourComponent,
+  //👇 Creates specific argTypes with options
+  argTypes: {
+    propertyA: {
+      options: ['Item One', 'Item Two', 'Item Three'],
+      control: { type: 'select' }, // automatically inferred when 'options' is defined
+    },
+    propertyB: {
+      options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+    },
+  },
+});
+
+const someFunction = (valuePropertyA, valuePropertyB) => {
+  // Do some logic here
+};
+
+export const ExampleStory = meta.story({
+  render: ({ args }) => {
+    const { propertyA, propertyB } = args;
+    //👇 Assigns the function result to a variable
+    const functionResult = someFunction(propertyA, propertyB);
+    return {
+      components: { YourComponent },
+      setup() {
+        return {
+          ...args,
+          //👇 Replaces arg variable with the override (without the need of mutation)
+          someProperty: functionResult,
+        };
+      },
+      template:
+        '<YourComponent :propertyA="propertyA" :propertyB="propertyB" :someProperty="someProperty"/>',
+    };
+  },
+  args: {
+    propertyA: 'Item One',
+    propertyB: 'Another Item One',
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
+
+const meta = preview.meta({
+  component: YourComponent,
+  //👇 Creates specific argTypes with options
+  argTypes: {
+    propertyA: {
+      options: ['Item One', 'Item Two', 'Item Three'],
+      control: { type: 'select' }, // automatically inferred when 'options' is defined
+    },
+    propertyB: {
+      options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+    },
+  },
+});
+
+const someFunction = (valuePropertyA, valuePropertyB) => {
+  // Do some logic here
+};
+
+export const ExampleStory = meta.story({
+  render: ({ args }) => {
+    const { propertyA, propertyB } = args;
+    //👇 Assigns the function result to a variable
+    const functionResult = someFunction(propertyA, propertyB);
+    return {
+      components: { YourComponent },
+      setup() {
+        return {
+          ...args,
+          //👇 Replaces arg variable with the override (without the need of mutation)
+          someProperty: functionResult,
+        };
+      },
+      template:
+        '<YourComponent :propertyA="propertyA" :propertyB="propertyB" :someProperty="someProperty"/>',
+    };
+  },
+  args: {
+    propertyA: 'Item One',
+    propertyB: 'Another Item One',
+  },
+});
 ```
 
 ```tsx filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

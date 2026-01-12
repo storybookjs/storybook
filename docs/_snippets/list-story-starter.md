@@ -181,7 +181,7 @@ type Story = StoryObj<typeof meta>;
 export const Empty: Story = {};
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js"
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import List from './ListComponent.vue';
 
 export default {
@@ -197,7 +197,7 @@ export const Empty = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './ListComponent.vue';
@@ -216,6 +216,44 @@ export const Empty: Story = {
     template: '<List/>',
   }),
 };
+```
+
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './ListComponent.vue';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({
+  render: () => ({
+    components: { List },
+    template: '<List/>',
+  }),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './ListComponent.vue';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({
+  render: () => ({
+    components: { List },
+    template: '<List/>',
+  }),
+});
 ```
 
 ```js filename="List.stories.js" renderer="web-components" language="js"

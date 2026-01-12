@@ -39,3 +39,21 @@ export default defineMain({
   stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+});
+```
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+});
+```

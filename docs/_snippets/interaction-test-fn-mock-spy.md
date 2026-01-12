@@ -296,3 +296,57 @@ export const FilledForm = meta.story({
   },
 });
 ```
+
+```ts filename="LoginForm.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { fn, expect } from 'storybook/test';
+
+import LoginForm from './LoginForm.vue';
+
+const meta = preview.meta({
+  component: LoginForm,
+  args: {
+    // 👇 Use `fn` to spy on the onSubmit arg
+    onSubmit: fn(),
+  },
+});
+
+export const FilledForm = meta.story({
+  play: async ({ args, canvas, userEvent }) => {
+    await userEvent.type(canvas.getByLabelText('Email'), 'email@provider.com');
+    await userEvent.type(canvas.getByLabelText('Password'), 'a-random-password');
+    await userEvent.click(canvas.getByRole('button', { name: 'Log in' }));
+
+    // 👇 Now we can assert that the onSubmit arg was called
+    await expect(args.onSubmit).toHaveBeenCalled();
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="LoginForm.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { fn, expect } from 'storybook/test';
+
+import LoginForm from './LoginForm.vue';
+
+const meta = preview.meta({
+  component: LoginForm,
+  args: {
+    // 👇 Use `fn` to spy on the onSubmit arg
+    onSubmit: fn(),
+  },
+});
+
+export const FilledForm = meta.story({
+  play: async ({ args, canvas, userEvent }) => {
+    await userEvent.type(canvas.getByLabelText('Email'), 'email@provider.com');
+    await userEvent.type(canvas.getByLabelText('Password'), 'a-random-password');
+    await userEvent.click(canvas.getByRole('button', { name: 'Log in' }));
+
+    // 👇 Now we can assert that the onSubmit arg was called
+    await expect(args.onSubmit).toHaveBeenCalled();
+  },
+});
+```

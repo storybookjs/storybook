@@ -133,3 +133,29 @@ const meta = preview.meta({
   tags: ['!autodocs'],
 });
 ```
+
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
+```

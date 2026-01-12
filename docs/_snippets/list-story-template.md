@@ -306,7 +306,7 @@ export const OneItem = {
 />
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js"
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import List from './List.vue';
 import ListItem from './ListItem.vue';
 
@@ -352,7 +352,7 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './List.vue';
@@ -401,6 +401,94 @@ export const OneItem: Story = {
     ],
   },
 };
+```
+
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './List.vue';
+import ListItem from './ListItem.vue';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { ...args };
+    },
+    template: `
+      <List v-bind="args">
+        <div v-for="item in items" :key="item.title">
+          <ListItem :item="item"/>
+        </div>
+      </List>
+    `,
+  }),
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [
+      {
+        ...Unchecked.input.args,
+      },
+    ],
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './List.vue';
+import ListItem from './ListItem.vue';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { ...args };
+    },
+    template: `
+      <List v-bind="args">
+        <div v-for="item in items" :key="item.title">
+          <ListItem :item="item"/>
+        </div>
+      </List>
+    `,
+  }),
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [
+      {
+        ...Unchecked.input.args,
+      },
+    ],
+  },
+});
 ```
 
 ```js filename="List.stories.js" renderer="web-components" language="js"

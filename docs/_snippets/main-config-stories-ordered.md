@@ -51,3 +51,27 @@ export default defineMain({
   ],
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: [
+    '../src/**/*.mdx', // 👈 These will display first in the sidebar
+    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)', // 👈 Followed by these
+  ],
+});
+```
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: [
+    '../src/**/*.mdx', // 👈 These will display first in the sidebar
+    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)', // 👈 Followed by these
+  ],
+});
+```

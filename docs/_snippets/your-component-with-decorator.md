@@ -139,7 +139,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="YourComponent.stories.js" renderer="vue" language="js"
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import YourComponent from './YourComponent.vue';
 
 export default {
@@ -148,7 +148,7 @@ export default {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/vue3-vite';
 
 import YourComponent from './YourComponent.vue';
@@ -159,6 +159,30 @@ const meta = {
 } satisfies Meta<typeof YourComponent>;
 
 export default meta;
+```
+
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
+
+const meta = preview.meta({
+  component: YourComponent,
+  decorators: [() => ({ template: '<div style="margin: 3em;"><story/></div>' })],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
+
+const meta = preview.meta({
+  component: YourComponent,
+  decorators: [() => ({ template: '<div style="margin: 3em;"><story/></div>' })],
+});
 ```
 
 ```js filename="YourComponent.stories.js" renderer="web-components" language="js"

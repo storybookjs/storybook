@@ -79,3 +79,43 @@ export default defineMain({
   },
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  refs: {
+    react: {
+      title: 'React',
+      url: 'http://localhost:7007',
+    },
+    angular: {
+      title: 'Angular',
+      url: 'http://localhost:7008',
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  refs: {
+    react: {
+      title: 'React',
+      url: 'http://localhost:7007',
+    },
+    angular: {
+      title: 'Angular',
+      url: 'http://localhost:7008',
+    },
+  },
+});
+```

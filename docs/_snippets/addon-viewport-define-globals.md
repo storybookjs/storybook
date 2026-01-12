@@ -237,3 +237,47 @@ export const OnPhone = meta.story({
   },
 });
 ```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  globals: {
+    // 👇 Set viewport for all component stories
+    viewport: { value: 'tablet', isRotated: false },
+  },
+});
+
+export const OnPhone = meta.story({
+  globals: {
+    // 👇 Override viewport for this story
+    viewport: { value: 'mobile1', isRotated: false },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  globals: {
+    // 👇 Set viewport for all component stories
+    viewport: { value: 'tablet', isRotated: false },
+  },
+});
+
+export const OnPhone = meta.story({
+  globals: {
+    // 👇 Override viewport for this story
+    viewport: { value: 'mobile1', isRotated: false },
+  },
+});
+```

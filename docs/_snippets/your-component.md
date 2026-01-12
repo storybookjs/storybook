@@ -244,7 +244,7 @@ export const FirstStory: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="vue" language="js"
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import YourComponent from './YourComponent.vue';
 
 //👇 This default export determines where your story goes in the story list
@@ -271,7 +271,7 @@ export const FirstStory = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import YourComponent from './YourComponent.vue';
@@ -301,6 +301,66 @@ export const Primary: Story = {
     //👇 The args you need here will depend on your component
   },
 };
+```
+
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
+
+//👇 This default export determines where your story goes in the story list
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Primary = meta.story({
+  render: (args) => ({
+    components: { YourComponent },
+    setup() {
+      return { args };
+    },
+    template: '<YourComponent v-bind="args" />',
+  }),
+  args: {
+    //👇 The args you need here will depend on your component
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
+
+//👇 This default export determines where your story goes in the story list
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const FirstStory = meta.story({
+  render: (args) => ({
+    components: { YourComponent },
+    setup() {
+      return { args };
+    },
+    template: '<YourComponent v-bind="args" />',
+  }),
+  args: {
+    //👇 The args you need here will depend on your component
+  },
+});
 ```
 
 ```js filename="YourComponent.stories.js" renderer="web-components" language="js"

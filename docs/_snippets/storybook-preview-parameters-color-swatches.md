@@ -50,3 +50,29 @@ export default definePreview({
   },
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  parameters: {
+    controls: {
+      presetColors: [{ color: '#ff4785', title: 'Coral' }, 'rgba(0, 159, 183, 1)', '#fe4a49'],
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  parameters: {
+    controls: {
+      presetColors: [{ color: '#ff4785', title: 'Coral' }, 'rgba(0, 159, 183, 1)', '#fe4a49'],
+    },
+  },
+});
+```

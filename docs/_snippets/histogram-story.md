@@ -268,7 +268,7 @@ export const Default: Story = {
 };
 ```
 
-```js filename="Histogram.stories.js" renderer="vue" language="js"
+```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Histogram from './Histogram.vue';
 
 export default {
@@ -297,7 +297,7 @@ export const Default = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="vue" language="ts"
+```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Histogram from './Histogram.vue';
@@ -364,6 +364,70 @@ export const Default: Story = {
     label: 'Latency distribution',
   },
 };
+```
+
+```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Histogram from './Histogram.vue';
+
+const meta = preview.meta({
+  component: Histogram,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Default = meta.story({
+  render: (args) => ({
+    components: { Histogram },
+    setup() {
+      return { args };
+    },
+    template: '<Histogram v-bind="args" />',
+  }),
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Histogram from './Histogram.vue';
+
+const meta = preview.meta({
+  component: Histogram,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Default = meta.story({
+  render: (args) => ({
+    components: { Histogram },
+    setup() {
+      return { args };
+    },
+    template: '<Histogram v-bind="args" />',
+  }),
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
 ```
 
 ```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

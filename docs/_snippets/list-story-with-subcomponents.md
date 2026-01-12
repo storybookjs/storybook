@@ -236,7 +236,7 @@ export const OneItem: Story = {
 };
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js"
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import List from './List.vue';
 import ListItem from './ListItem.vue';
 
@@ -263,7 +263,7 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './List.vue';
@@ -293,6 +293,66 @@ export const OneItem: Story = {
     template: '<List v-bind="args"><ListItem /></List>',
   }),
 };
+```
+
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './List.vue';
+import ListItem from './ListItem.vue';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story({
+  render: () => ({
+    components: { List },
+    template: '<List/>',
+  }),
+});
+
+export const OneItem = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { args }
+    }
+    template: '<List v-bind="args"><ListItem /></List>',
+  }),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './List.vue';
+import ListItem from './ListItem.vue';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story({
+  render: () => ({
+    components: { List },
+    template: '<List/>',
+  }),
+});
+
+export const OneItem = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { args }
+    }
+    template: '<List v-bind="args"><ListItem /></List>',
+  }),
+});
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

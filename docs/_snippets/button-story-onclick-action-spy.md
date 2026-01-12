@@ -132,3 +132,33 @@ const meta = preview.meta({
   args: { onClick: fn() },
 });
 ```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { fn } from 'storybook/test';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
+  args: { onClick: fn() },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { fn } from 'storybook/test';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
+  args: { onClick: fn() },
+});
+```

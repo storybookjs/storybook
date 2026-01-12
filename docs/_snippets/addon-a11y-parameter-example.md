@@ -308,3 +308,59 @@ export const NoA11yFail = meta.story({
   },
 });
 ```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    // 👇 Applies to all stories in this file
+    a11y: { test: 'error' },
+  },
+});
+
+// 👇 This story will use the 'error' value and fail on accessibility violations
+export const Primary = meta.story({
+  args: { primary: true },
+});
+
+// 👇 This story will not fail on accessibility violations
+//    (but will still run the tests and show warnings)
+export const NoA11yFail = meta.story({
+  parameters: {
+    a11y: { test: 'todo' },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    // 👇 Applies to all stories in this file
+    a11y: { test: 'error' },
+  },
+});
+
+// 👇 This story will use the 'error' value and fail on accessibility violations
+export const Primary = meta.story({
+  args: { primary: true },
+});
+
+// 👇 This story will not fail on accessibility violations
+//    (but will still run the tests and show warnings)
+export const NoA11yFail = meta.story({
+  parameters: {
+    a11y: { test: 'todo' },
+  },
+});
+```

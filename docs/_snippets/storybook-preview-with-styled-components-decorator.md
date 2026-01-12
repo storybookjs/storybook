@@ -435,3 +435,71 @@ export default definePreview({
   ],
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+import 'vuetify/styles';
+import '@mdi/font/css/materialdesignicons.css';
+import vuetify from '../src/plugins/vuetify';
+
+import StoryWrapper from './StoryWrapper.vue';
+
+// Registers the Vuetify plugin in Storybook's Vue app instance
+export default definePreview({
+  decorators: [
+    (_, { globals }) => {
+      // The theme can be accessed via the story context's globals
+      const themeName = globals.theme || 'light';
+      return {
+        components: { StoryWrapper },
+        setup() {
+          return { themeName };
+        },
+        template: `
+          <StoryWrapper :themeName="themeName">
+            <template #story>
+              <story />
+            </template>
+          </StoryWrapper>
+        `,
+      };
+    },
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+import 'vuetify/styles';
+import '@mdi/font/css/materialdesignicons.css';
+import vuetify from '../src/plugins/vuetify';
+
+import StoryWrapper from './StoryWrapper.vue';
+
+// Registers the Vuetify plugin in Storybook's Vue app instance
+export default definePreview({
+  decorators: [
+    (_, { globals }) => {
+      // The theme can be accessed via the story context's globals
+      const themeName = globals.theme || 'light';
+      return {
+        components: { StoryWrapper },
+        setup() {
+          return { themeName };
+        },
+        template: `
+          <StoryWrapper :themeName="themeName">
+            <template #story>
+              <story />
+            </template>
+          </StoryWrapper>
+        `,
+      };
+    },
+  ],
+});
+```

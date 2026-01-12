@@ -168,7 +168,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Button from './Button.vue';
 
 export default {
@@ -184,7 +184,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -202,6 +202,44 @@ const meta = {
 } satisfies Meta<typeof Button>;
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Creates specific argTypes
+  argTypes: {
+    backgroundColor: { control: 'color' },
+  },
+  args: {
+    //👇 Now all Button stories will be primary.
+    primary: true,
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Creates specific argTypes
+  argTypes: {
+    backgroundColor: { control: 'color' },
+  },
+  args: {
+    //👇 Now all Button stories will be primary.
+    primary: true,
+  },
+});
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js"

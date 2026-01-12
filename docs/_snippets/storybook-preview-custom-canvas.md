@@ -66,3 +66,37 @@ export default definePreview({
   },
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+import { MyCanvas } from './MyCanvas';
+
+export default definePreview({
+  parameters: {
+    docs: {
+      components: {
+        Canvas: MyCanvas,
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+import { MyCanvas } from './MyCanvas';
+
+export default definePreview({
+  parameters: {
+    docs: {
+      components: {
+        Canvas: MyCanvas,
+      },
+    },
+  },
+});
+```

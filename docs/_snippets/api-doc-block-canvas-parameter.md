@@ -206,3 +206,41 @@ export const Basic = meta.story({
   },
 });
 ```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Basic = meta.story({
+  parameters: {
+    docs: {
+      canvas: { sourceState: 'shown' },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Basic = meta.story({
+  parameters: {
+    docs: {
+      canvas: { sourceState: 'shown' },
+    },
+  },
+});
+```

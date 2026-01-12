@@ -167,7 +167,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import MyComponent from './MyComponent.vue';
@@ -183,7 +183,7 @@ export default {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
@@ -201,6 +201,44 @@ const meta = {
 } satisfies Meta<typeof MyComponent>;
 
 export default meta;
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+  parameters: {
+    viewport: {
+      //👇 Set available viewports for every story in the file
+      options: INITIAL_VIEWPORTS,
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+  parameters: {
+    viewport: {
+      //👇 Set available viewports for every story in the file
+      options: INITIAL_VIEWPORTS,
+    },
+  },
+});
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"

@@ -74,3 +74,39 @@ export default definePreview({
   loaders: [mswLoader], // 👈 Add the MSW loader to all stories
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+import { initialize, mswLoader } from 'msw-storybook-addon';
+
+/*
+ * Initializes MSW
+ * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * to learn how to customize it
+ */
+initialize();
+
+export default definePreview({
+  // ... rest of preview configuration
+  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
+});
+```
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+import { initialize, mswLoader } from 'msw-storybook-addon';
+
+/*
+ * Initializes MSW
+ * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * to learn how to customize it
+ */
+initialize();
+
+export default definePreview({
+  // ... rest of preview configuration
+  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
+});
+```

@@ -64,3 +64,33 @@ export default defineMain({
   },
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  tags: {
+    // 👇 Define a custom tag named "experimental"
+    experimental: {
+      defaultFilterSelection: 'exclude', // Or 'include'
+    },
+  },
+});
+```
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  tags: {
+    // 👇 Define a custom tag named "experimental"
+    experimental: {
+      defaultFilterSelection: 'exclude', // Or 'include'
+    },
+  },
+});
+```

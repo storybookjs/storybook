@@ -242,7 +242,56 @@ export const Simple = meta.story({
 
 ```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { DocumentScreen } from './YourPage';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
+```
+
+```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import DocumentScreen from './YourPage.vue';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import DocumentScreen from './YourPage.vue';
 
 // 👇 Imports the required stories
 import * as PageLayout from './PageLayout.stories';

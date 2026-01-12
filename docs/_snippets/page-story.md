@@ -183,7 +183,7 @@ export const LoggedIn: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Page from './Page.vue';
 
 //👇 Imports all Header stories
@@ -212,7 +212,7 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Page from './Page.vue';
@@ -244,6 +244,70 @@ export const Primary: Story = {
     ...HeaderStories.LoggedIn.args,
   },
 };
+```
+
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const LoggedIn = meta.story({
+  render: (args) => ({
+    components: { Page },
+    setup() {
+      return { args };
+    },
+    template: '<page v-bind="args" />',
+  }),
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const LoggedIn = meta.story({
+  render: (args) => ({
+    components: { Page },
+    setup() {
+      return { args };
+    },
+    template: '<page v-bind="args" />',
+  }),
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
 ```
 
 ```js filename="Page.stories.js" renderer="web-components" language="js"

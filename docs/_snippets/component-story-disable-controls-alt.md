@@ -166,7 +166,42 @@ const meta = preview.meta({
 
 ```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  argTypes: {
+    // foo is the property we want to remove from the UI
+    foo: {
+      control: false,
+    },
+  },
+});
+```
+
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
+
+const meta = preview.meta({
+  component: YourComponent,
+  argTypes: {
+    // foo is the property we want to remove from the UI
+    foo: {
+      control: false,
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import YourComponent from './YourComponent.vue';
 
 const meta = preview.meta({
   component: YourComponent,

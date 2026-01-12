@@ -625,3 +625,117 @@ export const ExampleStory = meta.story({
   },
 });
 ```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    a11y: {
+      /*
+       * Axe's context parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter
+       * to learn more.
+       */
+      context: {},
+      /*
+       * Axe's configuration
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#api-name-axeconfigure
+       * to learn more about the available properties.
+       */
+      config: {},
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
+      options: {},
+      /*
+       * Configure test behavior
+       * See: https://storybook.js.org/docs/next/writing-tests/accessibility-testing#test-behavior
+       */
+      test: 'error',
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
+      manual: true,
+    },
+  },
+});
+
+export const ExampleStory = meta.story({
+  parameters: {
+    a11y: {
+      // ...same config available as above
+    },
+  },
+  globals: {
+    a11y: {
+      // ...same config available as above
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    a11y: {
+      /*
+       * Axe's context parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter
+       * to learn more.
+       */
+      context: {},
+      /*
+       * Axe's configuration
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#api-name-axeconfigure
+       * to learn more about the available properties.
+       */
+      config: {},
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
+      options: {},
+      /*
+       * Configure test behavior
+       * See: https://storybook.js.org/docs/next/writing-tests/accessibility-testing#test-behavior
+       */
+      test: 'error',
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
+      manual: true,
+    },
+  },
+});
+
+export const ExampleStory = meta.story({
+  parameters: {
+    a11y: {
+      // ...same config available as above
+    },
+  },
+  globals: {
+    a11y: {
+      // ...same config available as above
+    },
+  },
+});
+```

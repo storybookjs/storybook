@@ -1126,3 +1126,163 @@ export const MockedError = meta.story({
   },
 });
 ```
+
+```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { graphql, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
+
+import WrapperComponent from './ApolloWrapperClient.vue';
+import DocumentScreen from './YourPage.vue';
+
+//👇The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+const meta = preview.meta({
+  component: DocumentScreen,
+  render: () => ({
+    components: { DocumentScreen, WrapperComponent },
+    template: '<WrapperComponent><DocumentScreen /></WrapperComponent>',
+  }),
+});
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', () => {
+          return HttpResponse.json({
+            data: {
+              allInfo: {
+                ...TestData,
+              },
+            },
+          });
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', async () => {
+          await delay(800);
+          return HttpResponse.json({
+            errors: [
+              {
+                message: 'Access denied',
+              },
+            ],
+          });
+        }),
+      ],
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { graphql, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
+
+import WrapperComponent from './ApolloWrapperClient.vue';
+import DocumentScreen from './YourPage.vue';
+
+//👇The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+const meta = preview.meta({
+  component: DocumentScreen,
+  render: () => ({
+    components: { DocumentScreen, WrapperComponent },
+    template: '<WrapperComponent><DocumentScreen /></WrapperComponent>',
+  }),
+});
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', () => {
+          return HttpResponse.json({
+            data: {
+              allInfo: {
+                ...TestData,
+              },
+            },
+          });
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', async () => {
+          await delay(800);
+          return HttpResponse.json({
+            errors: [
+              {
+                message: 'Access denied',
+              },
+            ],
+          });
+        }),
+      ],
+    },
+  },
+});
+```

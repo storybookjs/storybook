@@ -319,3 +319,95 @@ const meta = preview.meta({
   },
 });
 ```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    // Assigns the argTypes to the Colors category
+    backgroundColor: {
+      control: 'color',
+      table: {
+        category: 'Colors',
+        // Assigns the argTypes to a specific subcategory
+        subcategory: 'Button colors',
+      },
+    },
+    primary: {
+      table: {
+        category: 'Colors',
+        subcategory: 'Button style',
+      },
+    },
+    label: {
+      table: {
+        category: 'Text',
+        subcategory: 'Button contents',
+      },
+    },
+    // Assigns the argType to the Events category
+    onClick: {
+      table: {
+        category: 'Events',
+        subcategory: 'Button Events',
+      },
+    },
+    // Assigns the argType to the Sizes category
+    size: {
+      table: {
+        category: 'Sizes',
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    // Assigns the argTypes to the Colors category
+    backgroundColor: {
+      control: 'color',
+      table: {
+        category: 'Colors',
+        // Assigns the argTypes to a specific subcategory
+        subcategory: 'Button colors',
+      },
+    },
+    primary: {
+      table: {
+        category: 'Colors',
+        subcategory: 'Button style',
+      },
+    },
+    label: {
+      table: {
+        category: 'Text',
+        subcategory: 'Button contents',
+      },
+    },
+    // Assigns the argType to the Events category
+    onClick: {
+      table: {
+        category: 'Events',
+        subcategory: 'Button Events',
+      },
+    },
+    // Assigns the argType to the Sizes category
+    size: {
+      table: {
+        category: 'Sizes',
+      },
+    },
+  },
+});
+```

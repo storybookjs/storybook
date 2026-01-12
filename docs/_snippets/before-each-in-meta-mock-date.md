@@ -301,3 +301,57 @@ export const Default = meta.story({
   },
 });
 ```
+
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import MockDate from 'mockdate';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Default = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import MockDate from 'mockdate';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Default = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
+```

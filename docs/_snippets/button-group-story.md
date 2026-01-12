@@ -203,7 +203,7 @@ export const Pair: Story = {
 };
 ```
 
-```js filename="ButtonGroup.stories.js" renderer="vue" language="js"
+```js filename="ButtonGroup.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import ButtonGroup from './ButtonGroup.vue';
 
 //👇 Imports the Button stories
@@ -233,7 +233,7 @@ export const Pair = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts"
+```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import ButtonGroup from './ButtonGroup.vue';
@@ -298,6 +298,62 @@ export const Pair: Story = {
     orientation: 'horizontal',
   },
 };
+```
+
+```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import ButtonGroup from './ButtonGroup.vue';
+
+//👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: ButtonGroup,
+});
+
+export const Pair = meta.story({
+  render: (args) => ({
+    components: { ButtonGroup },
+    setup() {
+      return { args };
+    },
+    template: '<ButtonGroup v-bind="args" />',
+  }),
+  args: {
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    orientation: 'horizontal',
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="ButtonGroup.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import ButtonGroup from './ButtonGroup.vue';
+
+//👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: ButtonGroup,
+});
+
+export const Pair = meta.story({
+  render: (args) => ({
+    components: { ButtonGroup },
+    setup() {
+      return { args };
+    },
+    template: '<ButtonGroup v-bind="args" />',
+  }),
+  args: {
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    orientation: 'horizontal',
+  },
+});
 ```
 
 ```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

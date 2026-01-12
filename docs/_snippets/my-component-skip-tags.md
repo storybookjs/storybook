@@ -89,3 +89,37 @@ export const SkipStory = meta.story({
   tags: ['skip-test'],
 });
 ```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+});
+
+export const SkipStory = meta.story({
+  //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+});
+
+export const SkipStory = meta.story({
+  //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+});
+```

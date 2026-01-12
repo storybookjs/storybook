@@ -91,7 +91,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js"
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 3"
 export default {
   decorators: [
     (story) => ({
@@ -102,7 +102,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Preview } from '@storybook/vue3-vite';
 
 const preview: Preview = {
@@ -114,6 +114,34 @@ const preview: Preview = {
   ],
 };
 export default preview;
+```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+});
 ```
 
 ```js filename=".storybook/preview.js" renderer="web-components" language="js"

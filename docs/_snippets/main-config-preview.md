@@ -119,3 +119,35 @@ export default defineMain({
  `,
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="Head (CSF Next 🧪)"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  previewHead: (head) => `
+    ${head}
+    <style>
+      html, body {
+        background: #827979;
+      }
+    </style>
+ `,
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="Head (CSF Next 🧪)"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  previewHead: (head) => `
+    ${head}
+    <style>
+      html, body {
+        background: #827979;
+      }
+    </style>
+ `,
+});
+```

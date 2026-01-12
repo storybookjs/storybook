@@ -61,7 +61,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js"
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 3"
 import { setup } from '@storybook/vue3-vite';
 
 import { VApp } from 'vuetify/components';
@@ -94,7 +94,7 @@ const preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Preview } from '@storybook/vue3-vite';
 
 import { setup } from '@storybook/vue3-vite';
@@ -127,6 +127,70 @@ const preview: Preview = {
 };
 
 export default preview;
+```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview, setup } from '@storybook/vue3-vite';
+
+import { VApp } from 'vuetify/components';
+
+import { registerPlugins } from '../src/plugins';
+
+setup((app) => {
+  // Registers your app's plugins including Vuetify into Storybook
+  registerPlugins(app);
+});
+
+export default definePreview({
+  decorators: [
+    (story, context) => {
+      const theme = context.globals.theme || 'light';
+      return {
+        components: { story, VApp },
+        template: `
+          <v-app theme="${theme}">
+            <div class="d-flex">
+              <story/>
+            </div>
+          </v-app>
+      `,
+      };
+    },
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview, setup } from '@storybook/vue3-vite';
+
+import { VApp } from 'vuetify/components';
+
+import { registerPlugins } from '../src/plugins';
+
+setup((app) => {
+  // Registers your app's plugins including Vuetify into Storybook
+  registerPlugins(app);
+});
+
+export default definePreview({
+  decorators: [
+    (story, context) => {
+      const theme = context.globals.theme || 'light';
+      return {
+        components: { story, VApp },
+        template: `
+          <v-app theme="${theme}">
+            <div>
+              <story/>
+            </div>
+          </v-app>
+      `,
+      };
+    },
+  ],
+});
 ```
 
 ```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

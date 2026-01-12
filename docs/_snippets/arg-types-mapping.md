@@ -209,3 +209,45 @@ const meta = preview.meta({
   },
 });
 ```
+
+```ts filename="Example.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Example from './Example.vue';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    label: {
+      control: { type: 'select' },
+      options: ['Normal', 'Bold', 'Italic'],
+      mapping: {
+        Bold: 'Bold',
+        Italic: 'Italic',
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Example.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Example from './Example.vue';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    label: {
+      control: { type: 'select' },
+      options: ['Normal', 'Bold', 'Italic'],
+      mapping: {
+        Bold: 'Bold',
+        Italic: 'Italic',
+      },
+    },
+  },
+});
+```

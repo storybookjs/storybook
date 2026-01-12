@@ -43,3 +43,25 @@ export default defineMain({
   stories: ['../packages/MyStories'],
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  // 👇 Storybook will load all existing stories within the MyStories folder
+  stories: ['../packages/MyStories'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  // 👇 Storybook will load all existing stories within the MyStories folder
+  stories: ['../packages/MyStories'],
+});
+```

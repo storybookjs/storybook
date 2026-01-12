@@ -31,7 +31,7 @@ export const Text: Story = {
 };
 ```
 
-```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js"
 import { action } from 'storybook/actions';
 
 import { Button } from './Button';
@@ -49,7 +49,7 @@ export const Text = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -270,45 +270,4 @@ export const Text: Story = {
     onClick: action('clicked'),
   },
 };
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { action } from 'storybook/actions';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Text = meta.story({
-  args: {
-    label: 'Hello',
-    onClick: action('clicked'),
-  },
-  render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-import { action } from 'storybook/actions';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Text = meta.story({
-  args: {
-    label: 'Hello',
-    onClick: action('clicked'),
-  },
-  render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
-});
 ```

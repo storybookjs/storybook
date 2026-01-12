@@ -164,7 +164,43 @@ const meta = preview.meta({
 
 ```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+
+  /*
+   * All stories in this file will:
+   * - Be included in the docs page
+   * - Not appear in Storybook's sidebar
+   */
+  tags: ['autodocs', '!dev'],
+});
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  /*
+   * All stories in this file will:
+   * - Be included in the docs page
+   * - Not appear in Storybook's sidebar
+   */
+  tags: ['autodocs', '!dev'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
 
 const meta = preview.meta({
   component: Button,

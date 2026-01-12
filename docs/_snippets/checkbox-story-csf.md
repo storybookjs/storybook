@@ -173,7 +173,42 @@ export const Unchecked = meta.story({
 
 ```js filename="Checkbox.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Checkbox } from './Checkbox';
+
+const meta = preview.meta({
+  component: Checkbox,
+});
+
+export const Unchecked = meta.story({
+  args: {
+    label: 'Unchecked',
+  },
+});
+```
+
+```ts filename="Checkbox.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Checkbox from './Checkbox.vue';
+
+const meta = preview.meta({
+  component: Checkbox,
+});
+
+export const Unchecked = meta.story({
+  args: {
+    label: 'Unchecked',
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Checkbox.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Checkbox from './Checkbox.vue';
 
 const meta = preview.meta({
   component: Checkbox,

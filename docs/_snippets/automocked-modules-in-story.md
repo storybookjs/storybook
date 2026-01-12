@@ -342,3 +342,65 @@ export const LogIn = meta.story({
   },
 });
 ```
+
+```ts filename="AuthButton.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { expect } from 'storybook/test';
+
+import AuthButton from './AuthButton.vue';
+
+import { v4 as uuidv4 } from 'uuid';
+import { getUserFromSession } from '../lib/session';
+
+const meta = preview.meta({
+  component: AuthButton,
+  // 👇 This will run before each story is rendered
+  beforeEach: async () => {
+    // 👇 Force known, consistent behavior for mocked modules
+    uuidv4.mockReturnValue('1234-5678-90ab-cdef');
+    getUserFromSession.mockReturnValue({ name: 'John Doe' });
+  },
+});
+
+export const LogIn = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Sign in' });
+    userEvent.click(button);
+
+    // Assert that the getUserFromSession function was called
+    expect(getUserFromSession).toHaveBeenCalled();
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="AuthButton.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { expect } from 'storybook/test';
+
+import AuthButton from './AuthButton.vue';
+
+import { v4 as uuidv4 } from 'uuid';
+import { getUserFromSession } from '../lib/session';
+
+const meta = preview.meta({
+  component: AuthButton,
+  // 👇 This will run before each story is rendered
+  beforeEach: async () => {
+    // 👇 Force known, consistent behavior for mocked modules
+    uuidv4.mockReturnValue('1234-5678-90ab-cdef');
+    getUserFromSession.mockReturnValue({ name: 'John Doe' });
+  },
+});
+
+export const LogIn = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Sign in' });
+    userEvent.click(button);
+
+    // Assert that the getUserFromSession function was called
+    expect(getUserFromSession).toHaveBeenCalled();
+  },
+});
+```

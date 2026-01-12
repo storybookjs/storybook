@@ -186,7 +186,44 @@ const meta = preview.meta({
 
 ```js filename="MyComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      toc: {
+        disable: true, // 👈 Disables the table of contents
+      },
+    },
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      toc: {
+        disable: true, // 👈 Disables the table of contents
+      },
+    },
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
 
 const meta = preview.meta({
   component: MyComponent,

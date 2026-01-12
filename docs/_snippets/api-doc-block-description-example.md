@@ -391,3 +391,75 @@ export const Primary = meta.story({
   },
 });
 ```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```

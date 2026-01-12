@@ -64,7 +64,7 @@ export const Example = {
 };
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js"
 import { Layout } from './Layout';
 import { MyComponent } from './MyComponent';
 
@@ -87,7 +87,7 @@ export const Example = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -272,58 +272,6 @@ export const Example: Story = {
     </layout>
   `,
 };
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Layout } from './Layout';
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-// This story uses a render function to fully control how the component renders.
-export const Example = meta.story({
-  render: () => (
-    <Layout>
-      <header>
-        <h1>Example</h1>
-      </header>
-      <article>
-        <MyComponent />
-      </article>
-    </Layout>
-  ),
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Layout } from './Layout';
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-// This story uses a render function to fully control how the component renders.
-export const Example = meta.story({
-  render: () => (
-    <Layout>
-      <header>
-        <h1>Example</h1>
-      </header>
-      <article>
-        <MyComponent />
-      </article>
-    </Layout>
-  ),
-});
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js"

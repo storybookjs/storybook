@@ -62,3 +62,35 @@ export default definePreview({
   tags: ['autodocs'],
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  // ...rest of preview
+  /*
+   * All stories in your project will have these tags applied:
+   * - autodocs
+   * - dev (implicit default)
+   * - test (implicit default)
+   */
+  tags: ['autodocs'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  // ...rest of preview
+  /*
+   * All stories in your project will have these tags applied:
+   * - autodocs
+   * - dev (implicit default)
+   * - test (implicit default)
+   */
+  tags: ['autodocs'],
+});
+```

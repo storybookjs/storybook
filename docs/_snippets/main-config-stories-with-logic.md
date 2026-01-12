@@ -74,3 +74,37 @@ export default defineMain({
   ],
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain, type StoriesEntry } from '@storybook/vue3-vite/node';
+
+async function findStories(): Promise<StoriesEntry[]> {
+  // your custom logic returns a list of files
+}
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: async (list: StoriesEntry[]) => [
+    ...list,
+    // 👇 Add your found stories to the existing list of story files
+    ...(await findStories()),
+  ],
+});
+```
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+async function findStories() {
+  // your custom logic returns a list of files
+}
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: async (list) => [
+    ...list,
+    // 👇 Add your found stories to the existing list of story files
+    ...(await findStories()),
+  ],
+});
+```

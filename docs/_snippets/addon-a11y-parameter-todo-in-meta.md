@@ -163,3 +163,35 @@ const meta = preview.meta({
   },
 });
 ```
+
+```ts filename="DataTable.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import DataTable from './DataTable.vue';
+
+const meta = preview.meta({
+  component: DataTable,
+  parameters: {
+    // 👇 This component's accessibility tests will not fail
+    //    Instead, they display warnings in the Storybook UI
+    a11y: { test: 'todo' },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="DataTable.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import DataTable from './DataTable.vue';
+
+const meta = preview.meta({
+  component: DataTable,
+  parameters: {
+    // 👇 This component's accessibility tests will not fail
+    //    Instead, they display warnings in the Storybook UI
+    a11y: { test: 'todo' },
+  },
+});
+```

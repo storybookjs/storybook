@@ -222,3 +222,45 @@ const meta = preview.meta({
   },
 });
 ```
+
+```ts filename="Example.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Example from './Example.vue';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    value: {
+      control: {
+        type: 'number',
+        min: 0,
+        max: 100,
+        step: 10,
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Example.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Example from './Example.vue';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    value: {
+      control: {
+        type: 'number',
+        min: 0,
+        max: 100,
+        step: 10,
+      },
+    },
+  },
+});
+```

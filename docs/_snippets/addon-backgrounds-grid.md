@@ -243,3 +243,49 @@ const meta = preview.meta({
   },
 });
 ```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+// To apply a set of backgrounds to all stories of Button:
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      grid: {
+        cellSize: 20,
+        opacity: 0.5,
+        cellAmount: 5,
+        offsetX: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+        offsetY: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+// To apply a set of backgrounds to all stories of Button:
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      grid: {
+        cellSize: 20,
+        opacity: 0.5,
+        cellAmount: 5,
+        offsetX: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+        offsetY: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+      },
+    },
+  },
+});
+```

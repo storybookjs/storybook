@@ -240,7 +240,58 @@ export const Secondary = meta.story({
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    ...Primary.input.args,
+    primary: false,
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    ...Primary.input.args,
+    primary: false,
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
 
 const meta = preview.meta({
   component: Button,

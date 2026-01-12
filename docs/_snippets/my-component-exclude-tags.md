@@ -89,3 +89,37 @@ export const ExcludeStory = meta.story({
   tags: ['no-tests'],
 });
 ```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `no-tests` tag to all stories in this file
+  tags: ['no-tests'],
+});
+
+export const ExcludeStory = meta.story({
+  //👇 Adds the `no-tests` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+  tags: ['no-tests'],
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `no-tests` tag to all stories in this file
+  tags: ['no-tests'],
+});
+
+export const ExcludeStory = meta.story({
+  //👇 Adds the `no-tests` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+  tags: ['no-tests'],
+});
+```

@@ -160,7 +160,7 @@ export const CustomFooter = {
 </Story>
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Page from './Page.vue';
 
 export default {
@@ -187,7 +187,7 @@ export const CustomFooter = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { ComponentPropsAndSlots, Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Page from './Page.vue';
@@ -219,6 +219,68 @@ export const Primary = {
     footer: 'Built with Storybook',
   },
 } satisfies Story;
+```
+
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import type { ComponentPropsAndSlots } from '@storybook/vue3-vite';
+
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+type PagePropsAndCustomArgs = ComponentPropsAndSlots<typeof Page> & { footer?: string };
+
+const meta = preview.type<{ args: PagePropsAndCustomArgs }>().meta({
+  component: Page,
+  render: (args) => ({
+    components: { Page },
+    setup() {
+      return { args };
+    },
+    template: `
+      <page v-bind="args">
+        <template v-slot:footer>
+          <footer v-if="args.footer" v-html="args.footer" />
+        </template>
+      </page>
+    `,
+  }),
+});
+
+export const Primary = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
+```
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+  render: (args) => ({
+    components: { Page },
+    setup() {
+      return { args };
+    },
+    template: `
+      <page v-bind="args">
+        <template v-slot:footer>
+          <footer v-if="args.footer" v-html="args.footer" />
+        </template>
+      </page>
+    `,
+  }),
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
 ```
 
 ```js filename="Page.stories.js" renderer="web-components" language="js"
@@ -279,9 +341,9 @@ type PagePropsAndCustomArgs = React.ComponentProps<typeof Page> & {
   footer?: string;
 };
 
-const meta = preview.meta({
+const meta = preview.type<{ args: PagePropsAndCustomArgs }>().meta({
   component: Page,
-  render: ({ footer, ...args }: PagePropsAndCustomArgs) => (
+  render: ({ footer, ...args }) => (
     <Page {...args}>
       <footer>{footer}</footer>
     </Page>
@@ -294,8 +356,6 @@ export const CustomFooter = meta.story({
   },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```jsx filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';

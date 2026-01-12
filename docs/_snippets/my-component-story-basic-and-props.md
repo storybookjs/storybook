@@ -21,7 +21,7 @@ export const WithProp: Story = {
 };
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -35,7 +35,7 @@ export const WithProp = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -263,37 +263,4 @@ export const Basic: Story = {};
 export const WithProp: Story = {
   render: () => html`<my-component prop="value" />`,
 };
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Basic = meta.story();
-
-export const WithProp = meta.story({
-  render: () => <MyComponent prop="value" />,
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  component: MyComponent,
-});
-
-export const Basic = meta.story();
-
-export const WithProp = meta.story({
-  render: () => <MyComponent prop="value" />,
-});
 ```

@@ -191,7 +191,7 @@ export const ExperimentalFeatureStory = meta.story({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -211,7 +211,7 @@ export const ExperimentalFeatureStory: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Button from './Button.vue';
 
 export default {
@@ -224,4 +224,40 @@ export const ExperimentalFeatureStory = {
   //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
   tags: ['!stable', 'experimental'],
 };
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  // 👇 Applies to all stories in this file
+  tags: ['stable'],
+});
+
+export const ExperimentalFeatureStory = meta.story({
+  //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
+  tags: ['!stable', 'experimental'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  // 👇 Applies to all stories in this file
+  tags: ['stable'],
+});
+
+export const ExperimentalFeatureStory = meta.story({
+  //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
+  tags: ['!stable', 'experimental'],
+});
 ```

@@ -162,3 +162,38 @@ const meta = preview.meta({
 
 export const Baz = meta.story();
 ```
+
+```ts filename="FooBar.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Foo from './Foo.vue';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Foo/Bar',
+  component: Foo,
+});
+
+export const Baz = meta.story();
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="FooBar.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import Foo from './Foo.vue';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Foo/Bar',
+  component: Foo,
+});
+
+export const Baz = meta.story();
+```

@@ -211,7 +211,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import MyComponent from './MyComponent.vue';
 
 import imageFile from './static/image.png';
@@ -236,7 +236,7 @@ export const WithAnImage = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
@@ -264,6 +264,62 @@ export const WithAnImage: Story = {
     template: `<img v-bind="image"/>`,
   }),
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => ({
+    setup() {
+      //👇 Returns the content of the image object create above.
+      return { image };
+    },
+    template: `<img v-bind="image"/>`,
+  }),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => ({
+    setup() {
+      //👇 Returns the content of the image object create above.
+      return { image };
+    },
+    template: `<img v-bind="image"/>`,
+  }),
+});
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"

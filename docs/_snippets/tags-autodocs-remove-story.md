@@ -192,3 +192,39 @@ export const UndocumentedStory = meta.story({
   tags: ['!autodocs'],
 });
 ```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+
+export const UndocumentedStory = meta.story({
+  // 👇 Removes this story from auto-generated documentation
+  tags: ['!autodocs'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+
+export const UndocumentedStory = meta.story({
+  // 👇 Removes this story from auto-generated documentation
+  tags: ['!autodocs'],
+});
+```

@@ -224,3 +224,45 @@ export const Default = meta.story({
   },
 });
 ```
+
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Runs after each story in this file
+  async afterEach(context) {
+    console.log(`✅ Tested ${context.name} story`);
+  },
+});
+
+export const Default = meta.story({
+  async play({ canvas }) {
+    // ...
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Runs after each story in this file
+  async afterEach(context) {
+    console.log(`✅ Tested ${context.name} story`);
+  },
+});
+
+export const Default = meta.story({
+  async play({ canvas }) {
+    // ...
+  },
+});
+```

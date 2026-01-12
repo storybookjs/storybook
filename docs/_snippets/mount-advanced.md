@@ -249,3 +249,67 @@ export const Default = meta.story({
   },
 });
 ```
+
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import Page from './Page.vue';
+
+const meta = preview.meta({ component: Page });
+
+export const Default = meta.story({
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      Page,
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      { props: { ...args, params: { id: String(note.id) } } },
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    params: { control: { disable: true } },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import Page from './Page.vue';
+
+const meta = preview.meta({ component: Page });
+
+export const Default = meta.story({
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      Page,
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      { props: { ...args, params: { id: String(note.id) } } },
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    params: { control: { disable: true } },
+  },
+});
+```

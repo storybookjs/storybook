@@ -145,3 +145,45 @@ export const ChristmasUI = meta.story({
   },
 });
 ```
+
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const ChristmasUI = meta.story({
+  async play({ mount }) {
+    MockDate.set('2024-12-25');
+    // 👇 Render the component with the mocked date
+    await mount();
+    // ...rest of test
+  },
+});
+```
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const ChristmasUI = meta.story({
+  async play({ mount }) {
+    MockDate.set('2024-12-25');
+    // 👇 Render the component with the mocked date
+    await mount();
+    // ...rest of test
+  },
+});
+```

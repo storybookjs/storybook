@@ -262,7 +262,7 @@ export const Secondary = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -301,7 +301,7 @@ export const Secondary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Button from './Button.vue';
 
 export default {
@@ -333,6 +333,80 @@ export const Secondary = {
     },
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+});
+
+// 👇 This story will display the Code panel
+export const Primary = meta.story({
+  args: {
+    children: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+});
+
+// 👇 This story will display the Code panel
+export const Primary = meta.story({
+  args: {
+    children: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"

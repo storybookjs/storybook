@@ -246,7 +246,7 @@ export const ManyItems: Story = {
 </Story>
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js"
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import List from './ListComponent.vue';
 import ListItem from './ListItem.vue';
 
@@ -277,7 +277,7 @@ export const ManyItems = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './ListComponent.vue';
@@ -311,6 +311,74 @@ export const ManyItems: Story = {
     Unselected: Unselected.args.isSelected,
   },
 };
+```
+
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './ListComponent.vue';
+import ListItem from './ListItem.vue';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const ManyItems = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { ...args };
+    },
+    template: `
+      <List v-bind="args">
+        <list-item :isSelected="Selected"/>
+        <list-item :isSelected="Unselected"/>
+        <list-item :isSelected="Unselected"/>
+      </List>`,
+  }),
+  args: {
+    Selected: Selected.input.args.isSelected,
+    Unselected: Unselected.input.args.isSelected,
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './ListComponent.vue';
+import ListItem from './ListItem.vue';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const ManyItems = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { ...args };
+    },
+    template: `
+      <List v-bind="args">
+        <list-item :isSelected="Selected"/>
+        <list-item :isSelected="Unselected"/>
+        <list-item :isSelected="Unselected"/>
+      </List>`,
+  }),
+  args: {
+    Selected: Selected.input.args.isSelected,
+    Unselected: Unselected.input.args.isSelected,
+  },
+});
 ```
 
 ```js filename="List.stories.js" renderer="web-components" language="js"

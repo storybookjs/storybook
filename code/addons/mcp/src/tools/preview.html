@@ -1,0 +1,187 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				width: 100%;
+				height: 100%;
+			}
+		</style>
+		<template id="preview-template">
+			<article>
+				<h2></h2>
+				<iframe></iframe>
+			</article>
+		</template>
+		<script type="module">
+			// Adapted from https://github.com/MCP-UI-Org/mcp-ui/blob/fd89e2942eb7148d83245397be0b6ad34ce538b0/sdks/typescript/server/src/adapters/mcp-apps/adapter-runtime.ts
+
+			/**
+			 * Current protocol version - must match LATEST_PROTOCOL_VERSION from ext-apps
+			 * @see https://github.com/modelcontextprotocol/ext-apps
+			 */
+			const LATEST_PROTOCOL_VERSION = '2025-11-21';
+
+			/**
+			 * MCP Apps SEP protocol method constants
+			 * These match the `method` field values from @modelcontextprotocol/ext-apps type definitions:
+			 * - McpUiInitializeRequest: "ui/initialize"
+			 * - McpUiInitializedNotification: "ui/notifications/initialized"
+			 * - McpUiToolInputNotification: "ui/notifications/tool-input"
+			 * - McpUiToolInputPartialNotification: "ui/notifications/tool-input-partial"
+			 * - McpUiToolResultNotification: "ui/notifications/tool-result"
+			 * - McpUiHostContextChangedNotification: "ui/notifications/host-context-changed"
+			 * - McpUiSizeChangedNotification: "ui/notifications/size-changed"
+			 * - McpUiResourceTeardownRequest: "ui/resource-teardown"
+			 *
+			 * @see https://github.com/modelcontextprotocol/ext-apps/blob/main/src/spec.types.ts
+			 */
+			const METHODS = {
+				// Lifecycle
+				INITIALIZE: 'ui/initialize',
+				INITIALIZED: 'ui/notifications/initialized',
+
+				// Tool data (Host -> Guest)
+				TOOL_INPUT: 'ui/notifications/tool-input',
+				TOOL_INPUT_PARTIAL: 'ui/notifications/tool-input-partial',
+				TOOL_RESULT: 'ui/notifications/tool-result',
+				TOOL_CANCELLED: 'ui/notifications/tool-cancelled',
+
+				// Context & UI
+				HOST_CONTEXT_CHANGED: 'ui/notifications/host-context-changed',
+				SIZE_CHANGED: 'ui/notifications/size-changed',
+				RESOURCE_TEARDOWN: 'ui/resource-teardown',
+
+				// Standard MCP methods
+				TOOLS_CALL: 'tools/call',
+				NOTIFICATIONS_MESSAGE: 'notifications/message',
+				OPEN_LINK: 'ui/open-link',
+				MESSAGE: 'ui/message',
+			};
+
+			// Adapted from https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/draft/apps.mdx#transport-layer
+
+			let nextId = 1;
+			function sendHostRequest(method, params) {
+				const id = nextId++;
+				window.parent.postMessage({ jsonrpc: '2.0', id, method, params }, '*');
+				console.log('Sent host request:', { id, method, params });
+				return new Promise((resolve, reject) => {
+					window.addEventListener('message', function listener(event) {
+						console.log('Received message in preview iframe:', { event });
+						const data = event.data;
+						if (event.data?.id !== id) {
+							reject(new Error(`Unsupported message: ${JSON.stringify(data)}`));
+							return;
+						}
+						window.removeEventListener('message', listener);
+						if (event.data?.result) {
+							resolve(event.data?.result);
+						} else if (event.data?.error) {
+							reject(new Error(event.data.error));
+						}
+					});
+				});
+			}
+			function sendHostNotification(method, params) {
+				console.log('Sending host notification:', { method, params });
+				window.parent.postMessage({ jsonrpc: '2.0', method, params }, '*');
+			}
+			function onHostNotification(method, handler) {
+				window.addEventListener('message', function listener(event) {
+					console.log('Received message in preview iframe:', { event });
+					if (event.data?.method === method) {
+						handler(event.data.params);
+					}
+				});
+			}
+			// ---
+
+			console.log('Preview HTML loaded, initializing MCP Apps protocol...');
+
+			const initializeResult = await sendHostRequest(METHODS.INITIALIZE, {
+				appInfo: {
+					name: 'storybook-story-preview',
+					version: '1.0.0',
+				},
+				appCapabilities: {},
+				protocolVersion: LATEST_PROTOCOL_VERSION,
+			});
+			console.log({ initializeResult });
+			sendHostNotification(METHODS.INITIALIZED, {});
+			onHostNotification(METHODS.TOOL_RESULT, handleToolResult);
+
+			function handleToolResult(params) {
+				console.log('TOOL result RECEIVED IN PREVIEW HTML:');
+				console.log({ params });
+				if (
+					!params.structuredContent?.previewUrls ||
+					params.structuredContent.previewUrls.length === 0
+				) {
+					console.warn('No preview URLs found in tool result.');
+					return;
+				}
+
+				const template = document.getElementById('preview-template');
+
+				for (const previewUrl of params.structuredContent.previewUrls) {
+					const clone = template.content.cloneNode(true);
+					const article = clone.querySelector('article');
+					const heading = clone.querySelector('h2');
+					const iframe = clone.querySelector('iframe');
+
+					heading.textContent = previewUrl;
+					iframe.addEventListener('load', function () {
+						console.log('Iframe loaded:', {
+							h: iframe.contentWindow.document.body.scrollHeight,
+							w: iframe.contentWindow.document.body.scrollWidth,
+						});
+						iframe.style.height =
+							iframe.contentWindow.document.body.scrollHeight + 'px';
+						iframe.style.width =
+							iframe.contentWindow.document.body.scrollWidth + 'px';
+
+						sendHostNotification(METHODS.SIZE_CHANGED, {
+							width: document.body.scrollWidth,
+							height: document.body.scrollHeight,
+						});
+					});
+
+					iframe.src = previewUrl;
+
+					// // Fetch the content and use srcdoc to avoid CSP restrictions on iframe src
+					// try {
+					// 	const response = await fetch(previewUrl);
+					// 	const html = await response.text();
+
+					// 	// Inject a <base> tag so relative URLs resolve correctly
+					// 	const baseUrl = new URL(previewUrl);
+					// 	const baseTag = `<base href="${baseUrl.origin}${baseUrl.pathname}">`;
+					// 	const htmlWithBase = html.replace(
+					// 		/<head([^>]*)>/i,
+					// 		`<head$1>${baseTag}`,
+					// 	);
+
+					// 	iframe.srcdoc = htmlWithBase;
+					// } catch (error) {
+					// 	console.error('Failed to fetch preview URL:', previewUrl, error);
+					// 	heading.textContent = `Error loading: ${previewUrl}`;
+					// }
+
+					document.body.appendChild(article);
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<h1>Story Preview</h1>
+	</body>
+</html>

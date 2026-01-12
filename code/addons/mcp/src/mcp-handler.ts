@@ -37,6 +37,7 @@ const initializeMCPServer = async (options: Options) => {
 			adapter: new ValibotJsonSchemaAdapter(),
 			capabilities: {
 				tools: { listChanged: true },
+				resources: { listChanged: true },
 			},
 		},
 	).withContext<AddonContext>();

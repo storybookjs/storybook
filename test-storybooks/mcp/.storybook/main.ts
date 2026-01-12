@@ -23,7 +23,7 @@ const config = defineMain({
 		},
 	],
 	framework: '@storybook/react-vite',
-	logLevel: 'debug',
+	// logLevel: 'debug',
 	core: {
 		disableTelemetry: true,
 	},

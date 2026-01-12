@@ -522,6 +522,9 @@ export const baseTemplates = {
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
     },
+    modifications: {
+      useCsfFactory: true,
+    },
     skipTasks: ['e2e-tests', 'bench'],
   },
   'vue3-vite/default-ts': {
@@ -531,6 +534,9 @@ export const baseTemplates = {
       framework: '@storybook/vue3-vite',
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
     },
     skipTasks: ['bench'],
   },
@@ -634,6 +640,7 @@ export const baseTemplates = {
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
       extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
+      useCsfFactory: true,
     },
     expected: {
       framework: '@storybook/angular',
@@ -648,6 +655,7 @@ export const baseTemplates = {
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
       extraDependencies: ['@angular/forms@latest'],
+      useCsfFactory: true,
     },
     expected: {
       framework: '@storybook/angular',
@@ -676,6 +684,9 @@ export const baseTemplates = {
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
     },
+    modifications: {
+      useCsfFactory: true,
+    },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -687,6 +698,9 @@ export const baseTemplates = {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests', 'bench', 'vitest-integration'],

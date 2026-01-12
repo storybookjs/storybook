@@ -12,8 +12,8 @@ import type { ArgTypes } from 'storybook/internal/csf';
 
 import {
   STORYBOOK_FN_PLACEHOLDER,
-  generateDummyPropsFromArgTypes,
-} from '../../core-server/utils/get-dummy-props-for-args';
+  generateDummyArgsFromArgTypes,
+} from '../../core-server/utils/get-dummy-args-from-argtypes';
 import { createTestGuardDeclaration } from './transformer';
 
 const VITEST_IMPORT_SOURCE = 'vitest';
@@ -360,7 +360,7 @@ export const componentTransform = async ({
       ? await getComponentArgTypes({ componentName: component.exportedName, fileName })
       : undefined;
     const generatedArgs = argTypes
-      ? generateDummyPropsFromArgTypes(argTypes, { skipUrlGeneration: true }).required
+      ? generateDummyArgsFromArgTypes(argTypes, { skipUrlGeneration: true }).required
       : undefined;
 
     if (!hasAnyFunctionPlaceholders && generatedArgs && hasFunctionPlaceholder(generatedArgs)) {

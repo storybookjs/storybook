@@ -99,16 +99,10 @@ export async function getCandidatesForStorybook(
 
   // If we have enough simple candidates, use those
   if (simpleCandidates.length >= sampleCount) {
-    logger.debug(
-      `Found ${simpleCandidates.length} enough simple candidates after analyzing ${analyzedCandidates.length} out of ${files.length} files`
-    );
     selectedCandidates = simpleCandidates
       .sort((a, b) => a.complexity - b.complexity)
       .slice(0, sampleCount);
   } else {
-    logger.debug(
-      `Found ${simpleCandidates.length} simple and ${analyzedCandidates.length - simpleCandidates.length} complex candidates after analyzing ${analyzedCandidates.length} out of ${files.length} files`
-    );
     selectedCandidates = analyzedCandidates
       .sort((a, b) => a.complexity - b.complexity)
       .slice(0, sampleCount);
@@ -144,15 +138,12 @@ export async function getComponentCandidates({
   analyzedCount?: number;
   avgComplexity?: number;
 }> {
-  logger.debug(`Starting story sampling with glob: ${globPattern}`);
-  logger.debug(`Sample size: ${sampleSize}`);
   let globMatchCount = 0;
 
   try {
     let files: string[] = [];
 
     // Find files matching the glob pattern
-    logger.debug('Finding files matching glob pattern...');
     files = await glob(globPattern, {
       cwd: process.cwd(),
       absolute: true,
@@ -174,12 +165,9 @@ export async function getComponentCandidates({
       ],
     });
 
-    logger.debug(`Found ${files.length} files matching glob pattern`);
-
     globMatchCount = files.length;
 
     if (globMatchCount === 0) {
-      logger.warn(`No files found matching glob pattern: ${globPattern}`);
       return {
         candidates: [],
         globMatchCount,
@@ -190,7 +178,6 @@ export async function getComponentCandidates({
       files,
       sampleSize
     );
-    logger.debug('candidates files:' + candidates.length);
 
     return {
       analyzedCount,
@@ -200,8 +187,6 @@ export async function getComponentCandidates({
     };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(`Failed to find candidates: ${errorMessage}`);
-    logger.debug(`Full error: ${error}`);
     return {
       candidates: [],
       error: 'Failed to find candidates',

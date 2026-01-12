@@ -21,8 +21,8 @@ import type { ArgTypes } from '../../csf';
 import { loadConfig, printConfig } from '../../csf-tools';
 import {
   STORYBOOK_FN_PLACEHOLDER,
-  generateDummyPropsFromArgTypes,
-} from './get-dummy-props-for-args';
+  generateDummyArgsFromArgTypes,
+} from './get-dummy-args-from-argtypes';
 import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
 import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
 import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
@@ -74,17 +74,17 @@ export async function getNewStoryFile(
     logger.debug(`Extracted argTypes for ${componentExportName}: ${JSON.stringify(argTypes)}`);
 
     if (argTypes) {
-      const { required } = generateDummyPropsFromArgTypes(argTypes);
+      const { required } = generateDummyArgsFromArgTypes(argTypes);
       if (Object.keys(required).length > 0) {
         args = required;
         logger.debug(
-          `Generated mocked props using ArgTypes for ${componentExportName}: ${JSON.stringify(args)}`
+          `Generated dummy data using ArgTypes for ${componentExportName}: ${JSON.stringify(args)}`
         );
       }
     }
   } catch (error) {
-    // If anything fails with the mock generation, just proceed without args
-    logger.debug(`Could not generate mocked props for ${componentExportName}: ${error}`);
+    // If anything fails with the dummy data generation, just proceed without args
+    logger.debug(`Could not generate dummy data for ${componentExportName}: ${error}`);
   }
 
   let storyFileContent = '';

@@ -1,6 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
 import { GHOST_STORIES_REQUEST, GHOST_STORIES_RESPONSE } from 'storybook/internal/core-events';
-import { logger } from 'storybook/internal/node-logger';
 import {
   getLastEvents,
   getSessionId,
@@ -18,7 +17,6 @@ export function initGhostStoriesChannel(
   coreOptions: CoreConfig
 ) {
   if (coreOptions.disableTelemetry) {
-    logger.debug('Skipping ghost run - telemetry disabled');
     return channel;
   }
 
@@ -36,7 +34,6 @@ export function initGhostStoriesChannel(
 
     try {
       const ghostRunStart = Date.now();
-      // only execute ghost if it's a storybook init run
       const lastEvents = await getLastEvents();
       const sessionId = await getSessionId();
       const lastInit = lastEvents?.init;
@@ -45,9 +42,7 @@ export function initGhostStoriesChannel(
         lastGhostStoriesRun ||
         (lastInit?.body?.sessionId && lastInit?.body?.sessionId !== sessionId)
       ) {
-        logger.debug('Would normally skip ghost run');
-        // TODO: uncomment this later, it's commented out for debugging purposes DO NOT MERGE WITH THIS
-        // return;
+        return;
       }
 
       const metadata = await getStorybookMetadata(options.configDir);
@@ -60,22 +55,18 @@ export function initGhostStoriesChannel(
 
       // For now this is gated by React + Vitest
       if (!isReactStorybook || !hasVitestAddon) {
-        logger.debug('Skipping ghost run - not react vitest: ' + JSON.stringify(metadata, null, 2));
         return;
       }
 
-      // First, find candidates from components based on a glob pattern
-      logger.debug('Finding candidates...');
+      // Phase 1: find candidates from components
       const candidateAnalysisStart = Date.now();
       const candidatesResult = await getComponentCandidates();
       stats.candidateAnalysisDuration = Date.now() - candidateAnalysisStart;
-      logger.debug(`Component analysis took ${stats.candidateAnalysisDuration}ms`);
       stats.globMatchCount = candidatesResult.globMatchCount;
       stats.analyzedCount = candidatesResult.analyzedCount ?? 0;
       stats.avgComplexity = candidatesResult.avgComplexity ?? 0;
       stats.candidateCount = candidatesResult.candidates.length;
 
-      logger.debug('Candidates found: ' + JSON.stringify(candidatesResult, null, 2));
       if (candidatesResult.error) {
         stats.totalRunDuration = Date.now() - ghostRunStart;
         telemetry('ghost-stories', {
@@ -88,7 +79,6 @@ export function initGhostStoriesChannel(
 
       if (candidatesResult.candidates.length === 0) {
         stats.totalRunDuration = Date.now() - ghostRunStart;
-        logger.debug('No candidates found');
         telemetry('ghost-stories', {
           success: false,
           error: 'No candidates found',
@@ -97,9 +87,9 @@ export function initGhostStoriesChannel(
         return;
       }
 
-      // Phase 2: Run tests on generated stories using Vitest
+      // Phase 2: Run tests on those candidates Vitest. The components will be transformed directly to tests
+      // If they pass, it means that creating a story file for them would succeed.
       const testRunResult = await runStoryTests(candidatesResult.candidates);
-      logger.debug('Test results: ' + JSON.stringify(testRunResult, null, 2));
       stats.totalRunDuration = Date.now() - ghostRunStart;
       stats.testRunDuration = testRunResult.duration;
       telemetry('ghost-stories', {
@@ -111,7 +101,6 @@ export function initGhostStoriesChannel(
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
 
-      logger.debug('Error generating stories: ' + errorMessage);
       telemetry('ghost-stories', {
         success: false,
         error: errorMessage,

@@ -10,7 +10,7 @@ import type { Options } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
 
-import { STORYBOOK_FN_PLACEHOLDER } from './get-dummy-props-for-args';
+import { STORYBOOK_FN_PLACEHOLDER } from './get-dummy-args-from-argtypes';
 import { getNewStoryFile } from './get-new-story-file';
 
 vi.mock('storybook/internal/common', { spy: true });

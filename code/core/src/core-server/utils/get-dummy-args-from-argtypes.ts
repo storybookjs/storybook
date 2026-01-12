@@ -19,7 +19,7 @@ export const STORYBOOK_FN_PLACEHOLDER = '[[STORYBOOK_FN_PLACEHOLDER]]';
  * Generate dummy props using ArgTypes instead of ComponentArgTypesData This provides more accurate
  * dummy generation by leveraging ArgTypes structure
  */
-export function generateDummyPropsFromArgTypes(argTypes: ArgTypes, options: Options = {}) {
+export function generateDummyArgsFromArgTypes(argTypes: ArgTypes, options: Options = {}) {
   const required: Record<string, unknown> = {};
   const optional: Record<string, unknown> = {};
 
@@ -274,25 +274,4 @@ export function generateDummyValueFromSBType(
       return value ?? propName;
     }
   }
-}
-
-export function generateDummyPropsFromDocgen(argTypesData: ComponentArgTypesData | null) {
-  const required: Record<string, unknown> = {};
-  const optional: Record<string, unknown> = {};
-
-  if (!argTypesData?.props) {
-    return { required, optional };
-  }
-
-  for (const [propName, propInfo] of Object.entries(argTypesData.props)) {
-    const dummyValue = generateDummyValueFromSBType(propInfo.type, propName);
-
-    if (propInfo.required) {
-      required[propName] = dummyValue;
-    } else {
-      optional[propName] = dummyValue;
-    }
-  }
-
-  return { required, optional };
 }

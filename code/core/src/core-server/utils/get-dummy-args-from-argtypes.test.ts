@@ -1,11 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  type ComponentArgTypesData,
-  generateDummyPropsFromArgTypes,
-  generateDummyPropsFromDocgen,
+  generateDummyArgsFromArgTypes,
   generateDummyValueFromSBType,
-} from './get-dummy-props-for-args';
+} from './get-dummy-args-from-argtypes';
 
 describe('new-story-docgen', () => {
   const MOCK_DATE = new Date('2025-01-01T00:00:00.000Z');
@@ -126,37 +124,7 @@ describe('new-story-docgen', () => {
     });
   });
 
-  describe('generateDummyPropsFromDocgen', () => {
-    it('returns empty objects when docgen is missing', () => {
-      expect(generateDummyPropsFromDocgen(null)).toEqual({ required: {}, optional: {} });
-      expect(generateDummyPropsFromDocgen({})).toEqual({ required: {}, optional: {} });
-      expect(generateDummyPropsFromDocgen({ props: {} })).toEqual({ required: {}, optional: {} });
-    });
-
-    it('splits required and optional props and uses prop names', () => {
-      const docgen: ComponentArgTypesData = {
-        props: {
-          backgroundColor: { required: true, type: { name: 'string' } },
-          websiteUrl: { required: false, type: { name: 'string' } },
-          onClick: { required: true, type: { name: 'function' } },
-          children: { required: false, type: { name: 'node', renderer: 'react' } },
-        },
-      };
-
-      expect(generateDummyPropsFromDocgen(docgen)).toEqual({
-        required: {
-          backgroundColor: '#ff4785',
-          onClick: '[[STORYBOOK_FN_PLACEHOLDER]]',
-        },
-        optional: {
-          websiteUrl: 'https://example.com',
-          children: 'children',
-        },
-      });
-    });
-  });
-
-  describe('generateDummyPropsFromArgTypes', () => {
+  describe('generateDummyArgsFromArgTypes', () => {
     it('skips URL generation when skipUrlGeneration option is true', () => {
       const argTypes = {
         imageUrl: {
@@ -168,12 +136,12 @@ describe('new-story-docgen', () => {
       } as any;
 
       // With skipUrlGeneration: false (default behavior)
-      const resultWithUrls = generateDummyPropsFromArgTypes(argTypes, { skipUrlGeneration: false });
+      const resultWithUrls = generateDummyArgsFromArgTypes(argTypes, { skipUrlGeneration: false });
       expect(resultWithUrls.optional.imageUrl).toBe('https://placehold.co/600x400?text=Storybook');
       expect(resultWithUrls.optional.websiteUrl).toBe('https://example.com');
 
       // With skipUrlGeneration: true
-      const resultWithoutUrls = generateDummyPropsFromArgTypes(argTypes, {
+      const resultWithoutUrls = generateDummyArgsFromArgTypes(argTypes, {
         skipUrlGeneration: true,
       });
       expect(resultWithoutUrls.optional.imageUrl).toBe('imageUrl');

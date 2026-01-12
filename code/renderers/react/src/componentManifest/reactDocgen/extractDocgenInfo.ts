@@ -189,7 +189,7 @@ export function getComponentDocgen(
       reactDocgen: { type: 'success', data: firstDocgen },
     };
   } catch (error) {
-    logger.debug(`Error parsing component file ${filePath}: ${error}`);
+    logger.debug(`Error parsing component file for docgen ${filePath}: ${error}`);
     return null;
   }
 }

@@ -14,7 +14,7 @@ import {
 } from '../shared/utils/ecosystem-identifier';
 import { getActualPackageVersion } from './package-json';
 
-type PackageGroupResult = Record<string, string | undefined>;
+type PackageGroupResult = Record<string, string | null | undefined>;
 
 export type KnownPackagesList = {
   testPackages?: PackageGroupResult;
@@ -60,9 +60,13 @@ export function getSafeVersionSpecifier(version?: string): string | null {
     return version;
   }
 
-  const operator = version.trim().match(/^[~^]/)?.[0] ?? '';
-  const coerced = semver.coerce(version);
-  return coerced ? `${operator}${coerced.version}` : null;
+  try {
+    const operator = version.trim().match(/^[~^]/)?.[0] ?? '';
+    const coerced = semver.coerce(version);
+    return coerced ? `${operator}${coerced.version}` : null;
+  } catch {
+    return 'could-not-be-parsed-by-semver';
+  }
 }
 
 export async function analyzeEcosystemPackages(

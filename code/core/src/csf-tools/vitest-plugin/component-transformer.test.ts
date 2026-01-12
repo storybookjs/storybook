@@ -320,10 +320,10 @@ describe('component transformer', () => {
     const mockGetComponentArgTypes = vi.fn().mockImplementation(({ componentName }) => {
       if (componentName === 'Badge') {
         return Promise.resolve({
-          'data-testid': { name: 'data-testid', type: { name: 'string' } },
-          'aria-label': { name: 'aria-label', type: { name: 'string' } },
-          '2invalid': { name: '2invalid', type: { name: 'string' } },
-          validKey: { name: 'validKey', type: { name: 'string' } },
+          'data-testid': { name: 'data-testid', type: { name: 'string', required: true } },
+          'aria-label': { name: 'aria-label', type: { name: 'string', required: true } },
+          '2invalid': { name: '2invalid', type: { name: 'string', required: true } },
+          validKey: { name: 'validKey', type: { name: 'string', required: true } },
         });
       }
       return Promise.resolve({});
@@ -347,6 +347,33 @@ describe('component transformer', () => {
     expect(result.code).toContain('"2invalid": "2invalid"');
     // Check that valid identifiers still use identifier syntax
     expect(result.code).toContain('validKey: "validKey"');
+    expect(result.code).toMatchInlineSnapshot(`
+      "import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+      import { test as _test, expect as _expect } from "vitest";
+      export const Badge = () => <div />;
+      const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+      if (_isRunningFromThisFile) {
+        _test("Badge", _testStory({
+          exportName: "Badge",
+          story: {
+            args: {
+              "data-testid": "data-testid",
+              "aria-label": "aria-label",
+              "2invalid": "2invalid",
+              validKey: "validKey"
+            }
+          },
+          meta: {
+            title: "generated/tests/Badge",
+            component: Badge
+          },
+          skipTags: [],
+          storyId: "generated-Badge",
+          componentPath: "src/components/Badge.tsx",
+          componentName: "Badge"
+        }));
+      }"
+    `);
   });
 
   it('correctly handles aliased function and class exports', async () => {

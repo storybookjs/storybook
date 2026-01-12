@@ -91,7 +91,7 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
       };
     }
 
-    return parseVitestResults(testResults, duration);
+    return { ...parseVitestResults(testResults), duration };
   } catch {
     return {
       success: false,

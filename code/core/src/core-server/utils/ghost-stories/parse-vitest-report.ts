@@ -13,9 +13,7 @@ import { type ErrorCategorizationResult, type StoryTestResult, type TestRunSumma
  * - Return structured data about the run, with categorized errors instead of the actual error
  *   messages
  */
-export function extractCategorizedErrors(
-  testResults: StoryTestResult[]
-): ErrorCategorizationResult {
+function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategorizationResult {
   const failed = testResults.filter((r) => r.status === 'FAIL' && r.error);
 
   const map = new Map<
@@ -64,7 +62,7 @@ export function extractCategorizedErrors(
 }
 
 /** Transform the Vitest test results to our expected format and return a TestRunSummary */
-export function parseVitestResults(testResults: any, duration: number): TestRunSummary {
+export function parseVitestResults(testResults: any): TestRunSummary {
   // Transform the Vitest test results to our expected format
   const storyTestResults: StoryTestResult[] = [];
   let passedButEmptyRender = 0;
@@ -130,7 +128,6 @@ export function parseVitestResults(testResults: any, duration: number): TestRunS
   const enhancedResponse: TestRunSummary = {
     success: testResults.success,
     summary,
-    duration,
   };
 
   return enhancedResponse;

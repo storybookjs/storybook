@@ -85,6 +85,7 @@ describe('get-known-packages', () => {
 
       const result = await analyzeEcosystemPackages(packageJson);
       expect(result.stylingPackages).toEqual({
+        emotion: '11.0.0',
         tailwindcss: '3.0.0',
         'styled-components': '6.0.0',
       });

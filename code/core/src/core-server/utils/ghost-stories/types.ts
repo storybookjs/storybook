@@ -21,7 +21,7 @@ export interface ErrorCategorizationResult {
 
 export interface TestRunSummary {
   success: boolean;
-  duration: number;
+  duration?: number;
   summary?: {
     total: number;
     passed: number;

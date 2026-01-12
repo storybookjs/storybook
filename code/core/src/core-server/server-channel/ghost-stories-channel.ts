@@ -37,7 +37,7 @@ export function initGhostStoriesChannel(
       const lastEvents = await getLastEvents();
       const sessionId = await getSessionId();
       const lastInit = lastEvents?.init;
-      const lastGhostStoriesRun = lastEvents['ghost-stories'];
+      const lastGhostStoriesRun = lastEvents?.['ghost-stories'];
       if (
         lastGhostStoriesRun ||
         (lastInit?.body?.sessionId && lastInit?.body?.sessionId !== sessionId)

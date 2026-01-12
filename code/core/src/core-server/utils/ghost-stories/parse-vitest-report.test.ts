@@ -144,19 +144,16 @@ describe('parse-vitest-report', () => {
         HOOK_USAGE_ERROR: {
           count: 1,
           description: 'React hook was used incorrectly',
-          examples: ['Error: Invalid hook call'],
           matchedDependencies: [],
         },
         MISSING_THEME_PROVIDER: {
           count: 1,
           description: 'Component attempted to access theme values without a theme provider',
-          examples: ['Error: Cannot read property "x" of undefined'],
           matchedDependencies: ['styled-components'],
         },
         MODULE_IMPORT_ERROR: {
           count: 1,
           description: 'A required dependency could not be resolved',
-          examples: ['Error: Module not found: react-router'],
           matchedDependencies: [],
         },
       });

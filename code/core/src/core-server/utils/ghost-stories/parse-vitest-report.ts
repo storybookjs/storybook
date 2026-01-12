@@ -16,25 +16,20 @@ import { type ErrorCategorizationResult, type StoryTestResult, type TestRunSumma
 function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategorizationResult {
   const failed = testResults.filter((r) => r.status === 'FAIL' && r.error);
 
-  const map = new Map<
-    ErrorCategory,
-    { count: number; examples: Set<string>; matchedDependencies: Set<string> }
-  >();
+  const map = new Map<ErrorCategory, { count: number; matchedDependencies: Set<string> }>();
 
   // To count unique error messages (by their message, not by category)
   const uniqueErrorMessages = new Set<string>();
 
   for (const r of failed) {
     const { category, matchedDependencies } = categorizeError(r.error!, r.stack);
-    const example = r.error!.slice(0, 100);
 
     if (!map.has(category)) {
-      map.set(category, { count: 0, examples: new Set(), matchedDependencies: new Set() });
+      map.set(category, { count: 0, matchedDependencies: new Set() });
     }
 
     const data = map.get(category)!;
     data.count++;
-    data.examples.add(example);
     matchedDependencies.forEach((dep) => data.matchedDependencies.add(dep));
 
     // Use the full error message for unique error message counting
@@ -46,7 +41,6 @@ function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategori
       acc[category] = {
         description: getCategoryDescription(category),
         count: data.count,
-        examples: Array.from(data.examples).slice(0, 3),
         matchedDependencies: Array.from(data.matchedDependencies).sort(),
       };
       return acc;

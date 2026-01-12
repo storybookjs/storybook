@@ -9,7 +9,6 @@ export interface CategorizedError {
   category: string;
   description: string;
   count: number;
-  examples: string[];
   matchedDependencies: string[];
 }
 

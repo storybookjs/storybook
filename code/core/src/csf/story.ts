@@ -171,7 +171,23 @@ export interface StrictGlobalTypes {
   [name: string]: StrictInputType;
 }
 
+/**
+ * AddonTypes allows addons to extend the type system with additional args, parameters, and globals.
+ *
+ * Addons can use `definePreviewAddon<AddonTypes>()` to declare additional types that will be merged
+ * into the story context. For example, an addon that provides a `theme` arg could declare:
+ *
+ * ```ts
+ * const themeAddon = definePreviewAddon<{ args: { theme: 'light' | 'dark' } }>({
+ *   decorators: [(Story, { args }) => <ThemeProvider theme={args.theme}><Story /></ThemeProvider>]
+ * });
+ * ```
+ *
+ * When users include this addon in their preview config, the `theme` arg becomes available and
+ * type-checked across all stories.
+ */
 export interface AddonTypes {
+  args?: unknown;
   parameters?: Record<string, any>;
   globals?: Record<string, any>;
 }

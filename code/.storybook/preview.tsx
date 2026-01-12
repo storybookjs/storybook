@@ -242,11 +242,12 @@ const decorators = [
           <Fragment>
             <ThemeProvider theme={convert(themes.light)}>
               <Global styles={createReset} />
+              <ThemeVariables />
             </ThemeProvider>
             <ThemeProvider theme={convert(themes.light)}>
-              <ThemeVariables rootSelector="#sb-light-theme" />
+              <ThemeVariables rootSelector="#sb-theme-light" />
               <ThemeBlock
-                id="sb-light-theme"
+                id="sb-theme-light"
                 side="left"
                 data-side="left"
                 layout={parameters.layout}
@@ -255,9 +256,9 @@ const decorators = [
               </ThemeBlock>
             </ThemeProvider>
             <ThemeProvider theme={convert(themes.dark)}>
-              <ThemeVariables rootSelector="#sb-dark-theme" />
+              <ThemeVariables rootSelector="#sb-theme-dark" />
               <ThemeBlock
-                id="sb-dark-theme"
+                id="sb-theme-dark"
                 side="right"
                 data-side="right"
                 layout={parameters.layout}
@@ -273,17 +274,18 @@ const decorators = [
           <Fragment>
             <ThemeProvider theme={convert(themes.light)}>
               <Global styles={createReset} />
+              <ThemeVariables />
             </ThemeProvider>
             <StackContainer layout={parameters.layout}>
               <ThemeProvider theme={convert(themes.light)}>
-                <ThemeVariables rootSelector="#sb-light-theme" />
-                <ThemeStack id="sb-light-theme" data-side="left" layout={parameters.layout}>
+                <ThemeVariables rootSelector="#sb-theme-light" />
+                <ThemeStack id="sb-theme-light" data-side="left" layout={parameters.layout}>
                   <StoryFn />
                 </ThemeStack>
               </ThemeProvider>
               <ThemeProvider theme={convert(themes.dark)}>
-                <ThemeVariables rootSelector="#sb-dark-theme" />
-                <ThemeStack id="sb-dark-theme" data-side="right" layout={parameters.layout}>
+                <ThemeVariables rootSelector="#sb-theme-dark" />
+                <ThemeStack id="sb-theme-dark" data-side="right" layout={parameters.layout}>
                   <StoryFn />
                 </ThemeStack>
               </ThemeProvider>

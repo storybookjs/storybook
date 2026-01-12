@@ -150,8 +150,7 @@ type ConfiguredShortcut = { shortcut: API_KeyCollection; error: boolean; hardcod
 const fixedShortcuts = ['escape'];
 
 // Shortcuts that cannot be changed by the user (imposed by third-party libraries).
-const hardcodedShortcuts = ['gotoPreviousLandmark', 'goToNextLandmark'];
-
+const hardcodedShortcuts = ['goToPreviousLandmark', 'goToNextLandmark'];
 function toShortcutState(
   shortcutKeys: ShortcutsScreenProps['shortcutKeys']
 ): Record<Feature, ConfiguredShortcut> {

@@ -554,7 +554,6 @@ export const baseTemplates = {
         },
       },
       skipMocking: true,
-      useCsfFactory: true,
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
@@ -714,7 +713,6 @@ export const baseTemplates = {
     },
     modifications: {
       skipMocking: true,
-      useCsfFactory: true,
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },

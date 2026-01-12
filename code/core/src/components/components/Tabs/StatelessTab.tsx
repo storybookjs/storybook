@@ -12,7 +12,7 @@ export interface StatelessTabProps {
   children: React.ReactNode;
 }
 
-const StyledTab = styled(Tab)(({ theme }) => ({
+const StyledTab = styled(Tab)({
   whiteSpace: 'normal',
   display: 'inline-flex',
   overflow: 'hidden',
@@ -41,18 +41,18 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   fontSize: 13,
   '&:focus-visible': {
     outline: '0 none',
-    boxShadow: `inset 0 0 0 2px ${theme.barSelectedColor}`,
+    boxShadow: `inset 0 0 0 2px var(--sb-barSelectedColor)`,
   },
-  color: theme.barTextColor,
+  color: 'var(--sb-barTextColor)',
   borderBottomColor: 'transparent',
   '&:hover': {
-    color: theme.barHoverColor,
+    color: 'var(--sb-barHoverColor)',
   },
   '&[data-selected]': {
-    color: theme.barSelectedColor,
-    borderBottomColor: theme.barSelectedColor,
+    color: 'var(--sb-barSelectedColor)',
+    borderBottomColor: 'var(--sb-barSelectedColor)',
   },
-}));
+});
 
 export const StatelessTab: FC<StatelessTabProps> = ({ name, ...props }) => {
   return <StyledTab id={name} {...props} />;

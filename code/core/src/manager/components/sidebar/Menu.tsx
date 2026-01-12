@@ -43,14 +43,14 @@ const buttonStyleAdditions = ({
       height: 5px;
       z-index: 2;
       border-radius: 50%;
-      background: ${theme.background.app};
-      border: 1px solid ${theme.background.app};
-      box-shadow: 0 0 0 2px ${theme.background.app};
+      background: 'var(--sb-background-app)';
+      border: 1px solid 'var(--sb-background-app)';
+      box-shadow: 0 0 0 2px 'var(--sb-background-app)';
     }
     &:after {
-      background: ${theme.color.positive};
+      background: 'var(--sb-color-positive)';
       border: 1px solid rgba(0, 0, 0, 0.1);
-      box-shadow: 0 0 0 2px ${theme.background.app};
+      box-shadow: 0 0 0 2px 'var(--sb-background-app)';
     }
     &:hover:after,
     &:focus-visible:after {

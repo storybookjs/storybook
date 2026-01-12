@@ -66,7 +66,7 @@ const Arrow = styled.div<ArrowProps>(
       placement,
       theme.color[color] || color || theme.base === 'light'
         ? lighten(theme.background.app)
-        : theme.background.app,
+        : 'var(--sb-background-app)',
       'transparent'
     ),
     borderBottomColor: match(
@@ -74,7 +74,7 @@ const Arrow = styled.div<ArrowProps>(
       placement,
       theme.color[color] || color || theme.base === 'light'
         ? lighten(theme.background.app)
-        : theme.background.app,
+        : 'var(--sb-background-app)',
       'transparent'
     ),
     borderLeftColor: match(
@@ -82,7 +82,7 @@ const Arrow = styled.div<ArrowProps>(
       placement,
       theme.color[color] || color || theme.base === 'light'
         ? lighten(theme.background.app)
-        : theme.background.app,
+        : 'var(--sb-background-app)',
       'transparent'
     ),
     borderRightColor: match(
@@ -90,7 +90,7 @@ const Arrow = styled.div<ArrowProps>(
       placement,
       theme.color[color] || color || theme.base === 'light'
         ? lighten(theme.background.app)
-        : theme.background.app,
+        : 'var(--sb-background-app)',
       'transparent'
     ),
   })
@@ -114,13 +114,13 @@ const Wrapper = styled.div<WrapperProps>(
           background:
             (color && theme.color[color]) || color || theme.base === 'light'
               ? lighten(theme.background.app)
-              : theme.background.app,
+              : 'var(--sb-background-app)',
           filter: `
             drop-shadow(0px 5px 5px rgba(0,0,0,0.05))
             drop-shadow(0 1px 3px rgba(0,0,0,0.1))
           `,
-          borderRadius: theme.appBorderRadius + 2,
-          fontSize: theme.typography.size.s1,
+          borderRadius: 'calc(var(--sb-appBorderRadius) + 2px)',
+          fontSize: 'var(--sb-typography-size-s1)',
         }
       : {}
 );

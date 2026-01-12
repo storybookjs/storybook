@@ -2,7 +2,7 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-const Wrapper = styled.div(({ theme }) => ({
+const Wrapper = styled.div({
   height: '100%',
   display: 'flex',
   padding: 30,
@@ -10,8 +10,8 @@ const Wrapper = styled.div(({ theme }) => ({
   justifyContent: 'center',
   flexDirection: 'column',
   gap: 15,
-  background: theme.background.content,
-}));
+  background: 'var(--sb-background-content)',
+});
 
 const Content = styled.div({
   display: 'flex',
@@ -20,23 +20,23 @@ const Content = styled.div({
   maxWidth: 415,
 });
 
-const Title = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-  fontSize: theme.typography.size.s2 - 1,
+const Title = styled.div({
+  fontWeight: 'var(--sb-typography-weight-bold)',
+  fontSize: 'calc(var(--sb-typography-size-s2) - 1px)',
   textAlign: 'center',
-  color: theme.color.defaultText,
-}));
+  color: 'var(--sb-color-defaultText)',
+});
 
-const Footer = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s2 - 1,
-}));
+const Footer = styled.div({
+  fontSize: 'calc(var(--sb-typography-size-s2) - 1px)',
+});
 
-const Description = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.regular,
-  fontSize: theme.typography.size.s2 - 1,
+const Description = styled.div({
+  fontWeight: 'var(--sb-typography-weight-regular)',
+  fontSize: 'calc(var(--sb-typography-size-s2) - 1px)',
   textAlign: 'center',
-  color: theme.textMutedColor,
-}));
+  color: 'var(--sb-textMutedColor)',
+});
 
 interface Props {
   title: React.ReactNode;

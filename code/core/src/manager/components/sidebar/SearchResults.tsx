@@ -38,8 +38,8 @@ const ResultRow = styled.li<{ isHighlighted: boolean }>(({ theme, isHighlighted 
   justifyContent: 'space-between',
   textAlign: 'left',
   color: 'inherit',
-  fontSize: `${theme.typography.size.s2}px`,
-  background: isHighlighted ? theme.background.hoverable : 'transparent',
+  fontSize: 'var(--sb-typography-size-s2)',
+  background: isHighlighted ? 'var(--sb-background-hoverable)' : 'transparent',
   minHeight: 28,
   borderRadius: 4,
   gap: 6,
@@ -64,28 +64,28 @@ const ResultRowContent = styled.div({
   flexDirection: 'column',
 });
 
-const Mark = styled.mark(({ theme }) => ({
+const Mark = styled.mark({
   background: 'transparent',
-  color: theme.color.secondary,
+  color: 'var(--sb-color-secondary)',
   '@media (forced-colors: active)': {
     color: 'HighlightText',
     background: 'Highlight',
   },
-}));
+});
 
 const MoreWrapper = styled.div({
   marginTop: 8,
 });
 
-const RecentlyOpenedTitle = styled.div(({ theme }) => ({
+const RecentlyOpenedTitle = styled.div({
   display: 'flex',
   justifyContent: 'space-between',
-  fontSize: `${theme.typography.size.s1 - 1}px`,
-  fontWeight: theme.typography.weight.bold,
+  fontSize: `calc(var(--sb-typography-size-s1) - 1px)`,
+  fontWeight: 'var(--sb-typography-weight-bold)',
   minHeight: 28,
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
-  color: theme.textMutedColor,
+  color: 'var(--sb-textMutedColor)',
   marginBottom: 4,
   alignItems: 'center',
 
@@ -98,7 +98,7 @@ const RecentlyOpenedTitle = styled.div(({ theme }) => ({
       visibility: 'visible',
     },
   },
-}));
+});
 
 const Highlight: FC<PropsWithChildren<{ match?: Match }>> = React.memo(function Highlight({
   children,
@@ -136,12 +136,12 @@ const Title = styled.div({
   },
 });
 
-const Path = styled.div(({ theme }) => ({
+const Path = styled.div({
   display: 'grid',
   justifyContent: 'start',
   gridAutoColumns: 'auto',
   gridAutoFlow: 'column',
-  fontSize: `${theme.typography.size.s1 - 1}px`,
+  fontSize: 'calc(var(--sb-typography-size-s1) - 1px)',
 
   '& > span': {
     display: 'block',
@@ -155,7 +155,7 @@ const Path = styled.div(({ theme }) => ({
       content: "' / '",
     },
   },
-}));
+});
 
 const Result: FC<
   SearchResult & {

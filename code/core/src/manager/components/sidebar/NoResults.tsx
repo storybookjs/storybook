@@ -1,6 +1,6 @@
 import { styled } from 'storybook/theming';
 
-export const NoResults = styled.div(({ theme }) => ({
+export const NoResults = styled.div({
   display: 'flex',
   flexDirection: 'column',
   textAlign: 'center',
@@ -8,10 +8,10 @@ export const NoResults = styled.div(({ theme }) => ({
   gap: 4,
   padding: '20px 0',
   lineHeight: `18px`,
-  fontSize: `${theme.typography.size.s2}px`,
-  color: theme.color.defaultText,
+  fontSize: 'var(--sb-typography-size-s2)',
+  color: 'var(--sb-color-defaultText)',
   small: {
-    color: theme.textMutedColor,
-    fontSize: `${theme.typography.size.s1}px`,
+    color: 'var(--sb-textMutedColor)',
+    fontSize: 'var(--sb-typography-size-s1)',
   },
-}));
+});

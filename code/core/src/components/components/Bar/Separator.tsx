@@ -7,14 +7,14 @@ export interface SeparatorProps {
 }
 
 export const Separator = styled.span<SeparatorProps>(
-  ({ theme }) => ({
+  {
     display: 'inline-block',
     width: 1,
     height: 20,
-    background: theme.appBorderColor,
+    background: 'var(--sb-appBorderColor)',
     marginLeft: 2,
     marginRight: 2,
-  }),
+  },
   ({ force }) =>
     force
       ? {}

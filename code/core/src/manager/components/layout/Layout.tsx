@@ -235,17 +235,17 @@ const LayoutContainer = styled.div<LayoutState & { showPanel: boolean }>(
   }
 );
 
-const SidebarContainer = styled.div(({ theme }) => ({
-  backgroundColor: theme.appBg,
+const SidebarContainer = styled.div({
+  backgroundColor: 'var(--sb-appBg)',
   gridArea: 'sidebar',
   position: 'relative',
-  borderRight: `1px solid ${theme.appBorderColor}`,
-}));
+  borderRight: `1px solid var(--sb-appBorderColor)`,
+});
 
-const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
+const ContentContainer = styled.div<{ shown: boolean }>(({ shown }) => ({
   flex: 1,
   position: 'relative',
-  backgroundColor: theme.appContentBg,
+  backgroundColor: 'var(--sb-appContentBg)',
   display: shown ? 'grid' : 'none', // This is needed to make the content container fill the available space
   overflow: 'auto',
 
@@ -255,29 +255,27 @@ const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
   },
 }));
 
-const PagesContainer = styled.div(({ theme }) => ({
+const PagesContainer = styled.div({
   display: 'flex',
   flexDirection: 'column',
   gridRowStart: 'sidebar-start',
   gridRowEnd: '-1',
   gridColumnStart: 'sidebar-end',
   gridColumnEnd: '-1',
-  backgroundColor: theme.appContentBg,
+  backgroundColor: 'var(--sb-appContentBg)',
   zIndex: 1,
+});
+
+const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(({ position }) => ({
+  gridArea: 'panel',
+  position: 'relative',
+  backgroundColor: 'var(--sb-appContentBg)',
+  borderTop: position === 'bottom' ? `1px solid var(--sb-appBorderColor)` : undefined,
+  borderLeft: position === 'right' ? `1px solid var(--sb-appBorderColor)` : undefined,
 }));
 
-const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(
-  ({ theme, position }) => ({
-    gridArea: 'panel',
-    position: 'relative',
-    backgroundColor: theme.appContentBg,
-    borderTop: position === 'bottom' ? `1px solid ${theme.appBorderColor}` : undefined,
-    borderLeft: position === 'right' ? `1px solid ${theme.appBorderColor}` : undefined,
-  })
-);
-
 const Drag = styled.div<{ orientation?: 'horizontal' | 'vertical'; position?: 'left' | 'right' }>(
-  ({ theme }) => ({
+  {
     position: 'absolute',
     opacity: 0,
     transition: 'opacity 0.2s ease-in-out',
@@ -286,13 +284,13 @@ const Drag = styled.div<{ orientation?: 'horizontal' | 'vertical'; position?: 'l
     '&:after': {
       content: '""',
       display: 'block',
-      backgroundColor: theme.color.secondary,
+      backgroundColor: 'var(--sb-color-secondary)',
     },
 
     '&:hover': {
       opacity: 1,
     },
-  }),
+  },
   ({ orientation = 'vertical', position = 'left' }) => {
     if (orientation === 'vertical') {
       return {

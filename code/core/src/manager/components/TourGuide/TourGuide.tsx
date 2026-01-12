@@ -149,21 +149,27 @@ export const TourGuide = ({
         },
         spotlight: {
           backgroundColor: 'none',
-          border: `solid 2px ${theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary)}`,
+          border: `solid 2px ${theme.base === 'light' ? 'var(--sb-color-secondary)' : darken(0.18, theme.color.secondary)}`,
           boxShadow: '0px 0px 0px 9999px rgba(27, 28, 29, 0.2)',
         },
         tooltip: {
           width: 280,
-          color: theme.color.lightest,
+          color: 'var(--sb-color-lightest)',
           background:
-            theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary),
+            theme.base === 'light'
+              ? 'var(--sb-color-secondary)'
+              : darken(0.18, theme.color.secondary),
         },
         options: {
           zIndex: 9998,
           primaryColor:
-            theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary),
+            theme.base === 'light'
+              ? 'var(--sb-color-secondary)'
+              : darken(0.18, theme.color.secondary),
           arrowColor:
-            theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary),
+            theme.base === 'light'
+              ? 'var(--sb-color-secondary)'
+              : darken(0.18, theme.color.secondary),
         },
       }}
     />

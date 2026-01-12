@@ -7,26 +7,26 @@ import { styled } from 'storybook/theming';
 
 import { Link } from '../typography/link/link';
 
-const Title = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-}));
+const Title = styled.div({
+  fontWeight: 'var(--sb-typography-weight-bold)',
+});
 
 const Desc = styled.span();
 
-const Links = styled.div(({ theme }) => ({
+const Links = styled.div({
   marginTop: 8,
   textAlign: 'center',
 
   '> *': {
     margin: '0 8px',
-    fontWeight: theme.typography.weight.bold,
+    fontWeight: 'var(--sb-typography-weight-bold)',
   },
-}));
+});
 
-const Message = styled.div(({ theme }) => ({
-  color: theme.color.defaultText,
+const Message = styled.div({
+  color: 'var(--sb-color-defaultText)',
   lineHeight: '18px',
-}));
+});
 
 const MessageWrapper = styled.div({
   padding: 15,

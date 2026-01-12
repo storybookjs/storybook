@@ -33,19 +33,19 @@ export interface CurrentVersionProps {
   versions: RefType['versions'];
 }
 
-const IndicatorPlacement = styled.div(({ theme }) => ({
+const IndicatorPlacement = styled.div({
   height: 16,
 
   display: 'flex',
   alignItems: 'center',
 
   '& > * + *': {
-    marginLeft: theme.layoutMargin,
+    marginLeft: 'var(--sb-layoutMargin)',
   },
-}));
+});
 
-const IndicatorClickTarget = styled(Button)(({ theme }) => ({
-  color: theme.textMutedColor,
+const IndicatorClickTarget = styled(Button)({
+  color: 'var(--sb-textMutedColor)',
   svg: {
     height: 14,
     width: 14,
@@ -53,35 +53,35 @@ const IndicatorClickTarget = styled(Button)(({ theme }) => ({
     transition: 'all 150ms ease-out',
     color: 'inherit',
   },
-}));
+});
 
-const MessageTitle = styled.span(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-}));
+const MessageTitle = styled.span({
+  fontWeight: 'var(--sb-typography-weight-bold)',
+});
 
-const StyledMessage = styled.a(({ theme }) => ({
+const StyledMessage = styled.a({
   textDecoration: 'none',
   lineHeight: '16px',
   padding: 15,
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'flex-start',
-  color: theme.color.defaultText,
+  color: 'var(--sb-color-defaultText)',
 
   '&:not(:last-child)': {
-    borderBottom: `1px solid ${theme.appBorderColor}`,
+    borderBottom: `1px solid var(--sb-appBorderColor)`,
   },
   '&:hover': {
-    background: theme.background.hoverable,
-    color: theme.color.defaultText,
+    background: 'var(--sb-background-hoverable)',
+    color: 'var(--sb-color-defaultText)',
   },
   '&:link, &:active, &:focus': {
-    color: theme.color.defaultText,
+    color: 'var(--sb-color-defaultText)',
   },
   '&:focus-visible': {
-    background: theme.background.hoverable,
+    background: 'var(--sb-background-hoverable)',
     borderRadius: 8,
-    boxShadow: `inset 0 0 0 2px ${theme.color.secondary}`,
+    boxShadow: `inset 0 0 0 2px var(--sb-color-secondary)`,
     outline: 'none',
   },
   '& > *': {
@@ -94,7 +94,7 @@ const StyledMessage = styled.a(({ theme }) => ({
     marginRight: 10,
     flex: 'unset',
   },
-}));
+});
 
 const Message: FC<{
   blank?: boolean;
@@ -118,17 +118,17 @@ export const MessageWrapper = styled.div<{
     borderRadius: 8,
     overflow: 'hidden',
   }),
-  ({ theme }) => ({
-    color: theme.color.dark,
-  })
+  {
+    color: 'var(--sb-color-dark)',
+  }
 );
 
-const SubtleSelect = styled(Select)(({ theme }) => ({
+const SubtleSelect = styled(Select)({
   background: 'transparent',
-  color: theme.color.defaultText,
-  fontSize: theme.typography.size.s1,
-  fontWeight: theme.typography.weight.regular,
-}));
+  color: 'var(--sb-color-defaultText)',
+  fontSize: 'var(--sb-typography-size-s1)',
+  fontWeight: 'var(--sb-typography-weight-regular)',
+});
 
 export const RefIndicator = React.memo(
   forwardRef<HTMLDivElement, RefType & { state: ReturnType<typeof getStateType> }>(

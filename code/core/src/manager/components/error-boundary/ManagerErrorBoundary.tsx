@@ -8,18 +8,18 @@ import { SyncIcon, UnfoldIcon } from '@storybook/icons';
 import { transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
-const Container = styled.div(({ theme }) => ({
+const Container = styled.div({
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
   width: '100vw',
   height: '100vh',
-  backgroundColor: theme.background.app,
-  color: theme.color.defaultText,
-  fontFamily: theme.typography.fonts.base,
-}));
+  backgroundColor: 'var(--sb-background-app)',
+  color: 'var(--sb-color-defaultText)',
+  fontFamily: 'var(--sb-typography-fonts-base)',
+});
 
-const Content = styled.div(({ theme }) => ({
+const Content = styled.div({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
@@ -27,49 +27,49 @@ const Content = styled.div(({ theme }) => ({
   height: '80%',
   padding: 20,
   gap: 20,
-  backgroundColor: theme.background.content,
-  borderRadius: theme.appBorderRadius,
-  border: `1px solid ${theme.color.negative}`,
+  backgroundColor: 'var(--sb-background-content)',
+  borderRadius: 'var(--sb-appBorderRadius)',
+  border: `1px solid var(--sb-color-negative)`,
   boxShadow: '0 0 64px rgba(0, 0, 0, 0.1)',
   overflow: 'auto',
-}));
+});
 
-const Info = styled.div(({ theme }) => ({
+const Info = styled.div({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'start',
   gap: 15,
-}));
+});
 
-const Heading = styled.h1(({ theme }) => ({
+const Heading = styled.h1({
   display: 'flex',
   alignItems: 'center',
   margin: 0,
   gap: 10,
-  fontSize: theme.typography.size.s2,
-  fontWeight: theme.typography.weight.bold,
-  color: theme.color.defaultText,
-}));
+  fontSize: 'var(--sb-typography-size-s2)',
+  fontWeight: 'var(--sb-typography-weight-bold)',
+  color: 'var(--sb-color-defaultText)',
+});
 
-const SubHeading = styled.p(({ theme }) => ({
-  fontSize: theme.typography.size.s2,
-  color: theme.textMutedColor,
+const SubHeading = styled.p({
+  fontSize: 'var(--sb-typography-size-s2)',
+  color: 'var(--sb-textMutedColor)',
   margin: 0,
   lineHeight: 1.4,
   textWrap: 'balance',
-}));
+});
 
-const ErrorWrapper = styled.div(({ theme }) => ({
+const ErrorWrapper = styled.div({
   display: 'flex',
   flexDirection: 'column-reverse',
   width: '100%',
   flex: '0 0 auto',
-  border: `1px solid ${theme.appBorderColor}`,
-  borderRadius: theme.appBorderRadius,
+  border: `1px solid var(--sb-appBorderColor)`,
+  borderRadius: 'var(--sb-appBorderRadius)',
   pre: {
     borderRadius: 0,
   },
-}));
+});
 
 const CollapseToggle = styled.div(({ theme }) => ({
   flex: '0 0 auto',
@@ -80,15 +80,15 @@ const CollapseToggle = styled.div(({ theme }) => ({
   width: '100%',
   padding: '0 10px',
   cursor: 'pointer',
-  fontSize: theme.typography.size.s2,
-  fontWeight: theme.typography.weight.bold,
-  color: theme.color.defaultText,
+  fontSize: 'var(--sb-typography-size-s2)',
+  fontWeight: 'var(--sb-typography-weight-bold)',
+  color: 'var(--sb-color-defaultText)',
   userSelect: 'none',
   '&:hover': {
     backgroundColor: theme.base === 'light' ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.03)',
   },
   svg: {
-    color: theme.textMutedColor,
+    color: 'var(--sb-textMutedColor)',
   },
 }));
 
@@ -96,27 +96,27 @@ const ErrorMessage = styled.pre(({ theme }) => ({
   order: 1,
   padding: '11px 15px',
   margin: 0,
-  fontSize: theme.typography.size.s1,
-  color: theme.color.negativeText,
+  fontSize: 'var(--sb-typography-size-s1)',
+  color: 'var(--sb-color-negativeText)',
   backgroundColor: transparentize(theme.base === 'light' ? 0.95 : 0.9, theme.color.negative),
-  borderBottom: `1px solid ${theme.appBorderColor}`,
+  borderBottom: `1px solid var(--sb-appBorderColor)`,
   whiteSpace: 'pre-wrap',
   wordBreak: 'break-word',
-  fontFamily: theme.typography.fonts.mono,
+  fontFamily: 'var(--sb-typography-fonts-mono)',
   lineHeight: '18px',
 }));
 
-const ErrorStack = styled.pre(({ theme }) => ({
+const ErrorStack = styled.pre({
   padding: 15,
   margin: 0,
-  fontSize: theme.typography.size.s1,
-  color: theme.textMutedColor,
-  borderBottom: `1px solid ${theme.appBorderColor}`,
+  fontSize: 'var(--sb-typography-size-s1)',
+  color: 'var(--sb-textMutedColor)',
+  borderBottom: `1px solid var(--sb-appBorderColor)`,
   borderRadius: 0,
   whiteSpace: 'pre-wrap',
   wordBreak: 'break-word',
-  fontFamily: theme.typography.fonts.mono,
-}));
+  fontFamily: 'var(--sb-typography-fonts-mono)',
+});
 
 interface ErrorFallbackProps {
   error: Error;

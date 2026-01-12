@@ -6,16 +6,16 @@ import { styled } from 'storybook/theming';
 
 const { document } = global;
 
-const ErrorName = styled.strong(({ theme }) => ({
-  color: theme.color.orange,
-}));
-const ErrorImportant = styled.strong(({ theme }) => ({
-  color: theme.color.ancillary,
+const ErrorName = styled.strong({
+  color: 'var(--sb-color-orange)',
+});
+const ErrorImportant = styled.strong({
+  color: 'var(--sb-color-ancillary)',
   textDecoration: 'underline',
-}));
-const ErrorDetail = styled.em(({ theme }) => ({
-  color: theme.textMutedColor,
-}));
+});
+const ErrorDetail = styled.em({
+  color: 'var(--sb-textMutedColor)',
+});
 
 const firstLineRegex = /(Error): (.*)\n/;
 const linesRegexChromium = /at (?:(.*) )?\(?(.+)\)?/;

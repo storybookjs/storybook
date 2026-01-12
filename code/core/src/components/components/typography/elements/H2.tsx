@@ -2,8 +2,8 @@ import { styled } from 'storybook/theming';
 
 import { headerCommon, withReset } from '../lib/common';
 
-export const H2 = styled.h2(withReset, headerCommon, ({ theme }) => ({
-  fontSize: `${theme.typography.size.m2}px`,
+export const H2 = styled.h2(withReset, headerCommon, {
+  fontSize: 'var(--sb-typography-size-m2)',
   paddingBottom: 4,
-  borderBottom: `1px solid ${theme.appBorderColor}`,
-}));
+  borderBottom: `1px solid var(--sb-appBorderColor)`,
+});

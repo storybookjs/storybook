@@ -9,11 +9,11 @@ import { styled } from 'storybook/theming';
 
 import { DOCUMENTATION_PLAY_FUNCTION_LINK } from '../constants';
 
-const Links = styled.div(({ theme }) => ({
+const Links = styled.div({
   display: 'flex',
-  fontSize: theme.typography.size.s2 - 1,
+  fontSize: `calc(var(--sb-typography-size-s2) - 1px)`,
   gap: 25,
-}));
+});
 
 export const Empty = () => {
   const [isLoading, setIsLoading] = useState(true);

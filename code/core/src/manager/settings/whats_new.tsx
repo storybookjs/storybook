@@ -22,28 +22,28 @@ const LoaderWrapper = styled.div({
   height: '32px',
 });
 
-const Message = styled.div(({ theme }) => ({
+const Message = styled.div({
   paddingTop: '12px',
-  color: theme.textMutedColor,
+  color: 'var(--sb-textMutedColor)',
   maxWidth: '295px',
   margin: '0 auto',
-  fontSize: `${theme.typography.size.s1}px`,
+  fontSize: `var(--sb-typography-size-s1)`,
   lineHeight: `16px`,
-}));
+});
 
-const Container = styled.div(({ theme }) => ({
+const Container = styled.div({
   position: 'absolute',
   width: '100%',
   height: 40,
   bottom: 0,
-  background: theme.background.bar,
-  fontSize: theme.typography.size.s2,
-  borderTop: `1px solid ${theme.color.border}`,
+  background: 'var(--sb-background-bar)',
+  fontSize: `var(--sb-typography-size-s2)`,
+  borderTop: `1px solid var(--sb-color-border)`,
   padding: '0 10px 0 15px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-}));
+});
 
 export const WhatsNewFooter = ({
   isNotificationsEnabled,
@@ -106,12 +106,12 @@ const Iframe = styled.iframe<{ isLoaded: boolean }>(
 
 const AlertIcon = styled(((props) => <AlertIconSvg {...props} />) as FC<
   Omit<ComponentProps<typeof AlertIconSvg>, 'icon'>
->)(({ theme }) => ({
-  color: theme.textMutedColor,
+>)({
+  color: 'var(--sb-textMutedColor)',
   width: 32,
   height: 32,
   margin: '0 auto',
-}));
+});
 
 const WhatsNewLoader: FC = () => (
   <Centered>

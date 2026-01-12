@@ -21,18 +21,18 @@ import { NoResults } from './NoResults';
 
 const { window: globalWindow } = global;
 
-const TextStyle = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s2,
+const TextStyle = styled.div({
+  fontSize: `var(--sb-typography-size-s2)`,
   lineHeight: '20px',
   margin: 0,
-}));
-const Text = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s2,
+});
+const Text = styled.div({
+  fontSize: `var(--sb-typography-size-s2)`,
   lineHeight: '20px',
   margin: 0,
 
   code: {
-    fontSize: theme.typography.size.s1,
+    fontSize: `var(--sb-typography-size-s1)`,
   },
 
   ul: {
@@ -40,7 +40,7 @@ const Text = styled.div(({ theme }) => ({
     marginTop: 8,
     marginBottom: 8,
   },
-}));
+});
 
 const ErrorDisplay = styled.pre<{ isMobile: boolean }>(
   {
@@ -48,19 +48,10 @@ const ErrorDisplay = styled.pre<{ isMobile: boolean }>(
     borderRadius: 8,
     overflow: 'auto',
     whiteSpace: 'pre',
+    color: 'var(--sb-color-dark)',
   },
   ({ isMobile }) =>
-    isMobile
-      ? {
-          maxWidth: 'calc(100vw - 40px)',
-        }
-      : {
-          minWidth: 420,
-          maxWidth: 640,
-        },
-  ({ theme }) => ({
-    color: theme.color.dark,
-  })
+    isMobile ? { maxWidth: 'calc(100vw - 40px)' } : { minWidth: 420, maxWidth: 640 }
 );
 
 export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }) => {

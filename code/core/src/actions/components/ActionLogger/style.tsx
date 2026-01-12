@@ -13,9 +13,9 @@ export const Action = styled.div({
 
 export const Counter = styled.div(({ theme }) => ({
   backgroundColor: opacify(0.5, theme.appBorderColor),
-  color: theme.color.inverseText,
-  fontSize: theme.typography.size.s1,
-  fontWeight: theme.typography.weight.bold,
+  color: 'var(--sb-color-inverseText)',
+  fontSize: 'var(--sb-typography-size-s1)',
+  fontWeight: 'var(--sb-typography-weight-bold)',
   lineHeight: 1,
   padding: '1px 5px',
   borderRadius: 20,

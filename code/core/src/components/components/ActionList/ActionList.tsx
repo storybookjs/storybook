@@ -20,14 +20,14 @@ const ActionListItem = styled.li<{
     minHeight: 32,
     gap: 4,
 
-    fontSize: theme.typography.size.s1,
-    fontWeight: active ? theme.typography.weight.bold : theme.typography.weight.regular,
-    color: active ? 'var(--listbox-item-active-color)' : theme.color.defaultText,
+    fontSize: `var(--sb-typography-size-s1)`,
+    fontWeight: active ? 'var(--sb-typography-weight-bold)' : 'var(--sb-typography-weight-regular)',
+    color: active ? 'var(--listbox-item-active-color)' : 'var(--sb-color-defaultText)',
     '--listbox-item-active-color':
-      theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
+      theme.base === 'light' ? darken(0.1, theme.color.secondary) : 'var(--sb-color-secondary)',
     '--listbox-item-muted-color': active
       ? 'var(--listbox-item-active-color)'
-      : theme.color.mediumdark,
+      : 'var(--sb-color-mediumdark)',
 
     '&[aria-disabled="true"]': {
       opacity: 0.5,
@@ -35,7 +35,7 @@ const ActionListItem = styled.li<{
     },
     '&[aria-selected="true"]': {
       color: 'var(--listbox-item-active-color)',
-      fontWeight: theme.typography.weight.bold,
+      fontWeight: 'var(--sb-typography-weight-bold)',
       '--listbox-item-muted-color': 'var(--listbox-item-active-color)',
     },
 
@@ -46,7 +46,7 @@ const ActionListItem = styled.li<{
 
     '&[role="option"]': {
       cursor: 'pointer',
-      borderRadius: theme.input.borderRadius,
+      borderRadius: 'var(--sb-input-borderRadius)',
       outlineOffset: -2,
       padding: '0 9px',
       gap: 8,
@@ -55,7 +55,7 @@ const ActionListItem = styled.li<{
         background: transparentize(0.86, theme.color.secondary),
       },
       '&:focus-visible': {
-        outline: `2px solid ${theme.color.secondary}`,
+        outline: `2px solid var(--sb-color-secondary)`,
       },
     },
 
@@ -149,7 +149,7 @@ const ActionListToggle = forwardRef<HTMLButtonElement, ComponentProps<typeof Sty
   }
 );
 
-const ActionListAction = styled(ActionListButton)(({ theme }) => ({
+const ActionListAction = styled(ActionListButton)({
   height: 'auto',
   minHeight: 32,
   flex: '0 1 100%',
@@ -164,16 +164,16 @@ const ActionListAction = styled(ActionListButton)(({ theme }) => ({
     outline: 'none',
   },
   '&:has(input:focus-visible)': {
-    outline: `2px solid ${theme.color.secondary}`,
+    outline: `2px solid var(--sb-color-secondary)`,
     outlineOffset: -2,
   },
-}));
+});
 
 const ActionListLink = (
   props: ComponentProps<typeof ActionListAction> & React.AnchorHTMLAttributes<HTMLAnchorElement>
 ) => <ActionListAction as="a" {...props} />;
 
-const ActionListText = styled.div(({ theme }) => ({
+const ActionListText = styled.div({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',
@@ -193,7 +193,7 @@ const ActionListText = styled.div(({ theme }) => ({
   },
   '& small': {
     fontSize: 'inherit',
-    color: theme.textMutedColor,
+    color: 'var(--sb-textMutedColor)',
   },
   '&:first-child': {
     paddingLeft: 8,
@@ -207,7 +207,7 @@ const ActionListText = styled.div(({ theme }) => ({
   'button > &:last-child, [role="option"] > &:last-child': {
     paddingRight: 0,
   },
-}));
+});
 
 const ActionListIcon = styled.div({
   display: 'flex',
@@ -220,14 +220,14 @@ const ActionListIcon = styled.div({
 });
 
 export const ActionList = Object.assign(
-  styled.ul(({ theme, onClick }) => ({
+  styled.ul(({ onClick }) => ({
     listStyle: 'none',
     margin: 0,
     padding: 4,
     cursor: onClick ? 'pointer' : 'default',
 
     '& + *': {
-      borderTop: `1px solid ${theme.appBorderColor}`,
+      borderTop: `1px solid var(--sb-appBorderColor)`,
     },
   })),
   {

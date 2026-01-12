@@ -43,19 +43,19 @@ export const UpgradeBlock: FC<UpgradeBlockProps> = ({ onNavigateToWhatsNew }) =>
   );
 };
 
-const Container = styled.div(({ theme }) => ({
+const Container = styled.div({
   border: '1px solid',
   borderRadius: 5,
   padding: 20,
   marginTop: 0,
-  borderColor: theme.appBorderColor,
-  fontSize: theme.typography.size.s2,
+  borderColor: 'var(--sb-appBorderColor)',
+  fontSize: `var(--sb-typography-size-s2)`,
   width: '100%',
 
   [MEDIA_DESKTOP_BREAKPOINT]: {
     maxWidth: 400,
   },
-}));
+});
 
 const Tabs = styled.div({
   display: 'flex',
@@ -63,19 +63,19 @@ const Tabs = styled.div({
 });
 
 const Code = styled.pre(({ theme }) => ({
-  background: theme.base === 'light' ? 'rgba(0, 0, 0, 0.05)' : theme.appBorderColor,
-  fontSize: theme.typography.size.s2 - 1,
+  background: theme.base === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'var(--sb-appBorderColor)',
+  fontSize: `calc(var(--sb-typography-size-s2) - 1px)`,
   margin: '4px 0 16px',
 }));
 
-const ButtonTab = styled.button<{ active: boolean }>(({ theme, active }) => ({
+const ButtonTab = styled.button<{ active: boolean }>(({ active }) => ({
   all: 'unset',
   alignItems: 'center',
   gap: 10,
-  color: theme.color.defaultText,
-  fontSize: theme.typography.size.s2 - 1,
+  color: 'var(--sb-color-defaultText)',
+  fontSize: `calc(var(--sb-typography-size-s2) - 1px)`,
   borderBottom: '2px solid transparent',
-  borderBottomColor: active ? theme.color.secondary : 'none',
+  borderBottomColor: active ? 'var(--sb-color-secondary)' : 'none',
   padding: '0 10px 5px',
   marginBottom: '5px',
   cursor: 'pointer',

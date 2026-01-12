@@ -14,13 +14,13 @@ export interface BarProps {
 }
 
 const StyledBar = styled.div<BarProps>(
-  ({ backgroundColor, border = false, innerStyle = {}, scrollable, theme }) => ({
-    color: theme.barTextColor,
+  ({ backgroundColor, border = false, innerStyle = {}, scrollable }) => ({
+    color: 'var(--sb-barTextColor)',
     width: '100%',
     minHeight: 40,
     flexShrink: 0,
     // TODO in Storybook 11: Apply background regardless of border.
-    scrollbarColor: `${theme.barTextColor} ${border ? backgroundColor || theme.barBg : 'transparent'}`,
+    scrollbarColor: `var(--sb-barTextColor) ${border ? backgroundColor || 'var(--sb-barBg)' : 'transparent'}`,
     scrollbarWidth: 'thin',
     overflow: scrollable ? 'auto' : 'hidden',
     overflowY: 'hidden',
@@ -31,8 +31,8 @@ const StyledBar = styled.div<BarProps>(
     // TODO in Storybook 11: Apply background regardless of border.
     ...(border
       ? {
-          boxShadow: `${theme.appBorderColor}  0 -1px 0 0 inset`,
-          background: backgroundColor || theme.barBg,
+          boxShadow: `var(--sb-appBorderColor)  0 -1px 0 0 inset`,
+          background: backgroundColor || 'var(--sb-barBg)',
         }
       : {}),
     ...innerStyle,

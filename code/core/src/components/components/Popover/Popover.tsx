@@ -40,26 +40,27 @@ const Wrapper = styled.div<{
     colorScheme: 'light dark',
     padding,
   }),
-  ({ theme, hasChrome }) =>
+  ({ hasChrome }) =>
     hasChrome
       ? {
           filter: `
             drop-shadow(0px 5px 5px rgba(0,0,0,0.05))
             drop-shadow(0 1px 3px rgba(0,0,0,0.1))
           `,
-          borderRadius: theme.appBorderRadius + 2,
-          fontSize: theme.typography.size.s1,
+          borderRadius: 'calc(var(--sb-appBorderRadius) + 2px)',
+          fontSize: 'var(--sb-typography-size-s1)',
         }
       : {},
   ({ theme, bgColor }) =>
     bgColor === 'default' && {
-      background: theme.base === 'light' ? lighten(theme.background.app) : theme.background.app,
-      color: theme.color.defaultText,
+      background:
+        theme.base === 'light' ? lighten(theme.background.app) : 'var(--sb-background-app)',
+      color: 'var(--sb-color-defaultText)',
     },
   ({ theme, bgColor }) =>
     bgColor === 'inverse' && {
-      background: theme.base === 'light' ? theme.color.darkest : theme.color.lightest,
-      color: theme.color.inverseText,
+      background: theme.base === 'light' ? 'var(--sb-color-darkest)' : 'var(--sb-color-lightest)',
+      color: 'var(--sb-color-inverseText)',
     },
   ({ theme, bgColor }) =>
     (bgColor === 'positive' || bgColor === 'negative' || bgColor === 'warning') && {

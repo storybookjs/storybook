@@ -12,28 +12,28 @@ import type { Link } from '../tooltip/TooltipLinkList';
 import { TabButton } from './Button';
 import type { ChildrenListComplete } from './Tabs.helpers';
 
-const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) => ({
+const CollapseIcon = styled.span<{ isActive: boolean }>(({ isActive }) => ({
   display: 'inline-block',
   width: 0,
   height: 0,
   marginLeft: 8,
-  color: isActive ? theme.color.secondary : theme.color.mediumdark,
+  color: isActive ? 'var(--sb-color-secondary)' : 'var(--sb-color-mediumdark)',
   borderRight: '3px solid transparent',
   borderLeft: `3px solid transparent`,
   borderTop: '3px solid',
   transition: 'transform .1s ease-out',
 }));
 
-const AddonButton = styled(TabButton)<{ preActive: boolean }>(({ active, theme, preActive }) => {
+const AddonButton = styled(TabButton)<{ preActive: boolean }>(({ active, preActive }) => {
   return `
-    color: ${preActive || active ? theme.barSelectedColor : theme.barTextColor};
+    color: ${preActive || active ? 'var(--sb-barSelectedColor)' : 'var(--sb-barTextColor)'};
     .addon-collapsible-icon {
-      color: ${preActive || active ? theme.barSelectedColor : theme.barTextColor};
+      color: ${preActive || active ? 'var(--sb-barSelectedColor)' : 'var(--sb-barTextColor)'};
     }
     &:hover {
-      color: ${theme.barHoverColor};
+      color: 'var(--sb-barHoverColor)';
       .addon-collapsible-icon {
-        color: ${theme.barHoverColor};
+        color: 'var(--sb-barHoverColor)';
       }
     }
   `;

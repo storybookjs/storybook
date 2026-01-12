@@ -26,7 +26,7 @@ import { useLastViewed } from './useLastViewed';
 
 export const DEFAULT_REF_ID = 'storybook_internal';
 
-const Container = styled.nav(({ theme }) => ({
+const Container = styled.nav({
   position: 'absolute',
   zIndex: 1,
   left: 0,
@@ -37,12 +37,12 @@ const Container = styled.nav(({ theme }) => ({
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
-  background: theme.background.content,
+  background: 'var(--sb-background-content)',
 
   [MEDIA_DESKTOP_BREAKPOINT]: {
-    background: theme.background.app,
+    background: 'var(--sb-background-app)',
   },
-}));
+});
 
 const Stack = styled.div({
   display: 'flex',
@@ -51,11 +51,11 @@ const Stack = styled.div({
   padding: '16px 12px 20px 12px',
 });
 
-const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
-  color: theme.textMutedColor,
+const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ isMobile }) => ({
+  color: 'var(--sb-textMutedColor)',
   width: isMobile ? 36 : 32,
   height: isMobile ? 36 : 32,
-  borderRadius: theme.appBorderRadius + 2,
+  borderRadius: 'calc(var(--sb-appBorderRadius) + 2px)',
 }));
 
 const Swap = React.memo(function Swap({

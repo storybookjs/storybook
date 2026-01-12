@@ -132,14 +132,14 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   );
 };
 
-const Container = styled.div(({ theme }) => ({
+const Container = styled.div({
   bottom: 0,
   left: 0,
   width: '100%',
   zIndex: 10,
-  background: theme.barBg,
-  borderTop: `1px solid ${theme.appBorderColor}`,
-}));
+  background: 'var(--sb-barBg)',
+  borderTop: `1px solid var(--sb-appBorderColor)`,
+});
 
 const MobileBottomBar = styled.section({
   display: 'flex',

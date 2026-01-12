@@ -5,17 +5,18 @@ import { Link } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
 
-const Footer = styled.div(({ theme }) => ({
+const Footer = styled.div({
   display: 'flex',
   paddingTop: 20,
   marginTop: 20,
-  borderTop: `1px solid ${theme.appBorderColor}`,
-  fontWeight: theme.typography.weight.bold,
+  borderTop: `1px solid var(--sb-appBorderColor)`,
+  fontWeight: 'var(--sb-typography-weight-bold)',
 
   '& > * + *': {
     marginLeft: 20,
   },
-}));
+});
+
 const SettingsFooter: FC<any> = (props) => (
   <Footer {...props}>
     <Link secondary href="https://storybook.js.org?ref=ui" cancel={false} target="_blank">

@@ -115,7 +115,7 @@ const slideToRight = keyframes({
 });
 
 const Container = styled.div<{ $status: string; $transitionDuration: number }>(
-  ({ theme, $status, $transitionDuration }) => ({
+  ({ $status, $transitionDuration }) => ({
     position: 'absolute',
     width: '100%',
     height: '100%',
@@ -124,8 +124,8 @@ const Container = styled.div<{ $status: string; $transitionDuration: number }>(
     left: 0,
     zIndex: 11,
     overflow: 'auto',
-    color: theme.color.defaultText,
-    background: theme.background.content,
+    color: 'var(--sb-color-defaultText)',
+    background: 'var(--sb-background-content)',
     animation:
       $status === 'exiting'
         ? `${slideToRight} ${$transitionDuration}ms`
@@ -142,33 +142,33 @@ const InnerArea = styled.div({
 
 const LinkContainer = styled.div({});
 
-const LinkLine = styled.a(({ theme }) => ({
+const LinkLine = styled.a({
   all: 'unset',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  fontSize: theme.typography.size.s2 - 1,
-  borderBottom: `1px solid ${theme.appBorderColor}`,
+  fontSize: 'calc(var(--sb-typography-size-s2) - 1px)',
+  borderBottom: `1px solid var(--sb-appBorderColor)`,
   cursor: 'pointer',
   padding: '0 10px',
 
   '&:last-child': {
     borderBottom: 'none',
   },
-}));
+});
 
-const LinkLeft = styled.div(({ theme }) => ({
+const LinkLeft = styled.div({
   display: 'flex',
   alignItems: 'center',
-  fontSize: theme.typography.size.s2 - 1,
+  fontSize: 'calc(var(--sb-typography-size-s2) - 1px)',
   height: 40,
   gap: 5,
-}));
+});
 
-const BottomText = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s2 - 1,
+const BottomText = styled.div({
+  fontSize: 'calc(var(--sb-typography-size-s2) - 1px)',
   marginTop: 30,
-}));
+});
 
 const CloseButton = styled(Button)({
   alignSelf: 'start',

@@ -46,7 +46,7 @@ export const DesktopOnly = styled.span({
   },
 });
 
-export const IframeWrapper = styled.div(({ theme }) => ({
+export const IframeWrapper = styled.div({
   alignContent: 'center',
   alignItems: 'center',
   justifyContent: 'center',
@@ -60,14 +60,14 @@ export const IframeWrapper = styled.div(({ theme }) => ({
   position: 'relative',
   width: '100%',
   height: '100%',
-}));
+});
 
-export const LoaderWrapper = styled.div(({ theme }) => ({
+export const LoaderWrapper = styled.div({
   position: 'absolute',
   top: 0,
   left: 0,
   bottom: 0,
   right: 0,
-  background: theme.background.preview,
+  background: 'var(--sb-background-preview)',
   zIndex: 1,
-}));
+});

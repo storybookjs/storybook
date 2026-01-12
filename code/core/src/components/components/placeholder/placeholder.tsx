@@ -2,18 +2,18 @@ import React, { Children } from 'react';
 
 import { styled } from 'storybook/theming';
 
-const Title = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-}));
+const Title = styled.div({
+  fontWeight: 'var(--sb-typography-weight-bold)',
+});
 
 const Desc = styled.div();
 
-const Message = styled.div(({ theme }) => ({
+const Message = styled.div({
   padding: 30,
   textAlign: 'center',
-  color: theme.color.defaultText,
-  fontSize: theme.typography.size.s2 - 1,
-}));
+  color: 'var(--sb-color-defaultText)',
+  fontSize: 'calc(var(--sb-typography-size-s2) - 1px)',
+});
 
 export interface PlaceholderProps {
   children?: React.ReactNode;

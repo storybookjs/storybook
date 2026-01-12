@@ -26,9 +26,9 @@ const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({
   marginTop: isMain ? undefined : 0,
 }));
 
-const RefHead = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-  fontSize: theme.typography.size.s2,
+const RefHead = styled.div({
+  fontWeight: 'var(--sb-typography-weight-bold)',
+  fontSize: 'var(--sb-typography-size-s2)',
 
   // Similar to ListItem.tsx
   textDecoration: 'none',
@@ -42,10 +42,10 @@ const RefHead = styled.div(({ theme }) => ({
   marginTop: 20,
   paddingTop: 16,
   paddingBottom: 12,
-  borderTop: `1px solid ${theme.appBorderColor}`,
+  borderTop: `1px solid var(--sb-appBorderColor)`,
 
-  color: theme.color.defaultText,
-}));
+  color: 'var(--sb-color-defaultText)',
+});
 
 const RefTitle = styled.div({
   textOverflow: 'ellipsis',
@@ -55,7 +55,7 @@ const RefTitle = styled.div({
   marginLeft: 2,
 });
 
-const CollapseButton = styled.button(({ theme }) => ({
+const CollapseButton = styled.button({
   all: 'unset',
   display: 'flex',
   padding: '0px 8px',
@@ -65,12 +65,12 @@ const CollapseButton = styled.button(({ theme }) => ({
   overflow: 'hidden',
 
   '&:focus': {
-    borderColor: theme.color.secondary,
+    borderColor: 'var(--sb-color-secondary)',
     'span:first-of-type': {
-      borderLeftColor: theme.color.secondary,
+      borderLeftColor: 'var(--sb-color-secondary)',
     },
   },
-}));
+});
 
 export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
   const { docsOptions } = useStorybookState();

@@ -45,9 +45,9 @@ const availableItems = checklistData.sections.flatMap(
     })
 );
 
-const Container = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s2,
-}));
+const Container = styled.div({
+  fontSize: `var(--sb-typography-size-s2)`,
+});
 
 const managerContext: any = {
   state: {},

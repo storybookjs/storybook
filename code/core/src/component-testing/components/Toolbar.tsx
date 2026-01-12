@@ -18,13 +18,13 @@ import { type ControlStates } from '../../instrumenter/types';
 import type { Controls } from './InteractionsPanel';
 import { type PlayStatus, StatusBadge } from './StatusBadge';
 
-const ToolbarWrapper = styled.div(({ theme }) => ({
-  boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
-  background: theme.background.app,
+const ToolbarWrapper = styled.div({
+  boxShadow: `0 -1px 0 0 inset var(--sb-appBorderColor)`,
+  background: 'var(--sb-background-app)',
   position: 'sticky',
   top: 0,
   zIndex: 1,
-}));
+});
 
 interface ToolbarProps {
   controls: Controls;
@@ -37,41 +37,41 @@ interface ToolbarProps {
   api: API;
 }
 
-const StyledButton = styled(Button)(({ theme }) => ({
+const StyledButton = styled(Button)({
   borderRadius: 4,
   padding: 6,
-  color: theme.textMutedColor,
+  color: 'var(--sb-textMutedColor)',
   '&:not(:disabled)': {
     '&:hover,&:focus-visible': {
-      color: theme.color.secondary,
+      color: 'var(--sb-color-secondary)',
     },
   },
-}));
+});
 
-const StyledIconButton = styled(Button)(({ theme }) => ({
-  color: theme.textMutedColor,
-}));
+const StyledIconButton = styled(Button)({
+  color: 'var(--sb-textMutedColor)',
+});
 
-const OpenInEditorButton = styled(Button)(({ theme }) => ({
-  color: theme.color.secondary,
-  fontWeight: theme.typography.weight.bold,
+const OpenInEditorButton = styled(Button)({
+  color: 'var(--sb-color-secondary)',
+  fontWeight: 'var(--sb-typography-weight-bold)',
   justifyContent: 'flex-end',
   textAlign: 'right',
   whiteSpace: 'nowrap',
   fontSize: 13,
   lineHeight: 24,
-}));
+});
 
-const StyledLocation = styled(P)(({ theme }) => ({
-  color: theme.textMutedColor,
+const StyledLocation = styled(P)({
+  color: 'var(--sb-textMutedColor)',
   cursor: 'default',
-  fontWeight: theme.typography.weight.regular,
+  fontWeight: 'var(--sb-typography-weight-regular)',
   justifyContent: 'flex-end',
   textAlign: 'right',
   whiteSpace: 'nowrap',
   margin: 0,
   fontSize: 13,
-}));
+});
 
 const ControlsGroup = styled.div({
   display: 'flex',

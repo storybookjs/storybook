@@ -3,29 +3,29 @@ import { styled } from 'storybook/theming';
 import { withMargin, withReset } from '../lib/common';
 
 export const Table = styled.table(withReset, withMargin, ({ theme }) => ({
-  fontSize: theme.typography.size.s2,
+  fontSize: 'var(--sb-typography-size-s2)',
   lineHeight: '24px',
   padding: 0,
   borderCollapse: 'collapse',
   '& tr': {
-    borderTop: `1px solid ${theme.appBorderColor}`,
-    backgroundColor: theme.appContentBg,
+    borderTop: `1px solid var(--sb-appBorderColor)`,
+    backgroundColor: 'var(--sb-appContentBg)',
     margin: 0,
     padding: 0,
   },
   '& tr:nth-of-type(2n)': {
-    backgroundColor: theme.base === 'dark' ? theme.color.darker : theme.color.lighter,
+    backgroundColor: theme.base === 'dark' ? 'var(--sb-color-darker)' : 'var(--sb-color-lighter)',
   },
   '& tr th': {
     fontWeight: 'bold',
-    color: theme.color.defaultText,
-    border: `1px solid ${theme.appBorderColor}`,
+    color: 'var(--sb-color-defaultText)',
+    border: `1px solid var(--sb-appBorderColor)`,
     margin: 0,
     padding: '6px 13px',
   },
   '& tr td': {
-    border: `1px solid ${theme.appBorderColor}`,
-    color: theme.color.defaultText,
+    border: `1px solid var(--sb-appBorderColor)`,
+    color: 'var(--sb-color-defaultText)',
     margin: 0,
     padding: '6px 13px',
   },

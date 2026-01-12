@@ -19,7 +19,7 @@ const getActive = (refId: FramesRendererProps['refId'], refs: FramesRendererProp
   return 'storybook-preview-iframe';
 };
 
-const SkipToSidebarLink = styled(Button)(({ theme }) => ({
+const SkipToSidebarLink = styled(Button)({
   display: 'none',
   '@media (min-width: 600px)': {
     position: 'absolute',
@@ -27,14 +27,14 @@ const SkipToSidebarLink = styled(Button)(({ theme }) => ({
     top: 10,
     right: 15,
     padding: '10px 15px',
-    fontSize: theme.typography.size.s1,
+    fontSize: `var(--sb-typography-size-s1)`,
     transform: 'translateY(-100px)',
     '&:focus': {
       transform: 'translateY(0)',
       zIndex: 1,
     },
   },
-}));
+});
 
 const whenSidebarIsVisible = ({ api, state }: Combo) => ({
   isFullscreen: api.getIsFullscreen(),

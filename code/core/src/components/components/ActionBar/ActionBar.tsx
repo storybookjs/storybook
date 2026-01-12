@@ -3,18 +3,18 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-const Container = styled.div(({ theme }) => ({
+const Container = styled.div({
   position: 'absolute',
   bottom: 0,
   right: 0,
   maxWidth: '100%',
   display: 'flex',
-  background: theme.background.content,
+  background: 'var(--sb-background-content)',
   zIndex: 1,
-}));
+});
 
 export const ActionButton = styled.button<{ disabled: boolean }>(
-  ({ theme }) => ({
+  {
     margin: 0,
     border: '0 none',
     padding: '4px 10px',
@@ -22,35 +22,35 @@ export const ActionButton = styled.button<{ disabled: boolean }>(
     display: 'flex',
     alignItems: 'center',
 
-    color: theme.color.defaultText,
-    background: theme.background.content,
+    color: 'var(--sb-color-defaultText)',
+    background: 'var(--sb-background-content)',
 
     fontSize: 12,
     lineHeight: '16px',
-    fontFamily: theme.typography.fonts.base,
-    fontWeight: theme.typography.weight.bold,
+    fontFamily: 'var(--sb-typography-fonts-base)',
+    fontWeight: 'var(--sb-typography-weight-bold)',
 
-    borderTop: `1px solid ${theme.appBorderColor}`,
-    borderLeft: `1px solid ${theme.appBorderColor}`,
+    borderTop: `1px solid var(--sb-appBorderColor)`,
+    borderLeft: `1px solid var(--sb-appBorderColor)`,
     marginLeft: -1,
 
     borderRadius: `4px 0 0 0`,
 
-    '&:not(:last-child)': { borderRight: `1px solid ${theme.appBorderColor}` },
+    '&:not(:last-child)': { borderRight: `1px solid var(--sb-appBorderColor)` },
     '& + *': {
-      borderLeft: `1px solid ${theme.appBorderColor}`,
+      borderLeft: `1px solid var(--sb-appBorderColor)`,
       borderRadius: 0,
     },
 
     '&:focus': {
-      boxShadow: `${theme.color.secondary} 0 -3px 0 0 inset`,
+      boxShadow: `0 -3px 0 0 inset var(--sb-color-secondary)`,
       outline: '0 none',
 
       '@media (forced-colors: active)': {
         outline: '1px solid highlight',
       },
     },
-  }),
+  },
   ({ disabled }) =>
     disabled && {
       cursor: 'not-allowed',

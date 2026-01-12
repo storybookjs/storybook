@@ -3,11 +3,11 @@ import { styled } from 'storybook/theming';
 import { withReset } from '../lib/common';
 import { Link } from './Link';
 
-export const A = styled(Link)(withReset, ({ theme }) => ({
+export const A = styled(Link)(withReset, {
   fontSize: 'inherit',
   lineHeight: '24px',
 
-  color: theme.color.secondary,
+  color: 'var(--sb-color-secondary)',
   textDecoration: 'none',
   '&.absent': {
     color: '#cc0000',
@@ -22,4 +22,4 @@ export const A = styled(Link)(withReset, ({ theme }) => ({
     left: 0,
     bottom: 0,
   },
-}));
+});

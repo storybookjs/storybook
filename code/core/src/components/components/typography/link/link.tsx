@@ -69,7 +69,7 @@ const A = styled.a<LinkStylesProps>(
     transition: 'all 150ms ease-out',
     textDecoration: 'none',
 
-    color: theme.color.secondary,
+    color: 'var(--sb-color-secondary)',
 
     '&:hover, &:focus': {
       cursor: 'pointer',
@@ -95,7 +95,7 @@ const A = styled.a<LinkStylesProps>(
       marginRight: '0.4em',
 
       '& path': {
-        fill: theme.color.secondary,
+        fill: 'var(--sb-color-secondary)',
       },
     },
   }),
@@ -142,25 +142,25 @@ const A = styled.a<LinkStylesProps>(
           },
         }
       : {},
-  ({ theme, inverse }) =>
+  ({ inverse }) =>
     inverse
       ? {
-          color: theme.color.lightest,
+          color: 'var(--sb-color-lightest)',
           ':not([fill])': {
-            fill: theme.color.lightest,
+            fill: 'var(--sb-color-lightest)',
           },
 
           '&:hover': {
-            color: theme.color.lighter,
+            color: 'var(--sb-color-lighter)',
             'svg path:not([fill])': {
-              fill: theme.color.lighter,
+              fill: 'var(--sb-color-lighter)',
             },
           },
 
           '&:active': {
-            color: theme.color.light,
+            color: 'var(--sb-color-light)',
             'svg path:not([fill])': {
-              fill: theme.color.light,
+              fill: 'var(--sb-color-light)',
             },
           },
         }

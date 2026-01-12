@@ -46,15 +46,15 @@ export interface NewStoryPayload extends CreateNewStoryRequestPayload {
   selectedItemId: string | number;
 }
 
-const TreeExpandIconStyled = styled(ChevronSmallRightIcon)(({ theme }) => ({
-  color: theme.textMutedColor,
+const TreeExpandIconStyled = styled(ChevronSmallRightIcon)({
+  color: 'var(--sb-textMutedColor)',
   marginTop: 2,
-}));
+});
 
-const TreeCollapseIconStyled = styled(ChevronSmallDownIcon)(({ theme }) => ({
-  color: theme.textMutedColor,
+const TreeCollapseIconStyled = styled(ChevronSmallDownIcon)({
+  color: 'var(--sb-textMutedColor)',
   marginTop: 2,
-}));
+});
 
 interface FileSearchListProps {
   isLoading: boolean;

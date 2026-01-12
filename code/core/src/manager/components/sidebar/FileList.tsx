@@ -33,7 +33,7 @@ export const FileListLi = styled('li')(({ theme }) => ({
 
     '.file-list-item': {
       borderRadius: '4px',
-      background: theme.base === 'dark' ? 'rgba(255,255,255,.1)' : theme.color.mediumlight,
+      background: theme.base === 'dark' ? 'rgba(255,255,255,.1)' : 'var(--sb-color-mediumlight)',
 
       '> svg': {
         display: 'flex',
@@ -63,7 +63,7 @@ export const FileListItemContentWrapper = styled.div<{
 
   ...(selected && {
     borderRadius: '4px',
-    background: theme.base === 'dark' ? 'rgba(255,255,255,.1)' : theme.color.mediumlight,
+    background: theme.base === 'dark' ? 'rgba(255,255,255,.1)' : 'var(--sb-color-mediumlight)',
 
     '> svg': {
       display: 'flex',
@@ -74,7 +74,7 @@ export const FileListItemContentWrapper = styled.div<{
     cursor: 'not-allowed',
 
     div: {
-      color: `${theme.textMutedColor} !important`,
+      color: `var(--sb-textMutedColor) !important`,
     },
   }),
 
@@ -87,7 +87,7 @@ export const FileListItemContentWrapper = styled.div<{
       ? '#00000022'
       : theme.base === 'dark'
         ? 'rgba(255,255,255,.1)'
-        : theme.color.mediumlight,
+        : 'var(--sb-color-mediumlight)',
 
     '> svg': {
       display: 'flex',
@@ -109,16 +109,16 @@ export const FileListItemContent = styled('div')({
   width: 'calc(100% - 50px)',
 });
 
-export const FileListIconWrapper = styled('div')<{ error: boolean }>(({ theme, error }) => ({
-  color: error ? theme.color.negativeText : theme.color.secondary,
+export const FileListIconWrapper = styled('div')<{ error: boolean }>(({ error }) => ({
+  color: error ? 'var(--sb-color-negativeText)' : 'var(--sb-color-secondary)',
 }));
 
 export const FileListItemLabel = styled('div')<{ error: boolean }>(({ theme, error }) => ({
   color: error
-    ? theme.color.negativeText
+    ? 'var(--sb-color-negativeText)'
     : theme.base === 'dark'
-      ? theme.color.lighter
-      : theme.color.darkest,
+      ? 'var(--sb-color-lighter)'
+      : 'var(--sb-color-darkest)',
   fontSize: '14px',
   whiteSpace: 'nowrap',
   textOverflow: 'ellipsis',
@@ -126,14 +126,14 @@ export const FileListItemLabel = styled('div')<{ error: boolean }>(({ theme, err
   maxWidth: '100%',
 }));
 
-export const FileListItemPath = styled('div')(({ theme }) => ({
-  color: theme.textMutedColor,
+export const FileListItemPath = styled('div')({
+  color: 'var(--sb-textMutedColor)',
   fontSize: '14px',
   whiteSpace: 'nowrap',
   textOverflow: 'ellipsis',
   overflow: 'hidden',
   maxWidth: '100%',
-}));
+});
 
 export const FileListExport = styled('ul')({
   margin: 0,
@@ -156,7 +156,7 @@ export const FileListItemExport = styled('li')<{ error: boolean }>(({ theme, err
 
   ...(error && {
     background: '#F9ECEC',
-    color: theme.color.negativeText,
+    color: 'var(--sb-color-negativeText)',
   }),
 
   '&:hover,:focus-visible': {
@@ -164,7 +164,7 @@ export const FileListItemExport = styled('li')<{ error: boolean }>(({ theme, err
       ? '#F9ECEC'
       : theme.base === 'dark'
         ? 'rgba(255, 255, 255, 0.1)'
-        : theme.color.mediumlight,
+        : 'var(--sb-color-mediumlight)',
 
     '> svg': {
       display: 'flex',
@@ -172,7 +172,7 @@ export const FileListItemExport = styled('li')<{ error: boolean }>(({ theme, err
   },
 
   '> div > svg': {
-    color: error ? theme.color.negativeText : theme.color.secondary,
+    color: error ? 'var(--sb-color-negativeText)' : 'var(--sb-color-secondary)',
   },
 }));
 
@@ -188,7 +188,7 @@ export const FileListItemExportNameContent = styled('span')(({ theme }) => ({
   textOverflow: 'ellipsis',
   overflow: 'hidden',
   display: 'inline-block',
-  color: theme.base === 'dark' ? theme.color.lightest : theme.color.darkest,
+  color: theme.base === 'dark' ? 'var(--sb-color-lightest)' : 'var(--sb-color-darkest)',
 }));
 
 export const FileListItemExportNameContentWithExport = styled(FileListItemExportNameContent)({
@@ -197,10 +197,10 @@ export const FileListItemExportNameContentWithExport = styled(FileListItemExport
 
 export const DefaultExport = styled('span')(({ theme }) => ({
   display: 'inline-block',
-  padding: `1px ${theme.appBorderRadius}px`,
+  padding: `1px var(--sb-appBorderRadius)px`,
   borderRadius: '2px',
   fontSize: '10px',
-  color: theme.color.defaultText,
+  color: 'var(--sb-color-defaultText)',
   backgroundColor: theme.base === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#F2F4F5',
 }));
 
@@ -209,10 +209,10 @@ export const NoResults = styled('div')(({ theme }) => ({
   maxWidth: '334px',
   margin: '16px auto 50px auto',
   fontSize: '14px',
-  color: theme.base === 'dark' ? theme.color.lightest : '#000',
+  color: theme.base === 'dark' ? 'var(--sb-color-lightest)' : '#000',
 }));
 
-export const NoResultsDescription = styled('p')(({ theme }) => ({
+export const NoResultsDescription = styled('p')({
   margin: 0,
-  color: theme.textMutedColor,
-}));
+  color: 'var(--sb-textMutedColor)',
+});

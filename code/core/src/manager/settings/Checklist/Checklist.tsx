@@ -33,8 +33,8 @@ const Sections = styled.ol(({ theme }) => ({
   padding: 0,
 
   '& > li': {
-    background: theme.background.content,
-    border: `1px solid ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
+    background: 'var(--sb-background-content)',
+    border: `1px solid ${theme.base === 'dark' ? 'var(--sb-color-darker)' : 'var(--sb-color-border)'}`,
     borderRadius: 8,
   },
 }));
@@ -47,7 +47,7 @@ const Items = styled.ol(({ theme }) => ({
   padding: 0,
 
   '& > li:not(:last-child)': {
-    boxShadow: `inset 0 -1px 0 ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
+    boxShadow: `inset 0 -1px 0 ${theme.base === 'dark' ? 'var(--sb-color-darker)' : 'var(--sb-color-border)'}`,
   },
 
   '& > li:last-child': {
@@ -64,7 +64,7 @@ const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
     alignItems: 'center',
     gap: 10,
     padding: '10px 10px 10px 15px',
-    borderBottom: `5px solid ${theme.base === 'dark' ? theme.color.darker : theme.color.light}`,
+    borderBottom: `5px solid ${theme.base === 'dark' ? 'var(--sb-color-darker)' : 'var(--sb-color-light)'}`,
     borderBottomLeftRadius: isCollapsed ? 7 : 0,
     borderBottomRightRadius: isCollapsed ? 7 : 0,
     transition: 'border-radius var(--transition-duration, 0.2s)',
@@ -87,7 +87,7 @@ const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
       content: '""',
       display: 'block',
       width: `${progress}%`,
-      borderBottom: `5px solid ${theme.color.positive}`,
+      borderBottom: `5px solid var(--sb-color-positive)`,
       borderBottomLeftRadius: 'inherit',
       borderBottomRightRadius: progress === 100 ? 'inherit' : 0,
       transition: 'width var(--transition-duration, 0.2s)',
@@ -95,17 +95,17 @@ const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
   })
 );
 
-const SectionHeading = styled.h2(({ theme }) => ({
+const SectionHeading = styled.h2({
   flex: 1,
   margin: 0,
-  fontSize: theme.typography.size.s3,
-  fontWeight: theme.typography.weight.bold,
-}));
+  fontSize: `var(--sb-typography-size-s3)`,
+  fontWeight: 'var(--sb-typography-weight-bold)',
+});
 
 const ItemSummary = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(
-  ({ theme, isCollapsed, onClick }) => ({
-    fontWeight: theme.typography.weight.regular,
-    fontSize: theme.typography.size.s2,
+  ({ isCollapsed, onClick }) => ({
+    fontWeight: 'var(--sb-typography-weight-regular)',
+    fontSize: `var(--sb-typography-size-s2)`,
     display: 'flex',
     alignItems: 'center',
     minHeight: 40,
@@ -121,29 +121,29 @@ const ItemSummary = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(
   })
 );
 
-const ItemHeading = styled.h3<{ skipped: boolean }>(({ theme, skipped }) => ({
+const ItemHeading = styled.h3<{ skipped: boolean }>(({ skipped }) => ({
   flex: 1,
   margin: 0,
-  color: skipped ? theme.textMutedColor : theme.color.defaultText,
+  color: skipped ? 'var(--sb-textMutedColor)' : 'var(--sb-color-defaultText)',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
-  fontSize: theme.typography.size.s2,
-  fontWeight: theme.typography.weight.bold,
+  fontSize: `var(--sb-typography-size-s2)`,
+  fontWeight: 'var(--sb-typography-weight-bold)',
 }));
 
-const ItemContent = styled.div(({ theme }) => ({
+const ItemContent = styled.div({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'flex-start',
   gap: 8,
   padding: '0 15px 15px 41px',
-  fontSize: theme.typography.size.s2,
+  fontSize: `var(--sb-typography-size-s2)`,
 
   code: {
     fontSize: '0.9em',
-    backgroundColor: theme.background.app,
-    borderRadius: theme.appBorderRadius,
+    backgroundColor: 'var(--sb-background-app)',
+    borderRadius: 'var(--sb-appBorderRadius)',
     padding: '1px 3px',
   },
   img: {
@@ -159,10 +159,10 @@ const ItemContent = styled.div(({ theme }) => ({
     listStyleType: 'disc',
 
     'li::marker': {
-      color: theme.color.mediumdark,
+      color: 'var(--sb-color-mediumdark)',
     },
   },
-}));
+});
 
 const StatusIcon = styled.div(({ theme }) => ({
   position: 'relative',
@@ -170,13 +170,13 @@ const StatusIcon = styled.div(({ theme }) => ({
   minHeight: 16,
   minWidth: 16,
   margin: 0,
-  background: theme.base === 'dark' ? theme.color.darkest : theme.background.app,
+  background: theme.base === 'dark' ? 'var(--sb-color-darkest)' : 'var(--sb-background-app)',
   borderRadius: 9,
-  outline: `1px solid ${theme.base === 'dark' ? theme.color.darker : theme.color.border}`,
+  outline: `1px solid ${theme.base === 'dark' ? 'var(--sb-color-darker)' : 'var(--sb-color-border)'}`,
   outlineOffset: -1,
 }));
 const Checked = styled(StatusPassIcon)<{ 'data-visible'?: boolean }>(
-  ({ theme, 'data-visible': visible }) => ({
+  ({ 'data-visible': visible }) => ({
     position: 'absolute',
     width: 'inherit',
     height: 'inherit',
@@ -186,17 +186,17 @@ const Checked = styled(StatusPassIcon)<{ 'data-visible'?: boolean }>(
     right: 0,
     padding: 1,
     borderRadius: '50%',
-    background: theme.color.positive,
-    color: theme.background.content,
+    background: 'var(--sb-color-positive)',
+    color: 'var(--sb-background-content)',
     opacity: visible ? 1 : 0,
     transform: visible ? 'scale(1)' : 'scale(0.7)',
     transition: 'all var(--transition-duration, 0.2s)',
   })
 );
-const Skipped = styled.span<{ visible?: boolean }>(({ theme, visible }) => ({
+const Skipped = styled.span<{ visible?: boolean }>(({ visible }) => ({
   display: 'flex',
   alignItems: 'center',
-  color: theme.textMutedColor,
+  color: 'var(--sb-textMutedColor)',
   fontSize: '12px',
   fontWeight: 'bold',
   overflow: 'hidden',

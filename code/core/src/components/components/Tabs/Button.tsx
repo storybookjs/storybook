@@ -103,7 +103,7 @@ const StyledTabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid })
       display: 'none',
     },
   },
-  ({ theme }) => ({
+  {
     padding: '0 15px',
     transition: 'color 0.2s linear, border-bottom-color 0.2s linear',
     height: 40,
@@ -118,20 +118,20 @@ const StyledTabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid })
 
     '&:focus': {
       outline: '0 none',
-      borderBottomColor: theme.barSelectedColor,
+      borderBottomColor: 'var(--sb-barSelectedColor)',
     },
-  }),
-  ({ active, textColor, theme }) =>
+  },
+  ({ active, textColor }) =>
     active
       ? {
-          color: textColor || theme.barSelectedColor,
-          borderBottomColor: theme.barSelectedColor,
+          color: textColor || 'var(--sb-barSelectedColor)',
+          borderBottomColor: 'var(--sb-barSelectedColor)',
         }
       : {
-          color: textColor || theme.barTextColor,
+          color: textColor || 'var(--sb-barTextColor)',
           borderBottomColor: 'transparent',
           '&:hover': {
-            color: theme.barHoverColor,
+            color: 'var(--sb-barHoverColor)',
           },
         }
 );

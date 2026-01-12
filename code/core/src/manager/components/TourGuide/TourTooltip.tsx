@@ -58,10 +58,10 @@ const Count = styled.span`
 `;
 
 const NextButton = styled(Button)(({ theme }) => ({
-  background: theme.color.lightest,
+  background: 'var(--sb-color-lightest)',
   border: 'none',
   boxShadow: 'none',
-  color: theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary),
+  color: theme.base === 'light' ? 'var(--sb-color-secondary)' : darken(0.18, theme.color.secondary),
 
   '&:hover, &:focus': {
     background: transparentize(0.1, theme.color.lightest),

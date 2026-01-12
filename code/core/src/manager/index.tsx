@@ -11,7 +11,7 @@ import { global } from '@storybook/global';
 import { HelmetProvider } from 'react-helmet-async';
 import { Provider as ManagerProvider, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
-import { ThemeProvider, ensure as ensureTheme } from 'storybook/theming';
+import { ThemeProvider, ThemeVariables, ensure as ensureTheme } from 'storybook/theming';
 
 import { App } from './App';
 import type { Layout } from './components/layout/Layout';
@@ -68,6 +68,7 @@ const Main: FC<{ provider: Provider }> = ({ provider }) => {
 
             return (
               <ThemeProvider key="theme.provider" theme={ensureTheme(state.theme)}>
+                <ThemeVariables />
                 <LayoutProvider>
                   <App
                     key="app"

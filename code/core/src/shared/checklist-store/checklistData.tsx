@@ -33,17 +33,17 @@ import { TourGuide } from '../../manager/components/TourGuide/TourGuide';
 import { LocationMonitor } from '../../manager/hooks/useLocation';
 import type { initialState } from './checklistData.state';
 
-const CodeWrapper = styled.div(({ theme }) => ({
+const CodeWrapper = styled.div({
   alignSelf: 'stretch',
-  background: theme.background.content,
-  borderRadius: theme.appBorderRadius,
+  background: 'var(--sb-background-content)',
+  borderRadius: 'var(--sb-appBorderRadius)',
   margin: '5px 0',
   padding: 10,
-  fontSize: theme.typography.size.s1,
+  fontSize: `var(--sb-typography-size-s1)`,
   '.linenumber': {
     opacity: 0.5,
   },
-}));
+});
 
 const CodeSnippet = (props: ComponentProps<typeof SyntaxHighlighter>) => (
   <ThemeProvider theme={convert(themes.dark)}>

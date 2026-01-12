@@ -38,8 +38,8 @@ const StyledToggle = styled(Button)<ToggleButtonProps>(
           ...(variant === 'outline'
             ? {
                 background: transparentize(0.94, theme.barSelectedColor),
-                boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
-                color: theme.barSelectedColor,
+                boxShadow: `0 0 0 1px inset var(--sb-barSelectedColor)`,
+                color: 'var(--sb-barSelectedColor)',
               }
             : {}),
           ...(variant === 'ghost'
@@ -48,7 +48,7 @@ const StyledToggle = styled(Button)<ToggleButtonProps>(
                 color:
                   theme.base === 'light'
                     ? darken(0.1, theme.color.secondary)
-                    : theme.color.secondary,
+                    : 'var(--sb-color-secondary)',
               }
             : {}),
         }

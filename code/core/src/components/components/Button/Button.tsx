@@ -218,16 +218,18 @@ const StyledButton = styled('button', {
     userSelect: 'none',
     opacity: disabled && !readOnly ? 0.5 : 1,
     margin: 0,
-    fontSize: `${theme.typography.size.s1}px`,
-    fontWeight: theme.typography.weight.bold,
+    fontSize: `var(--sb-typography-size-s1)`,
+    fontWeight: 'var(--sb-typography-weight-bold)',
     lineHeight: '1',
     background: (() => {
       if (variant === 'solid') {
-        return theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary);
+        return theme.base === 'light'
+          ? 'var(--sb-color-secondary)'
+          : darken(0.18, theme.color.secondary);
       }
 
       if (variant === 'outline') {
-        return theme.button.background;
+        return 'var(--sb-button-background)';
       }
 
       if (variant === 'ghost' && active) {
@@ -246,16 +248,18 @@ const StyledButton = styled('button', {
       }
 
       if (variant === 'ghost' && active) {
-        return theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary;
+        return theme.base === 'light'
+          ? darken(0.1, theme.color.secondary)
+          : 'var(--sb-color-secondary)';
       }
 
       if (variant === 'ghost') {
-        return theme.textMutedColor;
+        return 'var(--sb-textMutedColor)';
       }
-      return theme.input.color;
+      return 'var(--sb-input-color)';
     })(),
-    boxShadow: variant === 'outline' ? `${theme.button.border} 0 0 0 1px inset` : 'none',
-    borderRadius: theme.input.borderRadius,
+    boxShadow: variant === 'outline' ? `0 0 0 1px inset var(--sb-button-border)` : 'none',
+    borderRadius: 'var(--sb-input-borderRadius)',
     // Making sure that the button never shrinks below its minimum size
     flexShrink: 0,
 
@@ -284,7 +288,7 @@ const StyledButton = styled('button', {
       },
 
       '&:active': {
-        color: variant === 'ghost' ? theme.color.secondary : undefined,
+        color: variant === 'ghost' ? 'var(--sb-color-secondary)' : undefined,
         background: (() => {
           let bgColor = theme.color.secondary;
 
@@ -297,7 +301,7 @@ const StyledButton = styled('button', {
           }
 
           if (variant === 'ghost') {
-            return theme.background.hoverable;
+            return 'var(--sb-background-hoverable)';
           }
           return theme.base === 'light' ? darken(0.02, bgColor) : lighten(0.03, bgColor);
         })(),

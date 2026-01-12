@@ -45,16 +45,16 @@ const QRImage = ({ value }: { value: string }) => {
 
 const QRContent = styled.div(() => ({}));
 
-const QRTitle = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-  fontSize: theme.typography.size.s1,
+const QRTitle = styled.div({
+  fontWeight: 'var(--sb-typography-weight-bold)',
+  fontSize: 'var(--sb-typography-size-s1)',
   marginBottom: 4,
-}));
+});
 
-const QRDescription = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s1,
-  color: theme.textMutedColor,
-}));
+const QRDescription = styled.div({
+  fontSize: 'var(--sb-typography-size-s1)',
+  color: 'var(--sb-textMutedColor)',
+});
 
 const ShareMenu = React.memo(function ShareMenu({
   api,

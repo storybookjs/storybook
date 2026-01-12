@@ -29,18 +29,18 @@ const RowContainer = styled('div', {
     position: 'relative',
     display: 'flex',
     flexDirection: 'column',
-    borderBottom: `1px solid ${theme.appBorderColor}`,
-    fontFamily: typography.fonts.base,
-    fontSize: 13,
+    borderBottom: `1px solid var(--sb-appBorderColor)`,
+    fontFamily: 'var(--sb-typography-fonts-base)',
+    fontSize: `calc(var(--sb-typography-size-s2) - 1px)`,
     ...(call.status === CallStates.ERROR && {
       backgroundColor:
         theme.base === 'dark'
           ? transparentize(0.93, theme.color.negative)
-          : theme.background.warning,
+          : 'var(--sb-background-warning)',
     }),
     paddingLeft: (call.ancestors?.length ?? 0) * 20,
   }),
-  ({ theme, call, pausedAt }) =>
+  ({ call, pausedAt }) =>
     pausedAt === call.id && {
       '&::before': {
         content: '""',
@@ -48,7 +48,7 @@ const RowContainer = styled('div', {
         top: -5,
         zIndex: 1,
         borderTop: '4.5px solid transparent',
-        borderLeft: `7px solid ${theme.color.warning}`,
+        borderLeft: `7px solid var(--sb-color-warning)`,
         borderBottom: '4.5px solid transparent',
       },
       '&::after': {
@@ -57,19 +57,19 @@ const RowContainer = styled('div', {
         top: -1,
         zIndex: 1,
         width: '100%',
-        borderTop: `1.5px solid ${theme.color.warning}`,
+        borderTop: `1.5px solid var(--sb-color-warning)`,
       },
     }
 );
 
-const RowHeader = styled.div<{ isInteractive: boolean }>(({ theme, isInteractive }) => ({
+const RowHeader = styled.div<{ isInteractive: boolean }>(({ isInteractive }) => ({
   display: 'flex',
-  '&:hover': isInteractive ? {} : { background: theme.background.hoverable },
+  '&:hover': isInteractive ? {} : { background: 'var(--sb-background-hoverable)' },
 }));
 
 const RowLabel = styled('button', {
   shouldForwardProp: (prop) => !['call'].includes(prop.toString()),
-})<React.ButtonHTMLAttributes<HTMLButtonElement> & { call: Call }>(({ theme, disabled, call }) => ({
+})<React.ButtonHTMLAttributes<HTMLButtonElement> & { call: Call }>(({ disabled, call }) => ({
   flex: 1,
   display: 'grid',
   background: 'none',
@@ -84,9 +84,9 @@ const RowLabel = styled('button', {
   '&:focus-visible': {
     outline: 0,
     boxShadow: `inset 3px 0 0 0 ${
-      call.status === CallStates.ERROR ? theme.color.warning : theme.color.secondary
+      call.status === CallStates.ERROR ? 'var(--sb-color-warning)' : 'var(--sb-color-secondary)'
     }`,
-    background: call.status === CallStates.ERROR ? 'transparent' : theme.background.hoverable,
+    background: call.status === CallStates.ERROR ? 'transparent' : 'var(--sb-background-hoverable)',
   },
   '& > div': {
     opacity: call.status === CallStates.WAITING ? 0.5 : 1,
@@ -99,20 +99,20 @@ const RowActions = styled.div({
   padding: 6,
 });
 
-const StyledButton = styled(Button)(({ theme }) => ({
-  color: theme.textMutedColor,
+const StyledButton = styled(Button)({
+  color: 'var(--sb-textMutedColor)',
   margin: '0 3px',
-}));
+});
 
-const RowMessage = styled('div')(({ theme }) => ({
+const RowMessage = styled('div')({
   padding: '8px 10px 8px 36px',
-  fontSize: typography.size.s1,
-  color: theme.color.defaultText,
+  fontSize: `var(--sb-typography-size-s1)`,
+  color: 'var(--sb-color-defaultText)',
   pre: {
     margin: 0,
     padding: 0,
   },
-}));
+});
 
 const ErrorName = styled.span(({ theme }) => ({
   color: theme.base === 'dark' ? '#5EC1FF' : '#0271B6',
@@ -123,8 +123,8 @@ const ErrorMessage = styled.span(({ theme }) => ({
 }));
 
 const ErrorExplainer = styled.p(({ theme }) => ({
-  color: theme.base === 'dark' ? theme.color.negative : theme.color.negativeText,
-  fontSize: theme.typography.size.s2,
+  color: theme.base === 'dark' ? 'var(--sb-color-negative)' : 'var(--sb-color-negativeText)',
+  fontSize: `var(--sb-typography-size-s2)`,
   maxWidth: 500,
   textWrap: 'balance',
 }));

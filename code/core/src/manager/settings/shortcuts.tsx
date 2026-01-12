@@ -14,18 +14,18 @@ import { keyframes, styled } from 'storybook/theming';
 
 import SettingsFooter from './SettingsFooter';
 
-const Header = styled.header(({ theme }) => ({
+const Header = styled.header({
   marginBottom: 20,
-  fontSize: theme.typography.size.m3,
-  fontWeight: theme.typography.weight.bold,
+  fontSize: `var(--sb-typography-size-m3)`,
+  fontWeight: 'var(--sb-typography-weight-bold)',
   alignItems: 'center',
   display: 'flex',
-}));
+});
 
 // Grid
-export const HeaderItem = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-}));
+export const HeaderItem = styled.div({
+  fontWeight: 'var(--sb-typography-weight-bold)',
+});
 
 export const GridHeaderRow = styled.div({
   alignSelf: 'flex-end',
@@ -39,12 +39,12 @@ export const GridHeaderRow = styled.div({
   },
 });
 
-export const Row = styled.div(({ theme }) => ({
+export const Row = styled.div({
   padding: '6px 0',
-  borderTop: `1px solid ${theme.appBorderColor}`,
+  borderTop: `1px solid var(--sb-appBorderColor)`,
   display: 'grid',
   gridTemplateColumns: '1fr 1fr 0px',
-}));
+});
 
 export const GridWrapper = styled.div({
   display: 'grid',
@@ -88,10 +88,10 @@ export const Fade = keyframes`
 `;
 
 const SuccessIcon = styled(CheckIcon)<{ valid: string }>(
-  ({ valid, theme }) =>
+  ({ valid }) =>
     valid === 'valid'
       ? {
-          color: theme.color.positive,
+          color: 'var(--sb-color-positive)',
           animation: `${Fade} 2s ease forwards`,
         }
       : {
@@ -106,12 +106,12 @@ const SuccessIcon = styled(CheckIcon)<{ valid: string }>(
   }
 );
 
-const Container = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s2,
+const Container = styled.div({
+  fontSize: `var(--sb-typography-size-s2)`,
   padding: `3rem 20px`,
   maxWidth: 600,
   margin: '0 auto',
-}));
+});
 
 const shortcutLabels = {
   fullScreen: 'Go full screen',

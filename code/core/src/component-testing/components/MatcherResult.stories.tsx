@@ -5,13 +5,13 @@ import { dedent } from 'ts-dedent';
 
 import { MatcherResult } from './MatcherResult';
 
-const StyledWrapper = styled.div(({ theme }) => ({
-  backgroundColor: theme.background.content,
+const StyledWrapper = styled.div({
+  backgroundColor: 'var(--sb-background-content)',
   padding: '12px 0',
-  boxShadow: `0 0 0 1px ${theme.appBorderColor}`,
-  color: theme.color.defaultText,
-  fontSize: 13,
-}));
+  boxShadow: `0 0 0 1px var(--sb-appBorderColor)`,
+  color: 'var(--sb-color-defaultText)',
+  fontSize: `calc(var(--sb-typography-size-s2) - 1px)`,
+});
 
 export default {
   title: 'MatcherResult',

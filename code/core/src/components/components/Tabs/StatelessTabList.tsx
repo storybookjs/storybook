@@ -40,16 +40,16 @@ const SCROLL_BUTTON_WIDTH = 28; // 16 width + 6 + 6 padding
 const ScrollButtonContainer = styled.div<{
   $showStartBorder?: boolean;
   $showEndBorder?: boolean;
-}>(({ $showStartBorder, $showEndBorder, theme }) => ({
+}>(({ $showStartBorder, $showEndBorder }) => ({
   flexShrink: 0,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   padding: 6,
   boxShadow: $showStartBorder
-    ? `inset 1px 0 0 ${theme.appBorderColor}`
+    ? `inset 1px 0 0 var(--sb-appBorderColor)`
     : $showEndBorder
-      ? `inset -1px 0 0 ${theme.appBorderColor}`
+      ? `inset -1px 0 0 var(--sb-appBorderColor)`
       : 'none',
 }));
 

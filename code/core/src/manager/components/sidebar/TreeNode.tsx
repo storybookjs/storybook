@@ -13,23 +13,23 @@ export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'gro
     flex: '0 0 auto',
     color: (() => {
       if (type === 'group') {
-        return theme.base === 'dark' ? theme.color.primary : theme.color.ultraviolet;
+        return theme.base === 'dark' ? 'var(--sb-color-primary)' : 'var(--sb-color-ultraviolet)';
       }
 
       if (type === 'component') {
-        return theme.color.secondary;
+        return 'var(--sb-color-secondary)';
       }
 
       if (type === 'document') {
-        return theme.base === 'dark' ? theme.color.gold : '#ff8300';
+        return theme.base === 'dark' ? 'var(--sb-color-gold)' : '#ff8300';
       }
 
       if (type === 'story') {
-        return theme.color.seafoam;
+        return 'var(--sb-color-seafoam)';
       }
 
       if (type === 'test') {
-        return theme.color.green;
+        return 'var(--sb-color-green)';
       }
 
       return 'currentColor';
@@ -38,7 +38,6 @@ export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'gro
 );
 
 const commonNodeStyles: FunctionInterpolation<{ depth?: number; isExpandable?: boolean }> = ({
-  theme,
   depth = 0,
   isExpandable = false,
 }) => ({
@@ -51,7 +50,7 @@ const commonNodeStyles: FunctionInterpolation<{ depth?: number; isExpandable?: b
   textDecoration: 'none',
   border: 'none',
   color: 'inherit',
-  fontSize: `${theme.typography.size.s2}px`,
+  fontSize: 'var(--sb-typography-size-s2)',
   fontWeight: 'inherit',
   background: 'transparent',
   minHeight: 28,

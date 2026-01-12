@@ -12,14 +12,14 @@ import { FileSearchList } from './FileSearchList';
 
 const MODAL_HEIGHT = 418;
 
-const ModalStyled = styled(Modal)(() => ({
+const ModalStyled = styled(Modal)({
   boxShadow: 'none',
   background: 'transparent',
   overflow: 'visible',
-}));
+});
 
-const ModalChild = styled.div<{ height?: number }>(({ theme, height }) => ({
-  backgroundColor: theme.background.bar,
+const ModalChild = styled.div<{ height?: number }>(({ height }) => ({
+  backgroundColor: 'var(--sb-background-bar)',
   borderRadius: 6,
   boxShadow: `rgba(255, 255, 255, 0.05) 0 0 0 1px inset, rgba(14, 18, 22, 0.35) 0px 10px 18px -10px`,
   padding: '16px',
@@ -28,10 +28,10 @@ const ModalChild = styled.div<{ height?: number }>(({ theme, height }) => ({
   overflow: 'hidden',
 }));
 
-const ModalContent = styled(Modal.Content)(({ theme }) => ({
+const ModalContent = styled(Modal.Content)({
   margin: 0,
-  color: theme.color.defaultText,
-}));
+  color: 'var(--sb-color-defaultText)',
+});
 
 const ModalInput = styled(Form.Input)(({ theme }) => ({
   paddingLeft: 40,
@@ -40,14 +40,14 @@ const ModalInput = styled(Form.Input)(({ theme }) => ({
   height: 40,
 
   ...(theme.base === 'light' && {
-    color: theme.color.darkest,
+    color: 'var(--sb-color-darkest)',
   }),
 
   '::placeholder': {
-    color: theme.color.mediumdark,
+    color: 'var(--sb-color-mediumdark)',
   },
   '&:invalid:not(:placeholder-shown)': {
-    boxShadow: `${theme.color.negative} 0 0 0 1px inset`,
+    boxShadow: `var(--sb-color-negative) 0 0 0 1px inset`,
   },
   '&::-webkit-search-decoration, &::-webkit-search-cancel-button, &::-webkit-search-results-button, &::-webkit-search-results-decoration':
     {
@@ -62,24 +62,24 @@ const SearchField = styled.div({
   position: 'relative',
 });
 
-const SearchIconWrapper = styled.div(({ theme }) => ({
+const SearchIconWrapper = styled.div({
   position: 'absolute',
   top: 0,
   left: 16,
   zIndex: 1,
   pointerEvents: 'none',
-  color: theme.darkest,
+  color: 'var(--sb-color-darkest)',
   display: 'flex',
   alignItems: 'center',
   height: '100%',
-}));
+});
 
-const LoadingIcon = styled.div(({ theme }) => ({
+const LoadingIcon = styled.div({
   position: 'absolute',
   top: 0,
   right: 16,
   zIndex: 1,
-  color: theme.darkest,
+  color: 'var(--sb-color-darkest)',
   display: 'flex',
   alignItems: 'center',
   height: '100%',
@@ -88,7 +88,7 @@ const LoadingIcon = styled.div(({ theme }) => ({
     to: { transform: 'rotate(360deg)' },
   },
   animation: 'spin 1s linear infinite',
-}));
+});
 
 const ModalError = styled(Modal.Error)({
   position: 'absolute',

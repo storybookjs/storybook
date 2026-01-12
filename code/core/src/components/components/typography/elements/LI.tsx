@@ -4,8 +4,8 @@ import { styled } from 'storybook/theming';
 import { codeCommon, withReset } from '../lib/common';
 
 export const LI = styled.li(withReset, ({ theme }) => ({
-  fontSize: theme.typography.size.s2,
-  color: theme.color.defaultText,
+  fontSize: 'var(--sb-typography-size-s2)',
+  color: 'var(--sb-color-defaultText)',
   lineHeight: '24px',
   '& + li': {
     marginTop: '.25em',

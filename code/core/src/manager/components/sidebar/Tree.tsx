@@ -63,33 +63,33 @@ import { useExpanded } from './useExpanded';
 
 export type ExcludesNull = <T>(x: T | null) => x is T;
 
-const CollapseButton = styled(Button)(({ theme }) => ({
-  fontSize: `${theme.typography.size.s1 - 1}px`,
-  fontWeight: theme.typography.weight.bold,
+const CollapseButton = styled(Button)({
+  fontSize: `calc(var(--sb-typography-size-s1) - 1px)`,
+  fontWeight: 'var(--sb-typography-weight-bold)',
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
-  color: theme.textMutedColor,
+  color: 'var(--sb-textMutedColor)',
   padding: '0 8px',
-}));
+});
 
 export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'flex-start',
-  color: theme.color.defaultText,
+  color: 'var(--sb-color-defaultText)',
   background: 'transparent',
   minHeight: 28,
   borderRadius: 4,
   overflow: 'hidden',
-  '--tree-node-background-hover': theme.background.content,
+  '--tree-node-background-hover': 'var(--sb-background-content)',
 
   [MEDIA_DESKTOP_BREAKPOINT]: {
-    '--tree-node-background-hover': theme.background.app,
+    '--tree-node-background-hover': 'var(--sb-background-app)',
   },
 
   '&:hover, &:focus': {
-    '--tree-node-background-hover': theme.background.hoverable,
+    '--tree-node-background-hover': 'var(--sb-background-hoverable)',
     background: 'var(--tree-node-background-hover)',
     outline: 'none',
   },
@@ -111,21 +111,22 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   },
 
   '&[data-selected="true"]': {
-    color: theme.color.lightest,
-    background: theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
-    fontWeight: theme.typography.weight.bold,
+    color: 'var(--sb-color-lightest)',
+    background:
+      theme.base === 'dark' ? darken(0.18, theme.color.secondary) : 'var(--sb-color-secondary)',
+    fontWeight: 'var(--sb-typography-weight-bold)',
 
     '&&:hover, &&:focus': {
       background:
-        theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
+        theme.base === 'dark' ? darken(0.18, theme.color.secondary) : 'var(--sb-color-secondary)',
     },
-    svg: { color: theme.color.lightest },
+    svg: { color: 'var(--sb-color-lightest)' },
   },
 
   a: { color: 'currentColor' },
 }));
 
-const SkipToContentLink = styled(Button)(({ theme }) => ({
+const SkipToContentLink = styled(Button)({
   display: 'none',
   '@media (min-width: 600px)': {
     display: 'block',
@@ -141,11 +142,11 @@ const SkipToContentLink = styled(Button)(({ theme }) => ({
       opacity: 1,
       padding: '5px 10px',
       background: 'white',
-      color: theme.color.secondary,
+      color: 'var(--sb-color-secondary)',
       width: 'auto',
     },
   },
-}));
+});
 
 interface NodeProps {
   item: Item;

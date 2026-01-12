@@ -17,10 +17,10 @@ import { styled } from 'storybook/theming';
 import { internal_fullTestProviderStore } from '../../manager-stores.mock';
 import { TestingWidget } from './TestingWidget';
 
-const Wrapper = styled.div(({ theme }) => ({
+const Wrapper = styled.div({
   maxWidth: 250,
-  '--card-box-shadow': `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app}`,
-}));
+  '--card-box-shadow': `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px var(--sb-background-app)`,
+});
 
 const TestProvider = styled.div({
   padding: 8,

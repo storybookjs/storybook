@@ -36,9 +36,9 @@ const Wrapper = styled.div({
   scrollbarWidth: 'thin',
 });
 
-const MutedText = styled.span(({ theme }) => ({
-  color: theme.textMutedColor,
-}));
+const MutedText = styled.span({
+  color: 'var(--sb-textMutedColor)',
+});
 
 export type FilterFunction = (entry: API_PreparedIndexEntry, excluded?: boolean) => boolean;
 export type Filter = {

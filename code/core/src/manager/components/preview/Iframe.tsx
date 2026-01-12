@@ -5,8 +5,8 @@ import { Zoom } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
 
-const StyledIframe = styled.iframe(({ theme }) => ({
-  backgroundColor: theme.background.preview,
+const StyledIframe = styled.iframe({
+  backgroundColor: 'var(--sb-background-preview)',
   display: 'block',
   boxSizing: 'content-box',
   height: '100%',
@@ -15,7 +15,7 @@ const StyledIframe = styled.iframe(({ theme }) => ({
   transition: 'background-position 0s, visibility 0s',
   backgroundPosition: '-1px -1px, -1px -1px, -1px -1px, -1px -1px',
   margin: `auto`,
-}));
+});
 
 export interface IFrameProps {
   id: string;

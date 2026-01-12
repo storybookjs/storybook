@@ -14,19 +14,17 @@ const List = styled.div(
     overflow: 'hidden',
     overflowY: 'auto',
     maxHeight: 15.5 * 32 + 8, // 15.5 items at 32px each + 8px padding
+    borderRadius: `calc(var(--sb-appBorderRadius) + 2px)`,
   },
-  ({ theme }) => ({
-    borderRadius: theme.appBorderRadius + 2,
-  }),
-  ({ theme }) => (theme.base === 'dark' ? { background: theme.background.content } : {})
+  ({ theme }) => (theme.base === 'dark' ? { background: 'var(--sb-background-content)' } : {})
 );
 
-const Group = styled.div(({ theme }) => ({
+const Group = styled.div({
   padding: 4,
   '& + &': {
-    borderTop: `1px solid ${theme.appBorderColor}`,
+    borderTop: `1px solid var(--sb-appBorderColor)`,
   },
-}));
+});
 
 export interface NormalLink extends Omit<ListItemProps, 'onClick'> {
   id: string;

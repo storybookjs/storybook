@@ -8,7 +8,7 @@ export const StorybookLogoStyled = styled(StorybookLogo)(({ theme }) => ({
   width: 'auto',
   height: '22px !important',
   display: 'block',
-  color: theme.base === 'light' ? theme.color.defaultText : theme.color.lightest,
+  color: theme.base === 'light' ? 'var(--sb-color-defaultText)' : 'var(--sb-color-lightest)',
 }));
 
 export const Img = styled.img({
@@ -17,7 +17,7 @@ export const Img = styled.img({
   maxHeight: '100px',
 });
 
-export const LogoLink = styled.a(({ theme }) => ({
+export const LogoLink = styled.a({
   display: 'inline-flex',
   alignItems: 'center',
   height: '100%',
@@ -28,10 +28,10 @@ export const LogoLink = styled.a(({ theme }) => ({
   color: 'inherit',
   textDecoration: 'none',
   '&:focus-visible': {
-    outline: `2px solid ${theme.color.secondary}`,
+    outline: `2px solid var(--sb-color-secondary)`,
     outlineOffset: 2,
   },
-}));
+});
 
 // @ts-expect-error (TODO)
 export const Brand = withTheme(({ theme }) => {

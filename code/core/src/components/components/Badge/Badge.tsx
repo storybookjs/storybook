@@ -4,12 +4,12 @@ import { darken, transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
 const BadgeWrapper = styled.div<BadgeProps>(
-  ({ theme, compact }) => ({
+  ({ compact }) => ({
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: theme.typography.size.s1,
-    fontWeight: theme.typography.weight.bold,
+    fontSize: `var(--sb-typography-size-s1)`,
+    fontWeight: 'var(--sb-typography-weight-bold)',
     lineHeight: '12px',
     minWidth: 20,
     borderRadius: 20,
@@ -31,44 +31,46 @@ const BadgeWrapper = styled.div<BadgeProps>(
     switch (status) {
       case 'critical': {
         return {
-          color: theme.fgColor.critical,
-          background: theme.bgColor.critical,
-          boxShadow: `inset 0 0 0 1px ${theme.borderColor.critical}`,
+          color: 'var(--sb-fgColor-critical)',
+          background: 'var(--sb-bgColor-critical)',
+          boxShadow: `inset 0 0 0 1px var(--sb-borderColor-critical)`,
         };
       }
       case 'negative': {
         return {
-          color: theme.fgColor.negative,
-          background: theme.bgColor.negative,
-          boxShadow: `inset 0 0 0 1px ${theme.borderColor.negative}`,
+          color: 'var(--sb-fgColor-negative)',
+          background: 'var(--sb-bgColor-negative)',
+          boxShadow: `inset 0 0 0 1px var(--sb-borderColor-negative)`,
         };
       }
       case 'warning': {
         return {
-          color: theme.fgColor.warning,
-          background: theme.bgColor.warning,
-          boxShadow: `inset 0 0 0 1px ${theme.borderColor.warning}`,
+          color: 'var(--sb-fgColor-warning)',
+          background: 'var(--sb-bgColor-warning)',
+          boxShadow: `inset 0 0 0 1px var(--sb-borderColor-warning)`,
         };
       }
       case 'neutral': {
         return {
-          color: theme.fgColor.muted,
-          background: theme.base === 'dark' ? theme.barBg : theme.background.app,
+          color: 'var(--sb-fgColor-muted)',
+          background: theme.base === 'dark' ? 'var(--sb-barBg)' : 'var(--sb-background-app)',
           boxShadow: `inset 0 0 0 1px ${transparentize(0.8, theme.textMutedColor)}`,
         };
       }
       case 'positive': {
         return {
-          color: theme.fgColor.positive,
-          background: theme.bgColor.positive,
-          boxShadow: `inset 0 0 0 1px ${theme.borderColor.positive}`,
+          color: 'var(--sb-fgColor-positive)',
+          background: 'var(--sb-bgColor-positive)',
+          boxShadow: `inset 0 0 0 1px var(--sb-borderColor-positive)`,
         };
       }
       case 'active': {
         return {
           color:
-            theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
-          background: theme.background.hoverable,
+            theme.base === 'light'
+              ? darken(0.1, theme.color.secondary)
+              : 'var(--sb-color-secondary)',
+          background: 'var(--sb-background-hoverable)',
           boxShadow: `inset 0 0 0 1px ${transparentize(0.9, theme.color.secondary)}`,
         };
       }

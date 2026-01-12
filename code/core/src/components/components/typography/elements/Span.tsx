@@ -2,13 +2,13 @@ import { styled } from 'storybook/theming';
 
 import { withReset } from '../lib/common';
 
-export const Span = styled.span(withReset, ({ theme }) => ({
+export const Span = styled.span(withReset, {
   '&.frame': {
     display: 'block',
     overflow: 'hidden',
 
     '& > span': {
-      border: `1px solid ${theme.color.medium}`,
+      border: `1px solid var(--sb-color-medium)`,
       display: 'block',
       float: 'left',
       overflow: 'hidden',
@@ -22,7 +22,7 @@ export const Span = styled.span(withReset, ({ theme }) => ({
     },
     '& span span': {
       clear: 'both',
-      color: theme.color.darkest,
+      color: 'var(--sb-color-darkest)',
       display: 'block',
       padding: '5px 0 0',
     },
@@ -81,4 +81,4 @@ export const Span = styled.span(withReset, ({ theme }) => ({
       textAlign: 'right',
     },
   },
-}));
+});

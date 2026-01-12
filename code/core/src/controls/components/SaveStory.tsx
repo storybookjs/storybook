@@ -30,9 +30,9 @@ const Bar = styled(BaseBar)(({ theme }) => ({
   '--highlight-bg-color': theme.base === 'dark' ? '#153B5B' : '#E0F0FF',
   paddingInline: 4,
   animation: `${slideIn} 300ms, ${highlight} 2s`,
-  background: theme.background.bar,
-  borderTop: `1px solid ${theme.appBorderColor}`,
-  fontSize: theme.typography.size.s2,
+  background: 'var(--sb-background-bar)',
+  borderTop: `1px solid var(--sb-appBorderColor)`,
+  fontSize: 'var(--sb-typography-size-s2)',
 
   '@container (max-width: 799px)': {
     flexDirection: 'row',
@@ -49,16 +49,16 @@ const Info = styled.div({
   gap: 6,
 });
 
-const Actions = styled.div(({ theme }) => ({
+const Actions = styled.div({
   // We want actions to appear first and be hidden last on overflow,
   // but the screenreader reading order must start with Info.
   display: 'flex',
   flex: '1 0 0',
   alignItems: 'center',
   gap: 2,
-  color: theme.textMutedColor,
-  fontSize: theme.typography.size.s2,
-}));
+  color: 'var(--sb-color-textMuted)',
+  fontSize: 'var(--sb-typography-size-s2)',
+});
 
 const Label = styled.div({
   '@container (max-width: 799px)': {
@@ -73,14 +73,14 @@ const Label = styled.div({
   },
 });
 
-const ModalInput = styled(Form.Input)(({ theme }) => ({
+const ModalInput = styled(Form.Input)({
   '::placeholder': {
-    color: theme.color.mediumdark,
+    color: 'var(--sb-color-mediumdark)',
   },
   '&:invalid:not(:placeholder-shown)': {
-    boxShadow: `${theme.color.negative} 0 0 0 1px inset`,
+    boxShadow: `var(--sb-color-negative) 0 0 0 1px inset`,
   },
-}));
+});
 
 type SaveStoryProps = {
   saveStory: () => Promise<unknown>;

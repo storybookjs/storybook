@@ -15,21 +15,25 @@ const getVariables = (theme: object, prefix = '--sb'): string[] =>
     }
 
     let rule = `${name}: ${value}`;
-    if (typeof value === 'number' && !/(animation|opacity|weight)/.test(name)) {
+    if (typeof value === 'number' && !/(opacity|weight)/.test(name)) {
       rule += 'px';
     }
-    return acc.concat(rule);
+    return acc.concat(`${rule};`);
   }, []);
 
-export const ThemeVariables = React.memo(function ThemeVariables() {
-  const { animation, code, ...theme } = useTheme();
-  const variables = getVariables(theme);
-
+export const ThemeVariables = React.memo(function ThemeVariables({
+  rootSelector = ':root',
+}: {
+  rootSelector?: string;
+}) {
+  const { animation, base, code, ...theme } = useTheme();
+  const variables = getVariables(theme).join('\n');
+  console.log(variables);
   return (
     <Global
       styles={css`
-        :root {
-          ${variables.join(';\n')}
+        ${rootSelector} {
+          ${variables}
         }
       `}
     />

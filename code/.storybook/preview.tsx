@@ -22,6 +22,7 @@ import { sb } from 'storybook/test';
 import {
   Global,
   ThemeProvider,
+  ThemeVariables,
   convert,
   createReset,
   styled,
@@ -243,12 +244,24 @@ const decorators = [
               <Global styles={createReset} />
             </ThemeProvider>
             <ThemeProvider theme={convert(themes.light)}>
-              <ThemeBlock side="left" data-side="left" layout={parameters.layout}>
+              <ThemeVariables rootSelector="#sb-light-theme" />
+              <ThemeBlock
+                id="sb-light-theme"
+                side="left"
+                data-side="left"
+                layout={parameters.layout}
+              >
                 <StoryFn />
               </ThemeBlock>
             </ThemeProvider>
             <ThemeProvider theme={convert(themes.dark)}>
-              <ThemeBlock side="right" data-side="right" layout={parameters.layout}>
+              <ThemeVariables rootSelector="#sb-dark-theme" />
+              <ThemeBlock
+                id="sb-dark-theme"
+                side="right"
+                data-side="right"
+                layout={parameters.layout}
+              >
                 <StoryFn />
               </ThemeBlock>
             </ThemeProvider>
@@ -263,12 +276,14 @@ const decorators = [
             </ThemeProvider>
             <StackContainer layout={parameters.layout}>
               <ThemeProvider theme={convert(themes.light)}>
-                <ThemeStack data-side="left" layout={parameters.layout}>
+                <ThemeVariables rootSelector="#sb-light-theme" />
+                <ThemeStack id="sb-light-theme" data-side="left" layout={parameters.layout}>
                   <StoryFn />
                 </ThemeStack>
               </ThemeProvider>
               <ThemeProvider theme={convert(themes.dark)}>
-                <ThemeStack data-side="right" layout={parameters.layout}>
+                <ThemeVariables rootSelector="#sb-dark-theme" />
+                <ThemeStack id="sb-dark-theme" data-side="right" layout={parameters.layout}>
                   <StoryFn />
                 </ThemeStack>
               </ThemeProvider>
@@ -281,6 +296,7 @@ const decorators = [
         return (
           <ThemeProvider theme={convert(themes[theme])}>
             <Global styles={createReset} />
+            <ThemeVariables />
             <ThemedSetRoot />
             {showPlayFnNotice && (
               <>

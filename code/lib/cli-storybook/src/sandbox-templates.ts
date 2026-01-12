@@ -433,9 +433,6 @@ export const baseTemplates = {
         features: {
           experimentalTestSyntax: true,
         },
-        typescript: {
-          reactDocgen: 'react-docgen-typescript',
-        } as any, // the generic type does not contain the reactDocgen property
       },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],

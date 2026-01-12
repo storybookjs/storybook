@@ -179,7 +179,7 @@ async function runStorybookDev(result: {
 
     const flags = [];
 
-    if (packageManager.type === 'npm') {
+    if (packageManager.type === 'npm' && projectType !== ProjectType.ANGULAR) {
       flags.push('--silent');
     }
 

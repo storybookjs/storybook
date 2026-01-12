@@ -250,18 +250,15 @@ export const TestingWidget = ({
               : undefined
   );
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { landmarkProps } = useLandmark(
+    { 'aria-labelledby': 'storybook-testing-widget-heading', role: 'region' },
+    cardRef
+  );
+
   if (!hasTestProviders && !errorCount && !warningCount) {
     return null;
   }
-
-  const cardRef = useRef<HTMLDivElement>(null);
-  const { landmarkProps } = useLandmark(
-    {
-      'aria-labelledby': 'storybook-testing-widget-heading',
-      role: 'region',
-    },
-    cardRef
-  );
 
   return (
     <HoverCard
@@ -272,7 +269,7 @@ export const TestingWidget = ({
         isCrashed || (isRunning && errorCount > 0) ? 'negative' : isUpdated ? 'positive' : undefined
       }
       ref={cardRef}
-      outlineProps={landmarkProps}
+      outlineAttrs={landmarkProps}
     >
       <h2 id="storybook-testing-widget-heading" className="sb-sr-only">
         Component tests

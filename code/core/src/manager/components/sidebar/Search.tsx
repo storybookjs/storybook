@@ -314,12 +314,7 @@ export const Search = React.memo<SearchProps>(function Search({
   const { isMobile } = useLayout();
 
   const searchLandmarkRef = useRef<HTMLDivElement>(null);
-  const { landmarkProps } = useLandmark(
-    {
-      role: 'search',
-    },
-    searchLandmarkRef
-  );
+  const { landmarkProps } = useLandmark({ role: 'search' }, searchLandmarkRef);
 
   return (
     // @ts-expect-error (non strict)
@@ -443,7 +438,7 @@ export const Search = React.memo<SearchProps>(function Search({
                 query: input,
                 results,
                 isNavVisible: !isOpen && document.activeElement !== inputRef.current,
-                isNavRendered: input.length === 0,
+                isNavReachable: input.length === 0,
                 isSearchResultRendered: isOpen,
                 closeMenu,
                 getMenuProps,

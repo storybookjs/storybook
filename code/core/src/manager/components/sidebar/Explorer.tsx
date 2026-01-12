@@ -11,6 +11,7 @@ export interface ExplorerProps {
   className?: string;
   isLoading: boolean;
   isBrowsing: boolean;
+  isHidden: boolean;
   hasEntries: boolean;
   dataset: CombinedDataset;
   selected: Selection;
@@ -20,11 +21,12 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
   hasEntries,
   isLoading,
   isBrowsing,
+  isHidden,
   dataset,
   selected,
   ...restProps
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLElement>(null);
 
   // Track highlighted nodes, keep it in sync with props and enable keyboard navigation
   const [highlighted, setHighlighted, highlightedRef] = useHighlighted({
@@ -35,15 +37,15 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
   });
 
   const { landmarkProps } = useLandmark(
-    {
-      'aria-labelledby': 'storybook-explorer-tree-heading',
-      role: 'navigation',
-    },
+    { 'aria-labelledby': 'storybook-explorer-tree-heading', role: 'navigation' },
     containerRef
   );
 
   return (
     <nav
+      hidden={isHidden || undefined}
+      aria-hidden={isHidden || undefined}
+      className={isBrowsing ? undefined : 'sb-sr-only'}
       ref={containerRef}
       id="storybook-explorer-tree"
       data-highlighted-ref-id={highlighted?.refId}

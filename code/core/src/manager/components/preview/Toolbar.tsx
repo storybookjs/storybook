@@ -86,10 +86,7 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
 }) {
   const sectionRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
-    {
-      'aria-labelledby': 'sb-preview-toolbar-title',
-      role: 'region',
-    },
+    { 'aria-labelledby': 'sb-preview-toolbar-title', role: 'region' },
     sectionRef
   );
 

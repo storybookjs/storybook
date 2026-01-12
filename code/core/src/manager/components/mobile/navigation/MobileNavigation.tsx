@@ -80,10 +80,7 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
 
   const sectionRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
-    {
-      'aria-labelledby': headingId,
-      role: 'banner',
-    },
+    { 'aria-labelledby': headingId, role: 'banner' },
     sectionRef
   );
 

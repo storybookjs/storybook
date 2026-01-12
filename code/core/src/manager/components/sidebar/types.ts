@@ -61,7 +61,7 @@ export type SearchChildrenFn = (args: {
   // Whether the nav explorer should be reachable in the document. When the search
   // input is focused, we keep the nav rendered in the document and reachable by
   // keyboard, so keyboard shortcuts to navigate to it still work.
-  isNavRendered: boolean;
+  isNavReachable: boolean;
   // Whether the UI with search results or recently viewed pages is visible.
   isSearchResultRendered: boolean;
   closeMenu: (cb?: () => void) => void;

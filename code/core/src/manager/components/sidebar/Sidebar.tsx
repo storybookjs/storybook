@@ -141,10 +141,7 @@ export const Sidebar = React.memo(function Sidebar({
 
   const headerRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
-    {
-      'aria-labelledby': 'global-site-h1',
-      role: 'banner',
-    },
+    { 'aria-labelledby': 'global-site-h1', role: 'banner' },
     headerRef
   );
 
@@ -202,7 +199,7 @@ export const Sidebar = React.memo(function Sidebar({
               query,
               results,
               isNavVisible,
-              isNavRendered,
+              isNavReachable,
               isSearchResultRendered,
               closeMenu,
               getMenuProps,
@@ -210,16 +207,16 @@ export const Sidebar = React.memo(function Sidebar({
               highlightedIndex,
             }) => (
               <>
-                {isNavRendered && (
+                {
                   <Explorer
-                    className={isNavVisible ? undefined : 'sb-sr-only'}
                     dataset={dataset}
                     selected={selected}
                     isLoading={isLoading}
                     isBrowsing={isNavVisible}
+                    isHidden={!isNavReachable}
                     hasEntries={hasEntries}
                   />
-                )}
+                }
                 {isSearchResultRendered && (
                   <SearchResults
                     query={query}

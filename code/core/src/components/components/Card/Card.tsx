@@ -92,16 +92,16 @@ const CardOutline = styled.div<{
 interface CardProps extends ComponentProps<typeof CardContent> {
   outlineAnimation?: 'none' | 'rainbow' | 'spin';
   outlineColor?: keyof typeof color;
-  outlineProps?: DOMAttributes<HTMLDivElement>;
+  outlineAttrs?: DOMAttributes<HTMLDivElement>;
 }
 
 export const Card = Object.assign(
   forwardRef<HTMLDivElement, CardProps>(function Card(
-    { outlineAnimation = 'none', outlineColor, outlineProps = {}, ...props },
+    { outlineAnimation = 'none', outlineColor, outlineAttrs: outlineAttrs = {}, ...props },
     ref
   ) {
     return (
-      <CardOutline animation={outlineAnimation} color={outlineColor} ref={ref} {...outlineProps}>
+      <CardOutline animation={outlineAnimation} color={outlineColor} ref={ref} {...outlineAttrs}>
         <CardContent {...props} />
       </CardOutline>
     );

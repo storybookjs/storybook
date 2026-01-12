@@ -75,7 +75,7 @@ const Wrapper = styled.div<WrapperProps>(
     bordered
       ? {
           border: `1px solid var(--sb-appBorderColor)`,
-          borderRadius: 'var(--sb-borderRadius)',
+          borderRadius: 'var(--sb-appBorderRadius)',
           background: 'var(--sb-background-content)',
         }
       : {},

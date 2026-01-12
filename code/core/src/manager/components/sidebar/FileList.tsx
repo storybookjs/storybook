@@ -197,7 +197,7 @@ export const FileListItemExportNameContentWithExport = styled(FileListItemExport
 
 export const DefaultExport = styled('span')(({ theme }) => ({
   display: 'inline-block',
-  padding: `1px var(--sb-appBorderRadius)px`,
+  padding: `1px var(--sb-appBorderRadius)`,
   borderRadius: '2px',
   fontSize: '10px',
   color: 'var(--sb-color-defaultText)',

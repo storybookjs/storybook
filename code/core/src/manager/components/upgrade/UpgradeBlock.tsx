@@ -75,7 +75,7 @@ const ButtonTab = styled.button<{ active: boolean }>(({ active }) => ({
   color: 'var(--sb-color-defaultText)',
   fontSize: `calc(var(--sb-typography-size-s2) - 1px)`,
   borderBottom: '2px solid transparent',
-  borderBottomColor: active ? 'var(--sb-color-secondary)' : 'none',
+  borderBottomColor: active ? 'var(--sb-color-secondary)' : 'transparent',
   padding: '0 10px 5px',
   marginBottom: '5px',
   cursor: 'pointer',

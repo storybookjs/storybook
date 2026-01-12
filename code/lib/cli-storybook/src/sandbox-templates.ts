@@ -369,11 +369,13 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types', '@types/prop-types'],
+      extraDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
+      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          experimentalComponentsManifest: true,
         },
       },
     },

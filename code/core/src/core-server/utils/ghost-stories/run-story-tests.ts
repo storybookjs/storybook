@@ -52,10 +52,11 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
         testFailureMessage = 'No tests found';
       } else if (errorMessage.includes('test timeout')) {
         testFailureMessage = 'Test timeout';
-      } else if (errorMessage.includes('Unhandled Rejection')) {
+      } else if (errorMessage.includes('react-native-web')) {
+        testFailureMessage = 'React Native Web error';
+      } else if (errorMessage.includes('unhandled rejection')) {
         testFailureMessage = 'Unhandled Rejection';
       }
-      // TODO: See if we can categorize error and get eror info with stripped data
     }
 
     // Calculate duration of the command execution

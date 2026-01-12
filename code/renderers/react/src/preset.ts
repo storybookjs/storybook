@@ -1,5 +1,7 @@
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { getProjectRoot } from 'storybook/internal/common';
 import type { ArgTypes } from 'storybook/internal/csf';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -81,7 +83,10 @@ export async function internal_getArgTypesData(
     return null;
   }
 
-  const argTypesData = extractArgTypesFromDocgen({ componentFilePath, componentExportName });
+  const argTypesData = extractArgTypesFromDocgen({
+    componentFilePath: join(getProjectRoot(), componentFilePath),
+    componentExportName,
+  });
   if (!argTypesData?.props) {
     return null;
   }

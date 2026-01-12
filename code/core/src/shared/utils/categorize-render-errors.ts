@@ -159,6 +159,7 @@ const CATEGORIZATION_RULES: CategorizationRule[] = [
     category: ERROR_CATEGORIES.MISSING_PROVIDER,
     priority: 60,
     match: (ctx) =>
+      (ctx.normalizedMessage.includes('use') && ctx.normalizedMessage.includes('provider')) ||
       ctx.normalizedMessage.includes('<provider>') ||
       ((ctx.normalizedMessage.includes('could not find') ||
         ctx.normalizedMessage.includes('missing')) &&
@@ -243,6 +244,9 @@ export function getCategoryDescription(category: ErrorCategory): string {
 
     case ERROR_CATEGORIES.COMPONENT_RENDER_ERROR:
       return 'Component failed during render due to a runtime error';
+
+    case ERROR_CATEGORIES.SERVER_COMPONENTS_ERROR:
+      return 'Server components usage in the browser';
 
     default:
       return 'Error could not be categorized';

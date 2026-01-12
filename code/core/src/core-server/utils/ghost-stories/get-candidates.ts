@@ -163,11 +163,14 @@ export async function getComponentCandidates({
         '**/__mocks__/**',
         '**/build/**',
         '**/storybook-static/**',
-        '**/*.stories.*',
         '**/*.test.*',
         '**/*.d.*',
         '**/*.config.*',
         '**/*.spec.*',
+        '**/*.stories.*',
+        // skip example story files that come from the CLI
+        '**/stories/{Button,Header,Page}.*',
+        '**/stories/{button,header,page}.*',
       ],
     });
 

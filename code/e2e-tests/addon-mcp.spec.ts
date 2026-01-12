@@ -53,11 +53,9 @@ test.describe('addon-mcp', () => {
 
   test.describe('Manifests', () => {
     test.describe('Component Manifest', () => {
-      test('should have valid components.json structure', async ({ page }) => {
-        const json = await page.evaluate(async (url) => {
-          const res = await fetch(`${url}/manifests/components.json`);
-          return res.json();
-        }, storybookUrl);
+      test('should have valid components.json structure', async ({ request }) => {
+        const response = await request.get(`${storybookUrl}/manifests/components.json`);
+        const json = await response.json();
 
         // Check basic structure
         expect(json).toHaveProperty('v');
@@ -66,11 +64,9 @@ test.describe('addon-mcp', () => {
         expect(typeof json.components).toBe('object');
       });
 
-      test('should contain the example Button component', async ({ page }) => {
-        const json = await page.evaluate(async (url) => {
-          const res = await fetch(`${url}/manifests/components.json`);
-          return res.json();
-        }, storybookUrl);
+      test('should contain the example Button component', async ({ request }) => {
+        const response = await request.get(`${storybookUrl}/manifests/components.json`);
+        const json = await response.json();
 
         // Check for example-button component
         expect(json.components).toHaveProperty('example-button');
@@ -94,11 +90,9 @@ test.describe('addon-mcp', () => {
     });
 
     test.describe('Docs Manifest', () => {
-      test('should have valid docs.json structure', async ({ page }) => {
-        const json = await page.evaluate(async (url) => {
-          const res = await fetch(`${url}/manifests/docs.json`);
-          return res.json();
-        }, storybookUrl);
+      test('should have valid docs.json structure', async ({ request }) => {
+        const response = await request.get(`${storybookUrl}/manifests/docs.json`);
+        const json = await response.json();
 
         // Check basic structure
         expect(json).toHaveProperty('v');
@@ -107,11 +101,9 @@ test.describe('addon-mcp', () => {
         expect(typeof json.docs).toBe('object');
       });
 
-      test('should contain the "Configure your project" docs entry', async ({ page }) => {
-        const json = await page.evaluate(async (url) => {
-          const res = await fetch(`${url}/manifests/docs.json`);
-          return res.json();
-        }, storybookUrl);
+      test('should contain the "Configure your project" docs entry', async ({ request }) => {
+        const response = await request.get(`${storybookUrl}/manifests/docs.json`);
+        const json = await response.json();
 
         // Check for configure-your-project--docs entry
         expect(json.docs).toHaveProperty('configure-your-project--docs');

@@ -31,9 +31,9 @@ const AddonButton = styled(TabButton)<{ preActive: boolean }>(({ active, preActi
       color: ${preActive || active ? 'var(--sb-barSelectedColor)' : 'var(--sb-barTextColor)'};
     }
     &:hover {
-      color: 'var(--sb-barHoverColor)';
+      color: var(--sb-barHoverColor);
       .addon-collapsible-icon {
-        color: 'var(--sb-barHoverColor)';
+        color: var(--sb-barHoverColor);
       }
     }
   `;

@@ -28,7 +28,7 @@ export const ThemeVariables = React.memo(function ThemeVariables({
 }) {
   const { animation, base, code, ...theme } = useTheme();
   const variables = getVariables(theme).join('\n');
-  console.log(variables);
+
   return (
     <Global
       styles={css`

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styled } from 'storybook/theming';
+import { color, styled } from 'storybook/theming';
 
 const Input = styled.input(({ theme }) => ({
   appearance: 'none',
@@ -27,7 +27,7 @@ const Input = styled.input(({ theme }) => ({
   },
   '&:checked, &:indeterminate': {
     border: 'none',
-    backgroundColor: 'var(--sb-color-secondary)',
+    backgroundColor: color.secondary, // TODO Can't use theme.color.secondary on dark theme
   },
   '&:checked::before': {
     content: '""',

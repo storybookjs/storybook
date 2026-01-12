@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { TypescriptOptions } from '@storybook/core-webpack';
+import ReactDocgenTypescriptPlugin from '@storybook/react-docgen-typescript-plugin';
 
-import ReactDocgenTypescriptPlugin from 'react-docgen-typescript-plugin';
 import type { Configuration } from 'webpack';
 
 import * as preset from './framework-preset-react-docs';

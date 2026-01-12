@@ -17,8 +17,20 @@ beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   vol.fromJSON(
     {
-      './Example.mdx': '# Example\n\nThis is example documentation.',
-      './Standalone.mdx': '# Standalone\n\nThis is standalone documentation.',
+      './Example.mdx': `import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta summary="An example documentation page" />
+
+# Example
+
+This is example documentation.`,
+      './Standalone.mdx': `import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta summary="A standalone documentation page" />
+
+# Standalone
+
+This is standalone documentation.`,
     },
     '/app'
   );
@@ -152,15 +164,16 @@ describe('experimental_manifests', () => {
 
     expect(result).toHaveProperty('components');
     expect(result).not.toHaveProperty('docs');
-    expect(result.components?.components.example.docs).toEqual({
-      'example--docs': {
-        id: 'example--docs',
-        name: 'docs',
-        path: './Example.mdx',
-        title: 'Example',
-        content: '# Example\n\nThis is example documentation.',
-      },
+    expect(result.components?.components.example.docs?.['example--docs']).toMatchObject({
+      id: 'example--docs',
+      name: 'docs',
+      path: './Example.mdx',
+      title: 'Example',
+      summary: 'An example documentation page',
     });
+    expect(result.components?.components.example.docs?.['example--docs'].content).toContain(
+      'This is example documentation.'
+    );
   });
 
   it('should generate docs manifest for unattached-mdx entries', async () => {
@@ -179,18 +192,16 @@ describe('experimental_manifests', () => {
     const result = (await manifests(undefined, { manifestEntries } as any)) as ManifestResult;
 
     expect(result).toHaveProperty('docs');
-    expect(result.docs).toEqual({
-      v: 0,
-      docs: {
-        'standalone--docs': {
-          id: 'standalone--docs',
-          name: 'docs',
-          path: './Standalone.mdx',
-          title: 'Standalone',
-          content: '# Standalone\n\nThis is standalone documentation.',
-        },
-      },
+    expect(result.docs?.docs['standalone--docs']).toMatchObject({
+      id: 'standalone--docs',
+      name: 'docs',
+      path: './Standalone.mdx',
+      title: 'Standalone',
+      summary: 'A standalone documentation page',
     });
+    expect(result.docs?.docs['standalone--docs'].content).toContain(
+      'This is standalone documentation.'
+    );
   });
 
   it('should handle both attached and unattached docs entries separately', async () => {
@@ -237,20 +248,22 @@ describe('experimental_manifests', () => {
     expect(result).toHaveProperty('docs');
     expect(result.docs?.docs).toHaveProperty('standalone--docs');
     expect(Object.keys(result.docs?.docs ?? {})).toHaveLength(1);
-    expect(result.docs?.docs['standalone--docs'].content).toBe(
-      '# Standalone\n\nThis is standalone documentation.'
+    expect(result.docs?.docs['standalone--docs'].content).toContain(
+      'This is standalone documentation.'
     );
+    expect(result.docs?.docs['standalone--docs'].summary).toBe('A standalone documentation page');
 
     // Attached docs should be in the component manifest
-    expect(result.components?.components.example.docs).toEqual({
-      'example--docs': {
-        id: 'example--docs',
-        name: 'docs',
-        path: './Example.mdx',
-        title: 'Example',
-        content: '# Example\n\nThis is example documentation.',
-      },
+    expect(result.components?.components.example.docs?.['example--docs']).toMatchObject({
+      id: 'example--docs',
+      name: 'docs',
+      path: './Example.mdx',
+      title: 'Example',
+      summary: 'An example documentation page',
     });
+    expect(result.components?.components.example.docs?.['example--docs'].content).toContain(
+      'This is example documentation.'
+    );
   });
 
   it('should preserve existing manifests and add unattached docs', async () => {
@@ -347,9 +360,10 @@ describe('experimental_manifests', () => {
     expect(Object.keys(result.docs?.docs ?? {})).toHaveLength(2);
 
     // Successful entry
-    expect(result.docs?.docs['standalone--docs'].content).toBe(
-      '# Standalone\n\nThis is standalone documentation.'
+    expect(result.docs?.docs['standalone--docs'].content).toContain(
+      'This is standalone documentation.'
     );
+    expect(result.docs?.docs['standalone--docs'].summary).toBe('A standalone documentation page');
     expect(result.docs?.docs['standalone--docs'].error).toBeUndefined();
 
     // Failed entry
@@ -358,5 +372,89 @@ describe('experimental_manifests', () => {
       name: 'Error',
       message: expect.stringContaining('ENOENT'),
     });
+  });
+
+  it('should include summary in unattached docs entries when available', async () => {
+    const manifestEntries: IndexEntry[] = [
+      {
+        id: 'standalone--docs',
+        name: 'docs',
+        title: 'Standalone',
+        type: 'docs',
+        importPath: './Standalone.mdx',
+        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
+        storiesImports: [],
+      } satisfies DocsIndexEntry,
+    ];
+
+    const result = (await manifests(undefined, { manifestEntries } as any)) as ManifestResult;
+
+    expect(result).toHaveProperty('docs');
+    expect(result.docs?.docs['standalone--docs'].summary).toBe('A standalone documentation page');
+  });
+
+  it('should include summary in attached docs entries when available', async () => {
+    const existingManifests = {
+      components: {
+        v: 0,
+        components: {
+          example: {
+            id: 'example',
+            path: './Example.stories.tsx',
+            name: 'Example',
+            stories: [],
+            jsDocTags: {},
+          },
+        },
+      },
+    };
+    const manifestEntries: IndexEntry[] = [
+      {
+        id: 'example--docs',
+        name: 'docs',
+        title: 'Example',
+        type: 'docs',
+        importPath: './Example.mdx',
+        tags: [Tag.MANIFEST, Tag.ATTACHED_MDX],
+        storiesImports: ['./Example.stories.tsx'],
+      } satisfies DocsIndexEntry,
+    ];
+
+    const result = (await manifests(existingManifests, {
+      manifestEntries,
+    } as any)) as ManifestResult;
+
+    expect(result.components?.components.example.docs?.['example--docs'].summary).toBe(
+      'An example documentation page'
+    );
+  });
+
+  it('should not include summary property when analyze returns no summary', async () => {
+    vol.fromJSON(
+      {
+        './NoSummary.mdx': '# No Summary\n\nThis content has no summary.',
+      },
+      '/app'
+    );
+
+    const manifestEntries: IndexEntry[] = [
+      {
+        id: 'nosummary--docs',
+        name: 'docs',
+        title: 'NoSummary',
+        type: 'docs',
+        importPath: './NoSummary.mdx',
+        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
+        storiesImports: [],
+      } satisfies DocsIndexEntry,
+    ];
+
+    const result = (await manifests(undefined, { manifestEntries } as any)) as ManifestResult;
+
+    expect(result).toHaveProperty('docs');
+    expect(result.docs?.docs['nosummary--docs'].content).toBe(
+      '# No Summary\n\nThis content has no summary.'
+    );
+    expect(result.docs?.docs['nosummary--docs'].summary).toBeUndefined();
   });
 });

@@ -1,3 +1,4 @@
+import type { Channel } from 'storybook/internal/channels';
 import { CHANNEL_CREATED, CHANNEL_WS_DISCONNECT } from 'storybook/internal/core-events';
 import { MemoryRouter } from 'storybook/internal/router';
 import type { Addon_Config, Addon_Types } from 'storybook/internal/types';
@@ -12,13 +13,12 @@ import { screen, within } from 'storybook/test';
 import { color } from 'storybook/theming';
 
 import preview from '../../../.storybook/preview';
-import type Channel from '../channels';
 import { Main } from './index';
 import Provider from './provider';
 
 const WS_DISCONNECTED_NOTIFICATION_ID = 'CORE/WS_DISCONNECTED';
 
-const channel = mockChannel();
+const channel = mockChannel() as unknown as Channel;
 
 const originalGetItem = Storage.prototype.getItem;
 const originalSetItem = Storage.prototype.setItem;

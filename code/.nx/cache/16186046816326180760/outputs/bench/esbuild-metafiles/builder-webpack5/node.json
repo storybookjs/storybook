@@ -1,0 +1,705 @@
+{
+  "inputs": {
+    "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs": {
+      "bytes": 6539,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/pathe/dist/index.mjs": {
+      "bytes": 272,
+      "imports": [
+        {
+          "path": "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs",
+          "kind": "import-statement",
+          "original": "./shared/pathe.ff20891b.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/pretty-hrtime/index.js": {
+      "bytes": 2363,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/totalist/sync/index.js": {
+      "bytes": 446,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@polka/url/build.js": {
+      "bytes": 895,
+      "imports": [
+        {
+          "path": "querystring",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/mrmime/index.js": {
+      "bytes": 13608,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/sirv/build.js": {
+      "bytes": 5216,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/totalist/sync/index.js",
+          "kind": "require-call",
+          "original": "totalist/sync"
+        },
+        {
+          "path": "../../node_modules/@polka/url/build.js",
+          "kind": "require-call",
+          "original": "@polka/url"
+        },
+        {
+          "path": "../../node_modules/mrmime/index.js",
+          "kind": "require-call",
+          "original": "mrmime"
+        }
+      ],
+      "format": "cjs"
+    },
+    "src/types.ts": {
+      "bytes": 1605,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/slash/index.js": {
+      "bytes": 181,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/preview/virtual-module-mapping.ts": {
+      "bytes": 2660,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/core-webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/slash/index.js",
+          "kind": "import-statement",
+          "original": "slash"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 9895,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/core-webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/pathe/dist/index.mjs",
+          "kind": "import-statement",
+          "original": "pathe"
+        },
+        {
+          "path": "../../node_modules/pretty-hrtime/index.js",
+          "kind": "import-statement",
+          "original": "pretty-hrtime"
+        },
+        {
+          "path": "../../node_modules/sirv/build.js",
+          "kind": "import-statement",
+          "original": "sirv"
+        },
+        {
+          "path": "webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack-dev-middleware",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack-hot-middleware",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        },
+        {
+          "path": "src/preview/virtual-module-mapping.ts",
+          "kind": "import-statement",
+          "original": "./preview/virtual-module-mapping"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preview/base-webpack.config.ts": {
+      "bytes": 3190,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/presets/custom-webpack-preset.ts": {
+      "bytes": 1952,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/core-webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/preview/base-webpack.config.ts",
+          "kind": "import-statement",
+          "original": "../preview/base-webpack.config"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preview/iframe-webpack.config.ts": {
+      "bytes": 8644,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/preview/globals",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/core-webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "case-sensitive-paths-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fork-ts-checker-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "html-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "terser-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack-virtual-modules",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/preview/virtual-module-mapping.ts",
+          "kind": "import-statement",
+          "original": "./virtual-module-mapping"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/presets/preview-preset.ts": {
+      "bytes": 924,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/preview/iframe-webpack.config.ts",
+          "kind": "import-statement",
+          "original": "../preview/iframe-webpack.config"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/loaders/export-order-loader.ts": {
+      "bytes": 1848,
+      "imports": [
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "cjs-module-lexer",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "es-module-lexer",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-SW2WGPNY.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-3SFLERUD.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "querystring",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-events",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/core-webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack-dev-middleware",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack-hot-middleware",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "WebpackDefinePlugin",
+        "WebpackIgnorePlugin",
+        "bail",
+        "build",
+        "corePresets",
+        "executor",
+        "getConfig",
+        "getVirtualModules",
+        "overridePresets",
+        "printDuration",
+        "start"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "../../node_modules/pretty-hrtime/index.js": {
+          "bytesInOutput": 1664
+        },
+        "../../node_modules/totalist/sync/index.js": {
+          "bytesInOutput": 580
+        },
+        "../../node_modules/@polka/url/build.js": {
+          "bytesInOutput": 798
+        },
+        "../../node_modules/mrmime/index.js": {
+          "bytesInOutput": 14610
+        },
+        "../../node_modules/sirv/build.js": {
+          "bytesInOutput": 5457
+        },
+        "src/index.ts": {
+          "bytesInOutput": 7014
+        },
+        "../../node_modules/pathe/dist/shared/pathe.ff20891b.mjs": {
+          "bytesInOutput": 3568
+        },
+        "../../node_modules/pathe/dist/index.mjs": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 34957
+    },
+    "dist/presets/custom-webpack-preset.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-3SFLERUD.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/core-webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "swc",
+        "webpack",
+        "webpackInstance",
+        "webpackVersion"
+      ],
+      "entryPoint": "src/presets/custom-webpack-preset.ts",
+      "inputs": {
+        "src/presets/custom-webpack-preset.ts": {
+          "bytesInOutput": 1392
+        },
+        "src/preview/base-webpack.config.ts": {
+          "bytesInOutput": 2853
+        }
+      },
+      "bytes": 5096
+    },
+    "dist/presets/preview-preset.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-SW2WGPNY.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-3SFLERUD.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/preview/globals",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "case-sensitive-paths-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fork-ts-checker-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "html-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "terser-webpack-plugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "webpack-virtual-modules",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "entries",
+        "previewMainTemplate",
+        "webpack"
+      ],
+      "entryPoint": "src/presets/preview-preset.ts",
+      "inputs": {
+        "src/presets/preview-preset.ts": {
+          "bytesInOutput": 636
+        },
+        "src/preview/iframe-webpack.config.ts": {
+          "bytesInOutput": 7572
+        }
+      },
+      "bytes": 9110
+    },
+    "dist/_node-chunks/chunk-SW2WGPNY.js": {
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/core-webpack",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "getVirtualModules"
+      ],
+      "inputs": {
+        "src/preview/virtual-module-mapping.ts": {
+          "bytesInOutput": 1833
+        },
+        "../../node_modules/slash/index.js": {
+          "bytesInOutput": 96
+        }
+      },
+      "bytes": 2704
+    },
+    "dist/loaders/export-order-loader.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-3SFLERUD.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:assert",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "cjs-module-lexer",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "es-module-lexer",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "default"
+      ],
+      "entryPoint": "src/loaders/export-order-loader.ts",
+      "inputs": {
+        "src/loaders/export-order-loader.ts": {
+          "bytesInOutput": 1378
+        }
+      },
+      "bytes": 2113
+    },
+    "dist/_node-chunks/chunk-3SFLERUD.js": {
+      "imports": [],
+      "exports": [
+        "__commonJS",
+        "__require",
+        "__toESM"
+      ],
+      "inputs": {},
+      "bytes": 2281
+    }
+  }
+}

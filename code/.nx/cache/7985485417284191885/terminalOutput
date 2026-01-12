@@ -1,0 +1,39 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/core[39m
+Running prebuild script
+(node:43483) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✅ Generated types for [36mcore/src/telemetry/index.ts[39m
+✅ Generated types for [36mcore/src/client-logger/index.ts[39m
+✅ Generated types for [36mcore/src/csf-tools/index.ts[39m
+✅ Generated types for [36mcore/src/node-logger/index.ts[39m
+✅ Generated types for [36mcore/src/cli/index.ts[39m
+✅ Generated types for [36mcore/src/instrumenter/index.ts[39m
+✅ Generated types for [36mcore/src/common/index.ts[39m
+✅ Generated types for [36mcore/src/babel/index.ts[39m
+✅ Generated types for [36mcore/src/server-errors.ts[39m
+✅ Generated types for [36mcore/src/core-server/index.ts[39m
+✅ Generated types for [36mcore/src/actions/decorator.ts[39m
+✅ Generated types for [36mcore/src/highlight/index.ts[39m
+✅ Generated types for [36mcore/src/viewport/index.ts[39m
+✅ Generated types for [36mcore/src/actions/index.ts[39m
+✅ Generated types for [36mcore/src/preview-api/index.ts[39m
+✅ Generated types for [36mcore/src/test/index.ts[39m
+✅ Generated types for [36mcore/src/preview/globals.ts[39m
+✅ Generated types for [36mcore/src/preview-errors.ts[39m
+✅ Generated types for [36mcore/src/manager-errors.ts[39m
+✅ Generated types for [36mcore/src/csf/index.ts[39m
+✅ Generated types for [36mcore/src/manager/globals.ts[39m
+✅ Generated types for [36mcore/src/theming/create.ts[39m
+✅ Generated types for [36mcore/src/theming/index.ts[39m
+✅ Generated types for [36mcore/src/router/index.ts[39m
+✅ Generated types for [36mcore/src/manager-api/index.ts[39m
+✅ Generated types for [36mcore/src/docs-tools/index.ts[39m
+✅ Generated types for [36mcore/src/channels/index.ts[39m
+✅ Generated types for [36mcore/src/types/index.ts[39m
+✅ Generated types for [36mcore/src/core-events/index.ts[39m
+✅ Generated types for [36mcore/src/components/index.ts[39m
+Prebuild script completed in [33m5.22 s[39m
+Bundled in [33m2.34 s[39m
+Generated types in [33m21 s[39m

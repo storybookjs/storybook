@@ -1,0 +1,2153 @@
+{
+  "inputs": {
+    "src/globals.ts": {
+      "bytes": 149,
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/public-types.ts": {
+      "bytes": 2817,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/act-compat.ts": {
+      "bytes": 2905,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-dom/test-utils",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/render.tsx": {
+      "bytes": 446,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/renderToCanvas.tsx": {
+      "bytes": 3251,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/act-compat.ts",
+          "kind": "import-statement",
+          "original": "./act-compat"
+        },
+        {
+          "path": "@storybook/react-dom-shim",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/mount.ts": {
+      "bytes": 384,
+      "imports": [
+        {
+          "path": "./public-types",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/applyDecorators.ts": {
+      "bytes": 479,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/entry-preview.tsx": {
+      "bytes": 3465,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/test",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/act-compat.ts",
+          "kind": "import-statement",
+          "original": "./act-compat"
+        },
+        {
+          "path": "src/render.tsx",
+          "kind": "import-statement",
+          "original": "./render"
+        },
+        {
+          "path": "src/renderToCanvas.tsx",
+          "kind": "import-statement",
+          "original": "./renderToCanvas"
+        },
+        {
+          "path": "src/mount.ts",
+          "kind": "import-statement",
+          "original": "./mount"
+        },
+        {
+          "path": "src/applyDecorators.ts",
+          "kind": "import-statement",
+          "original": "./applyDecorators"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/lib/componentTypes.ts": {
+      "bytes": 197,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/docs/lib/captions.ts": {
+      "bytes": 238,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/estraverse/estraverse.js": {
+      "bytes": 26957,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/esutils/lib/ast.js": {
+      "bytes": 4728,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/esutils/lib/code.js": {
+      "bytes": 29610,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/esutils/lib/keyword.js": {
+      "bytes": 5616,
+      "imports": [
+        {
+          "path": "../../node_modules/esutils/lib/code.js",
+          "kind": "require-call",
+          "original": "./code"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/esutils/lib/utils.js": {
+      "bytes": 1527,
+      "imports": [
+        {
+          "path": "../../node_modules/esutils/lib/ast.js",
+          "kind": "require-call",
+          "original": "./ast"
+        },
+        {
+          "path": "../../node_modules/esutils/lib/code.js",
+          "kind": "require-call",
+          "original": "./code"
+        },
+        {
+          "path": "../../node_modules/esutils/lib/keyword.js",
+          "kind": "require-call",
+          "original": "./keyword"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/node_modules/source-map/lib/base64.js": {
+      "bytes": 1540,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/node_modules/source-map/lib/base64-vlq.js": {
+      "bytes": 4714,
+      "imports": [
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/base64.js",
+          "kind": "require-call",
+          "original": "./base64"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/node_modules/source-map/lib/util.js": {
+      "bytes": 12950,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/node_modules/source-map/lib/array-set.js": {
+      "bytes": 3197,
+      "imports": [
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/util.js",
+          "kind": "require-call",
+          "original": "./util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/node_modules/source-map/lib/mapping-list.js": {
+      "bytes": 2339,
+      "imports": [
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/util.js",
+          "kind": "require-call",
+          "original": "./util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/node_modules/source-map/lib/source-map-generator.js": {
+      "bytes": 14356,
+      "imports": [
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/base64-vlq.js",
+          "kind": "require-call",
+          "original": "./base64-vlq"
+        },
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/util.js",
+          "kind": "require-call",
+          "original": "./util"
+        },
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/array-set.js",
+          "kind": "require-call",
+          "original": "./array-set"
+        },
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/mapping-list.js",
+          "kind": "require-call",
+          "original": "./mapping-list"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/node_modules/source-map/lib/binary-search.js": {
+      "bytes": 4249,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/node_modules/source-map/lib/quick-sort.js": {
+      "bytes": 3616,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/node_modules/source-map/lib/source-map-consumer.js": {
+      "bytes": 40562,
+      "imports": [
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/util.js",
+          "kind": "require-call",
+          "original": "./util"
+        },
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/binary-search.js",
+          "kind": "require-call",
+          "original": "./binary-search"
+        },
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/array-set.js",
+          "kind": "require-call",
+          "original": "./array-set"
+        },
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/base64-vlq.js",
+          "kind": "require-call",
+          "original": "./base64-vlq"
+        },
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/quick-sort.js",
+          "kind": "require-call",
+          "original": "./quick-sort"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/node_modules/source-map/lib/source-node.js": {
+      "bytes": 13808,
+      "imports": [
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/source-map-generator.js",
+          "kind": "require-call",
+          "original": "./source-map-generator"
+        },
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/util.js",
+          "kind": "require-call",
+          "original": "./util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/node_modules/source-map/source-map.js": {
+      "bytes": 405,
+      "imports": [
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/source-map-generator.js",
+          "kind": "require-call",
+          "original": "./lib/source-map-generator"
+        },
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/source-map-consumer.js",
+          "kind": "require-call",
+          "original": "./lib/source-map-consumer"
+        },
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/lib/source-node.js",
+          "kind": "require-call",
+          "original": "./lib/source-node"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/escodegen/package.json": {
+      "bytes": 1757,
+      "imports": []
+    },
+    "../../node_modules/escodegen/escodegen.js": {
+      "bytes": 97065,
+      "imports": [
+        {
+          "path": "../../node_modules/estraverse/estraverse.js",
+          "kind": "require-call",
+          "original": "estraverse"
+        },
+        {
+          "path": "../../node_modules/esutils/lib/utils.js",
+          "kind": "require-call",
+          "original": "esutils"
+        },
+        {
+          "path": "../../node_modules/escodegen/node_modules/source-map/source-map.js",
+          "kind": "require-call",
+          "original": "source-map"
+        },
+        {
+          "path": "../../node_modules/escodegen/package.json",
+          "kind": "require-call",
+          "original": "./package.json"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/ts-dedent/esm/index.js": {
+      "bytes": 1634,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/docs/lib/generateCode.ts": {
+      "bytes": 1777,
+      "imports": [
+        {
+          "path": "../../node_modules/escodegen/escodegen.js",
+          "kind": "import-statement",
+          "original": "escodegen"
+        },
+        {
+          "path": "../../node_modules/ts-dedent/esm/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/lib/inspection/types.ts": {
+      "bytes": 1489,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/acorn/dist/acorn.js": {
+      "bytes": 200010,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/acorn-jsx/xhtml.js": {
+      "bytes": 4718,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/acorn-jsx/index.js": {
+      "bytes": 15827,
+      "imports": [
+        {
+          "path": "../../node_modules/acorn-jsx/xhtml.js",
+          "kind": "require-call",
+          "original": "./xhtml"
+        },
+        {
+          "path": "../../node_modules/acorn/dist/acorn.js",
+          "kind": "require-call",
+          "original": "acorn"
+        },
+        {
+          "path": "../../node_modules/acorn/dist/acorn.js",
+          "kind": "require-call",
+          "original": "acorn"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/acorn-walk/dist/walk.mjs": {
+      "bytes": 14560,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/docs/lib/inspection/acornParser.ts": {
+      "bytes": 6361,
+      "imports": [
+        {
+          "path": "../../node_modules/acorn/dist/acorn.js",
+          "kind": "import-statement",
+          "original": "acorn"
+        },
+        {
+          "path": "../../node_modules/acorn-jsx/index.js",
+          "kind": "import-statement",
+          "original": "acorn-jsx"
+        },
+        {
+          "path": "../../node_modules/acorn-walk/dist/walk.mjs",
+          "kind": "import-statement",
+          "original": "acorn-walk"
+        },
+        {
+          "path": "src/docs/lib/inspection/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/lib/inspection/inspectValue.ts": {
+      "bytes": 380,
+      "imports": [
+        {
+          "path": "src/docs/lib/inspection/acornParser.ts",
+          "kind": "import-statement",
+          "original": "./acornParser"
+        },
+        {
+          "path": "src/docs/lib/inspection/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/lib/inspection/index.ts": {
+      "bytes": 57,
+      "imports": [
+        {
+          "path": "src/docs/lib/inspection/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        },
+        {
+          "path": "src/docs/lib/inspection/inspectValue.ts",
+          "kind": "import-statement",
+          "original": "./inspectValue"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/html-tags/html-tags.json": {
+      "bytes": 1103,
+      "imports": []
+    },
+    "../../node_modules/html-tags/index.js": {
+      "bytes": 60,
+      "imports": [
+        {
+          "path": "../../node_modules/html-tags/html-tags.json",
+          "kind": "require-call",
+          "original": "./html-tags.json"
+        }
+      ],
+      "format": "cjs"
+    },
+    "src/docs/lib/isHtmlTag.ts": {
+      "bytes": 185,
+      "imports": [
+        {
+          "path": "../../node_modules/html-tags/index.js",
+          "kind": "import-statement",
+          "original": "html-tags"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/lib/defaultValues/generateArray.ts": {
+      "bytes": 710,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/docs/lib/captions.ts",
+          "kind": "import-statement",
+          "original": "../captions"
+        },
+        {
+          "path": "src/docs/lib/generateCode.ts",
+          "kind": "import-statement",
+          "original": "../generateCode"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/lib/defaultValues/generateObject.ts": {
+      "bytes": 720,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/docs/lib/captions.ts",
+          "kind": "import-statement",
+          "original": "../captions"
+        },
+        {
+          "path": "src/docs/lib/generateCode.ts",
+          "kind": "import-statement",
+          "original": "../generateCode"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/lib/defaultValues/prettyIdentifier.ts": {
+      "bytes": 930,
+      "imports": [
+        {
+          "path": "src/docs/lib/inspection/index.ts",
+          "kind": "import-statement",
+          "original": "../inspection"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/lib/defaultValues/createDefaultValue.ts": {
+      "bytes": 2535,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/docs/lib/captions.ts",
+          "kind": "import-statement",
+          "original": "../captions"
+        },
+        {
+          "path": "src/docs/lib/generateCode.ts",
+          "kind": "import-statement",
+          "original": "../generateCode"
+        },
+        {
+          "path": "src/docs/lib/inspection/index.ts",
+          "kind": "import-statement",
+          "original": "../inspection"
+        },
+        {
+          "path": "src/docs/lib/isHtmlTag.ts",
+          "kind": "import-statement",
+          "original": "../isHtmlTag"
+        },
+        {
+          "path": "src/docs/lib/defaultValues/generateArray.ts",
+          "kind": "import-statement",
+          "original": "./generateArray"
+        },
+        {
+          "path": "src/docs/lib/defaultValues/generateObject.ts",
+          "kind": "import-statement",
+          "original": "./generateObject"
+        },
+        {
+          "path": "src/docs/lib/defaultValues/prettyIdentifier.ts",
+          "kind": "import-statement",
+          "original": "./prettyIdentifier"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isArrayBuffer.mjs": {
+      "bytes": 102,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isBlob.mjs": {
+      "bytes": 140,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isBoolean.mjs": {
+      "bytes": 84,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isBrowser.mjs": {
+      "bytes": 118,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isBuffer.mjs": {
+      "bytes": 111,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isDate.mjs": {
+      "bytes": 81,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isPlainObject.mjs": {
+      "bytes": 449,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/compat/_internal/getSymbols.mjs": {
+      "bytes": 182,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/compat/_internal/getTag.mjs": {
+      "bytes": 205,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/compat/_internal/tags.mjs": {
+      "bytes": 1458,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/compat/util/eq.mjs": {
+      "bytes": 122,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isEqualWith.mjs": {
+      "bytes": 6670,
+      "imports": [
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isPlainObject.mjs",
+          "kind": "import-statement",
+          "original": "./isPlainObject.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/compat/_internal/getSymbols.mjs",
+          "kind": "import-statement",
+          "original": "../compat/_internal/getSymbols.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/compat/_internal/getTag.mjs",
+          "kind": "import-statement",
+          "original": "../compat/_internal/getTag.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/compat/_internal/tags.mjs",
+          "kind": "import-statement",
+          "original": "../compat/_internal/tags.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/compat/util/eq.mjs",
+          "kind": "import-statement",
+          "original": "../compat/util/eq.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/function/noop.mjs": {
+      "bytes": 38,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isEqual.mjs": {
+      "bytes": 179,
+      "imports": [
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isEqualWith.mjs",
+          "kind": "import-statement",
+          "original": "./isEqualWith.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/function/noop.mjs",
+          "kind": "import-statement",
+          "original": "../function/noop.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isError.mjs": {
+      "bytes": 84,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isFile.mjs": {
+      "bytes": 193,
+      "imports": [
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isBlob.mjs",
+          "kind": "import-statement",
+          "original": "./isBlob.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isFunction.mjs": {
+      "bytes": 95,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isJSON.mjs": {
+      "bytes": 216,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isJSONValue.mjs": {
+      "bytes": 996,
+      "imports": [
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isPlainObject.mjs",
+          "kind": "import-statement",
+          "original": "./isPlainObject.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isLength.mjs": {
+      "bytes": 105,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isMap.mjs": {
+      "bytes": 78,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isNil.mjs": {
+      "bytes": 63,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isNode.mjs": {
+      "bytes": 120,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isNotNil.mjs": {
+      "bytes": 69,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isNull.mjs": {
+      "bytes": 66,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isPrimitive.mjs": {
+      "bytes": 145,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isPromise.mjs": {
+      "bytes": 90,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isRegExp.mjs": {
+      "bytes": 87,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isSet.mjs": {
+      "bytes": 78,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isString.mjs": {
+      "bytes": 89,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isSymbol.mjs": {
+      "bytes": 89,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isTypedArray.mjs": {
+      "bytes": 117,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isUndefined.mjs": {
+      "bytes": 81,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isWeakMap.mjs": {
+      "bytes": 90,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/isWeakSet.mjs": {
+      "bytes": 90,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/es-toolkit/dist/predicate/index.mjs": {
+      "bytes": 1337,
+      "imports": [
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isArrayBuffer.mjs",
+          "kind": "import-statement",
+          "original": "./isArrayBuffer.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isBlob.mjs",
+          "kind": "import-statement",
+          "original": "./isBlob.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isBoolean.mjs",
+          "kind": "import-statement",
+          "original": "./isBoolean.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isBrowser.mjs",
+          "kind": "import-statement",
+          "original": "./isBrowser.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isBuffer.mjs",
+          "kind": "import-statement",
+          "original": "./isBuffer.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isDate.mjs",
+          "kind": "import-statement",
+          "original": "./isDate.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isEqual.mjs",
+          "kind": "import-statement",
+          "original": "./isEqual.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isEqualWith.mjs",
+          "kind": "import-statement",
+          "original": "./isEqualWith.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isError.mjs",
+          "kind": "import-statement",
+          "original": "./isError.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isFile.mjs",
+          "kind": "import-statement",
+          "original": "./isFile.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isFunction.mjs",
+          "kind": "import-statement",
+          "original": "./isFunction.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isJSON.mjs",
+          "kind": "import-statement",
+          "original": "./isJSON.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isJSONValue.mjs",
+          "kind": "import-statement",
+          "original": "./isJSONValue.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isLength.mjs",
+          "kind": "import-statement",
+          "original": "./isLength.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isMap.mjs",
+          "kind": "import-statement",
+          "original": "./isMap.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isNil.mjs",
+          "kind": "import-statement",
+          "original": "./isNil.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isNode.mjs",
+          "kind": "import-statement",
+          "original": "./isNode.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isNotNil.mjs",
+          "kind": "import-statement",
+          "original": "./isNotNil.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isNull.mjs",
+          "kind": "import-statement",
+          "original": "./isNull.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isPlainObject.mjs",
+          "kind": "import-statement",
+          "original": "./isPlainObject.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isPrimitive.mjs",
+          "kind": "import-statement",
+          "original": "./isPrimitive.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isPromise.mjs",
+          "kind": "import-statement",
+          "original": "./isPromise.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isRegExp.mjs",
+          "kind": "import-statement",
+          "original": "./isRegExp.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isSet.mjs",
+          "kind": "import-statement",
+          "original": "./isSet.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isString.mjs",
+          "kind": "import-statement",
+          "original": "./isString.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isSymbol.mjs",
+          "kind": "import-statement",
+          "original": "./isSymbol.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isTypedArray.mjs",
+          "kind": "import-statement",
+          "original": "./isTypedArray.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isUndefined.mjs",
+          "kind": "import-statement",
+          "original": "./isUndefined.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isWeakMap.mjs",
+          "kind": "import-statement",
+          "original": "./isWeakMap.mjs"
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/isWeakSet.mjs",
+          "kind": "import-statement",
+          "original": "./isWeakSet.mjs"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/is-plain-object/dist/is-plain-object.mjs": {
+      "bytes": 758,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/@base2/pretty-print-object/dist/index.js": {
+      "bytes": 6096,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/react-element-to-jsx-string/node_modules/react-is/cjs/react-is.production.min.js": {
+      "bytes": 2265,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/react-element-to-jsx-string/node_modules/react-is/cjs/react-is.development.js": {
+      "bytes": 7195,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/react-element-to-jsx-string/node_modules/react-is/index.js": {
+      "bytes": 196,
+      "imports": [
+        {
+          "path": "../../node_modules/react-element-to-jsx-string/node_modules/react-is/cjs/react-is.production.min.js",
+          "kind": "require-call",
+          "original": "./cjs/react-is.production.min.js"
+        },
+        {
+          "path": "../../node_modules/react-element-to-jsx-string/node_modules/react-is/cjs/react-is.development.js",
+          "kind": "require-call",
+          "original": "./cjs/react-is.development.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/react-element-to-jsx-string/dist/esm/index.js": {
+      "bytes": 24704,
+      "imports": [
+        {
+          "path": "../../node_modules/is-plain-object/dist/is-plain-object.mjs",
+          "kind": "import-statement",
+          "original": "is-plain-object"
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/@base2/pretty-print-object/dist/index.js",
+          "kind": "import-statement",
+          "original": "@base2/pretty-print-object"
+        },
+        {
+          "path": "../../node_modules/react-element-to-jsx-string/node_modules/react-is/index.js",
+          "kind": "import-statement",
+          "original": "react-is"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/lib/defaultValues/createFromRawDefaultProp.ts": {
+      "bytes": 6211,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/es-toolkit/dist/predicate/index.mjs",
+          "kind": "import-statement",
+          "original": "es-toolkit/predicate"
+        },
+        {
+          "path": "../../node_modules/react-element-to-jsx-string/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "react-element-to-jsx-string/dist/esm/index.js"
+        },
+        {
+          "path": "src/docs/lib/captions.ts",
+          "kind": "import-statement",
+          "original": "../captions"
+        },
+        {
+          "path": "src/docs/lib/inspection/index.ts",
+          "kind": "import-statement",
+          "original": "../inspection"
+        },
+        {
+          "path": "src/docs/lib/isHtmlTag.ts",
+          "kind": "import-statement",
+          "original": "../isHtmlTag"
+        },
+        {
+          "path": "src/docs/lib/defaultValues/generateArray.ts",
+          "kind": "import-statement",
+          "original": "./generateArray"
+        },
+        {
+          "path": "src/docs/lib/defaultValues/generateObject.ts",
+          "kind": "import-statement",
+          "original": "./generateObject"
+        },
+        {
+          "path": "src/docs/lib/defaultValues/prettyIdentifier.ts",
+          "kind": "import-statement",
+          "original": "./prettyIdentifier"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/lib/defaultValues/index.ts": {
+      "bytes": 82,
+      "imports": [
+        {
+          "path": "src/docs/lib/defaultValues/createDefaultValue.ts",
+          "kind": "import-statement",
+          "original": "./createDefaultValue"
+        },
+        {
+          "path": "src/docs/lib/defaultValues/createFromRawDefaultProp.ts",
+          "kind": "import-statement",
+          "original": "./createFromRawDefaultProp"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/propTypes/generateFuncSignature.ts": {
+      "bytes": 1446,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/docs/propTypes/createType.ts": {
+      "bytes": 11016,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/docs/lib/captions.ts",
+          "kind": "import-statement",
+          "original": "../lib/captions"
+        },
+        {
+          "path": "src/docs/lib/generateCode.ts",
+          "kind": "import-statement",
+          "original": "../lib/generateCode"
+        },
+        {
+          "path": "src/docs/lib/inspection/index.ts",
+          "kind": "import-statement",
+          "original": "../lib/inspection"
+        },
+        {
+          "path": "src/docs/lib/isHtmlTag.ts",
+          "kind": "import-statement",
+          "original": "../lib/isHtmlTag"
+        },
+        {
+          "path": "src/docs/propTypes/generateFuncSignature.ts",
+          "kind": "import-statement",
+          "original": "./generateFuncSignature"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/propTypes/rawDefaultPropResolvers.ts": {
+      "bytes": 1338,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/docs/lib/captions.ts",
+          "kind": "import-statement",
+          "original": "../lib/captions"
+        },
+        {
+          "path": "src/docs/lib/defaultValues/index.ts",
+          "kind": "import-statement",
+          "original": "../lib/defaultValues"
+        },
+        {
+          "path": "src/docs/lib/defaultValues/prettyIdentifier.ts",
+          "kind": "import-statement",
+          "original": "../lib/defaultValues/prettyIdentifier"
+        },
+        {
+          "path": "src/docs/lib/inspection/index.ts",
+          "kind": "import-statement",
+          "original": "../lib/inspection"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/propTypes/sortProps.ts": {
+      "bytes": 609,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/docs/propTypes/handleProp.ts": {
+      "bytes": 1564,
+      "imports": [
+        {
+          "path": "src/docs/lib/defaultValues/index.ts",
+          "kind": "import-statement",
+          "original": "../lib/defaultValues"
+        },
+        {
+          "path": "src/docs/propTypes/createType.ts",
+          "kind": "import-statement",
+          "original": "./createType"
+        },
+        {
+          "path": "src/docs/propTypes/rawDefaultPropResolvers.ts",
+          "kind": "import-statement",
+          "original": "./rawDefaultPropResolvers"
+        },
+        {
+          "path": "src/docs/propTypes/sortProps.ts",
+          "kind": "import-statement",
+          "original": "./sortProps"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/typeScript/handleProp.ts": {
+      "bytes": 982,
+      "imports": [
+        {
+          "path": "src/docs/lib/defaultValues/index.ts",
+          "kind": "import-statement",
+          "original": "../lib/defaultValues"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/extractProps.ts": {
+      "bytes": 1163,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/docs/lib/componentTypes.ts",
+          "kind": "import-statement",
+          "original": "./docs/lib/componentTypes"
+        },
+        {
+          "path": "src/docs/propTypes/handleProp.ts",
+          "kind": "import-statement",
+          "original": "./docs/propTypes/handleProp"
+        },
+        {
+          "path": "src/docs/typeScript/handleProp.ts",
+          "kind": "import-statement",
+          "original": "./docs/typeScript/handleProp"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/extractArgTypes.ts": {
+      "bytes": 942,
+      "imports": [
+        {
+          "path": "src/extractProps.ts",
+          "kind": "import-statement",
+          "original": "./extractProps"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/entry-preview-argtypes.ts": {
+      "bytes": 449,
+      "imports": [
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/extractArgTypes.ts",
+          "kind": "import-statement",
+          "original": "./extractArgTypes"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/portable-stories.tsx": {
+      "bytes": 5999,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/entry-preview.tsx",
+          "kind": "import-statement",
+          "original": "./entry-preview"
+        },
+        {
+          "path": "src/entry-preview-argtypes.ts",
+          "kind": "import-statement",
+          "original": "./entry-preview-argtypes"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/jsxDecorator.tsx": {
+      "bytes": 8868,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/client-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/react-element-to-jsx-string/dist/esm/index.js",
+          "kind": "import-statement",
+          "original": "react-element-to-jsx-string/dist/esm/index.js"
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/docs/lib/componentTypes.ts",
+          "kind": "import-statement",
+          "original": "./lib/componentTypes"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/docs/applyDecorators.ts": {
+      "bytes": 869,
+      "imports": [
+        {
+          "path": "src/applyDecorators.ts",
+          "kind": "import-statement",
+          "original": "../applyDecorators"
+        },
+        {
+          "path": "src/docs/jsxDecorator.tsx",
+          "kind": "import-statement",
+          "original": "./jsxDecorator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/entry-preview-docs.ts": {
+      "bytes": 464,
+      "imports": [
+        {
+          "path": "src/docs/jsxDecorator.tsx",
+          "kind": "import-statement",
+          "original": "./docs/jsxDecorator"
+        },
+        {
+          "path": "src/docs/applyDecorators.ts",
+          "kind": "import-statement",
+          "original": "./docs/applyDecorators"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preview.tsx": {
+      "bytes": 4092,
+      "imports": [
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/entry-preview.tsx",
+          "kind": "import-statement",
+          "original": "./entry-preview"
+        },
+        {
+          "path": "src/entry-preview-argtypes.ts",
+          "kind": "import-statement",
+          "original": "./entry-preview-argtypes"
+        },
+        {
+          "path": "src/entry-preview-docs.ts",
+          "kind": "import-statement",
+          "original": "./entry-preview-docs"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 162,
+      "imports": [
+        {
+          "path": "src/globals.ts",
+          "kind": "import-statement",
+          "original": "./globals"
+        },
+        {
+          "path": "src/public-types.ts",
+          "kind": "import-statement",
+          "original": "./public-types"
+        },
+        {
+          "path": "src/portable-stories.tsx",
+          "kind": "import-statement",
+          "original": "./portable-stories"
+        },
+        {
+          "path": "src/preview.tsx",
+          "kind": "import-statement",
+          "original": "./preview"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/entry-preview-rsc.tsx": {
+      "bytes": 62,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/playwright.ts": {
+      "bytes": 76,
+      "imports": [
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-M77NQZM3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-34HS64JJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-FMVW4CIJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-OCTWNRZO.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-DDIRQRCA.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-7SRU6CYS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-SL3VIQZ3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "INTERNAL_DEFAULT_PROJECT_ANNOTATIONS",
+        "__definePreview",
+        "composeStories",
+        "composeStory",
+        "setProjectAnnotations"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/globals.ts": {
+          "bytesInOutput": 139
+        },
+        "src/index.ts": {
+          "bytesInOutput": 0
+        },
+        "src/portable-stories.tsx": {
+          "bytesInOutput": 1476
+        }
+      },
+      "bytes": 2234
+    },
+    "dist/preview.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-M77NQZM3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-34HS64JJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-FMVW4CIJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-OCTWNRZO.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-DDIRQRCA.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-7SRU6CYS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-SL3VIQZ3.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "__definePreview"
+      ],
+      "entryPoint": "src/preview.tsx",
+      "inputs": {},
+      "bytes": 379
+    },
+    "dist/_browser-chunks/chunk-M77NQZM3.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-34HS64JJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-FMVW4CIJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-OCTWNRZO.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/csf",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "__definePreview"
+      ],
+      "inputs": {
+        "src/preview.tsx": {
+          "bytesInOutput": 632
+        }
+      },
+      "bytes": 886
+    },
+    "dist/entry-preview.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-34HS64JJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-DDIRQRCA.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-SL3VIQZ3.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "applyDecorators",
+        "beforeAll",
+        "decorators",
+        "mount",
+        "parameters",
+        "render",
+        "renderToCanvas"
+      ],
+      "entryPoint": "src/entry-preview.tsx",
+      "inputs": {},
+      "bytes": 359
+    },
+    "dist/_browser-chunks/chunk-34HS64JJ.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-DDIRQRCA.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-SL3VIQZ3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/test",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-dom/test-utils",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/react-dom-shim",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "exports": [
+        "beforeAll",
+        "decorators",
+        "entry_preview_exports",
+        "mount",
+        "parameters",
+        "render",
+        "renderToCanvas"
+      ],
+      "inputs": {
+        "src/entry-preview.tsx": {
+          "bytesInOutput": 2478
+        },
+        "src/act-compat.ts": {
+          "bytesInOutput": 1786
+        },
+        "src/render.tsx": {
+          "bytesInOutput": 312
+        },
+        "src/renderToCanvas.tsx": {
+          "bytesInOutput": 2102
+        },
+        "src/mount.ts": {
+          "bytesInOutput": 141
+        }
+      },
+      "bytes": 7178
+    },
+    "dist/entry-preview-argtypes.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-FMVW4CIJ.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-7SRU6CYS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-SL3VIQZ3.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "argTypesEnhancers",
+        "parameters"
+      ],
+      "entryPoint": "src/entry-preview-argtypes.ts",
+      "inputs": {},
+      "bytes": 227
+    },
+    "dist/_browser-chunks/chunk-FMVW4CIJ.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-7SRU6CYS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-SL3VIQZ3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "argTypesEnhancers",
+        "entry_preview_argtypes_exports",
+        "parameters"
+      ],
+      "inputs": {
+        "../../node_modules/estraverse/estraverse.js": {
+          "bytesInOutput": 19820
+        },
+        "../../node_modules/esutils/lib/ast.js": {
+          "bytesInOutput": 3105
+        },
+        "../../node_modules/esutils/lib/code.js": {
+          "bytesInOutput": 27841
+        },
+        "../../node_modules/esutils/lib/keyword.js": {
+          "bytesInOutput": 3732
+        },
+        "../../node_modules/esutils/lib/utils.js": {
+          "bytesInOutput": 247
+        },
+        "../../node_modules/escodegen/node_modules/source-map/lib/base64.js": {
+          "bytesInOutput": 899
+        },
+        "../../node_modules/escodegen/node_modules/source-map/lib/base64-vlq.js": {
+          "bytesInOutput": 1495
+        },
+        "../../node_modules/escodegen/node_modules/source-map/lib/util.js": {
+          "bytesInOutput": 7065
+        },
+        "../../node_modules/escodegen/node_modules/source-map/lib/array-set.js": {
+          "bytesInOutput": 1988
+        },
+        "../../node_modules/escodegen/node_modules/source-map/lib/mapping-list.js": {
+          "bytesInOutput": 1213
+        },
+        "../../node_modules/escodegen/node_modules/source-map/lib/source-map-generator.js": {
+          "bytesInOutput": 9106
+        },
+        "../../node_modules/escodegen/node_modules/source-map/lib/binary-search.js": {
+          "bytesInOutput": 1236
+        },
+        "../../node_modules/escodegen/node_modules/source-map/lib/quick-sort.js": {
+          "bytesInOutput": 896
+        },
+        "../../node_modules/escodegen/node_modules/source-map/lib/source-map-consumer.js": {
+          "bytesInOutput": 21799
+        },
+        "../../node_modules/escodegen/node_modules/source-map/lib/source-node.js": {
+          "bytesInOutput": 8231
+        },
+        "../../node_modules/escodegen/node_modules/source-map/source-map.js": {
+          "bytesInOutput": 352
+        },
+        "../../node_modules/escodegen/package.json": {
+          "bytesInOutput": 1859
+        },
+        "../../node_modules/escodegen/escodegen.js": {
+          "bytesInOutput": 65259
+        },
+        "../../node_modules/acorn/dist/acorn.js": {
+          "bytesInOutput": 168904
+        },
+        "../../node_modules/acorn-jsx/xhtml.js": {
+          "bytesInOutput": 5636
+        },
+        "../../node_modules/acorn-jsx/index.js": {
+          "bytesInOutput": 14787
+        },
+        "../../node_modules/html-tags/html-tags.json": {
+          "bytesInOutput": 1831
+        },
+        "../../node_modules/html-tags/index.js": {
+          "bytesInOutput": 167
+        },
+        "src/entry-preview-argtypes.ts": {
+          "bytesInOutput": 387
+        },
+        "src/extractProps.ts": {
+          "bytesInOutput": 790
+        },
+        "src/docs/lib/defaultValues/createDefaultValue.ts": {
+          "bytesInOutput": 1662
+        },
+        "src/docs/lib/captions.ts": {
+          "bytesInOutput": 164
+        },
+        "src/docs/lib/generateCode.ts": {
+          "bytesInOutput": 1144
+        },
+        "../../node_modules/ts-dedent/esm/index.js": {
+          "bytesInOutput": 1350
+        },
+        "src/docs/lib/inspection/index.ts": {
+          "bytesInOutput": 0
+        },
+        "src/docs/lib/inspection/acornParser.ts": {
+          "bytesInOutput": 4444
+        },
+        "../../node_modules/acorn-walk/dist/walk.mjs": {
+          "bytesInOutput": 8521
+        },
+        "src/docs/lib/inspection/inspectValue.ts": {
+          "bytesInOutput": 151
+        },
+        "src/docs/lib/isHtmlTag.ts": {
+          "bytesInOutput": 156
+        },
+        "src/docs/lib/defaultValues/generateArray.ts": {
+          "bytesInOutput": 433
+        },
+        "src/docs/lib/defaultValues/generateObject.ts": {
+          "bytesInOutput": 503
+        },
+        "src/docs/lib/defaultValues/prettyIdentifier.ts": {
+          "bytesInOutput": 560
+        },
+        "src/docs/lib/defaultValues/index.ts": {
+          "bytesInOutput": 0
+        },
+        "src/docs/lib/defaultValues/createFromRawDefaultProp.ts": {
+          "bytesInOutput": 3771
+        },
+        "../../node_modules/es-toolkit/dist/predicate/index.mjs": {
+          "bytesInOutput": 0
+        },
+        "../../node_modules/es-toolkit/dist/predicate/isPlainObject.mjs": {
+          "bytesInOutput": 298
+        },
+        "../../node_modules/es-toolkit/dist/predicate/isFunction.mjs": {
+          "bytesInOutput": 68
+        },
+        "../../node_modules/es-toolkit/dist/predicate/isString.mjs": {
+          "bytesInOutput": 64
+        },
+        "src/docs/propTypes/createType.ts": {
+          "bytesInOutput": 8481
+        },
+        "src/docs/propTypes/generateFuncSignature.ts": {
+          "bytesInOutput": 1006
+        },
+        "src/docs/propTypes/rawDefaultPropResolvers.ts": {
+          "bytesInOutput": 723
+        },
+        "src/docs/propTypes/sortProps.ts": {
+          "bytesInOutput": 240
+        },
+        "src/docs/propTypes/handleProp.ts": {
+          "bytesInOutput": 1031
+        },
+        "src/docs/typeScript/handleProp.ts": {
+          "bytesInOutput": 688
+        },
+        "src/extractArgTypes.ts": {
+          "bytesInOutput": 641
+        }
+      },
+      "bytes": 407682
+    },
+    "dist/entry-preview-docs.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-OCTWNRZO.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-DDIRQRCA.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-7SRU6CYS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-SL3VIQZ3.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "applyDecorators",
+        "decorators",
+        "parameters"
+      ],
+      "entryPoint": "src/entry-preview-docs.ts",
+      "inputs": {},
+      "bytes": 297
+    },
+    "dist/_browser-chunks/chunk-OCTWNRZO.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-DDIRQRCA.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-7SRU6CYS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_browser-chunks/chunk-SL3VIQZ3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/client-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/docs-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "applyDecorators",
+        "decorators",
+        "entry_preview_docs_exports",
+        "parameters"
+      ],
+      "inputs": {
+        "src/entry-preview-docs.ts": {
+          "bytesInOutput": 359
+        },
+        "src/docs/jsxDecorator.tsx": {
+          "bytesInOutput": 4676
+        },
+        "src/docs/applyDecorators.ts": {
+          "bytesInOutput": 296
+        }
+      },
+      "bytes": 5760
+    },
+    "dist/_browser-chunks/chunk-DDIRQRCA.js": {
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "applyDecorators"
+      ],
+      "inputs": {
+        "src/applyDecorators.ts": {
+          "bytesInOutput": 222
+        }
+      },
+      "bytes": 279
+    },
+    "dist/_browser-chunks/chunk-7SRU6CYS.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-SL3VIQZ3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "isForwardRef",
+        "isMemo",
+        "reactElementToJsxString"
+      ],
+      "inputs": {
+        "../../node_modules/@base2/pretty-print-object/dist/index.js": {
+          "bytesInOutput": 4936
+        },
+        "../../node_modules/react-element-to-jsx-string/node_modules/react-is/cjs/react-is.production.min.js": {
+          "bytesInOutput": 3205
+        },
+        "../../node_modules/react-element-to-jsx-string/node_modules/react-is/cjs/react-is.development.js": {
+          "bytesInOutput": 6625
+        },
+        "../../node_modules/react-element-to-jsx-string/node_modules/react-is/index.js": {
+          "bytesInOutput": 309
+        },
+        "src/docs/lib/componentTypes.ts": {
+          "bytesInOutput": 163
+        },
+        "../../node_modules/is-plain-object/dist/is-plain-object.mjs": {
+          "bytesInOutput": 319
+        },
+        "../../node_modules/react-element-to-jsx-string/dist/esm/index.js": {
+          "bytesInOutput": 20892
+        }
+      },
+      "bytes": 37096
+    },
+    "dist/entry-preview-rsc.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-SL3VIQZ3.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "parameters"
+      ],
+      "entryPoint": "src/entry-preview-rsc.tsx",
+      "inputs": {
+        "src/entry-preview-rsc.tsx": {
+          "bytesInOutput": 49
+        }
+      },
+      "bytes": 150
+    },
+    "dist/playwright.js": {
+      "imports": [
+        {
+          "path": "dist/_browser-chunks/chunk-SL3VIQZ3.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "createTest"
+      ],
+      "entryPoint": "src/playwright.ts",
+      "inputs": {
+        "src/playwright.ts": {
+          "bytesInOutput": 62
+        }
+      },
+      "bytes": 179
+    },
+    "dist/_browser-chunks/chunk-SL3VIQZ3.js": {
+      "imports": [],
+      "exports": [
+        "__commonJS",
+        "__export",
+        "__toESM"
+      ],
+      "inputs": {},
+      "bytes": 1457
+    }
+  }
+}

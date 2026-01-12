@@ -94,7 +94,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
   } = props;
 
   const length = useMemo(() => (index ? Object.keys(index).length : 0), [index]);
-  const indicatorRef = useRef<HTMLElement>(null);
+  const indicatorRef = useRef(null);
 
   const isMain = refId === DEFAULT_REF_ID;
   const isLoadingInjected =

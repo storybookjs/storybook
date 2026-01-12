@@ -1,7 +1,7 @@
 import { opacify } from 'polished';
 
 import { animation, easing } from './animation';
-import { background, color, typography } from './base';
+import { background, color, tokens, typography } from './base';
 import { themes } from './create';
 import { chromeDark, chromeLight, create as createSyntax } from './modules/syntax';
 import type { Color, StorybookTheme, ThemeVars, ThemeVarsColors } from './types';
@@ -102,6 +102,7 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
     inputBorder,
     inputTextColor,
     inputBorderRadius,
+    highlightOpacity,
     brandTitle,
     brandUrl,
     brandImage,
@@ -114,6 +115,9 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
     ...rest,
 
     base,
+
+    ...(base === 'dark' ? tokens.dark : tokens.light),
+
     color: createColors(inherit),
     background: {
       app: appBg,
@@ -127,6 +131,7 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
       warning: background.warning,
       critical: background.critical,
     },
+
     typography: {
       fonts: {
         base: fontBase,
@@ -155,6 +160,9 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
       selectedBackground: booleanSelectedBg || inputBg,
     },
 
+    // Highlight styles
+    highlightOpacity: highlightOpacity ?? 0.85,
+
     // UI
     layoutMargin: 10,
     appBorderColor,
@@ -175,14 +183,14 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
     },
 
     code: createSyntax({
-      colors: base === 'light' ? lightSyntaxColors : darkSyntaxColors,
+      colors: base === 'dark' ? darkSyntaxColors : lightSyntaxColors,
       mono: fontCode,
     }),
 
     // Addon actions theme
     // API example https://github.com/storybookjs/react-inspector/blob/master/src/styles/themes/chromeLight.tsx
     addonActionsTheme: {
-      ...(base === 'light' ? chromeLight : chromeDark),
+      ...(base === 'dark' ? chromeDark : chromeLight),
 
       BASE_FONT_FAMILY: fontCode,
       BASE_FONT_SIZE: typography.size.s2 - 1,

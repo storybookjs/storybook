@@ -1,0 +1,5 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/lib/create-storybook[39m
+Bundled in [33m143 ms[39m
+Generated types in [33m3.61 ms[39m

@@ -1,0 +1,153 @@
+{
+  "inputs": {
+    "src/constants.ts": {
+      "bytes": 79,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/rollup-based-plugin.ts": {
+      "bytes": 1326,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 1411,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "unplugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/constants.ts",
+          "kind": "import-statement",
+          "original": "./constants"
+        },
+        {
+          "path": "src/rollup-based-plugin.ts",
+          "kind": "import-statement",
+          "original": "./rollup-based-plugin"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/webpack-loader.ts": {
+      "bytes": 1412,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "unplugin",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "esbuild",
+        "rollup",
+        "unplugin",
+        "unpluginFactory",
+        "vite",
+        "webpack"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 921
+        },
+        "src/constants.ts": {
+          "bytesInOutput": 70
+        },
+        "src/rollup-based-plugin.ts": {
+          "bytesInOutput": 887
+        }
+      },
+      "bytes": 2672
+    },
+    "dist/webpack-loader.js": {
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/csf-tools",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "default"
+      ],
+      "entryPoint": "src/webpack-loader.ts",
+      "inputs": {
+        "src/webpack-loader.ts": {
+          "bytesInOutput": 939
+        }
+      },
+      "bytes": 1639
+    }
+  }
+}

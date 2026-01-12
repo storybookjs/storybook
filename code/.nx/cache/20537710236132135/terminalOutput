@@ -1,0 +1,5 @@
+[2m> [22myarn prep --reset
+
+Building [92mcode/renderers/web-components[39m
+Bundled in [33m80 ms[39m
+Generated type mappers in [33m19 ms[39m

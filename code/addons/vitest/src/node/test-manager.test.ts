@@ -1,8 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
-import { createVitest as actualCreateVitest } from 'vitest/node';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
-import { experimental_MockUniversalStore } from 'storybook/internal/core-server';
+import { Tag, experimental_MockUniversalStore } from 'storybook/internal/core-server';
 import type {
   Options,
   StatusStoreByTypeId,
@@ -43,14 +42,21 @@ const vitest = vi.hoisted(() => ({
   },
 }));
 
+const mockCreateVitest = vi.fn();
+
 vi.mock('vitest/node', async (importOriginal) => ({
   ...(await importOriginal()),
-  createVitest: vi.fn(() => Promise.resolve(vitest)),
+  createVitest: mockCreateVitest,
 }));
 
-const createVitest = vi.mocked(actualCreateVitest);
+// Use the mock function directly
+const createVitest = mockCreateVitest;
 
 const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
+
+beforeEach(() => {
+  createVitest.mockResolvedValue(vitest);
+});
 const mockChannel = new Channel({ transport });
 const mockStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(
   {
@@ -109,7 +115,7 @@ global.fetch = vi.fn().mockResolvedValue({
             name: 'One',
             title: 'story/one',
             importPath: 'path/to/file',
-            tags: ['test'],
+            tags: [Tag.TEST],
           },
           'another--one': {
             type: 'story',
@@ -118,7 +124,7 @@ global.fetch = vi.fn().mockResolvedValue({
             name: 'One',
             title: 'another/one',
             importPath: 'path/to/another/file',
-            tags: ['test'],
+            tags: [Tag.TEST],
           },
           'parent--story': {
             type: 'story',
@@ -127,17 +133,17 @@ global.fetch = vi.fn().mockResolvedValue({
             name: 'Parent story',
             title: 'parent/story',
             importPath: 'path/to/parent/file',
-            tags: ['test'],
+            tags: [Tag.TEST],
           },
           'parent--story:test': {
             type: 'story',
-            subtype: 'test',
+            subtype: Tag.TEST,
             id: 'parent--story:test',
             name: 'Test name',
             title: 'parent/story',
             parent: 'parent--story',
             importPath: 'path/to/parent/file',
-            tags: ['test', 'test-fn'],
+            tags: [Tag.TEST, Tag.TEST_FN],
           },
         },
       } as StoryIndex)
@@ -272,7 +278,7 @@ describe('TestManager', () => {
 
     expect(createVitest).toHaveBeenCalledTimes(1);
     expect(createVitest).toHaveBeenCalledWith(
-      'test',
+      Tag.TEST,
       expect.objectContaining({
         coverage: expect.objectContaining({ enabled: true }),
       })

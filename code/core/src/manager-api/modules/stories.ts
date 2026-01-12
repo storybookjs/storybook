@@ -121,6 +121,13 @@ export interface SubAPI {
    */
   getCurrentStoryData: () => API_LeafEntry;
   /**
+   * Returns the current story index.
+   *
+   * @returns {API_PreparedStoryIndex | undefined} The current story index, or undefined if not yet
+   *   loaded.
+   */
+  getIndex: () => API_PreparedStoryIndex | undefined;
+  /**
    * Sets the prepared story index to the given value.
    *
    * @param {API_PreparedStoryIndex} index - The prepared story index to set.
@@ -342,6 +349,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const { storyId, refId } = store.getState();
 
       return api.getData(storyId, refId);
+    },
+    getIndex: () => {
+      const { internal_index } = store.getState();
+      return internal_index;
     },
     getParameters: (storyIdOrCombo, parameterName) => {
       const { storyId, refId } =
@@ -607,13 +618,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     ): Promise<void> => {
       if (!ref) {
         const { index, filteredIndex } = store.getState();
-        if (index) {
+        if (index && index[storyId]) {
           index[storyId] = {
             ...index[storyId],
             ...update,
           } as API_StoryEntry;
         }
-        if (filteredIndex) {
+        if (filteredIndex && filteredIndex[storyId]) {
           filteredIndex[storyId] = {
             ...filteredIndex[storyId],
             ...update,
@@ -624,14 +635,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         }
       } else {
         const { id: refId, index, filteredIndex }: any = ref;
-        index[storyId] = {
-          ...index[storyId],
-          ...update,
-        } as API_StoryEntry;
-        filteredIndex[storyId] = {
-          ...filteredIndex[storyId],
-          ...update,
-        } as API_StoryEntry;
+        if (index && index[storyId]) {
+          index[storyId] = {
+            ...index[storyId],
+            ...update,
+          } as API_StoryEntry;
+        }
+        if (filteredIndex && filteredIndex[storyId]) {
+          filteredIndex[storyId] = {
+            ...filteredIndex[storyId],
+            ...update,
+          } as API_StoryEntry;
+        }
         await fullAPI.updateRef(refId, { index, filteredIndex });
       }
     },

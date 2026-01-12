@@ -16,8 +16,10 @@ interface InternalLayoutState {
   isDragging: boolean;
 }
 
-interface ManagerLayoutState
-  extends Pick<API_Layout, 'navSize' | 'bottomPanelHeight' | 'rightPanelWidth' | 'panelPosition'> {
+interface ManagerLayoutState extends Pick<
+  API_Layout,
+  'navSize' | 'bottomPanelHeight' | 'rightPanelWidth' | 'panelPosition'
+> {
   viewMode: API_ViewMode;
 }
 
@@ -167,39 +169,35 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       showPanel={showPanel}
     >
       {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
-      {isDesktop && (
-        <>
+      <>
+        {isDesktop && (
           <SidebarContainer>
             <Drag ref={sidebarResizerRef} />
             {slots.slotSidebar}
           </SidebarContainer>
-
-          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
-
-          {showPanel && (
-            <PanelContainer position={panelPosition}>
-              <Drag
-                orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
-                position={panelPosition === 'bottom' ? 'left' : 'right'}
-                ref={panelResizerRef}
-              />
-              {slots.slotPanel}
-            </PanelContainer>
-          )}
-        </>
-      )}
-
-      {isMobile && (
-        <>
+        )}
+        {isMobile && (
           <OrderedMobileNavigation
             menu={slots.slotSidebar}
             panel={slots.slotPanel}
             showPanel={showPanel}
           />
-          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
-          <Notifications />
-        </>
-      )}
+        )}
+
+        <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
+
+        {isDesktop && showPanel && (
+          <PanelContainer position={panelPosition}>
+            <Drag
+              orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
+              position={panelPosition === 'bottom' ? 'left' : 'right'}
+              ref={panelResizerRef}
+            />
+            {slots.slotPanel}
+          </PanelContainer>
+        )}
+        {isMobile && <Notifications />}
+      </>
     </LayoutContainer>
   );
 };
@@ -258,6 +256,8 @@ const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
 }));
 
 const PagesContainer = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
   gridRowStart: 'sidebar-start',
   gridRowEnd: '-1',
   gridColumnStart: 'sidebar-end',

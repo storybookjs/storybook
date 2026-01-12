@@ -6,10 +6,14 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
+// eslint-disable-next-line depend/ban-dependencies
+import type { ResultPromise } from 'execa';
 import sort from 'semver/functions/sort.js';
 
+import type { ExecuteCommandOptions } from '../utils/command';
+import { executeCommand } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
-import { JsPackageManager } from './JsPackageManager';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
 
@@ -64,7 +68,7 @@ const NPM_ERROR_CODES = {
 };
 
 export class NPMProxy extends JsPackageManager {
-  readonly type = 'npm';
+  readonly type = PackageManagerName.NPM;
 
   installArgs: string[] | undefined;
 
@@ -72,13 +76,12 @@ export class NPMProxy extends JsPackageManager {
     return `npm run ${command}`;
   }
 
-  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
-    return `npx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
-  }
-
   async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      last: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;
@@ -95,31 +98,16 @@ export class NPMProxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  public runPackageCommandSync(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ): string {
-    return this.executeCommandSync({
-      command: 'npm',
-      args: ['exec', '--', command, ...args],
-      cwd,
-      stdio,
-    });
+  public getPackageCommand(args: string[]): string {
+    return `npx ${args.join(' ')}`;
   }
 
   public runPackageCommand(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ) {
-    return this.executeCommand({
-      command: 'npm',
-      args: ['exec', '--', command, ...args],
-      cwd,
-      stdio,
+    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
+  ): ResultPromise {
+    return executeCommand({
+      command: 'npx',
+      ...options,
     });
   }
 
@@ -129,10 +117,10 @@ export class NPMProxy extends JsPackageManager {
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
   ) {
-    return this.executeCommand({
+    return executeCommand({
       command: 'npm',
       args: [command, ...args],
-      cwd,
+      cwd: cwd ?? this.cwd,
       stdio,
     });
   }
@@ -140,7 +128,7 @@ export class NPMProxy extends JsPackageManager {
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     const exec = ({ packageDepth }: { packageDepth: number }) => {
       const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
-      return this.executeCommand({
+      return executeCommand({
         command: 'npm',
         args: ['ls', '--json', `--depth=${packageDepth}`, pipeToNull],
         env: {
@@ -152,21 +140,21 @@ export class NPMProxy extends JsPackageManager {
 
     try {
       const childProcess = await exec({ packageDepth: depth });
-      const commandResult = childProcess.stdout ?? '';
+      const commandResult = typeof childProcess.stdout === 'string' ? childProcess.stdout : '';
       const parsedOutput = JSON.parse(commandResult);
 
       return this.mapDependencies(parsedOutput, pattern);
-    } catch (e) {
+    } catch {
       // when --depth is higher than 0, npm can return a non-zero exit code
       // in case the user's project has peer dependency issues. So we try again with no depth
       try {
         const childProcess = await exec({ packageDepth: 0 });
-        const commandResult = childProcess.stdout ?? '';
+        const commandResult = typeof childProcess.stdout === 'string' ? childProcess.stdout : '';
         const parsedOutput = JSON.parse(commandResult);
 
         return this.mapDependencies(parsedOutput, pattern);
-      } catch (err) {
-        logger.debug(`An issue occurred while trying to find dependencies metadata using npm.`);
+      } catch (e) {
+        logger.debug(`Error finding installations for ${pattern.join(', ')}: ${String(e)}`);
         return undefined;
       }
     }
@@ -182,7 +170,7 @@ export class NPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
-    return this.executeCommand({
+    return executeCommand({
       command: 'npm',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       cwd: this.cwd,
@@ -191,14 +179,14 @@ export class NPMProxy extends JsPackageManager {
   }
 
   public async getRegistryURL() {
-    const process = this.executeCommand({
+    const process = executeCommand({
       command: 'npm',
       // "npm config" commands are not allowed in workspaces per default
       // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
       args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
     });
     const result = await process;
-    const url = (result.stdout ?? '').trim();
+    const url = (typeof result.stdout === 'string' ? result.stdout : '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
@@ -209,7 +197,7 @@ export class NPMProxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
-    return this.executeCommand({
+    return executeCommand({
       command: 'npm',
       args: ['install', ...args, ...this.getInstallArgs()],
       stdio: prompt.getPreferredStdio(),
@@ -223,12 +211,12 @@ export class NPMProxy extends JsPackageManager {
   ): Promise<T extends true ? string[] : string> {
     const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
     try {
-      const process = this.executeCommand({
+      const process = executeCommand({
         command: 'npm',
         args: ['info', packageName, ...args],
       });
       const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = typeof result.stdout === 'string' ? result.stdout : '';
 
       const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 

@@ -1,0 +1,228 @@
+{
+  "inputs": {
+    "src/plugins/docgen-handlers/actualNameHandler.ts": {
+      "bytes": 2233,
+      "imports": [
+        {
+          "path": "react-docgen",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/docgen-resolver.ts": {
+      "bytes": 2432,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "resolve",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/react-docgen.ts": {
+      "bytes": 3944,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@rollup/pluginutils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "empathic/find",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-docgen",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tsconfig-paths",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/plugins/docgen-handlers/actualNameHandler.ts",
+          "kind": "import-statement",
+          "original": "./docgen-handlers/actualNameHandler"
+        },
+        {
+          "path": "src/plugins/docgen-resolver.ts",
+          "kind": "import-statement",
+          "original": "./docgen-resolver"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/preset.ts": {
+      "bytes": 1666,
+      "imports": [
+        {
+          "path": "@joshwooding/vite-plugin-react-docgen-typescript",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "src/plugins/react-docgen.ts",
+          "kind": "dynamic-import",
+          "original": "./plugins/react-docgen"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/node/index.ts": {
+      "bytes": 123,
+      "imports": [],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/preset.js": {
+      "imports": [
+        {
+          "path": "@joshwooding/vite-plugin-react-docgen-typescript",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "dist/_node-chunks/react-docgen-LXIMNXMC.js",
+          "kind": "dynamic-import"
+        }
+      ],
+      "exports": [
+        "core",
+        "viteFinal"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/preset.ts": {
+          "bytesInOutput": 1259
+        }
+      },
+      "bytes": 1929
+    },
+    "dist/node/index.js": {
+      "imports": [],
+      "exports": [
+        "defineMain"
+      ],
+      "entryPoint": "src/node/index.ts",
+      "inputs": {
+        "src/node/index.ts": {
+          "bytesInOutput": 49
+        }
+      },
+      "bytes": 716
+    },
+    "dist/_node-chunks/react-docgen-LXIMNXMC.js": {
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@rollup/pluginutils",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "empathic/find",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-docgen",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tsconfig-paths",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-docgen",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "resolve",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "getReactDocgenImporter",
+        "reactDocgen"
+      ],
+      "entryPoint": "src/plugins/react-docgen.ts",
+      "inputs": {
+        "src/plugins/react-docgen.ts": {
+          "bytesInOutput": 2819
+        },
+        "src/plugins/docgen-handlers/actualNameHandler.ts": {
+          "bytesInOutput": 1315
+        },
+        "src/plugins/docgen-resolver.ts": {
+          "bytesInOutput": 1529
+        }
+      },
+      "bytes": 6487
+    }
+  }
+}

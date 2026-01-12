@@ -1,38 +1,25 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Badge, Button, PopoverProvider } from 'storybook/internal/components';
-import type {
-  API_PreparedIndexEntry,
-  StoryIndex,
-  Tag,
-  TagsOptions,
-} from 'storybook/internal/types';
+import type { API_PreparedIndexEntry, StoryIndex, TagsOptions } from 'storybook/internal/types';
 
 import { BeakerIcon, DocumentIcon, FilterIcon, PlayHollowIcon } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
+import { Tag } from 'storybook/manager-api';
 import { color, styled } from 'storybook/theming';
 
 import { type Filter, type FilterFunction, TagsFilterPanel, groupByType } from './TagsFilterPanel';
 
 const TAGS_FILTER = 'tags-filter';
 
-const BUILT_IN_TAGS = new Set([
-  'dev',
-  'test',
-  'autodocs',
-  'attached-mdx',
-  'unattached-mdx',
-  'play-fn',
-  'test-fn',
-]);
+const BUILT_IN_TAGS = new Set<string>(Object.values(Tag));
 
-// Temporary to prevent regressions until TagFilterPanel can be refactored.
-const StyledIconButton = styled(Button)<{ active: boolean }>(({ active, theme }) => ({
+const StyledButton = styled(Button)<{ isHighlighted: boolean }>(({ isHighlighted, theme }) => ({
   '&:focus-visible': {
     outlineOffset: 4,
   },
-  ...(active && {
+  ...(isHighlighted && {
     background: theme.background.hoverable,
     color: theme.color.secondary,
   }),
@@ -51,10 +38,6 @@ const remove = (set: Set<string>, id: string) => {
 };
 const equal = (left: Set<string>, right: Set<string>) =>
   left.size === right.size && new Set([...left, ...right]).size === left.size;
-
-const Wrapper = styled.div({
-  position: 'relative',
-});
 
 const TagSelected = styled(Badge)(({ theme }) => ({
   position: 'absolute',
@@ -77,11 +60,10 @@ const TagSelected = styled(Badge)(({ theme }) => ({
 export interface TagsFilterProps {
   api: API;
   indexJson: StoryIndex;
-  isDevelopment: boolean;
   tagPresets: TagsOptions;
 }
 
-export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFilterProps) => {
+export const TagsFilter = ({ api, indexJson, tagPresets }: TagsFilterProps) => {
   const filtersById = useMemo<{ [id: string]: Filter }>(() => {
     const userTagsCounts = Object.values(indexJson.entries).reduce<{ [key: Tag]: number }>(
       (acc, entry) => {
@@ -125,8 +107,8 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
         icon: <PlayHollowIcon color={color.seafoam} />,
         ...withCount((entry: API_PreparedIndexEntry, excluded?: boolean) =>
           excluded
-            ? entry.type !== 'story' || !entry.tags?.includes('play-fn')
-            : entry.type === 'story' && !!entry.tags?.includes('play-fn')
+            ? entry.type !== 'story' || !entry.tags?.includes(Tag.PLAY_FN)
+            : entry.type === 'story' && !!entry.tags?.includes(Tag.PLAY_FN)
         ),
       },
       _test: {
@@ -228,11 +210,6 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
     [expanded, setExpanded]
   );
 
-  // Hide the entire UI if there are no tags and it's a built Storybook
-  if (Object.keys(filtersById).length === 0 && !isDevelopment) {
-    return null;
-  }
-
   return (
     <PopoverProvider
       placement="bottom"
@@ -248,7 +225,6 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
           toggleFilter={toggleFilter}
           setAllFilters={setAllFilters}
           resetFilters={resetFilters}
-          isDevelopment={isDevelopment}
           isDefaultSelection={
             equal(includedFilters, defaultIncluded) && equal(excludedFilters, defaultExcluded)
           }
@@ -256,18 +232,19 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
         />
       )}
     >
-      <StyledIconButton
+      <StyledButton
         key="tags"
         ariaLabel="Tag filters"
         ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
+        aria-haspopup="dialog"
         variant="ghost"
         padding="small"
-        active={tagsActive}
+        isHighlighted={tagsActive}
         onClick={handleToggleExpand}
       >
         <FilterIcon />
         {includedFilters.size + excludedFilters.size > 0 && <TagSelected />}
-      </StyledIconButton>
+      </StyledButton>
     </PopoverProvider>
   );
 };

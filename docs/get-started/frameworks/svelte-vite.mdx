@@ -1,63 +1,44 @@
 ---
-title: Storybook for Svelte & Vite
+title: Storybook for Svelte with Vite
 hideRendererSelector: true
 sidebar:
-  order: 8
-  title: Svelte & Vite
+  order: 9
+  title: Svelte (Vite)
 ---
 
 Storybook for Svelte & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for applications using [Svelte](https://svelte.dev/) built with [Vite](https://vitejs.dev/).
 
-## Requirements
+## Install
 
-* Svelte ≥ 5.0
-* Vite ≥ 5.0
+To install Storybook in an existing Svelte project, run this command in your project's root directory:
 
-## Getting started
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
-### In a project without Storybook
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
-Follow the prompts after running this command in your Svelte project's root directory:
+### Requirements
 
-{/* prettier-ignore-start */}
+<GetStartedVersions versions={[{
+  name: 'Svelte',
+  range: '≥ 5',
+  icon: '/images/logos/renderers/logo-svelte.svg'
+}, {
+  name: 'Vite',
+  range: '≥ 5',
+  icon: '/images/logos/builders/vite.svg'
+}]} />
 
-<CodeSnippets path="create-command.md" />
+## Run Storybook
 
-{/* prettier-ignore-end */}
+To run Storybook for a particular project, run the following:
 
-[More on getting started with Storybook.](../install.mdx)
+<CodeSnippets path="storybook-run-dev.md" />
 
-### In a project with Storybook
+To build Storybook, run:
 
-This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+<CodeSnippets path="build-storybook-production-mode.md" />
 
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-upgrade.md" />
-
-{/* prettier-ignore-end */}
-
-#### Automatic migration
-
-When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/svelte-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
-
-#### Manual migration
-
-First, install the framework:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="svelte-vite-install.md" />
-
-{/* prettier-ignore-end */}
-
-Then, update your `.storybook/main.js|ts` to change the framework property:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="svelte-vite-add-framework.md" />
-
-{/* prettier-ignore-end */}
+You will find the output in the configured `outputDir` (default is `storybook-static`).
 
 ## Writing native Svelte stories
 
@@ -81,7 +62,7 @@ Run the following command to install the addon.
 
 <Callout variant="info">
 
-  The CLI's [`add`](../../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../addons/install-addons.mdx#manual-installation) on how to install addons.
+  The CLI's [`add`](../../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../../addons/install-addons.mdx#manual-installation) on how to install addons.
 
 </Callout>
 
@@ -172,6 +153,25 @@ If you enabled automatic documentation generation with the `autodocs` story prop
 {/* prettier-ignore-start */ }
 
 <CodeSnippets path="svelte-csf-addon-tags.md" />
+
+{/* prettier-ignore-end */}
+
+## FAQ 
+### How do I manually install the Svelte framework?
+
+First, install the framework:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="svelte-vite-install.md" />
+
+{/* prettier-ignore-end */}
+
+Then, update your `.storybook/main.js|ts` to change the framework property:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="svelte-vite-add-framework.md" />
 
 {/* prettier-ignore-end */}
 

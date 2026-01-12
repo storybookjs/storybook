@@ -1,0 +1,150 @@
+{
+  "inputs": {
+    "src/node/index.ts": {
+      "bytes": 123,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/plugins/mock-sveltekit-stores.ts": {
+      "bytes": 554,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/vite-plugin.ts": {
+      "bytes": 157,
+      "imports": [
+        {
+          "path": "src/plugins/mock-sveltekit-stores.ts",
+          "kind": "import-statement",
+          "original": "./plugins/mock-sveltekit-stores"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/plugins/config-overrides.ts": {
+      "bytes": 302,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/preset.ts": {
+      "bytes": 1534,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-vite",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/svelte-vite/preset",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/plugins/config-overrides.ts",
+          "kind": "import-statement",
+          "original": "./plugins/config-overrides"
+        },
+        {
+          "path": "src/plugins/mock-sveltekit-stores.ts",
+          "kind": "import-statement",
+          "original": "./plugins/mock-sveltekit-stores"
+        },
+        {
+          "path": "./types",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/node/index.js": {
+      "imports": [],
+      "exports": [
+        "defineMain"
+      ],
+      "entryPoint": "src/node/index.ts",
+      "inputs": {
+        "src/node/index.ts": {
+          "bytesInOutput": 49
+        }
+      },
+      "bytes": 716
+    },
+    "dist/vite-plugin.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-KUAFJO6O.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "storybookSveltekitPlugin"
+      ],
+      "entryPoint": "src/vite-plugin.ts",
+      "inputs": {
+        "src/vite-plugin.ts": {
+          "bytesInOutput": 62
+        }
+      },
+      "bytes": 818
+    },
+    "dist/preset.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-KUAFJO6O.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/builder-vite",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/svelte-vite/preset",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "core",
+        "optimizeViteDeps",
+        "previewAnnotations",
+        "viteFinal"
+      ],
+      "entryPoint": "src/preset.ts",
+      "inputs": {
+        "src/preset.ts": {
+          "bytesInOutput": 1119
+        },
+        "src/plugins/config-overrides.ts": {
+          "bytesInOutput": 217
+        }
+      },
+      "bytes": 2176
+    },
+    "dist/_node-chunks/chunk-KUAFJO6O.js": {
+      "imports": [],
+      "exports": [
+        "mockSveltekitStores"
+      ],
+      "inputs": {
+        "src/plugins/mock-sveltekit-stores.ts": {
+          "bytesInOutput": 489
+        }
+      },
+      "bytes": 1185
+    }
+  }
+}

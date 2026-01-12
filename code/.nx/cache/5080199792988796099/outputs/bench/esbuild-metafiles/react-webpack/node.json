@@ -1,0 +1,377 @@
+{
+  "inputs": {
+    "src/types.ts": {
+      "bytes": 1489,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 362,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/cra-config.ts": {
+      "bytes": 1987,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/framework-preset-cra.ts": {
+      "bytes": 1282,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/cra-config.ts",
+          "kind": "import-statement",
+          "original": "./cra-config"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/framework-preset-react-docs.ts": {
+      "bytes": 2010,
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/react-docgen-typescript-plugin",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/resolve.mjs": {
+      "bytes": 971,
+      "imports": [
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/walk.mjs": {
+      "bytes": 535,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/resolve.mjs",
+          "kind": "import-statement",
+          "original": "empathic/resolve"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/find.mjs": {
+      "bytes": 2033,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/walk.mjs",
+          "kind": "import-statement",
+          "original": "empathic/walk"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/loaders/docgen-resolver.ts": {
+      "bytes": 2432,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "resolve",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/loaders/react-docgen-loader.ts": {
+      "bytes": 5220,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/find.mjs",
+          "kind": "import-statement",
+          "original": "empathic/find"
+        },
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-docgen",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tsconfig-paths",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/loaders/docgen-resolver.ts",
+          "kind": "import-statement",
+          "original": "./docgen-resolver"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "addons"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 234
+        }
+      },
+      "bytes": 880
+    },
+    "dist/framework-preset-cra.js": {
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "webpackFinal"
+      ],
+      "entryPoint": "src/framework-preset-cra.ts",
+      "inputs": {
+        "src/framework-preset-cra.ts": {
+          "bytesInOutput": 931
+        },
+        "src/cra-config.ts": {
+          "bytesInOutput": 1580
+        }
+      },
+      "bytes": 3232
+    },
+    "dist/framework-preset-react-docs.js": {
+      "imports": [
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/react-docgen-typescript-plugin",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "exports": [
+        "webpackFinal"
+      ],
+      "entryPoint": "src/framework-preset-react-docs.ts",
+      "inputs": {
+        "src/framework-preset-react-docs.ts": {
+          "bytesInOutput": 1772
+        }
+      },
+      "bytes": 2446
+    },
+    "dist/loaders/react-docgen-loader.js": {
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "magic-string",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-docgen",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "tsconfig-paths",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "resolve",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "default",
+        "getReactDocgenImporter"
+      ],
+      "entryPoint": "src/loaders/react-docgen-loader.ts",
+      "inputs": {
+        "src/loaders/react-docgen-loader.ts": {
+          "bytesInOutput": 4090
+        },
+        "../../node_modules/empathic/find.mjs": {
+          "bytesInOutput": 272
+        },
+        "../../node_modules/empathic/walk.mjs": {
+          "bytesInOutput": 289
+        },
+        "../../node_modules/empathic/resolve.mjs": {
+          "bytesInOutput": 156
+        },
+        "src/loaders/docgen-resolver.ts": {
+          "bytesInOutput": 1532
+        }
+      },
+      "bytes": 7376
+    }
+  }
+}

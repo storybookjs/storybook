@@ -1,0 +1,10 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/frameworks/svelte-vite[39m
+(node:44107) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✅ Generated types for [36mframeworks/svelte-vite/src/node/index.ts[39m
+✅ Generated types for [36mframeworks/svelte-vite/src/preset.ts[39m
+✅ Generated types for [36mframeworks/svelte-vite/src/index.ts[39m
+Bundled in [33m127 ms[39m
+Generated types in [33m4.73 s[39m

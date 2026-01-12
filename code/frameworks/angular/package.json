@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "10.1.0-alpha.10",
+  "version": "10.2.0-alpha.14",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -56,10 +56,6 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
@@ -82,26 +78,25 @@
     "@angular/platform-browser": "^19.1.1",
     "@angular/platform-browser-dynamic": "^19.1.1",
     "@storybook/core-webpack": "workspace:*",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "rimraf": "^6.0.1",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "webpack": "5",
     "zone.js": "^0.15.0"
   },
   "peerDependencies": {
-    "@angular-devkit/architect": ">=0.1800.0 < 0.2100.0",
-    "@angular-devkit/build-angular": ">=18.0.0 < 21.0.0",
-    "@angular-devkit/core": ">=18.0.0 < 21.0.0",
-    "@angular/animations": ">=18.0.0 < 21.0.0",
-    "@angular/cli": ">=18.0.0 < 21.0.0",
-    "@angular/common": ">=18.0.0 < 21.0.0",
-    "@angular/compiler": ">=18.0.0 < 21.0.0",
-    "@angular/compiler-cli": ">=18.0.0 < 21.0.0",
-    "@angular/core": ">=18.0.0 < 21.0.0",
-    "@angular/forms": ">=18.0.0 < 21.0.0",
-    "@angular/platform-browser": ">=18.0.0 < 21.0.0",
-    "@angular/platform-browser-dynamic": ">=18.0.0 < 21.0.0",
+    "@angular-devkit/architect": ">=0.1800.0 < 0.2200.0",
+    "@angular-devkit/build-angular": ">=18.0.0 < 22.0.0",
+    "@angular-devkit/core": ">=18.0.0 < 22.0.0",
+    "@angular/animations": ">=18.0.0 < 22.0.0",
+    "@angular/cli": ">=18.0.0 < 22.0.0",
+    "@angular/common": ">=18.0.0 < 22.0.0",
+    "@angular/compiler": ">=18.0.0 < 22.0.0",
+    "@angular/compiler-cli": ">=18.0.0 < 22.0.0",
+    "@angular/core": ">=18.0.0 < 22.0.0",
+    "@angular/platform-browser": ">=18.0.0 < 22.0.0",
+    "@angular/platform-browser-dynamic": ">=18.0.0 < 22.0.0",
     "rxjs": "^6.5.3 || ^7.4.0",
     "storybook": "workspace:^",
     "typescript": "^4.9.0 || ^5.0.0",

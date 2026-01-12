@@ -1,0 +1,56 @@
+{
+  "inputs": {
+    "src/types.ts": {
+      "bytes": 1274,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 128,
+      "imports": [
+        {
+          "path": "@storybook/react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/types.ts",
+          "kind": "import-statement",
+          "original": "./types"
+        },
+        {
+          "path": "@storybook/react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "@storybook/react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@storybook/react",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "definePreview"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 86
+        }
+      },
+      "bytes": 149
+    }
+  }
+}

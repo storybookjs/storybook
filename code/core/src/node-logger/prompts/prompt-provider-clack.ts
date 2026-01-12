@@ -1,6 +1,7 @@
 import * as clack from '@clack/prompts';
 
 import { logTracker } from '../logger/log-tracker';
+import { wrapTextForClackHint } from '../wrap-utils';
 import type {
   ConfirmPromptOptions,
   MultiSelectPromptOptions,
@@ -14,7 +15,26 @@ import type {
 } from './prompt-provider-base';
 import { PromptProvider } from './prompt-provider-base';
 
-export let currentTaskLog: ReturnType<typeof clack.taskLog> | null = null;
+export const getCurrentTaskLog = (): ReturnType<typeof clack.taskLog> | null => {
+  if (globalThis.STORYBOOK_CURRENT_TASK_LOG) {
+    return globalThis.STORYBOOK_CURRENT_TASK_LOG[globalThis.STORYBOOK_CURRENT_TASK_LOG.length - 1];
+  } else {
+    return null;
+  }
+};
+
+const setCurrentTaskLog = (taskLog: any) => {
+  globalThis.STORYBOOK_CURRENT_TASK_LOG = [
+    ...(globalThis.STORYBOOK_CURRENT_TASK_LOG || []),
+    taskLog,
+  ];
+};
+
+const clearCurrentTaskLog = () => {
+  if (globalThis.STORYBOOK_CURRENT_TASK_LOG) {
+    globalThis.STORYBOOK_CURRENT_TASK_LOG.pop();
+  }
+};
 
 export class ClackPromptProvider extends PromptProvider {
   private handleCancel(result: unknown | symbol, promptOptions?: PromptOptions) {
@@ -36,14 +56,20 @@ export class ClackPromptProvider extends PromptProvider {
   }
 
   async confirm(options: ConfirmPromptOptions, promptOptions?: PromptOptions): Promise<boolean> {
-    const result = await clack.confirm(options);
+    const result = await clack.confirm({
+      ...options,
+      message: wrapTextForClackHint(options.message, undefined, undefined, 2),
+    });
     this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
     return Boolean(result);
   }
 
   async select<T>(options: SelectPromptOptions<T>, promptOptions?: PromptOptions): Promise<T> {
-    const result = await clack.select<T>(options);
+    const result = await clack.select<T>({
+      ...options,
+      message: wrapTextForClackHint(options.message, undefined, undefined, 2),
+    });
     this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
     return result as T;
@@ -79,15 +105,26 @@ export class ClackPromptProvider extends PromptProvider {
         logTracker.addLog('info', `${spinnerId}-stop: ${message}`);
         task.stop(message);
       },
+      cancel: (message) => {
+        logTracker.addLog('info', `${spinnerId}-cancel: ${message}`);
+        task.cancel(message);
+      },
+      error: (message) => {
+        logTracker.addLog('error', `${spinnerId}-error: ${message}`);
+        task.error(message);
+      },
     };
   }
 
   taskLog(options: TaskLogOptions): TaskLogInstance {
-    const task = clack.taskLog(options);
+    const isCurrentTaskActive = !!getCurrentTaskLog();
+    const task = getCurrentTaskLog() || clack.taskLog(options);
     const taskId = `${options.id}-task`;
     logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 
-    currentTaskLog = task;
+    if (!isCurrentTaskActive) {
+      setCurrentTaskLog(task);
+    }
 
     return {
       message: (message) => {
@@ -97,12 +134,34 @@ export class ClackPromptProvider extends PromptProvider {
       error: (message) => {
         logTracker.addLog('error', `${taskId}-error: ${message}`);
         task.error(message, { showLog: true });
-        currentTaskLog = null;
+        clearCurrentTaskLog();
       },
       success: (message, options) => {
         logTracker.addLog('info', `${taskId}-success: ${message}`);
-        task.success(message, options);
-        currentTaskLog = null;
+        if (!isCurrentTaskActive) {
+          task.success(message, options);
+        }
+        clearCurrentTaskLog();
+      },
+      group(title) {
+        logTracker.addLog('info', `${taskId}-group: ${title}`);
+        const group = task.group(title);
+
+        setCurrentTaskLog(group);
+
+        return {
+          message: (message) => {
+            group.message(message);
+          },
+          success: (message) => {
+            group.success(message);
+            clearCurrentTaskLog();
+          },
+          error: (message) => {
+            group.error(message);
+            clearCurrentTaskLog();
+          },
+        };
       },
     };
   }

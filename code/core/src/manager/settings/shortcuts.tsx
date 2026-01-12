@@ -133,6 +133,7 @@ const shortcutLabels = {
   expandAll: 'Expand all items on sidebar',
   remount: 'Reload story',
   openInEditor: 'Open story in editor',
+  openInIsolation: 'Open story in isolation',
   copyStoryLink: 'Copy story link to clipboard',
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: 'Copy story name to clipboard',
@@ -287,8 +288,14 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
   renderKeyInput = () => {
     const { shortcutKeys, addonsShortcutLabels } = this.state;
-    // @ts-expect-error (non strict)
-    const arr = Object.entries(shortcutKeys).map(([feature, { shortcut }]: [Feature, any]) => (
+    // Filter out keyboard shortcuts from localStorage that no longer exist in code
+    const availableShortcuts = (Object.entries(shortcutKeys) as [Feature, any][]).filter(
+      ([feature]: [Feature, any]) =>
+        shortcutLabels[feature] !== undefined ||
+        (addonsShortcutLabels && addonsShortcutLabels[feature])
+    );
+
+    const arr = availableShortcuts.map(([feature, { shortcut }]: [Feature, any]) => (
       <Row key={feature}>
         {/* @ts-expect-error (non strict) */}
         <Description>{shortcutLabels[feature] || addonsShortcutLabels[feature]}</Description>

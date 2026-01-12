@@ -10,10 +10,10 @@ import { TrashIcon } from '@storybook/icons';
 import type { ControllerStateAndHelpers } from 'downshift';
 import { transparentize } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
-import { statusMapping } from '../../utils/status';
+import { getStatus } from '../../utils/status';
 import { UseSymbol } from './IconSymbols';
 import { NoResults } from './NoResults';
 import { StatusLabel } from './StatusButton';
@@ -82,7 +82,6 @@ const RecentlyOpenedTitle = styled.div(({ theme }) => ({
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
   color: theme.textMutedColor,
-  marginTop: 16,
   marginBottom: 4,
   alignItems: 'center',
 
@@ -159,6 +158,7 @@ const Result: FC<
     isHighlighted: boolean;
   } & React.DetailedHTMLProps<React.LiHTMLAttributes<HTMLLIElement>, HTMLLIElement>
 > = React.memo(function Result({ item, matches, onClick, ...props }) {
+  const theme = useTheme();
   const click: MouseEventHandler<HTMLLIElement> = useCallback(
     (event) => {
       event.preventDefault();
@@ -172,12 +172,12 @@ const Result: FC<
     if (api && props.isHighlighted && item.type === 'component') {
       api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]] }, { options: { target: item.refId } });
     }
-  }, [props.isHighlighted, item]);
+  }, [api, props.isHighlighted, item]);
 
   const nameMatch = matches.find((match: Match) => match.key === 'name');
   const pathMatches = matches.filter((match: Match) => match.key === 'path');
 
-  const [icon] = item.status ? statusMapping[item.status] : [];
+  const [icon] = item.status ? getStatus(theme, item.status) : [];
 
   return (
     <ResultRow {...props} onClick={click}>
@@ -314,7 +314,6 @@ export const SearchResults: FC<{
           const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
-              {/* @ts-expect-error (non strict) */}
               <Button key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>

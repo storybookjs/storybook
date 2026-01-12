@@ -1,0 +1,124 @@
+{
+  "inputs": {
+    "src/globals.ts": {
+      "bytes": 126,
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/public-types.ts": {
+      "bytes": 1420,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 53,
+      "imports": [
+        {
+          "path": "src/globals.ts",
+          "kind": "import-statement",
+          "original": "./globals"
+        },
+        {
+          "path": "src/public-types.ts",
+          "kind": "import-statement",
+          "original": "./public-types"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/render.ts": {
+      "bytes": 3033,
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/entry-preview.ts": {
+      "bytes": 111,
+      "imports": [
+        {
+          "path": "src/render.ts",
+          "kind": "import-statement",
+          "original": "./render"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/globals.ts": {
+          "bytesInOutput": 122
+        },
+        "src/index.ts": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 140
+    },
+    "dist/entry-preview.js": {
+      "imports": [
+        {
+          "path": "@storybook/global",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/preview-api",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ts-dedent",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "parameters",
+        "render",
+        "renderToCanvas"
+      ],
+      "entryPoint": "src/entry-preview.ts",
+      "inputs": {
+        "src/render.ts": {
+          "bytesInOutput": 2169
+        },
+        "src/entry-preview.ts": {
+          "bytesInOutput": 41
+        }
+      },
+      "bytes": 2305
+    }
+  }
+}

@@ -13,7 +13,7 @@ const theme: ThemeVars = {
   appContentBg: '#222325',
   appHoverBg: '#233952',
   appPreviewBg: color.lightest,
-  appBorderColor: 'rgba(255,255,255,.1)',
+  appBorderColor: 'hsl(0 0% 100% / 0.1)',
   appBorderRadius: 4,
 
   // Fonts
@@ -33,13 +33,16 @@ const theme: ThemeVars = {
 
   // Form colors
   buttonBg: '#1B1C1D',
-  buttonBorder: 'hsl(0 0 100 / 0.1)',
+  buttonBorder: 'hsl(0 0% 100% / 0.1)',
   booleanBg: '#1B1C1D',
   booleanSelectedBg: '#292B2E',
   inputBg: '#1B1C1D',
-  inputBorder: 'hsl(0 0 100 / 0.1)',
+  inputBorder: 'hsl(0 0% 100% / 0.1)',
   inputTextColor: '#C9CCCF',
   inputBorderRadius: 4,
+
+  // Highlight styles
+  highlightOpacity: 0.85,
 };
 
 export default theme;

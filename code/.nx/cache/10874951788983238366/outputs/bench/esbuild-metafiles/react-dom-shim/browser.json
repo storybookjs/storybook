@@ -1,0 +1,78 @@
+{
+  "inputs": {
+    "src/react-18.tsx": {
+      "bytes": 2173,
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-dom/client",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/react-16.tsx": {
+      "bytes": 393,
+      "imports": [
+        {
+          "path": "react-dom",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/react-18.js": {
+      "imports": [
+        {
+          "path": "react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "react-dom/client",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "renderElement",
+        "unmountElement"
+      ],
+      "entryPoint": "src/react-18.tsx",
+      "inputs": {
+        "src/react-18.tsx": {
+          "bytesInOutput": 1268
+        }
+      },
+      "bytes": 1334
+    },
+    "dist/react-16.js": {
+      "imports": [
+        {
+          "path": "react-dom",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "renderElement",
+        "unmountElement"
+      ],
+      "entryPoint": "src/react-16.tsx",
+      "inputs": {
+        "src/react-16.tsx": {
+          "bytesInOutput": 229
+        }
+      },
+      "bytes": 295
+    }
+  }
+}

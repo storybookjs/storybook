@@ -1,0 +1,8 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/lib/core-webpack[39m
+(node:43912) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✅ Generated types for [36mlib/core-webpack/src/index.ts[39m
+Bundled in [33m13 ms[39m
+Generated types in [33m2.53 s[39m

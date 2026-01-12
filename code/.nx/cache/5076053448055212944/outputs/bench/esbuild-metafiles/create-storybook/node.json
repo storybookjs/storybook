@@ -1,0 +1,5054 @@
+{
+  "inputs": {
+    "../../node_modules/ansi-regex/index.js": {
+      "bytes": 590,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/strip-ansi/index.js": {
+      "bytes": 468,
+      "imports": [
+        {
+          "path": "../../node_modules/ansi-regex/index.js",
+          "kind": "import-statement",
+          "original": "ansi-regex"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/get-east-asian-width/lookup.js": {
+      "bytes": 9096,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/get-east-asian-width/index.js": {
+      "bytes": 730,
+      "imports": [
+        {
+          "path": "../../node_modules/get-east-asian-width/lookup.js",
+          "kind": "import-statement",
+          "original": "./lookup.js"
+        },
+        {
+          "path": "../../node_modules/get-east-asian-width/lookup.js",
+          "kind": "import-statement",
+          "original": "./lookup.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/boxen/node_modules/emoji-regex/index.js": {
+      "bytes": 14183,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/boxen/node_modules/string-width/index.js": {
+      "bytes": 2231,
+      "imports": [
+        {
+          "path": "../../node_modules/strip-ansi/index.js",
+          "kind": "import-statement",
+          "original": "strip-ansi"
+        },
+        {
+          "path": "../../node_modules/get-east-asian-width/index.js",
+          "kind": "import-statement",
+          "original": "get-east-asian-width"
+        },
+        {
+          "path": "../../node_modules/boxen/node_modules/emoji-regex/index.js",
+          "kind": "import-statement",
+          "original": "emoji-regex"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/boxen/node_modules/chalk/source/vendor/ansi-styles/index.js": {
+      "bytes": 5256,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/boxen/node_modules/chalk/source/vendor/supports-color/index.js": {
+      "bytes": 3965,
+      "imports": [
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:tty",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/boxen/node_modules/chalk/source/utilities.js": {
+      "bytes": 997,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/boxen/node_modules/chalk/source/index.js": {
+      "bytes": 5902,
+      "imports": [
+        {
+          "path": "../../node_modules/boxen/node_modules/chalk/source/vendor/ansi-styles/index.js",
+          "kind": "import-statement",
+          "original": "#ansi-styles"
+        },
+        {
+          "path": "../../node_modules/boxen/node_modules/chalk/source/vendor/supports-color/index.js",
+          "kind": "import-statement",
+          "original": "#supports-color"
+        },
+        {
+          "path": "../../node_modules/boxen/node_modules/chalk/source/utilities.js",
+          "kind": "import-statement",
+          "original": "./utilities.js"
+        },
+        {
+          "path": "../../node_modules/boxen/node_modules/chalk/source/vendor/ansi-styles/index.js",
+          "kind": "import-statement",
+          "original": "./vendor/ansi-styles/index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/widest-line/node_modules/emoji-regex/index.js": {
+      "bytes": 14183,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/widest-line/node_modules/string-width/index.js": {
+      "bytes": 2231,
+      "imports": [
+        {
+          "path": "../../node_modules/strip-ansi/index.js",
+          "kind": "import-statement",
+          "original": "strip-ansi"
+        },
+        {
+          "path": "../../node_modules/get-east-asian-width/index.js",
+          "kind": "import-statement",
+          "original": "get-east-asian-width"
+        },
+        {
+          "path": "../../node_modules/widest-line/node_modules/emoji-regex/index.js",
+          "kind": "import-statement",
+          "original": "emoji-regex"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/widest-line/index.js": {
+      "bytes": 228,
+      "imports": [
+        {
+          "path": "../../node_modules/widest-line/node_modules/string-width/index.js",
+          "kind": "import-statement",
+          "original": "string-width"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/cli-boxes/boxes.json": {
+      "bytes": 1388,
+      "imports": []
+    },
+    "../../node_modules/cli-boxes/index.js": {
+      "bytes": 167,
+      "imports": [
+        {
+          "path": "../../node_modules/cli-boxes/boxes.json",
+          "kind": "require-call",
+          "original": "./boxes.json"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/camelcase/index.js": {
+      "bytes": 3568,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/string-width/node_modules/ansi-regex/index.js": {
+      "bytes": 350,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/string-width/node_modules/strip-ansi/index.js": {
+      "bytes": 154,
+      "imports": [
+        {
+          "path": "../../node_modules/string-width/node_modules/ansi-regex/index.js",
+          "kind": "require-call",
+          "original": "ansi-regex"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/is-fullwidth-code-point/index.js": {
+      "bytes": 1756,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/string-width/node_modules/emoji-regex/index.js": {
+      "bytes": 10286,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/string-width/index.js": {
+      "bytes": 923,
+      "imports": [
+        {
+          "path": "../../node_modules/string-width/node_modules/strip-ansi/index.js",
+          "kind": "require-call",
+          "original": "strip-ansi"
+        },
+        {
+          "path": "../../node_modules/is-fullwidth-code-point/index.js",
+          "kind": "require-call",
+          "original": "is-fullwidth-code-point"
+        },
+        {
+          "path": "../../node_modules/string-width/node_modules/emoji-regex/index.js",
+          "kind": "require-call",
+          "original": "emoji-regex"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/ansi-align/index.js": {
+      "bytes": 1334,
+      "imports": [
+        {
+          "path": "../../node_modules/string-width/index.js",
+          "kind": "require-call",
+          "original": "string-width"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/ansi-styles/index.js": {
+      "bytes": 5256,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../node_modules/boxen/node_modules/wrap-ansi/index.js": {
+      "bytes": 6059,
+      "imports": [
+        {
+          "path": "../../node_modules/boxen/node_modules/string-width/index.js",
+          "kind": "import-statement",
+          "original": "string-width"
+        },
+        {
+          "path": "../../node_modules/strip-ansi/index.js",
+          "kind": "import-statement",
+          "original": "strip-ansi"
+        },
+        {
+          "path": "../../node_modules/ansi-styles/index.js",
+          "kind": "import-statement",
+          "original": "ansi-styles"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/boxen/index.js": {
+      "bytes": 10923,
+      "imports": [
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/boxen/node_modules/string-width/index.js",
+          "kind": "import-statement",
+          "original": "string-width"
+        },
+        {
+          "path": "../../node_modules/boxen/node_modules/chalk/source/index.js",
+          "kind": "import-statement",
+          "original": "chalk"
+        },
+        {
+          "path": "../../node_modules/widest-line/index.js",
+          "kind": "import-statement",
+          "original": "widest-line"
+        },
+        {
+          "path": "../../node_modules/cli-boxes/index.js",
+          "kind": "import-statement",
+          "original": "cli-boxes"
+        },
+        {
+          "path": "../../node_modules/camelcase/index.js",
+          "kind": "import-statement",
+          "original": "camelcase"
+        },
+        {
+          "path": "../../node_modules/ansi-align/index.js",
+          "kind": "import-statement",
+          "original": "ansi-align"
+        },
+        {
+          "path": "../../node_modules/boxen/node_modules/wrap-ansi/index.js",
+          "kind": "import-statement",
+          "original": "wrap-ansi"
+        },
+        {
+          "path": "../../node_modules/cli-boxes/index.js",
+          "kind": "import-statement",
+          "original": "cli-boxes"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/resolve.mjs": {
+      "bytes": 971,
+      "imports": [
+        {
+          "path": "node:module",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/walk.mjs": {
+      "bytes": 535,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/resolve.mjs",
+          "kind": "import-statement",
+          "original": "empathic/resolve"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/empathic/find.mjs": {
+      "bytes": 2033,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/walk.mjs",
+          "kind": "import-statement",
+          "original": "empathic/walk"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/isexe/windows.js": {
+      "bytes": 890,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/isexe/mode.js": {
+      "bytes": 909,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/isexe/index.js": {
+      "bytes": 1192,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/isexe/windows.js",
+          "kind": "require-call",
+          "original": "./windows.js"
+        },
+        {
+          "path": "../../node_modules/isexe/mode.js",
+          "kind": "require-call",
+          "original": "./mode.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/which/which.js": {
+      "bytes": 3163,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/isexe/index.js",
+          "kind": "require-call",
+          "original": "isexe"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/path-key/index.js": {
+      "bytes": 415,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/cross-spawn/lib/util/resolveCommand.js": {
+      "bytes": 1557,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/which/which.js",
+          "kind": "require-call",
+          "original": "which"
+        },
+        {
+          "path": "../../node_modules/path-key/index.js",
+          "kind": "require-call",
+          "original": "path-key"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/cross-spawn/lib/util/escape.js": {
+      "bytes": 1383,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/shebang-regex/index.js": {
+      "bytes": 42,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/shebang-command/index.js": {
+      "bytes": 387,
+      "imports": [
+        {
+          "path": "../../node_modules/shebang-regex/index.js",
+          "kind": "require-call",
+          "original": "shebang-regex"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/cross-spawn/lib/util/readShebang.js": {
+      "bytes": 549,
+      "imports": [
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/shebang-command/index.js",
+          "kind": "require-call",
+          "original": "shebang-command"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/cross-spawn/lib/parse.js": {
+      "bytes": 3065,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/cross-spawn/lib/util/resolveCommand.js",
+          "kind": "require-call",
+          "original": "./util/resolveCommand"
+        },
+        {
+          "path": "../../node_modules/cross-spawn/lib/util/escape.js",
+          "kind": "require-call",
+          "original": "./util/escape"
+        },
+        {
+          "path": "../../node_modules/cross-spawn/lib/util/readShebang.js",
+          "kind": "require-call",
+          "original": "./util/readShebang"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/cross-spawn/lib/enoent.js": {
+      "bytes": 1471,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/cross-spawn/index.js": {
+      "bytes": 1192,
+      "imports": [
+        {
+          "path": "child_process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/cross-spawn/lib/parse.js",
+          "kind": "require-call",
+          "original": "./lib/parse"
+        },
+        {
+          "path": "../../node_modules/cross-spawn/lib/enoent.js",
+          "kind": "require-call",
+          "original": "./lib/enoent"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/strip-final-newline/index.js": {
+      "bytes": 368,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/npm-run-path/index.js": {
+      "bytes": 1013,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/path-key/index.js",
+          "kind": "require-call",
+          "original": "path-key"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/mimic-fn/index.js": {
+      "bytes": 300,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/onetime/index.js": {
+      "bytes": 1120,
+      "imports": [
+        {
+          "path": "../../node_modules/mimic-fn/index.js",
+          "kind": "require-call",
+          "original": "mimic-fn"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/human-signals/build/src/core.js": {
+      "bytes": 4268,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/human-signals/build/src/realtime.js": {
+      "bytes": 590,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/human-signals/build/src/signals.js": {
+      "bytes": 778,
+      "imports": [
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node_modules/human-signals/build/src/core.js",
+          "kind": "require-call",
+          "original": "./core.js"
+        },
+        {
+          "path": "node_modules/human-signals/build/src/realtime.js",
+          "kind": "require-call",
+          "original": "./realtime.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/human-signals/build/src/main.js": {
+      "bytes": 1528,
+      "imports": [
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node_modules/human-signals/build/src/signals.js",
+          "kind": "require-call",
+          "original": "./signals.js"
+        },
+        {
+          "path": "node_modules/human-signals/build/src/realtime.js",
+          "kind": "require-call",
+          "original": "./realtime.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/execa/lib/error.js": {
+      "bytes": 2169,
+      "imports": [
+        {
+          "path": "node_modules/human-signals/build/src/main.js",
+          "kind": "require-call",
+          "original": "human-signals"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/execa/lib/stdio.js": {
+      "bytes": 1186,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/signal-exit/signals.js": {
+      "bytes": 1295,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/signal-exit/index.js": {
+      "bytes": 5708,
+      "imports": [
+        {
+          "path": "assert",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/signal-exit/signals.js",
+          "kind": "require-call",
+          "original": "./signals.js"
+        },
+        {
+          "path": "events",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/execa/lib/kill.js": {
+      "bytes": 3095,
+      "imports": [
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/signal-exit/index.js",
+          "kind": "require-call",
+          "original": "signal-exit"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/is-stream/index.js": {
+      "bytes": 677,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/get-stream/buffer-stream.js": {
+      "bytes": 894,
+      "imports": [
+        {
+          "path": "stream",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/get-stream/index.js": {
+      "bytes": 1489,
+      "imports": [
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "stream",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "util",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/get-stream/buffer-stream.js",
+          "kind": "require-call",
+          "original": "./buffer-stream"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/merge-stream/index.js": {
+      "bytes": 885,
+      "imports": [
+        {
+          "path": "stream",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/execa/lib/stream.js": {
+      "bytes": 2400,
+      "imports": [
+        {
+          "path": "../../node_modules/is-stream/index.js",
+          "kind": "require-call",
+          "original": "is-stream"
+        },
+        {
+          "path": "../../node_modules/get-stream/index.js",
+          "kind": "require-call",
+          "original": "get-stream"
+        },
+        {
+          "path": "../../node_modules/merge-stream/index.js",
+          "kind": "require-call",
+          "original": "merge-stream"
+        }
+      ],
+      "format": "cjs"
+    },
+    "node_modules/execa/lib/promise.js": {
+      "bytes": 1150,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/execa/lib/command.js": {
+      "bytes": 1189,
+      "imports": [],
+      "format": "cjs"
+    },
+    "node_modules/execa/index.js": {
+      "bytes": 6516,
+      "imports": [
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/cross-spawn/index.js",
+          "kind": "require-call",
+          "original": "cross-spawn"
+        },
+        {
+          "path": "node_modules/strip-final-newline/index.js",
+          "kind": "require-call",
+          "original": "strip-final-newline"
+        },
+        {
+          "path": "../../node_modules/npm-run-path/index.js",
+          "kind": "require-call",
+          "original": "npm-run-path"
+        },
+        {
+          "path": "../../node_modules/onetime/index.js",
+          "kind": "require-call",
+          "original": "onetime"
+        },
+        {
+          "path": "node_modules/execa/lib/error.js",
+          "kind": "require-call",
+          "original": "./lib/error"
+        },
+        {
+          "path": "node_modules/execa/lib/stdio.js",
+          "kind": "require-call",
+          "original": "./lib/stdio"
+        },
+        {
+          "path": "node_modules/execa/lib/kill.js",
+          "kind": "require-call",
+          "original": "./lib/kill"
+        },
+        {
+          "path": "node_modules/execa/lib/stream.js",
+          "kind": "require-call",
+          "original": "./lib/stream"
+        },
+        {
+          "path": "node_modules/execa/lib/promise.js",
+          "kind": "require-call",
+          "original": "./lib/promise"
+        },
+        {
+          "path": "node_modules/execa/lib/command.js",
+          "kind": "require-call",
+          "original": "./lib/command"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/picocolors/picocolors.js": {
+      "bytes": 2663,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/process-ancestry/dist/index.js": {
+      "bytes": 3771,
+      "imports": [
+        {
+          "path": "os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/kleur/index.js": {
+      "bytes": 2514,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/util/action.js": {
+      "bytes": 1250,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/util/strip.js": {
+      "bytes": 362,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/sisteransi/src/index.js": {
+      "bytes": 1361,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/util/clear.js": {
+      "bytes": 2359,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/util/strip.js",
+          "kind": "require-call",
+          "original": "./strip"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/util/figures.js": {
+      "bytes": 607,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/util/style.js": {
+      "bytes": 1146,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/figures.js",
+          "kind": "require-call",
+          "original": "./figures"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/util/lines.js": {
+      "bytes": 326,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/util/strip.js",
+          "kind": "require-call",
+          "original": "./strip"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/util/wrap.js": {
+      "bytes": 717,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/util/entriesToDisplay.js": {
+      "bytes": 727,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/util/index.js": {
+      "bytes": 293,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/util/action.js",
+          "kind": "require-call",
+          "original": "./action"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/clear.js",
+          "kind": "require-call",
+          "original": "./clear"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/style.js",
+          "kind": "require-call",
+          "original": "./style"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/strip.js",
+          "kind": "require-call",
+          "original": "./strip"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/figures.js",
+          "kind": "require-call",
+          "original": "./figures"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/lines.js",
+          "kind": "require-call",
+          "original": "./lines"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/wrap.js",
+          "kind": "require-call",
+          "original": "./wrap"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/entriesToDisplay.js",
+          "kind": "require-call",
+          "original": "./entriesToDisplay"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/elements/prompt.js": {
+      "bytes": 1937,
+      "imports": [
+        {
+          "path": "readline",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        },
+        {
+          "path": "events",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/elements/text.js": {
+      "bytes": 6385,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/elements/select.js": {
+      "bytes": 5114,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/elements/toggle.js": {
+      "bytes": 2677,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/dateparts/datepart.js": {
+      "bytes": 699,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/dateparts/meridiem.js": {
+      "bytes": 421,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/dateparts/day.js": {
+      "bytes": 799,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/dateparts/hours.js": {
+      "bytes": 551,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/dateparts/milliseconds.js": {
+      "bytes": 541,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/dateparts/minutes.js": {
+      "bytes": 499,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/dateparts/month.js": {
+      "bytes": 648,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/dateparts/seconds.js": {
+      "bytes": 499,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/dateparts/year.js": {
+      "bytes": 511,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/dateparts/index.js": {
+      "bytes": 324,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/meridiem.js",
+          "kind": "require-call",
+          "original": "./meridiem"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/day.js",
+          "kind": "require-call",
+          "original": "./day"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/hours.js",
+          "kind": "require-call",
+          "original": "./hours"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/milliseconds.js",
+          "kind": "require-call",
+          "original": "./milliseconds"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/minutes.js",
+          "kind": "require-call",
+          "original": "./minutes"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/month.js",
+          "kind": "require-call",
+          "original": "./month"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/seconds.js",
+          "kind": "require-call",
+          "original": "./seconds"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/year.js",
+          "kind": "require-call",
+          "original": "./year"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/elements/date.js": {
+      "bytes": 6866,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/dateparts/index.js",
+          "kind": "require-call",
+          "original": "../dateparts"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/elements/number.js": {
+      "bytes": 6675,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/elements/multiselect.js": {
+      "bytes": 7447,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/elements/autocomplete.js": {
+      "bytes": 8747,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/elements/autocompleteMultiselect.js": {
+      "bytes": 5335,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/multiselect.js",
+          "kind": "require-call",
+          "original": "./multiselect"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/elements/confirm.js": {
+      "bytes": 2425,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/elements/index.js": {
+      "bytes": 418,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/elements/text.js",
+          "kind": "require-call",
+          "original": "./text"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/select.js",
+          "kind": "require-call",
+          "original": "./select"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/toggle.js",
+          "kind": "require-call",
+          "original": "./toggle"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/date.js",
+          "kind": "require-call",
+          "original": "./date"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/number.js",
+          "kind": "require-call",
+          "original": "./number"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/multiselect.js",
+          "kind": "require-call",
+          "original": "./multiselect"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/autocomplete.js",
+          "kind": "require-call",
+          "original": "./autocomplete"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/autocompleteMultiselect.js",
+          "kind": "require-call",
+          "original": "./autocompleteMultiselect"
+        },
+        {
+          "path": "../../node_modules/prompts/dist/elements/confirm.js",
+          "kind": "require-call",
+          "original": "./confirm"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/prompts.js": {
+      "bytes": 8816,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/elements/index.js",
+          "kind": "require-call",
+          "original": "./elements"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/dist/index.js": {
+      "bytes": 7309,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/prompts.js",
+          "kind": "require-call",
+          "original": "./prompts"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/util/action.js": {
+      "bytes": 1258,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/util/strip.js": {
+      "bytes": 376,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/util/clear.js": {
+      "bytes": 489,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/util/strip.js",
+          "kind": "require-call",
+          "original": "./strip"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/util/figures.js": {
+      "bytes": 628,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/util/style.js": {
+      "bytes": 1110,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/figures.js",
+          "kind": "require-call",
+          "original": "./figures"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/util/lines.js": {
+      "bytes": 334,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/util/strip.js",
+          "kind": "require-call",
+          "original": "./strip"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/util/wrap.js": {
+      "bytes": 794,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/util/entriesToDisplay.js": {
+      "bytes": 721,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/util/index.js": {
+      "bytes": 294,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/util/action.js",
+          "kind": "require-call",
+          "original": "./action"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/clear.js",
+          "kind": "require-call",
+          "original": "./clear"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/style.js",
+          "kind": "require-call",
+          "original": "./style"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/strip.js",
+          "kind": "require-call",
+          "original": "./strip"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/figures.js",
+          "kind": "require-call",
+          "original": "./figures"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/lines.js",
+          "kind": "require-call",
+          "original": "./lines"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/wrap.js",
+          "kind": "require-call",
+          "original": "./wrap"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/entriesToDisplay.js",
+          "kind": "require-call",
+          "original": "./entriesToDisplay"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/elements/prompt.js": {
+      "bytes": 1827,
+      "imports": [
+        {
+          "path": "readline",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        },
+        {
+          "path": "events",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/elements/text.js": {
+      "bytes": 5341,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/elements/select.js": {
+      "bytes": 4831,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/elements/toggle.js": {
+      "bytes": 2592,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/dateparts/datepart.js": {
+      "bytes": 681,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/dateparts/meridiem.js": {
+      "bytes": 419,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/dateparts/day.js": {
+      "bytes": 862,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/dateparts/hours.js": {
+      "bytes": 557,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/dateparts/milliseconds.js": {
+      "bytes": 588,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/dateparts/minutes.js": {
+      "bytes": 497,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/dateparts/month.js": {
+      "bytes": 685,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/dateparts/seconds.js": {
+      "bytes": 497,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/dateparts/year.js": {
+      "bytes": 509,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/dateparts/index.js": {
+      "bytes": 325,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/datepart.js",
+          "kind": "require-call",
+          "original": "./datepart"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/meridiem.js",
+          "kind": "require-call",
+          "original": "./meridiem"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/day.js",
+          "kind": "require-call",
+          "original": "./day"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/hours.js",
+          "kind": "require-call",
+          "original": "./hours"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/milliseconds.js",
+          "kind": "require-call",
+          "original": "./milliseconds"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/minutes.js",
+          "kind": "require-call",
+          "original": "./minutes"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/month.js",
+          "kind": "require-call",
+          "original": "./month"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/seconds.js",
+          "kind": "require-call",
+          "original": "./seconds"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/year.js",
+          "kind": "require-call",
+          "original": "./year"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/elements/date.js": {
+      "bytes": 5676,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/dateparts/index.js",
+          "kind": "require-call",
+          "original": "../dateparts"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/elements/number.js": {
+      "bytes": 5662,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/elements/multiselect.js": {
+      "bytes": 7221,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/elements/autocomplete.js": {
+      "bytes": 7756,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/elements/autocompleteMultiselect.js": {
+      "bytes": 5310,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/multiselect.js",
+          "kind": "require-call",
+          "original": "./multiselect"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/elements/confirm.js": {
+      "bytes": 2343,
+      "imports": [
+        {
+          "path": "../../node_modules/kleur/index.js",
+          "kind": "require-call",
+          "original": "kleur"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/prompt.js",
+          "kind": "require-call",
+          "original": "./prompt"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/util/index.js",
+          "kind": "require-call",
+          "original": "../util"
+        },
+        {
+          "path": "../../node_modules/sisteransi/src/index.js",
+          "kind": "require-call",
+          "original": "sisteransi"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/elements/index.js": {
+      "bytes": 419,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/elements/text.js",
+          "kind": "require-call",
+          "original": "./text"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/select.js",
+          "kind": "require-call",
+          "original": "./select"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/toggle.js",
+          "kind": "require-call",
+          "original": "./toggle"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/date.js",
+          "kind": "require-call",
+          "original": "./date"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/number.js",
+          "kind": "require-call",
+          "original": "./number"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/multiselect.js",
+          "kind": "require-call",
+          "original": "./multiselect"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/autocomplete.js",
+          "kind": "require-call",
+          "original": "./autocomplete"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/autocompleteMultiselect.js",
+          "kind": "require-call",
+          "original": "./autocompleteMultiselect"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/elements/confirm.js",
+          "kind": "require-call",
+          "original": "./confirm"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/prompts.js": {
+      "bytes": 8801,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/elements/index.js",
+          "kind": "require-call",
+          "original": "./elements"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/lib/index.js": {
+      "bytes": 3054,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/lib/prompts.js",
+          "kind": "require-call",
+          "original": "./prompts"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/prompts/index.js": {
+      "bytes": 386,
+      "imports": [
+        {
+          "path": "../../node_modules/prompts/dist/index.js",
+          "kind": "require-call",
+          "original": "./dist/index.js"
+        },
+        {
+          "path": "../../node_modules/prompts/lib/index.js",
+          "kind": "require-call",
+          "original": "./lib/index.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/ts-dedent/dist/index.js": {
+      "bytes": 1757,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/color-name/index.js": {
+      "bytes": 4617,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/color-convert/conversions.js": {
+      "bytes": 17040,
+      "imports": [
+        {
+          "path": "../../node_modules/color-name/index.js",
+          "kind": "require-call",
+          "original": "color-name"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/color-convert/route.js": {
+      "bytes": 2257,
+      "imports": [
+        {
+          "path": "../../node_modules/color-convert/conversions.js",
+          "kind": "require-call",
+          "original": "./conversions"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/color-convert/index.js": {
+      "bytes": 1708,
+      "imports": [
+        {
+          "path": "../../node_modules/color-convert/conversions.js",
+          "kind": "require-call",
+          "original": "./conversions"
+        },
+        {
+          "path": "../../node_modules/color-convert/route.js",
+          "kind": "require-call",
+          "original": "./route"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/chalk/node_modules/ansi-styles/index.js": {
+      "bytes": 4139,
+      "imports": [
+        {
+          "path": "../../node_modules/color-convert/index.js",
+          "kind": "require-call",
+          "original": "color-convert"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/has-flag/index.js": {
+      "bytes": 330,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/supports-color/index.js": {
+      "bytes": 2748,
+      "imports": [
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "tty",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/has-flag/index.js",
+          "kind": "require-call",
+          "original": "has-flag"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/chalk/source/util.js": {
+      "bytes": 1035,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/chalk/source/templates.js": {
+      "bytes": 3367,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/chalk/source/index.js": {
+      "bytes": 6075,
+      "imports": [
+        {
+          "path": "../../node_modules/chalk/node_modules/ansi-styles/index.js",
+          "kind": "require-call",
+          "original": "ansi-styles"
+        },
+        {
+          "path": "../../node_modules/supports-color/index.js",
+          "kind": "require-call",
+          "original": "supports-color"
+        },
+        {
+          "path": "../../node_modules/chalk/source/util.js",
+          "kind": "require-call",
+          "original": "./util"
+        },
+        {
+          "path": "../../node_modules/chalk/source/templates.js",
+          "kind": "require-call",
+          "original": "./templates"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/restore-cursor/index.js": {
+      "bytes": 215,
+      "imports": [
+        {
+          "path": "../../node_modules/onetime/index.js",
+          "kind": "require-call",
+          "original": "onetime"
+        },
+        {
+          "path": "../../node_modules/signal-exit/index.js",
+          "kind": "require-call",
+          "original": "signal-exit"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/cli-cursor/index.js": {
+      "bytes": 617,
+      "imports": [
+        {
+          "path": "../../node_modules/restore-cursor/index.js",
+          "kind": "require-call",
+          "original": "restore-cursor"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/cli-spinners/spinners.json": {
+      "bytes": 26268,
+      "imports": []
+    },
+    "../../node_modules/cli-spinners/index.js": {
+      "bytes": 406,
+      "imports": [
+        {
+          "path": "../../node_modules/cli-spinners/spinners.json",
+          "kind": "require-call",
+          "original": "./spinners.json"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/is-unicode-supported/index.js": {
+      "bytes": 313,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/log-symbols/index.js": {
+      "bytes": 427,
+      "imports": [
+        {
+          "path": "../../node_modules/chalk/source/index.js",
+          "kind": "require-call",
+          "original": "chalk"
+        },
+        {
+          "path": "../../node_modules/is-unicode-supported/index.js",
+          "kind": "require-call",
+          "original": "is-unicode-supported"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/ora/node_modules/ansi-regex/index.js": {
+      "bytes": 350,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/ora/node_modules/strip-ansi/index.js": {
+      "bytes": 154,
+      "imports": [
+        {
+          "path": "../../node_modules/ora/node_modules/ansi-regex/index.js",
+          "kind": "require-call",
+          "original": "ansi-regex"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/defaults/node_modules/clone/clone.js": {
+      "bytes": 4389,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/defaults/index.js": {
+      "bytes": 277,
+      "imports": [
+        {
+          "path": "../../node_modules/defaults/node_modules/clone/clone.js",
+          "kind": "require-call",
+          "original": "clone"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/wcwidth/combining.js": {
+      "bytes": 3078,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/wcwidth/index.js": {
+      "bytes": 3141,
+      "imports": [
+        {
+          "path": "../../node_modules/defaults/index.js",
+          "kind": "require-call",
+          "original": "defaults"
+        },
+        {
+          "path": "../../node_modules/wcwidth/combining.js",
+          "kind": "require-call",
+          "original": "./combining"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/is-interactive/index.js": {
+      "bytes": 180,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/internal/streams/stream.js": {
+      "bytes": 36,
+      "imports": [
+        {
+          "path": "stream",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/internal/streams/buffer_list.js": {
+      "bytes": 6905,
+      "imports": [
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "util",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/internal/streams/destroy.js": {
+      "bytes": 3109,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/errors.js": {
+      "bytes": 3715,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/internal/streams/state.js": {
+      "bytes": 745,
+      "imports": [
+        {
+          "path": "../../node_modules/readable-stream/errors.js",
+          "kind": "require-call",
+          "original": "../../../errors"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/inherits/inherits_browser.js": {
+      "bytes": 753,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/inherits/inherits.js": {
+      "bytes": 250,
+      "imports": [
+        {
+          "path": "util",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/inherits/inherits_browser.js",
+          "kind": "require-call",
+          "original": "./inherits_browser.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/util-deprecate/node.js": {
+      "bytes": 123,
+      "imports": [
+        {
+          "path": "util",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/_stream_writable.js": {
+      "bytes": 21907,
+      "imports": [
+        {
+          "path": "../../node_modules/util-deprecate/node.js",
+          "kind": "require-call",
+          "original": "util-deprecate"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/stream.js",
+          "kind": "require-call",
+          "original": "./internal/streams/stream"
+        },
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/destroy.js",
+          "kind": "require-call",
+          "original": "./internal/streams/destroy"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/state.js",
+          "kind": "require-call",
+          "original": "./internal/streams/state"
+        },
+        {
+          "path": "../../node_modules/readable-stream/errors.js",
+          "kind": "require-call",
+          "original": "../errors"
+        },
+        {
+          "path": "../../node_modules/inherits/inherits.js",
+          "kind": "require-call",
+          "original": "inherits"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_duplex.js",
+          "kind": "require-call",
+          "original": "./_stream_duplex"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_duplex.js",
+          "kind": "require-call",
+          "original": "./_stream_duplex"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/_stream_duplex.js": {
+      "bytes": 4381,
+      "imports": [
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_readable.js",
+          "kind": "require-call",
+          "original": "./_stream_readable"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_writable.js",
+          "kind": "require-call",
+          "original": "./_stream_writable"
+        },
+        {
+          "path": "../../node_modules/inherits/inherits.js",
+          "kind": "require-call",
+          "original": "inherits"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/safe-buffer/index.js": {
+      "bytes": 1670,
+      "imports": [
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/string_decoder/lib/string_decoder.js": {
+      "bytes": 9465,
+      "imports": [
+        {
+          "path": "../../node_modules/safe-buffer/index.js",
+          "kind": "require-call",
+          "original": "safe-buffer"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/internal/streams/end-of-stream.js": {
+      "bytes": 3084,
+      "imports": [
+        {
+          "path": "../../node_modules/readable-stream/errors.js",
+          "kind": "require-call",
+          "original": "../../../errors"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/internal/streams/async_iterator.js": {
+      "bytes": 6468,
+      "imports": [
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/end-of-stream.js",
+          "kind": "require-call",
+          "original": "./end-of-stream"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/internal/streams/from.js": {
+      "bytes": 3668,
+      "imports": [
+        {
+          "path": "../../node_modules/readable-stream/errors.js",
+          "kind": "require-call",
+          "original": "../../../errors"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/_stream_readable.js": {
+      "bytes": 36023,
+      "imports": [
+        {
+          "path": "events",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/stream.js",
+          "kind": "require-call",
+          "original": "./internal/streams/stream"
+        },
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "util",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/buffer_list.js",
+          "kind": "require-call",
+          "original": "./internal/streams/buffer_list"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/destroy.js",
+          "kind": "require-call",
+          "original": "./internal/streams/destroy"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/state.js",
+          "kind": "require-call",
+          "original": "./internal/streams/state"
+        },
+        {
+          "path": "../../node_modules/readable-stream/errors.js",
+          "kind": "require-call",
+          "original": "../errors"
+        },
+        {
+          "path": "../../node_modules/inherits/inherits.js",
+          "kind": "require-call",
+          "original": "inherits"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_duplex.js",
+          "kind": "require-call",
+          "original": "./_stream_duplex"
+        },
+        {
+          "path": "../../node_modules/string_decoder/lib/string_decoder.js",
+          "kind": "require-call",
+          "original": "string_decoder/"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_duplex.js",
+          "kind": "require-call",
+          "original": "./_stream_duplex"
+        },
+        {
+          "path": "../../node_modules/string_decoder/lib/string_decoder.js",
+          "kind": "require-call",
+          "original": "string_decoder/"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/async_iterator.js",
+          "kind": "require-call",
+          "original": "./internal/streams/async_iterator"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/from.js",
+          "kind": "require-call",
+          "original": "./internal/streams/from"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/_stream_transform.js": {
+      "bytes": 7936,
+      "imports": [
+        {
+          "path": "../../node_modules/readable-stream/errors.js",
+          "kind": "require-call",
+          "original": "../errors"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_duplex.js",
+          "kind": "require-call",
+          "original": "./_stream_duplex"
+        },
+        {
+          "path": "../../node_modules/inherits/inherits.js",
+          "kind": "require-call",
+          "original": "inherits"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/_stream_passthrough.js": {
+      "bytes": 1628,
+      "imports": [
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_transform.js",
+          "kind": "require-call",
+          "original": "./_stream_transform"
+        },
+        {
+          "path": "../../node_modules/inherits/inherits.js",
+          "kind": "require-call",
+          "original": "inherits"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/lib/internal/streams/pipeline.js": {
+      "bytes": 2416,
+      "imports": [
+        {
+          "path": "../../node_modules/readable-stream/errors.js",
+          "kind": "require-call",
+          "original": "../../../errors"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/end-of-stream.js",
+          "kind": "require-call",
+          "original": "./end-of-stream"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/readable-stream/readable.js": {
+      "bytes": 729,
+      "imports": [
+        {
+          "path": "stream",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_readable.js",
+          "kind": "require-call",
+          "original": "./lib/_stream_readable.js"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_writable.js",
+          "kind": "require-call",
+          "original": "./lib/_stream_writable.js"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_duplex.js",
+          "kind": "require-call",
+          "original": "./lib/_stream_duplex.js"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_transform.js",
+          "kind": "require-call",
+          "original": "./lib/_stream_transform.js"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/_stream_passthrough.js",
+          "kind": "require-call",
+          "original": "./lib/_stream_passthrough.js"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/end-of-stream.js",
+          "kind": "require-call",
+          "original": "./lib/internal/streams/end-of-stream.js"
+        },
+        {
+          "path": "../../node_modules/readable-stream/lib/internal/streams/pipeline.js",
+          "kind": "require-call",
+          "original": "./lib/internal/streams/pipeline.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/bl/BufferList.js": {
+      "bytes": 9524,
+      "imports": [
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/bl/bl.js": {
+      "bytes": 2043,
+      "imports": [
+        {
+          "path": "../../node_modules/readable-stream/readable.js",
+          "kind": "require-call",
+          "original": "readable-stream"
+        },
+        {
+          "path": "../../node_modules/inherits/inherits.js",
+          "kind": "require-call",
+          "original": "inherits"
+        },
+        {
+          "path": "../../node_modules/bl/BufferList.js",
+          "kind": "require-call",
+          "original": "./BufferList"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/ora/index.js": {
+      "bytes": 8582,
+      "imports": [
+        {
+          "path": "readline",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/chalk/source/index.js",
+          "kind": "require-call",
+          "original": "chalk"
+        },
+        {
+          "path": "../../node_modules/cli-cursor/index.js",
+          "kind": "require-call",
+          "original": "cli-cursor"
+        },
+        {
+          "path": "../../node_modules/cli-spinners/index.js",
+          "kind": "require-call",
+          "original": "cli-spinners"
+        },
+        {
+          "path": "../../node_modules/log-symbols/index.js",
+          "kind": "require-call",
+          "original": "log-symbols"
+        },
+        {
+          "path": "../../node_modules/ora/node_modules/strip-ansi/index.js",
+          "kind": "require-call",
+          "original": "strip-ansi"
+        },
+        {
+          "path": "../../node_modules/wcwidth/index.js",
+          "kind": "require-call",
+          "original": "wcwidth"
+        },
+        {
+          "path": "../../node_modules/is-interactive/index.js",
+          "kind": "require-call",
+          "original": "is-interactive"
+        },
+        {
+          "path": "../../node_modules/is-unicode-supported/index.js",
+          "kind": "require-call",
+          "original": "is-unicode-supported"
+        },
+        {
+          "path": "../../node_modules/bl/bl.js",
+          "kind": "require-call",
+          "original": "bl"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/tiny-invariant/dist/esm/tiny-invariant.js": {
+      "bytes": 452,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/generators/configure.ts": {
+      "bytes": 4351,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/baseGenerator.ts": {
+      "bytes": 14187,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ora/index.js",
+          "kind": "import-statement",
+          "original": "ora"
+        },
+        {
+          "path": "../../node_modules/tiny-invariant/dist/esm/tiny-invariant.js",
+          "kind": "import-statement",
+          "original": "tiny-invariant"
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/generators/configure.ts",
+          "kind": "import-statement",
+          "original": "./configure"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/ANGULAR/index.ts": {
+      "bytes": 3399,
+      "imports": [
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/EMBER/index.ts": {
+      "bytes": 424,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/HTML/index.ts": {
+      "bytes": 426,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/NEXTJS/index.ts": {
+      "bytes": 624,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/NUXT/index.ts": {
+      "bytes": 1145,
+      "imports": [
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/PREACT/index.ts": {
+      "bytes": 428,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/QWIK/index.ts": {
+      "bytes": 282,
+      "imports": [
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/REACT/index.ts": {
+      "bytes": 690,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/REACT_NATIVE/index.ts": {
+      "bytes": 2127,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/REACT_NATIVE_WEB/index.ts": {
+      "bytes": 1054,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/REACT_SCRIPTS/index.ts": {
+      "bytes": 2249,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/SERVER/index.ts": {
+      "bytes": 477,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/SOLID/index.ts": {
+      "bytes": 423,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/SVELTE/index.ts": {
+      "bytes": 369,
+      "imports": [
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/SVELTEKIT/index.ts": {
+      "bytes": 505,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/VUE3/index.ts": {
+      "bytes": 598,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/WEB-COMPONENTS/index.ts": {
+      "bytes": 465,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/generators/WEBPACK_REACT/index.ts": {
+      "bytes": 427,
+      "imports": [
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/generators/baseGenerator.ts",
+          "kind": "import-statement",
+          "original": "../baseGenerator"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ink/steps/checks/CompatibilityType.tsx": {
+      "bytes": 429,
+      "imports": [],
+      "format": "esm"
+    },
+    "src/ink/steps/checks/packageVersions.tsx": {
+      "bytes": 1529,
+      "imports": [
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "./Check",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "src/ink/steps/checks/CompatibilityType.tsx",
+          "kind": "import-statement",
+          "original": "./CompatibilityType"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/ink/steps/checks/vitestConfigFiles.tsx": {
+      "bytes": 5202,
+      "imports": [
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/babel",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/empathic/find.mjs",
+          "kind": "import-statement",
+          "original": "empathic/find"
+        },
+        {
+          "path": "src/ink/steps/checks/CompatibilityType.tsx",
+          "kind": "import-statement",
+          "original": "./CompatibilityType"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/scaffold-new-project.ts": {
+      "bytes": 7477,
+      "imports": [
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/boxen/index.js",
+          "kind": "import-statement",
+          "original": "boxen"
+        },
+        {
+          "path": "node_modules/execa/index.js",
+          "kind": "import-statement",
+          "original": "execa"
+        },
+        {
+          "path": "../../node_modules/picocolors/picocolors.js",
+          "kind": "import-statement",
+          "original": "picocolors"
+        },
+        {
+          "path": "../../node_modules/prompts/index.js",
+          "kind": "import-statement",
+          "original": "prompts"
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/initiate.ts": {
+      "bytes": 28216,
+      "imports": [
+        {
+          "path": "node:child_process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/babel",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-server",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/boxen/index.js",
+          "kind": "import-statement",
+          "original": "boxen"
+        },
+        {
+          "path": "../../node_modules/empathic/find.mjs",
+          "kind": "import-statement",
+          "original": "empathic/find"
+        },
+        {
+          "path": "node_modules/execa/index.js",
+          "kind": "import-statement",
+          "original": "execa"
+        },
+        {
+          "path": "../../node_modules/picocolors/picocolors.js",
+          "kind": "import-statement",
+          "original": "picocolors"
+        },
+        {
+          "path": "../../node_modules/process-ancestry/dist/index.js",
+          "kind": "import-statement",
+          "original": "process-ancestry"
+        },
+        {
+          "path": "../../node_modules/prompts/index.js",
+          "kind": "import-statement",
+          "original": "prompts"
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/generators/ANGULAR/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/ANGULAR"
+        },
+        {
+          "path": "src/generators/EMBER/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/EMBER"
+        },
+        {
+          "path": "src/generators/HTML/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/HTML"
+        },
+        {
+          "path": "src/generators/NEXTJS/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/NEXTJS"
+        },
+        {
+          "path": "src/generators/NUXT/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/NUXT"
+        },
+        {
+          "path": "src/generators/PREACT/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/PREACT"
+        },
+        {
+          "path": "src/generators/QWIK/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/QWIK"
+        },
+        {
+          "path": "src/generators/REACT/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/REACT"
+        },
+        {
+          "path": "src/generators/REACT_NATIVE/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/REACT_NATIVE"
+        },
+        {
+          "path": "src/generators/REACT_NATIVE_WEB/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/REACT_NATIVE_WEB"
+        },
+        {
+          "path": "src/generators/REACT_SCRIPTS/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/REACT_SCRIPTS"
+        },
+        {
+          "path": "src/generators/SERVER/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/SERVER"
+        },
+        {
+          "path": "src/generators/SOLID/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/SOLID"
+        },
+        {
+          "path": "src/generators/SVELTE/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/SVELTE"
+        },
+        {
+          "path": "src/generators/SVELTEKIT/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/SVELTEKIT"
+        },
+        {
+          "path": "src/generators/VUE3/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/VUE3"
+        },
+        {
+          "path": "src/generators/WEB-COMPONENTS/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/WEB-COMPONENTS"
+        },
+        {
+          "path": "src/generators/WEBPACK_REACT/index.ts",
+          "kind": "import-statement",
+          "original": "./generators/WEBPACK_REACT"
+        },
+        {
+          "path": "src/ink/steps/checks/packageVersions.tsx",
+          "kind": "import-statement",
+          "original": "./ink/steps/checks/packageVersions"
+        },
+        {
+          "path": "src/ink/steps/checks/vitestConfigFiles.tsx",
+          "kind": "import-statement",
+          "original": "./ink/steps/checks/vitestConfigFiles"
+        },
+        {
+          "path": "src/scaffold-new-project.ts",
+          "kind": "import-statement",
+          "original": "./scaffold-new-project"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/index.ts": {
+      "bytes": 53,
+      "imports": [
+        {
+          "path": "src/initiate.ts",
+          "kind": "import-statement",
+          "original": "./initiate"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../node_modules/commander/lib/error.js": {
+      "bytes": 1170,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/lib/argument.js": {
+      "bytes": 3208,
+      "imports": [
+        {
+          "path": "../../node_modules/commander/lib/error.js",
+          "kind": "require-call",
+          "original": "./error.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/lib/help.js": {
+      "bytes": 21130,
+      "imports": [
+        {
+          "path": "../../node_modules/commander/lib/argument.js",
+          "kind": "require-call",
+          "original": "./argument.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/lib/option.js": {
+      "bytes": 10289,
+      "imports": [
+        {
+          "path": "../../node_modules/commander/lib/error.js",
+          "kind": "require-call",
+          "original": "./error.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/lib/suggestSimilar.js": {
+      "bytes": 2774,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/lib/command.js": {
+      "bytes": 87209,
+      "imports": [
+        {
+          "path": "node:events",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:child_process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/commander/lib/argument.js",
+          "kind": "require-call",
+          "original": "./argument.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/error.js",
+          "kind": "require-call",
+          "original": "./error.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/help.js",
+          "kind": "require-call",
+          "original": "./help.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/option.js",
+          "kind": "require-call",
+          "original": "./option.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/suggestSimilar.js",
+          "kind": "require-call",
+          "original": "./suggestSimilar"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/index.js": {
+      "bytes": 812,
+      "imports": [
+        {
+          "path": "../../node_modules/commander/lib/argument.js",
+          "kind": "require-call",
+          "original": "./lib/argument.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/command.js",
+          "kind": "require-call",
+          "original": "./lib/command.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/error.js",
+          "kind": "require-call",
+          "original": "./lib/error.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/help.js",
+          "kind": "require-call",
+          "original": "./lib/help.js"
+        },
+        {
+          "path": "../../node_modules/commander/lib/option.js",
+          "kind": "require-call",
+          "original": "./lib/option.js"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/commander/esm.mjs": {
+      "bytes": 310,
+      "imports": [
+        {
+          "path": "../../node_modules/commander/index.js",
+          "kind": "import-statement",
+          "original": "./index.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "package.json": {
+      "bytes": 1697,
+      "imports": []
+    },
+    "src/bin/run.ts": {
+      "bytes": 2757,
+      "imports": [
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/commander/esm.mjs",
+          "kind": "import-statement",
+          "original": "commander"
+        },
+        {
+          "path": "package.json",
+          "kind": "import-statement",
+          "original": "../../package.json"
+        },
+        {
+          "path": "src/initiate.ts",
+          "kind": "import-statement",
+          "original": "../initiate"
+        }
+      ],
+      "format": "esm"
+    },
+    "src/bin/index.ts": {
+      "bytes": 587,
+      "imports": [
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "../../node_modules/ts-dedent/dist/index.js",
+          "kind": "import-statement",
+          "original": "ts-dedent"
+        },
+        {
+          "path": "src/bin/run.ts",
+          "kind": "dynamic-import",
+          "original": "./run"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist/index.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-M54JEEP6.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-EKWS6HTS.js",
+          "kind": "import-statement"
+        }
+      ],
+      "exports": [
+        "initiate"
+      ],
+      "entryPoint": "src/index.ts",
+      "inputs": {
+        "src/index.ts": {
+          "bytesInOutput": 0
+        }
+      },
+      "bytes": 765
+    },
+    "dist/bin/index.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-EKWS6HTS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "dist/_node-chunks/run-7BZSFGBN.js",
+          "kind": "dynamic-import"
+        }
+      ],
+      "exports": [],
+      "entryPoint": "src/bin/index.ts",
+      "inputs": {
+        "src/bin/index.ts": {
+          "bytesInOutput": 597
+        }
+      },
+      "bytes": 1337
+    },
+    "dist/_node-chunks/run-7BZSFGBN.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-M54JEEP6.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/_node-chunks/chunk-EKWS6HTS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "node:events",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:child_process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "entryPoint": "src/bin/run.ts",
+      "inputs": {
+        "../../node_modules/commander/lib/error.js": {
+          "bytesInOutput": 1170
+        },
+        "../../node_modules/commander/lib/argument.js": {
+          "bytesInOutput": 3301
+        },
+        "../../node_modules/commander/lib/help.js": {
+          "bytesInOutput": 18618
+        },
+        "../../node_modules/commander/lib/option.js": {
+          "bytesInOutput": 9052
+        },
+        "../../node_modules/commander/lib/suggestSimilar.js": {
+          "bytesInOutput": 2016
+        },
+        "../../node_modules/commander/lib/command.js": {
+          "bytesInOutput": 78161
+        },
+        "../../node_modules/commander/index.js": {
+          "bytesInOutput": 925
+        },
+        "src/bin/run.ts": {
+          "bytesInOutput": 1780
+        },
+        "../../node_modules/commander/esm.mjs": {
+          "bytesInOutput": 279
+        },
+        "package.json": {
+          "bytesInOutput": 33
+        }
+      },
+      "bytes": 116509
+    },
+    "dist/_node-chunks/chunk-M54JEEP6.js": {
+      "imports": [
+        {
+          "path": "dist/_node-chunks/chunk-EKWS6HTS.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "assert",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "events",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "stream",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "stream",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "util",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "stream",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "readline",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "events",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "readline",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "events",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "tty",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "stream",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "util",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "util",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "util",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "events",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "util",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "stream",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "buffer",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "readline",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:child_process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/babel",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/core-server",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:tty",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "os",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "child_process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:url",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/cli",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "semver",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/babel",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/common",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:fs/promises",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/node-logger",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/server-errors",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "storybook/internal/telemetry",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [
+        "doInitiate",
+        "initiate"
+      ],
+      "inputs": {
+        "../../node_modules/boxen/node_modules/emoji-regex/index.js": {
+          "bytesInOutput": 14277
+        },
+        "../../node_modules/widest-line/node_modules/emoji-regex/index.js": {
+          "bytesInOutput": 14284
+        },
+        "../../node_modules/cli-boxes/boxes.json": {
+          "bytesInOutput": 2006
+        },
+        "../../node_modules/cli-boxes/index.js": {
+          "bytesInOutput": 233
+        },
+        "../../node_modules/string-width/node_modules/ansi-regex/index.js": {
+          "bytesInOutput": 515
+        },
+        "../../node_modules/string-width/node_modules/strip-ansi/index.js": {
+          "bytesInOutput": 299
+        },
+        "../../node_modules/is-fullwidth-code-point/index.js": {
+          "bytesInOutput": 1625
+        },
+        "../../node_modules/string-width/node_modules/emoji-regex/index.js": {
+          "bytesInOutput": 10410
+        },
+        "../../node_modules/string-width/index.js": {
+          "bytesInOutput": 856
+        },
+        "../../node_modules/ansi-align/index.js": {
+          "bytesInOutput": 1468
+        },
+        "../../node_modules/isexe/windows.js": {
+          "bytesInOutput": 1023
+        },
+        "../../node_modules/isexe/mode.js": {
+          "bytesInOutput": 1004
+        },
+        "../../node_modules/isexe/index.js": {
+          "bytesInOutput": 1117
+        },
+        "../../node_modules/which/which.js": {
+          "bytesInOutput": 3071
+        },
+        "../../node_modules/path-key/index.js": {
+          "bytesInOutput": 452
+        },
+        "../../node_modules/cross-spawn/lib/util/resolveCommand.js": {
+          "bytesInOutput": 1189
+        },
+        "../../node_modules/cross-spawn/lib/util/escape.js": {
+          "bytesInOutput": 701
+        },
+        "../../node_modules/shebang-regex/index.js": {
+          "bytesInOutput": 164
+        },
+        "../../node_modules/shebang-command/index.js": {
+          "bytesInOutput": 506
+        },
+        "../../node_modules/cross-spawn/lib/util/readShebang.js": {
+          "bytesInOutput": 517
+        },
+        "../../node_modules/cross-spawn/lib/parse.js": {
+          "bytesInOutput": 1895
+        },
+        "../../node_modules/cross-spawn/lib/enoent.js": {
+          "bytesInOutput": 1292
+        },
+        "../../node_modules/cross-spawn/index.js": {
+          "bytesInOutput": 895
+        },
+        "node_modules/strip-final-newline/index.js": {
+          "bytesInOutput": 450
+        },
+        "../../node_modules/npm-run-path/index.js": {
+          "bytesInOutput": 1117
+        },
+        "../../node_modules/mimic-fn/index.js": {
+          "bytesInOutput": 380
+        },
+        "../../node_modules/onetime/index.js": {
+          "bytesInOutput": 1223
+        },
+        "node_modules/human-signals/build/src/core.js": {
+          "bytesInOutput": 6555
+        },
+        "node_modules/human-signals/build/src/realtime.js": {
+          "bytesInOutput": 787
+        },
+        "node_modules/human-signals/build/src/signals.js": {
+          "bytesInOutput": 924
+        },
+        "node_modules/human-signals/build/src/main.js": {
+          "bytesInOutput": 1799
+        },
+        "node_modules/execa/lib/error.js": {
+          "bytesInOutput": 1965
+        },
+        "node_modules/execa/lib/stdio.js": {
+          "bytesInOutput": 1233
+        },
+        "../../node_modules/signal-exit/signals.js": {
+          "bytesInOutput": 669
+        },
+        "../../node_modules/signal-exit/index.js": {
+          "bytesInOutput": 3898
+        },
+        "node_modules/execa/lib/kill.js": {
+          "bytesInOutput": 2859
+        },
+        "../../node_modules/is-stream/index.js": {
+          "bytesInOutput": 785
+        },
+        "../../node_modules/get-stream/buffer-stream.js": {
+          "bytesInOutput": 942
+        },
+        "../../node_modules/get-stream/index.js": {
+          "bytesInOutput": 1673
+        },
+        "../../node_modules/merge-stream/index.js": {
+          "bytesInOutput": 990
+        },
+        "node_modules/execa/lib/stream.js": {
+          "bytesInOutput": 2129
+        },
+        "node_modules/execa/lib/promise.js": {
+          "bytesInOutput": 1119
+        },
+        "node_modules/execa/lib/command.js": {
+          "bytesInOutput": 1049
+        },
+        "node_modules/execa/index.js": {
+          "bytesInOutput": 6955
+        },
+        "../../node_modules/picocolors/picocolors.js": {
+          "bytesInOutput": 3084
+        },
+        "../../node_modules/kleur/index.js": {
+          "bytesInOutput": 2803
+        },
+        "../../node_modules/prompts/dist/util/action.js": {
+          "bytesInOutput": 1120
+        },
+        "../../node_modules/prompts/dist/util/strip.js": {
+          "bytesInOutput": 483
+        },
+        "../../node_modules/sisteransi/src/index.js": {
+          "bytesInOutput": 1460
+        },
+        "../../node_modules/prompts/dist/util/clear.js": {
+          "bytesInOutput": 2689
+        },
+        "../../node_modules/prompts/dist/util/figures.js": {
+          "bytesInOutput": 869
+        },
+        "../../node_modules/prompts/dist/util/style.js": {
+          "bytesInOutput": 1252
+        },
+        "../../node_modules/prompts/dist/util/lines.js": {
+          "bytesInOutput": 384
+        },
+        "../../node_modules/prompts/dist/util/wrap.js": {
+          "bytesInOutput": 603
+        },
+        "../../node_modules/prompts/dist/util/entriesToDisplay.js": {
+          "bytesInOutput": 507
+        },
+        "../../node_modules/prompts/dist/util/index.js": {
+          "bytesInOutput": 422
+        },
+        "../../node_modules/prompts/dist/elements/prompt.js": {
+          "bytesInOutput": 1783
+        },
+        "../../node_modules/prompts/dist/elements/text.js": {
+          "bytesInOutput": 5869
+        },
+        "../../node_modules/prompts/dist/elements/select.js": {
+          "bytesInOutput": 4238
+        },
+        "../../node_modules/prompts/dist/elements/toggle.js": {
+          "bytesInOutput": 2381
+        },
+        "../../node_modules/prompts/dist/dateparts/datepart.js": {
+          "bytesInOutput": 948
+        },
+        "../../node_modules/prompts/dist/dateparts/meridiem.js": {
+          "bytesInOutput": 602
+        },
+        "../../node_modules/prompts/dist/dateparts/day.js": {
+          "bytesInOutput": 954
+        },
+        "../../node_modules/prompts/dist/dateparts/hours.js": {
+          "bytesInOutput": 733
+        },
+        "../../node_modules/prompts/dist/dateparts/milliseconds.js": {
+          "bytesInOutput": 737
+        },
+        "../../node_modules/prompts/dist/dateparts/minutes.js": {
+          "bytesInOutput": 689
+        },
+        "../../node_modules/prompts/dist/dateparts/month.js": {
+          "bytesInOutput": 822
+        },
+        "../../node_modules/prompts/dist/dateparts/seconds.js": {
+          "bytesInOutput": 689
+        },
+        "../../node_modules/prompts/dist/dateparts/year.js": {
+          "bytesInOutput": 695
+        },
+        "../../node_modules/prompts/dist/dateparts/index.js": {
+          "bytesInOutput": 464
+        },
+        "../../node_modules/prompts/dist/elements/date.js": {
+          "bytesInOutput": 6503
+        },
+        "../../node_modules/prompts/dist/elements/number.js": {
+          "bytesInOutput": 5805
+        },
+        "../../node_modules/prompts/dist/elements/multiselect.js": {
+          "bytesInOutput": 6506
+        },
+        "../../node_modules/prompts/dist/elements/autocomplete.js": {
+          "bytesInOutput": 7932
+        },
+        "../../node_modules/prompts/dist/elements/autocompleteMultiselect.js": {
+          "bytesInOutput": 4585
+        },
+        "../../node_modules/prompts/dist/elements/confirm.js": {
+          "bytesInOutput": 1814
+        },
+        "../../node_modules/prompts/dist/elements/index.js": {
+          "bytesInOutput": 556
+        },
+        "../../node_modules/prompts/dist/prompts.js": {
+          "bytesInOutput": 2195
+        },
+        "../../node_modules/prompts/dist/index.js": {
+          "bytesInOutput": 7400
+        },
+        "../../node_modules/prompts/lib/util/action.js": {
+          "bytesInOutput": 1120
+        },
+        "../../node_modules/prompts/lib/util/strip.js": {
+          "bytesInOutput": 507
+        },
+        "../../node_modules/prompts/lib/util/clear.js": {
+          "bytesInOutput": 533
+        },
+        "../../node_modules/prompts/lib/util/figures.js": {
+          "bytesInOutput": 869
+        },
+        "../../node_modules/prompts/lib/util/style.js": {
+          "bytesInOutput": 1165
+        },
+        "../../node_modules/prompts/lib/util/lines.js": {
+          "bytesInOutput": 385
+        },
+        "../../node_modules/prompts/lib/util/wrap.js": {
+          "bytesInOutput": 603
+        },
+        "../../node_modules/prompts/lib/util/entriesToDisplay.js": {
+          "bytesInOutput": 485
+        },
+        "../../node_modules/prompts/lib/util/index.js": {
+          "bytesInOutput": 430
+        },
+        "../../node_modules/prompts/lib/elements/prompt.js": {
+          "bytesInOutput": 1689
+        },
+        "../../node_modules/prompts/lib/elements/text.js": {
+          "bytesInOutput": 4741
+        },
+        "../../node_modules/prompts/lib/elements/select.js": {
+          "bytesInOutput": 4018
+        },
+        "../../node_modules/prompts/lib/elements/toggle.js": {
+          "bytesInOutput": 2351
+        },
+        "../../node_modules/prompts/lib/dateparts/datepart.js": {
+          "bytesInOutput": 910
+        },
+        "../../node_modules/prompts/lib/dateparts/meridiem.js": {
+          "bytesInOutput": 603
+        },
+        "../../node_modules/prompts/lib/dateparts/day.js": {
+          "bytesInOutput": 955
+        },
+        "../../node_modules/prompts/lib/dateparts/hours.js": {
+          "bytesInOutput": 734
+        },
+        "../../node_modules/prompts/lib/dateparts/milliseconds.js": {
+          "bytesInOutput": 738
+        },
+        "../../node_modules/prompts/lib/dateparts/minutes.js": {
+          "bytesInOutput": 690
+        },
+        "../../node_modules/prompts/lib/dateparts/month.js": {
+          "bytesInOutput": 823
+        },
+        "../../node_modules/prompts/lib/dateparts/seconds.js": {
+          "bytesInOutput": 690
+        },
+        "../../node_modules/prompts/lib/dateparts/year.js": {
+          "bytesInOutput": 696
+        },
+        "../../node_modules/prompts/lib/dateparts/index.js": {
+          "bytesInOutput": 473
+        },
+        "../../node_modules/prompts/lib/elements/date.js": {
+          "bytesInOutput": 5200
+        },
+        "../../node_modules/prompts/lib/elements/number.js": {
+          "bytesInOutput": 4679
+        },
+        "../../node_modules/prompts/lib/elements/multiselect.js": {
+          "bytesInOutput": 6294
+        },
+        "../../node_modules/prompts/lib/elements/autocomplete.js": {
+          "bytesInOutput": 6767
+        },
+        "../../node_modules/prompts/lib/elements/autocompleteMultiselect.js": {
+          "bytesInOutput": 4550
+        },
+        "../../node_modules/prompts/lib/elements/confirm.js": {
+          "bytesInOutput": 1764
+        },
+        "../../node_modules/prompts/lib/elements/index.js": {
+          "bytesInOutput": 565
+        },
+        "../../node_modules/prompts/lib/prompts.js": {
+          "bytesInOutput": 2208
+        },
+        "../../node_modules/prompts/lib/index.js": {
+          "bytesInOutput": 2621
+        },
+        "../../node_modules/prompts/index.js": {
+          "bytesInOutput": 491
+        },
+        "../../node_modules/color-name/index.js": {
+          "bytesInOutput": 5029
+        },
+        "../../node_modules/color-convert/conversions.js": {
+          "bytesInOutput": 15400
+        },
+        "../../node_modules/color-convert/route.js": {
+          "bytesInOutput": 1864
+        },
+        "../../node_modules/color-convert/index.js": {
+          "bytesInOutput": 1539
+        },
+        "../../node_modules/chalk/node_modules/ansi-styles/index.js": {
+          "bytesInOutput": 4599
+        },
+        "../../node_modules/has-flag/index.js": {
+          "bytesInOutput": 439
+        },
+        "../../node_modules/supports-color/index.js": {
+          "bytesInOutput": 2733
+        },
+        "../../node_modules/chalk/source/util.js": {
+          "bytesInOutput": 1248
+        },
+        "../../node_modules/chalk/source/templates.js": {
+          "bytesInOutput": 3662
+        },
+        "../../node_modules/chalk/source/index.js": {
+          "bytesInOutput": 5505
+        },
+        "../../node_modules/restore-cursor/index.js": {
+          "bytesInOutput": 350
+        },
+        "../../node_modules/cli-cursor/index.js": {
+          "bytesInOutput": 669
+        },
+        "../../node_modules/cli-spinners/spinners.json": {
+          "bytesInOutput": 47841
+        },
+        "../../node_modules/cli-spinners/index.js": {
+          "bytesInOutput": 489
+        },
+        "../../node_modules/is-unicode-supported/index.js": {
+          "bytesInOutput": 397
+        },
+        "../../node_modules/log-symbols/index.js": {
+          "bytesInOutput": 602
+        },
+        "../../node_modules/ora/node_modules/ansi-regex/index.js": {
+          "bytesInOutput": 507
+        },
+        "../../node_modules/ora/node_modules/strip-ansi/index.js": {
+          "bytesInOutput": 292
+        },
+        "../../node_modules/defaults/node_modules/clone/clone.js": {
+          "bytesInOutput": 3206
+        },
+        "../../node_modules/defaults/index.js": {
+          "bytesInOutput": 374
+        },
+        "../../node_modules/wcwidth/combining.js": {
+          "bytesInOutput": 3037
+        },
+        "../../node_modules/wcwidth/index.js": {
+          "bytesInOutput": 1861
+        },
+        "../../node_modules/is-interactive/index.js": {
+          "bytesInOutput": 278
+        },
+        "../../node_modules/readable-stream/lib/internal/streams/stream.js": {
+          "bytesInOutput": 174
+        },
+        "../../node_modules/readable-stream/lib/internal/streams/buffer_list.js": {
+          "bytesInOutput": 6985
+        },
+        "../../node_modules/readable-stream/lib/internal/streams/destroy.js": {
+          "bytesInOutput": 2347
+        },
+        "../../node_modules/readable-stream/errors.js": {
+          "bytesInOutput": 3352
+        },
+        "../../node_modules/readable-stream/lib/internal/streams/state.js": {
+          "bytesInOutput": 902
+        },
+        "../../node_modules/inherits/inherits_browser.js": {
+          "bytesInOutput": 741
+        },
+        "../../node_modules/inherits/inherits.js": {
+          "bytesInOutput": 322
+        },
+        "../../node_modules/util-deprecate/node.js": {
+          "bytesInOutput": 155
+        },
+        "../../node_modules/readable-stream/lib/_stream_writable.js": {
+          "bytesInOutput": 14327
+        },
+        "../../node_modules/readable-stream/lib/_stream_duplex.js": {
+          "bytesInOutput": 2797
+        },
+        "../../node_modules/safe-buffer/index.js": {
+          "bytesInOutput": 1546
+        },
+        "../../node_modules/string_decoder/lib/string_decoder.js": {
+          "bytesInOutput": 6364
+        },
+        "../../node_modules/readable-stream/lib/internal/streams/end-of-stream.js": {
+          "bytesInOutput": 2966
+        },
+        "../../node_modules/readable-stream/lib/internal/streams/async_iterator.js": {
+          "bytesInOutput": 5589
+        },
+        "../../node_modules/readable-stream/lib/internal/streams/from.js": {
+          "bytesInOutput": 4039
+        },
+        "../../node_modules/readable-stream/lib/_stream_readable.js": {
+          "bytesInOutput": 21963
+        },
+        "../../node_modules/readable-stream/lib/_stream_transform.js": {
+          "bytesInOutput": 3336
+        },
+        "../../node_modules/readable-stream/lib/_stream_passthrough.js": {
+          "bytesInOutput": 542
+        },
+        "../../node_modules/readable-stream/lib/internal/streams/pipeline.js": {
+          "bytesInOutput": 2387
+        },
+        "../../node_modules/readable-stream/readable.js": {
+          "bytesInOutput": 709
+        },
+        "../../node_modules/bl/BufferList.js": {
+          "bytesInOutput": 8345
+        },
+        "../../node_modules/bl/bl.js": {
+          "bytesInOutput": 2138
+        },
+        "../../node_modules/ora/index.js": {
+          "bytesInOutput": 8567
+        },
+        "src/initiate.ts": {
+          "bytesInOutput": 23028
+        },
+        "../../node_modules/boxen/index.js": {
+          "bytesInOutput": 9512
+        },
+        "../../node_modules/ansi-regex/index.js": {
+          "bytesInOutput": 265
+        },
+        "../../node_modules/strip-ansi/index.js": {
+          "bytesInOutput": 201
+        },
+        "../../node_modules/get-east-asian-width/lookup.js": {
+          "bytesInOutput": 6945
+        },
+        "../../node_modules/get-east-asian-width/index.js": {
+          "bytesInOutput": 351
+        },
+        "../../node_modules/boxen/node_modules/string-width/index.js": {
+          "bytesInOutput": 1366
+        },
+        "../../node_modules/boxen/node_modules/chalk/source/vendor/ansi-styles/index.js": {
+          "bytesInOutput": 4841
+        },
+        "../../node_modules/boxen/node_modules/chalk/source/vendor/supports-color/index.js": {
+          "bytesInOutput": 3229
+        },
+        "../../node_modules/boxen/node_modules/chalk/source/utilities.js": {
+          "bytesInOutput": 885
+        },
+        "../../node_modules/boxen/node_modules/chalk/source/index.js": {
+          "bytesInOutput": 4267
+        },
+        "../../node_modules/widest-line/node_modules/string-width/index.js": {
+          "bytesInOutput": 1374
+        },
+        "../../node_modules/widest-line/index.js": {
+          "bytesInOutput": 168
+        },
+        "../../node_modules/camelcase/index.js": {
+          "bytesInOutput": 3211
+        },
+        "../../node_modules/ansi-styles/index.js": {
+          "bytesInOutput": 4886
+        },
+        "../../node_modules/boxen/node_modules/wrap-ansi/index.js": {
+          "bytesInOutput": 4410
+        },
+        "../../node_modules/empathic/find.mjs": {
+          "bytesInOutput": 1099
+        },
+        "../../node_modules/empathic/walk.mjs": {
+          "bytesInOutput": 289
+        },
+        "../../node_modules/empathic/resolve.mjs": {
+          "bytesInOutput": 156
+        },
+        "../../node_modules/process-ancestry/dist/index.js": {
+          "bytesInOutput": 3349
+        },
+        "src/generators/ANGULAR/index.ts": {
+          "bytesInOutput": 3127
+        },
+        "src/generators/baseGenerator.ts": {
+          "bytesInOutput": 11362
+        },
+        "../../node_modules/tiny-invariant/dist/esm/tiny-invariant.js": {
+          "bytesInOutput": 376
+        },
+        "src/generators/configure.ts": {
+          "bytesInOutput": 3200
+        },
+        "src/generators/EMBER/index.ts": {
+          "bytesInOutput": 335
+        },
+        "src/generators/HTML/index.ts": {
+          "bytesInOutput": 330
+        },
+        "src/generators/NEXTJS/index.ts": {
+          "bytesInOutput": 545
+        },
+        "src/generators/NUXT/index.ts": {
+          "bytesInOutput": 930
+        },
+        "src/generators/PREACT/index.ts": {
+          "bytesInOutput": 334
+        },
+        "src/generators/QWIK/index.ts": {
+          "bytesInOutput": 176
+        },
+        "src/generators/REACT/index.ts": {
+          "bytesInOutput": 524
+        },
+        "src/generators/REACT_NATIVE/index.ts": {
+          "bytesInOutput": 1830
+        },
+        "src/generators/REACT_NATIVE_WEB/index.ts": {
+          "bytesInOutput": 854
+        },
+        "src/generators/REACT_SCRIPTS/index.ts": {
+          "bytesInOutput": 2021
+        },
+        "src/generators/SERVER/index.ts": {
+          "bytesInOutput": 390
+        },
+        "src/generators/SOLID/index.ts": {
+          "bytesInOutput": 333
+        },
+        "src/generators/SVELTE/index.ts": {
+          "bytesInOutput": 266
+        },
+        "src/generators/SVELTEKIT/index.ts": {
+          "bytesInOutput": 423
+        },
+        "src/generators/VUE3/index.ts": {
+          "bytesInOutput": 470
+        },
+        "src/generators/WEB-COMPONENTS/index.ts": {
+          "bytesInOutput": 363
+        },
+        "src/generators/WEBPACK_REACT/index.ts": {
+          "bytesInOutput": 344
+        },
+        "src/ink/steps/checks/packageVersions.tsx": {
+          "bytesInOutput": 1111
+        },
+        "src/ink/steps/checks/CompatibilityType.tsx": {
+          "bytesInOutput": 132
+        },
+        "src/ink/steps/checks/vitestConfigFiles.tsx": {
+          "bytesInOutput": 3504
+        },
+        "src/scaffold-new-project.ts": {
+          "bytesInOutput": 6555
+        }
+      },
+      "bytes": 568767
+    },
+    "dist/_node-chunks/chunk-EKWS6HTS.js": {
+      "imports": [],
+      "exports": [
+        "__commonJS",
+        "__export",
+        "__require",
+        "__toESM",
+        "require_dist"
+      ],
+      "inputs": {
+        "../../node_modules/ts-dedent/dist/index.js": {
+          "bytesInOutput": 1727
+        }
+      },
+      "bytes": 4205
+    }
+  }
+}

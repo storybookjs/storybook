@@ -1,0 +1,8 @@
+> yarn prep --reset --optimized
+
+Building [92mcode/builders/builder-vite[39m
+(node:43999) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✅ Generated types for [36mbuilders/builder-vite/src/index.ts[39m
+Bundled in [33m62 ms[39m
+Generated types in [33m4.5 s[39m

@@ -78,6 +78,7 @@ export type StorybookMetadata = {
     packageName: string;
     version: string;
   };
+  packageJsonType?: 'unknown' | 'module' | 'commonjs';
   knownPackages?: KnownPackagesList;
   hasRouterPackage?: boolean;
   hasStorybookEslint?: boolean;

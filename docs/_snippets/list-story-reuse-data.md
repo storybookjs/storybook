@@ -1,4 +1,4 @@
-```ts filename="List.stories.ts" renderer="angular" language="ts"
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { moduleMetadata } from '@storybook/angular';
@@ -40,6 +40,47 @@ export const ManyItems: Story = {
     `,
   }),
 };
+```
+
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import { CommonModule } from '@angular/common';
+
+import { List } from './list.component';
+import { ListItem } from './list-item.component';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+  decorators: [
+    moduleMetadata({
+      declarations: [List, ListItem],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+export const ManyItems = meta.story({
+  args: {
+    Selected: Selected.input.args.isSelected,
+    Unselected: Unselected.input.args.isSelected,
+  },
+  render: (args) => ({
+    props: args,
+    template: `
+      <app-list>
+        <app-list-item [isSelected]="Selected"></app-list-item>
+        <app-list-item [isSelected]="Unselected"></app-list-item>
+        <app-list-item [isSelected]="Unselected"></app-list-item>
+      </app-list>
+    `,
+  }),
+});
 ```
 
 ```js filename="List.stories.js" renderer="html" language="js"

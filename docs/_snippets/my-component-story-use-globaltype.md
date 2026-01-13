@@ -1,4 +1,4 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { MyComponent } from './MyComponent.component';
@@ -33,6 +33,40 @@ export const StoryWithLocale: Story = {
     };
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const getCaptionForLocale = (locale) => {
+  switch (locale) {
+    case 'es':
+      return 'Hola!';
+    case 'fr':
+      return 'Bonjour!';
+    case 'kr':
+      return '안녕하세요!';
+    case 'zh':
+      return '你好!';
+    default:
+      return 'Hello!';
+  }
+};
+
+export const StoryWithLocale = meta.story({
+  render: (args, { globals: { locale } }) => {
+    const caption = getCaptionForLocale(locale);
+    return {
+      template: `<p>${caption}</p>`,
+    };
+  },
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

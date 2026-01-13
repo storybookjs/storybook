@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -20,6 +20,27 @@ export const OnPhone: Story = {
     viewport: { value: 'mobile1', isRotated: false },
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+  globals: {
+    // 👇 Set viewport for all component stories
+    viewport: { value: 'tablet', isRotated: false },
+  },
+});
+
+export const OnPhone = meta.story({
+  globals: {
+    // 👇 Override viewport for this story
+    viewport: { value: 'mobile1', isRotated: false },
+  },
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

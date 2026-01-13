@@ -1,4 +1,4 @@
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { YourComponent } from './your-component.component';
@@ -38,6 +38,45 @@ export const ExampleStory: Story = {
   },
   args: { propertyA: 'Item One', propertyB: 'Another Item One' },
 };
+```
+
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './your-component.component';
+
+const someFunction = (valuePropertyA: String, valuePropertyB: String) => {
+  // Do some logic here
+};
+
+const meta = preview.meta({
+  component: YourComponent,
+  //👇 Creates specific argTypes with options
+  argTypes: {
+    propertyA: {
+      options: ['Item One', 'Item Two', 'Item Three'],
+      control: { type: 'select' }, // automatically inferred when 'options' is defined
+    },
+    propertyB: {
+      options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+    },
+  },
+});
+
+export const ExampleStory = meta.story({
+  render: (args) => {
+    const { propertyA, propertyB } = args;
+    //👇 Assigns the function result to a variable
+    const someFunctionResult = someFunction(propertyA, propertyB);
+    return {
+      props: {
+        ...args,
+        someProperty: someFunctionResult,
+      },
+    };
+  },
+  args: { propertyA: 'Item One', propertyB: 'Another Item One' },
+});
 ```
 
 ```jsx filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

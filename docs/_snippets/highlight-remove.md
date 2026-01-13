@@ -1,4 +1,4 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { componentWrapperDecorator } from '@storybook/angular';
 
@@ -27,6 +27,34 @@ export const RemoveHighlight: Story = {
     }),
   ],
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { componentWrapperDecorator } from '@storybook/angular';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
+import { MyComponent } from './MyComponent.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const RemoveHighlight = meta.story({
+  decorators: [
+    componentWrapperDecorator((story) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        id: 'my-unique-id',
+        selectors: ['header', 'section', 'footer'],
+      });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
+      return story;
+    }),
+  ],
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

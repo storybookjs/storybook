@@ -28,6 +28,27 @@ export const ChristmasUI: Story = {
 };
 ```
 
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import Page from './Page.component';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const ChristmasUI = meta.story({
+  async play({ mount }) {
+    MockDate.set('2024-12-25');
+    // 👇 Render the component with the mocked date
+    await mount();
+    // ...rest of test
+  },
+});
+```
+
 ```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';

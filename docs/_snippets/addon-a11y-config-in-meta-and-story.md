@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './Button.component';
@@ -55,6 +55,62 @@ export const ExampleStory: Story = {
     },
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button.component';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    a11y: {
+      /*
+       * Axe's context parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter
+       * to learn more.
+       */
+      context: {},
+      /*
+       * Axe's configuration
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#api-name-axeconfigure
+       * to learn more about the available properties.
+       */
+      config: {},
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
+      options: {},
+      /*
+       * Configure test behavior
+       * See: https://storybook.js.org/docs/next/writing-tests/accessibility-testing#test-behavior
+       */
+      test: 'error',
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
+      manual: true,
+    },
+  },
+});
+
+export const ExampleStory = meta.story({
+  parameters: {
+    a11y: {
+      // ...same config available as above
+    },
+  },
+  globals: {
+    a11y: {
+      // ...same config available as above
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

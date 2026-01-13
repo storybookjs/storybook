@@ -1,4 +1,4 @@
-```ts filename="Page.stories.ts" renderer="angular" language="ts"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
 import { Page } from './Page';
@@ -9,6 +9,18 @@ const meta: Meta<Page> = {
   tags: ['!autodocs'],
 };
 export default meta;
+```
+
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

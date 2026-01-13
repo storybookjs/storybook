@@ -1,4 +1,4 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { componentWrapperDecorator } from '@storybook/angular';
 
@@ -42,6 +42,49 @@ export const StyledHighlight: Story = {
     }),
   ],
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { componentWrapperDecorator } from '@storybook/angular';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import { MyComponent } from './MyComponent.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const StyledHighlight = meta.story({
+  decorators: [
+    componentWrapperDecorator((story) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
+      });
+      return story;
+    }),
+  ],
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

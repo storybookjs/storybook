@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -41,6 +41,48 @@ export const Tertiary: Story = {
     },
   }),
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Primary = meta.story({
+  render: () => ({
+    props: {
+      label: 'Button',
+      backgroundColor: '#ff0',
+    },
+  }),
+});
+
+export const Secondary = meta.story({
+  render: () => ({
+    props: {
+      label: '😄👍😍💯',
+      backgroundColor: '#ff0',
+    },
+  }),
+});
+
+export const Tertiary = meta.story({
+  render: () => ({
+    props: {
+      label: '📚📕📈🤓',
+      backgroundColor: '#ff0',
+    },
+  }),
+});
 ```
 
 ```js filename="Button.stories.js" renderer="html" language="js"

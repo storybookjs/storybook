@@ -1,4 +1,4 @@
-```ts filename="DataTable.stories.ts" renderer="angular" language="ts"
+```ts filename="DataTable.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import { Meta } from '@storybook/angular';
 
 import { DataTable } from './DataTable.component';
@@ -12,6 +12,21 @@ const meta: Meta<DataTable> = {
   },
 };
 export default meta;
+```
+
+```ts filename="DataTable.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { DataTable } from './DataTable.component';
+
+const meta = preview.meta({
+  component: DataTable,
+  parameters: {
+    // 👇 This component's accessibility tests will not fail
+    //    Instead, they display warnings in the Storybook UI
+    a11y: { test: 'todo' },
+  },
+});
 ```
 
 ```ts filename="DataTable.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

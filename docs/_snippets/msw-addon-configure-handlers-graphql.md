@@ -1,4 +1,4 @@
-```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story"
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 
@@ -87,6 +87,93 @@ export const MockedError: Story = {
     },
   },
 };
+```
+
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { moduleMetadata } from '@storybook/angular';
+
+import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
+import { graphql, HttpResponse, delay } from 'msw';
+
+import { DocumentHeader } from './DocumentHeader.component';
+import { DocumentList } from './DocumentList.component';
+import { PageLayout } from './PageLayout.component';
+import { DocumentScreen } from './YourPage.component';
+import { MockGraphQLModule } from './mock-graphql.module';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+  decorators: [
+    moduleMetadata({
+      declarations: [DocumentList, DocumentHeader, PageLayout],
+      imports: [CommonModule, HttpClientModule, MockGraphQLModule],
+    }),
+  ],
+});
+
+//👇The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', () => {
+          return HttpResponse.json({
+            data: {
+              allInfo: {
+                ...TestData,
+              },
+            },
+          });
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', async () => {
+          await delay(800);
+          return HttpResponse.json({
+            errors: [
+              {
+                message: 'Access denied',
+              },
+            ],
+          });
+        }),
+      ],
+    },
+  },
+});
 ```
 
 ```ts filename="mock-graphql.module.ts" renderer="angular" language="ts" tabTitle="mock-apollo-module"

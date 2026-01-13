@@ -113,3 +113,41 @@ export default defineMain({
   },
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  async babel(config, { configType }) {
+    if (configType === 'DEVELOPMENT') {
+      // Your development configuration goes here
+    }
+    if (configType === 'PRODUCTION') {
+      // Your production configuration goes here.
+    }
+    return config;
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  async babel(config, { configType }) {
+    if (configType === 'DEVELOPMENT') {
+      // Your development configuration goes here
+    }
+    if (configType === 'PRODUCTION') {
+      // Your production configuration goes here.
+    }
+    return config;
+  },
+});
+```

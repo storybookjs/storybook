@@ -1,4 +1,4 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { componentWrapperDecorator } from '@storybook/angular';
 
@@ -23,6 +23,30 @@ export const ScrollIntoView: Story = {
     }),
   ],
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { componentWrapperDecorator } from '@storybook/angular';
+
+import { useChannel } from 'storybook/preview-api';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
+
+import { MyComponent } from './MyComponent.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ScrollIntoView = meta.story({
+  decorators: [
+    componentWrapperDecorator((story) => {
+      const emit = useChannel({});
+      emit(SCROLL_INTO_VIEW, '#footer');
+      return story;
+    }),
+  ],
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

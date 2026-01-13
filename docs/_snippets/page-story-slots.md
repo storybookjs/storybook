@@ -1,4 +1,4 @@
-```ts filename="Page.stories.ts" renderer="angular" language="ts"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { argsToTemplate } from '@storybook/angular';
 
@@ -25,6 +25,32 @@ export const CustomFooter: Story = {
     footer: 'Built with Storybook',
   },
 };
+```
+
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { argsToTemplate } from '@storybook/angular';
+
+import { Page } from './page.component';
+
+type PagePropsAndCustomArgs = Page & { footer?: string };
+
+const meta = preview.type<{ args: PagePropsAndCustomArgs }>().meta({
+  component: Page,
+  render: ({ footer, ...args }) => ({
+    props: args,
+    template: `
+      <storybook-page ${argsToTemplate(args)}>
+        <ng-container footer>${footer}</ng-container>
+      </storybook-page>`,
+  }),
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
 ```
 
 ```jsx filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

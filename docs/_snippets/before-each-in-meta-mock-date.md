@@ -1,4 +1,4 @@
-```ts filename="Page.stories.ts" renderer="angular" language="ts"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import MockDate from 'mockdate';
@@ -26,6 +26,32 @@ export const Default: Story = {
     // ... This will run with the mocked Date
   },
 };
+```
+
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Default = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

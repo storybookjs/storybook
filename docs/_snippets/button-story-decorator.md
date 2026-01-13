@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
@@ -26,6 +26,32 @@ export const InsideParent: Story = {
     componentWrapperDecorator(Parent),
   ],
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+import { Parent } from './parent.component'; // Parent contains ng-content
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  decorators: [componentWrapperDecorator((story) => `<div style="margin: 3em">${story}</div>`)],
+});
+
+export const InsideParent = meta.story({
+  decorators: [
+    moduleMetadata({
+      declarations: [Parent],
+    }),
+    componentWrapperDecorator(Parent),
+  ],
+});
 ```
 
 ```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

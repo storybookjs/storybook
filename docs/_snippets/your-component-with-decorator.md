@@ -1,4 +1,4 @@
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import { componentWrapperDecorator } from '@storybook/angular';
 
 import type { Meta } from '@storybook/angular';
@@ -11,6 +11,18 @@ const meta: Meta<YourComponent> = {
 };
 
 export default meta;
+```
+
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { componentWrapperDecorator } from '@storybook/angular';
+
+import { YourComponent } from './your.component';
+
+const meta = preview.meta({
+  component: YourComponent,
+  decorators: [componentWrapperDecorator((story) => `<div style="margin: 3em">${story}</div>`)],
+});
 ```
 
 ```jsx filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

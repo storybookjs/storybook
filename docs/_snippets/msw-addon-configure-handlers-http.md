@@ -1,4 +1,4 @@
-```ts filename="YourPage.stories.ts" renderer="angular" language="ts"
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { http, HttpResponse, delay } from 'msw';
@@ -63,6 +63,70 @@ export const MockedError: Story = {
     },
   },
 };
+```
+
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { http, HttpResponse, delay } from 'msw';
+
+import { DocumentScreen } from './YourPage.component';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+// 👇 The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('https://your-restful-endpoint/', () => {
+          return HttpResponse.json(TestData);
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('https://your-restful-endpoint', async () => {
+          await delay(800);
+          return new HttpResponse(null, {
+            status: 403,
+          });
+        }),
+      ],
+    },
+  },
+});
 ```
 
 ```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

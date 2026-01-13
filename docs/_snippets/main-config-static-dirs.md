@@ -54,11 +54,35 @@ export default defineMain({
 });
 ```
 
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
 ```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { defineMain } from '@storybook/vue3-vite/node';
 
 export default defineMain({
   framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  staticDirs: ['../public', '../static'],
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  staticDirs: ['../public', '../static'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   staticDirs: ['../public', '../static'],
 });

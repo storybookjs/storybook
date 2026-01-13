@@ -58,3 +58,23 @@ export default definePreview({
   args: { theme: 'light' },
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+export default definePreview({
+  // The default value of the theme arg for all stories
+  args: { theme: 'light' },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+export default definePreview({
+  // The default value of the theme arg for all stories
+  args: { theme: 'light' },
+});
+```

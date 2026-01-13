@@ -1,4 +1,4 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { MyComponent } from './MyComponent.component';
@@ -29,6 +29,35 @@ export const ComplexStory: Story = {
     data: complexData,
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent.component';
+
+import someData from './data.json';
+
+const meta = preview.meta({
+  component: MyComponent,
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"

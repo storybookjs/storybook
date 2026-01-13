@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -20,6 +20,28 @@ const meta: Meta<Button> = {
 };
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+// To apply a set of backgrounds to all stories of Button:
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      grid: {
+        cellSize: 20,
+        opacity: 0.5,
+        cellAmount: 5,
+        offsetX: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+        offsetY: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+      },
+    },
+  },
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

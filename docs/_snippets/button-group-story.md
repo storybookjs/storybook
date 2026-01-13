@@ -1,4 +1,4 @@
-```ts filename="ButtonGroup.stories.ts" renderer="angular" language="ts"
+```ts filename="ButtonGroup.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { moduleMetadata } from '@storybook/angular';
@@ -30,6 +30,36 @@ export const Pair: Story = {
     orientation: 'horizontal',
   },
 };
+```
+
+```ts filename="ButtonGroup.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { moduleMetadata } from '@storybook/angular';
+import preview from '../.storybook/preview';
+
+import { CommonModule } from '@angular/common';
+
+import { ButtonGroup } from './ButtonGroup.component';
+import { Button } from './button.component';
+
+//👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: ButtonGroup,
+  decorators: [
+    moduleMetadata({
+      declarations: [Button],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+export const Pair = meta.story({
+  args: {
+    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
+    orientation: 'horizontal',
+  },
+});
 ```
 
 ```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

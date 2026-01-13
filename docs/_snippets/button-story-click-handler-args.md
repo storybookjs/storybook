@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { argsToTemplate } from '@storybook/angular';
 
@@ -29,6 +29,36 @@ export const Text: Story = {
     onClick: action('clicked'),
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { argsToTemplate } from '@storybook/angular';
+import preview from '../.storybook/preview';
+
+import { action } from 'storybook/actions';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  render: (args) => ({
+    props: args,
+    // The argsToTemplate helper function converts the args to property and event bindings.
+    // You could also write the template in plain HTML and bind to the component's inputs and outputs yourself:
+    // <storybook-button ["label"]="label" (onClick)="onClick($event)">
+    // We don't recommend the latter since it can conflict with how Storybook applies arguments via the Controls panel.
+    // Binding to the component's inputs and outputs yourself will conflict with default values set inside the component's class.
+    // In edge-case scenarios, you may need to define the template yourself, though.
+    template: `<storybook-button ${argsToTemplate(args)}></storybook-button>`,
+  }),
+  args: {
+    label: 'Hello',
+    onClick: action('clicked'),
+  },
+});
 ```
 
 ```jsx filename="Button.stories.js|jsx" renderer="react" language="js"

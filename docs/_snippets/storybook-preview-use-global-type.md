@@ -16,6 +16,38 @@ const preview: Preview = {
 export default preview;
 ```
 
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { componentWrapperDecorator, definePreview } from '@storybook/angular';
+
+export default definePreview({
+  decorators: [
+    componentWrapperDecorator(
+      (story) => `<div [class]="myTheme">${story}</div>`,
+      ({ globals }) => {
+        return { myTheme: globals['theme'] };
+      },
+    ),
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import { componentWrapperDecorator, definePreview } from '@storybook/angular';
+
+export default definePreview({
+  decorators: [
+    componentWrapperDecorator(
+      (story) => `<div [class]="myTheme">${story}</div>`,
+      ({ globals }) => {
+        return { myTheme: globals['theme'] };
+      },
+    ),
+  ],
+});
+```
+
 ```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { ThemeProvider } from 'styled-components';
 

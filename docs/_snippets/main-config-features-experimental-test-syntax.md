@@ -22,3 +22,15 @@ export default defineMain({
   },
 });
 ```
+
+```ts filename=".storybook/main.js|ts (CSF Next 🧪)" renderer="angular" language="ts"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    experimentalTestSyntax: true,
+  },
+});
+```

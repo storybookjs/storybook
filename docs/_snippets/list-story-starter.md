@@ -1,4 +1,4 @@
-```ts filename="List.stories.ts" renderer="angular" language="ts"
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { moduleMetadata } from '@storybook/angular';
@@ -27,6 +27,34 @@ export const Empty: Story = {
     template: `<app-list></app-list>`,
   }),
 };
+```
+
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import { CommonModule } from '@angular/common';
+
+import { List } from './list.component';
+
+const meta = preview.meta({
+  component: List,
+  decorators: [
+    moduleMetadata({
+      declarations: [List],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({
+  render: (args) => ({
+    props: args,
+    template: `<app-list></app-list>`,
+  }),
+});
 ```
 
 ```js filename="List.stories.js" renderer="html" language="js"

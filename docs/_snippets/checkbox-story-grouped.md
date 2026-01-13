@@ -1,4 +1,4 @@
-```ts filename="CheckBox.stories.ts" renderer="angular" language="ts"
+```ts filename="CheckBox.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Checkbox } from './checkbox.component';
@@ -13,6 +13,21 @@ const meta: Meta<Checkbox> = {
 };
 
 export default meta;
+```
+
+```ts filename="CheckBox.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Checkbox } from './checkbox.component';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Design System/Atoms/Checkbox',
+  component: CheckBox,
+});
 ```
 
 ```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

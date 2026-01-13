@@ -107,3 +107,39 @@ export default defineMain({
   }),
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  /*
+   * 👇 The `config` argument contains all the other existing environment variables.
+   * Either configured in an `.env` file or configured on the command line.
+   */
+  env: (config) => ({
+    ...config,
+    EXAMPLE_VAR: 'An environment variable configured in Storybook',
+  }),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  /*
+   * 👇 The `config` argument contains all the other existing environment variables.
+   * Either configured in an `.env` file or configured on the command line.
+   */
+  env: (config) => ({
+    ...config,
+    EXAMPLE_VAR: 'An environment variable configured in Storybook',
+  }),
+});
+```

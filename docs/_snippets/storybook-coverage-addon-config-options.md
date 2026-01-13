@@ -143,3 +143,53 @@ export default defineMain({
   ],
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+// For Vite support add the following import
+// import type { AddonOptionsVite } from '@storybook/addon-coverage';
+import type { AddonOptionsWebpack } from '@storybook/addon-coverage';
+
+const coverageConfig: AddonOptionsWebpack = {
+  istanbul: {
+    include: ['**/stories/**'],
+    exclude: ['**/exampleDirectory/**'],
+  },
+};
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: [],
+  addons: [
+    // Other Storybook addons
+    {
+      name: '@storybook/addon-coverage',
+      options: coverageConfig,
+    },
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: [],
+  addons: [
+    // Other Storybook addons
+    {
+      name: '@storybook/addon-coverage',
+      options: {
+        istanbul: {
+          include: ['**/stories/**'],
+          exclude: ['**/exampleDirectory/**'],
+        },
+      },
+    },
+  ],
+});
+```

@@ -1,4 +1,4 @@
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { YourComponent } from './your.component';
@@ -16,6 +16,23 @@ export const FirstStory: Story = {
     //👇 The args you need here will depend on your component
   },
 };
+```
+
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './your.component';
+
+//👇 This default export determines where your story goes in the story list
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+export const FirstStory = meta.story({
+  args: {
+    //👇 The args you need here will depend on your component
+  },
+});
 ```
 
 ```js filename="YourComponent.stories.js" renderer="html" language="js"

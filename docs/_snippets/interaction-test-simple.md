@@ -1,4 +1,4 @@
-```ts filename="Dialog.stories.ts" renderer="angular" language="ts"
+```ts filename="Dialog.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { expect } from 'storybook/test';
 
@@ -19,6 +19,26 @@ export const Opens: Story = {
     await expect(canvas.getByRole('dialog')).toBeInTheDocument();
   },
 };
+```
+
+```ts filename="Dialog.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { expect } from 'storybook/test';
+
+import { Dialog } from './Dialog.component';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Opens = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // Click on a button and assert that a dialog appears
+    const button = canvas.getByRole('button', { text: 'Open Modal' });
+    await userEvent.click(button);
+    await expect(canvas.getByRole('dialog')).toBeInTheDocument();
+  },
+});
 ```
 
 ```ts filename="Dialog.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

@@ -93,3 +93,35 @@ export default definePreview({
   // ...
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+import { sb } from 'storybook/test';
+
+// 👇 Automatically replaces all exports from the `lib/session` local module with mock functions
+sb.mock(import('../lib/session.ts'));
+// 👇 Automatically replaces all exports from the `uuid` package in `node_modules` with mock functions
+sb.mock(import('uuid'));
+
+export default definePreview({
+  // ...
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+import { sb } from 'storybook/test';
+
+// 👇 Automatically replaces all exports from the `lib/session` local module with mock functions
+sb.mock('../lib/session.js');
+// 👇 Automatically replaces all exports from the `uuid` package in `node_modules` with mock functions
+sb.mock('uuid');
+
+export default definePreview({
+  // ...
+});
+```

@@ -71,3 +71,39 @@ export default defineMain({
   },
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+import custom from '../webpack.config.js'; // 👈 Custom Webpack configuration being imported.
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  webpackFinal: async (config) => {
+    return {
+      ...config,
+      module: { ...config.module, rules: [...config.module.rules, ...custom.module.rules] },
+    };
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular/node';
+
+import custom from '../webpack.config.js'; // 👈 Custom Webpack configuration being imported.
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  webpackFinal: async (config) => {
+    return {
+      ...config,
+      module: { ...config.module, rules: [...config.module.rules, ...custom.module.rules] },
+    };
+  },
+});
+```

@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -16,6 +16,24 @@ const meta: Meta<Button> = {
 };
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    label: { control: 'text' }, // Always shows the control
+    advanced: { control: 'boolean' },
+    // Only enabled if advanced is true
+    margin: { control: 'number', if: { arg: 'advanced' } },
+    padding: { control: 'number', if: { arg: 'advanced' } },
+    cornerRadius: { control: 'number', if: { arg: 'advanced' } },
+  },
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

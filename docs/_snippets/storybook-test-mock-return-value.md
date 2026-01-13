@@ -1,4 +1,4 @@
-```ts filename="Page.stories.ts" renderer="angular" language="ts"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { mocked } from 'storybook/test';
 
@@ -20,6 +20,27 @@ export const Default: Story = {
     mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
   },
 };
+```
+
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { mocked } from 'storybook/test';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const Default = meta.story({
+  async beforeEach() {
+    // 👇 Set the return value for the getUserFromSession function
+    mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
+  },
+});
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

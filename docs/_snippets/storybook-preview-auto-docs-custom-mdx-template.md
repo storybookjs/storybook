@@ -88,3 +88,33 @@ export default definePreview({
   },
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+import DocumentationTemplate from './DocumentationTemplate.mdx';
+
+export default definePreview({
+  parameters: {
+    docs: {
+      page: DocumentationTemplate,
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+import DocumentationTemplate from './DocumentationTemplate.mdx';
+
+export default definePreview({
+  parameters: {
+    docs: {
+      page: DocumentationTemplate,
+    },
+  },
+});
+```

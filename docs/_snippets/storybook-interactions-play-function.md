@@ -1,4 +1,4 @@
-```ts filename="Form.stories.ts" renderer="angular" language="ts"
+```ts filename="Form.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { expect, fn, waitFor } from 'storybook/test';
@@ -35,6 +35,42 @@ export const Submitted: Story = {
     await waitFor(() => expect(args.onSubmit).toHaveBeenCalled());
   },
 };
+```
+
+```ts filename="Form.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { expect, fn, waitFor } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+import { Form } from './Form.component';
+
+const meta = preview.meta({
+  component: Form,
+  args: {
+    // 👇 Use `fn` to spy on the submit output
+    submit: fn(),
+  },
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const Submitted = meta.story({
+  play: async ({ args, canvas, step, userEvent }) => {
+    await step('Enter credentials', async () => {
+      await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
+      await userEvent.type(canvas.getByTestId('password'), 'supersecret');
+    });
+
+    await step('Submit form', async () => {
+      await userEvent.click(canvas.getByRole('button'));
+    });
+
+    // 👇 Now we can assert that the onSubmit arg was called
+    await waitFor(() => expect(args.onSubmit).toHaveBeenCalled());
+  },
+});
 ```
 
 ```svelte filename="Form.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular/';
 
 import { Button } from './button.component';
@@ -31,6 +31,38 @@ export const PrimaryInAlert: Story = {
     label: 'Button',
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+  render: (args) => ({
+    props: args,
+    template: `
+      <demo-alert>
+        Alert text
+        <demo-button ${argsToTemplate(args)}></demo-button>
+      </demo-alert>
+    `,
+  }),
+});
+
+export const DefaultInAlert = meta.story({
+  args: {
+    label: 'Button',
+  },
+});
+
+export const PrimaryInAlert = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+});
 ```
 
 ```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF 3"

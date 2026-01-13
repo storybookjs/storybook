@@ -1,4 +1,4 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata, argsToTemplate } from '@storybook/angular';
 
@@ -36,6 +36,44 @@ export const Example: Story = {
     `,
   }),
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { moduleMetadata, argsToTemplate } from '@storybook/angular';
+
+import { CommonModule } from '@angular/common';
+
+import preview from '../.storybook/preview';
+
+import { Layout } from './Layout.component';
+import { MyComponent } from './MyComponent.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+  decorators: [
+    moduleMetadata({
+      declarations: [Layout],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: (args) => ({
+    props: args,
+    template: `
+      <app-layout>
+        <header>
+          <h1>Example</h1>
+        </header>
+        <article>
+          <app-my-component ${argsToTemplate(args)}></app-my-component>
+        </article>
+      </app-layout>
+    `,
+  }),
+});
 ```
 
 ```jsx filename="MyComponent.stories.js|jsx" renderer="preact" language="js"

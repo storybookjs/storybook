@@ -144,6 +144,24 @@ export default definePreview({
 });
 ```
 
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { componentWrapperDecorator, definePreview } from '@storybook/angular';
+
+export default definePreview({
+  decorators: [componentWrapperDecorator((story) => `<div style="margin: 3em">${story}</div>`)],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import { componentWrapperDecorator, definePreview } from '@storybook/angular';
+
+export default definePreview({
+  decorators: [componentWrapperDecorator((story) => `<div style="margin: 3em">${story}</div>`)],
+});
+```
+
 ```js filename=".storybook/preview.js" renderer="web-components" language="js"
 import { html } from 'lit';
 

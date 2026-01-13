@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './Button';
@@ -16,6 +16,23 @@ export const UndocumentedStory: Story = {
   // 👇 Removes this story from auto-generated documentation
   tags: ['!autodocs'],
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+
+export const UndocumentedStory = meta.story({
+  // 👇 Removes this story from auto-generated documentation
+  tags: ['!autodocs'],
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

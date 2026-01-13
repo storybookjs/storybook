@@ -176,3 +176,55 @@ export default defineMain({
   },
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="With Webpack (CSF Next 🧪)"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  async webpackFinal(config) {
+    config.module?.rules?.push({
+      test: /\.(graphql|gql)$/,
+      include: [path.resolve('./lib/emails')],
+      exclude: /node_modules/,
+      loader: 'graphql-tag/loader',
+    });
+    config.module?.rules?.push({
+      test: /\.(graphql|gql)$/,
+      include: [path.resolve('./lib/schema')],
+      exclude: /node_modules/,
+      loader: 'raw-loader',
+    });
+
+    return config;
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="With Webpack (CSF Next 🧪)"
+import { defineMain } from '@storybook/angular/node';
+
+export default defineMain({
+  framework: '@storybook/angular',
+  stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  async webpackFinal(config) {
+    config.module?.rules?.push({
+      test: /\.(graphql|gql)$/,
+      include: [path.resolve('./lib/emails')],
+      exclude: /node_modules/,
+      loader: 'graphql-tag/loader',
+    });
+    config.module?.rules?.push({
+      test: /\.(graphql|gql)$/,
+      include: [path.resolve('./lib/schema')],
+      exclude: /node_modules/,
+      loader: 'raw-loader',
+    });
+
+    return config;
+  },
+});
+```

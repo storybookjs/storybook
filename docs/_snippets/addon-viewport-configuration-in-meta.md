@@ -33,7 +33,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
@@ -51,6 +51,24 @@ const meta: Meta<MyComponent> = {
 };
 
 export default meta;
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+
+import { MyComponent } from './MyComponent.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+  parameters: {
+    viewport: {
+      //👇 Set available viewports for every story in the file
+      options: INITIAL_VIEWPORTS,
+    },
+  },
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

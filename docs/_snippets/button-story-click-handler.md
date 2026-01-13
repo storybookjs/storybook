@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { action } from 'storybook/actions';
@@ -21,6 +21,28 @@ export const Text: Story = {
     template: `<storybook-button [label]="label" (onClick)="onClick($event)"></storybook-button>`,
   }),
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { action } from 'storybook/actions';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  render: () => ({
+    props: {
+      label: 'Button',
+      onClick: action('clicked'),
+    },
+    template: `<storybook-button [label]="label" (onClick)="onClick($event)"></storybook-button>`,
+  }),
+});
 ```
 
 ```jsx filename="Button.stories.js|jsx" renderer="react" language="js"

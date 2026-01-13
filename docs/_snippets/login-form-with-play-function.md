@@ -1,4 +1,4 @@
-```ts filename="LoginForm.stories.ts" renderer="angular" language="ts"
+```ts filename="LoginForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { expect } from 'storybook/test';
@@ -32,6 +32,39 @@ export const FilledForm: Story = {
     ).toBeInTheDocument();
   },
 };
+```
+
+```ts filename="LoginForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { expect } from 'storybook/test';
+
+import { LoginForm } from './LoginForm.component';
+
+const meta = preview.meta({
+  component: LoginForm,
+});
+
+export const EmptyForm = meta.story({});
+
+export const FilledForm = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // 👇 Simulate interactions with the component
+    await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
+
+    await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+
+    // 👇 Assert DOM structure
+    await expect(
+      canvas.getByText(
+        'Everything is perfect. Your account is ready and we should probably get you started!',
+      ),
+    ).toBeInTheDocument();
+  },
+});
 ```
 
 ```js filename="LoginForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

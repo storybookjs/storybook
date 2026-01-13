@@ -94,3 +94,35 @@ export default definePreview({
   },
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+export default definePreview({
+  parameters: {
+    backgrounds: {
+      options: {
+        light: { name: 'Light', value: '#fff' },
+        dark: { name: 'Dark', value: '#333' },
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/angular';
+
+export default definePreview({
+  parameters: {
+    backgrounds: {
+      options: {
+        light: { name: 'Light', value: '#fff' },
+        dark: { name: 'Dark', value: '#333' },
+      },
+    },
+  },
+});
+```

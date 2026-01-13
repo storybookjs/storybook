@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './Button';
@@ -13,6 +13,22 @@ const meta: Meta<Button> = {
   tags: ['autodocs', '!dev'],
 };
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  /*
+   * All stories in this file will:
+   * - Be included in the docs page
+   * - Not appear in Storybook's sidebar
+   */
+  tags: ['autodocs', '!dev'],
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './Button';
@@ -34,6 +34,41 @@ export const Combo: Story = {
     `,
   }),
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Variant1 = meta.story({
+  // 👇 This story will not appear in Storybook's sidebar or docs page
+  tags: ['!dev', '!autodocs'],
+  args: { variant: 1 },
+});
+
+export const Variant2 = meta.story({
+  // 👇 This story will not appear in Storybook's sidebar or docs page
+  tags: ['!dev', '!autodocs'],
+  args: { variant: 2 },
+});
+
+export const Combo = meta.story({
+  // 👇 This story should not be tested, but will appear in the sidebar and docs page
+  tags: ['!test'],
+  render: () => ({
+    template: `
+      <div>
+        <demo-button [variant]="1"></demo-button>
+        <demo-button [variant]="2"></demo-button>
+      </div>
+    `,
+  }),
+});
 ```
 
 ```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF 3"

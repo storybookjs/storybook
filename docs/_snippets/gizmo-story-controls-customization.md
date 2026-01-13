@@ -1,4 +1,4 @@
-```ts filename="Gizmo.stories.ts" renderer="angular" language="ts"
+```ts filename="Gizmo.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
 import { Gizmo } from './Gizmo.component';
@@ -55,6 +55,63 @@ const meta: Meta<Gizmo> = {
 };
 
 export default meta;
+```
+
+```ts filename="Gizmo.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Gizmo } from './Gizmo.component';
+
+const meta = preview.meta({
+  component: Gizmo,
+  argTypes: {
+    canRotate: {
+      control: 'boolean',
+    },
+    width: {
+      control: { type: 'number', min: 400, max: 1200, step: 50 },
+    },
+    height: {
+      control: { type: 'range', min: 200, max: 1500, step: 50 },
+    },
+    rawData: {
+      control: 'object',
+    },
+    coordinates: {
+      control: 'object',
+    },
+    texture: {
+      control: {
+        type: 'file',
+        accept: '.png',
+      },
+    },
+    position: {
+      control: 'radio',
+      options: ['left', 'right', 'center'],
+    },
+    rotationAxis: {
+      control: 'check',
+      options: ['x', 'y', 'z'],
+    },
+    scaling: {
+      control: 'select',
+      options: [10, 50, 75, 100, 200],
+    },
+    label: {
+      control: 'text',
+    },
+    meshColors: {
+      control: {
+        type: 'color',
+        presetColors: ['#ff0000', '#00ff00', '#0000ff'],
+      },
+    },
+    revisionDate: {
+      control: 'date',
+    },
+  },
+});
 ```
 
 ```svelte filename="Gizmo.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

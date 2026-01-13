@@ -155,3 +155,55 @@ export default definePreview({
   },
 });
 ```
+
+```tsx filename=".storybook/preview.tsx" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import { definePreview } from '@storybook/angular';
+import { DocsContainer } from '@storybook/addon-docs/blocks';
+
+const ExampleContainer = ({ children, ...props }) => {
+  return <DocsContainer {...props}>{children}</DocsContainer>;
+};
+
+export default definePreview({
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      container: ExampleContainer,
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename=".storybook/preview.jsx" renderer="angular" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import { definePreview } from '@storybook/angular';
+import { DocsContainer } from '@storybook/addon-docs/blocks';
+
+const ExampleContainer = ({ children, ...props }) => {
+  return <DocsContainer {...props}>{children}</DocsContainer>;
+};
+
+export default definePreview({
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      container: ExampleContainer,
+    },
+  },
+});
+```

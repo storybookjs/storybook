@@ -1,4 +1,4 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { MyComponent } from './MyComponent.component';
@@ -26,6 +26,33 @@ export const WithAnImage: Story = {
     template: `<img src="{{src}}" alt="{{alt}}" />`,
   }),
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent.component';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => ({
+    props: {
+      src: image.src,
+      alt: image.alt,
+    },
+    template: `<img src="{{src}}" alt="{{alt}}" />`,
+  }),
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

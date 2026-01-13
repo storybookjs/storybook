@@ -1,4 +1,4 @@
-```ts filename="LoginForm.stories.ts" renderer="angular" language="ts"
+```ts filename="LoginForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { fn, expect } from 'storybook/test';
 
@@ -25,6 +25,32 @@ export const FilledForm: Story = {
     await expect(args.onSubmit).toHaveBeenCalled();
   },
 };
+```
+
+```ts filename="LoginForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { fn, expect } from 'storybook/test';
+
+import { LoginForm } from './LoginForm.component';
+
+const meta = preview.meta({
+  component: LoginForm,
+  args: {
+    // 👇 Use `fn` to spy on the onSubmit arg
+    onSubmit: fn(),
+  },
+});
+
+export const FilledForm = meta.story({
+  play: async ({ args, canvas, userEvent }) => {
+    await userEvent.type(canvas.getByLabelText('Email'), 'email@provider.com');
+    await userEvent.type(canvas.getByLabelText('Password'), 'a-random-password');
+    await userEvent.click(canvas.getByRole('button', { name: 'Log in' }));
+
+    // 👇 Now we can assert that the onSubmit arg was called
+    await expect(args.onSubmit).toHaveBeenCalled();
+  },
+});
 ```
 
 ```ts filename="LoginForm.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

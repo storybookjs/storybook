@@ -1,4 +1,4 @@
-```ts filename="List.stories.ts" renderer="angular" language="ts"
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { moduleMetadata } from '@storybook/angular';
@@ -42,6 +42,49 @@ export const OneItem: Story = {
     ...Unchecked.args,
   },
 };
+```
+
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import { CommonModule } from '@angular/common';
+
+import { List } from './list.component';
+import { ListItem } from './list-item.component';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+  decorators: [
+    moduleMetadata({
+      declarations: [List, ListItem],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const OneItem = meta.story({
+  render: (args) => ({
+    props: args,
+    template: `
+      <app-list>
+        <app-list-item [item]="item"></app-list-item>
+      </app-list>
+   `,
+  }),
+  args: {
+    ...Unchecked.input.args,
+  },
+});
 ```
 
 ```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

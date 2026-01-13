@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import { Meta } from '@storybook/angular';
 
 import { Button } from './Button.component';
@@ -11,6 +11,20 @@ const meta: Meta<Button> = {
   },
 };
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button.component';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    // 👇 Remove this once all stories pass accessibility tests
+    // a11y: { test: 'todo' },
+  },
+});
 ```
 
 ```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"

@@ -1,4 +1,4 @@
-```ts filename="Dialog.stories.ts" renderer="angular" language="ts"
+```ts filename="Dialog.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { screen } from 'storybook/test';
 
@@ -20,6 +20,27 @@ export const Open: Story = {
     await expect(dialog).toBeVisible();
   },
 };
+```
+
+```ts filename="Dialog.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { screen } from 'storybook/test';
+
+import { Dialog } from './Dialog.component';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Open = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Open dialog' }));
+
+    // Starts querying from the document
+    const dialog = screen.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+  },
+});
 ```
 
 ```svelte filename="Dialog.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

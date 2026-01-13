@@ -1,4 +1,4 @@
-```ts filename="List.stories.ts" renderer="angular" language="ts"
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { moduleMetadata } from '@storybook/angular';
@@ -35,6 +35,42 @@ export const OneItem: Story = {
   `,
   }),
 };
+```
+
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import { CommonModule } from '@angular/common';
+
+import { List } from './list.component';
+import { ListItem } from './list-item.component';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+  decorators: [
+    moduleMetadata({
+      declarations: [List, ListItem],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+export const Empty = meta.story({});
+
+export const OneItem = meta.story({
+  args: {},
+  render: (args) => ({
+    props: args,
+    template: `
+      <app-list>
+        <app-list-item></app-list-item>
+      </app-list>
+  `,
+  }),
+});
 ```
 
 ```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

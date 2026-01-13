@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './Button.component';
@@ -26,6 +26,33 @@ export const NoA11yFail: Story = {
     a11y: { test: 'todo' },
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button.component';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    // 👇 Applies to all stories in this file
+    a11y: { test: 'error' },
+  },
+});
+
+// 👇 This story will use the 'error' value and fail on accessibility violations
+export const Primary = meta.story({
+  args: { primary: true },
+});
+
+// 👇 This story will not fail on accessibility violations
+//    (but will still run the tests and show warnings)
+export const NoA11yFail = meta.story({
+  parameters: {
+    a11y: { test: 'todo' },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"

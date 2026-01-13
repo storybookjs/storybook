@@ -1,4 +1,4 @@
-```ts filename="TodoItem.stories.ts" renderer="angular" language="ts"
+```ts filename="TodoItem.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { moduleMetadata } from '@storybook/angular';
@@ -38,6 +38,45 @@ export const Primary: Story = {
     }),
   ],
 };
+```
+
+```ts filename="TodoItem.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import { CommonModule } from '@angular/common';
+
+import { TodoItem } from './TodoItem';
+
+const meta = preview.meta({
+  component: TodoItem,
+  decorators: [
+    moduleMetadata({
+      declarations: [TodoItem],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Primary = meta.story({
+  render: (args, { loaded: { todo } }) => ({
+    props: {
+      args,
+      todo,
+    },
+  }),
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
 ```
 
 ```jsx filename="TodoItem.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"

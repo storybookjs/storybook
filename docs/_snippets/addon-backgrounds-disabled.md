@@ -32,6 +32,22 @@ export const Large: Story = {
 };
 ```
 
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Large = meta.story({
+  parameters: {
+    backgrounds: { disable: true },
+  },
+});
+```
+
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';

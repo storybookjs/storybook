@@ -1,4 +1,4 @@
-```ts filename="Example.stories.ts" renderer="angular" language="ts"
+```ts filename="Example.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
 import { Example } from './Example';
@@ -16,6 +16,24 @@ const meta: Meta<Example> = {
 };
 
 export default meta;
+```
+
+```ts filename="Example.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Example } from './Example';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    value: {
+      table: {
+        defaultValue: { summary: 0 },
+        type: { summary: 'number' },
+      },
+    },
+  },
+});
 ```
 
 ```svelte filename="Example.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

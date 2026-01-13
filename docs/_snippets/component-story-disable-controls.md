@@ -1,4 +1,4 @@
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
 import { YourComponent } from './YourComponent.component';
@@ -16,6 +16,24 @@ const meta: Meta<YourComponent> = {
 };
 
 export default meta;
+```
+
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './YourComponent.component';
+
+const meta = preview.meta({
+  component: YourComponent,
+  argTypes: {
+    // foo is the property we want to remove from the UI
+    foo: {
+      table: {
+        disable: true,
+      },
+    },
+  },
+});
 ```
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

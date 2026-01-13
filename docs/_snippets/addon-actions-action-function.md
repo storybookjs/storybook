@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
 import { action } from 'storybook/actions';
@@ -14,6 +14,22 @@ const meta: Meta<Button> = {
 };
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { action } from 'storybook/actions';
+
+import Button from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

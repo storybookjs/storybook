@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -18,6 +18,26 @@ const meta: Meta<Button> = {
 };
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+});
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js"

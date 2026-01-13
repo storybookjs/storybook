@@ -1,4 +1,4 @@
-```ts filename="NoteUI.stories.ts" renderer="angular" language="ts"
+```ts filename="NoteUI.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { expect } from 'storybook/test';
 
@@ -28,6 +28,35 @@ export const SaveFlow: Story = {
     await expect(saveNote).toHaveBeenCalled();
   },
 };
+```
+
+```ts filename="NoteUI.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { expect } from 'storybook/test';
+
+// 👇 Automocked module resolves to '../app/__mocks__/actions'
+import { saveNote } from '../app/actions';
+import { createNotes } from '../app/mocks/notes';
+
+import NoteUI from './note-ui';
+
+const meta = preview.meta({ component: NoteUI });
+
+const notes = createNotes();
+
+export const SaveFlow = meta.story({
+  name: 'Save Flow ▶',
+  args: {
+    isEditing: true,
+    note: notes[0],
+  },
+  play: async ({ canvas, userEvent }) => {
+    const saveButton = canvas.getByRole('menuitem', { name: /done/i });
+    await userEvent.click(saveButton);
+    // 👇 This is the mock function, so you can assert its behavior
+    await expect(saveNote).toHaveBeenCalled();
+  },
+});
 ```
 
 ```svelte filename="NoteUI.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

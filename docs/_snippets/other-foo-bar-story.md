@@ -1,4 +1,4 @@
-```ts filename="FooBar.stories.ts" renderer="angular" language="ts"
+```ts filename="FooBar.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Foo } from './Foo.component';
@@ -19,6 +19,26 @@ type Story = StoryObj<Foo>;
 export const Baz: Story = {
   name: 'Insert name here',
 };
+```
+
+```ts filename="FooBar.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Foo } from './Foo.component';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'OtherFoo/Bar',
+  component: Foo,
+  id: 'Foo/Bar', // Or 'foo-bar' if you prefer
+});
+
+export const Baz = meta.story({
+  name: 'Insert name here',
+});
 ```
 
 ```js filename="FooBar.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"

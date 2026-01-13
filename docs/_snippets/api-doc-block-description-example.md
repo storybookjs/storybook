@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -34,6 +34,41 @@ export const Primary: Story = {
     },
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

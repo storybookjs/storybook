@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './Button.component';
@@ -16,6 +16,23 @@ export const ExperimentalFeatureStory: Story = {
   //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
   tags: ['!stable', 'experimental'],
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button.component';
+
+const meta = preview.meta({
+  component: Button,
+  // 👇 Applies to all stories in this file
+  tags: ['stable'],
+});
+
+export const ExperimentalFeatureStory = meta.story({
+  //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
+  tags: ['!stable', 'experimental'],
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

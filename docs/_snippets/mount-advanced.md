@@ -60,6 +60,69 @@ export const Default = {
 };
 ```
 
+```tsx filename="Page.stories.tsx" renderer="angular" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/angular';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import { Page } from './Page.component';
+
+const meta = { component: Page } satisfies Meta<typeof Page>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      <Page {...args} params={{ id: String(note.id) }} />,
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    params: { control: { disable: true } },
+  },
+};
+```
+
+```tsx filename="Page.stories.tsx" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import { Page } from './Page.component';
+
+const meta = preview.meta({ component: Page });
+
+export const Default = meta.story({
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      <Page {...args} params={{ id: String(note.id) }} />,
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    params: { control: { disable: true } },
+  },
+});
+```
+
 ```ts filename="Page.stories.ts" renderer="svelte" language="ts"
 // Replace your-framework with the framework you are using, e.g., svelte-vite, sveltekit, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';

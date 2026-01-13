@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -22,6 +22,29 @@ export const Primary: Story = {
     },
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  // 👇 Story-level parameters
+  parameters: {
+    backgrounds: {
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
+    },
+  },
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"

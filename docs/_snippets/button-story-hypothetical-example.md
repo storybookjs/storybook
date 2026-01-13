@@ -1,3 +1,44 @@
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/angular';
+
+import { Button } from './button.component';
+
+const meta: Meta<Button> = {
+  component: Button,
+};
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Sample: Story = {
+  render: () => ({
+    template: '<button :label=label />',
+    data: {
+      label: 'hello button',
+    },
+  }),
+};
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Sample = meta.story({
+  render: () => ({
+    template: '<button :label=label />',
+    data: {
+      label: 'hello button',
+    },
+  }),
+});
+```
+
 ```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 

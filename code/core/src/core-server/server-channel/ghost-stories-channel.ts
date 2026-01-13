@@ -74,8 +74,7 @@ export function initGhostStoriesChannel(
       if (candidatesResult.error) {
         stats.totalRunDuration = Date.now() - ghostRunStart;
         telemetry('ghost-stories', {
-          success: false,
-          error: candidatesResult.error,
+          runError: candidatesResult.error,
           stats,
         });
         return;
@@ -84,8 +83,7 @@ export function initGhostStoriesChannel(
       if (candidatesResult.candidates.length === 0) {
         stats.totalRunDuration = Date.now() - ghostRunStart;
         telemetry('ghost-stories', {
-          success: false,
-          error: 'No candidates found',
+          runError: 'No candidates found',
           stats,
         });
         return;
@@ -97,17 +95,13 @@ export function initGhostStoriesChannel(
       stats.totalRunDuration = Date.now() - ghostRunStart;
       stats.testRunDuration = testRunResult.duration;
       telemetry('ghost-stories', {
-        ...(testRunResult.error !== undefined ? { error: testRunResult.error } : {}),
-        success: testRunResult.success,
+        ...(testRunResult.runError !== undefined ? { runError: testRunResult.runError } : {}),
         stats,
         results: testRunResult.summary,
       });
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-
+    } catch {
       telemetry('ghost-stories', {
-        success: false,
-        error: errorMessage,
+        runError: 'Unknown error during ghost run',
         stats,
       });
     } finally {

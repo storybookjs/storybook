@@ -64,17 +64,15 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
 
     if (testFailureMessage) {
       return {
-        success: false,
         duration,
-        error: testFailureMessage,
+        runError: testFailureMessage,
       };
     }
 
     if (!existsSync(outputFile)) {
       return {
-        success: false,
         duration,
-        error: 'JSON report not found',
+        runError: 'JSON report not found',
       };
     }
 
@@ -86,17 +84,15 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
       testResults = JSON.parse(resultsJson);
     } catch {
       return {
-        success: false,
         duration,
-        error: 'Failed to read or parse JSON report',
+        runError: 'Failed to read or parse JSON report',
       };
     }
 
     return { ...parseVitestResults(testResults), duration };
   } catch {
     return {
-      success: false,
-      error: 'Uncaught error running story tests',
+      runError: 'Uncaught error running story tests',
       duration: 0,
     };
   }

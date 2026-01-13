@@ -1,8 +1,5 @@
 import type { ErrorCategory } from '../../../shared/utils/categorize-render-errors';
-import {
-  categorizeError,
-  getCategoryDescription,
-} from '../../../shared/utils/categorize-render-errors';
+import { categorizeError } from '../../../shared/utils/categorize-render-errors';
 import { type ErrorCategorizationResult, type StoryTestResult, type TestRunSummary } from './types';
 
 /**
@@ -16,7 +13,11 @@ import { type ErrorCategorizationResult, type StoryTestResult, type TestRunSumma
 function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategorizationResult {
   const failed = testResults.filter((r) => r.status === 'FAIL' && r.error);
 
-  const map = new Map<ErrorCategory, { count: number; matchedDependencies: Set<string> }>();
+  // Map: category -> { count, uniqueErrors: Set<string>, matchedDependencies }
+  const map = new Map<
+    ErrorCategory,
+    { count: number; uniqueErrors: Set<string>; matchedDependencies: Set<string> }
+  >();
 
   // To count unique error messages (by their message, not by category)
   const uniqueErrorMessages = new Set<string>();
@@ -25,7 +26,7 @@ function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategori
     const { category, matchedDependencies } = categorizeError(r.error!, r.stack);
 
     if (!map.has(category)) {
-      map.set(category, { count: 0, matchedDependencies: new Set() });
+      map.set(category, { count: 0, uniqueErrors: new Set(), matchedDependencies: new Set() });
     }
 
     const data = map.get(category)!;
@@ -34,12 +35,13 @@ function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategori
 
     // Use the full error message for unique error message counting
     uniqueErrorMessages.add(r.error!);
+    data.uniqueErrors.add(r.error!);
   }
 
   const categorizedErrors = Array.from(map.entries()).reduce<Record<string, any>>(
     (acc, [category, data]) => {
       acc[category] = {
-        description: getCategoryDescription(category),
+        uniqueCount: data.uniqueErrors.size,
         count: data.count,
         matchedDependencies: Array.from(data.matchedDependencies).sort(),
       };
@@ -97,9 +99,7 @@ export function parseVitestResults(testResults: any): TestRunSummary {
 
   const total = testResults.numTotalTests;
   const passed = testResults.numPassedTests;
-  const failed = testResults.numFailedTests;
   const successRate = total > 0 ? parseFloat((passed / total).toFixed(2)) : 0;
-  const failureRate = total > 0 ? parseFloat((failed / total).toFixed(2)) : 0;
   const successRateWithoutEmptyRender =
     total > 0 ? parseFloat(((passed - passedButEmptyRender) / total).toFixed(2)) : 0;
 
@@ -107,22 +107,15 @@ export function parseVitestResults(testResults: any): TestRunSummary {
   const errorClassification = extractCategorizedErrors(storyTestResults);
   const categorizedErrors = errorClassification.categorizedErrors;
 
-  const summary = {
-    total,
-    passed,
-    passedButEmptyRender,
-    failed,
-    successRate,
-    successRateWithoutEmptyRender,
-    failureRate,
-    uniqueErrorCount: errorClassification.uniqueErrorCount,
-    categorizedErrors,
+  return {
+    summary: {
+      total,
+      passed,
+      passedButEmptyRender,
+      successRate,
+      successRateWithoutEmptyRender,
+      uniqueErrorCount: errorClassification.uniqueErrorCount,
+      categorizedErrors,
+    },
   };
-
-  const enhancedResponse: TestRunSummary = {
-    success: testResults.success,
-    summary,
-  };
-
-  return enhancedResponse;
 }

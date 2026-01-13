@@ -229,7 +229,7 @@ export const ExperimentalFeatureStory: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   title: 'Button',
   component: 'demo-button',
@@ -254,7 +254,7 @@ export const ExperimentalFeatureStory = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -282,6 +282,58 @@ export const ExperimentalFeatureStory: Story = {
    */
   tags: ['experimental'],
 };
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  /*
+   * All stories in this file will have these tags applied:
+   * - autodocs
+   * - dev (implicit default, inherited from preview)
+   * - test (implicit default, inherited from preview)
+   */
+  tags: ['autodocs'],
+});
+
+export const ExperimentalFeatureStory = meta.story({
+  /*
+   * This particular story will have these tags applied:
+   * - experimental
+   * - autodocs (inherited from meta)
+   * - dev (inherited from meta)
+   * - test (inherited from meta)
+   */
+  tags: ['experimental'],
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  /*
+   * All stories in this file will have these tags applied:
+   * - autodocs
+   * - dev (implicit default, inherited from preview)
+   * - test (implicit default, inherited from preview)
+   */
+  tags: ['autodocs'],
+});
+
+export const ExperimentalFeatureStory = meta.story({
+  /*
+   * This particular story will have these tags applied:
+   * - experimental
+   * - autodocs (inherited from meta)
+   * - dev (inherited from meta)
+   * - test (inherited from meta)
+   */
+  tags: ['experimental'],
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"

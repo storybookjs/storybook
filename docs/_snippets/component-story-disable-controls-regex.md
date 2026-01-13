@@ -289,7 +289,7 @@ export const RegexExclude: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="web-components" language="js"
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'your-component',
 };
@@ -319,7 +319,7 @@ export const RegexExclude = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -352,6 +352,70 @@ export const RegexExclude: Story = {
     controls: { exclude: /^hello*/ },
   },
 };
+```
+
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'your-component',
+});
+
+export const ArrayInclude = meta.story({
+  parameters: {
+    controls: { include: ['foo', 'bar'] },
+  },
+});
+
+export const RegexInclude = meta.story({
+  parameters: {
+    controls: { include: /^hello*/ },
+  },
+});
+
+export const ArrayExclude = meta.story({
+  parameters: {
+    controls: { exclude: ['foo', 'bar'] },
+  },
+});
+
+export const RegexExclude = meta.story({
+  parameters: {
+    controls: { exclude: /^hello*/ },
+  },
+});
+```
+
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'your-component',
+});
+
+export const ArrayInclude = meta.story({
+  parameters: {
+    controls: { include: ['foo', 'bar'] },
+  },
+});
+
+export const RegexInclude = meta.story({
+  parameters: {
+    controls: { include: /^hello*/ },
+  },
+});
+
+export const ArrayExclude = meta.story({
+  parameters: {
+    controls: { exclude: ['foo', 'bar'] },
+  },
+});
+
+export const RegexExclude = meta.story({
+  parameters: {
+    controls: { exclude: /^hello*/ },
+  },
+});
 ```
 
 ```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

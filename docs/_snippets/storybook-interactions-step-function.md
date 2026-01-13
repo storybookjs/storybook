@@ -2,7 +2,7 @@
 // ...rest of story file
 
 export const Submitted = {
-  play: async ({ args, canvas, step }) => {
+  play: async ({ args, canvas, step, userEvent }) => {
     await step('Enter email and password', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');
@@ -19,35 +19,7 @@ export const Submitted = {
 // ...rest of story file
 
 export const Submitted: Story = {
-  play: async ({ args, canvas, step }) => {
-    await step('Enter email and password', async () => {
-      await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
-      await userEvent.type(canvas.getByTestId('password'), 'supersecret');
-    });
-
-    await step('Submit form', async () => {
-      await userEvent.click(canvas.getByRole('button'));
-    });
-  },
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { userEvent } from 'storybook/test';
-
-import { MyComponent } from './MyComponent.component';
-
-const meta: Meta<MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<MyComponent>;
-
-export const Submitted: Story = {
-  play: async ({ args, canvas, step }) => {
+  play: async ({ args, canvas, step, userEvent }) => {
     await step('Enter email and password', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');
@@ -165,6 +137,48 @@ import MyComponent from './MyComponent.vue';
 
 const meta = preview.meta({
   component: MyComponent,
+});
+
+export const Submitted = meta.story({
+  play: async ({ args, canvas, step }) => {
+    await step('Enter email and password', async () => {
+      await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
+      await userEvent.type(canvas.getByTestId('password'), 'supersecret');
+    });
+
+    await step('Submit form', async () => {
+      await userEvent.click(canvas.getByRole('button'));
+    });
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const Submitted = meta.story({
+  play: async ({ args, canvas, step }) => {
+    await step('Enter email and password', async () => {
+      await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
+      await userEvent.type(canvas.getByTestId('password'), 'supersecret');
+    });
+
+    await step('Submit form', async () => {
+      await userEvent.click(canvas.getByRole('button'));
+    });
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
 });
 
 export const Submitted = meta.story({

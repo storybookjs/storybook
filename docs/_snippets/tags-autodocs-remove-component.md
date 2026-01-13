@@ -99,7 +99,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   title: 'Page',
   component: 'demo-page',
@@ -108,7 +108,7 @@ export default {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -118,6 +118,26 @@ const meta: Meta = {
   tags: ['!autodocs'],
 };
 export default meta;
+```
+
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-page',
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
+```
+
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-page',
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
 ```
 
 ```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"

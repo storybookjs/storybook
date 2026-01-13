@@ -182,7 +182,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 // To apply a set of backgrounds to all stories of Button:
 export default {
   component: 'demo-button',
@@ -200,7 +200,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 // To apply a set of backgrounds to all stories of Button:
@@ -220,6 +220,46 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// To apply a set of backgrounds to all stories of Button:
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    backgrounds: {
+      grid: {
+        cellSize: 20,
+        opacity: 0.5,
+        cellAmount: 5,
+        offsetX: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+        offsetY: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// To apply a set of backgrounds to all stories of Button:
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    backgrounds: {
+      grid: {
+        cellSize: 20,
+        opacity: 0.5,
+        cellAmount: 5,
+        offsetX: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+        offsetY: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+      },
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

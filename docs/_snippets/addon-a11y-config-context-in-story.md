@@ -18,6 +18,94 @@ export const ExampleStory: Story = {
 };
 ```
 
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ...rest of story file
+
+export const ExampleStory = {
+  parameters: {
+    a11y: {
+      /*
+       * Axe's context parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter
+       * to learn more.
+       */
+      context: {
+        include: ['body'],
+        exclude: ['.no-a11y-check'],
+      },
+    },
+  },
+};
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ...rest of story file
+
+export const ExampleStory: Story = {
+  parameters: {
+    a11y: {
+      /*
+       * Axe's context parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter
+       * to learn more.
+       */
+      context: {
+        include: ['body'],
+        exclude: ['.no-a11y-check'],
+      },
+    },
+  },
+};
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const ExampleStory = meta.story({
+  parameters: {
+    a11y: {
+      /*
+       * Axe's context parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter
+       * to learn more.
+       */
+      context: {
+        include: ['body'],
+        exclude: ['.no-a11y-check'],
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const ExampleStory = meta.story({
+  parameters: {
+    a11y: {
+      /*
+       * Axe's context parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter
+       * to learn more.
+       */
+      context: {
+        include: ['body'],
+        exclude: ['.no-a11y-check'],
+      },
+    },
+  },
+});
+```
+
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 

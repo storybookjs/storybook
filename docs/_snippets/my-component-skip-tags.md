@@ -140,3 +140,64 @@ export const SkipStory = meta.story({
   tags: ['skip-test'],
 });
 ```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+export default {
+  component: 'my-component',
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+};
+
+export const ExcludeStory = {
+  //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+};
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
+const meta: Meta = {
+  component: 'my-component',
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+};
+
+export default meta;
+type Story = StoryObj;
+
+export const ExcludeStory: Story = {
+  //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+};
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+});
+
+export const ExcludeStory = meta.story({
+  //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+});
+
+export const ExcludeStory = meta.story({
+  //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+});
+```

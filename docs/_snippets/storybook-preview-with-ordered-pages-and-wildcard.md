@@ -118,3 +118,33 @@ export default definePreview({
   },
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  parameters: {
+    options: {
+      storySort: {
+        order: ['Intro', 'Pages', ['Home', 'Login', 'Admin'], 'Components', '*', 'WIP'],
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  parameters: {
+    options: {
+      storySort: {
+        order: ['Intro', 'Pages', ['Home', 'Login', 'Admin'], 'Components', '*', 'WIP'],
+      },
+    },
+  },
+});
+```

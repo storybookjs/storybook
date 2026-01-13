@@ -273,7 +273,7 @@ const meta = preview.meta({
 });
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -284,7 +284,7 @@ export default {
 export const Example = {};
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -298,6 +298,32 @@ export default meta;
 type Story = StoryObj;
 
 export const Example: Story = {};
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
+});
+
+export const Example = meta.story({});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
+});
+
+export const Example = meta.story({});
 ```
 
 ```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

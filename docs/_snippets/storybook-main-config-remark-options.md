@@ -199,3 +199,53 @@ export default defineMain({
   ],
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+import remarkGfm from 'remark-gfm';
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    // Other addons go here
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+import remarkGfm from 'remark-gfm';
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    // Other addons go here
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
+  ],
+});
+```

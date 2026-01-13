@@ -309,7 +309,7 @@ export const CustomFooter = meta.story({
 });
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -329,14 +329,12 @@ export const CustomFooter = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
-
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import { html } from 'lit';
 
-type CustomArgs = { footer?: string };
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
-const meta: Meta<CustomArgs> = {
+const meta: Meta = {
   title: 'Page',
   component: 'demo-page',
   render: ({ footer }) => html`
@@ -347,13 +345,59 @@ const meta: Meta<CustomArgs> = {
 };
 
 export default meta;
-type Story = StoryObj<CustomArgs>;
+type Story = StoryObj;
 
 export const CustomFooter: Story = {
   args: {
     footer: 'Built with Storybook',
   },
 };
+```
+
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Page',
+  component: 'demo-page',
+  render: ({ footer }) => html`
+    <demo-page>
+      <footer>${footer}</footer>
+    </demo-page>
+  `,
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
+```
+
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+type CustomArgs = { footer?: string };
+
+const meta = preview.type<{ args: CustomArgs }>()meta({
+  title: 'Page',
+  component: 'demo-page',
+  render: ({ footer }) => html`
+    <demo-page>
+      <footer>${footer}</footer>
+    </demo-page>
+  `,
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
 ```
 
 ```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

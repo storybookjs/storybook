@@ -222,7 +222,7 @@ export const Default: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import MockDate from 'mockdate';
 
 export default {
@@ -245,7 +245,7 @@ export const Default = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import MockDate from 'mockdate';
@@ -271,6 +271,56 @@ export const Default: Story = {
     // ... This will run with the mocked Date
   },
 };
+```
+
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-page',
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Default = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
+```
+
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-page',
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Default = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
 ```
 
 ```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"

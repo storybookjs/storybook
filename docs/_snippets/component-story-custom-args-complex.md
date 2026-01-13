@@ -505,7 +505,7 @@ export const ExampleStory: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -546,7 +546,7 @@ export const ExampleStory = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -590,6 +590,92 @@ export const ExampleStory: Story = {
     propertyB: 'Another Item One',
   },
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'custom-component',
+  //👇 Creates specific argTypes
+  argTypes: {
+    propertyA: {
+      options: ['Item One', 'Item Two', 'Item Three'],
+      control: { type: 'select' }, // Automatically inferred when 'options' is defined
+    },
+    propertyB: {
+      options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+    },
+  },
+});
+
+const someFunction = (valuePropertyA, valuePropertyB) => {
+  // Do some logic here
+};
+
+export const ExampleStory = meta.story({
+  render: ({ propertyA, propertyB }) => {
+    //👇 Assigns the function result to a variable
+    const someFunctionResult = someFunction(propertyA, propertyB);
+
+    return html`
+      <custom-component
+        .propertyA=${propertyA}
+        .propertyB=${propertyB}
+        .someProperty=${someFunctionResult}
+      ></custom-component>
+    `;
+  },
+  args: {
+    propertyA: 'Item One',
+    propertyB: 'Another Item One',
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { html } from 'lit';
+
+const meta = preview.meta({
+  component: 'custom-component',
+  //👇 Creates specific argTypes with options
+  argTypes: {
+    propertyA: {
+      options: ['Item One', 'Item Two', 'Item Three'],
+      control: { type: 'select' }, // Automatically inferred when 'options' is defined
+    },
+    propertyB: {
+      options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+    },
+  },
+});
+
+const someFunction = (valuePropertyA: any, valuePropertyB: any) => {
+  // Do some logic here
+};
+
+export const ExampleStory = meta.story({
+  render: ({ propertyA, propertyB }) => {
+    //👇 Assigns the function result to a variable
+    const someFunctionResult = someFunction(propertyA, propertyB);
+
+    return html`
+      <custom-component
+        .propertyA=${propertyA}
+        .propertyB=${propertyB}
+        .someProperty=${someFunctionResult}
+      ></custom-component>
+    `;
+  },
+  args: {
+    propertyA: 'Item One',
+    propertyB: 'Another Item One',
+  },
+});
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"

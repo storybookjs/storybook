@@ -263,7 +263,7 @@ export const Example: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -273,19 +273,19 @@ export default {
 // This story uses a render function to fully control how the component renders.
 export const Example = {
   render: () => html`
-    <layout>
+    <my-layout>
       <header>
         <h1>Example</h1>
       </header>
       <article>
         <my-component />
       </article>
-    </layout>
+    </my-layout>
   `,
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -300,16 +300,64 @@ type Story = StoryObj;
 // This story uses a render function to fully control how the component renders.
 export const Example: Story = {
   render: () => html`
-    <layout>
+    <my-layout>
       <header>
         <h1>Example</h1>
       </header>
       <article>
         <my-component />
       </article>
-    </layout>
+    </my-layout>
   `,
 };
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => html`
+    <my-layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <my-component />
+      </article>
+    </my-layout>
+  `,
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { html } from 'lit';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => html`
+    <my-layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <my-component />
+      </article>
+    </my-layout>
+  `,
+});
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js"

@@ -154,7 +154,7 @@ export const Text: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'custom-button',
   argTypes: {
@@ -167,7 +167,7 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -183,4 +183,34 @@ type Story = StoryObj;
 export const Text: Story = {
   args: {},
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'custom-button',
+  argTypes: {
+    onClick: { action: 'onClick' },
+  },
+});
+
+export const Text = meta.story({
+  args: {},
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'custom-button',
+  argTypes: {
+    onClick: { action: 'onClick' },
+  },
+});
+
+export const Text = meta.story({
+  args: {},
+});
 ```

@@ -167,7 +167,7 @@ export const Default: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'my-page',
   // 👇 Runs after each story in this file
@@ -183,7 +183,7 @@ export const Default = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -202,6 +202,42 @@ export const Default: Story = {
     // ...
   },
 };
+```
+
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-page',
+  // 👇 Runs after each story in this file
+  async afterEach(context) {
+    console.log(`✅ Tested ${context.name} story`);
+  },
+});
+
+export const Default = meta.story({
+  async play({ canvas }) {
+    // ...
+  },
+});
+```
+
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-page',
+  // 👇 Runs after each story in this file
+  async afterEach(context) {
+    console.log(`✅ Tested ${context.name} story`);
+  },
+});
+
+export const Default = meta.story({
+  async play({ canvas }) {
+    // ...
+  },
+});
 ```
 
 ```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"

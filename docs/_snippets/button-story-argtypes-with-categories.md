@@ -169,7 +169,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'demo-button',
   argTypes: {
@@ -207,7 +207,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -247,6 +247,86 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  argTypes: {
+    // Assigns the argTypes to the Colors category
+    backgroundColor: {
+      control: 'color',
+      table: {
+        category: 'Colors',
+      },
+    },
+    primary: {
+      table: {
+        category: 'Colors',
+      },
+    },
+    // Assigns the argType to the Text category
+    label: {
+      table: {
+        category: 'Text',
+      },
+    },
+    // Assigns the argType to the Events category
+    onClick: {
+      table: {
+        category: 'Events',
+      },
+    },
+    // Assigns the argType to the Sizes category
+    size: {
+      table: {
+        category: 'Sizes',
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  argTypes: {
+    // Assigns the argTypes to the Colors category
+    backgroundColor: {
+      control: 'color',
+      table: {
+        category: 'Colors',
+      },
+    },
+    primary: {
+      table: {
+        category: 'Colors',
+      },
+    },
+    // Assigns the argType to the Text category
+    label: {
+      table: {
+        category: 'Text',
+      },
+    },
+    // Assigns the argType to the Events category
+    onClick: {
+      table: {
+        category: 'Events',
+      },
+    },
+    // Assigns the argType to the Sizes category
+    size: {
+      table: {
+        category: 'Sizes',
+      },
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

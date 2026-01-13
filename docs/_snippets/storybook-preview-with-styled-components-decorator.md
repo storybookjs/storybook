@@ -220,12 +220,10 @@ export default preview;
 </BitsConfig>
 ```
 
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview"
-import type { Preview } from '@storybook/web-components-vite';
-
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF 3)"
 import { html } from 'lit';
 
-import './ThemeProvider';
+import type { Preview } from '@storybook/web-components-vite';
 
 const preview: Preview = {
   decorators: [
@@ -264,10 +262,8 @@ export class ThemeProvider extends LitElement {
 }
 ```
 
-```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="Preview"
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="Preview (CSF 3)"
 import { html } from 'lit';
-
-import './ThemeProvider';
 
 const preview = {
   decorators: [
@@ -311,6 +307,38 @@ export class ThemeProvider extends LitElement {
 if (!customElements.get('theme-provider')) {
   customElements.define('theme-provider', ThemeProvider);
 }
+```
+
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF Next 🧪)"
+import { html } from 'lit';
+
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  decorators: [
+    // The theme can be accessed via the story context's globals
+    (story, { globals }) => {
+      const theme = globals.theme || 'light';
+      return html`<theme-provider theme=${theme}>${story()}</theme-provider>`;
+    },
+  ],
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="Preview (CSF Next 🧪)"
+import { html } from 'lit';
+
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  decorators: [
+    // The theme can be accessed via the story context's globals
+    (story, { globals }) => {
+      const theme = globals.theme || 'light';
+      return html`<theme-provider theme=${theme}>${story()}</theme-provider>`;
+    },
+  ],
+});
 ```
 
 ```jsx filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF 3"

@@ -249,3 +249,65 @@ export default defineMain({
   experimental_indexers: async (existingIndexers) => [...existingIndexers, combosIndexer],
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+const combosIndexer = {
+  test: /\.stories\.[tj]sx?$/,
+  createIndex: async (fileName, { makeTitle }) => {
+    // 👇 Grab title from fileName
+    const title = fileName.match(/\/(.*)\.stories/)[1];
+
+    // Read file and generate entries ...
+    let entries = [];
+    // Read file and generate entries...
+
+    return entries.map((entry) => ({
+      type: 'story',
+      // 👇 Use makeTitle to format the title
+      title: `${makeTitle(title)} Custom`,
+      importPath: fileName,
+      exportName: entry.name,
+    }));
+  },
+};
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
+  experimental_indexers: async (existingIndexers) => [...existingIndexers, combosIndexer],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+const combosIndexer = {
+  test: /\.stories\.[tj]sx?$/,
+  createIndex: async (fileName, { makeTitle }) => {
+    // 👇 Grab title from fileName
+    const title = fileName.match(/\/(.*)\.stories/)[1];
+
+    // Read file and generate entries ...
+    let entries = [];
+    // Read file and generate entries...
+
+    return entries.map((entry) => ({
+      type: 'story',
+      // 👇 Use makeTitle to format the title
+      title: `${makeTitle(title)} Custom`,
+      importPath: fileName,
+      exportName: entry.name,
+    }));
+  },
+};
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
+  experimental_indexers: async (existingIndexers) => [...existingIndexers, combosIndexer],
+});
+```

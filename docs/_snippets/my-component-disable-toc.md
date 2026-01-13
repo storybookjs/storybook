@@ -150,7 +150,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'my-component',
   tags: ['autodocs'],
@@ -164,7 +164,7 @@ export default {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -180,6 +180,38 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      toc: {
+        disable: true, // 👈 Disables the table of contents
+      },
+    },
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      toc: {
+        disable: true, // 👈 Disables the table of contents
+      },
+    },
+  },
+});
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

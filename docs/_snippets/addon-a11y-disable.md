@@ -242,7 +242,7 @@ export const NonA11yStory = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'my-component',
 };
@@ -257,7 +257,7 @@ export const ExampleStory = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -275,6 +275,40 @@ export const ExampleStory: Story = {
     },
   },
 };
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const ExampleStory = meta.story({
+  globals: {
+    a11y: {
+      // This option disables all automatic a11y checks on this story
+      manual: true,
+    },
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const ExampleStory = meta.story({
+  globals: {
+    a11y: {
+      // This option disables all automatic a11y checks on this story
+      manual: true,
+    },
+  },
+});
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

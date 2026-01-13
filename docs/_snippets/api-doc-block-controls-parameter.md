@@ -126,22 +126,19 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   title: 'Button',
   component: 'demo-button',
-};
-
-export const Basic = {
   parameters: {
     docs: {
-      canvas: { sourceState: 'shown' },
+      controls: { exclude: ['style'] },
     },
   },
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -155,6 +152,34 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Button',
+  component: 'demo-button',
+  parameters: {
+    docs: {
+      controls: { exclude: ['style'] },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Button',
+  component: 'demo-button',
+  parameters: {
+    docs: {
+      controls: { exclude: ['style'] },
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

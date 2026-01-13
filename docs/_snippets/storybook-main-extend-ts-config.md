@@ -57,3 +57,17 @@ export default defineMain({
   },
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  typescript: {
+    check: false,
+    checkOptions: {},
+    skipCompiler: false,
+  },
+});
+```

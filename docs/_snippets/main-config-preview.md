@@ -211,3 +211,63 @@ export default defineMain({
  `,
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="Body (CSF Next 🧪)"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  previewBody: (body) => `
+    ${body}
+    ${
+      process.env.ANALYTICS_ID ? '<script src="https://cdn.example.com/analytics.js"></script>' : ''
+    }
+  `,
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="Body (CSF Next 🧪)"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  previewBody: (body) => `
+    ${body}
+    ${
+      process.env.ANALYTICS_ID ? '<script src="https://cdn.example.com/analytics.js"></script>' : ''
+    }
+  `,
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="Head (CSF Next 🧪)"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  previewHead: (head) => `
+    ${head}
+    <style>
+      html, body {
+        background: #827979;
+      }
+    </style>
+ `,
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="Head (CSF Next 🧪)"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  previewHead: (head) => `
+    ${head}
+    <style>
+      html, body {
+        background: #827979;
+      }
+    </style>
+ `,
+});
+```

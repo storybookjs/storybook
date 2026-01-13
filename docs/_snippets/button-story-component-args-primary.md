@@ -260,7 +260,7 @@ const meta = preview.meta({
 });
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'demo-button',
   // 👇 Creates specific argTypes
@@ -274,7 +274,7 @@ export default {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -290,6 +290,38 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  // 👇 Creates specific argTypes
+  argTypes: {
+    backgroundColor: { control: 'color' },
+  },
+  args: {
+    // 👇 Now all Button stories will be primary.
+    primary: true,
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  // 👇 Creates specific argTypes
+  argTypes: {
+    backgroundColor: { control: 'color' },
+  },
+  args: {
+    // 👇 Now all Button stories will be primary.
+    primary: true,
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

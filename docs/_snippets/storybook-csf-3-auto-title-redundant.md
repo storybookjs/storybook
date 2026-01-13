@@ -153,7 +153,7 @@ export const Default: Story = {
 };
 ```
 
-```js filename="components/MyComponent/MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="components/MyComponent/MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'my-component',
   title: 'components/MyComponent/MyComponent',
@@ -166,7 +166,7 @@ export const Default = {
 };
 ```
 
-```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -182,6 +182,36 @@ export const Default: Story = {
     something: 'Something else',
   },
 };
+```
+
+```js filename="components/MyComponent/MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  title: 'components/MyComponent/MyComponent',
+});
+
+export const Default = meta.story({
+  args: {
+    something: 'Something else',
+  },
+});
+```
+
+```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  title: 'components/MyComponent/MyComponent',
+});
+
+export const Default = meta.story({
+  args: {
+    something: 'Something else',
+  },
+});
 ```
 
 ```ts filename="components/MyComponent/MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

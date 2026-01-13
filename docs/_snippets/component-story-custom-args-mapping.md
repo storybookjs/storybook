@@ -246,10 +246,15 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+import { html } from 'lit';
 
-const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+const arrows = {
+  'Up': html`<icon-arrow-up></icon-arrow-up>`,
+  'Down': html`<icon-arrow-down></icon-arrow-down>`,
+  'Left': html`<icon-arrow-left></icon-arrow-left>`,
+  'Right': html`<icon-arrow-right></icon-arrow-right>`,
+};
 
 export default {
   component: 'demo-button',
@@ -259,25 +264,23 @@ export default {
       mapping: arrows, // Maps serializable option values to complex arg values
       control: {
         type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-        labels: {
-          // 'labels' maps option values to string labels
-          ArrowUp: 'Up',
-          ArrowDown: 'Down',
-          ArrowLeft: 'Left',
-          ArrowRight: 'Right',
-        },
       },
     },
   },
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+import { html } from 'lit';
+
 import type { Meta } from '@storybook/web-components-vite';
 
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
-
-const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+const arrows = {
+  'Up': html`<icon-arrow-up></icon-arrow-up>`,
+  'Down': html`<icon-arrow-down></icon-arrow-down>`,
+  'Left': html`<icon-arrow-left></icon-arrow-left>`,
+  'Right': html`<icon-arrow-right></icon-arrow-right>`,
+};
 
 const meta: Meta = {
   component: 'demo-button',
@@ -287,19 +290,64 @@ const meta: Meta = {
       mapping: arrows, // Maps serializable option values to complex arg values
       control: {
         type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-        labels: {
-          // 'labels' maps option values to string labels
-          ArrowUp: 'Up',
-          ArrowDown: 'Down',
-          ArrowLeft: 'Left',
-          ArrowRight: 'Right',
-        },
       },
     },
   },
 };
 
 export default meta;
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const arrows = {
+  'Up': html`<icon-arrow-up></icon-arrow-up>`,
+  'Down': html`<icon-arrow-down></icon-arrow-down>`,
+  'Left': html`<icon-arrow-left></icon-arrow-left>`,
+  'Right': html`<icon-arrow-right></icon-arrow-right>`,
+};
+
+const meta = preview.meta({
+  component: 'demo-button',
+  argTypes: {
+    arrow: {
+      options: Object.keys(arrows), // An array of serializable values
+      mapping: arrows, // Maps serializable option values to complex arg values
+      control: {
+        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const arrows = {
+  'Up': html`<icon-arrow-up></icon-arrow-up>`,
+  'Down': html`<icon-arrow-down></icon-arrow-down>`,
+  'Left': html`<icon-arrow-left></icon-arrow-left>`,
+  'Right': html`<icon-arrow-right></icon-arrow-right>`,
+};
+
+const meta = preview.meta({
+  component: 'demo-button',
+  argTypes: {
+    arrow: {
+      options: Object.keys(arrows), // An array of serializable values
+      mapping: arrows, // Maps serializable option values to complex arg values
+      control: {
+        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+      },
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

@@ -81,7 +81,7 @@ export const Default: Story = {
 };
 ```
 
-```js filename="CSF 3 - Button.stories.js" renderer="web-components" language="js"
+```js filename="CSF 3 - Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 // Other imports and story implementation
 
 export const Default = {
@@ -89,10 +89,40 @@ export const Default = {
 };
 ```
 
-```js filename="CSF 3 - Button.stories.ts" renderer="web-components" language="ts"
+```js filename="CSF 3 - Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 // Other imports and story implementation
 
 export const Default: Story = {
   render: (args) => html`<custom-button label="Hello" @click=${action('clicked')}></custom-button>`,
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+import { action } from '@storybook/addon-actions';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const Default = meta.story({
+  render: (args) => html`<demo-button label="Hello" @click=${action('clicked')}></demo-button>`,
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+import { action } from '@storybook/addon-actions';
+
+const meta = preview.meta({
+  component: 'custom-button',
+});
+
+export const Default = meta.story({
+  render: (args) => html`<custom-button label="Hello" @click=${action('clicked')}></custom-button>`,
+});
 ```

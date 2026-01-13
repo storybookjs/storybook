@@ -175,3 +175,51 @@ const meta = preview.meta({
   args: { onClick: fn() },
 });
 ```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+import { fn } from 'storybook/test';
+
+export default {
+  component: 'demo-button',
+  // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
+  args: { onClick: fn() },
+};
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+import type { Meta } from '@storybook/web-components-vite';
+
+import { fn } from 'storybook/test';
+
+const meta: Meta = {
+  component: 'demo-button',
+  // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
+  args: { onClick: fn() },
+};
+
+export default meta;
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { fn } from 'storybook/test';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
+  args: { onClick: fn() },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { fn } from 'storybook/test';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
+  args: { onClick: fn() },
+});
+```

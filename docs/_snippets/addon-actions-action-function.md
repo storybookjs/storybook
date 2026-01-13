@@ -134,7 +134,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.js" renderer="web-components" language="js"
+```ts filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { action } from 'storybook/actions';
 
 export default {
@@ -146,7 +146,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 import { action } from 'storybook/actions';
@@ -160,6 +160,34 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { action } from 'storybook/actions';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { action } from 'storybook/actions';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"

@@ -349,7 +349,7 @@ export const Submits = {
 };
 ```
 
-```ts filename="EventForm.stories.ts" renderer="web-components" language="ts"
+```ts filename="EventForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { fn, expect } from 'storybook/test';
 
@@ -393,7 +393,7 @@ export const Submits: Story = {
 };
 ```
 
-```js filename="EventForm.stories.js" renderer="web-components" language="js"
+```js filename="EventForm.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { fn, expect } from 'storybook/test';
 
 import { users } from '../mocks/users';
@@ -431,6 +431,88 @@ export const Submits = {
     });
   },
 };
+```
+
+```js filename="EventForm.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { fn, expect } from 'storybook/test';
+
+import { users } from '../mocks/users';
+
+const meta = preview.meta({
+  component: 'demo-event-form',
+});
+
+export const Submits = meta.story({
+  // Mock functions so we can manipulate and spy on them
+  args: {
+    getUsers: fn(),
+    onSubmit: fn(),
+  },
+  beforeEach: async ({ args }) => {
+    // Manipulate `getUsers` mock to return mocked value
+    args.getUsers.mockResolvedValue(users);
+  },
+  play: async ({ args, canvas, userEvent }) => {
+    const usersList = canvas.getAllByRole('listitem');
+    await expect(usersList).toHaveLength(4);
+    await expect(canvas.getAllByText('VIP')).toHaveLength(2);
+
+    const titleInput = await canvas.findByLabelText('Enter a title for your event');
+    await userEvent.type(titleInput, 'Holiday party');
+
+    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    await userEvent.click(submitButton);
+
+    // Spy on `onSubmit` to verify that it is called correctly
+    await expect(args.onSubmit).toHaveBeenCalledWith({
+      name: 'Holiday party',
+      userCount: 4,
+      data: expect.anything(),
+    });
+  },
+});
+```
+
+```ts filename="EventForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { fn, expect } from 'storybook/test';
+
+import { users } from '../mocks/users';
+
+const meta = preview.meta({
+  component: 'demo-event-form',
+});
+
+export const Submits = meta.story({
+  // Mock functions so we can manipulate and spy on them
+  args: {
+    getUsers: fn(),
+    onSubmit: fn(),
+  },
+  beforeEach: async ({ args }) => {
+    // Manipulate `getUsers` mock to return mocked value
+    args.getUsers.mockResolvedValue(users);
+  },
+  play: async ({ args, canvas, userEvent }) => {
+    const usersList = canvas.getAllByRole('listitem');
+    await expect(usersList).toHaveLength(4);
+    await expect(canvas.getAllByText('VIP')).toHaveLength(2);
+
+    const titleInput = await canvas.findByLabelText('Enter a title for your event');
+    await userEvent.type(titleInput, 'Holiday party');
+
+    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    await userEvent.click(submitButton);
+
+    // Spy on `onSubmit` to verify that it is called correctly
+    await expect(args.onSubmit).toHaveBeenCalledWith({
+      name: 'Holiday party',
+      userCount: 4,
+      data: expect.anything(),
+    });
+  },
+});
 ```
 
 ```ts filename="EventForm.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"

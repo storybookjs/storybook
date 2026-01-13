@@ -259,7 +259,7 @@ const meta = preview.meta({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 export default {
@@ -273,7 +273,7 @@ export default {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
@@ -289,6 +289,38 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+
+const meta = preview.meta({
+  component: 'my-component',
+  parameters: {
+    viewport: {
+      //👇 Set available viewports for every story in the file
+      options: INITIAL_VIEWPORTS,
+    },
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+
+const meta = preview.meta({
+  component: 'my-component',
+  parameters: {
+    viewport: {
+      //👇 Set available viewports for every story in the file
+      options: INITIAL_VIEWPORTS,
+    },
+  },
+});
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

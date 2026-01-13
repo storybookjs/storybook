@@ -110,7 +110,7 @@ export const ExampleStory: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'my-component',
 };
@@ -123,7 +123,7 @@ export const ExampleStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -139,6 +139,36 @@ export const ExampleStory: Story = {
     propertyB: import.meta.env.VITE_CUSTOM_VAR,
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const ExampleStory = meta.story({
+  args: {
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const ExampleStory = meta.story({
+  args: {
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  },
+});
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

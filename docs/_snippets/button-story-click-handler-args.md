@@ -259,7 +259,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { action } from 'storybook/actions';
 
 import { html } from 'lit';
@@ -278,7 +278,7 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { action } from 'storybook/actions';
@@ -300,4 +300,46 @@ export const Text: Story = {
     onClick: action('clicked'),
   },
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'custom-button',
+});
+
+export const Text = meta.story({
+  render: ({ label, onClick }) =>
+    html`<custom-button label=${label} @click=${onClick}></custom-button>`,
+  args: {
+    label: 'Hello',
+    onClick: action('clicked'),
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'custom-button',
+});
+
+export const Text = meta.story({
+  render: ({ label, onClick }) =>
+    html`<custom-button label=${label} @click=${onClick}></custom-button>`,
+  args: {
+    label: 'Hello',
+    onClick: action('clicked'),
+  },
+});
 ```

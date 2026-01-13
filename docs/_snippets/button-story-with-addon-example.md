@@ -340,7 +340,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -364,7 +364,7 @@ export const Basic = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -391,6 +391,58 @@ type Story = StoryObj;
 export const Basic: Story = {
   render: () => html`<custom-button label="Hello"></custom-button>`,
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Button',
+  component: 'custom-button',
+  //👇 Creates specific parameters for the story
+  parameters: {
+    myAddon: {
+      data: 'This data is passed to the addon',
+    },
+  },
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic = meta.story({
+  render: () => html`<custom-button label="Hello"></custom-button>`,
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Button',
+  component: 'custom-button',
+  //👇 Creates specific parameters for the story
+  parameters: {
+    myAddon: {
+      data: 'This data is passed to the addon',
+    },
+  },
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Basic = meta.story({
+  render: () => html`<custom-button label="Hello"></custom-button>`,
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"

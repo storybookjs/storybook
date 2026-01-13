@@ -75,7 +75,7 @@ type Story = StoryObj<typeof meta>;
 export const Button: Story = {};
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   title: 'Design System/Atoms/Button',
   component: 'demo-button',
@@ -85,7 +85,7 @@ export default {
 export const Button = {};
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -98,6 +98,30 @@ type Story = StoryObj;
 
 // This is the only named export in the file, and it matches the component name
 export const Button: Story = {};
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Design System/Atoms/Button',
+  component: 'demo-button',
+});
+
+// This is the only named export in the file, and it matches the component name
+export const Button = meta.story({});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Design System/Atoms/Button',
+  component: 'demo-component',
+});
+
+// This is the only named export in the file, and it matches the component name
+export const Button = meta.story({});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

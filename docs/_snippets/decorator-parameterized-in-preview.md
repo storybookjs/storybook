@@ -509,3 +509,57 @@ export default definePreview({
   ],
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (story, { parameters }) => {
+      // 👇 Make it configurable by reading from parameters
+      const { pageLayout } = parameters;
+      switch (pageLayout) {
+        case 'page':
+          // Your page layout is probably a little more complex than this
+          return html`<div class="page-layout">${story()}</div>`;
+        case 'page-mobile':
+          return html`<div class="page-mobile-layout">${story()}</div>`;
+        default:
+          // In the default case, don't apply a layout
+          return story();
+      }
+    },
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (story, { parameters }) => {
+      // 👇 Make it configurable by reading from parameters
+      const { pageLayout } = parameters;
+      switch (pageLayout) {
+        case 'page':
+          // Your page layout is probably a little more complex than this
+          return html`<div class="page-layout">${story()}</div>`;
+        case 'page-mobile':
+          return html`<div class="page-mobile-layout">${story()}</div>`;
+        default:
+          // In the default case, don't apply a layout
+          return story();
+      }
+    },
+  ],
+});
+```

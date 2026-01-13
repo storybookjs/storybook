@@ -150,3 +150,41 @@ export default defineMain({
   },
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  viteFinal: async (config, options) => {
+    // Update config here
+    return config;
+  },
+  webpackFinal: async (config, options) => {
+    // Change webpack config
+    return config;
+  },
+  babel: async (config, options) => {
+    return config;
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  viteFinal: async (config, options) => {
+    // Update config here
+    return config;
+  },
+  webpackFinal: async (config, options) => {
+    // Change webpack config
+    return config;
+  },
+  babel: async (config, options) => {
+    return config;
+  },
+});
+```

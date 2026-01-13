@@ -144,3 +144,39 @@ export default defineMain({
   ],
 });
 ```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain, type StoriesEntry } from '@storybook/web-components-vite/node';
+
+async function findStories(): Promise<StoriesEntry[]> {
+  // your custom logic returns a list of files
+}
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: async (list: StoriesEntry[]) => [
+    ...list,
+    // 👇 Add your found stories to the existing list of story files
+    ...(await findStories()),
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+async function findStories() {
+  // your custom logic returns a list of files
+}
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: async (list) => [
+    ...list,
+    // 👇 Add your found stories to the existing list of story files
+    ...(await findStories()),
+  ],
+});
+```

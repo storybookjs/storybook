@@ -380,7 +380,7 @@ export const FirstStory = meta.story({
 });
 ```
 
-```js filename="YourComponent.stories.js" renderer="web-components" language="js"
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 // This default export determines where your story goes in the story list
 export default {
   component: 'demo-your-component',
@@ -393,7 +393,7 @@ export const FirstStory = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // This default export determines where your story goes in the story list
@@ -409,6 +409,36 @@ export const FirstStory: Story = {
     // 👇 The args you need here will depend on your component
   },
 };
+```
+
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 This default export determines where your story goes in the story list
+const meta = preview.meta({
+  component: 'demo-your-component',
+});
+
+export const FirstStory = meta.story({
+  args: {
+    // 👇 The args you need here will depend on your component
+  },
+});
+```
+
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 This default export determines where your story goes in the story list
+const meta = preview.meta({
+  component: 'demo-your-component',
+});
+
+export const FirstStory = meta.story({
+  args: {
+    // 👇 The args you need here will depend on your component
+  },
+});
 ```
 
 ```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

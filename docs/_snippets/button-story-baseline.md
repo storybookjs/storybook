@@ -56,7 +56,7 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -66,12 +66,26 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-//👇 Throws a type error if the args don't match the component props
 export const Primary: Story = {
   args: {
     primary: true,
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+//👇 Throws a type error if the args don't match the component props
+export const Primary = meta.story({
+  args: {
+    primary: true,
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

@@ -164,7 +164,7 @@ export const Basic: Story = {
 } satisfies Story;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'demo-button',
 };
@@ -180,7 +180,7 @@ export const Basic = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -199,6 +199,42 @@ export const Basic: Story = {
     },
   },
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const Basic = meta.story({
+  argTypes: {
+    // 👇 This story expects a label arg
+    label: {
+      control: 'text',
+      description: 'Overwritten description',
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const Basic = meta.story({
+  argTypes: {
+    // 👇 This story expects a label arg
+    label: {
+      control: 'text',
+      description: 'Overwritten description',
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

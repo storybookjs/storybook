@@ -419,7 +419,7 @@ export const Primary = meta.story({
 });
 ```
 
-```js filename="TodoItem.stories.js" renderer="web-components" language="js"
+```js filename="TodoItem.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
  * See https://storybook.js.org/docs/api/csf
@@ -439,7 +439,7 @@ export const Primary = {
 };
 ```
 
-```ts filename="TodoItem.stories.ts" renderer="web-components" language="ts"
+```ts filename="TodoItem.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 /*
@@ -462,6 +462,50 @@ export const Primary: Story = {
     }),
   ],
 };
+```
+
+```ts filename="TodoItem.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+const meta = preview.meta({
+  component: 'demo-todo-item',
+  render: (args, { loaded: { todo } }) => TodoItem({ ...args, ...todo }),
+});
+
+export const Primary = meta.story({
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
+```
+
+```js filename="TodoItem.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+const meta = preview.meta({
+  component: 'demo-todo-item',
+  render: (args, { loaded: { todo } }) => TodoItem({ ...args, ...todo }),
+});
+
+export const Primary = meta.story({
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

@@ -545,7 +545,7 @@ export const OneItem = Empty.extend({
 });
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js"
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 
@@ -584,7 +584,7 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="web-components" language="ts"
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -625,6 +625,78 @@ export const OneItem: Story = {
     ],
   },
 };
+```
+
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
+
+import preview from '../.storybook/preview';
+
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: 'demo-list',
+});
+
+export const Empty = meta.story({
+  render: ({ items, ...args }) => {
+    return html`
+      <demo-list>
+        ${repeat(items, (item) => html`<demo-list-item>${item}</demo-list-item>`)}
+      </demo-list>
+    `;
+  },
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [
+      {
+        ...Unchecked.input.args,
+      },
+    ],
+  },
+});
+```
+
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
+
+import preview from '../.storybook/preview';
+
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: 'demo-list',
+});
+
+export const Empty = meta.story({
+  render: ({ items, ...args }) => {
+    return html`
+      <demo-list>
+        ${repeat(items, (item) => html`<demo-list-item>${item}</demo-list-item>`)}
+      </demo-list>
+    `;
+  },
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [
+      {
+        ...Unchecked.input.args,
+      },
+    ],
+  },
+});
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

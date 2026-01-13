@@ -278,7 +278,7 @@ export const ResetHighlight: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
@@ -300,7 +300,7 @@ export const ResetHighlight = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { useChannel } from 'storybook/preview-api';
@@ -325,6 +325,54 @@ export const ResetHighlight: Story = {
     },
   ],
 };
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const ResetHighlight = meta.story({
+  decorators: [
+    (story) => {
+      const emit = useChannel({});
+      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
+      emit(HIGHLIGHT, {
+        selectors: ['header', 'section', 'footer'],
+      });
+      return story();
+    },
+  ],
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const ResetHighlight = meta.story({
+  decorators: [
+    (story) => {
+      const emit = useChannel({});
+      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
+      emit(HIGHLIGHT, {
+        selectors: ['header', 'section', 'footer'],
+      });
+      return story();
+    },
+  ],
+});
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"

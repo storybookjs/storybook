@@ -105,7 +105,7 @@ export const ExperimentalFeatureStory: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   title: 'Button',
   component: 'demo-button',
@@ -119,7 +119,7 @@ export const ExperimentalFeatureStory = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -136,6 +136,36 @@ export const ExperimentalFeatureStory: Story = {
   //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
   tags: ['!stable', 'experimental'],
 };
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  // 👇 Applies to all stories in this file
+  tags: ['stable'],
+});
+
+export const ExperimentalFeatureStory = meta.story({
+  //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
+  tags: ['!stable', 'experimental'],
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  // 👇 Applies to all stories in this file
+  tags: ['stable'],
+});
+
+export const ExperimentalFeatureStory = meta.story({
+  //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
+  tags: ['!stable', 'experimental'],
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"

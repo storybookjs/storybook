@@ -110,7 +110,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Example.stories.js" renderer="web-components" language="js"
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'demo-example',
   argTypes: {
@@ -119,7 +119,7 @@ export default {
 };
 ```
 
-```ts filename="Example.stories.ts" renderer="web-components" language="ts"
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -130,6 +130,28 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-example',
+  argTypes: {
+    value: { type: 'number' },
+  },
+});
+```
+
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-example',
+  argTypes: {
+    value: { type: 'number' },
+  },
+});
 ```
 
 ```ts filename="Example.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

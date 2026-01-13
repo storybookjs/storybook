@@ -324,3 +324,111 @@ export const IndividualA11yRulesExample = meta.story({
   },
 });
 ```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ...rest of story file
+
+export const IndividualA11yRulesExample = {
+  parameters: {
+    a11y: {
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+    },
+  },
+};
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ...rest of story file
+
+export const IndividualA11yRulesExample: Story = {
+  parameters: {
+    a11y: {
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+    },
+  },
+};
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const IndividualA11yRulesExample = meta.story({
+  parameters: {
+    a11y: {
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const IndividualA11yRulesExample = meta.story({
+  parameters: {
+    a11y: {
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+    },
+  },
+});
+```

@@ -250,7 +250,7 @@ export const WithAnImage = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -263,7 +263,7 @@ export const WithAnImage = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -279,6 +279,36 @@ type Story = StoryObj;
 export const WithAnImage: Story = {
   render: () => html`<img src="/image.png" alt="image" />`,
 };
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+// Assume image.png is located in the "public" directory.
+export const WithAnImage = meta.story({
+  render: () => html`<img src="/image.png" alt="image" />`,
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+// Assume image.png is located in the "public" directory.
+export const WithAnImage = meta.story({
+  render: () => html`<img src="/image.png" alt="image" />`,
+});
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

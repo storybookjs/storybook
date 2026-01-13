@@ -159,3 +159,43 @@ export default definePreview({
   },
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+import { ensure, themes } from 'storybook/theming';
+
+export default definePreview({
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      theme: ensure(themes.dark), // The replacement theme to use
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+import { ensure, themes } from 'storybook/theming';
+
+export default definePreview({
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      theme: ensure(themes.dark), // The replacement theme to use
+    },
+  },
+});
+```

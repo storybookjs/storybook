@@ -422,51 +422,6 @@ export const ManyItems = meta.story({
 });
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
-
-// 👇 We're importing the necessary stories from ListItem
-import { Selected, Unselected } from './ListItem.stories';
-
-export default {
-  component: 'demo-list',
-};
-
-export const ManyItems = {
-  render: (args) => html`
-    <demo-list>
-      ${Selected({ ...args, ...Selected.args })} ${Unselected({ ...args, ...Unselected.args })}
-      ${Unselected({ ...args, ...Unselected.args })}
-    </demo-list>
-  `,
-};
-```
-
-```ts filename="List.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
-
-import { html } from 'lit';
-
-// 👇 We're importing the necessary stories from ListItem
-import { Selected, Unselected } from './ListItem.stories';
-
-const meta: Meta = {
-  component: 'demo-list',
-};
-
-export default meta;
-type Story = StoryObj;
-
-export const ManyItems: Story = {
-  render: (args) => html`
-    <demo-list>
-      ${Selected({ ...args, ...Selected.args })} ${Unselected({ ...args, ...Unselected.args })}
-      ${Unselected({ ...args, ...Unselected.args })}
-    </demo-list>
-  `,
-};
-```
-
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import * as React from 'react';
 

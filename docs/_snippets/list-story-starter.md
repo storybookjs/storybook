@@ -284,7 +284,7 @@ export const Empty = meta.story({
 });
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js"
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -297,7 +297,7 @@ export const Empty = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="web-components" language="ts"
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -311,6 +311,36 @@ type Story = StoryObj;
 export const Empty: Story = {
   render: () => html`<demo-list></demo-list>`,
 };
+```
+
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-list',
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({
+  render: () => html`<demo-list></demo-list>`,
+});
+```
+
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-list',
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({
+  render: () => html`<demo-list></demo-list>`,
+});
 ```
 
 ```ts filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

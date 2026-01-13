@@ -197,7 +197,7 @@ const meta = preview.meta({
 });
 ```
 
-```js filename="YourComponent.stories.js" renderer="web-components" language="js"
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -206,7 +206,7 @@ export default {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -216,6 +216,28 @@ const meta: Meta = {
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 };
 export default meta;
+```
+
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-your-component',
+  decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
+});
+```
+
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-your-component',
+  decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
+});
 ```
 
 ```tsx filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

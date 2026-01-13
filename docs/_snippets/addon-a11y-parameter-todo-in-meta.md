@@ -123,7 +123,7 @@ export default {
 };
 ```
 
-```ts filename="DataTable.stories.ts" renderer="web-components" language="ts"
+```ts filename="DataTable.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta<DataTable> = {
@@ -137,7 +137,7 @@ const meta: Meta<DataTable> = {
 export default meta;
 ```
 
-```js filename="DataTable.stories.js" renderer="web-components" language="js"
+```js filename="DataTable.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'demo-data-table',
   parameters: {
@@ -146,6 +146,32 @@ export default {
     a11y: { test: 'todo' },
   },
 };
+```
+
+```js filename="DataTable.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-data-table',
+  parameters: {
+    // 👇 This component's accessibility tests will not fail
+    //    Instead, they display warnings in the Storybook UI
+    a11y: { test: 'todo' },
+  },
+});
+```
+
+```ts filename="DataTable.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-data-table',
+  parameters: {
+    // 👇 This component's accessibility tests will not fail
+    //    Instead, they display warnings in the Storybook UI
+    a11y: { test: 'todo' },
+  },
+});
 ```
 
 ```ts filename="DataTable.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"

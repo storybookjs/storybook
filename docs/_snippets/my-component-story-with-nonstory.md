@@ -346,7 +346,7 @@ export const ComplexStory: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'my-component',
   includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
@@ -369,7 +369,7 @@ export const ComplexStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -395,4 +395,54 @@ export const ComplexStory: Story = {
     data: complexData,
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
 ```

@@ -349,7 +349,7 @@ export const WithAnImage = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 import imageFile from './static/image.png';
@@ -368,7 +368,7 @@ export const WithAnImage = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -390,6 +390,48 @@ type Story = StoryObj;
 export const WithAnImage: Story = {
   render: () => html`<img src=${image.src} alt=${image.alt} />`,
 };
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => html`<img src=${image.src} alt=${image.alt} /> `,
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { html } from 'lit';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => html`<img src=${image.src} alt=${image.alt} />`,
+});
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

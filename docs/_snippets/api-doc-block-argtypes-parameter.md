@@ -7,7 +7,7 @@ const meta: Meta<Button> = {
   component: Button,
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 };
@@ -24,7 +24,7 @@ const meta = preview.meta({
   component: Button,
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 });
@@ -40,7 +40,7 @@ const meta = preview.meta({
     component: Button,
     parameters: {
       docs: {
-        controls: { exclude: ['style'] },
+        argTypes: { exclude: ['style'] },
       },
     },
   });
@@ -54,7 +54,7 @@ export default {
   component: Button,
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 };
@@ -67,7 +67,7 @@ export default {
   component: Button,
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 };
@@ -83,7 +83,7 @@ export default {
     component: Button,
     parameters: {
       docs: {
-        controls: { exclude: ['style'] },
+        argTypes: { exclude: ['style'] },
       },
     },
   });
@@ -100,7 +100,7 @@ const meta = {
   component: Button,
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 } satisfies Meta<typeof Button>;
@@ -118,7 +118,7 @@ const meta = {
   component: Button,
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 } satisfies Meta<typeof Button>;
@@ -126,30 +126,56 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'demo-button',
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 };
 ```
 
-```ts filename="Button.ts" renderer="web-components" language="ts"
+```ts filename="Button.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-button',
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 };
 
 export default meta;
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    docs: {
+      argTypes: { exclude: ['style'] },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    docs: {
+      argTypes: { exclude: ['style'] },
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -161,7 +187,7 @@ const meta = preview.meta({
   component: Button,
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 });
@@ -177,7 +203,7 @@ const meta = preview.meta({
   component: Button,
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 });
@@ -192,7 +218,7 @@ const meta = preview.meta({
   component: Button,
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 });
@@ -209,7 +235,7 @@ const meta = preview.meta({
   component: Button,
   parameters: {
     docs: {
-      controls: { exclude: ['style'] },
+      argTypes: { exclude: ['style'] },
     },
   },
 });

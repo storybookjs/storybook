@@ -424,7 +424,7 @@ export const MyStory: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -454,7 +454,7 @@ export const StoryWithLocale = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -487,6 +487,70 @@ export const StoryWithLocale: Story = {
     return html`<p>${caption}</p>`;
   },
 };
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+const getCaptionForLocale = (locale) => {
+  switch (locale) {
+    case 'es':
+      return 'Hola!';
+    case 'fr':
+      return 'Bonjour!';
+    case 'kr':
+      return '안녕하세요!';
+    case 'zh':
+      return '你好!';
+    default:
+      return 'Hello!';
+  }
+};
+
+export const StoryWithLocale = meta.story({
+  render: (args, { globals: { locale } }) => {
+    const caption = getCaptionForLocale(locale);
+    return html`<p>${caption}</p>`;
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+const getCaptionForLocale = (locale) => {
+  switch (locale) {
+    case 'es':
+      return 'Hola!';
+    case 'fr':
+      return 'Bonjour!';
+    case 'kr':
+      return '안녕하세요!';
+    case 'zh':
+      return '你好!';
+    default:
+      return 'Hello!';
+  }
+};
+
+export const StoryWithLocale = meta.story({
+  render: (args, { globals: { locale } }) => {
+    const caption = getCaptionForLocale(locale);
+    return html`<p>${caption}</p>`;
+  },
+});
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"

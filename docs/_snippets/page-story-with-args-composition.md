@@ -195,7 +195,7 @@ export const Simple: Story = {
 };
 ```
 
-```js filename="YourPage.stories.js" renderer="web-components" language="js"
+```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 // 👇 Imports the required stories
 import * as PageLayout from './PageLayout.stories';
 import * as DocumentHeader from './DocumentHeader.stories';
@@ -214,7 +214,7 @@ export const Simple = {
 };
 ```
 
-```ts filename="YourPage.stories.ts" renderer="web-components" language="ts"
+```ts filename="YourPage.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // 👇 Imports the required stories
@@ -236,6 +236,48 @@ export const Simple: Story = {
     subdocuments: DocumentList.Simple.args.documents,
   },
 };
+```
+
+```ts filename="YourPage.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: 'demo-document-screen',
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
+```
+
+```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: 'demo-document-screen',
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
 ```
 
 ```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

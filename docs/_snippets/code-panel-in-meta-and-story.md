@@ -445,7 +445,7 @@ export const Secondary = meta.story({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -482,7 +482,7 @@ export const Secondary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'my-component',
   parameters: {
@@ -512,6 +512,74 @@ export const Secondary = {
     },
   },
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+});
+
+// 👇 This story will display the Code panel
+export const Primary = meta.story({
+  args: {
+    children: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+});
+
+// 👇 This story will display the Code panel
+export const Primary = meta.story({
+  args: {
+    children: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

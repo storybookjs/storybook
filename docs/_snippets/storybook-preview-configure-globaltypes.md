@@ -200,3 +200,53 @@ export default definePreview({
   },
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  globalTypes: {
+    theme: {
+      description: 'Global theme for components',
+      toolbar: {
+        // The label to show for this toolbar item
+        title: 'Theme',
+        icon: 'circlehollow',
+        // Array of plain string values or MenuItem shape (see below)
+        items: ['light', 'dark'],
+        // Change title based on selected value
+        dynamicTitle: true,
+      },
+    },
+  },
+  initialGlobals: {
+    theme: 'light',
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  globalTypes: {
+    theme: {
+      description: 'Global theme for components',
+      toolbar: {
+        // The label to show for this toolbar item
+        title: 'Theme',
+        icon: 'circlehollow',
+        // Array of plain string values or MenuItem shape (see below)
+        items: ['light', 'dark'],
+        // Change title based on selected value
+        dynamicTitle: true,
+      },
+    },
+  },
+  initialGlobals: {
+    theme: 'light',
+  },
+});
+```

@@ -269,7 +269,7 @@ export const Highlighted: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
 
@@ -290,7 +290,7 @@ export const Highlighted = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { useChannel } from 'storybook/preview-api';
@@ -314,6 +314,52 @@ export const Highlighted: Story = {
     },
   ],
 };
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const Highlighted = meta.story({
+  decorators: [
+    (story) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+      });
+      return story();
+    },
+  ],
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+export const Highlighted = meta.story({
+  decorators: [
+    (story) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+      });
+      return story();
+    },
+  ],
+});
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"

@@ -131,7 +131,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   title: 'Button',
   component: 'demo-button',
@@ -144,7 +144,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -158,6 +158,34 @@ const meta: Meta = {
   tags: ['autodocs', '!dev'],
 };
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  /*
+   * All stories in this file will:
+   * - Be included in the docs page
+   * - Not appear in Storybook's sidebar
+   */
+  tags: ['autodocs', '!dev'],
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  /*
+   * All stories in this file will:
+   * - Be included in the docs page
+   * - Not appear in Storybook's sidebar
+   */
+  tags: ['autodocs', '!dev'],
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"

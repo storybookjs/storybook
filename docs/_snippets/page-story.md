@@ -341,7 +341,7 @@ export const LoggedIn = meta.story({
 });
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 // 👇 Imports all Header stories
 import * as HeaderStories from './Header.stories';
 
@@ -356,7 +356,7 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // 👇 Imports all Header stories
@@ -374,6 +374,40 @@ export const LoggedIn: Story = {
     ...HeaderStories.LoggedIn.args,
   },
 };
+```
+
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: 'demo-page',
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
+```
+
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: 'demo-page',
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
 ```
 
 ```ts filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

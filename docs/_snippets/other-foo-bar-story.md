@@ -83,10 +83,10 @@ export const Baz: Story = {
 };
 ```
 
-```js filename="FooBar.stories.js" renderer="web-components" language="js"
+```js filename="FooBar.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   title: 'OtherFoo/Bar',
-  component: 'foo',
+  component: 'demo-foo',
   id: 'Foo/Bar', // Or 'foo-bar' if you prefer
 };
 
@@ -95,12 +95,12 @@ export const Baz = {
 };
 ```
 
-```ts filename="FooBar.stories.ts" renderer="web-components" language="ts"
+```ts filename="FooBar.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   title: 'OtherFoo/Bar',
-  component: 'foo',
+  component: 'demo-foo',
   id: 'Foo/Bar', // Or 'foo-bar' if you prefer
 };
 
@@ -110,6 +110,34 @@ type Story = StoryObj;
 export const Baz: Story = {
   name: 'Insert name here',
 };
+```
+
+```ts filename="FooBar.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'OtherFoo/Bar',
+  component: 'demo-foo',
+  id: 'Foo/Bar', // Or 'foo-bar' if you prefer
+});
+
+export const Baz = meta.story({
+  name: 'Insert name here',
+});
+```
+
+```js filename="FooBar.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'OtherFoo/Bar',
+  component: 'demo-foo',
+  id: 'Foo/Bar', // Or 'foo-bar' if you prefer
+});
+
+export const Baz = meta.story({
+  name: 'Insert name here',
+});
 ```
 
 ```ts filename="FooBar.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

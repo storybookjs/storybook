@@ -227,7 +227,7 @@ export const OneItem: Story = {
 </Story>
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js"
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -247,7 +247,7 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="web-components" language="ts"
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -270,6 +270,48 @@ export const OneItem: Story = {
     </demo-list>
   `,
 };
+```
+
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-list',
+  subcomponents: { ListItem: 'demo-list-item' }, // 👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story({});
+
+export const OneItem = meta.story({
+  render: () => html`
+    <demo-list>
+      <demo-list-item></demo-list-item>
+    </demo-list>
+  `,
+});
+```
+
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-list',
+  subcomponents: { ListItem: 'demo-list-item' }, // 👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story({});
+
+export const OneItem = meta.story({
+  render: () => html`
+    <demo-list>
+      <demo-list-item></demo-list-item>
+    </demo-list>
+  `,
+});
 ```
 
 ```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

@@ -309,43 +309,6 @@ export const OneItem = meta.story({
 });
 ```
 
-```js filename="MyList.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
-
-// 👇 Import the stories of MyListItem
-import { Unchecked } from './MyListItem.stories';
-
-export default {
-  title: 'MyList',
-  component: 'demo-my-list',
-};
-
-export const OneItem = {
-  render: () => html` <List> ${Unchecked({ ...Unchecked.args })} </List> `,
-};
-```
-
-```ts filename="MyList.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
-
-import { html } from 'lit';
-
-// 👇 Import the stories of MyListItem
-import { Unchecked } from './my-list-item.stories';
-
-const meta: Meta = {
-  title: 'MyList',
-  component: 'demo-my-list',
-};
-export default meta;
-
-type Story = StoryObj;
-
-export const OneItem: Story = {
-  render: () => html` <List> ${Unchecked({ ...Unchecked.args })} </List> `,
-};
-```
-
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 

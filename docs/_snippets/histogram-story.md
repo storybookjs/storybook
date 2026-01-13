@@ -350,7 +350,7 @@ export const Default: Story = {
 };
 ```
 
-```js filename="Histogram.stories.js" renderer="web-components" language="js"
+```js filename="Histogram.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'histogram-component',
 };
@@ -365,7 +365,7 @@ export const Default = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="web-components" language="ts"
+```ts filename="Histogram.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -383,6 +383,40 @@ export const Default: Story = {
     label: 'Latency distribution',
   },
 };
+```
+
+```js filename="Histogram.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'histogram-component',
+});
+
+export const Default = meta.story({
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
+```
+
+```ts filename="Histogram.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'histogram-component',
+});
+
+export const Default = meta.story({
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
 ```
 
 ```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"

@@ -415,7 +415,7 @@ export const Combo = meta.story({
 });
 ```
 
-```ts filename="Button.stories.js" renderer="web-components" language="js"
+```ts filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -447,7 +447,7 @@ export const Combo = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -482,6 +482,74 @@ export const Combo: Story = {
     </div>
   `,
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Button',
+  component: 'demo-button',
+});
+
+export const Variant1 = meta.story({
+  // 👇 This story will not appear in Storybook's sidebar or docs page
+  tags: ['!dev', '!autodocs'],
+  args: { variant: 1 },
+});
+
+export const Variant2 = meta.story({
+  // 👇 This story will not appear in Storybook's sidebar or docs page
+  tags: ['!dev', '!autodocs'],
+  args: { variant: 2 },
+});
+
+export const Combo = meta.story({
+  // 👇 This story should not be tested, but will appear in the sidebar and docs page
+  tags: ['!test'],
+  render: () => html`
+    <div>
+      <demo-button variant="1" />
+      <demo-button variant="2" />
+    </div>
+  `,
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  title: 'Button',
+  component: 'demo-button',
+});
+
+export const Variant1 = meta.story({
+  // 👇 This story will not appear in Storybook's sidebar or docs page
+  tags: ['!dev', '!autodocs'],
+  args: { variant: 1 },
+});
+
+export const Variant2 = meta.story({
+  // 👇 This story will not appear in Storybook's sidebar or docs page
+  tags: ['!dev', '!autodocs'],
+  args: { variant: 2 },
+});
+
+export const Combo = meta.story({
+  // 👇 This story should not be tested, but will appear in the sidebar and docs page
+  tags: ['!test'],
+  render: () => html`
+    <div>
+      <demo-button variant="1" />
+      <demo-button variant="2" />
+    </div>
+  `,
+});
 ```
 
 ```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

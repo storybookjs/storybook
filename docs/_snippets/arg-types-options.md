@@ -108,17 +108,6 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Example.stories.js" renderer="web-components" language="js"
-export default {
-  component: 'demo-example',
-  argTypes: {
-    icon: {
-      options: ['arrow-up', 'arrow-down', 'loading'],
-    },
-  },
-};
-```
-
 ```ts filename="Example.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
@@ -137,7 +126,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Example.stories.js" renderer="web-components" language="js"
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'demo-example',
   argTypes: {
@@ -148,7 +137,7 @@ export default {
 };
 ```
 
-```ts filename="Example.stories.ts" renderer="web-components" language="ts"
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -161,6 +150,32 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-example',
+  argTypes: {
+    icon: {
+      options: ['arrow-up', 'arrow-down', 'loading'],
+    },
+  },
+});
+```
+
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-example',
+  argTypes: {
+    icon: {
+      options: ['arrow-up', 'arrow-down', 'loading'],
+    },
+  },
+});
 ```
 
 ```ts filename="Example.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

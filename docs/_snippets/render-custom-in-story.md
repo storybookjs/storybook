@@ -206,7 +206,7 @@ export const PrimaryInAlert = meta.story({
 });
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import html from 'lit';
 
 export default {
@@ -227,7 +227,7 @@ export const PrimaryInAlert = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import html from 'lit';
 
@@ -250,6 +250,52 @@ export const PrimaryInAlert: Story = {
     </demo-alert>
   `,
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import html from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const PrimaryInAlert = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+  render: (args) => html`
+    <demo-alert>
+      Alert text
+      <demo-button ?primary=${args.primary} label=${args.label}></demo-button>
+    </demo-alert>
+  `,
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import html from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+});
+
+export const PrimaryInAlert = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+  render: (args) => html`
+    <demo-alert>
+      Alert text
+      <demo-button ?primary=${args.primary} label=${args.label}></demo-button>
+    </demo-alert>
+  `,
+});
 ```
 
 ```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

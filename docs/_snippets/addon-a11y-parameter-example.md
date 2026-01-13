@@ -229,7 +229,7 @@ export const NoA11yFail = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -257,7 +257,7 @@ export const NoA11yFail: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'demo-button',
   parameters: {
@@ -278,6 +278,56 @@ export const NoA11yFail = {
     a11y: { test: 'todo' },
   },
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    // 👇 Applies to all stories in this file
+    a11y: { test: 'error' },
+  },
+});
+
+// 👇 This story will use the 'error' value and fail on accessibility violations
+export const Primary = meta.story({
+  args: { primary: true },
+});
+
+// 👇 This story will not fail on accessibility violations
+//    (but will still run the tests and show warnings)
+export const NoA11yFail = meta.story({
+  parameters: {
+    a11y: { test: 'todo' },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    // 👇 Applies to all stories in this file
+    a11y: { test: 'error' },
+  },
+});
+
+// 👇 This story will use the 'error' value and fail on accessibility violations
+export const Primary = meta.story({
+  args: { primary: true },
+});
+
+// 👇 This story will not fail on accessibility violations
+//    (but will still run the tests and show warnings)
+export const NoA11yFail = meta.story({
+  parameters: {
+    a11y: { test: 'todo' },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"

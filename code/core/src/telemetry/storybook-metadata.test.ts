@@ -15,7 +15,11 @@ import {
 import { detect } from 'package-manager-detector';
 
 import { type Settings, globalSettings } from '../cli/globalSettings';
+import { getApplicationFileCount } from '../telemetry/get-application-file-count';
+import { analyzeEcosystemPackages } from '../telemetry/get-known-packages';
 import { getMonorepoType } from '../telemetry/get-monorepo-type';
+import { getPackageManagerInfo } from '../telemetry/get-package-manager-info';
+import { getPortableStoriesFileCount } from '../telemetry/get-portable-stories-usage';
 import {
   getActualPackageJson,
   getActualPackageVersion,
@@ -26,6 +30,11 @@ import { computeStorybookMetadata, metaFrameworks, sanitizeAddonName } from './s
 vi.mock(import('../cli/globalSettings'), { spy: true });
 vi.mock(import('./package-json'), { spy: true });
 vi.mock(import('./get-monorepo-type'), { spy: true });
+vi.mock(import('./get-framework-info'), { spy: true });
+vi.mock(import('./get-package-manager-info'), { spy: true });
+vi.mock(import('./get-portable-stories-usage'), { spy: true });
+vi.mock(import('./get-application-file-count'), { spy: true });
+vi.mock(import('./get-known-packages'), { spy: true });
 vi.mock(import('package-manager-detector'), { spy: true });
 vi.mock(import('storybook/internal/common'), { spy: true });
 
@@ -67,6 +76,27 @@ beforeEach(() => {
   }));
 
   vi.mocked(getMonorepoType).mockImplementation(() => 'Nx');
+
+  vi.mocked(getPackageManagerInfo).mockImplementation(async () => ({
+    type: 'yarn',
+    version: '3.1.1',
+    agent: 'yarn@berry',
+    nodeLinker: 'node_modules',
+  }));
+
+  vi.mocked(getPortableStoriesFileCount).mockImplementation(async () => 5);
+
+  vi.mocked(getApplicationFileCount).mockImplementation(async () => 10);
+
+  vi.mocked(analyzeEcosystemPackages).mockImplementation(async () => ({
+    testPackages: { jest: 'x.x.x' },
+    stylingPackages: { tailwindcss: '3.0.0' },
+    routerPackages: { 'react-router-dom': '^6.0.0' },
+    stateManagementPackages: { redux: '4.0.0' },
+    dataFetchingPackages: { axios: '>=1.0.0' },
+    uiLibraryPackages: { '@mui/material': '5.0.0' },
+    i18nPackages: { i18next: '22.0.0' },
+  }));
 
   vi.mocked(getActualPackageJson).mockImplementation(async () => ({
     dependencies: {
@@ -469,6 +499,52 @@ describe('storybook-metadata', () => {
 
       expect(globalSettings).not.toHaveBeenCalled();
       expect(res.userSince).not.toBeDefined();
+    });
+
+    it('should include knownPackages in metadata', async () => {
+      const res = await computeStorybookMetadata({
+        configDir: '.storybook',
+        packageJson: {
+          ...packageJsonMock,
+          dependencies: {
+            jest: '29.0.0',
+            'react-router-dom': '^6.0.0',
+            tailwindcss: '3.0.0',
+            redux: '4.0.0',
+            axios: '>=1.0.0',
+            '@mui/material': '5.0.0',
+            i18next: '22.0.0',
+          },
+        } as PackageJson,
+        packageJsonPath,
+        mainConfig: mainJsMock,
+      });
+
+      expect(res.knownPackages).toMatchInlineSnapshot(`
+        {
+          "dataFetchingPackages": {
+            "axios": ">=1.0.0",
+          },
+          "i18nPackages": {
+            "i18next": "22.0.0",
+          },
+          "routerPackages": {
+            "react-router-dom": "^6.0.0",
+          },
+          "stateManagementPackages": {
+            "redux": "4.0.0",
+          },
+          "stylingPackages": {
+            "tailwindcss": "3.0.0",
+          },
+          "testPackages": {
+            "jest": "x.x.x",
+          },
+          "uiLibraryPackages": {
+            "@mui/material": "5.0.0",
+          },
+        }
+      `);
     });
   });
 });

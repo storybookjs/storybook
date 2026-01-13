@@ -19,6 +19,7 @@ import type {
 
 import { EventEmitter } from 'events';
 
+import { Tag } from '../../../shared/constants/tags';
 import { composeConfigs } from '../store';
 import type { RenderPhase } from './render/StoryRender';
 
@@ -97,7 +98,7 @@ export const storyIndex: StoryIndex = {
       name: 'Docs',
       importPath: './src/ComponentOne.stories.js',
       storiesImports: ['./src/ExtraComponentOne.stories.js'],
-      tags: ['autodocs', 'docs'],
+      tags: [Tag.AUTODOCS, 'docs'],
     },
     'component-one--attached-docs': {
       type: 'docs',
@@ -106,7 +107,7 @@ export const storyIndex: StoryIndex = {
       name: 'Attached Docs',
       importPath: './src/ComponentOne.mdx',
       storiesImports: ['./src/ComponentOne.stories.js'],
-      tags: ['attached-mdx', 'docs'],
+      tags: [Tag.ATTACHED_MDX, 'docs'],
     },
     'component-one--a': {
       type: 'story',
@@ -139,7 +140,7 @@ export const storyIndex: StoryIndex = {
       name: 'Docs',
       importPath: './src/ComponentTwo.stories.js',
       storiesImports: [],
-      tags: ['autodocs', 'docs'],
+      tags: [Tag.AUTODOCS, 'docs'],
     },
     'component-two--c': {
       type: 'story',
@@ -156,7 +157,7 @@ export const storyIndex: StoryIndex = {
       name: 'Docs',
       importPath: './src/Introduction.mdx',
       storiesImports: ['./src/ComponentTwo.stories.js'],
-      tags: ['unattached-mdx', 'docs'],
+      tags: [Tag.UNATTACHED_MDX, 'docs'],
     },
   },
 };

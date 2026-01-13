@@ -54,7 +54,7 @@ let loadedLabel = 'Initial';
  */
 export const SlowLoader = {
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
   },
   loaders: [
     async () => {

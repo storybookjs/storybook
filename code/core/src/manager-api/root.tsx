@@ -106,6 +106,7 @@ export type API = addons.SubAPI &
   version.SubAPI &
   url.SubAPI &
   whatsnew.SubAPI &
+  openInEditor.SubAPI &
   Other;
 
 interface Other {

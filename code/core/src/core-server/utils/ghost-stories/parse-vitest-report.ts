@@ -58,12 +58,12 @@ function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategori
 }
 
 /** Transform the Vitest test results to our expected format and return a TestRunSummary */
-export function parseVitestResults(testResults: any): TestRunSummary {
+export function parseVitestResults(report: any): TestRunSummary {
   // Transform the Vitest test results to our expected format
   const storyTestResults: StoryTestResult[] = [];
   let passedButEmptyRender = 0;
 
-  for (const testSuite of testResults.testResults) {
+  for (const testSuite of report.testResults) {
     for (const assertion of testSuite.assertionResults) {
       const storyId = assertion.meta?.storyId || assertion.fullName;
 
@@ -97,8 +97,8 @@ export function parseVitestResults(testResults: any): TestRunSummary {
     }
   }
 
-  const total = testResults.numTotalTests;
-  const passed = testResults.numPassedTests;
+  const total = report.numTotalTests;
+  const passed = report.numPassedTests;
   const successRate = total > 0 ? parseFloat((passed / total).toFixed(2)) : 0;
   const successRateWithoutEmptyRender =
     total > 0 ? parseFloat(((passed - passedButEmptyRender) / total).toFixed(2)) : 0;

@@ -74,8 +74,8 @@ export function initGhostStoriesChannel(
       if (candidatesResult.error) {
         stats.totalRunDuration = Date.now() - ghostRunStart;
         telemetry('ghost-stories', {
-          runError: candidatesResult.error,
           stats,
+          runError: candidatesResult.error,
         });
         return;
       }
@@ -83,8 +83,8 @@ export function initGhostStoriesChannel(
       if (candidatesResult.candidates.length === 0) {
         stats.totalRunDuration = Date.now() - ghostRunStart;
         telemetry('ghost-stories', {
-          runError: 'No candidates found',
           stats,
+          runError: 'No candidates found',
         });
         return;
       }
@@ -94,15 +94,22 @@ export function initGhostStoriesChannel(
       const testRunResult = await runStoryTests(candidatesResult.candidates);
       stats.totalRunDuration = Date.now() - ghostRunStart;
       stats.testRunDuration = testRunResult.duration;
+      if (testRunResult.runError) {
+        telemetry('ghost-stories', {
+          stats,
+          runError: testRunResult.runError,
+        });
+        return;
+      }
+
       telemetry('ghost-stories', {
-        ...(testRunResult.runError !== undefined ? { runError: testRunResult.runError } : {}),
         stats,
         results: testRunResult.summary,
       });
     } catch {
       telemetry('ghost-stories', {
-        runError: 'Unknown error during ghost run',
         stats,
+        runError: 'Unknown error during ghost run',
       });
     } finally {
       // we don't currently do anything with this, but will be useful in the future

@@ -78,10 +78,10 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
 
     // Type is the return Vitest JSON report structure
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let testResults: any;
+    let vitestReport: any;
     try {
       const resultsJson = await readFile(outputFile, 'utf8');
-      testResults = JSON.parse(resultsJson);
+      vitestReport = JSON.parse(resultsJson);
     } catch {
       return {
         duration,
@@ -89,7 +89,14 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
       };
     }
 
-    return { ...parseVitestResults(testResults), duration };
+    if (!vitestReport.testResults || vitestReport.testResults.length === 0) {
+      return {
+        duration,
+        runError: 'No tests found',
+      };
+    }
+
+    return { ...parseVitestResults(vitestReport), duration };
   } catch {
     return {
       runError: 'Uncaught error running story tests',

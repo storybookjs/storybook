@@ -415,7 +415,7 @@ describe('ghostStoriesChannel', () => {
         } as any);
         vi.mocked(mockStoryGeneration.getComponentCandidates).mockResolvedValue({
           candidates: [],
-          runError: 'Failed to analyze components',
+          error: 'Failed to analyze components',
           globMatchCount: 0,
         });
 

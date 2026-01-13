@@ -24,15 +24,7 @@ const preview = __definePreview({
 });
 
 test('csf factories', () => {
-  const config = __definePreview({
-    addons: [
-      {
-        decorators: [],
-      },
-    ],
-  });
-
-  const meta = config.meta({ component: Button, args: { disabled: true } });
+  const meta = preview.meta({ component: Button, args: { disabled: true } });
 
   const MyStory = meta.story({
     args: {

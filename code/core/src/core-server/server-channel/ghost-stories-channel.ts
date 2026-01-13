@@ -35,12 +35,16 @@ export function initGhostStoriesChannel(
     try {
       const ghostRunStart = Date.now();
       const lastEvents = await getLastEvents();
-      const sessionId = await getSessionId();
       const lastInit = lastEvents?.init;
-      const lastGhostStoriesRun = lastEvents?.['ghost-stories'];
+      if (!lastEvents || !lastInit) {
+        return;
+      }
+
+      const sessionId = await getSessionId();
+      const lastGhostStoriesRun = lastEvents['ghost-stories'];
       if (
         lastGhostStoriesRun ||
-        (lastInit?.body?.sessionId && lastInit?.body?.sessionId !== sessionId)
+        (lastInit.body?.sessionId && lastInit.body.sessionId !== sessionId)
       ) {
         return;
       }

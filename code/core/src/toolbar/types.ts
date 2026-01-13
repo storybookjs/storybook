@@ -51,6 +51,11 @@ export type ToolbarArgType = {
   description?: string;
   defaultValue?: any;
   toolbar?: ToolbarConfig;
+  /**
+   * @deprecated This loose index signature has been added for compatibility with InputType, and
+   *   will be removed in Storybook 11
+   */
+  [key: string]: any;
 };
 
 export type ToolbarMenuProps = NormalizedToolbarArgType & { id: string };

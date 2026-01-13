@@ -1,1 +1,1 @@
-{"version":"10.2.0-alpha.14","info":{"plain":"- ReactDocgen: Try using the latest version of the original - [#33454](https://github.com/storybookjs/storybook/pull/33454), thanks @ndelangen!\n- ReactDocgen: Try using the latest version of the original - [#33487](https://github.com/storybookjs/storybook/pull/33487), thanks @ndelangen!"}}
+{"version":"10.2.0-alpha.17","info":{"plain":"- Core: Improve the story generation experience - [#33259](https://github.com/storybookjs/storybook/pull/33259), thanks @yannbf!"}}

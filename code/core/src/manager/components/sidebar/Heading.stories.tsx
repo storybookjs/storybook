@@ -236,6 +236,6 @@ export const SkipToCanvasLinkFocused: StoryObj<typeof Heading> = {
   parameters: { layout: 'padded', chromatic: { delay: 300 } },
   play: () => {
     // focus each instance for chromatic/storybook's stacked theme
-    screen.getAllByText('Skip to canvas').forEach((x) => x.focus());
+    screen.getAllByText('Skip to content').forEach((x) => x.focus());
   },
 };

@@ -126,6 +126,7 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
           [
             'next/dist/compiled/babel/preset-env',
             {
+              bugfixes: true,
               targets: {
                 chrome: 100,
                 safari: 15,

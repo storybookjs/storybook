@@ -1,3 +1,7 @@
+## 10.2.0-alpha.17
+
+- Core: Improve the story generation experience - [#33259](https://github.com/storybookjs/storybook/pull/33259), thanks @yannbf!
+
 ## 10.2.0-alpha.16
 
 - Addon Pseudo States: Fix stylesheet rewrite for `:not()` with parenthesis in inner selector - [#33491](https://github.com/storybookjs/storybook/pull/33491), thanks @ghengeveld!

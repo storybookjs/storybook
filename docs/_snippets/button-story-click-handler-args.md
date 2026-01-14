@@ -60,7 +60,7 @@ export const Text = meta.story({
 });
 ```
 
-```jsx filename="Button.stories.js|jsx" renderer="react" language="js"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { action } from 'storybook/actions';
 
 import { Button } from './Button';
@@ -78,7 +78,7 @@ export const Text = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -100,6 +100,46 @@ export const Text = {
   },
   render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
 };
+```
+
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {
+    label: 'Hello',
+    onClick: action('clicked'),
+  },
+  render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
+});
+```
+
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {
+    label: 'Hello',
+    onClick: action('clicked'),
+  },
+  render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
+});
 ```
 
 ```jsx filename="Button.stories.js|jsx" renderer="solid" language="js"
@@ -201,7 +241,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import { action } from 'storybook/actions';
 
 import Button from './Button.vue';
@@ -227,7 +267,7 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { action } from 'storybook/actions';
@@ -256,6 +296,62 @@ export const Primary: Story = {
     label: 'Hello',
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return {
+        ...args,
+        onClick: action('clicked'),
+      };
+    },
+    template: '<Button @click="onClick" :label="label" />',
+  }),
+  args: {
+    label: 'Hello',
+  },
+});
+```
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  render: (args) => ({
+    components: { Button },
+    setup() {
+      return {
+        ...args,
+        onClick: action('clicked'),
+      };
+    },
+    template: '<Button @click="onClick" :label="label" />',
+  }),
+  args: {
+    label: 'Hello',
+  },
+});
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"

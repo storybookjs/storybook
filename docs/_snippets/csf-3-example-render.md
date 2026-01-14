@@ -81,7 +81,7 @@ export const Default: Story = {
 };
 ```
 
-```js filename="CSF 3 - Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="CSF 3 - Button.stories.js" renderer="web-components" language="js"
 // Other imports and story implementation
 
 export const Default = {
@@ -89,7 +89,7 @@ export const Default = {
 };
 ```
 
-```ts filename="CSF 3 - Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="CSF 3 - Button.stories.ts" renderer="web-components" language="ts"
 // Other imports and story implementation
 
 export const Default: Story = {

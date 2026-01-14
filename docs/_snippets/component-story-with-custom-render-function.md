@@ -102,7 +102,7 @@ export const Example = {
 };
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Layout } from './Layout';
 import { MyComponent } from './MyComponent';
 
@@ -125,7 +125,7 @@ export const Example = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -152,6 +152,56 @@ export const Example: Story = {
     </Layout>
   ),
 };
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Layout } from './Layout';
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => (
+    <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  ),
+});
+```
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Layout } from './Layout';
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => (
+    <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  ),
+});
 ```
 
 ```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
@@ -206,7 +256,7 @@ export const Example: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Layout from './Layout.vue';
 import MyComponent from './MyComponent.vue';
 
@@ -232,7 +282,7 @@ export const Example = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Layout from './Layout.vue';
@@ -261,6 +311,62 @@ export const Example: Story = {
     `,
   }),
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Layout from './Layout.vue';
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => ({
+    components: { Layout, MyComponent },
+    template: `
+      <Layout>
+        <header>
+          <h1>Example</h1>
+        </header>
+        <article>
+          <MyComponent />
+        </article>
+      </Layout>
+    `,
+  }),
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Layout from './Layout.vue';
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => ({
+    components: { Layout, MyComponent },
+    template: `
+      <Layout>
+        <header>
+          <h1>Example</h1>
+        </header>
+        <article>
+          <MyComponent />
+        </article>
+      </Layout>
+    `,
+  }),
+});
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"

@@ -46,10 +46,10 @@ export type PluginOptions = {
   image?: NextImagePluginOptions;
 };
 
-function VitePlugin({
-  dir = process.cwd(),
-  image,
-}: PluginOptions = {}): (Plugin | Promise<Plugin>)[] {
+function VitePlugin({ dir = process.cwd(), image }: PluginOptions = {}): (
+  | Plugin
+  | Promise<Plugin>
+)[] {
   const resolvedDir = resolve(dir);
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
 
@@ -63,8 +63,8 @@ function VitePlugin({
           env.mode === "development"
             ? PHASE_DEVELOPMENT_SERVER
             : env.mode === "test"
-              ? PHASE_TEST
-              : PHASE_PRODUCTION_BUILD;
+            ? PHASE_TEST
+            : PHASE_PRODUCTION_BUILD;
 
         const isNext16orNewer = getNextjsMajorVersion() >= 16;
 
@@ -83,13 +83,13 @@ function VitePlugin({
                 {
                   find: /^react\/jsx-runtime$/,
                   replacement: require.resolve(
-                    "next/dist/compiled/react/jsx-runtime",
+                    "next/dist/compiled/react/jsx-runtime"
                   ),
                 },
                 {
                   find: /^react\/jsx-dev-runtime$/,
                   replacement: require.resolve(
-                    "next/dist/compiled/react/jsx-dev-runtime",
+                    "next/dist/compiled/react/jsx-dev-runtime"
                   ),
                 },
                 {
@@ -99,25 +99,25 @@ function VitePlugin({
                 {
                   find: /^react-dom\/server$/,
                   replacement: require.resolve(
-                    "next/dist/compiled/react-dom/server.browser.js",
+                    "next/dist/compiled/react-dom/server.browser.js"
                   ),
                 },
                 {
                   find: /^react-dom\/test-utils$/,
                   replacement: require.resolve(
-                    "next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js",
+                    "next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js"
                   ),
                 },
                 {
                   find: /^react-dom\/client$/,
                   replacement: require.resolve(
-                    "next/dist/compiled/react-dom/client.js",
+                    "next/dist/compiled/react-dom/client.js"
                   ),
                 },
                 {
                   find: /^react-dom\/cjs\/react-dom\.development\.js$/,
                   replacement: require.resolve(
-                    "next/dist/compiled/react-dom/cjs/react-dom.development.js",
+                    "next/dist/compiled/react-dom/cjs/react-dom.development.js"
                   ),
                 },
               ],
@@ -133,6 +133,14 @@ function VitePlugin({
               "next/dist/client/head-manager",
               "next/dist/client/components/is-next-router-error",
               "next/dist/shared/lib/segment",
+              "next/dist/shared/lib/app-router-context.shared-runtime.js",
+              "next/dist/shared/lib/head-manager-context.shared-runtime.js",
+              "next/dist/shared/lib/hooks-client-context.shared-runtime.js",
+              "next/dist/shared/lib/router-context.shared-runtime.js",
+              "next/dist/client/components/redirect-boundary.js",
+              "next/dist/client/head-manager.js",
+              "next/dist/client/components/is-next-router-error.js",
+              "next/dist/shared/lib/segment.js",
               "styled-jsx",
               "styled-jsx/style",
               "sb-original/image-context",
@@ -150,10 +158,10 @@ function VitePlugin({
           test: {
             alias: {
               "react/jsx-dev-runtime": require.resolve(
-                "next/dist/compiled/react/jsx-dev-runtime.js",
+                "next/dist/compiled/react/jsx-dev-runtime.js"
               ),
               "react/jsx-runtime": require.resolve(
-                "next/dist/compiled/react/jsx-runtime.js",
+                "next/dist/compiled/react/jsx-runtime.js"
               ),
 
               react: require.resolve("next/dist/compiled/react"),
@@ -161,19 +169,19 @@ function VitePlugin({
               "react-dom/server": require.resolve(
                 executionEnvironment === "node"
                   ? "next/dist/compiled/react-dom/server.js"
-                  : "next/dist/compiled/react-dom/server.browser.js",
+                  : "next/dist/compiled/react-dom/server.browser.js"
               ),
 
               "react-dom/test-utils": require.resolve(
-                "next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js",
+                "next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js"
               ),
 
               "react-dom/cjs/react-dom.development.js": require.resolve(
-                "next/dist/compiled/react-dom/cjs/react-dom.development.js",
+                "next/dist/compiled/react-dom/cjs/react-dom.development.js"
               ),
 
               "react-dom/client": require.resolve(
-                "next/dist/compiled/react-dom/client.js",
+                "next/dist/compiled/react-dom/client.js"
               ),
 
               "react-dom": require.resolve("next/dist/compiled/react-dom"),

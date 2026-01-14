@@ -138,27 +138,6 @@ export default definePreview({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/preview.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
-import { definePreview } from '@storybook/angular';
-
-export default definePreview({
-  parameters: {
-    a11y: {
-      options: {
-        /*
-         * Opt in to running WCAG 2.x AAA rules
-         * Note that you must explicitly re-specify the defaults (all but the last array entry)
-         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter-examples for more details
-         */
-        runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice', 'wcag2aaa'],
-      },
-    },
-  },
-});
-```
-
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
 

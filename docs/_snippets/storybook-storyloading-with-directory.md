@@ -76,18 +76,6 @@ export default defineMain({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/angular/node';
-
-export default defineMain({
-  framework: '@storybook/angular',
-  // 👇 Storybook will load all existing stories within the MyStories folder
-  stories: ['../packages/MyStories'],
-});
-```
-
 ```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { defineMain } from '@storybook/web-components-vite/node';
 

@@ -483,33 +483,6 @@ export default definePreview({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/preview.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
-import { definePreview } from '@storybook/angular';
-import { componentWrapperDecorator } from '@storybook/angular';
-
-export default definePreview({
-  decorators: [
-    // 👇 Defining the decorator in the preview file applies it to all stories
-    componentWrapperDecorator((story, { parameters }) => {
-      // 👇 Make it configurable by reading from parameters
-      const { pageLayout } = parameters;
-      switch (pageLayout) {
-        case 'page':
-          //  Your page layout is probably a little more complex than this
-          return `<div class="page-layout">${story}</div>`;
-        case 'page-mobile':
-          return `<div class="page-mobile-layout">${story}</div>`;
-        default:
-          // In the default case, don't apply a layout
-          return story;
-      }
-    }),
-  ],
-});
-```
-
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { html } from 'lit';
 

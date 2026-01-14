@@ -89,20 +89,6 @@ export default definePreview({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/preview.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
-import { definePreview } from '@storybook/angular';
-
-import { init } from '../project-bootstrap';
-
-export default definePreview({
-  async beforeAll() {
-    await init();
-  },
-});
-```
-
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
 

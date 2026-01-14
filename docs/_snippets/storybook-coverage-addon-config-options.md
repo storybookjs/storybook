@@ -171,29 +171,6 @@ export default defineMain({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/angular/node';
-
-export default defineMain({
-  framework: '@storybook/angular',
-  stories: [],
-  addons: [
-    // Other Storybook addons
-    {
-      name: '@storybook/addon-coverage',
-      options: {
-        istanbul: {
-          include: ['**/stories/**'],
-          exclude: ['**/exampleDirectory/**'],
-        },
-      },
-    },
-  ],
-});
-```
-
 ```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { defineMain } from '@storybook/web-components-vite/node';
 

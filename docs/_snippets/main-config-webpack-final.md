@@ -93,23 +93,3 @@ export default defineMain({
   },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/angular/node';
-
-export default defineMain({
-  framework: '@storybook/angular',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  webpackFinal: async (config, { configType }) => {
-    if (configType === 'DEVELOPMENT') {
-      // Modify config for development
-    }
-    if (configType === 'PRODUCTION') {
-      // Modify config for production
-    }
-    return config;
-  },
-});
-```

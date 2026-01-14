@@ -167,31 +167,6 @@ export default defineMain({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/angular/node';
-
-export default defineMain({
-  framework: '@storybook/angular',
-  stories: [
-    '../src/**/*.mdx',
-    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
-    // 👇 Make sure files to index are included in `stories`
-    '../src/**/*.custom-stories.@(js|jsx|ts|tsx)',
-  ],
-  experimental_indexers: async (existingIndexers) => {
-    const customIndexer = {
-      test: /\.custom-stories\.[tj]sx?$/,
-      createIndex: async (fileName) => {
-        // See API and examples below...
-      },
-    };
-    return [...existingIndexers, customIndexer];
-  },
-});
-```
-
 ```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { defineMain } from '@storybook/web-components-vite/node';
 

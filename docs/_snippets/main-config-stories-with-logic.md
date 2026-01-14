@@ -126,25 +126,6 @@ export default defineMain({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="angular" language="js" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/angular/node';
-
-async function findStories() {
-  // your custom logic returns a list of files
-}
-
-export default defineMain({
-  framework: '@storybook/angular',
-  stories: async (list) => [
-    ...list,
-    // 👇 Add your found stories to the existing list of story files
-    ...(await findStories()),
-  ],
-});
-```
-
 ```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { defineMain, type StoriesEntry } from '@storybook/web-components-vite/node';
 

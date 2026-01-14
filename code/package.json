@@ -53,7 +53,7 @@
       "yarn lint:js:cmd --fix"
     ],
     "*.ejs": [
-      "../scripts/node_modules/.bin/ejslint"
+      "yarn --cwd ../scripts ejslint"
     ],
     "*.{css,html,json,md,yml}": [
       "yarn lint:prettier"
@@ -220,5 +220,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "10.2.0-alpha.18"
 }

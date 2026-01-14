@@ -98,14 +98,14 @@ export const UI_LIBRARY_PACKAGES = [
 export const I18N_PACKAGES = ['*i18n*', '*intl', '@lingui/*'] as const;
 
 export const ROUTER_PACKAGES = [
-  // e.g. react-router, react-easy-router
-  '*-router',
-  // e.g. react-router-dom
-  '*-router-*',
-  // e.g. @reach/router, @remix-run/router
-  '*/router',
+  'react-router',
+  'react-router-dom',
+  'react-easy-router',
+  '@remix-run/router',
+  'expo-router',
   '@tanstack/*-router',
   'wouter',
+  '@reach/router',
 ] as const;
 
 export function globToRegex(pattern: string): RegExp {

@@ -64,39 +64,42 @@ export async function runStoryTests(componentFilePaths: string[]): Promise<TestR
 
     if (testFailureMessage) {
       return {
-        success: false,
         duration,
-        error: testFailureMessage,
+        runError: testFailureMessage,
       };
     }
 
     if (!existsSync(outputFile)) {
       return {
-        success: false,
         duration,
-        error: 'JSON report not found',
+        runError: 'JSON report not found',
       };
     }
 
     // Type is the return Vitest JSON report structure
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let testResults: any;
+    let vitestReport: any;
     try {
       const resultsJson = await readFile(outputFile, 'utf8');
-      testResults = JSON.parse(resultsJson);
+      vitestReport = JSON.parse(resultsJson);
     } catch {
       return {
-        success: false,
         duration,
-        error: 'Failed to read or parse JSON report',
+        runError: 'Failed to read or parse JSON report',
       };
     }
 
-    return { ...parseVitestResults(testResults), duration };
+    if (!vitestReport.testResults || vitestReport.testResults.length === 0) {
+      return {
+        duration,
+        runError: 'No tests found',
+      };
+    }
+
+    return { ...parseVitestResults(vitestReport), duration };
   } catch {
     return {
-      success: false,
-      error: 'Uncaught error running story tests',
+      runError: 'Uncaught error running story tests',
       duration: 0,
     };
   }

@@ -12,9 +12,9 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
 To install Storybook in an existing Angular project, run this command in your project's root directory:
 
-<CodeSnippets path="create-command.md" variant="new-users" />
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
-You can then get started [writing stories](/docs/get-started/whats-a-story/), [running tests](/docs/writing-tests/) and [documenting your components](/docs/writing-docs/). For more control over the installation process, refer to the [installation guide](/docs/install/).
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
 ### Requirements
 
@@ -46,7 +46,7 @@ You will find the output in the configured `outputDir` (default is `dist/storybo
 
 ## Configure
 
-To make the most out of Storybook in your Angular project, you can set up Compodoc integration and Storybook [decorators](/docs/writing-stories/decorators/) based on your project needs.
+To make the most out of Storybook in your Angular project, you can set up Compodoc integration and Storybook [decorators](../../writing-stories/decorators.mdx) based on your project needs.
 
 ### Compodoc
 
@@ -122,7 +122,7 @@ export default preview;
 
 ### Application-wide providers
 
-If your component relies on application-wide providers, like the ones defined by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any other modules that use the forRoot pattern to provide a [`ModuleWithProviders`](https://angular.dev/api/core/ModuleWithProviders), you can apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to all stories for that component. This will provide them with the [bootstrapApplication function](https://angular.io/guide/standalone-components#configuring-dependency-injection), used to bootstrap the component in Storybook.
+If your component relies on application-wide providers, like the ones defined by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any other modules that use the forRoot pattern to provide a [`ModuleWithProviders`](https://angular.dev/api/core/ModuleWithProviders), you can apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to all stories for that component. This will provide them with the [bootstrapApplication function](https://angular.dev/api/platform-browser/bootstrapApplication), used to bootstrap the component in Storybook.
 
 ```ts title="ChipsModule.stories.ts"
 import { Meta, applicationConfig, StoryObj } from '@storybook/angular';
@@ -202,7 +202,6 @@ export const WithCustomProvider: Story = {
   ],
 };
 ```
-
 
 ## FAQ
 

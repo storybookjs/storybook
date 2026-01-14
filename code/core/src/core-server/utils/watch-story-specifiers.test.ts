@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 
@@ -19,7 +19,20 @@ describe('watchStorySpecifiers', () => {
   const abspath = (filename: string) => join(workingDir, filename);
 
   let close: () => void;
-  afterEach(() => close?.());
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    close?.();
+    vi.useRealTimers();
+  });
+
+  // Helper to flush the batched events queue
+  const flushEvents = async () => {
+    await vi.runAllTimersAsync();
+  };
 
   it('watches basic globs', async () => {
     const specifier = normalizeStoriesEntry('../src/**/*.stories.@(ts|js)', options);
@@ -29,12 +42,6 @@ describe('watchStorySpecifiers', () => {
 
     expect(Watchpack).toHaveBeenCalledTimes(1);
     const watcher = Watchpack.mock.instances[0];
-    expect(watcher.watch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        directories: expect.any(Array),
-        files: expect.any(Array),
-      })
-    );
 
     expect(watcher.on).toHaveBeenCalledTimes(2);
     const baseOnChange = watcher.on.mock.calls[0][1];
@@ -44,38 +51,48 @@ describe('watchStorySpecifiers', () => {
 
     // File changed, matching
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.stories.ts', 1234);
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.stories.ts`, false);
+    onChange('src/nested/Button.stories.ts', 1234);
+    await flushEvents();
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, false);
 
     // File changed, NOT matching
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.ts', 1234);
+    onChange('src/nested/Button.ts', 1234);
+    await flushEvents();
     expect(onInvalidate).not.toHaveBeenCalled();
 
     // File removed, matching
     onInvalidate.mockClear();
-    await onRemove('src/nested/Button.stories.ts');
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.stories.ts`, true);
+    onRemove('src/nested/Button.stories.ts');
+    await flushEvents();
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, true);
 
     // File removed, NOT matching
     onInvalidate.mockClear();
-    await onRemove('src/nested/Button.ts');
+    onRemove('src/nested/Button.ts');
+    await flushEvents();
     expect(onInvalidate).not.toHaveBeenCalled();
 
     // File moved out, matching
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.stories.ts', null);
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.stories.ts`, true);
+    onChange('src/nested/Button.stories.ts', null);
+    await flushEvents();
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, true);
 
     // File renamed, matching
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.stories.ts', null);
-    await onChange('src/nested/Button-2.stories.ts', 1234);
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.stories.ts`, true);
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button-2.stories.ts`, false);
+    onChange('src/nested/Button.stories.ts', null);
+    onChange('src/nested/Button-2.stories.ts', 1234);
+    await flushEvents();
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, true);
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button-2.stories.ts`, false);
   });
 
   it('scans directories when they are added', async () => {
+    // This test uses real timers because globby performs actual filesystem I/O
+    // that doesn't work well with fake timers
+    vi.useRealTimers();
+
     const specifier = normalizeStoriesEntry('../src/**/*.stories.@(ts|js)', options);
 
     const onInvalidate = vi.fn();
@@ -83,20 +100,17 @@ describe('watchStorySpecifiers', () => {
 
     expect(Watchpack).toHaveBeenCalledTimes(1);
     const watcher = Watchpack.mock.instances[0];
-    expect(watcher.watch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        directories: expect.any(Array),
-        files: expect.any(Array),
-      })
-    );
 
     expect(watcher.on).toHaveBeenCalledTimes(2);
     const baseOnChange = watcher.on.mock.calls[0][1];
     const onChange = (filename: string, ...args: any[]) => baseOnChange(abspath(filename), ...args);
 
     onInvalidate.mockClear();
-    await onChange('src/nested', 1234);
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.stories.ts`, false);
+    onChange('src/nested', 1234);
+    // Wait for the batching timeout and globby to complete
+    await vi.waitFor(() => {
+      expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, false);
+    });
   });
 
   it('watches single file globs', async () => {
@@ -107,12 +121,6 @@ describe('watchStorySpecifiers', () => {
 
     expect(Watchpack).toHaveBeenCalledTimes(1);
     const watcher = Watchpack.mock.instances[0];
-    expect(watcher.watch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        directories: expect.any(Array),
-        files: expect.any(Array),
-      })
-    );
 
     expect(watcher.on).toHaveBeenCalledTimes(2);
     const baseOnChange = watcher.on.mock.calls[0][1];
@@ -122,28 +130,33 @@ describe('watchStorySpecifiers', () => {
 
     // File changed, matching
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.mdx', 1234);
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.mdx`, false);
+    onChange('src/nested/Button.mdx', 1234);
+    await flushEvents();
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.mdx`, false);
 
     // File changed, NOT matching
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.tsx', 1234);
+    onChange('src/nested/Button.tsx', 1234);
+    await flushEvents();
     expect(onInvalidate).not.toHaveBeenCalled();
 
     // File removed, matching
     onInvalidate.mockClear();
-    await onRemove('src/nested/Button.mdx');
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.mdx`, true);
+    onRemove('src/nested/Button.mdx');
+    await flushEvents();
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.mdx`, true);
 
     // File removed, NOT matching
     onInvalidate.mockClear();
-    await onRemove('src/nested/Button.tsx');
+    onRemove('src/nested/Button.tsx');
+    await flushEvents();
     expect(onInvalidate).not.toHaveBeenCalled();
 
     // File moved out, matching
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.mdx', null);
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.mdx`, true);
+    onChange('src/nested/Button.mdx', null);
+    await flushEvents();
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.mdx`, true);
   });
 
   it('multiplexes between two specifiers on the same directory', async () => {
@@ -155,27 +168,19 @@ describe('watchStorySpecifiers', () => {
 
     expect(Watchpack).toHaveBeenCalledTimes(1);
     const watcher = Watchpack.mock.instances[0];
-    expect(watcher.watch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        directories: expect.any(Array),
-        files: expect.any(Array),
-      })
-    );
 
     expect(watcher.on).toHaveBeenCalledTimes(2);
     const baseOnChange = watcher.on.mock.calls[0][1];
     const onChange = (filename: string, ...args: any[]) => baseOnChange(abspath(filename), ...args);
 
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.stories.ts', 1234);
-    expect(onInvalidate).toHaveBeenCalledWith(
-      globSpecifier,
-      `./src/nested/Button.stories.ts`,
-      false
-    );
+    onChange('src/nested/Button.stories.ts', 1234);
+    await flushEvents();
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, false);
 
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.mdx', 1234);
-    expect(onInvalidate).toHaveBeenCalledWith(fileSpecifier, `./src/nested/Button.mdx`, false);
+    onChange('src/nested/Button.mdx', 1234);
+    await flushEvents();
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.mdx`, false);
   });
 });

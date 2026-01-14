@@ -1,5 +1,5 @@
 executor:
-  class: large
+  class: xlarge
   name: sb_node_22_classic
 
 steps:
@@ -13,13 +13,9 @@ steps:
       keys:
         - build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
   - run:
-      name: Compile
-      command: |
-        yarn
-        yarn task --task compile --start-from=auto --no-link --debug
-  - run:
       name: Check
       command: |
+        yarn
         yarn task --task check --start-from=auto --no-link --debug
   - run:
       name: Ensure no changes pending

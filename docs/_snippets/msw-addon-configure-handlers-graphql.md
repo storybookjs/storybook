@@ -6,10 +6,10 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { graphql, HttpResponse, delay } from 'msw';
 
-import { DocumentHeader } from './DocumentHeader.component';
-import { DocumentList } from './DocumentList.component';
-import { PageLayout } from './PageLayout.component';
-import { DocumentScreen } from './YourPage.component';
+import { DocumentHeader } from './document-header.component';
+import { DocumentList } from './document-list.component';
+import { PageLayout } from './page-layout.component';
+import { DocumentScreen } from './your-page.component';
 import { MockGraphQLModule } from './mock-graphql.module';
 
 const meta: Meta<DocumentScreen> = {
@@ -90,17 +90,18 @@ export const MockedError: Story = {
 ```
 
 ```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { graphql, HttpResponse, delay } from 'msw';
 
-import { DocumentHeader } from './DocumentHeader.component';
-import { DocumentList } from './DocumentList.component';
-import { PageLayout } from './PageLayout.component';
-import { DocumentScreen } from './YourPage.component';
+import preview from '../.storybook/preview';
+
+import { DocumentHeader } from './document-header.component';
+import { DocumentList } from './document-list.component';
+import { PageLayout } from './page-layout.component';
+import { DocumentScreen } from './your-page.component';
 import { MockGraphQLModule } from './mock-graphql.module';
 
 const meta = preview.meta({

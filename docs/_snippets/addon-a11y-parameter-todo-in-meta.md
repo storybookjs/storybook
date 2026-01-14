@@ -1,7 +1,7 @@
 ```ts filename="DataTable.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import { Meta } from '@storybook/angular';
 
-import { DataTable } from './DataTable.component';
+import { DataTable } from './data-table.component';
 
 const meta: Meta<DataTable> = {
   component: DataTable,
@@ -17,7 +17,7 @@ export default meta;
 ```ts filename="DataTable.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { DataTable } from './DataTable.component';
+import { DataTable } from './data-table.component';
 
 const meta = preview.meta({
   component: DataTable,

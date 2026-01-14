@@ -1,6 +1,5 @@
 ```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
-import { argsToTemplate } from '@storybook/angular';
+import { type Meta, type StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { Page } from './page.component';
 
@@ -28,8 +27,9 @@ export const CustomFooter: Story = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { argsToTemplate } from '@storybook/angular';
+
+import preview from '../.storybook/preview';
 
 import { Page } from './page.component';
 

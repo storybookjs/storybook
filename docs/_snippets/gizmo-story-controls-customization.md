@@ -1,7 +1,7 @@
 ```ts filename="Gizmo.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
-import { Gizmo } from './Gizmo.component';
+import { Gizmo } from './gizmo.component';
 
 const meta: Meta<Gizmo> = {
   component: Gizmo,
@@ -60,7 +60,7 @@ export default meta;
 ```ts filename="Gizmo.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { Gizmo } from './Gizmo.component';
+import { Gizmo } from './gizmo.component';
 
 const meta = preview.meta({
   component: Gizmo,

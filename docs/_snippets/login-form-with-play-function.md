@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 
 import { expect } from 'storybook/test';
 
-import { LoginForm } from './LoginForm.component';
+import { LoginForm } from './login-form.component';
 
 const meta: Meta<LoginForm> = {
   component: LoginForm,
@@ -39,7 +39,7 @@ import preview from '../.storybook/preview';
 
 import { expect } from 'storybook/test';
 
-import { LoginForm } from './LoginForm.component';
+import { LoginForm } from './login-form.component';
 
 const meta = preview.meta({
   component: LoginForm,

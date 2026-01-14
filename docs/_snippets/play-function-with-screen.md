@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { screen } from 'storybook/test';
 
-import { Dialog } from './Dialog.component';
+import { Dialog } from './dialog.component';
 
 const meta: Meta<Dialog> = {
   component: Dialog,
@@ -26,7 +26,7 @@ export const Open: Story = {
 import preview from '../.storybook/preview';
 import { screen } from 'storybook/test';
 
-import { Dialog } from './Dialog.component';
+import { Dialog } from './dialog.component';
 
 const meta = preview.meta({
   component: Dialog,

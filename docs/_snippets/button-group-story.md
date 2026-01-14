@@ -5,7 +5,7 @@ import { moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
-import { ButtonGroup } from './ButtonGroup.component';
+import { ButtonGroup } from './button-group.component';
 import { Button } from './button.component';
 
 //👇 Imports the Button stories
@@ -38,7 +38,7 @@ import preview from '../.storybook/preview';
 
 import { CommonModule } from '@angular/common';
 
-import { ButtonGroup } from './ButtonGroup.component';
+import { ButtonGroup } from './button-group.component';
 import { Button } from './button.component';
 
 //👇 Imports the Button stories

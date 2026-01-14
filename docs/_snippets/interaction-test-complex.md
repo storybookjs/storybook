@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { fn, expect } from 'storybook/test';
 
 import { users } from '../mocks/users';
-import { EventForm } from './EventForm.component';
+import { EventForm } from './event-form.component';
 
 const meta: Meta<EventForm> = {
   component: EventForm,
@@ -48,7 +48,7 @@ import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
 
 import { users } from '../mocks/users';
-import { EventForm } from './EventForm.component';
+import { EventForm } from './event-form.component';
 
 const meta = preview.meta({
   component: EventForm,

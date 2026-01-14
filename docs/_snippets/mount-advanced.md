@@ -65,7 +65,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page.component';
+import { Page } from './page.component';
 
 const meta = { component: Page } satisfies Meta<typeof Page>;
 export default meta;
@@ -79,9 +79,10 @@ export const Default: Story = {
     });
 
     const canvas = await mount(
+      Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      <Page {...args} params={{ id: String(note.id) }} />,
+      { props: { ...args, params: { id: String(note.id) } } },
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -98,7 +99,7 @@ import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page.component';
+import { Page } from './page.component';
 
 const meta = preview.meta({ component: Page });
 
@@ -109,9 +110,10 @@ export const Default = meta.story({
     });
 
     const canvas = await mount(
+      Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      <Page {...args} params={{ id: String(note.id) }} />,
+      { props: { ...args, params: { id: String(note.id) } } },
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));

@@ -33,7 +33,7 @@ import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
 
-import Page from './Page.component';
+import Page from './page.component';
 
 const meta = preview.meta({
   component: Page,

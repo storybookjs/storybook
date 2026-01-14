@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -18,24 +18,7 @@ export const Example = {
 } satisfies Story;
 ```
 
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Button } from './button.component';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Example = meta.story({
-  args: {
-    primary: true,
-    label: 'Button',
-  },
-});
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

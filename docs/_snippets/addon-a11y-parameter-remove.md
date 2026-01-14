@@ -1,7 +1,7 @@
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import { Meta } from '@storybook/angular';
 
-import { Button } from './Button.component';
+import { Button } from './button.component';
 
 const meta: Meta<Button> = {
   component: Button,
@@ -16,7 +16,7 @@ export default meta;
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { Button } from './Button.component';
+import { Button } from './button.component';
 
 const meta = preview.meta({
   component: Button,

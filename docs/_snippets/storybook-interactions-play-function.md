@@ -1,9 +1,8 @@
 ```ts filename="Form.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
-
 import { expect, fn, waitFor } from 'storybook/test';
 
-import { Form } from './Form.component';
+import { Form } from './form.component';
 
 const meta: Meta<Form> = {
   component: Form,
@@ -39,10 +38,9 @@ export const Submitted: Story = {
 
 ```ts filename="Form.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { expect, fn, waitFor } from 'storybook/test';
-
 import preview from '../.storybook/preview';
 
-import { Form } from './Form.component';
+import { Form } from './form.component';
 
 const meta = preview.meta({
   component: Form,

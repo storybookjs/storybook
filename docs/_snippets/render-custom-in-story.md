@@ -1,5 +1,5 @@
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular/';
+import { type Meta, type StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { Button } from './button.component';
 
@@ -28,6 +28,7 @@ export const PrimaryInAlert: Story = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { argsToTemplate } from '@storybook/angular';
 import preview from '../.storybook/preview';
 
 import { Button } from './button.component';

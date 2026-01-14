@@ -56,11 +56,10 @@ export const OneItem: Story = {
 ```
 
 ```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
+import { CommonModule } from '@angular/common';
 
 import { moduleMetadata } from '@storybook/angular';
-
-import { CommonModule } from '@angular/common';
+import preview from '../.storybook/preview';
 
 import { List } from './list.component';
 import { ListItem } from './list-item.component';

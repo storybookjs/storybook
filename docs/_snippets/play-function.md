@@ -1,7 +1,7 @@
 ```ts filename="RegistrationForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { RegistrationForm } from './RegistrationForm.component';
+import { RegistrationForm } from './registration-form.component';
 
 const meta: Meta<RegistrationForm> = {
   component: RegistrationForm,
@@ -41,7 +41,7 @@ export const FilledForm: Story = {
 ```ts filename="RegistrationForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { RegistrationForm } from './RegistrationForm.component';
+import { RegistrationForm } from './registration-form.component';
 
 const meta = preview.meta({
   component: RegistrationForm,

@@ -1,7 +1,7 @@
 ```ts filename="FooBar.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { Foo } from './Foo.component';
+import { Foo } from './foo.component';
 
 const meta: Meta<Foo> = {
   /* 👇 The title prop is optional.
@@ -21,7 +21,7 @@ export const Baz: Story = {};
 ```ts filename="FooBar.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { Foo } from './Foo.component';
+import { Foo } from './foo.component';
 
 const meta = preview.meta({
   /* 👇 The title prop is optional.

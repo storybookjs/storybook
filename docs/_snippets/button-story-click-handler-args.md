@@ -1,6 +1,5 @@
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
-import { argsToTemplate } from '@storybook/angular';
+import { type Meta, type StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { action } from 'storybook/actions';
 

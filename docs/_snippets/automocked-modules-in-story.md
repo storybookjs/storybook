@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { expect, mocked } from 'storybook/test';
 
-import { AuthButton } from './AuthButton.component';
+import { AuthButton } from './auth-button.component';
 
 import { v4 as uuidv4 } from 'uuid';
 import { getUserFromSession } from '../lib/session';
@@ -35,7 +35,7 @@ export const LogIn: Story = {
 import { expect, mocked } from 'storybook/test';
 import preview from '../.storybook/preview';
 
-import { AuthButton } from './AuthButton.component';
+import { AuthButton } from './auth-button.component';
 
 import { v4 as uuidv4 } from 'uuid';
 import { getUserFromSession } from '../lib/session';

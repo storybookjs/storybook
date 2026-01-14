@@ -1,6 +1,5 @@
 ```ts filename=".storybook/preview.ts" renderer="angular" language="ts"
-import type { Preview } from '@storybook/angular';
-import { componentWrapperDecorator } from '@storybook/angular';
+import { type Preview, componentWrapperDecorator } from '@storybook/angular';
 
 const preview: Preview = {
   decorators: [
@@ -459,8 +458,7 @@ export default definePreview({
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { definePreview } from '@storybook/angular';
-import { componentWrapperDecorator } from '@storybook/angular';
+import { definePreview, componentWrapperDecorator } from '@storybook/angular';
 
 export default definePreview({
   decorators: [

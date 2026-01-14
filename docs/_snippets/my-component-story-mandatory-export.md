@@ -1,7 +1,7 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 const meta: Meta<MyComponent> = {
   /* 👇 The title prop is optional.
@@ -24,7 +24,7 @@ export default meta;
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 const meta = preview.meta({
   /* 👇 The title prop is optional.

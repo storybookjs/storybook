@@ -3,7 +3,6 @@ import type { Meta, StoryObj } from '@storybook/angular';
 
 import { MyComponent } from './MyComponent';
 
-// To apply a set of backgrounds to all stories of Button:
 const meta: Meta<MyComponent> = {
   component: MyComponent,
 };
@@ -23,7 +22,6 @@ import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 
-// To apply a set of backgrounds to all stories of Button:
 const meta = preview.meta({
   component: MyComponent,
 });

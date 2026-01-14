@@ -38,7 +38,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 const meta: Meta<MyComponent> = {
   component: MyComponent,
@@ -58,7 +58,7 @@ import preview from '../.storybook/preview';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 const meta = preview.meta({
   component: MyComponent,

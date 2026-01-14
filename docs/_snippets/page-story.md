@@ -1,9 +1,7 @@
 ```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import { moduleMetadata } from '@storybook/angular';
-
-import type { Meta, StoryObj } from '@storybook/angular';
-
 import { CommonModule } from '@angular/common';
+
+import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { Button } from './button.component';
 import { Header } from './header.component';
@@ -33,11 +31,10 @@ export const LoggedIn: Story = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { moduleMetadata } from '@storybook/angular';
-
-import preview from '../.storybook/preview';
-
 import { CommonModule } from '@angular/common';
+
+import { moduleMetadata } from '@storybook/angular';
+import preview from '../.storybook/preview';
 
 import { Button } from './button.component';
 import { Header } from './header.component';

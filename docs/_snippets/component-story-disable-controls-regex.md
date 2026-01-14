@@ -1,7 +1,7 @@
 ```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { YourComponent } from './YourComponent.component';
+import { YourComponent } from './your-component.component';
 
 const meta: Meta<YourComponent> = {
   component: YourComponent,
@@ -38,7 +38,7 @@ export const RegexExclude: Story = {
 ```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { YourComponent } from './YourComponent.component';
+import { YourComponent } from './your-component.component';
 
 const meta = preview.meta({
   component: YourComponent,

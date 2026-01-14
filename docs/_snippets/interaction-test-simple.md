@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { expect } from 'storybook/test';
 
-import { Dialog } from './Dialog.component';
+import { Dialog } from './dialog.component';
 
 const meta: Meta<Dialog> = {
   component: Dialog,
@@ -25,7 +25,7 @@ export const Opens: Story = {
 import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
 
-import { Dialog } from './Dialog.component';
+import { Dialog } from './dialog.component';
 
 const meta = preview.meta({
   component: Dialog,

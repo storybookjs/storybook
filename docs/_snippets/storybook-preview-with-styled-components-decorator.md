@@ -1,6 +1,5 @@
 ```ts filename=".storybook/preview.ts" renderer="angular" language="ts"
-import { componentWrapperDecorator } from '@storybook/angular';
-import type { Preview } from '@storybook/angular';
+import { type Preview, componentWrapperDecorator } from '@storybook/angular';
 
 import { ThemeProvider } from './theme-provider.component';
 
@@ -28,8 +27,7 @@ export default preview;
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="Preview"
-import type { Preview } from '@storybook/vue3-vite';
-import { setup } from '@storybook/vue3-vite';
+import { type Preview, setup } from '@storybook/vue3-vite';
 
 import 'vuetify/styles';
 import '@mdi/font/css/materialdesignicons.css';

@@ -14,8 +14,9 @@ export default meta;
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { componentWrapperDecorator } from '@storybook/angular';
+
+import preview from '../.storybook/preview';
 
 import { YourComponent } from './your.component';
 

@@ -1,9 +1,9 @@
 ```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
-
 import { http, HttpResponse, delay } from 'msw';
 
-import { DocumentScreen } from './YourPage.component';
+import type { Meta, StoryObj } from '@storybook/angular';
+
+import { DocumentScreen } from './your-page.component';
 
 const meta: Meta<DocumentScreen> = {
   component: DocumentScreen,
@@ -66,11 +66,11 @@ export const MockedError: Story = {
 ```
 
 ```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { http, HttpResponse, delay } from 'msw';
 
-import { DocumentScreen } from './YourPage.component';
+import preview from '../.storybook/preview';
+
+import { DocumentScreen } from './your-page.component';
 
 const meta = preview.meta({
   component: DocumentScreen,

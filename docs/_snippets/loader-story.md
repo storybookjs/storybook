@@ -41,11 +41,10 @@ export const Primary: Story = {
 ```
 
 ```ts filename="TodoItem.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
+import { CommonModule } from '@angular/common';
 
 import { moduleMetadata } from '@storybook/angular';
-
-import { CommonModule } from '@angular/common';
+import preview from '../.storybook/preview';
 
 import { TodoItem } from './TodoItem';
 

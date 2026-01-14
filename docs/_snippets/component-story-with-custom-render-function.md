@@ -4,8 +4,8 @@ import { moduleMetadata, argsToTemplate } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
-import { Layout } from './Layout.component';
-import { MyComponent } from './MyComponent.component';
+import { Layout } from './layout.component';
+import { MyComponent } from './my-component.component';
 
 const meta: Meta<MyComponent> = {
   component: MyComponent,
@@ -45,8 +45,8 @@ import { CommonModule } from '@angular/common';
 
 import preview from '../.storybook/preview';
 
-import { Layout } from './Layout.component';
-import { MyComponent } from './MyComponent.component';
+import { Layout } from './layout.component';
+import { MyComponent } from './my-component.component';
 
 const meta = preview.meta({
   component: MyComponent,

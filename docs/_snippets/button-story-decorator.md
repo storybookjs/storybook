@@ -4,7 +4,6 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
 
 import { Button } from './button.component';
-
 import { Parent } from './parent.component'; // Parent contains ng-content
 
 const meta: Meta<Button> = {
@@ -33,7 +32,6 @@ import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
 import preview from '../.storybook/preview';
 
 import { Button } from './button.component';
-
 import { Parent } from './parent.component'; // Parent contains ng-content
 
 const meta = preview.meta({

@@ -1,7 +1,7 @@
 ```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { DocumentScreen } from './YourPage.component';
+import { DocumentScreen } from './your-page.component';
 
 // 👇 Imports the required stories
 import * as PageLayout from './PageLayout.stories';
@@ -27,7 +27,7 @@ export const Simple: Story = {
 ```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { DocumentScreen } from './YourPage.component';
+import { DocumentScreen } from './your-page.component';
 
 // 👇 Imports the required stories
 import * as PageLayout from './PageLayout.stories';

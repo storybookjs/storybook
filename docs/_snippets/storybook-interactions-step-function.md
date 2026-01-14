@@ -33,18 +33,16 @@ export const Submitted: Story = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { userEvent } from 'storybook/test';
-
 import preview from '../.storybook/preview';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 const meta = preview.meta({
   component: MyComponent,
 });
 
 export const Submitted = meta.story({
-  play: async ({ args, canvas, step }) => {
+  play: async ({ args, canvas, step, userEvent }) => {
     await step('Enter email and password', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');

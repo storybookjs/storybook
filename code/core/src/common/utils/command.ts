@@ -105,14 +105,13 @@ function isCommandNotFoundError(error: any): boolean {
     return false;
   }
 
-  // Check for Windows-specific "command not recognized" error
   const stderr = error.stderr || '';
-  const message = error.message || '';
+  return stderr.includes('is not recognized as an internal or external command');
+}
 
-  return (
-    stderr.includes('is not recognized as an internal or external command') ||
-    message.includes('is not recognized as an internal or external command')
-  );
+/** Helper to check if we should continue trying command variations. */
+function shouldRetry(error: any, isLastVariation: boolean): boolean {
+  return isCommandNotFoundError(error) && !isLastVariation;
 }
 
 /**
@@ -142,12 +141,10 @@ function tryCommandVariations(
     } catch (error: any) {
       lastError = error;
 
-      // If this is not a "command not found" error, or we're on the last variation, re-throw
-      if (!isCommandNotFoundError(error) || index === commandVariations.length - 1) {
+      if (!shouldRetry(error, index === commandVariations.length - 1)) {
         throw error;
       }
 
-      // Otherwise, try the next variation
       logger.debug(`Command "${cmd}" not found, trying next variation...`);
       return tryNext(index + 1);
     }
@@ -179,17 +176,14 @@ function tryCommandVariationsSync(
     } catch (error: any) {
       lastError = error;
 
-      // If this is not a "command not found" error, or we're on the last variation, re-throw
-      if (!isCommandNotFoundError(error) || i === commandVariations.length - 1) {
+      if (!shouldRetry(error, i === commandVariations.length - 1)) {
         throw error;
       }
 
-      // Otherwise, try the next variation
       logger.debug(`Command "${cmd}" not found, trying next variation...`);
     }
   }
 
-  // This should never be reached, but TypeScript needs it
   throw lastError;
 }
 
@@ -213,8 +207,8 @@ function tryCommandVariationsSync(
  *
  * - If on Windows:
  *
- *   - For known shim-based commands, return an array of variations to try in order: [command.exe,
- *       command.cmd, command.ps1, command]
+ *   - For known shim-based commands, return an array of variations to try in order: [command.cmd,
+ *       command.exe, command.ps1, command]
  *   - For everything else, return the name unchanged.
  * - On non-Windows, return command unchanged.
  *
@@ -243,12 +237,7 @@ function resolveCommand(command: string): string[] {
   }
 
   if (WINDOWS_SHIM_COMMANDS.has(command)) {
-    // On Windows, try multiple variations in order of likelihood:
-    // 1. .exe - native executable (e.g., pnpm installed via Scoop/Mise)
-    // 2. .cmd - CMD shim (most common for npm-installed packages)
-    // 3. .ps1 - PowerShell shim (less common but possible)
-    // 4. bare command - fallback
-    return [`${command}.exe`, `${command}.cmd`, `${command}.ps1`, command];
+    return [`${command}.cmd`, `${command}.exe`, `${command}.ps1`, command];
   }
 
   return [command];

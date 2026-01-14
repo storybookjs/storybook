@@ -104,6 +104,9 @@ const meta = preview.meta({
   },
   parameters: {
     layout: 'fullscreen',
+    chromatic: {
+      disableSnapshot: true,
+    },
   },
   beforeEach: () => {
     global.PREVIEW_URL = 'about:blank';

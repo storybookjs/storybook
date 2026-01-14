@@ -72,7 +72,6 @@ export default {
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="library (CSF 3)"
-// CSF 3
 import { setup, Preview } from '@storybook/vue3-vite';
 
 import { createPinia } from 'pinia';
@@ -95,7 +94,7 @@ export default preview;
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="component (CSF 3)"
-import { setup, Preview } from '@storybook/vue3-vite';
+import { setup, type Preview } from '@storybook/vue3-vite';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';

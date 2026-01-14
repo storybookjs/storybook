@@ -38,6 +38,7 @@ export const Submitted: Story = {
 
 ```ts filename="Form.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { expect, fn, waitFor } from 'storybook/test';
+
 import preview from '../.storybook/preview';
 
 import { Form } from './form.component';
@@ -369,8 +370,9 @@ export const Submitted: Story = {
 ```
 
 ```js filename="Form.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect, fn, waitFor } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'my-form-element',
@@ -402,8 +404,9 @@ export const Submitted = meta.story({
 ```
 
 ```ts filename="Form.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect, fn, waitFor } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'my-form-element',
@@ -435,9 +438,9 @@ export const Submitted = meta.story({
 ```
 
 ```ts filename="Form.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { expect, fn, waitFor } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { Form } from './Form';
 
@@ -473,8 +476,9 @@ export const Submitted = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Form.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect, fn, waitFor } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { Form } from './Form';
 
@@ -509,8 +513,9 @@ export const Submitted = meta.story({
 ```
 
 ```ts filename="Form.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect, fn, waitFor } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import Form from './Form.vue';
 
@@ -546,8 +551,9 @@ export const Submitted = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Form.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect, fn, waitFor } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import Form from './Form.vue';
 

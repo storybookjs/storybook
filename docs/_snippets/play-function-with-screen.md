@@ -23,8 +23,9 @@ export const Open: Story = {
 ```
 
 ```ts filename="Dialog.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { screen } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { Dialog } from './dialog.component';
 
@@ -218,8 +219,9 @@ export const Open: Story = {
 ```
 
 ```js filename="Dialog.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { screen } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'demo-dialog',
@@ -237,8 +239,9 @@ export const Open = meta.story({
 ```
 
 ```ts filename="Dialog.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { screen } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'demo-dialog',
@@ -256,8 +259,9 @@ export const Open = meta.story({
 ```
 
 ```ts filename="Dialog.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { screen } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { Dialog } from './Dialog';
 
@@ -279,8 +283,9 @@ export const Open = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Dialog.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { screen } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { Dialog } from './Dialog';
 
@@ -300,8 +305,9 @@ export const Open = meta.story({
 ```
 
 ```ts filename="Dialog.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { screen } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import Dialog from './Dialog.vue';
 
@@ -323,8 +329,9 @@ export const Open = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Dialog.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { screen } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import Dialog from './Dialog.vue';
 

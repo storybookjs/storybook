@@ -24,6 +24,7 @@ export default meta;
 
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
+
 import preview from '../.storybook/preview';
 
 import { Button } from './button.component';

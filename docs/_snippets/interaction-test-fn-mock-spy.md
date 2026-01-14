@@ -28,8 +28,9 @@ export const FilledForm: Story = {
 ```
 
 ```ts filename="LoginForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { LoginForm } from './login-form.component';
 
@@ -270,8 +271,9 @@ export const FilledForm = {
 ```
 
 ```js filename="LoginForm.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'demo-login-form',
@@ -294,8 +296,9 @@ export const FilledForm = meta.story({
 ```
 
 ```ts filename="LoginForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'demo-login-form',
@@ -318,8 +321,9 @@ export const FilledForm = meta.story({
 ```
 
 ```ts filename="LoginForm.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { LoginForm } from './LoginForm';
 
@@ -346,8 +350,9 @@ export const FilledForm = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="LoginForm.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { LoginForm } from './LoginForm';
 
@@ -372,8 +377,9 @@ export const FilledForm = meta.story({
 ```
 
 ```ts filename="LoginForm.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import LoginForm from './LoginForm.vue';
 
@@ -400,8 +406,9 @@ export const FilledForm = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="LoginForm.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import LoginForm from './LoginForm.vue';
 

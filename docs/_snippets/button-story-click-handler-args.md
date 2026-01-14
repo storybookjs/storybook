@@ -32,9 +32,9 @@ export const Text: Story = {
 
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { argsToTemplate } from '@storybook/angular';
-import preview from '../.storybook/preview';
-
 import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
 
 import { Button } from './button.component';
 

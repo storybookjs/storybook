@@ -636,9 +636,9 @@ export const ExampleStory = meta.story({
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { html } from 'lit';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'custom-component',

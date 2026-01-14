@@ -1,6 +1,5 @@
 ```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
+import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';

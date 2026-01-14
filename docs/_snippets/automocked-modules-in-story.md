@@ -33,6 +33,7 @@ export const LogIn: Story = {
 
 ```ts filename="AuthButton.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { expect, mocked } from 'storybook/test';
+
 import preview from '../.storybook/preview';
 
 import { AuthButton } from './auth-button.component';
@@ -370,8 +371,9 @@ export const LogIn = meta.story({
 ```
 
 ```ts filename="AuthButton.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect, mocked } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { AuthButton } from './AuthButton';
 
@@ -402,8 +404,9 @@ export const LogIn = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="AuthButton.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { AuthButton } from './AuthButton';
 
@@ -432,8 +435,9 @@ export const LogIn = meta.story({
 ```
 
 ```ts filename="AuthButton.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import AuthButton from './AuthButton.vue';
 
@@ -464,8 +468,9 @@ export const LogIn = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="AuthButton.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import AuthButton from './AuthButton.vue';
 

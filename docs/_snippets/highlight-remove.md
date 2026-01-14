@@ -4,6 +4,7 @@ import { type Meta, type StoryObj, componentWrapperDecorator } from '@storybook/
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
+
 import { MyComponent } from './my-component.component';
 
 const meta: Meta<MyComponent> = {
@@ -34,6 +35,7 @@ import { componentWrapperDecorator } from '@storybook/angular';
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
+
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './my-component.component';
@@ -60,6 +62,7 @@ export const RemoveHighlight = meta.story({
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
 
 import { MyComponent } from './MyComponent';
 
@@ -88,6 +91,7 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
 
 import { MyComponent } from './MyComponent';
 
@@ -120,6 +124,7 @@ export const RemoveHighlight: Story = {
   import { useChannel } from 'storybook/preview-api';
   import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
+
   import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
@@ -146,6 +151,7 @@ export const RemoveHighlight: Story = {
 ```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
 
 import MyComponent from './MyComponent.svelte';
 
@@ -174,6 +180,7 @@ export const RemoveHighlight = {
 
   import { useChannel } from 'storybook/preview-api';
   import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
 
   import MyComponent from './MyComponent.svelte';
 
@@ -205,6 +212,7 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
+
 import MyComponent from './MyComponent.svelte';
 
 const meta = {
@@ -232,6 +240,7 @@ export const RemoveHighlight: Story = {
 ```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
 
 import MyComponent from './MyComponent.vue';
 
@@ -261,6 +270,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
 
 import MyComponent from './MyComponent.vue';
 
@@ -292,6 +302,7 @@ export const RemoveHighlight: Story = {
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
+
 export default {
   component: 'my-component',
 };
@@ -317,6 +328,7 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
+
 const meta: Meta = {
   component: 'my-component',
 };
@@ -340,10 +352,10 @@ export const RemoveHighlight: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'my-component',
@@ -365,10 +377,10 @@ export const RemoveHighlight = meta.story({
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'my-component',
@@ -390,10 +402,10 @@ export const RemoveHighlight = meta.story({
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';
 
@@ -421,10 +433,10 @@ export const RemoveHighlight = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';
 
@@ -450,10 +462,10 @@ export const RemoveHighlight = meta.story({
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 
@@ -479,9 +491,10 @@ export const RemoveHighlight = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 

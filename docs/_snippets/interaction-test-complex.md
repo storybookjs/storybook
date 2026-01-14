@@ -44,8 +44,9 @@ export const Submits: Story = {
 ```
 
 ```ts filename="EventForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { users } from '../mocks/users';
 import { EventForm } from './event-form.component';
@@ -434,8 +435,9 @@ export const Submits = {
 ```
 
 ```js filename="EventForm.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { users } from '../mocks/users';
 
@@ -475,8 +477,9 @@ export const Submits = meta.story({
 ```
 
 ```ts filename="EventForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { users } from '../mocks/users';
 
@@ -516,8 +519,9 @@ export const Submits = meta.story({
 ```
 
 ```ts filename="EventForm.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { users } from '../mocks/users';
 import { EventForm } from './EventForm';
@@ -560,8 +564,9 @@ export const Submits = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="EventForm.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { users } from '../mocks/users';
 import { EventForm } from './EventForm';
@@ -602,8 +607,9 @@ export const Submits = meta.story({
 ```
 
 ```ts filename="EventForm.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { users } from '../mocks/users';
 import EventForm from './EventForm.vue';
@@ -646,8 +652,9 @@ export const Submits = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="EventForm.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { users } from '../mocks/users';
 import EventForm from './EventForm.vue';

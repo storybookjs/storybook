@@ -109,9 +109,7 @@ export default preview;
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF 3"
-import type { Preview } from '@storybook/vue3-vite';
-
-import { setup } from '@storybook/vue3-vite';
+import { type Preview, setup } from '@storybook/vue3-vite';
 
 import { VApp } from 'vuetify/components';
 

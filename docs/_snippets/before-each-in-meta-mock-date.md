@@ -30,6 +30,7 @@ export const Default: Story = {
 
 ```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import MockDate from 'mockdate';
+
 import preview from '../.storybook/preview';
 
 import { Page } from './Page';
@@ -324,9 +325,9 @@ export const Default = meta.story({
 ```
 
 ```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
 
 import { Page } from './Page';
 
@@ -353,8 +354,9 @@ export const Default = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
 
 import { Page } from './Page';
 
@@ -379,8 +381,9 @@ export const Default = meta.story({
 ```
 
 ```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
 
 import Page from './Page.vue';
 
@@ -407,8 +410,9 @@ export const Default = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
 
 import Page from './Page.vue';
 

@@ -1,7 +1,5 @@
 ```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { moduleMetadata } from '@storybook/angular';
+import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
@@ -59,6 +57,7 @@ export const OneItem: Story = {
 import { CommonModule } from '@angular/common';
 
 import { moduleMetadata } from '@storybook/angular';
+
 import preview from '../.storybook/preview';
 
 import { List } from './list.component';

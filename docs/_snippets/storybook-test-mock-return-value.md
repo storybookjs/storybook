@@ -23,8 +23,9 @@ export const Default: Story = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { mocked } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/session'
 import { getUserFromSession } from '../lib/session';
@@ -229,8 +230,9 @@ export const Default = meta.story({
 ```
 
 ```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { mocked } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/session'
 import { getUserFromSession } from '../lib/session';
@@ -248,8 +250,9 @@ export const Default = meta.story({
 ```
 
 ```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { mocked } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/session'
 import { getUserFromSession } from '../lib/session';
@@ -272,6 +275,7 @@ export const Default = meta.story({
 
 ```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 // 👇 Automocked module resolves to '../lib/__mocks__/session'
 import { getUserFromSession } from '../lib/session';
 
@@ -290,8 +294,9 @@ export const Default = meta.story({
 ```
 
 ```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { mocked } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/session'
 import { getUserFromSession } from '../lib/session';

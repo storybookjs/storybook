@@ -33,6 +33,7 @@ import { componentWrapperDecorator } from '@storybook/angular';
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
+
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './my-component.component';
@@ -328,10 +329,10 @@ export const ResetHighlight: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'my-component',
@@ -352,10 +353,10 @@ export const ResetHighlight = meta.story({
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'my-component',
@@ -376,10 +377,10 @@ export const ResetHighlight = meta.story({
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';
 
@@ -406,10 +407,10 @@ export const ResetHighlight = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';
 
@@ -434,10 +435,10 @@ export const ResetHighlight = meta.story({
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 
@@ -462,9 +463,10 @@ export const ResetHighlight = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 

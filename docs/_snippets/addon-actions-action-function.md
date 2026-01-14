@@ -17,9 +17,9 @@ export default meta;
 ```
 
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
 
 import Button from './button.component';
 
@@ -163,9 +163,9 @@ export default meta;
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'demo-button',
@@ -177,9 +177,9 @@ const meta = preview.meta({
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'demo-button',
@@ -191,9 +191,9 @@ const meta = preview.meta({
 ```
 
 ```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
 
 import Button from './Button';
 
@@ -209,8 +209,9 @@ const meta = preview.meta({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
 
 import Button from './Button';
 
@@ -224,9 +225,9 @@ const meta = preview.meta({
 ```
 
 ```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
 
 import Button from './Button.vue';
 
@@ -242,9 +243,9 @@ const meta = preview.meta({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
 
 import Button from './Button.vue';
 

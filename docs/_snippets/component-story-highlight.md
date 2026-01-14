@@ -316,10 +316,10 @@ export const Highlighted: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'my-component',
@@ -339,10 +339,10 @@ export const Highlighted = meta.story({
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 const meta = preview.meta({
   component: 'my-component',
@@ -362,10 +362,10 @@ export const Highlighted = meta.story({
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';
 
@@ -391,10 +391,10 @@ export const Highlighted = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';
 
@@ -418,10 +418,10 @@ export const Highlighted = meta.story({
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 
@@ -445,9 +445,10 @@ export const Highlighted = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
 

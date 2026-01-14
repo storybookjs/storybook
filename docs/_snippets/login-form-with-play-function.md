@@ -35,9 +35,9 @@ export const FilledForm: Story = {
 ```
 
 ```ts filename="LoginForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { LoginForm } from './login-form.component';
 
@@ -206,7 +206,7 @@ export const FilledForm: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { expect, userEvent, within } from 'storybook/test';
+  import { expect, within } from 'storybook/test';
 
   import LoginForm from './LoginForm.svelte';
 
@@ -243,7 +243,7 @@ export const FilledForm: Story = {
 ```
 
 ```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, within } from 'storybook/test';
 
 import LoginForm from './LoginForm.svelte';
 
@@ -277,7 +277,7 @@ export const FilledForm = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { expect, userEvent, within } from 'storybook/test';
+  import { expect, within } from 'storybook/test';
 
   import LoginForm from './LoginForm.svelte';
 
@@ -317,7 +317,7 @@ export const FilledForm = {
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, within } from 'storybook/test';
 
 import LoginForm from './LoginForm.svelte';
 
@@ -436,9 +436,9 @@ export const FilledForm: Story = {
 ```
 
 ```ts filename="LoginForm.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import LoginForm from './LoginForm.vue';
 
@@ -480,9 +480,9 @@ export const FilledForm = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="LoginForm.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import LoginForm from './LoginForm.vue';
 
@@ -647,9 +647,9 @@ export const FilledForm = meta.story({
 ```
 
 ```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { LoginForm } from './LoginForm';
 
@@ -682,8 +682,9 @@ export const FilledForm = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="LoginForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 import { LoginForm } from './LoginForm';
 

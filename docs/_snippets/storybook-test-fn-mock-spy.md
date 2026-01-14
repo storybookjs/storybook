@@ -31,8 +31,9 @@ export const SaveFlow: Story = {
 ```
 
 ```ts filename="NoteUI.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../app/__mocks__/actions'
 import { saveNote } from '../app/actions';
@@ -310,8 +311,9 @@ export const SaveFlow: Story = {
 ```
 
 ```js filename="NoteUI.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../app/__mocks__/actions'
 import { saveNote } from '../app/actions';
@@ -339,8 +341,9 @@ export const SaveFlow = meta.story({
 ```
 
 ```ts filename="NoteUI.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../app/__mocks__/actions'
 import { saveNote } from '../app/actions';
@@ -368,8 +371,9 @@ export const SaveFlow = meta.story({
 ```
 
 ```ts filename="NoteUI.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../app/__mocks__/actions'
 import { saveNote } from '../app/actions';
@@ -399,8 +403,9 @@ export const SaveFlow = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="NoteUI.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../app/__mocks__/actions'
 import { saveNote } from '../app/actions';
@@ -430,8 +435,9 @@ export const SaveFlow = meta.story({
 ```
 
 ```ts filename="NoteUI.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../app/__mocks__/actions'
 import { saveNote } from '../app/actions';
@@ -461,8 +467,9 @@ export const SaveFlow = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="NoteUI.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../app/__mocks__/actions'
 import { saveNote } from '../app/actions';

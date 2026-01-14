@@ -182,15 +182,6 @@ async function runStorybookDev(result: {
       flags.push('--silent');
     }
 
-    // Check if default port 6006 is available
-    const defaultPort = 6006;
-    const availablePort = await getServerPort(defaultPort);
-    const useAlternativePort = availablePort !== defaultPort;
-
-    if (useAlternativePort) {
-      flags.push(`--port=${availablePort}`);
-    }
-
     // npm needs extra -- to pass flags to the command
     // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`
     const doesNeedExtraDash =
@@ -203,6 +194,15 @@ async function runStorybookDev(result: {
 
     if (supportsOnboarding && shouldOnboard) {
       flags.push('--initial-path=/onboarding');
+    }
+
+    // Check if default port 6006 is available
+    const defaultPort = 6006;
+    const availablePort = await getServerPort(defaultPort);
+    const useAlternativePort = availablePort !== defaultPort;
+
+    if (useAlternativePort) {
+      flags.push(`--port=${availablePort}`);
     }
 
     flags.push('--quiet');

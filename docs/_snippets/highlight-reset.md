@@ -33,7 +33,6 @@ import { componentWrapperDecorator } from '@storybook/angular';
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
-
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './my-component.component';

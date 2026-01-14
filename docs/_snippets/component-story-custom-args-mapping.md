@@ -250,10 +250,10 @@ export default meta;
 import { html } from 'lit';
 
 const arrows = {
-  'Up': html`<icon-arrow-up></icon-arrow-up>`,
-  'Down': html`<icon-arrow-down></icon-arrow-down>`,
-  'Left': html`<icon-arrow-left></icon-arrow-left>`,
-  'Right': html`<icon-arrow-right></icon-arrow-right>`,
+  Up: html`<icon-arrow-up></icon-arrow-up>`,
+  Down: html`<icon-arrow-down></icon-arrow-down>`,
+  Left: html`<icon-arrow-left></icon-arrow-left>`,
+  Right: html`<icon-arrow-right></icon-arrow-right>`,
 };
 
 export default {
@@ -276,10 +276,10 @@ import { html } from 'lit';
 import type { Meta } from '@storybook/web-components-vite';
 
 const arrows = {
-  'Up': html`<icon-arrow-up></icon-arrow-up>`,
-  'Down': html`<icon-arrow-down></icon-arrow-down>`,
-  'Left': html`<icon-arrow-left></icon-arrow-left>`,
-  'Right': html`<icon-arrow-right></icon-arrow-right>`,
+  Up: html`<icon-arrow-up></icon-arrow-up>`,
+  Down: html`<icon-arrow-down></icon-arrow-down>`,
+  Left: html`<icon-arrow-left></icon-arrow-left>`,
+  Right: html`<icon-arrow-right></icon-arrow-right>`,
 };
 
 const meta: Meta = {
@@ -304,10 +304,10 @@ import { html } from 'lit';
 import preview from '../.storybook/preview';
 
 const arrows = {
-  'Up': html`<icon-arrow-up></icon-arrow-up>`,
-  'Down': html`<icon-arrow-down></icon-arrow-down>`,
-  'Left': html`<icon-arrow-left></icon-arrow-left>`,
-  'Right': html`<icon-arrow-right></icon-arrow-right>`,
+  Up: html`<icon-arrow-up></icon-arrow-up>`,
+  Down: html`<icon-arrow-down></icon-arrow-down>`,
+  Left: html`<icon-arrow-left></icon-arrow-left>`,
+  Right: html`<icon-arrow-right></icon-arrow-right>`,
 };
 
 const meta = preview.meta({
@@ -330,10 +330,10 @@ import { html } from 'lit';
 import preview from '../.storybook/preview';
 
 const arrows = {
-  'Up': html`<icon-arrow-up></icon-arrow-up>`,
-  'Down': html`<icon-arrow-down></icon-arrow-down>`,
-  'Left': html`<icon-arrow-left></icon-arrow-left>`,
-  'Right': html`<icon-arrow-right></icon-arrow-right>`,
+  Up: html`<icon-arrow-up></icon-arrow-up>`,
+  Down: html`<icon-arrow-down></icon-arrow-down>`,
+  Left: html`<icon-arrow-left></icon-arrow-left>`,
+  Right: html`<icon-arrow-right></icon-arrow-right>`,
 };
 
 const meta = preview.meta({

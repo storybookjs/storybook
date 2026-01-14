@@ -259,7 +259,7 @@ export default definePreview({
   decorators: [
     (story, context) => {
       const theme = context.globals.theme || 'light';
-      return html`<div class="${theme}">${story()}</div>`;
+      return html`<div class=${theme}>${story()}</div>`;
     },
   ],
 });
@@ -276,7 +276,7 @@ export default definePreview({
   decorators: [
     (story, context) => {
       const theme = context.globals.theme || 'light';
-      return html`<div class="${theme}">${story()}</div>`;
+      return html`<div class=${theme}>${story()}</div>`;
     },
   ],
 });

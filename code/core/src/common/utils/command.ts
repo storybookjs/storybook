@@ -49,7 +49,9 @@ function getExecaOptions({
 export function executeCommand(options: ExecuteCommandOptions): ResultPromise {
   const { command, args = [], ignoreError = false } = options;
   logger.debug(`Executing command: ${command} ${args.join(' ')}`);
-  const execaProcess = execa(resolveCommand(command), args, getExecaOptions(options));
+
+  const commandVariations = resolveCommand(command);
+  const execaProcess = tryCommandVariations(commandVariations, args, getExecaOptions(options));
 
   if (ignoreError) {
     execaProcess.catch(() => {
@@ -63,11 +65,12 @@ export function executeCommand(options: ExecuteCommandOptions): ResultPromise {
 export function executeCommandSync(options: ExecuteCommandOptions): string {
   const { command, args = [], ignoreError = false } = options;
   try {
-    const commandResult = execaCommandSync(
-      [resolveCommand(command), ...args].join(' '),
+    const commandVariations = resolveCommand(command);
+    return tryCommandVariationsSync(
+      commandVariations,
+      args,
       getExecaOptions(options) as SyncOptions
     );
-    return typeof commandResult.stdout === 'string' ? commandResult.stdout : '';
   } catch (err) {
     if (!ignoreError) {
       throw err;
@@ -91,15 +94,117 @@ export function executeNodeCommand({
 }
 
 /**
+ * Check if an error is a "command not found" error on Windows. This happens when trying to execute
+ * a command that doesn't exist.
+ *
+ * @param error - The error to check
+ * @returns True if the error is a "command not found" error
+ */
+function isCommandNotFoundError(error: any): boolean {
+  if (!error) {
+    return false;
+  }
+
+  // Check for Windows-specific "command not recognized" error
+  const stderr = error.stderr || '';
+  const message = error.message || '';
+
+  return (
+    stderr.includes('is not recognized as an internal or external command') ||
+    message.includes('is not recognized as an internal or external command')
+  );
+}
+
+/**
+ * Try executing a command with multiple variations until one succeeds. This is needed on Windows
+ * where package managers can be installed in different ways.
+ *
+ * @param commandVariations - Array of command variations to try
+ * @param args - Command arguments
+ * @param options - Execa options
+ * @returns Promise from execa
+ */
+function tryCommandVariations(
+  commandVariations: string[],
+  args: string[],
+  options: Options
+): ResultPromise {
+  let lastError: any;
+
+  const tryNext = async (index: number): Promise<any> => {
+    if (index >= commandVariations.length) {
+      throw lastError;
+    }
+
+    const cmd = commandVariations[index];
+    try {
+      return await execa(cmd, args, options);
+    } catch (error: any) {
+      lastError = error;
+
+      // If this is not a "command not found" error, or we're on the last variation, re-throw
+      if (!isCommandNotFoundError(error) || index === commandVariations.length - 1) {
+        throw error;
+      }
+
+      // Otherwise, try the next variation
+      logger.debug(`Command "${cmd}" not found, trying next variation...`);
+      return tryNext(index + 1);
+    }
+  };
+
+  return tryNext(0) as ResultPromise;
+}
+
+/**
+ * Synchronously try executing a command with multiple variations until one succeeds.
+ *
+ * @param commandVariations - Array of command variations to try
+ * @param args - Command arguments
+ * @param options - Execa sync options
+ * @returns Stdout from the successful command
+ */
+function tryCommandVariationsSync(
+  commandVariations: string[],
+  args: string[],
+  options: SyncOptions
+): string {
+  let lastError: any;
+
+  for (let i = 0; i < commandVariations.length; i++) {
+    const cmd = commandVariations[i];
+    try {
+      const commandResult = execaCommandSync([cmd, ...args].join(' '), options);
+      return typeof commandResult.stdout === 'string' ? commandResult.stdout : '';
+    } catch (error: any) {
+      lastError = error;
+
+      // If this is not a "command not found" error, or we're on the last variation, re-throw
+      if (!isCommandNotFoundError(error) || i === commandVariations.length - 1) {
+        throw error;
+      }
+
+      // Otherwise, try the next variation
+      logger.debug(`Command "${cmd}" not found, trying next variation...`);
+    }
+  }
+
+  // This should never be reached, but TypeScript needs it
+  throw lastError;
+}
+
+/**
  * Resolve the actual executable name for a given command on the current platform.
  *
  * Why this exists:
  *
  * - Many Node-based CLIs (npm, npx, pnpm, yarn, vite, eslint, anything in node_modules/.bin) do NOT
  *   ship as real executables on Windows.
- * - Instead, they install *.cmd and *.ps1 “shim” files.
+ * - Instead, they install *.cmd and *.ps1 "shim" files.
  * - When using execa/child_process with `shell: false` (our default), Node WILL NOT resolve these
  *   shims. -> calling execa("npx") throws ENOENT on Windows.
+ * - HOWEVER, package managers like pnpm can be installed via system tools (Mise, Scoop) as native
+ *   executables (.exe), not as Node packages. In these cases, the .cmd shim doesn't exist.
  *
  * This helper normalizes command names so they can be spawned cross-platform without using `shell:
  * true`.
@@ -108,7 +213,8 @@ export function executeNodeCommand({
  *
  * - If on Windows:
  *
- *   - For known shim-based commands, append `.cmd` (e.g., "npx" → "npx.cmd").
+ *   - For known shim-based commands, return an array of variations to try in order: [command.exe,
+ *       command.cmd, command.ps1, command]
  *   - For everything else, return the name unchanged.
  * - On non-Windows, return command unchanged.
  *
@@ -118,9 +224,9 @@ export function executeNodeCommand({
  * - If Storybook adds new internal commands later, extend the list.
  *
  * @param {string} command - The executable name passed into executeCommand.
- * @returns {string} - The normalized executable name safe for passing to execa.
+ * @returns {string[]} - Array of command variations to try (most specific first).
  */
-function resolveCommand(command: string): string {
+function resolveCommand(command: string): string[] {
   // Commands known to require .cmd on Windows (node-based & shim-installed)
   const WINDOWS_SHIM_COMMANDS = new Set([
     'npm',
@@ -133,12 +239,17 @@ function resolveCommand(command: string): string {
   ]);
 
   if (process.platform !== 'win32') {
-    return command;
+    return [command];
   }
 
   if (WINDOWS_SHIM_COMMANDS.has(command)) {
-    return `${command}.cmd`;
+    // On Windows, try multiple variations in order of likelihood:
+    // 1. .exe - native executable (e.g., pnpm installed via Scoop/Mise)
+    // 2. .cmd - CMD shim (most common for npm-installed packages)
+    // 3. .ps1 - PowerShell shim (less common but possible)
+    // 4. bare command - fallback
+    return [`${command}.exe`, `${command}.cmd`, `${command}.ps1`, command];
   }
 
-  return command;
+  return [command];
 }

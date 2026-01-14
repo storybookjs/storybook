@@ -4,11 +4,8 @@ import {
   PackageManagerName,
   executeCommand,
 } from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
+import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
-import { ErrorCollector } from 'storybook/internal/telemetry';
-
-import detectFreePort from 'detect-port';
 
 import {
   executeAddonConfiguration,
@@ -187,7 +184,7 @@ async function runStorybookDev(result: {
 
     // Check if default port 6006 is available
     const defaultPort = 6006;
-    const availablePort = await detectFreePort(defaultPort);
+    const availablePort = await getServerPort(defaultPort);
     const useAlternativePort = availablePort !== defaultPort;
 
     if (useAlternativePort) {

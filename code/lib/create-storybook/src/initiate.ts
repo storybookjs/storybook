@@ -4,9 +4,8 @@ import {
   PackageManagerName,
   executeCommand,
 } from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
+import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
-import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import {
   executeAddonConfiguration,
@@ -197,13 +196,22 @@ async function runStorybookDev(result: {
       flags.push('--initial-path=/onboarding');
     }
 
+    // Check if default port 6006 is available
+    const defaultPort = 6006;
+    const availablePort = await getServerPort(defaultPort);
+    const useAlternativePort = availablePort !== defaultPort;
+
+    if (useAlternativePort) {
+      flags.push(`--port=${availablePort}`);
+    }
+
     flags.push('--quiet');
 
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
     const [command, ...args] = [...storybookCommand.split(' '), ...flags];
-    executeCommand({
+    await executeCommand({
       command: command,
       args,
       stdio: 'inherit',

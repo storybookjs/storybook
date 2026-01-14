@@ -140,8 +140,8 @@ async function run() {
       ],
       { onCancel: () => process.exit(0) }
     ).then(({ watch, prod, todo }: { watch: boolean; prod: boolean; todo: Array<string> }) => {
-      watchMode = watch;
-      prodMode = prod;
+      watchMode ??= watch;
+      prodMode ??= prod;
       return todo?.map((key) => tasks[key]);
     });
   }

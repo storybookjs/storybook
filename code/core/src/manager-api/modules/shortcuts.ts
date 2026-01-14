@@ -117,6 +117,8 @@ export interface API_Shortcuts {
   openInEditor: API_KeyCollection;
   openInIsolation: API_KeyCollection;
   copyStoryLink: API_KeyCollection;
+  goToPreviousLandmark: API_KeyCollection;
+  goToNextLandmark: API_KeyCollection;
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: API_KeyCollection;
 }
@@ -157,6 +159,8 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   openInEditor: ['alt', 'shift', 'E'],
   openInIsolation: ['alt', 'shift', 'I'],
   copyStoryLink: ['alt', 'shift', 'L'],
+  goToPreviousLandmark: ['shift', 'F6'], // hardcoded in react-aria
+  goToNextLandmark: ['F6'], // hardcoded in react-aria
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
 });
@@ -272,6 +276,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           }
           break;
         }
+
+        // Handled by @react-aria/interactions and useLandmarkIndicator
+        case 'goToNextLandmark':
+        case 'goToPreviousLandmark':
+          break;
 
         case 'focusNav': {
           if (fullAPI.getIsFullscreen()) {

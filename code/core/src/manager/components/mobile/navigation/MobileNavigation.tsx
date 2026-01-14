@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import type { ComponentProps, FC } from 'react';
 
 import { Button } from 'storybook/internal/components';
@@ -10,6 +10,7 @@ import { useId } from '@react-aria/utils';
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { useLandmark } from '../../../hooks/useLandmark';
 import { useLayout } from '../../layout/LayoutProvider';
 import { MobileAddonsDrawer } from './MobileAddonsDrawer';
 import { MobileMenuDrawer } from './MobileMenuDrawer';
@@ -77,6 +78,12 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   const fullStoryName = useFullStoryName();
   const headingId = useId();
 
+  const sectionRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { 'aria-labelledby': headingId, role: 'banner' },
+    sectionRef
+  );
+
   return (
     <Container {...props}>
       <MobileMenuDrawer
@@ -96,7 +103,7 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
       </MobileAddonsDrawer>
 
       {!isMobilePanelOpen && (
-        <MobileBottomBar className="sb-bar" aria-labelledby={headingId}>
+        <MobileBottomBar className="sb-bar" {...landmarkProps} ref={sectionRef}>
           <h2 id={headingId} className="sb-sr-only">
             Navigation controls
           </h2>
@@ -132,7 +139,7 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   );
 };
 
-const Container = styled.div({
+const Container = styled.section({
   bottom: 0,
   left: 0,
   width: '100%',
@@ -141,7 +148,7 @@ const Container = styled.div({
   borderTop: `1px solid var(--sb-appBorderColor)`,
 });
 
-const MobileBottomBar = styled.section({
+const MobileBottomBar = styled.header({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',

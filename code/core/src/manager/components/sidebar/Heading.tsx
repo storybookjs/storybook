@@ -90,7 +90,7 @@ export const Heading: FC<HeadingProps & ComponentProps<typeof HeadingWrapper>> =
       {skipLinkHref && (
         <SkipToCanvasLink ariaLabel={false} asChild>
           <a href={skipLinkHref} tabIndex={0}>
-            Skip to canvas
+            Skip to content
           </a>
         </SkipToCanvasLink>
       )}

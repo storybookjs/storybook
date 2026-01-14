@@ -303,7 +303,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         </LeafNode>
         {isSelected && (
           <SkipToContentLink asChild ariaLabel={false}>
-            <a href="#storybook-preview-wrapper">Skip to canvas</a>
+            <a href="#storybook-preview-wrapper">Skip to content</a>
           </SkipToContentLink>
         )}
         {contextMenu.node}
@@ -444,7 +444,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         </BranchNode>
         {isSelected && (
           <SkipToContentLink asChild ariaLabel={false}>
-            <a href="#storybook-preview-wrapper">Skip to canvas</a>
+            <a href="#storybook-preview-wrapper">Skip to content</a>
           </SkipToContentLink>
         )}
         {contextMenu.node}
@@ -502,7 +502,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
       </LeafNode>
       {isSelected && (
         <SkipToContentLink ariaLabel={false} asChild>
-          <a href="#storybook-preview-wrapper">Skip to canvas</a>
+          <a href="#storybook-preview-wrapper">Skip to content</a>
         </SkipToContentLink>
       )}
       {contextMenu.node}
@@ -752,10 +752,7 @@ export const Tree = React.memo<{
   ]);
   return (
     <StatusContext.Provider value={{ data, allStatuses, groupStatus }}>
-      <div ref={containerRef}>
-        <IconSymbols />
-        {treeItems}
-      </div>
+      <div ref={containerRef}>{treeItems}</div>
     </StatusContext.Provider>
   );
 });

@@ -3,7 +3,6 @@
 import type { Preview } from '@storybook/your-framework';
 
 const preview: Preview = {
-  // ...
   parameters: {
     // 👇 Fail all accessibility tests when violations are found
     a11y: { test: 'error' },
@@ -14,7 +13,6 @@ export default preview;
 
 ```js filename=".storybook/preview.js" renderer="common" language="js" tabTitle="CSF 3"
 export default {
-  // ...
   parameters: {
     // 👇 Fail all accessibility tests when violations are found
     a11y: { test: 'error' },
@@ -25,9 +23,10 @@ export default {
 ```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+import addonA11y from '@storybook/addon-a11y';
 
 export default definePreview({
-  // ...
+  addons: [addonA11y()],
   parameters: {
     // 👇 Fail all accessibility tests when violations are found
     a11y: { test: 'error' },
@@ -40,9 +39,10 @@ export default definePreview({
 ```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+import addonA11y from '@storybook/addon-a11y';
 
 export default definePreview({
-  // ...
+  addons: [addonA11y()],
   parameters: {
     // 👇 Fail all accessibility tests when violations are found
     a11y: { test: 'error' },
@@ -52,9 +52,10 @@ export default definePreview({
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
+import addonA11y from '@storybook/addon-a11y';
 
 export default definePreview({
-  // ...
+  addons: [addonA11y()],
   parameters: {
     // 👇 Fail all accessibility tests when violations are found
     a11y: { test: 'error' },
@@ -66,9 +67,10 @@ export default definePreview({
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
+import addonA11y from '@storybook/addon-a11y';
 
 export default definePreview({
-  // ...
+  addons: [addonA11y()],
   parameters: {
     // 👇 Fail all accessibility tests when violations are found
     a11y: { test: 'error' },
@@ -78,9 +80,10 @@ export default definePreview({
 
 ```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/angular';
+import addonA11y from '@storybook/addon-a11y';
 
 export default definePreview({
-  // ...
+  addons: [addonA11y()],
   parameters: {
     // 👇 Fail all accessibility tests when violations are found
     a11y: { test: 'error' },
@@ -90,9 +93,10 @@ export default definePreview({
 
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
+import addonA11y from '@storybook/addon-a11y';
 
 export default definePreview({
-  // ...
+  addons: [addonA11y()],
   parameters: {
     // 👇 Fail all accessibility tests when violations are found
     a11y: { test: 'error' },
@@ -104,9 +108,10 @@ export default definePreview({
 
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
+import addonA11y from '@storybook/addon-a11y';
 
 export default definePreview({
-  // ...
+  addons: [addonA11y()],
   parameters: {
     // 👇 Fail all accessibility tests when violations are found
     a11y: { test: 'error' },

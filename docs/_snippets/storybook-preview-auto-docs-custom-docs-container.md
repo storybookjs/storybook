@@ -55,6 +55,7 @@ import * as React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 const ExampleContainer = ({ children, ...props }) => {
@@ -62,6 +63,7 @@ const ExampleContainer = ({ children, ...props }) => {
 };
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -83,6 +85,7 @@ import * as React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 const ExampleContainer = ({ children, ...props }) => {
@@ -90,6 +93,7 @@ const ExampleContainer = ({ children, ...props }) => {
 };
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -108,6 +112,7 @@ export default definePreview({
 import * as React from 'react';
 
 import { definePreview } from '@storybook/vue3-vite';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 const ExampleContainer = ({ children, ...props }) => {
@@ -115,6 +120,7 @@ const ExampleContainer = ({ children, ...props }) => {
 };
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -135,6 +141,7 @@ export default definePreview({
 import * as React from 'react';
 
 import { definePreview } from '@storybook/vue3-vite';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 const ExampleContainer = ({ children, ...props }) => {
@@ -142,6 +149,7 @@ const ExampleContainer = ({ children, ...props }) => {
 };
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -160,6 +168,7 @@ export default definePreview({
 import * as React from 'react';
 
 import { definePreview } from '@storybook/angular';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 const ExampleContainer = ({ children, ...props }) => {
@@ -167,6 +176,7 @@ const ExampleContainer = ({ children, ...props }) => {
 };
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -185,6 +195,7 @@ export default definePreview({
 import * as React from 'react';
 
 import { definePreview } from '@storybook/web-components-vite';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 const ExampleContainer = ({ children, ...props }) => {
@@ -192,6 +203,7 @@ const ExampleContainer = ({ children, ...props }) => {
 };
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -212,6 +224,7 @@ export default definePreview({
 import * as React from 'react';
 
 import { definePreview } from '@storybook/web-components-vite';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 const ExampleContainer = ({ children, ...props }) => {
@@ -219,6 +232,7 @@ const ExampleContainer = ({ children, ...props }) => {
 };
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {

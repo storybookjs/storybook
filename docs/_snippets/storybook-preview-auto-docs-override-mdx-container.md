@@ -76,6 +76,7 @@ import { MDXProvider } from '@mdx-js/react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 import * as DesignSystem from 'your-design-system';
@@ -92,6 +93,7 @@ export const MyDocsContainer = (props) => (
 );
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -114,6 +116,7 @@ import { MDXProvider } from '@mdx-js/react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 import * as DesignSystem from 'your-design-system';
@@ -130,6 +133,7 @@ export const MyDocsContainer = (props) => (
 );
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -149,6 +153,7 @@ import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
 import { definePreview } from '@storybook/vue3-vite';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 import * as DesignSystem from 'your-design-system';
@@ -165,6 +170,7 @@ export const MyDocsContainer = (props) => (
 );
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -186,6 +192,7 @@ import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
 import { definePreview } from '@storybook/vue3-vite';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 import * as DesignSystem from 'your-design-system';
@@ -202,6 +209,7 @@ export const MyDocsContainer = (props) => (
 );
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -221,6 +229,7 @@ import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
 import { definePreview } from '@storybook/angular';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 import * as DesignSystem from 'your-design-system';
@@ -237,6 +246,7 @@ export const MyDocsContainer = (props) => (
 );
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -256,6 +266,7 @@ import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
 import { definePreview } from '@storybook/web-components-vite';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 import * as DesignSystem from 'your-design-system';
@@ -272,6 +283,7 @@ export const MyDocsContainer = (props) => (
 );
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {
@@ -293,6 +305,7 @@ import * as React from 'react';
 import { MDXProvider } from '@mdx-js/react';
 
 import { definePreview } from '@storybook/web-components-vite';
+import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 import * as DesignSystem from 'your-design-system';
@@ -309,6 +322,7 @@ export const MyDocsContainer = (props) => (
 );
 
 export default definePreview({
+  addons: [addonDocs()],
   parameters: {
     controls: {
       matchers: {

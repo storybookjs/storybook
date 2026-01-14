@@ -1,6 +1,5 @@
 ```js filename=".storybook/preview.js" renderer="common" language="js" tabTitle="CSF 3"
 export default {
-  // ...rest of preview
   //👇 Enables auto-generated documentation for all stories
   tags: ['autodocs'],
 };
@@ -11,7 +10,6 @@ export default {
 import type { Preview } from '@storybook/your-framework';
 
 const preview: Preview = {
-  // ...rest of preview
   //👇 Enables auto-generated documentation for all stories
   tags: ['autodocs'],
 };
@@ -22,9 +20,11 @@ export default preview;
 ```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+import addonDocs from '@storybook/addon-docs';
+import addonDocs from '@storybook/addon-docs';
 
 export default definePreview({
-  // ...rest of preview
+  addons: [addonDocs()],
   //👇 Enables auto-generated documentation for all stories
   tags: ['autodocs'],
 });
@@ -35,9 +35,10 @@ export default definePreview({
 ```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+import addonDocs from '@storybook/addon-docs';
 
 export default definePreview({
-  // ...rest of preview
+  addons: [addonDocs()],
   //👇 Enables auto-generated documentation for all stories
   tags: ['autodocs'],
 });
@@ -45,9 +46,10 @@ export default definePreview({
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
+import addonDocs from '@storybook/addon-docs';
 
 export default definePreview({
-  // ...rest of preview
+  addons: [addonDocs()],
   //👇 Enables auto-generated documentation for all stories
   tags: ['autodocs'],
 });
@@ -57,9 +59,10 @@ export default definePreview({
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
+import addonDocs from '@storybook/addon-docs';
 
 export default definePreview({
-  // ...rest of preview
+  addons: [addonDocs()],
   //👇 Enables auto-generated documentation for all stories
   tags: ['autodocs'],
 });
@@ -67,9 +70,10 @@ export default definePreview({
 
 ```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/angular';
+import addonDocs from '@storybook/addon-docs';
 
 export default definePreview({
-  // ...rest of preview
+  addons: [addonDocs()],
   //👇 Enables auto-generated documentation for all stories
   tags: ['autodocs'],
 });
@@ -77,9 +81,10 @@ export default definePreview({
 
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
+import addonDocs from '@storybook/addon-docs';
 
 export default definePreview({
-  // ...rest of preview
+  addons: [addonDocs()],
   //👇 Enables auto-generated documentation for all stories
   tags: ['autodocs'],
 });
@@ -89,9 +94,10 @@ export default definePreview({
 
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
+import addonDocs from '@storybook/addon-docs';
 
 export default definePreview({
-  // ...rest of preview
+  addons: [addonDocs()],
   //👇 Enables auto-generated documentation for all stories
   tags: ['autodocs'],
 });

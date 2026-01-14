@@ -6,6 +6,7 @@ import type { ComponentsManifest, Manifests, Presets, StoryIndex } from 'storybo
 import { vol } from 'memfs';
 import type { Polka, Request, Response } from 'polka';
 
+import { Tag } from '../../../shared/constants/tags';
 import { registerManifests, writeManifests } from './manifests';
 
 // Mock dependencies
@@ -20,7 +21,11 @@ describe('manifests', () => {
   let mockManifests: Manifests;
 
   const setupMockPresets = () => {
-    mockGenerator = { getIndex: vi.fn().mockResolvedValue({} as StoryIndex) };
+    mockGenerator = {
+      getIndex: vi.fn().mockResolvedValue({
+        entries: {},
+      } as StoryIndex),
+    };
     mockManifests = {};
 
     return {
@@ -113,6 +118,67 @@ describe('manifests', () => {
 
       expect(vi.mocked(logger).error).toHaveBeenCalledWith('Failed to generate manifests');
       expect(vi.mocked(logger).error).toHaveBeenCalledWith(errorString);
+    });
+
+    it('should filter entries by manifest tag and pass manifestEntries to preset', async () => {
+      mockGenerator.getIndex.mockResolvedValue({
+        v: 5,
+        entries: {
+          'story-with-manifest': {
+            type: 'story',
+            subtype: 'story',
+            id: 'story-with-manifest',
+            name: 'Story',
+            title: 'Example',
+            importPath: './Example.stories.tsx',
+            tags: [Tag.MANIFEST, 'other'],
+          },
+          'story-without-manifest': {
+            type: 'story',
+            subtype: 'story',
+            id: 'story-without-manifest',
+            name: 'Other',
+            title: 'Other',
+            importPath: './Other.stories.tsx',
+            tags: ['other'],
+          },
+          'docs-entry': {
+            type: 'docs',
+            id: 'docs',
+            name: 'Docs',
+            title: 'Docs',
+            importPath: './Docs.mdx',
+            tags: [Tag.MANIFEST],
+            storiesImports: [],
+          },
+        },
+      } as StoryIndex);
+
+      mockManifests = { custom: { data: 'value' } };
+
+      await writeManifests('/output', mockPresets);
+
+      expect(mockPresets.apply).toHaveBeenCalledWith(
+        'experimental_manifests',
+        undefined,
+        expect.objectContaining({
+          manifestEntries: expect.arrayContaining([
+            expect.objectContaining({ id: 'story-with-manifest' }),
+          ]),
+        })
+      );
+
+      // Get the specific apply call to the experimental_manifests preset
+      const manifestsPresetCall = (mockPresets.apply as any).mock.calls.find(
+        (call: any) => call[0] === 'experimental_manifests'
+      );
+      // Should include both story and docs entries with manifest tag
+      expect(manifestsPresetCall[2].manifestEntries).toHaveLength(2);
+      const entryIds = manifestsPresetCall[2].manifestEntries.map((entry: any) => entry.id);
+      expect(entryIds).toContain('story-with-manifest');
+      expect(entryIds).toContain('docs');
+      // Should NOT include story without manifest tag
+      expect(entryIds).not.toContain('story-without-manifest');
     });
   });
 

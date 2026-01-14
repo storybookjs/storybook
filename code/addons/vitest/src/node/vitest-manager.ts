@@ -9,6 +9,7 @@ import type {
 } from 'vitest/node';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
+import { Tag } from 'storybook/internal/core-server';
 import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
@@ -221,7 +222,7 @@ export class VitestManager {
 
     for (const testSpecification of testSpecifications) {
       const { env = {} } = testSpecification.project.config;
-      const include = env.__VITEST_INCLUDE_TAGS__?.split(',').filter(Boolean) ?? ['test'];
+      const include = env.__VITEST_INCLUDE_TAGS__?.split(',').filter(Boolean) ?? [Tag.TEST];
       const exclude = env.__VITEST_EXCLUDE_TAGS__?.split(',').filter(Boolean) ?? [];
       const skip = env.__VITEST_SKIP_TAGS__?.split(',').filter(Boolean) ?? [];
 

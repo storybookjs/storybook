@@ -53,7 +53,7 @@ export type StoryContext<TArgs = StrictArgs> = GenericStoryContext<AngularRender
 export type Preview = ProjectAnnotations<AngularRenderer>;
 
 /** Utility type that transforms InputSignal and EventEmitter types */
-type TransformComponentType<T> = TransformInputSignalType<
+export type TransformComponentType<T> = TransformInputSignalType<
   TransformOutputSignalType<TransformEventType<T>>
 >;
 

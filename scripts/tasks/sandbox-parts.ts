@@ -57,6 +57,14 @@ async function ensureSymlink(src: string, dest: string): Promise<void> {
 
 // Windows-compatible symlink function that falls back to copying
 async function ensureSymlinkOrCopy(source: string, target: string): Promise<void> {
+  if (process.env.CI) {
+    /**
+     * On CI, we don't need to symlink, we can just copy the files because there's no benefit in
+     * having a symlink on CI, but it does cause issues if we persist the workspace to windows.
+     */
+    await cp(source, target, { recursive: true, force: true });
+    return;
+  }
   try {
     await ensureSymlink(source, target);
   } catch (error: any) {
@@ -110,7 +118,7 @@ export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRu
   } else {
     await executeCLIStep(steps.repro, {
       argument: key,
-      optionValues: { output: sandboxDir, init: false, debug },
+      optionValues: { output: sandboxDir, init: false, debug, loglevel: 'debug' },
       cwd: parentDir,
       dryRun,
       debug,
@@ -862,6 +870,9 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
       ? '../src/stories/components'
       : '../stories/components';
     previewConfig.setImport(null, storiesDir);
+    if (template.expected.renderer === '@storybook/vue3') {
+      previewConfig.setImport(null, '../src/stories/renderers/vue3/preview.js');
+    }
     previewConfig.setImport(
       { namespace: 'templateAnnotations' },
       '../template-stories/core/preview'

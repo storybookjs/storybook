@@ -7,6 +7,7 @@ const { window, EventSource } = global;
 export * from './public-types';
 export * from './framework-api';
 export * from './portable-stories';
+export * from './preview';
 
 // TODO: disable HMR and do full page loads because of customElements.define
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment

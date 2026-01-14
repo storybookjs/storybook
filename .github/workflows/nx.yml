@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - next
+  # TODO use pull_request_target in the future to also run on forks
   pull_request:
     types: [opened, synchronize, labeled, reopened]
   schedule:
@@ -21,6 +22,7 @@ jobs:
   nx:
     if: >
       (github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
         (contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
          contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
          contains(github.event.pull_request.labels.*.name, 'ci:daily'))

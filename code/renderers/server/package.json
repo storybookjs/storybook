@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server",
-  "version": "10.2.0-alpha.9",
+  "version": "10.2.0-alpha.17",
   "description": "Storybook Server renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -43,7 +43,7 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "ts-dedent": "^2.0.0",
-    "yaml": "^2.3.1"
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

@@ -21,6 +21,7 @@ import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/ico
 import { internal_fullTestProviderStore } from '#manager-stores';
 import { styled } from 'storybook/theming';
 
+import { useLandmark } from '../../hooks/useLandmark';
 import { Optional } from '../Optional/Optional';
 import { useDynamicFavicon } from './useDynamicFavicon';
 
@@ -249,6 +250,12 @@ export const TestingWidget = ({
               : undefined
   );
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { landmarkProps } = useLandmark(
+    { 'aria-labelledby': 'storybook-testing-widget-heading', role: 'region' },
+    cardRef
+  );
+
   if (!hasTestProviders && !errorCount && !warningCount) {
     return null;
   }
@@ -261,7 +268,12 @@ export const TestingWidget = ({
       outlineColor={
         isCrashed || (isRunning && errorCount > 0) ? 'negative' : isUpdated ? 'positive' : undefined
       }
+      ref={cardRef}
+      outlineAttrs={landmarkProps}
     >
+      <h2 id="storybook-testing-widget-heading" className="sb-sr-only">
+        Component tests
+      </h2>
       <Bar {...(hasTestProviders ? { onClick: (e) => toggleCollapsed(e) } : {})}>
         <Action>
           {hasTestProviders && (

@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import type { Addon_StoryContext } from 'storybook/internal/types';
 
-import { RedirectBoundary } from 'next/dist/client/components/redirect-boundary';
+import { RedirectBoundary } from 'next/dist/client/components/redirect-boundary.js';
 
 import { AppRouterProvider } from './app-router-provider';
 import { PageRouterProvider } from './page-router-provider';

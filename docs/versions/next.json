@@ -1,1 +1,1 @@
-{"version":"10.2.0-alpha.9","info":{"plain":"- Core and Vite: Use story index as source of truth for Vite paths - [#30612](https://github.com/storybookjs/storybook/pull/30612), thanks @JReinhold!"}}
+{"version":"10.2.0-alpha.17","info":{"plain":"- Core: Improve the story generation experience - [#33259](https://github.com/storybookjs/storybook/pull/33259), thanks @yannbf!"}}

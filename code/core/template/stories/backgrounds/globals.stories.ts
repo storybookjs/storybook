@@ -6,7 +6,7 @@ export default {
     text: 'Testing the background',
   },
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { disableSnapshot: true },
     backgrounds: {
       options: {
         red: { name: 'light', value: 'red' },

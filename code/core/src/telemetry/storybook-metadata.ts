@@ -22,6 +22,7 @@ import { getApplicationFileCount } from './get-application-file-count';
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
 import { getFrameworkInfo } from './get-framework-info';
 import { getHasRouterPackage } from './get-has-router-package';
+import { analyzeEcosystemPackages } from './get-known-packages';
 import { getMonorepoType } from './get-monorepo-type';
 import { getPackageManagerInfo } from './get-package-manager-info';
 import { getPortableStoriesFileCount } from './get-portable-stories-usage';
@@ -91,35 +92,7 @@ export const computeStorybookMetadata = async ({
     };
   }
 
-  const testPackages = [
-    'playwright',
-    'vitest',
-    'jest',
-    'cypress',
-    'nightwatch',
-    'webdriver',
-    '@web/test-runner',
-    'puppeteer',
-    'karma',
-    'jasmine',
-    'chai',
-    'testing-library',
-    '@ngneat/spectator',
-    'wdio',
-    'msw',
-    'miragejs',
-    'sinon',
-    'chromatic',
-  ];
-  const testPackageDeps = Object.keys(allDependencies).filter((dep) =>
-    testPackages.find((pkg) => dep.includes(pkg))
-  );
-  metadata.testPackages = Object.fromEntries(
-    await Promise.all(
-      testPackageDeps.map(async (dep) => [dep, (await getActualPackageVersion(dep))?.version])
-    )
-  );
-
+  metadata.knownPackages = await analyzeEcosystemPackages(packageJson);
   metadata.hasRouterPackage = getHasRouterPackage(packageJson);
 
   const monorepoType = getMonorepoType();

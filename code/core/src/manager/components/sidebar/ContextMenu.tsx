@@ -18,8 +18,8 @@ import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
-import { Shortcut } from '../../container/Menu';
 import { getMostCriticalStatusValue } from '../../utils/status';
+import { Shortcut } from '../Shortcut';
 import { UseSymbol } from './IconSymbols';
 import { StatusButton } from './StatusButton';
 import { StatusContext } from './StatusContext';
@@ -53,17 +53,17 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
   const topLinks = useMemo<Link[]>(() => {
     const defaultLinks = [];
 
-    if (context && 'importPath' in context) {
+    if (context && 'importPath' in context && context.importPath) {
       defaultLinks.push({
         id: 'open-in-editor',
         title: 'Open in editor',
         icon: <EditorIcon />,
         right: enableShortcuts ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
         onClick: (e: SyntheticEvent) => {
-          e.preventDefault();
-          api.openInEditor({
-            file: context.importPath,
-          });
+          if (context.importPath) {
+            e.preventDefault();
+            api.openInEditor({ file: context.importPath });
+          }
         },
       });
     }

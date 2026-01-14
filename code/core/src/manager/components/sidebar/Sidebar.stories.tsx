@@ -17,7 +17,6 @@ import {
 } from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
-import { IconSymbols } from './IconSymbols';
 import { DEFAULT_REF_ID, Sidebar } from './Sidebar';
 import { mockDataset } from './mockdata';
 import type { RefType } from './types';
@@ -109,7 +108,6 @@ const meta = {
             title.endsWith('scrolled')
           }
         >
-          <IconSymbols />
           {storyFn()}
         </LayoutProvider>
       </ManagerContext.Provider>
@@ -144,7 +142,6 @@ const mobileLayoutDecorator: DecoratorFunction = (storyFn, { globals, title }) =
         title.endsWith('scrolled')
       }
     >
-      <IconSymbols />
       {storyFn()}
     </LayoutProvider>
   </ManagerContext.Provider>
@@ -204,6 +201,19 @@ export const SimpleInProduction: Story = {
     global.CONFIG_TYPE = 'PRODUCTION';
     return () => {
       global.CONFIG_TYPE = configType;
+    };
+  },
+};
+
+export const SimpleNoChecklist: Story = {
+  args: {
+    showCreateStoryButton: false,
+  },
+  beforeEach: () => {
+    const features = global.FEATURES;
+    global.FEATURES = { ...features, sidebarOnboardingChecklist: false };
+    return () => {
+      global.FEATURES = features;
     };
   },
 };

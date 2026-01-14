@@ -1,7 +1,6 @@
 import type { AddonTypes, StoryContext } from 'storybook/internal/csf';
 import { combineTags } from 'storybook/internal/csf';
 import type {
-  Args,
   ComponentAnnotations,
   ComposedStoryFn,
   NormalizedProjectAnnotations,
@@ -11,6 +10,8 @@ import type {
   TestFunction,
 } from 'storybook/internal/types';
 
+import type { SetOptional } from 'type-fest';
+
 import {
   combineParameters,
   composeConfigs,
@@ -19,6 +20,7 @@ import {
   normalizeProjectAnnotations,
 } from '../preview-api/index';
 import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils';
+import { Tag } from '../shared/constants/tags';
 import { getCoreAnnotations } from './core-annotations';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
@@ -26,9 +28,14 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
-  meta<TArgs extends Args, TInput extends ComponentAnnotations<TRenderer & { args: TArgs }, TArgs>>(
+  meta<
+    TArgs,
+    TInput extends ComponentAnnotations<TRenderer & { args: TArgs }, TArgs & TRenderer['args']>,
+  >(
     input: TInput
   ): Meta<TRenderer & { args: TArgs }, TInput>;
+
+  type<T>(): Preview<TRenderer & T>;
 }
 
 export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
@@ -52,6 +59,9 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
       );
       return composed;
     },
+    type() {
+      return this;
+    },
     meta(meta) {
       // @ts-expect-error hard
       return defineMeta(meta, this);
@@ -61,8 +71,9 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
   return preview;
 }
 
-export interface PreviewAddon<in TExtraContext extends AddonTypes = AddonTypes>
-  extends ProjectAnnotations<Renderer> {}
+export interface PreviewAddon<
+  in TExtraContext extends AddonTypes = AddonTypes,
+> extends ProjectAnnotations<Renderer> {}
 
 export function definePreviewAddon<TExtraContext extends AddonTypes = AddonTypes>(
   preview: ProjectAnnotations<Renderer>
@@ -76,13 +87,13 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
 
 export interface Meta<
   TRenderer extends Renderer,
-  TInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
+  TMetaInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
     TRenderer,
     TRenderer['args']
   >,
 > {
   readonly _tag: 'Meta';
-  input: TInput;
+  input: TMetaInput;
   // composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;
 
@@ -90,7 +101,13 @@ export interface Meta<
     input?: () => TRenderer['storyResult']
   ): Story<TRenderer, { render: () => TRenderer['storyResult'] }>;
 
-  story<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
+  story<
+    TInput extends StoryAnnotations<
+      TRenderer,
+      TRenderer['args'],
+      SetOptional<TRenderer['args'], keyof TRenderer['args'] & keyof TMetaInput['args']>
+    >,
+  >(
     input?: TInput
   ): Story<TRenderer, TInput>;
 }
@@ -108,7 +125,7 @@ function defineMeta<
 >(input: TInput, preview: Preview<TRenderer>): Meta<TRenderer, TInput> {
   return {
     _tag: 'Meta',
-    input,
+    input: { ...input, parameters: { ...input.parameters, csfFactory: true } },
     preview,
     // @ts-expect-error hard
     story(
@@ -218,7 +235,7 @@ function defineStory<
       const test = this.extend({
         ...annotations,
         name,
-        tags: ['test-fn', '!autodocs', ...(annotations.tags ?? [])],
+        tags: [Tag.TEST_FN, `!${Tag.AUTODOCS}`, ...(annotations.tags ?? [])],
         play,
       });
       __children.push(test);

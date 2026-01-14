@@ -1,11 +1,11 @@
 import { recast } from 'storybook/internal/babel';
-import { combineTags } from 'storybook/internal/csf';
+import { Tag } from 'storybook/internal/core-server';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
+import type { DocsIndexEntry, IndexEntry } from 'storybook/internal/types';
 import {
   type ComponentManifest,
   type PresetPropertyFn,
-  type StoryIndex,
   type StorybookConfigRaw,
 } from 'storybook/internal/types';
 
@@ -52,17 +52,16 @@ function getPackageInfo(componentPath: string | undefined, fallbackPath: string)
 
 function extractStories(
   csf: ReturnType<ReturnType<typeof loadCsf>['parse']>,
-  componentName: string | undefined
+  componentName: string | undefined,
+  manifestEntries: IndexEntry[]
 ) {
-  return Object.keys(csf._stories)
-    .filter((storyName) =>
-      combineTags(
-        'manifest',
-        ...(csf.meta.tags ?? []),
-        ...(csf._stories[storyName].tags ?? [])
-      ).includes('manifest')
+  const manifestEntryIds = new Set(manifestEntries.map((entry) => entry.id));
+  return Object.entries(csf._stories)
+    .filter(([, story]) =>
+      // Only include stories that are in the list of entries already filtered for the 'manifest' tag
+      manifestEntryIds.has(story.id)
     )
-    .map((storyName) => {
+    .map(([storyName]) => {
       try {
         const jsdocComment = extractDescription(csf._storyStatements[storyName]);
         const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
@@ -100,32 +99,35 @@ function extractComponentDescription(
 export const manifests: PresetPropertyFn<
   'experimental_manifests',
   StorybookConfigRaw,
-  { index: StoryIndex }
-> = async (existingManifests = {}, { index }) => {
+  { manifestEntries: IndexEntry[] }
+> = async (existingManifests = {}, { manifestEntries }) => {
   invalidateCache();
 
   const startPerformance = performance.now();
 
   const entriesByUniqueComponent = uniqBy(
-    Object.values(index.entries).filter(
-      (entry) => entry.type === 'story' && entry.subtype === 'story'
+    manifestEntries.filter(
+      (entry) =>
+        (entry.type === 'story' && entry.subtype === 'story') ||
+        // addon-docs will add docs entries to these manifest entries afterwards
+        // Docs entries have importPath pointing to MDX file, but storiesImports[0] points to the story file
+        (entry.type === 'docs' &&
+          entry.tags?.includes(Tag.ATTACHED_MDX) &&
+          entry.storiesImports.length > 0)
     ),
     (entry) => entry.id.split('--')[0]
   );
 
   const components = entriesByUniqueComponent
     .map((entry): ReactComponentManifest | undefined => {
-      const absoluteImportPath = path.join(process.cwd(), entry.importPath);
+      const storyFilePath =
+        entry.type === 'story'
+          ? entry.importPath
+          : // For attached docs entries, storiesImports[0] points to the stories file being attached to
+            (entry as DocsIndexEntry).storiesImports[0];
+      const absoluteImportPath = path.join(process.cwd(), storyFilePath);
       const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
       const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
-
-      const hasManifestTag = csf.stories
-        .map((it) => combineTags('manifest', ...(csf.meta.tags ?? []), ...(it.tags ?? [])))
-        .some((it) => it.includes('manifest'));
-
-      if (!hasManifestTag) {
-        return;
-      }
 
       const componentName = csf._meta?.component;
       const id = entry.id.split('--')[0];
@@ -144,12 +146,12 @@ export const manifests: PresetPropertyFn<
       const imports =
         getImports({ components: allComponents, packageName }).join('\n').trim() || fallbackImport;
 
-      const stories = extractStories(csf, component?.componentName);
+      const stories = extractStories(csf, component?.componentName, manifestEntries);
 
       const base = {
         id,
         name: componentName ?? title,
-        path: entry.importPath,
+        path: storyFilePath,
         stories,
         import: imports,
         jsDocTags: {},

@@ -65,7 +65,7 @@ If you are using [flat config style](https://eslint.org/docs/latest/use/configur
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
-  globalIgnores(['!.storybook'], "Include Storybook Directory"),
+  globalIgnores(['!.storybook'], 'Include Storybook Directory'),
   // ...
 ]);
 ```

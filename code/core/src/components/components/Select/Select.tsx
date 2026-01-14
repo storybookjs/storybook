@@ -25,8 +25,10 @@ import {
   valueToExternal,
 } from './helpers';
 
-export interface SelectProps
-  extends Omit<ButtonProps, 'onClick' | 'onChange' | 'onSelect' | 'variant'> {
+export interface SelectProps extends Omit<
+  ButtonProps,
+  'onClick' | 'onChange' | 'onSelect' | 'variant'
+> {
   size?: 'small' | 'medium';
   padding?: 'small' | 'medium' | 'none';
 
@@ -219,6 +221,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     ref
   ) => {
     const [isOpen, setIsOpen] = useState(props.defaultOpen || false);
+    const [shouldRefocusTrigger, setShouldRefocusTrigger] = useState(false);
     const triggerRef = useObjectRef(ref);
 
     const id = useMemo(() => {
@@ -234,8 +237,17 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
 
     const handleClose = useCallback(() => {
       setIsOpen(false);
-      triggerRef.current?.focus();
-    }, [triggerRef]);
+      setShouldRefocusTrigger(true);
+    }, []);
+
+    // We must delay refocusing the trigger because we first need the listbox to close,
+    // and @react-aria/overlays to remove the inert attribute set up by MinimalistPopover.
+    useEffect(() => {
+      if (!otState.isOpen && shouldRefocusTrigger) {
+        triggerRef.current?.focus();
+        setShouldRefocusTrigger(false);
+      }
+    }, [otState.isOpen, shouldRefocusTrigger, triggerRef]);
 
     // The last selected option(s), which will be used by the app.
     const [selectedOptions, setSelectedOptions] = useState<InternalOption[]>(
@@ -323,9 +335,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     // wrap setActiveOption to handle selection. We never close the listbox
     // in that scenario.
     const setActiveOption = useCallback(
-      (option: Option | ResetOption) => {
+      (option: Option | ResetOption, changeSelection = true) => {
         setActiveOptionState(optionOrResetToInternal(option));
-        if (!multiSelect) {
+        if (!multiSelect && changeSelection) {
           handleSelectOption(optionOrResetToInternal(option));
         }
       },
@@ -565,6 +577,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                       key={option.value === undefined ? 'sb-reset' : String(option.value)}
                       title={option.title}
                       description={option.description}
+                      aside={option.aside}
                       icon={
                         !isReset && multiSelect ? (
                           // Purely decorative.
@@ -582,7 +595,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                           handleClose();
                         }
                       }}
-                      onFocus={() => setActiveOption(externalOption)}
+                      onFocus={() => setActiveOption(externalOption, false)}
                       shouldLookDisabled={isReset && selectedOptions.length === 0 && multiSelect}
                       onKeyDown={(e: KeyboardEvent) => {
                         if (e.key === 'Enter' || e.key === ' ') {

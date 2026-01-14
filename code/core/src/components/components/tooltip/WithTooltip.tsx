@@ -177,7 +177,8 @@ interface WithHideFn {
 }
 
 export interface WithTooltipPureProps
-  extends Omit<ReactPopperTooltipConfig, 'closeOnOutsideClick'>,
+  extends
+    Omit<ReactPopperTooltipConfig, 'closeOnOutsideClick'>,
     Omit<ComponentProps<typeof TargetContainer>, 'trigger'>,
     PopperOptions {
   svg?: boolean;

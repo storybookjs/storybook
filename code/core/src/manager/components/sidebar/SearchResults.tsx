@@ -67,6 +67,10 @@ const ResultRowContent = styled.div({
 const Mark = styled.mark(({ theme }) => ({
   background: 'transparent',
   color: theme.color.secondary,
+  '@media (forced-colors: active)': {
+    color: 'HighlightText',
+    background: 'Highlight',
+  },
 }));
 
 const MoreWrapper = styled.div({

@@ -112,7 +112,7 @@ export const Container = styled.div<{
       outline: 'none',
     },
   }),
-  ({ width, height, $variant, $status, $transitionDuration }) =>
+  ({ theme, width, height, $variant, $status, $transitionDuration }) =>
     $variant === 'dialog'
       ? {
           top: '50%',
@@ -138,9 +138,12 @@ export const Container = styled.div<{
           bottom: '0',
           left: '0',
           right: '0',
+          borderRadius: '10px 10px 0 0',
+          overflow: 'hidden',
           width: width ?? '100%',
           height: height ?? '80%',
           maxWidth: '100%',
+          background: theme.background.content,
           '@supports (interpolate-size: allow-keywords)': {
             interpolateSize: 'allow-keywords',
           },
@@ -187,6 +190,7 @@ export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
 
   return (
     <Button
+      type="button"
       padding="small"
       ariaLabel="Close modal"
       variant="ghost"

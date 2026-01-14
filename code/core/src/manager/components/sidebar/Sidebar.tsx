@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 
 import { Button, ScrollArea } from 'storybook/internal/components';
 import type { API_LoadedRefData, StoryIndex, TagsOptions } from 'storybook/internal/types';
@@ -11,12 +11,14 @@ import { type State, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { useLandmark } from '../../hooks/useLandmark';
 import { useLayout } from '../layout/LayoutProvider';
 import { ChecklistWidget } from './ChecklistWidget';
 import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
 import { Explorer } from './Explorer';
 import type { HeadingProps } from './Heading';
 import { Heading } from './Heading';
+import { IconSymbols } from './IconSymbols';
 import { Search } from './Search';
 import { SearchResults } from './SearchResults';
 import { SidebarBottom } from './SidebarBottom';
@@ -26,7 +28,7 @@ import { useLastViewed } from './useLastViewed';
 
 export const DEFAULT_REF_ID = 'storybook_internal';
 
-const Container = styled.nav(({ theme }) => ({
+const Container = styled.header(({ theme }) => ({
   position: 'absolute',
   zIndex: 1,
   left: 0,
@@ -57,22 +59,6 @@ const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isM
   height: isMobile ? 36 : 32,
   borderRadius: theme.appBorderRadius + 2,
 }));
-
-const Swap = React.memo(function Swap({
-  children,
-  condition,
-}: {
-  children: React.ReactNode;
-  condition: boolean;
-}) {
-  const [a, b] = React.Children.toArray(children);
-  return (
-    <>
-      <div style={{ display: condition ? 'block' : 'none' }}>{a}</div>
-      <div style={{ display: condition ? 'none' : 'block' }}>{b}</div>
-    </>
-  );
-});
 
 const useCombination = (
   index: SidebarProps['index'],
@@ -153,8 +139,18 @@ export const Sidebar = React.memo(function Sidebar({
     []
   );
 
+  const headerRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { 'aria-labelledby': 'global-site-h1', role: 'banner' },
+    headerRef
+  );
+
   return (
-    <Container className="container sidebar-container" aria-label="Global">
+    <Container className="container sidebar-container" ref={headerRef} {...landmarkProps}>
+      <h1 id="global-site-h1" className="sb-sr-only">
+        Storybook
+      </h1>
+      <IconSymbols />
       <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
         <Stack>
           <div>
@@ -166,7 +162,9 @@ export const Sidebar = React.memo(function Sidebar({
               isLoading={isLoading}
               onMenuClick={onMenuClick}
             />
-            {!isLoading && global.CONFIG_TYPE === 'DEVELOPMENT' && <ChecklistWidget />}
+            {!isLoading &&
+              global.CONFIG_TYPE === 'DEVELOPMENT' &&
+              global.FEATURES?.sidebarOnboardingChecklist !== false && <ChecklistWidget />}
           </div>
           <Search
             dataset={dataset}
@@ -200,32 +198,39 @@ export const Sidebar = React.memo(function Sidebar({
             {({
               query,
               results,
-              isBrowsing,
+              isNavVisible,
+              isNavReachable,
+              isSearchResultRendered,
               closeMenu,
               getMenuProps,
               getItemProps,
               highlightedIndex,
             }) => (
-              <Swap condition={isBrowsing}>
-                <Explorer
-                  dataset={dataset}
-                  selected={selected}
-                  isLoading={isLoading}
-                  isBrowsing={isBrowsing}
-                  hasEntries={hasEntries}
-                />
-                <SearchResults
-                  query={query}
-                  results={results}
-                  closeMenu={closeMenu}
-                  getMenuProps={getMenuProps}
-                  getItemProps={getItemProps}
-                  highlightedIndex={highlightedIndex}
-                  enableShortcuts={enableShortcuts}
-                  isLoading={isLoading}
-                  clearLastViewed={lastViewedProps.clearLastViewed}
-                />
-              </Swap>
+              <>
+                {
+                  <Explorer
+                    dataset={dataset}
+                    selected={selected}
+                    isLoading={isLoading}
+                    isBrowsing={isNavVisible}
+                    isHidden={!isNavReachable}
+                    hasEntries={hasEntries}
+                  />
+                }
+                {isSearchResultRendered && (
+                  <SearchResults
+                    query={query}
+                    results={results}
+                    closeMenu={closeMenu}
+                    getMenuProps={getMenuProps}
+                    getItemProps={getItemProps}
+                    highlightedIndex={highlightedIndex}
+                    enableShortcuts={enableShortcuts}
+                    isLoading={isLoading}
+                    clearLastViewed={lastViewedProps.clearLastViewed}
+                  />
+                )}
+              </>
             )}
           </Search>
         </Stack>

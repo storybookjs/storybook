@@ -45,7 +45,9 @@ export interface SubAPI {
    * @param shortcuts The new shortcuts to set.
    * @returns A promise that resolves to the new shortcuts.
    */
-  setShortcuts(shortcuts: API_Shortcuts): Promise<API_Shortcuts>;
+  setShortcuts(
+    update: API_Shortcuts | ((shortcuts: API_Shortcuts) => API_Shortcuts)
+  ): Promise<API_Shortcuts>;
   /**
    * Sets the shortcut for the given action to the given value.
    *
@@ -113,7 +115,10 @@ export interface API_Shortcuts {
   expandAll: API_KeyCollection;
   remount: API_KeyCollection;
   openInEditor: API_KeyCollection;
+  openInIsolation: API_KeyCollection;
   copyStoryLink: API_KeyCollection;
+  goToPreviousLandmark: API_KeyCollection;
+  goToNextLandmark: API_KeyCollection;
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: API_KeyCollection;
 }
@@ -152,7 +157,10 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   expandAll: [controlOrMetaKey(), 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],
   openInEditor: ['alt', 'shift', 'E'],
+  openInIsolation: ['alt', 'shift', 'I'],
   copyStoryLink: ['alt', 'shift', 'L'],
+  goToPreviousLandmark: ['shift', 'F6'], // hardcoded in react-aria
+  goToNextLandmark: ['F6'], // hardcoded in react-aria
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
 });
@@ -203,24 +211,25 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
       return defaults;
     },
-    async setShortcuts(shortcuts: API_Shortcuts) {
-      await store.setState({ shortcuts }, { persistence: 'permanent' });
+    async setShortcuts(update) {
+      const { shortcuts } = await store.setState(
+        (state) => ({ shortcuts: typeof update === 'function' ? update(state.shortcuts) : update }),
+        { persistence: 'permanent' }
+      );
       return shortcuts;
     },
     async restoreAllDefaultShortcuts() {
       return api.setShortcuts(api.getDefaultShortcuts() as API_Shortcuts);
     },
     async setShortcut(action, value) {
-      const shortcuts = api.getShortcutKeys();
-      await api.setShortcuts({ ...shortcuts, [action]: value });
+      await api.setShortcuts((shortcuts) => ({ ...shortcuts, [action]: value }));
       return value;
     },
     async setAddonShortcut(addon: string, shortcut: API_AddonShortcut) {
-      const shortcuts = api.getShortcutKeys();
-      await api.setShortcuts({
+      await api.setShortcuts((shortcuts) => ({
         ...shortcuts,
         [`${addon}-${shortcut.actionName}`]: shortcut.defaultShortcut,
-      });
+      }));
       addonsShortcuts[`${addon}-${shortcut.actionName}`] = shortcut;
       return shortcut;
     },
@@ -247,6 +256,8 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       const {
         ui: { enableShortcuts },
         storyId,
+        refId,
+        viewMode,
       } = store.getState();
       if (!enableShortcuts) {
         return;
@@ -265,6 +276,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           }
           break;
         }
+
+        // Handled by @react-aria/interactions and useLandmarkIndicator
+        case 'goToNextLandmark':
+        case 'goToPreviousLandmark':
+          break;
 
         case 'focusNav': {
           if (fullAPI.getIsFullscreen()) {
@@ -397,6 +413,13 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           }
           break;
         }
+        case 'openInIsolation': {
+          if (storyId && viewMode === 'story') {
+            const { previewHref } = fullAPI.getStoryHrefs(storyId, { refId });
+            window.open(previewHref, '_blank', 'noopener,noreferrer');
+          }
+          break;
+        }
         // TODO: bring this back once we want to add shortcuts for this
         // case 'copyStoryName': {
         //   const storyData = fullAPI.getCurrentStoryData();
@@ -406,7 +429,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         //   break;
         // }
         case 'copyStoryLink': {
-          copy(window.location.href);
+          if (storyId) {
+            const { managerHref } = fullAPI.getStoryHrefs(storyId, { refId });
+            copy(managerHref);
+          }
           break;
         }
         default:

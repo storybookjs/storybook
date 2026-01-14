@@ -8,6 +8,8 @@ import { withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
+import detectFreePort from 'detect-port';
+
 import {
   executeAddonConfiguration,
   executeDependencyInstallation,
@@ -183,6 +185,15 @@ async function runStorybookDev(result: {
       flags.push('--silent');
     }
 
+    // Check if default port 6006 is available
+    const defaultPort = 6006;
+    const availablePort = await detectFreePort(defaultPort);
+    const useAlternativePort = availablePort !== defaultPort;
+
+    if (useAlternativePort) {
+      flags.push(`--port=${availablePort}`);
+    }
+
     // npm needs extra -- to pass flags to the command
     // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`
     const doesNeedExtraDash =
@@ -203,7 +214,7 @@ async function runStorybookDev(result: {
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
     const [command, ...args] = [...storybookCommand.split(' '), ...flags];
-    executeCommand({
+    await executeCommand({
       command: command,
       args,
       stdio: 'inherit',

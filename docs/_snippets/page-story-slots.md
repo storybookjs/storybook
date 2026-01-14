@@ -405,8 +405,6 @@ import preview from '../.storybook/preview';
 
 import { Page } from './Page';
 
-// Defines a custom type that combines the component props with custom story args to prevent type errors in the render function
-// This is optional, but helps with type safety as args are inferred automatically in CSF Next
 type PagePropsAndCustomArgs = React.ComponentProps<typeof Page> & {
   footer?: string;
 };

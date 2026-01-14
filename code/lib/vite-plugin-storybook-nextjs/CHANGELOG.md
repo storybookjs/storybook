@@ -1,3 +1,15 @@
+# v3.1.9 (Wed Jan 14 2026)
+
+#### 🐛 Bug Fix
+
+- Add nextjs imports with extensions as SB has started using [#83](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/83) ([@ndelangen](https://github.com/ndelangen))
+
+#### Authors: 1
+
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+
+---
+
 # v3.1.8 (Mon Dec 15 2025)
 
 #### 🐛 Bug Fix

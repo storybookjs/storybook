@@ -1,5 +1,5 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import { Pressable } from '@react-aria/interactions';
 import { DialogTrigger } from 'react-aria-components/patched-dist/Dialog';

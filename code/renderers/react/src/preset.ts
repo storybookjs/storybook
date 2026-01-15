@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import path, { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
@@ -84,7 +84,9 @@ export async function internal_getArgTypesData(
   }
 
   const argTypesData = extractArgTypesFromDocgen({
-    componentFilePath: join(getProjectRoot(), componentFilePath),
+    componentFilePath: path.isAbsolute(componentFilePath)
+      ? componentFilePath
+      : join(getProjectRoot(), componentFilePath),
     componentExportName,
   });
   if (!argTypesData?.props) {

@@ -1,3 +1,8 @@
+## 10.2.0-beta.0
+
+- Manager: Fix system query parameters being overridable - [#33535](https://github.com/storybookjs/storybook/pull/33535), thanks @JReinhold!
+- NextJSVite: Upgrade plugin - [#33538](https://github.com/storybookjs/storybook/pull/33538), thanks @ndelangen!
+
 ## 10.2.0-alpha.18
 
 - Build: Fix `ejslint` execution path in lint-staged - [#33504](https://github.com/storybookjs/storybook/pull/33504), thanks @Yeonny0723!

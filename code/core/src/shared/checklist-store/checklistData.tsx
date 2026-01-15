@@ -581,7 +581,8 @@ export default {
             ),
           action: {
             label: 'Start',
-            onClick: () =>
+            onClick: ({ api }) => {
+              api.toggleNav(true);
               TourGuide.render({
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore Circular reference in Step type
@@ -613,7 +614,8 @@ export default {
                     hideNextButton: true,
                   },
                 ],
-              }),
+              });
+            },
           },
           content: ({ api }) => (
             <>

@@ -176,10 +176,10 @@ async function runStorybookDev(result: {
   try {
     const supportsOnboarding = FeatureCompatibilityService.supportsOnboarding(projectType);
 
-    const flags = [];
+    const parts = storybookCommand.split(' ');
 
     if (packageManager.type === 'npm') {
-      flags.push('--silent');
+      parts.push('--silent');
     }
 
     // npm needs extra -- to pass flags to the command
@@ -189,11 +189,11 @@ async function runStorybookDev(result: {
       packageManager.type === PackageManagerName.BUN;
 
     if (doesNeedExtraDash && projectType !== ProjectType.ANGULAR) {
-      flags.push('--');
+      parts.push('--');
     }
 
     if (supportsOnboarding && shouldOnboard) {
-      flags.push('--initial-path=/onboarding');
+      parts.push('--initial-path=/onboarding');
     }
 
     // Check if default port 6006 is available
@@ -201,20 +201,23 @@ async function runStorybookDev(result: {
     const availablePort = await getServerPort(defaultPort);
     const useAlternativePort = availablePort !== defaultPort;
 
-    const portFlag = flags.findIndex((flag) => flag.startsWith('-p '));
+    if (useAlternativePort) {
+      const numberString = defaultPort.toString();
+      const findPortNumberIndex = parts.findIndex((flag) => flag === numberString);
 
-    if (useAlternativePort && portFlag === -1) {
-      flags.push(`-p ${availablePort}`);
-    } else if (useAlternativePort && portFlag !== -1) {
-      flags[portFlag] = `-p ${availablePort}`;
+      if (findPortNumberIndex !== -1) {
+        parts[findPortNumberIndex] = availablePort.toString();
+      } else {
+        parts.push(`-p`, `${availablePort}`);
+      }
     }
 
-    flags.push('--quiet');
+    parts.push('--quiet');
 
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
-    const [command, ...args] = [...storybookCommand.split(' '), ...flags];
+    const [command, ...args] = [...parts];
     await executeCommand({
       command: command,
       args,

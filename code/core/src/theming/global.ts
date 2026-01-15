@@ -134,6 +134,26 @@ export const createGlobal = memoize(1)(({
       opacity: 1,
     },
 
+    '[data-sb-landmark]': {
+      position: 'relative',
+    },
+
+    '[data-sb-landmark]:focus-visible': {
+      outline: 'none',
+    },
+
+    '[data-sb-landmark]:focus-visible::after': {
+      outline: `2px solid ${color.primary}`,
+      outlineOffset: '-2px',
+    },
+
+    '[data-sb-landmark]::after': {
+      content: "''",
+      position: 'absolute',
+      inset: 0,
+      pointerEvents: 'none',
+    },
+
     '.react-aria-Popover:focus-visible': {
       outline: 'none',
     },

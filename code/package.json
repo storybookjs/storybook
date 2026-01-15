@@ -1,6 +1,6 @@
 {
   "name": "@storybook/code",
-  "version": "10.2.0-alpha.14",
+  "version": "10.2.0-alpha.18",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -53,7 +53,7 @@
       "yarn lint:js:cmd --fix"
     ],
     "*.ejs": [
-      "../scripts/node_modules/.bin/ejslint"
+      "yarn --cwd ../scripts ejslint"
     ],
     "*.{css,html,json,md,yml}": [
       "yarn lint:prettier"

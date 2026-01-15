@@ -870,6 +870,9 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
       ? '../src/stories/components'
       : '../stories/components';
     previewConfig.setImport(null, storiesDir);
+    if (template.expected.renderer === '@storybook/vue3') {
+      previewConfig.setImport(null, '../src/stories/renderers/vue3/preview.js');
+    }
     previewConfig.setImport(
       { namespace: 'templateAnnotations' },
       '../template-stories/core/preview'

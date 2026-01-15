@@ -93,7 +93,6 @@ Use the `eslint.config.js` file to configure rules using the [flat config style]
 
 ```js title="eslint.config.js"
 import storybook from 'eslint-plugin-storybook';
-
 // Replace the eslint/config package with @eslint/config-helpers if you're using an older version of ESLint.
 import { defineConfig } from 'eslint/config';
 
@@ -107,9 +106,7 @@ In case you are using utility functions from tools like `tseslint`, you might ne
 
 ```ts title="eslint.config.ts"
 import storybook from 'eslint-plugin-storybook';
-
 import somePlugin from 'some-plugin';
-
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
@@ -124,7 +121,6 @@ Optionally, you can override, add, or disable individual rules. You likely don't
 
 ```js title="eslint.config.js"
 import storybook from 'eslint-plugin-storybook';
-
 import { defineConfig } from 'eslint/config';
 
 export default defineConfig([

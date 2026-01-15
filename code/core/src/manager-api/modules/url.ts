@@ -12,6 +12,7 @@ import type { API_Layout, API_UI, API_ViewMode, Args } from 'storybook/internal/
 import { global } from '@storybook/global';
 
 import { dequal as deepEqual } from 'dequal';
+import { omit } from 'es-toolkit/object';
 import { stringify } from 'picoquery';
 
 import type { ModuleArgs, ModuleFn } from '../lib/types';
@@ -261,18 +262,23 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       let globalsParam = inheritGlobals
         ? mergeSerializedParams(customQueryParams?.globals ?? '', globals)
         : globals;
-      let customParams = stringify(otherParams, {
+      let customManagerParams = stringify(otherParams, {
+        nesting: true,
+        nestingSyntax: 'js',
+      });
+      let customPreviewParams = stringify(omit(otherParams, ['id', 'viewMode']), {
         nesting: true,
         nestingSyntax: 'js',
       });
 
       argsParam = argsParam && `&args=${argsParam}`;
       globalsParam = globalsParam && `&globals=${globalsParam}`;
-      customParams = customParams && `&${customParams}`;
+      customManagerParams = customManagerParams && `&${customManagerParams}`;
+      customPreviewParams = customPreviewParams && `&${customPreviewParams}`;
 
       return {
-        managerHref: `${managerBase}?path=/${viewMode}/${refId ? `${refId}_` : ''}${storyId}${argsParam}${globalsParam}${customParams}`,
-        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customParams}`,
+        managerHref: `${managerBase}?path=/${viewMode}/${refId ? `${refId}_` : ''}${storyId}${argsParam}${globalsParam}${customManagerParams}`,
+        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customPreviewParams}`,
       };
     },
     getQueryParam(key) {

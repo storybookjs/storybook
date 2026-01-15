@@ -644,7 +644,7 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
+      // extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
       useCsfFactory: true,
     },
     expected: {

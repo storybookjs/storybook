@@ -215,7 +215,6 @@ async function runStorybookDev(result: {
     // with packages running in npxs' node_modules
     const [command, ...args] = [...parts];
 
-    console.log({ args });
     await executeCommand({
       command: command,
       args,

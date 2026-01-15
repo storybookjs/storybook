@@ -201,8 +201,12 @@ async function runStorybookDev(result: {
     const availablePort = await getServerPort(defaultPort);
     const useAlternativePort = availablePort !== defaultPort;
 
-    if (useAlternativePort) {
-      flags.push(`--port=${availablePort}`);
+    const portFlag = flags.findIndex((flag) => flag.startsWith('-p '));
+
+    if (useAlternativePort && portFlag === -1) {
+      flags.push(`-p ${availablePort}`);
+    } else if (useAlternativePort && portFlag !== -1) {
+      flags[portFlag] = `-p ${availablePort}`;
     }
 
     flags.push('--quiet');

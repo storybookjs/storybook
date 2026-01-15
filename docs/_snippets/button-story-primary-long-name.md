@@ -43,7 +43,7 @@ export const Primary = meta.story({
 
 export const PrimaryLongName = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: 'Primary with a really long name',
   },
 });
@@ -260,7 +260,7 @@ export const Primary = meta.story({
 
 export const PrimaryLongName = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: 'Primary with a really long name',
   },
 });
@@ -282,7 +282,7 @@ export const Primary = meta.story({
 
 export const PrimaryLongName = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: 'Primary with a really long name',
   },
 });

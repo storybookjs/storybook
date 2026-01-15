@@ -55,7 +55,7 @@ const meta = preview.meta({
 
 export const Pair = meta.story({
   args: {
-    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
     orientation: 'horizontal',
   },
 });

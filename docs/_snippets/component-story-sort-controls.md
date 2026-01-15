@@ -1,5 +1,5 @@
 ```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta } from  from '@storybook/angular';
+import type { Meta } from '@storybook/angular';
 
 import { YourComponent } from './your-component.component';
 

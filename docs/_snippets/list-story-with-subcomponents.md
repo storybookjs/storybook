@@ -332,8 +332,8 @@ export const OneItem = {
   render: (args) => ({
     components: { List, ListItem },
     setup() {
-      return { args }
-    }
+      return { args };
+    },
     template: '<List v-bind="args"><ListItem /></List>',
   }),
 };
@@ -364,8 +364,8 @@ export const OneItem: Story = {
   render: (args) => ({
     components: { List, ListItem },
     setup() {
-      return { args }
-    }
+      return { args };
+    },
     template: '<List v-bind="args"><ListItem /></List>',
   }),
 };
@@ -393,8 +393,8 @@ export const OneItem = meta.story({
   render: (args) => ({
     components: { List, ListItem },
     setup() {
-      return { args }
-    }
+      return { args };
+    },
     template: '<List v-bind="args"><ListItem /></List>',
   }),
 });
@@ -424,8 +424,8 @@ export const OneItem = meta.story({
   render: (args) => ({
     components: { List, ListItem },
     setup() {
-      return { args }
-    }
+      return { args };
+    },
     template: '<List v-bind="args"><ListItem /></List>',
   }),
 });

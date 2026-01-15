@@ -435,7 +435,7 @@ export const LogIn = meta.story({
 ```
 
 ```ts filename="AuthButton.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import { expect } from 'storybook/test';
+import { expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
 
@@ -449,8 +449,8 @@ const meta = preview.meta({
   // 👇 This will run before each story is rendered
   beforeEach: async () => {
     // 👇 Force known, consistent behavior for mocked modules
-    uuidv4.mockReturnValue('1234-5678-90ab-cdef');
-    getUserFromSession.mockReturnValue({ name: 'John Doe' });
+    mocked(uuidv4).mockReturnValue('1234-5678-90ab-cdef');
+    mocked(getUserFromSession).mockReturnValue({ name: 'John Doe' });
   },
 });
 

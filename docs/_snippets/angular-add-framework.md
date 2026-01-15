@@ -10,7 +10,7 @@ export default config;
 ```
 
 ```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/angular';
+import { defineMain } from '@storybook/angular/node';
 
 export default defineMain({
   // ...

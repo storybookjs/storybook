@@ -43,7 +43,7 @@ export const Primary = meta.story({
 
 export const Secondary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     primary: false,
   },
 });
@@ -252,7 +252,7 @@ export const Primary = meta.story({
 
 export const Secondary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     primary: false,
   },
 });
@@ -274,7 +274,7 @@ export const Primary = meta.story({
 
 export const Secondary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     primary: false,
   },
 });

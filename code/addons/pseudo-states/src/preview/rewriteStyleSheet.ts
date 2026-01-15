@@ -342,9 +342,12 @@ const rewriteRuleContainer = (
       rootSheet.cssRules[insertedIndex].__processed = true;
       // @ts-expect-error Adding custom property to track rewrite count
       rootSheet.cssRules[insertedIndex].__pseudoStatesRewrittenCount = 0;
-    } catch {
+    } catch (e) {
       // Rule insertion can fail for various reasons (invalid syntax, etc.)
-      // Silently ignore as this is a best-effort enhancement
+      // Log in development to help troubleshoot, silently ignore in production
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('[pseudo-states] Failed to insert rule:', rule, e);
+      }
     }
   }
 
@@ -362,10 +365,8 @@ const extractPseudoStateRulesFromHoverMedia = (
   const extractedRules: string[] = [];
 
   for (const cssRule of groupingRule.cssRules) {
-    // Handle nested grouping rules (e.g., @layer inside @media)
+    // Recursively process nested grouping rules (e.g., @layer inside @media)
     if ('cssRules' in cssRule && (cssRule.cssRules as CSSRuleList).length) {
-      // For nested grouping rules, we need to wrap extracted rules in the same grouping context
-      // But for simplicity and common use cases, we focus on direct style rules
       const nestedRules = extractPseudoStateRulesFromHoverMedia(
         cssRule as CSSGroupingRule,
         forShadowDOM

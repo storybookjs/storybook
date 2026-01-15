@@ -233,12 +233,12 @@ export const Viewport = ({
       if (dragSide.current === 'both' || dragSide.current === 'right') {
         const newWidth = Math.max(VIEWPORT_MIN_WIDTH, dragStart.current![0] + e.clientX);
         targetRef.current!.style.width = `${newWidth}px`;
-        dragRefX.current!.dataset.value = `${newWidth}`;
+        dragRefX.current!.dataset.value = `${newWidth / scale}`;
       }
       if (dragSide.current === 'both' || dragSide.current === 'bottom') {
         const newHeight = Math.max(VIEWPORT_MIN_HEIGHT, dragStart.current![1] + e.clientY);
         targetRef.current!.style.height = `${newHeight}px`;
-        dragRefY.current!.dataset.value = `${newHeight}`;
+        dragRefY.current!.dataset.value = `${newHeight / scale}`;
       }
       if (dragSide.current === 'both') {
         scrollBoth?.scrollIntoView({ block: 'center', inline: 'center' });
@@ -276,16 +276,20 @@ export const Viewport = ({
     const handles = [dragRefX.current, dragRefY.current, dragRefXY.current];
     handles.forEach((el) => el?.addEventListener('mousedown', onStart));
     return () => handles.forEach((el) => el?.removeEventListener('mousedown', onStart));
-  }, [resize]);
+  }, [resize, scale]);
 
-  const frameStyles = useMemo(() => {
+  const dimensions = useMemo(() => {
     const { number: nx, unit: ux = 'px' } = parseNumber(width) ?? { number: 0, unit: 'px' };
     const { number: ny, unit: uy = 'px' } = parseNumber(height) ?? { number: 0, unit: 'px' };
-    return {
-      width: `${Math.max(VIEWPORT_MIN_WIDTH, nx * scale)}${ux}`,
-      height: `${Math.max(VIEWPORT_MIN_HEIGHT, ny * scale)}${uy}`,
-    };
+    const vw = Math.max(VIEWPORT_MIN_WIDTH, nx * scale);
+    const vh = Math.max(VIEWPORT_MIN_HEIGHT, ny * scale);
+    return { nx, ny, ux, uy, vw, vh };
   }, [width, height, scale]);
+
+  const frameStyles = useMemo(() => {
+    const { vw, ux, vh, uy } = dimensions;
+    return { width: `${vw}${ux}`, height: `${vh}${uy}` };
+  }, [dimensions]);
 
   return (
     <ViewportWrapper key={id} active={active} isDefault={isDefault}>
@@ -369,13 +373,13 @@ export const Viewport = ({
           ref={dragRefX}
           isDefault={isDefault}
           data-side="right"
-          data-value={frameStyles.width.replace('px', '')}
+          data-value={`${dimensions.nx}${dimensions.ux === 'px' ? '' : dimensions.ux}`}
         />
         <DragHandle
           ref={dragRefY}
           isDefault={isDefault}
           data-side="bottom"
-          data-value={frameStyles.height.replace('px', '')}
+          data-value={`${dimensions.ny}${dimensions.uy === 'px' ? '' : dimensions.uy}`}
         />
         <DragHandle ref={dragRefXY} isDefault={isDefault} data-side="both" />
       </FrameWrapper>

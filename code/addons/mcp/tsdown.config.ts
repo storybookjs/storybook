@@ -4,5 +4,5 @@ import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig({
 	...sharedTsDownConfig(pkg.name),
-	entry: 'src/preset.ts',
+	entry: ['src/preset.ts', 'src/preview.ts'],
 });

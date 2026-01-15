@@ -16,6 +16,7 @@
 	"type": "module",
 	"exports": {
 		"./preset": "./dist/preset.js",
+		"./preview": "./dist/preview.js",
 		"./package.json": "./package.json"
 	},
 	"files": [

@@ -8,17 +8,34 @@ import { collectTelemetry } from '../telemetry.ts';
 import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
-import { StoryInputArray } from '../types.ts';
+import { StoryInput, StoryInputArray } from '../types.ts';
 import previewHtml from './preview.html';
 
-export const GET_STORY_URLS_TOOL_NAME = 'preview-story';
-export const GET_STORY_URLS_RESOURCE_URI = `ui://${GET_STORY_URLS_TOOL_NAME}/preview.html`;
+export const PREVIEW_STORIES_TOOL_NAME = 'preview-story';
+export const PREVIEW_STORIES_RESOURCE_URI = `ui://${PREVIEW_STORIES_TOOL_NAME}/preview.html`;
 
 const GetStoryUrlsInput = v.object({
 	stories: StoryInputArray,
 });
 
+const GetStoryUrlsOutput = v.object({
+	stories: v.array(
+		v.union([
+			v.object({
+				title: v.string(),
+				name: v.string(),
+				previewUrl: v.string(),
+			}),
+			v.object({
+				input: StoryInput,
+				error: v.string(),
+			}),
+		]),
+	),
+});
+
 type GetStoryUrlsInput = v.InferOutput<typeof GetStoryUrlsInput>;
+type GetStoryUrlsOutput = v.InferOutput<typeof GetStoryUrlsOutput>;
 
 export async function addGetStoryUrlsTool(
 	server: McpServer<any, AddonContext>,
@@ -41,38 +58,47 @@ export async function addGetStoryUrlsTool(
 
 	server.resource(
 		{
-			name: GET_STORY_URLS_RESOURCE_URI,
+			name: PREVIEW_STORIES_RESOURCE_URI,
 			description: 'App Resource for the Get Story tool',
-			uri: GET_STORY_URLS_RESOURCE_URI,
+			uri: PREVIEW_STORIES_RESOURCE_URI,
 			mimeType: 'text/html;profile=mcp-app',
 		},
-		() => ({
-			contents: [
-				{
-					uri: GET_STORY_URLS_RESOURCE_URI,
-					mimeType: 'text/html;profile=mcp-app',
-					text: previewHtml,
-					_meta: {
-						ui: {
-							prefersBorders: true,
-							csp: {
-								frameDomains: ['http://localhost:6006'],
+		() => {
+			const origin = server.ctx.custom!.origin;
+			console.log({ origin });
+			return {
+				contents: [
+					{
+						uri: PREVIEW_STORIES_RESOURCE_URI,
+						mimeType: 'text/html;profile=mcp-app',
+						text: previewHtml,
+						_meta: {
+							ui: {
+								prefersBorders: true,
+								domain: origin,
+								csp: {
+									connectDomains: [origin],
+									resourceDomains: [origin],
+									frameDomains: [origin],
+									baseUriDomains: [origin],
+								},
 							},
 						},
 					},
-				},
-			],
-		}),
+				],
+			};
+		},
 	);
 
 	server.tool(
 		{
-			name: GET_STORY_URLS_TOOL_NAME,
-			title: 'Preview stories, either as rendered MCP Apps or raw URLs',
-			description: `Preview one or more stories, rendering them as an MCP App using the UI Resource.`,
+			name: PREVIEW_STORIES_TOOL_NAME,
+			title: 'Preview stories',
+			description: `Use this tool to preview one or more stories, rendering them as an MCP App using the UI Resource or returning the raw URL for users to visit.`,
 			schema: GetStoryUrlsInput,
+			outputSchema: GetStoryUrlsOutput,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
-			_meta: { ui: { resourceUri: GET_STORY_URLS_RESOURCE_URI } },
+			_meta: { ui: { resourceUri: PREVIEW_STORIES_RESOURCE_URI } },
 		},
 		async (input) => {
 			try {
@@ -85,15 +111,12 @@ export async function addGetStoryUrlsTool(
 				const index = await fetchStoryIndex(origin);
 				const entriesList = Object.values(index.entries);
 
-				const result: string[] = [];
-				const previewUrls: string[] = [];
-				let foundStoryCount = 0;
+				const structuredResult: GetStoryUrlsOutput['stories'] = [];
+				const textResult: string[] = [];
 
-				for (const {
-					exportName,
-					explicitStoryName,
-					absoluteStoryPath,
-				} of input.stories) {
+				for (const inputParams of input.stories) {
+					const { exportName, explicitStoryName, absoluteStoryPath } =
+						inputParams;
 					const relativePath = `./${path.relative(process.cwd(), absoluteStoryPath)}`;
 
 					logger.debug('Searching for:');
@@ -104,26 +127,34 @@ export async function addGetStoryUrlsTool(
 						relativePath,
 					});
 
-					const foundStoryId = entriesList.find(
+					const foundStory = entriesList.find(
 						(entry) =>
 							entry.importPath === relativePath &&
 							[explicitStoryName, storyNameFromExport(exportName)].includes(
 								entry.name,
 							),
-					)?.id;
+					);
 
-					if (foundStoryId) {
-						logger.debug(`Found story ID: ${foundStoryId}`);
-						result.push(`${origin}/?path=/story/${foundStoryId}`);
-						previewUrls.push(`${origin}/iframe.html?id=${foundStoryId}`);
-						foundStoryCount++;
+					if (foundStory) {
+						logger.debug(`Found story ID: ${foundStory.id}`);
+						const previewUrl = `${origin}/?path=/story/${foundStory.id}`;
+						structuredResult.push({
+							title: foundStory.title,
+							name: foundStory.name,
+							previewUrl,
+						});
+						textResult.push(previewUrl);
 					} else {
 						logger.debug('No story found');
 						let errorMessage = `No story found for export name "${exportName}" with absolute file path "${absoluteStoryPath}"`;
 						if (!explicitStoryName) {
 							errorMessage += ` (did you forget to pass the explicit story name?)`;
 						}
-						result.push(errorMessage);
+						structuredResult.push({
+							input: inputParams,
+							error: errorMessage,
+						});
+						textResult.push(errorMessage);
 					}
 				}
 
@@ -133,17 +164,17 @@ export async function addGetStoryUrlsTool(
 						server,
 						toolset: 'dev',
 						inputStoryCount: input.stories.length,
-						outputStoryCount: foundStoryCount,
+						outputStoryCount: structuredResult.length,
 					});
 				}
 
 				return {
-					content: result.map((text) => ({
+					content: textResult.map((text) => ({
 						type: 'text',
 						text,
 					})),
 					structuredContent: {
-						previewUrls,
+						stories: structuredResult,
 					},
 				};
 			} catch (error) {

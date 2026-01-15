@@ -3,6 +3,7 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<style></style>
 		<style>
 			* {
 				margin: 0;
@@ -13,15 +14,39 @@
 			body {
 				width: 100%;
 				height: 100%;
+				margin: 0.5rem;
+			}
+			:root {
+				--color-text-primary: light-dark(black, white);
+				--color-border-primary: light-dark(#ccc, #444);
+
+				--font-sans:
+					-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Oxygen-Sans',
+					Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+				--font-heading-md-size: 1.5rem;
+				--border-width-regular: 1px;
+			}
+			.story-heading {
+				font-family: var(--font-sans);
+				font-size: var(--font-heading-md-size);
+				color: var(--color-text-primary);
+				padding: 1rem 0;
+			}
+			.story-iframe {
+				background-color: white;
+				border: var(--border-width-regular) solid var(--color-border-primary);
 			}
 		</style>
 		<template id="preview-template">
 			<article>
-				<h2></h2>
-				<iframe></iframe>
+				<h1 class="story-heading"></h1>
+				<iframe class="story-iframe"></iframe>
 			</article>
 		</template>
 		<script type="module">
+			const STORYBOOK_MCP_SIZE_CHANGED = 'storybook-mcp:size-changed';
+			const MCP_APP_PARAM = 'mcp-app';
+
 			// Adapted from https://github.com/MCP-UI-Org/mcp-ui/blob/fd89e2942eb7148d83245397be0b6ad34ce538b0/sdks/typescript/server/src/adapters/mcp-apps/adapter-runtime.ts
 
 			/**
@@ -76,8 +101,8 @@
 				console.log('Sent host request:', { id, method, params });
 				return new Promise((resolve, reject) => {
 					window.addEventListener('message', function listener(event) {
-						console.log('Received message in preview iframe:', { event });
 						const data = event.data;
+						console.log('Received message in preview iframe:', { data });
 						if (event.data?.id !== id) {
 							reject(new Error(`Unsupported message: ${JSON.stringify(data)}`));
 							return;
@@ -97,8 +122,11 @@
 			}
 			function onHostNotification(method, handler) {
 				window.addEventListener('message', function listener(event) {
-					console.log('Received message in preview iframe:', { event });
 					if (event.data?.method === method) {
+						console.log('Received host notification:', {
+							method,
+							params: event.data.params,
+						});
 						handler(event.data.params);
 					}
 				});
@@ -115,16 +143,51 @@
 				appCapabilities: {},
 				protocolVersion: LATEST_PROTOCOL_VERSION,
 			});
+			const hostTheme = initializeResult?.hostContext?.theme;
+			const hostStyles = initializeResult?.hostContext?.styles?.variables;
+			// if (hostTheme) {
+			// 	document.documentElement.setAttribute('data-theme', hostTheme);
+			// 	document.documentElement.style.colorScheme = hostTheme;
+			// }
+			// if (hostStyles) {
+			// 	for (const [key, value] of Object.entries(hostStyles)) {
+			// 		if (value !== undefined) {
+			// 			document.documentElement.style.setProperty(key, value);
+			// 		}
+			// 		s;
+			// 	}
+			// }
 			console.log({ initializeResult });
 			sendHostNotification(METHODS.INITIALIZED, {});
-			onHostNotification(METHODS.TOOL_RESULT, handleToolResult);
+			onHostNotification(METHODS.TOOL_RESULT, loadStoryIframes);
 
-			function handleToolResult(params) {
+			// Listen for size messages from Storybook iframes (height only to avoid feedback loops)
+			window.addEventListener('message', function (event) {
+				console.log('Received size change from story iframe:');
+				console.log(event.data?.type);
+				if (event.data?.type !== STORYBOOK_MCP_SIZE_CHANGED) {
+					return;
+				}
+
+				console.log('Received size change from story iframe:');
+
+				// Find the iframe that sent this message
+				const iframes = document.querySelectorAll('.story-iframe');
+				for (const iframe of iframes) {
+					if (iframe.contentWindow === event.source) {
+						iframe.style.height = event.data.height + 'px';
+						resizeApp();
+						break;
+					}
+				}
+			});
+
+			function loadStoryIframes(params) {
 				console.log('TOOL result RECEIVED IN PREVIEW HTML:');
 				console.log({ params });
 				if (
-					!params.structuredContent?.previewUrls ||
-					params.structuredContent.previewUrls.length === 0
+					!params.structuredContent?.stories ||
+					params.structuredContent.stories.length === 0
 				) {
 					console.warn('No preview URLs found in tool result.');
 					return;
@@ -132,56 +195,40 @@
 
 				const template = document.getElementById('preview-template');
 
-				for (const previewUrl of params.structuredContent.previewUrls) {
+				for (const { title, name, previewUrl } of params.structuredContent
+					.stories) {
 					const clone = template.content.cloneNode(true);
 					const article = clone.querySelector('article');
-					const heading = clone.querySelector('h2');
+					const heading = clone.querySelector('h1');
 					const iframe = clone.querySelector('iframe');
 
-					heading.textContent = previewUrl;
-					iframe.addEventListener('load', function () {
-						console.log('Iframe loaded:', {
-							h: iframe.contentWindow.document.body.scrollHeight,
-							w: iframe.contentWindow.document.body.scrollWidth,
-						});
-						iframe.style.height =
-							iframe.contentWindow.document.body.scrollHeight + 'px';
-						iframe.style.width =
-							iframe.contentWindow.document.body.scrollWidth + 'px';
+					heading.textContent = `${title} - ${name}`;
 
-						sendHostNotification(METHODS.SIZE_CHANGED, {
-							width: document.body.scrollWidth,
-							height: document.body.scrollHeight,
-						});
-					});
+					// Set a reasonable default size while waiting for the iframe to report its size
+					iframe.style.width = '100%';
+					iframe.style.height = '200px';
 
-					iframe.src = previewUrl;
-
-					// // Fetch the content and use srcdoc to avoid CSP restrictions on iframe src
-					// try {
-					// 	const response = await fetch(previewUrl);
-					// 	const html = await response.text();
-
-					// 	// Inject a <base> tag so relative URLs resolve correctly
-					// 	const baseUrl = new URL(previewUrl);
-					// 	const baseTag = `<base href="${baseUrl.origin}${baseUrl.pathname}">`;
-					// 	const htmlWithBase = html.replace(
-					// 		/<head([^>]*)>/i,
-					// 		`<head$1>${baseTag}`,
-					// 	);
-
-					// 	iframe.srcdoc = htmlWithBase;
-					// } catch (error) {
-					// 	console.error('Failed to fetch preview URL:', previewUrl, error);
-					// 	heading.textContent = `Error loading: ${previewUrl}`;
-					// }
+					const iframeSrc = previewUrl.replace(
+						'/?path=/story/',
+						'/iframe.html?id=',
+					);
+					// Add MCP App param to enable size reporting in Storybook's preview.ts
+					const url = new URL(iframeSrc);
+					url.searchParams.set(MCP_APP_PARAM, 'true');
+					iframe.src = url.toString();
 
 					document.body.appendChild(article);
+					resizeApp();
 				}
+			}
+
+			function resizeApp(event) {
+				sendHostNotification(METHODS.SIZE_CHANGED, {
+					width: document.body.scrollWidth,
+					height: document.body.scrollHeight,
+				});
 			}
 		</script>
 	</head>
-	<body>
-		<h1>Story Preview</h1>
-	</body>
+	<body></body>
 </html>

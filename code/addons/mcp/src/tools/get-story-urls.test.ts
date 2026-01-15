@@ -3,7 +3,7 @@ import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import {
 	addGetStoryUrlsTool,
-	GET_STORY_URLS_TOOL_NAME,
+	PREVIEW_STORIES_TOOL_NAME,
 } from './get-story-urls.ts';
 import type { AddonContext } from '../types.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
@@ -68,7 +68,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -102,7 +102,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -151,7 +151,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -182,7 +182,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -216,7 +216,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -254,7 +254,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -289,7 +289,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -328,7 +328,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{

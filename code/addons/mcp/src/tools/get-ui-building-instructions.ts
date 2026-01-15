@@ -1,5 +1,5 @@
 import type { McpServer } from 'tmcp';
-import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls.ts';
+import { PREVIEW_STORIES_TOOL_NAME } from './get-story-urls.ts';
 import { collectTelemetry } from '../telemetry.ts';
 import uiInstructionsTemplate from '../ui-building-instructions.md';
 import { errorToMCPContent } from '../utils/errors.ts';
@@ -46,7 +46,7 @@ export async function addGetUIBuildingInstructionsTool(
 				const uiInstructions = uiInstructionsTemplate
 					.replace('{{FRAMEWORK}}', framework)
 					.replace('{{RENDERER}}', renderer ?? framework)
-					.replace('{{GET_STORY_URLS_TOOL_NAME}}', GET_STORY_URLS_TOOL_NAME);
+					.replace('{{GET_STORY_URLS_TOOL_NAME}}', PREVIEW_STORIES_TOOL_NAME);
 
 				return {
 					content: [{ type: 'text' as const, text: uiInstructions }],

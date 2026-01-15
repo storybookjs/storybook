@@ -1,9 +1,20 @@
 import { mcpServerHandler } from './mcp-handler.ts';
+import * as path from 'node:path';
 import type { PresetProperty } from 'storybook/internal/types';
 import { AddonOptions } from './types.ts';
 import * as v from 'valibot';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
 import htmlTemplate from './template.html';
+import { fileURLToPath } from 'node:url';
+
+export const previewEntries: PresetProperty<'previewEntries'> = async (
+	existingEntries = [],
+) => {
+	return [
+		...existingEntries,
+		fileURLToPath(import.meta.resolve('@storybook/addon-mcp/preview')),
+	];
+};
 
 export const experimental_devServer: PresetProperty<
 	'experimental_devServer'

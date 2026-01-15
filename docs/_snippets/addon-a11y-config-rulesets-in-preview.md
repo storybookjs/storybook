@@ -64,6 +64,7 @@ export default definePreview({
 ```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+import addonA11y from '@storybook/addon-a11y';
 
 export default definePreview({
   addons: [addonA11y()],

@@ -1,4 +1,4 @@
-```ts filename="CheckBox.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Checkbox.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Checkbox } from './checkbox.component';
@@ -9,13 +9,13 @@ const meta: Meta<Checkbox> = {
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
-  component: CheckBox,
+  component: Checkbox,
 };
 
 export default meta;
 ```
 
-```ts filename="CheckBox.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Checkbox.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
 import { Checkbox } from './checkbox.component';
@@ -26,7 +26,7 @@ const meta = preview.meta({
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
-  component: CheckBox,
+  component: Checkbox,
 });
 ```
 
@@ -34,7 +34,7 @@ const meta = preview.meta({
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import CheckBox from './Checkbox.svelte';
+  import Checkbox from './Checkbox.svelte';
 
   const { Story } = defineMeta({
     /* 👇 The title prop is optional.
@@ -42,13 +42,13 @@ const meta = preview.meta({
      * to learn how to generate automatic titles
      */
     title: 'Design System/Atoms/Checkbox',
-    component: CheckBox,
+    component: Checkbox,
   });
 </script>
 ```
 
 ```js filename="Checkbox.stories.js" renderer="svelte" language="js" tabTitle="CSF"
-import CheckBox from './Checkbox.svelte';
+import Checkbox from './Checkbox.svelte';
 
 export default {
   /* 👇 The title prop is optional.
@@ -56,12 +56,12 @@ export default {
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
-  component: CheckBox,
+  component: Checkbox,
 };
 ```
 
 ```js filename="Checkbox.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { CheckBox } from './Checkbox';
+import { Checkbox } from './Checkbox';
 
 export default {
   /* 👇 The title prop is optional.
@@ -69,7 +69,7 @@ export default {
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
-  component: CheckBox,
+  component: Checkbox,
 };
 ```
 
@@ -77,7 +77,7 @@ export default {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import CheckBox from './Checkbox.svelte';
+  import Checkbox from './Checkbox.svelte';
 
   const { Story } = defineMeta({
     /* 👇 The title prop is optional.
@@ -85,16 +85,16 @@ export default {
      * to learn how to generate automatic titles
      */
     title: 'Design System/Atoms/Checkbox',
-    component: CheckBox,
+    component: Checkbox,
   });
 </script>
 ```
 
-```ts filename="CheckBox.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Checkbox.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
-import CheckBox from './Checkbox.svelte';
+import Checkbox from './Checkbox.svelte';
 
 const meta = {
   /* 👇 The title prop is optional.
@@ -102,17 +102,17 @@ const meta = {
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
-  component: CheckBox,
-} satisfies Meta<typeof CheckBox>;
+  component: Checkbox,
+} satisfies Meta<typeof Checkbox>;
 
 export default meta;
 ```
 
-```ts filename="CheckBox.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Checkbox.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
-import { CheckBox } from './Checkbox';
+import { Checkbox } from './Checkbox';
 
 const meta = {
   /* 👇 The title prop is optional.
@@ -120,8 +120,8 @@ const meta = {
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
-  component: CheckBox,
-} satisfies Meta<typeof CheckBox>;
+  component: Checkbox,
+} satisfies Meta<typeof Checkbox>;
 
 export default meta;
 ```
@@ -133,7 +133,7 @@ export default {
 };
 ```
 
-```ts filename="CheckBox.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Checkbox.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -153,7 +153,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="CheckBox.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Checkbox.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -162,10 +162,10 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="CheckBox.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Checkbox.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { CheckBox } from './Checkbox';
+import { Checkbox } from './Checkbox';
 
 const meta = preview.meta({
   /* 👇 The title prop is optional.
@@ -173,7 +173,7 @@ const meta = preview.meta({
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
-  component: CheckBox,
+  component: Checkbox,
 });
 ```
 
@@ -182,7 +182,7 @@ const meta = preview.meta({
 ```js filename="Checkbox.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { CheckBox } from './Checkbox';
+import { Checkbox } from './Checkbox';
 
 const meta = preview.meta({
   /* 👇 The title prop is optional.
@@ -190,14 +190,14 @@ const meta = preview.meta({
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
-  component: CheckBox,
+  component: Checkbox,
 });
 ```
 
 ```ts filename="Checkbox.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import CheckBox from './Checkbox.vue';
+import Checkbox from './Checkbox.vue';
 
 const meta = preview.meta({
   /* 👇 The title prop is optional.
@@ -205,7 +205,7 @@ const meta = preview.meta({
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
-  component: CheckBox,
+  component: Checkbox,
 });
 ```
 
@@ -214,7 +214,7 @@ const meta = preview.meta({
 ```js filename="Checkbox.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import CheckBox from './Checkbox.vue';
+import Checkbox from './Checkbox.vue';
 
 const meta = preview.meta({
   /* 👇 The title prop is optional.
@@ -222,6 +222,6 @@ const meta = preview.meta({
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
-  component: CheckBox,
+  component: Checkbox,
 });
 ```

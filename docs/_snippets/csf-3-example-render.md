@@ -93,6 +93,6 @@ export const Default = {
 // Other imports and story implementation
 
 export const Default: Story = {
-  render: (args) => html`<custom-button label="Hello" @click=${action('clicked')}></custom-button>`,
+  render: (args) => html`<demo-button label="Hello" @click=${action('clicked')}></demo-button>`,
 };
 ```

@@ -1,4 +1,4 @@
-```ts filename="CheckBox.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Checkbox.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Checkbox } from './checkbox.component';
@@ -17,7 +17,7 @@ export const Unchecked: Story = {
 };
 ```
 
-```ts filename="CheckBox.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Checkbox.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
 import { Checkbox } from './checkbox.component';

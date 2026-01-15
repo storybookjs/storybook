@@ -47,7 +47,7 @@ async function mcpRequest(
 
 test.describe('addon-mcp', () => {
   test.skip(
-    !templateName?.includes('react-vite/default-ts'),
+    templateName !== 'react-vite/default-ts',
     'Only run for sandboxes with addon-mcp configured'
   );
 

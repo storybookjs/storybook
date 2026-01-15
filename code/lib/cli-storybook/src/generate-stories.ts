@@ -258,7 +258,7 @@ async function generateStoriesForComponents(
           componentExportCount: component.exportCount,
         },
         options,
-        { checkFileExists: true }
+        { checkFileExists: true, ignoreStoryId: true }
       );
 
       if (result.success) {

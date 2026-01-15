@@ -28,9 +28,11 @@ import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
 import { buildOrThrow } from './utils/build-or-throw';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
+import { getServerChannel } from './utils/get-server-channel';
 import { outputStartupInformation } from './utils/output-startup-information';
 import { outputStats } from './utils/output-stats';
 import { getServerChannelUrl, getServerPort } from './utils/server-address';
+import { getServer } from './utils/server-init';
 import { updateCheck } from './utils/update-check';
 import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons';
 import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex';
@@ -211,15 +213,19 @@ export async function buildDevStandalone(
 
   const features = await presets.apply('features');
   global.FEATURES = features;
+  const server = await getServer(options);
+  const channel = getServerChannel(server);
+  await presets.apply('experimental_serverChannel', channel);
 
   const fullOptions: Options = {
     ...options,
     presets,
     features,
+    channel,
   };
 
   const { address, networkAddress, managerResult, previewResult } = await buildOrThrow(async () =>
-    storybookDevServer(fullOptions)
+    storybookDevServer(fullOptions, server)
   );
 
   const previewTotalTime = previewResult?.totalTime;

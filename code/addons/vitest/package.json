@@ -42,6 +42,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "default": "./dist/constants.js"
+    },
     "./internal/coverage-reporter": "./dist/node/coverage-reporter.js",
     "./internal/global-setup": "./dist/vitest-plugin/global-setup.js",
     "./internal/setup-file": "./dist/vitest-plugin/setup-file.js",

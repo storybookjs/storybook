@@ -27,6 +27,33 @@ export type RunTrigger =
   | Extract<API_HashEntry['type'], string>
   | `external:${string}`;
 
+export type CurrentRun = {
+  triggeredBy: RunTrigger | undefined;
+  config: StoreState['config'];
+  componentTestStatuses: Status[];
+  a11yStatuses: Status[];
+  componentTestCount: {
+    success: number;
+    error: number;
+  };
+  a11yCount: {
+    success: number;
+    warning: number;
+    error: number;
+  };
+  totalTestCount: number | undefined;
+  storyIds: StoryId[] | undefined;
+  startedAt: number | undefined;
+  finishedAt: number | undefined;
+  unhandledErrors: VitestError[];
+  coverageSummary:
+    | {
+        status: 'positive' | 'warning' | 'negative' | 'unknown';
+        percentage: number;
+      }
+    | undefined;
+};
+
 export type StoreState = {
   config: {
     coverage: boolean;
@@ -44,32 +71,7 @@ export type StoreState = {
         error: ErrorLike;
       }
     | undefined;
-  currentRun: {
-    triggeredBy: RunTrigger | undefined;
-    config: StoreState['config'];
-    componentTestStatuses: Status[];
-    a11yStatuses: Status[];
-    componentTestCount: {
-      success: number;
-      error: number;
-    };
-    a11yCount: {
-      success: number;
-      warning: number;
-      error: number;
-    };
-    totalTestCount: number | undefined;
-    storyIds: StoryId[] | undefined;
-    startedAt: number | undefined;
-    finishedAt: number | undefined;
-    unhandledErrors: VitestError[];
-    coverageSummary:
-      | {
-          status: 'positive' | 'warning' | 'negative' | 'unknown';
-          percentage: number;
-        }
-      | undefined;
-  };
+  currentRun: CurrentRun;
 };
 
 export type CachedState = Pick<StoreState, 'config'>;

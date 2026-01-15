@@ -29,6 +29,10 @@ import {
   COVERAGE_DIRECTORY,
   STORE_CHANNEL_EVENT_NAME,
   STORYBOOK_ADDON_TEST_CHANNEL,
+  TRIGGER_TEST_RUN_REQUEST,
+  TRIGGER_TEST_RUN_RESPONSE,
+  type TriggerTestRunRequestPayload,
+  type TriggerTestRunResponsePayload,
   storeOptions,
 } from './constants';
 import { log } from './logger';
@@ -103,7 +107,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       fsCache.set('state', selectCachedState(state));
     }
   });
-  globalThis.__STORYBOOK_ADDON_VITEST_STORE__ = store;
   const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
 
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
@@ -183,6 +186,56 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       ...s,
       currentRun: { ...s.currentRun, coverageSummary: undefined, unhandledErrors: [] },
     }));
+  });
+
+  // Programmatic test run trigger API
+  channel.on(TRIGGER_TEST_RUN_REQUEST, async (payload: TriggerTestRunRequestPayload) => {
+    const { requestId, actor, storyIds } = payload;
+
+    const sendResponse = (response: Omit<TriggerTestRunResponsePayload, 'requestId'>) => {
+      channel.emit(TRIGGER_TEST_RUN_RESPONSE, { requestId, ...response });
+    };
+
+    await store.untilReady();
+
+    const {
+      currentRun: { startedAt, finishedAt },
+    } = store.getState();
+    if (startedAt && !finishedAt) {
+      sendResponse({
+        status: 'error',
+        error: { message: 'Tests are already running' },
+      });
+      return;
+    }
+
+    store.send({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds,
+        triggeredBy: `external:${actor}`,
+      },
+    });
+
+    const unsubscribe = store.subscribe((event) => {
+      switch (event.type) {
+        case 'TEST_RUN_COMPLETED': {
+          unsubscribe();
+          sendResponse({ status: 'completed', result: event.payload });
+          return;
+        }
+        case 'FATAL_ERROR': {
+          unsubscribe();
+          sendResponse({ status: 'error', error: event.payload });
+          return;
+        }
+        case 'CANCEL_RUN': {
+          unsubscribe();
+          sendResponse({ status: 'cancelled' });
+          return;
+        }
+      }
+    });
   });
 
   if (!core.disableTelemetry) {

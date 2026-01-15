@@ -12,7 +12,6 @@ import { type StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { doTelemetry } from './utils/doTelemetry';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
-import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
 import { registerIndexJsonRoute } from './utils/index-json';
 import { registerManifests } from './utils/manifests/manifests';
@@ -20,18 +19,17 @@ import { useStorybookMetadata } from './utils/metadata';
 import { getMiddleware } from './utils/middleware';
 import { openInBrowser } from './utils/open-browser/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
-import { getServer } from './utils/server-init';
+import type { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
 import { summarizeIndex } from './utils/summarizeIndex';
 
-export async function storybookDevServer(options: Options) {
-  const [server, core] = await Promise.all([getServer(options), options.presets.apply('core')]);
-  const app = polka({ server });
+export async function storybookDevServer(
+  options: Options,
+  server: Awaited<ReturnType<typeof getServer>>
+) {
+  const core = await options.presets.apply('core');
 
-  const serverChannel = await options.presets.apply(
-    'experimental_serverChannel',
-    getServerChannel(server)
-  );
+  const app = polka({ server });
 
   const workingDir = process.cwd();
   const configDir = options.configDir;
@@ -50,7 +48,7 @@ export async function storybookDevServer(options: Options) {
     app,
     storyIndexGeneratorPromise,
     normalizedStories,
-    serverChannel,
+    channel: options.channel,
     workingDir,
     configDir,
   });
@@ -107,7 +105,7 @@ export async function storybookDevServer(options: Options) {
         options,
         router: app,
         server,
-        channel: serverChannel,
+        channel: options.channel,
       });
 
   let previewResult: Awaited<ReturnType<(typeof previewBuilder)['start']>> =
@@ -121,7 +119,7 @@ export async function storybookDevServer(options: Options) {
         options,
         router: app,
         server,
-        channel: serverChannel,
+        channel: options.channel,
       })
       .catch(async (e: any) => {
         logger.error('Failed to build the preview');

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "10.2.0-alpha.0",
+  "version": "10.2.0-alpha.18",
   "description": "Storybook CLI: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -36,14 +36,10 @@
     "README.md",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/codemod": "workspace:*",
-    "@types/semver": "^7.3.4",
-    "commander": "^14.0.1",
+    "@types/semver": "^7.7.1",
+    "commander": "^14.0.2",
     "create-storybook": "workspace:*",
     "jscodeshift": "^0.15.1",
     "storybook": "workspace:*",
@@ -56,11 +52,11 @@
     "cross-spawn": "^7.0.6",
     "empathic": "^2.0.0",
     "envinfo": "^7.14.0",
-    "globby": "^14.0.1",
+    "globby": "^14.1.0",
     "leven": "^4.0.0",
-    "p-limit": "^6.2.0",
+    "p-limit": "^7.2.0",
     "picocolors": "^1.1.0",
-    "semver": "^7.7.2",
+    "semver": "^7.7.3",
     "slash": "^5.0.0",
     "tiny-invariant": "^1.3.3",
     "typescript": "^5.8.3"

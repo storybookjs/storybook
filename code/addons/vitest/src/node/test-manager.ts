@@ -1,4 +1,4 @@
-import type { TestResult, TestState } from 'vitest/dist/node.js';
+import type { TestResult, TestState } from 'vitest/node';
 
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
 import type {

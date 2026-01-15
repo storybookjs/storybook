@@ -23,7 +23,6 @@
     "@storybook/builder-vite": "portal:../../../code/builders/builder-vite",
     "@storybook/builder-webpack5": "portal:../../../code/builders/builder-webpack5",
     "@storybook/codemod": "portal:../../../code/lib/codemod",
-    "storybook": "portal:../../../code/core",
     "@storybook/core-webpack": "portal:../../../code/lib/core-webpack",
     "@storybook/csf-plugin": "portal:../../../code/lib/csf-plugin",
     "@storybook/ember": "portal:../../../code/frameworks/ember",
@@ -47,7 +46,8 @@
     "@storybook/vue3-vite": "portal:../../../code/frameworks/vue3-vite",
     "@storybook/web-components": "portal:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "portal:../../../code/frameworks/web-components-vite",
-    "playwright": "1.52.0"
+    "playwright": "1.52.0",
+    "storybook": "portal:../../../code/core"
   },
   "devDependencies": {
     "@playwright/experimental-ct-svelte": "1.52.0",
@@ -66,5 +66,8 @@
     "typescript": "^5.2.2",
     "vite": "^6",
     "vitest": "^3.2.4"
+  },
+  "nx": {
+    "includedScripts": []
   }
 }

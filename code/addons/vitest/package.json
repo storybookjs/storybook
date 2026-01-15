@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "10.2.0-alpha.0",
+  "version": "10.2.0-alpha.18",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -71,37 +71,33 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^2.0.0"
+    "@storybook/icons": "^2.0.1"
   },
   "devDependencies": {
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/micromatch": "^4.0.0",
-    "@types/node": "^22.0.0",
-    "@types/semver": "^7",
-    "@vitest/browser-playwright": "^4.0.1",
-    "@vitest/runner": "^4.0.1",
+    "@types/node": "^22.19.1",
+    "@types/semver": "^7.7.1",
+    "@vitest/browser-playwright": "^4.0.14",
+    "@vitest/runner": "^4.0.14",
     "empathic": "^2.0.0",
-    "es-toolkit": "^1.36.0",
+    "es-toolkit": "^1.43.0",
     "istanbul-lib-report": "^3.0.1",
     "micromatch": "^4.0.8",
     "pathe": "^1.1.2",
     "picocolors": "^1.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "semver": "^7.6.3",
+    "semver": "^7.7.3",
     "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "tinyglobby": "^0.2.10",
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
-    "typescript": "^5.8.3",
-    "vitest": "^4.0.1"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
   },
   "peerDependencies": {
     "@vitest/browser": "^3.0.0 || ^4.0.0",

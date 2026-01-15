@@ -1,5 +1,5 @@
 executor:
-  class: large
+  class: xlarge
   name: sb_node_22_classic
 
 steps:
@@ -8,10 +8,11 @@ steps:
   - restore_cache:
       name: Restore Yarn cache
       keys:
-        - build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+        - build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
   - run:
       name: Compile
       command: |
+        yarn
         yarn task --task compile --start-from=auto --no-link --debug
         git diff --exit-code
         yarn dedupe --check
@@ -22,24 +23,25 @@ steps:
         yarn local-registry --publish
   - report-workflow-on-failure
   - store_artifacts:
-      path: code/bench/esbuild-metafiles
+      path: storybook/code/bench/esbuild-metafiles
   - save_cache:
       name: Save Yarn cache
-      key: build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+      key: build-yarn-2-cache-v5--{{ checksum "yarn.lock" }}
       paths:
         - ~/.yarn/berry/cache
   - persist_to_workspace:
-      root: .
+      root: /tmp
       paths:
-        - code/node_modules
-        - code/addons
-        - scripts/node_modules
-        - code/bench
-        - code/examples
-        - code/frameworks
-        - code/lib
-        - code/core
-        - code/builders
-        - code/renderers
-        - code/presets
-        - .verdaccio-cache
+        - storybook/node_modules
+        - storybook/code/node_modules
+        - storybook/code/addons
+        - storybook/scripts/node_modules
+        - storybook/code/bench
+        - storybook/code/examples
+        - storybook/code/frameworks
+        - storybook/code/lib
+        - storybook/code/core
+        - storybook/code/builders
+        - storybook/code/renderers
+        - storybook/code/presets
+        - storybook/.verdaccio-cache

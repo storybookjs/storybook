@@ -12,29 +12,41 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { mkdir, rm } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { parseArgs } from 'node:util';
 
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 
+import { ROOT_DIRECTORY } from '../utils/constants';
 import { buildEntries, hasPrebuild, isBuildEntries } from './entry-configs';
 import { measure } from './utils/entry-utils';
 import { generateBundle } from './utils/generate-bundle';
 import { generatePackageJsonFile } from './utils/generate-package-json';
 import { generateTypesMapperFiles } from './utils/generate-type-mappers';
 import { generateTypesFiles } from './utils/generate-types';
-import { modifyCoreThemeTypes } from './utils/modify-core-theme-types';
+
+const {
+  values: { prod, production, optimized, watch, cwd },
+} = parseArgs({
+  options: {
+    prod: { type: 'boolean', default: false },
+    production: { type: 'boolean', default: false },
+    optimized: { type: 'boolean', default: false },
+    watch: { type: 'boolean', default: false },
+    cwd: { type: 'string' },
+  },
+  allowNegative: true,
+});
 
 async function run() {
-  const flags = process.argv.slice(2);
   const DIR_ROOT = join(import.meta.dirname, '..', '..');
-  const DIR_CWD = process.cwd();
+  const DIR_CWD = cwd ? join(ROOT_DIRECTORY, cwd) : process.cwd();
   const DIR_DIST = join(DIR_CWD, 'dist');
   const DIR_REL = relative(DIR_ROOT, DIR_CWD);
 
-  const isProduction =
-    flags.includes('--prod') || flags.includes('--production') || flags.includes('--optimized');
-  const isWatch = flags.includes('--watch');
+  const isProduction = prod || production || optimized;
+  const isWatch = watch;
 
   if (isProduction && isWatch) {
     throw new Error('Cannot watch and build for production at the same time');
@@ -74,7 +86,6 @@ async function run() {
     measure(async () => generateBundle({ cwd: DIR_CWD, entry, name, isWatch })),
     measure(async () => {
       await generateTypesMapperFiles(DIR_CWD, entry);
-      await modifyCoreThemeTypes(DIR_CWD);
       if (isProduction) {
         await generateTypesFiles(DIR_CWD, entry);
       }

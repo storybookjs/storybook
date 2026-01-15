@@ -12,7 +12,6 @@ import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
-import { SupportedLanguage } from '../../code/core/dist/types';
 import { babelParse, types as t } from '../../code/core/src/babel';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
 import storybookPackages from '../../code/core/src/common/versions';
@@ -22,11 +21,12 @@ import {
   formatConfig,
   writeConfig,
 } from '../../code/core/src/csf-tools';
+import { SupportedLanguage } from '../../code/core/src/types';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
-import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
+import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
 import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir';
 import { addPreviewAnnotations, readConfig } from '../utils/main-js';
@@ -57,6 +57,14 @@ async function ensureSymlink(src: string, dest: string): Promise<void> {
 
 // Windows-compatible symlink function that falls back to copying
 async function ensureSymlinkOrCopy(source: string, target: string): Promise<void> {
+  if (process.env.CI) {
+    /**
+     * On CI, we don't need to symlink, we can just copy the files because there's no benefit in
+     * having a symlink on CI, but it does cause issues if we persist the workspace to windows.
+     */
+    await cp(source, target, { recursive: true, force: true });
+    return;
+  }
   try {
     await ensureSymlink(source, target);
   } catch (error: any) {
@@ -110,7 +118,7 @@ export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRu
   } else {
     await executeCLIStep(steps.repro, {
       argument: key,
-      optionValues: { output: sandboxDir, init: false, debug },
+      optionValues: { output: sandboxDir, init: false, debug, loglevel: 'debug' },
       cwd: parentDir,
       dryRun,
       debug,
@@ -259,7 +267,7 @@ export const init: Task['run'] = async (
 function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
   // NOTE: the test regexp here will apply whether the path is symlink-preserved or otherwise
   const require = createRequire(import.meta.url);
-  const esbuildLoaderPath = require.resolve('../../code/node_modules/esbuild-loader');
+  const esbuildLoaderPath = require.resolve('../../node_modules/esbuild-loader');
   const webpackFinalCode = `
   (config) => ({
     ...config,
@@ -544,7 +552,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     if (lastBraceIndex !== -1) {
       // Insert before the last }
       const before = args.slice(0, lastBraceIndex).trimEnd();
-      const needsComma = before.endsWith('{') ? '' : ',';
+      const needsComma = before.endsWith('{') || before.endsWith(',') ? '' : ',';
       const after = args.slice(lastBraceIndex);
       return `storybookTest(${before}${needsComma}\n  tags: {\n    include: ['vitest']\n  }\n${after})`;
     }
@@ -862,6 +870,9 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
       ? '../src/stories/components'
       : '../stories/components';
     previewConfig.setImport(null, storiesDir);
+    if (template.expected.renderer === '@storybook/vue3') {
+      previewConfig.setImport(null, '../src/stories/renderers/vue3/preview.js');
+    }
     previewConfig.setImport(
       { namespace: 'templateAnnotations' },
       '../template-stories/core/preview'
@@ -1031,7 +1042,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    'docs:json': 'DIR=$PWD; yarn --cwd ../../scripts jiti combine-compodoc $DIR',
+    'docs:json': `DIR=$PWD; yarn --cwd ${join(ROOT_DIRECTORY, 'scripts')} jiti combine-compodoc $DIR`,
     storybook: `yarn docs:json && ${packageJson.scripts.storybook}`,
     'build-storybook': `yarn docs:json && ${packageJson.scripts['build-storybook']}`,
   };

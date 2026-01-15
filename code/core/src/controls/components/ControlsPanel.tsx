@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-import { ScrollArea } from 'storybook/internal/components';
 import type { ArgTypes } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -31,11 +30,15 @@ const clean = (obj: { [key: string]: any }) =>
     {} as typeof obj
   );
 
-const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI }) => ({
-  display: 'grid',
-  gridTemplateRows: showSaveFromUI ? '1fr 41px' : '1fr',
+const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI, theme }) => ({
   height: '100%',
   maxHeight: '100vh',
+  paddingBottom: showSaveFromUI ? 41 : 0,
+  backgroundColor: theme.background.content,
+
+  table: {
+    backgroundColor: theme.background.app,
+  },
 }));
 
 interface ControlsParameters {
@@ -101,20 +104,18 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
 
   return (
     <AddonWrapper showSaveFromUI={showSaveFromUI}>
-      <ScrollArea vertical>
-        <ArgsTable
-          key={path} // resets state when switching stories
-          compact={!expanded && hasControls}
-          rows={withPresetColors}
-          args={args}
-          globals={globals}
-          updateArgs={updateArgs}
-          resetArgs={resetArgs}
-          inAddonPanel
-          sort={sort}
-          isLoading={isLoading}
-        />
-      </ScrollArea>
+      <ArgsTable
+        key={path} // resets state when switching stories
+        compact={!expanded && hasControls}
+        rows={withPresetColors}
+        args={args}
+        globals={globals}
+        updateArgs={updateArgs}
+        resetArgs={resetArgs}
+        inAddonPanel
+        sort={sort}
+        isLoading={isLoading}
+      />
       {showSaveFromUI && <SaveStory {...{ resetArgs, saveStory, createStory }} />}
     </AddonWrapper>
   );

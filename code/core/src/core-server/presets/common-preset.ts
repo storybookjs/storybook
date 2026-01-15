@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { optionalEnvToBoolean } from 'storybook/internal/common';
+import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -12,6 +12,7 @@ import {
   loadEnvs,
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
+import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
@@ -21,6 +22,7 @@ import type {
   Options,
   PresetProperty,
   PresetPropertyFn,
+  StorybookConfigRaw,
 } from 'storybook/internal/types';
 
 import { isAbsolute, join } from 'pathe';
@@ -30,6 +32,7 @@ import { dedent } from 'ts-dedent';
 import { resolvePackageDir } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
+import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
 import { initPreviewInitializedChannel } from '../server-channel/preview-initialized-channel';
 import { initializeChecklist } from '../utils/checklist';
@@ -109,7 +112,7 @@ export const babel = async (_: unknown, options: Options) => {
     ...babelDefault,
     // This override makes sure that we will never transpile babel further down then the browsers that storybook supports.
     // This is needed to support the mount property of the context described here:
-    // https://storybook.js.org/docs/writing-tests/interaction-testing#run-code-before-each-test
+    // https://storybook.js.org/docs/writing-tests/interaction-testing#run-code-before-each-story-in-a-file
     overrides: [
       ...(babelDefault?.overrides ?? []),
       {
@@ -207,6 +210,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   backgrounds: true,
   outline: true,
   measure: true,
+  sidebarOnboardingChecklist: true,
 });
 
 export const csfIndexer: Indexer = {
@@ -258,6 +262,7 @@ export const experimental_serverChannel = async (
 
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
+  initGhostStoriesChannel(channel, options, coreOptions);
   initOpenInEditorChannel(channel, options, coreOptions);
   initPreviewInitializedChannel(channel, options, coreOptions);
 
@@ -287,4 +292,43 @@ export const managerEntries = async (existing: any) => {
     pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
   ];
+};
+
+// Store the promise (not the result) to prevent race conditions.
+// The promise is assigned synchronously, so concurrent calls will share the same initialization.
+// This is essentially an async singleton pattern.
+let storyIndexGeneratorPromise: Promise<StoryIndexGenerator> | undefined;
+export const storyIndexGenerator: PresetPropertyFn<
+  'storyIndexGenerator',
+  StorybookConfigRaw
+> = async (_, options) => {
+  if (storyIndexGeneratorPromise) {
+    return storyIndexGeneratorPromise;
+  }
+
+  storyIndexGeneratorPromise = (async () => {
+    const workingDir = process.cwd();
+    const configDir = options.configDir;
+    const stories = await options.presets.apply('stories');
+    const normalizedStories = normalizeStories(stories, {
+      configDir,
+      workingDir,
+    });
+
+    const [indexers, docs] = await Promise.all([
+      options.presets.apply('experimental_indexers', []),
+      options.presets.apply('docs'),
+    ]);
+
+    const generator = new StoryIndexGenerator(normalizedStories, {
+      workingDir,
+      configDir,
+      indexers,
+      docs,
+    });
+    await generator.initialize();
+    return generator;
+  })();
+
+  return storyIndexGeneratorPromise;
 };

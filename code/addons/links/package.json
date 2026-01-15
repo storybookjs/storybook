@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-links",
-  "version": "10.2.0-alpha.0",
+  "version": "10.2.0-alpha.18",
   "description": "Storybook Links: Link stories together to build demos and prototypes with your UI components",
   "keywords": [
     "storybook",
@@ -49,15 +49,11 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "10.2.0-alpha.0",
+  "version": "10.2.0-alpha.18",
   "description": "Storybook Addon A11y: Test UI component compliance with WCAG web accessibility standards",
   "keywords": [
     "a11y",
@@ -54,23 +54,19 @@
     "*.d.ts",
     "!src/**/*"
   ],
-  "scripts": {
-    "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/build/build-package.ts"
-  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "axe-core": "^4.2.0"
   },
   "devDependencies": {
     "@radix-ui/react-tabs": "1.0.4",
-    "@storybook/icons": "^2.0.0",
+    "@storybook/icons": "^2.0.1",
     "@testing-library/react": "^14.0.0",
-    "execa": "^9.5.2",
+    "execa": "^9.6.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "vitest-axe": "^0.1.0"
   },
   "peerDependencies": {

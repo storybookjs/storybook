@@ -88,7 +88,7 @@ function getMinimalTrace() {
     return;
   }
 
-  const callStack = '\n' + userStackLines.slice(0, 2).join('\n');
+  const callStack = '\n' + userStackLines.slice(0, 4).join('\n');
 
   return callStack;
 }

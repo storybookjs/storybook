@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
+import { SANDBOX_DIRECTORY } from '../../scripts/utils/constants';
 import { SbPage } from './util';
 
 declare global {
@@ -16,8 +17,7 @@ declare global {
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const sandboxDir =
-  process.env.STORYBOOK_SANDBOX_DIR ||
-  join(__dirname, '..', '..', 'sandbox', 'react-vite-default-ts');
+  process.env.STORYBOOK_SANDBOX_DIR || join(SANDBOX_DIRECTORY, 'react-vite-default-ts');
 const previewFilePath = join(sandboxDir, '.storybook', 'preview.ts');
 const isStorybookDev = process.env.STORYBOOK_TYPE === 'dev';
 

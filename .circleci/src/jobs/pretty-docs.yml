@@ -1,5 +1,5 @@
 executor:
-  class: medium
+  class: medium+
   name: sb_node_22_classic
 
 steps:
@@ -8,15 +8,14 @@ steps:
   - restore_cache:
       name: Restore Yarn cache
       keys:
-        - prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+        - prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
   - run:
       name: Install
       command: |
-        cd scripts
         yarn install
   - save_cache:
       name: Save Yarn cache
-      key: prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+      key: prettydocs-yarn-2-cache-v8--{{ checksum "yarn.lock" }}
       paths:
         - ~/.yarn/berry/cache
   - run:

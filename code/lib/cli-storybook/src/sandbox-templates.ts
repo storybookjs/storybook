@@ -369,11 +369,13 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types', '@types/prop-types'],
+      extraDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
+      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
+          experimentalComponentsManifest: true,
         },
       },
     },
@@ -491,7 +493,7 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      extraDependencies: ['prop-types', 'storybook-react-rsbuild@^3.0.0-beta.1'],
+      extraDependencies: ['prop-types'],
       useCsfFactory: true,
       mainConfig: {
         features: {
@@ -502,25 +504,15 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'solid-vite/default-js': {
-    name: 'SolidJS Latest (Vite | JavaScript)',
-    script: 'npx degit solidjs/templates/js {{beforeDir}}',
-    expected: {
-      framework: 'storybook-solidjs-vite',
-      renderer: 'storybook-solidjs-vite',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-  },
   'solid-vite/default-ts': {
     name: 'SolidJS Latest (Vite | TypeScript)',
-    script: 'npx degit solidjs/templates/ts {{beforeDir}}',
+    script: 'yarn create solid {{beforeDir}} --vanilla --ts --template=with-vitest',
     expected: {
       framework: 'storybook-solidjs-vite',
       renderer: 'storybook-solidjs-vite',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests', 'bench'],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'vue3-vite/default-js': {
     name: 'Vue v3 (Vite | JavaScript)',
@@ -529,6 +521,9 @@ export const baseTemplates = {
       framework: '@storybook/vue3-vite',
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -539,6 +534,9 @@ export const baseTemplates = {
       framework: '@storybook/vue3-vite',
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
     },
     skipTasks: ['bench'],
   },
@@ -608,10 +606,12 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      extraDependencies: ['storybook-html-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+    initOptions: {
+      type: ProjectType.HTML,
+    },
   },
   'svelte-vite/default-js': {
     name: 'Svelte Latest (Vite | JavaScript)',
@@ -639,9 +639,8 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      // Angular 21 has introduced a peer dependency requirement on standard-schema via @angular/forms`
-      // TODO: use @angular/forms@next as soon as @angular/cli@next points to the same version
-      extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@^21.0.0'],
+      extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
+      useCsfFactory: true,
     },
     expected: {
       framework: '@storybook/angular',
@@ -656,6 +655,7 @@ export const baseTemplates = {
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
       extraDependencies: ['@angular/forms@latest'],
+      useCsfFactory: true,
     },
     expected: {
       framework: '@storybook/angular',
@@ -684,6 +684,9 @@ export const baseTemplates = {
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
     },
+    modifications: {
+      useCsfFactory: true,
+    },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -695,6 +698,9 @@ export const baseTemplates = {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests', 'bench', 'vitest-integration'],
@@ -708,7 +714,6 @@ export const baseTemplates = {
       builder: 'storybook-builder-rsbuild',
     },
     modifications: {
-      extraDependencies: ['storybook-web-components-rsbuild@^3.0.0-beta.1'],
       skipMocking: true,
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
@@ -1008,7 +1013,7 @@ export const normal: TemplateKey[] = [
   'bench/react-vite-default-ts-nodocs',
   'bench/react-vite-default-ts-test-build',
   'bench/react-webpack-18-ts-test-build',
-  'ember/default-js',
+  // 'ember/default-js',
   'react-rsbuild/default-ts',
 ];
 
@@ -1020,6 +1025,7 @@ export const merged: TemplateKey[] = [
   'nextjs-vite/15-ts',
   'preact-vite/default-ts',
   'html-vite/default-ts',
+  'solid-vite/default-ts',
   'vue3-rsbuild/default-ts',
 ];
 

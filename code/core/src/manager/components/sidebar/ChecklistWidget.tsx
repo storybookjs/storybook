@@ -121,6 +121,7 @@ const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
   }),
   ({ theme, isSkipped }) =>
     isSkipped && {
+      alignSelf: 'flex-start',
       '&:after': {
         content: '""',
         position: 'absolute',
@@ -173,34 +174,55 @@ const OpenGuideButton = ({
 
 export const ChecklistWidget = () => {
   const api = useStorybookApi();
-  const { loaded, allItems, nextItems, progress, accept, mute, items } = useChecklist();
-  const [renderItems, setItems] = useState<ChecklistItem[]>([]);
+  const { loaded, ready, allItems, nextItems, progress, accept, mute, items } = useChecklist();
+  const [renderItems, setRenderItems] = useState<ChecklistItem[]>(nextItems);
+  const [animated, setAnimated] = useState(false);
+
+  useEffect(() => {
+    if (ready) {
+      // Don't animate anything until the checklist items have settled down.
+      const timeout = setTimeout(setAnimated, 1000, true);
+      return () => clearTimeout(timeout);
+    }
+  }, [ready]);
+
+  useEffect(() => {
+    if (!animated) {
+      setRenderItems(nextItems);
+      return;
+    }
+
+    // Render outgoing items with updated state for 2 seconds before
+    // rendering new items, in order to allow exit transition.
+    setRenderItems((current) => {
+      let animateOut = false;
+      const prevItems = current.map((item) => {
+        const { status } = items[item.id];
+        const isAccepted = status === 'accepted';
+        const isDone = status === 'done';
+        const isSkipped = status === 'skipped';
+        animateOut = animateOut || isAccepted || isDone || isSkipped;
+        return { ...item, isCompleted: isAccepted || isDone, isAccepted, isDone, isSkipped };
+      });
+      return animateOut ? prevItems : nextItems;
+    });
+
+    const timeout = setTimeout(setRenderItems, 2000, nextItems);
+    return () => clearTimeout(timeout);
+  }, [animated, nextItems, items]);
 
   const hasItems = renderItems.length > 0;
   const transitionItems = useTransitionArray(allItems, renderItems, {
     keyFn: (item) => item.id,
-    timeout: 300,
+    timeout: animated ? 300 : 0,
   });
-
-  useEffect(() => {
-    // Render old items (with updated status) for 2 seconds before
-    // rendering new items, in order to allow exit transition.
-    setItems((current) =>
-      current.map((item) => ({
-        ...item,
-        isCompleted: items[item.id].status === 'accepted' || items[item.id].status === 'done',
-        isSkipped: items[item.id].status === 'skipped',
-      }))
-    );
-    const timeout = setTimeout(setItems, 2000, nextItems);
-    return () => clearTimeout(timeout);
-  }, [nextItems, items]);
 
   return (
     <CollapsibleWithMargin collapsed={!hasItems || !loaded}>
       <HoverCard id="storybook-checklist-widget" outlineAnimation="rainbow">
         <Collapsible
-          collapsed={!hasItems}
+          storageKey="checklist-widget"
+          initialCollapsed={!hasItems}
           disabled={!hasItems}
           summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
             <ActionList as="div" onClick={toggleCollapsed}>
@@ -288,7 +310,7 @@ export const ChecklistWidget = () => {
                       onClick={() => api.navigate(`/settings/guide#${item.id}`)}
                     >
                       <ActionList.Icon>
-                        {item.isCompleted ? (
+                        {item.isCompleted && animated ? (
                           <Particles anchor={Checked} key={item.id} />
                         ) : (
                           <StatusFailIcon />

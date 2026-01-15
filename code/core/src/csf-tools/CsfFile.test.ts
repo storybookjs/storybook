@@ -2108,8 +2108,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           metaId: component-id
           tags:
@@ -2131,8 +2130,7 @@ describe('CsfFile', () => {
           type: story
           subtype: story
           name: A
-        - importPath: foo/bar.stories.js
-          exportName: B
+        - exportName: B
           title: custom foo title
           metaId: component-id
           tags:
@@ -2174,8 +2172,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           metaId: component-id
           tags:
@@ -2214,8 +2211,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           tags:
             - component-tag
@@ -2283,8 +2279,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2323,8 +2318,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2362,8 +2356,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          rawComponentPath: ../src/Component.js
+        - rawComponentPath: ../src/Component.js
           exportName: A
           title: custom foo title
           tags: []
@@ -2402,8 +2395,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          rawComponentPath: some-library
+        - rawComponentPath: some-library
           exportName: A
           title: custom foo title
           tags: []
@@ -2868,6 +2860,50 @@ describe('CsfFile', () => {
                 factory: true
                 play: false
                 render: true
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('meta variable with .type() chaining', () => {
+        expect(
+          parse(
+            dedent`
+              import { config } from '#.storybook/preview'
+              const meta = config.type<{ args: { label: string } }>().meta({ component: 'foo' });
+              export const A = meta.story({})
+              export const B = meta.story({})
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+            - id: default-title--b
+              name: B
+              __stats:
+                factory: true
+                play: false
+                render: false
                 loaders: false
                 beforeEach: false
                 globals: false

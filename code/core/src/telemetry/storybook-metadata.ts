@@ -1,5 +1,7 @@
+import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 import {
   getStorybookConfiguration,
@@ -8,6 +10,7 @@ import {
   loadMainConfig,
   versions,
 } from 'storybook/internal/common';
+import { getInterpretedFile } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
@@ -19,6 +22,7 @@ import { getApplicationFileCount } from './get-application-file-count';
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
 import { getFrameworkInfo } from './get-framework-info';
 import { getHasRouterPackage } from './get-has-router-package';
+import { analyzeEcosystemPackages } from './get-known-packages';
 import { getMonorepoType } from './get-monorepo-type';
 import { getPackageManagerInfo } from './get-package-manager-info';
 import { getPortableStoriesFileCount } from './get-portable-stories-usage';
@@ -88,35 +92,7 @@ export const computeStorybookMetadata = async ({
     };
   }
 
-  const testPackages = [
-    'playwright',
-    'vitest',
-    'jest',
-    'cypress',
-    'nightwatch',
-    'webdriver',
-    '@web/test-runner',
-    'puppeteer',
-    'karma',
-    'jasmine',
-    'chai',
-    'testing-library',
-    '@ngneat/spectator',
-    'wdio',
-    'msw',
-    'miragejs',
-    'sinon',
-    'chromatic',
-  ];
-  const testPackageDeps = Object.keys(allDependencies).filter((dep) =>
-    testPackages.find((pkg) => dep.includes(pkg))
-  );
-  metadata.testPackages = Object.fromEntries(
-    await Promise.all(
-      testPackageDeps.map(async (dep) => [dep, (await getActualPackageVersion(dep))?.version])
-    )
-  );
-
+  metadata.knownPackages = await analyzeEcosystemPackages(packageJson);
   metadata.hasRouterPackage = getHasRouterPackage(packageJson);
 
   const monorepoType = getMonorepoType();
@@ -246,6 +222,7 @@ export const computeStorybookMetadata = async ({
     storybookPackages,
     addons,
     hasStorybookEslint,
+    packageJsonType: packageJson.type ?? 'unknown',
   };
 };
 
@@ -265,12 +242,26 @@ async function getPackageJsonDetails() {
   };
 }
 
-let cachedMetadata: StorybookMetadata;
-export const getStorybookMetadata = async (_configDir?: string) => {
-  if (cachedMetadata) {
-    return cachedMetadata;
-  }
+// Cache metadata keyed by a hash of the main config file to avoid caching
+// empty/incorrect values during init flows when the configDir is created/updated.
+const metadataCache = new Map<string, StorybookMetadata>();
 
+async function hashMainConfig(configDir: string): Promise<string> {
+  try {
+    const mainPath = getInterpretedFile(resolve(configDir, 'main')) as string | null;
+
+    if (!mainPath || !existsSync(mainPath)) {
+      return 'missing';
+    }
+    const content = await readFile(mainPath);
+    const hash = createHash('sha256').update(new Uint8Array(content)).digest('hex');
+    return hash;
+  } catch {
+    return 'unknown';
+  }
+}
+
+export const getStorybookMetadata = async (_configDir?: string) => {
   const { packageJson, packageJsonPath } = await getPackageJsonDetails();
   // TODO: improve the way configDir is extracted, as a "storybook" script might not be present
   // Scenarios:
@@ -284,12 +275,21 @@ export const getStorybookMetadata = async (_configDir?: string) => {
         '--config-dir'
       ) as string)) ??
     '.storybook';
+  const contentHash = await hashMainConfig(configDir);
+  const cacheKey = `${configDir}::${contentHash}`;
+  const cached = metadataCache.get(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
   const mainConfig = await loadMainConfig({ configDir }).catch(() => undefined);
-  cachedMetadata = await computeStorybookMetadata({
+  const computed = await computeStorybookMetadata({
     mainConfig,
     packageJson,
     packageJsonPath,
     configDir,
   });
-  return cachedMetadata;
+  metadataCache.set(cacheKey, computed);
+  return computed;
 };

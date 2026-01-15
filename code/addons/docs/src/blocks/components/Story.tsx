@@ -2,16 +2,14 @@
 import type { FunctionComponent } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 
-import { ErrorFormatter, Loader, getStoryHref } from 'storybook/internal/components';
+import { ErrorFormatter, Loader } from 'storybook/internal/components';
 import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
+import { getStoryHref } from '../getStoryHref';
 import { IFrame } from './IFrame';
 import { ZoomContext } from './ZoomContext';
-
-const { PREVIEW_URL } = globalThis;
-const BASE_URL = PREVIEW_URL || 'iframe.html';
 
 interface CommonProps {
   story: PreparedStory;
@@ -98,7 +96,7 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500
             key="iframe"
             id={`iframe--${story.id}`}
             title={story.name}
-            src={getStoryHref(BASE_URL, story.id, { viewMode: 'story' })}
+            src={getStoryHref(story.id, { viewMode: 'story' })}
             allowFullScreen
             scale={scale}
             style={{

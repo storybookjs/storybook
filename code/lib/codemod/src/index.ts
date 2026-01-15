@@ -1,4 +1,4 @@
-/* eslint import/prefer-default-export: "off" */
+/* eslint import-x/prefer-default-export: "off" */
 import { readdirSync } from 'node:fs';
 import { rename as renameAsync } from 'node:fs/promises';
 import { extname, join } from 'node:path';

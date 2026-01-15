@@ -168,6 +168,7 @@ export const checklistData = {
           action: {
             label: 'Start',
             onClick: ({ api }) => {
+              api.toggleNav(true);
               const path = api.getUrlState().path || '';
               if (path.startsWith('/story/')) {
                 document.location.href = `/?path=${path}&onboarding=true`;

@@ -200,7 +200,7 @@ async function runStorybookDev(result: {
       const useAlternativePort = availablePort !== defaultPort;
 
       if (useAlternativePort) {
-        parts.push(`-p ${availablePort}`);
+        parts.push(`-p`, `${availablePort}`);
 
         if (supportsOnboarding && shouldOnboard) {
           parts.push('--initial-path=/onboarding');

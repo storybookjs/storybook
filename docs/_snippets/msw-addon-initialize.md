@@ -37,9 +37,7 @@ export default preview;
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
-import * as addonMsw from 'msw-storybook-addon';
-
-const { initialize, mswLoader } = addonMsw;
+import { initialize, mswLoader } from 'msw-storybook-addon';
 
 /*
  * Initializes MSW
@@ -49,7 +47,6 @@ const { initialize, mswLoader } = addonMsw;
 initialize();
 
 export default definePreview({
-  addons: [addonMsw()],
   loaders: [mswLoader], // 👈 Add the MSW loader to all stories
 });
 ```
@@ -60,9 +57,7 @@ export default definePreview({
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
-import * as addonMsw from 'msw-storybook-addon';
-
-const { initialize, mswLoader } = addonMsw;
+import { initialize, mswLoader } from 'msw-storybook-addon';
 
 /*
  * Initializes MSW
@@ -72,7 +67,6 @@ const { initialize, mswLoader } = addonMsw;
 initialize();
 
 export default definePreview({
-  addons: [addonMsw()],
   loaders: [mswLoader], // 👈 Add the MSW loader to all stories
 });
 ```
@@ -80,9 +74,7 @@ export default definePreview({
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
 
-import * as addonMsw from 'msw-storybook-addon';
-
-const { initialize, mswLoader } = addonMsw;
+import { initialize, mswLoader } from 'msw-storybook-addon';
 
 /*
  * Initializes MSW
@@ -92,7 +84,6 @@ const { initialize, mswLoader } = addonMsw;
 initialize();
 
 export default definePreview({
-  addons: [addonMsw()],
   loaders: [mswLoader], // 👈 Add the MSW loader to all stories
 });
 ```
@@ -100,9 +91,7 @@ export default definePreview({
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
 
-import * as addonMsw from 'msw-storybook-addon';
-
-const { initialize, mswLoader } = addonMsw;
+import { initialize, mswLoader } from 'msw-storybook-addon';
 
 /*
  * Initializes MSW
@@ -112,7 +101,6 @@ const { initialize, mswLoader } = addonMsw;
 initialize();
 
 export default definePreview({
-  addons: [addonMsw()],
   loaders: [mswLoader], // 👈 Add the MSW loader to all stories
 });
 ```
@@ -120,9 +108,7 @@ export default definePreview({
 ```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/angular';
 
-import * as addonMsw from 'msw-storybook-addon';
-
-const { initialize, mswLoader } = addonMsw;
+import { initialize, mswLoader } from 'msw-storybook-addon';
 
 /*
  * Initializes MSW
@@ -132,7 +118,6 @@ const { initialize, mswLoader } = addonMsw;
 initialize();
 
 export default definePreview({
-  addons: [addonMsw()],
   loaders: [mswLoader], // 👈 Add the MSW loader to all stories
 });
 ```
@@ -140,9 +125,7 @@ export default definePreview({
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
 
-import * as addonMsw from 'msw-storybook-addon';
-
-const { initialize, mswLoader } = addonMsw;
+import { initialize, mswLoader } from 'msw-storybook-addon';
 
 /*
  * Initializes MSW
@@ -152,7 +135,6 @@ const { initialize, mswLoader } = addonMsw;
 initialize();
 
 export default definePreview({
-  addons: [addonMsw()],
   loaders: [mswLoader], // 👈 Add the MSW loader to all stories
 });
 ```
@@ -162,9 +144,7 @@ export default definePreview({
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
 
-import * as addonMsw from 'msw-storybook-addon';
-
-const { initialize, mswLoader } = addonMsw;
+import { initialize, mswLoader } from 'msw-storybook-addon';
 
 /*
  * Initializes MSW
@@ -174,7 +154,6 @@ const { initialize, mswLoader } = addonMsw;
 initialize();
 
 export default definePreview({
-  addons: [addonMsw()],
   loaders: [mswLoader], // 👈 Add the MSW loader to all stories
 });
 ```

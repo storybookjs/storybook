@@ -156,17 +156,6 @@ export async function initiate(options: CommandOptions): Promise<void> {
   });
 
   if (initiateResult?.shouldRunDev) {
-    const defaultPort = 6006;
-    const availablePort = await getServerPort(defaultPort);
-    const useAlternativePort = availablePort !== defaultPort;
-
-    if (useAlternativePort) {
-      initiateResult.storybookCommand = initiateResult.storybookCommand?.replace(
-        `-p ${defaultPort}`,
-        `-p ${availablePort}`
-      );
-    }
-
     await runStorybookDev(initiateResult);
   }
 }
@@ -206,17 +195,27 @@ async function runStorybookDev(result: {
         parts.push('--');
       }
 
-      if (supportsOnboarding && shouldOnboard) {
-        parts.push('--initial-path=/onboarding');
-      }
+      const defaultPort = 6006;
+      const availablePort = await getServerPort(defaultPort);
+      const useAlternativePort = availablePort !== defaultPort;
 
-      parts.push('--quiet');
+      if (useAlternativePort) {
+        parts.push(`-p ${availablePort}`);
+
+        if (supportsOnboarding && shouldOnboard) {
+          parts.push('--initial-path=/onboarding');
+        }
+
+        parts.push('--quiet');
+      }
     }
 
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
     const [command, ...args] = [...parts];
+
+    console.log({ args });
     await executeCommand({
       command: command,
       args,

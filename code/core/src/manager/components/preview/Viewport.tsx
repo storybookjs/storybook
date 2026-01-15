@@ -231,12 +231,14 @@ export const Viewport = ({
 
     const onDrag = (e: MouseEvent) => {
       if (dragSide.current === 'both' || dragSide.current === 'right') {
-        targetRef.current!.style.width = `${dragStart.current![0] + e.clientX}px`;
-        dragRefX.current!.dataset.value = `${dragStart.current![0] + e.clientX}`;
+        const newWidth = Math.max(VIEWPORT_MIN_WIDTH, dragStart.current![0] + e.clientX);
+        targetRef.current!.style.width = `${newWidth}px`;
+        dragRefX.current!.dataset.value = `${newWidth}`;
       }
       if (dragSide.current === 'both' || dragSide.current === 'bottom') {
-        targetRef.current!.style.height = `${dragStart.current![1] + e.clientY}px`;
-        dragRefY.current!.dataset.value = `${dragStart.current![1] + e.clientY}`;
+        const newHeight = Math.max(VIEWPORT_MIN_HEIGHT, dragStart.current![1] + e.clientY);
+        targetRef.current!.style.height = `${newHeight}px`;
+        dragRefY.current!.dataset.value = `${newHeight}`;
       }
       if (dragSide.current === 'both') {
         scrollBoth?.scrollIntoView({ block: 'center', inline: 'center' });
@@ -280,8 +282,8 @@ export const Viewport = ({
     const { number: nx, unit: ux = 'px' } = parseNumber(width) ?? { number: 0, unit: 'px' };
     const { number: ny, unit: uy = 'px' } = parseNumber(height) ?? { number: 0, unit: 'px' };
     return {
-      width: `${nx * scale}${ux}`,
-      height: `${ny * scale}${uy}`,
+      width: `${Math.max(VIEWPORT_MIN_WIDTH, nx * scale)}${ux}`,
+      height: `${Math.max(VIEWPORT_MIN_HEIGHT, ny * scale)}${uy}`,
     };
   }, [width, height, scale]);
 
@@ -367,13 +369,13 @@ export const Viewport = ({
           ref={dragRefX}
           isDefault={isDefault}
           data-side="right"
-          data-value={width.replace('px', '')}
+          data-value={frameStyles.width.replace('px', '')}
         />
         <DragHandle
           ref={dragRefY}
           isDefault={isDefault}
           data-side="bottom"
-          data-value={height.replace('px', '')}
+          data-value={frameStyles.height.replace('px', '')}
         />
         <DragHandle ref={dragRefXY} isDefault={isDefault} data-side="both" />
       </FrameWrapper>

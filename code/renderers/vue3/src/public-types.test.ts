@@ -168,7 +168,7 @@ describe('Story args can be inferred', () => {
     });
 
     const Basic: StoryObj<typeof meta> = {
-      args: { decoratorArg: '', decoratorArg2: '', label: 'good' },
+      args: { decoratorArg: ', decoratorArg2: ', label: 'good' },
     };
 
     type Expected = StoryAnnotations<VueRenderer, Props, SetOptional<Props, 'disabled'>>;
@@ -208,4 +208,126 @@ it('mount accepts a Component', () => {
     },
   };
   expectTypeOf(Basic).toMatchTypeOf<StoryObj<typeof Button>>();
+});
+
+
+// Test for WithCustomArgs type helper
+import { describe, it } from 'vitest';
+import { expectTypeOf } from 'expect-type';
+import { defineComponent } from 'vue';
+
+import type { Meta, StoryObj, WithCustomArgs } from '../public-types';
+
+describe('WithCustomArgs', () => {
+  it('should allow custom args that don''t map to component props', () => {
+    const MyComponent = defineComponent({
+      props: {
+        title: { type: String, required: true },
+        disabled: { type: Boolean, default: false },
+      },
+    });
+
+    type CustomArgs = WithCustomArgs<typeof MyComponent, {
+      footer?: string;
+      theme?: 'light' | 'dark';
+    }>;
+
+    const meta: Meta<CustomArgs> = {
+      component: MyComponent,
+      render: ({ footer, theme, ...componentProps }) => ({
+        components: { MyComponent },
+        template: '<my-component v-bind="componentProps" />',
+      }),
+    };
+
+    type Story = StoryObj<typeof meta>;
+
+    const story: Story = {
+      args: {
+        title: 'Hello',
+        footer: 'Footer text',
+        theme: 'light',
+      },
+    };
+
+    // Verify that custom args are properly typed
+    expectTypeOf(story.args).toHaveProperty('title');
+    expectTypeOf(story.args).toHaveProperty('footer');
+    expectTypeOf(story.args).toHaveProperty('theme');
+    expectTypeOf(story.args).toHaveProperty('disabled');
+  });
+
+  it('should work with empty custom args (no additional args)', () => {
+    const MyComponent = defineComponent({
+      props: {
+        label: { type: String, required: true },
+      },
+    });
+
+    type NoCustomArgs = WithCustomArgs<typeof MyComponent>;
+
+    const meta: Meta<NoCustomArgs> = {
+      component: MyComponent,
+      args: {
+        label: 'Test',
+      },
+    };
+
+    type Story = StoryObj<typeof meta>;
+
+    const story: Story = {
+      args: {
+        label: 'Hello',
+      },
+    };
+
+    expectTypeOf(story.args).toHaveProperty('label');
+  });
+
+  it('should merge component props with custom args correctly', () => {
+    const MyPage = defineComponent({
+      props: {
+        variant: { type: String as () => 'primary' | 'secondary', default: 'primary' },
+      },
+    });
+
+    type PageArgs = WithCustomArgs<typeof MyPage, {
+      showHeader?: boolean;
+      footerText?: string;
+    }>;
+
+    const meta: Meta<PageArgs> = {
+      component: MyPage,
+      render: ({ showHeader, footerText, variant }) => ({
+        components: { MyPage },
+        template: `
+          <div>
+            <header v-if="showHeader">Header</header>
+            <my-page :variant="variant" />
+            <footer v-if="footerText">{{ footerText }}</footer>
+          </div>
+        `,
+        setup() {
+          return { showHeader, footerText, variant };
+        },
+      }),
+    };
+
+    type Story = StoryObj<typeof meta>;
+
+    const story: Story = {
+      args: {
+        variant: 'secondary', // From component props
+        showHeader: true, // Custom arg
+        footerText: 'Custom footer', // Custom arg
+      },
+    };
+
+    // Verify all args are typed correctly
+    expectTypeOf(story.args).toMatchTypeOf<{
+      variant?: 'primary' | 'secondary';
+      showHeader?: boolean;
+      footerText?: string;
+    }>();
+  });
 });

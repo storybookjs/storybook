@@ -1,8 +1,5 @@
 import type { ErrorCategory } from '../../../shared/utils/categorize-render-errors';
-import {
-  categorizeError,
-  getCategoryDescription,
-} from '../../../shared/utils/categorize-render-errors';
+import { categorizeError } from '../../../shared/utils/categorize-render-errors';
 import { type ErrorCategorizationResult, type StoryTestResult, type TestRunSummary } from './types';
 
 /**
@@ -16,9 +13,10 @@ import { type ErrorCategorizationResult, type StoryTestResult, type TestRunSumma
 function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategorizationResult {
   const failed = testResults.filter((r) => r.status === 'FAIL' && r.error);
 
+  // Map: category -> { count, uniqueErrors: Set<string>, matchedDependencies }
   const map = new Map<
     ErrorCategory,
-    { count: number; examples: Set<string>; matchedDependencies: Set<string> }
+    { count: number; uniqueErrors: Set<string>; matchedDependencies: Set<string> }
   >();
 
   // To count unique error messages (by their message, not by category)
@@ -26,27 +24,25 @@ function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategori
 
   for (const r of failed) {
     const { category, matchedDependencies } = categorizeError(r.error!, r.stack);
-    const example = r.error!.slice(0, 100);
 
     if (!map.has(category)) {
-      map.set(category, { count: 0, examples: new Set(), matchedDependencies: new Set() });
+      map.set(category, { count: 0, uniqueErrors: new Set(), matchedDependencies: new Set() });
     }
 
     const data = map.get(category)!;
     data.count++;
-    data.examples.add(example);
     matchedDependencies.forEach((dep) => data.matchedDependencies.add(dep));
 
     // Use the full error message for unique error message counting
     uniqueErrorMessages.add(r.error!);
+    data.uniqueErrors.add(r.error!);
   }
 
   const categorizedErrors = Array.from(map.entries()).reduce<Record<string, any>>(
     (acc, [category, data]) => {
       acc[category] = {
-        description: getCategoryDescription(category),
+        uniqueCount: data.uniqueErrors.size,
         count: data.count,
-        examples: Array.from(data.examples).slice(0, 3),
         matchedDependencies: Array.from(data.matchedDependencies).sort(),
       };
       return acc;
@@ -62,12 +58,12 @@ function extractCategorizedErrors(testResults: StoryTestResult[]): ErrorCategori
 }
 
 /** Transform the Vitest test results to our expected format and return a TestRunSummary */
-export function parseVitestResults(testResults: any): TestRunSummary {
+export function parseVitestResults(report: any): TestRunSummary {
   // Transform the Vitest test results to our expected format
   const storyTestResults: StoryTestResult[] = [];
   let passedButEmptyRender = 0;
 
-  for (const testSuite of testResults.testResults) {
+  for (const testSuite of report.testResults) {
     for (const assertion of testSuite.assertionResults) {
       const storyId = assertion.meta?.storyId || assertion.fullName;
 
@@ -101,11 +97,9 @@ export function parseVitestResults(testResults: any): TestRunSummary {
     }
   }
 
-  const total = testResults.numTotalTests;
-  const passed = testResults.numPassedTests;
-  const failed = testResults.numFailedTests;
+  const total = report.numTotalTests;
+  const passed = report.numPassedTests;
   const successRate = total > 0 ? parseFloat((passed / total).toFixed(2)) : 0;
-  const failureRate = total > 0 ? parseFloat((failed / total).toFixed(2)) : 0;
   const successRateWithoutEmptyRender =
     total > 0 ? parseFloat(((passed - passedButEmptyRender) / total).toFixed(2)) : 0;
 
@@ -113,22 +107,15 @@ export function parseVitestResults(testResults: any): TestRunSummary {
   const errorClassification = extractCategorizedErrors(storyTestResults);
   const categorizedErrors = errorClassification.categorizedErrors;
 
-  const summary = {
-    total,
-    passed,
-    passedButEmptyRender,
-    failed,
-    successRate,
-    successRateWithoutEmptyRender,
-    failureRate,
-    uniqueErrorCount: errorClassification.uniqueErrorCount,
-    categorizedErrors,
+  return {
+    summary: {
+      total,
+      passed,
+      passedButEmptyRender,
+      successRate,
+      successRateWithoutEmptyRender,
+      uniqueErrorCount: errorClassification.uniqueErrorCount,
+      categorizedErrors,
+    },
   };
-
-  const enhancedResponse: TestRunSummary = {
-    success: testResults.success,
-    summary,
-  };
-
-  return enhancedResponse;
 }

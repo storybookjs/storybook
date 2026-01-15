@@ -7,9 +7,8 @@ export interface StoryTestResult {
 
 export interface CategorizedError {
   category: string;
-  description: string;
   count: number;
-  examples: string[];
+  uniqueCount: number;
   matchedDependencies: string[];
 }
 
@@ -20,19 +19,16 @@ export interface ErrorCategorizationResult {
 }
 
 export interface TestRunSummary {
-  success: boolean;
   duration?: number;
   summary?: {
     total: number;
     passed: number;
     passedButEmptyRender: number;
-    failed: number;
     successRate: number;
     successRateWithoutEmptyRender: number;
-    failureRate: number;
     uniqueErrorCount: number;
     categorizedErrors: Record<string, CategorizedError>;
   };
   // Error message if the operation failed
-  error?: string;
+  runError?: string;
 }

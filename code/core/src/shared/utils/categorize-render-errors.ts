@@ -17,6 +17,10 @@ export const ERROR_CATEGORIES = {
   COMPONENT_RENDER_ERROR: 'COMPONENT_RENDER_ERROR',
   SERVER_COMPONENTS_ERROR: 'SERVER_COMPONENTS_ERROR',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
+  // Vite related errors
+  DYNAMIC_MODULE_IMPORT_ERROR: 'DYNAMIC_MODULE_IMPORT_ERROR',
+  // Vitest test run related errors
+  TEST_FILE_IMPORT_ERROR: 'TEST_FILE_IMPORT_ERROR',
 } as const;
 
 export type ErrorCategory = (typeof ERROR_CATEGORIES)[keyof typeof ERROR_CATEGORIES];
@@ -86,6 +90,18 @@ const CATEGORIZATION_RULES: CategorizationRule[] = [
       ctx.normalizedMessage.includes('cannot find module') ||
       ctx.normalizedMessage.includes('module not found') ||
       ctx.normalizedMessage.includes('cannot resolve module'),
+  },
+
+  {
+    category: ERROR_CATEGORIES.TEST_FILE_IMPORT_ERROR,
+    priority: 95,
+    match: (ctx) => ctx.normalizedMessage.includes('failed to import test file'),
+  },
+
+  {
+    category: ERROR_CATEGORIES.DYNAMIC_MODULE_IMPORT_ERROR,
+    priority: 95,
+    match: (ctx) => ctx.normalizedMessage.includes('failed to fetch dynamically imported module'),
   },
 
   {
@@ -241,6 +257,12 @@ export function getCategoryDescription(category: ErrorCategory): string {
 
     case ERROR_CATEGORIES.MODULE_IMPORT_ERROR:
       return 'A required dependency could not be resolved';
+
+    case ERROR_CATEGORIES.TEST_FILE_IMPORT_ERROR:
+      return 'Failed to import a test file during test execution';
+
+    case ERROR_CATEGORIES.DYNAMIC_MODULE_IMPORT_ERROR:
+      return 'Failed to dynamically import a module at runtime';
 
     case ERROR_CATEGORIES.COMPONENT_RENDER_ERROR:
       return 'Component failed during render due to a runtime error';

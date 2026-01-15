@@ -41,15 +41,12 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.success).toBe(true);
       expect(result.summary).toEqual({
         total: 3,
         passed: 3,
         passedButEmptyRender: 0,
-        failed: 0,
         successRate: 1.0,
         successRateWithoutEmptyRender: 1.0,
-        failureRate: 0.0,
         uniqueErrorCount: 0,
         categorizedErrors: {},
       });
@@ -88,12 +85,9 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.success).toBe(false);
       expect(result.summary?.total).toBe(3);
       expect(result.summary?.passed).toBe(1);
-      expect(result.summary?.failed).toBe(2);
       expect(result.summary?.successRate).toBe(0.33);
-      expect(result.summary?.failureRate).toBe(0.67);
       expect(result.summary?.uniqueErrorCount).toBe(2);
     });
 
@@ -121,10 +115,17 @@ describe('parse-vitest-report', () => {
               {
                 fullName: 'Story3',
                 status: 'failed',
-                failureMessages: ['Error: Module not found: react-router\n  at import statement'],
+                failureMessages: [
+                  'Error: Cannot read property "x" of undefined\n  at /deps/styled-components.js:1168:14',
+                ],
               },
               {
                 fullName: 'Story4',
+                status: 'failed',
+                failureMessages: ['Error: Module not found: react-router\n  at import statement'],
+              },
+              {
+                fullName: 'Story5',
                 status: 'failed',
                 failureMessages: ['Error: Invalid hook call\n  at useEffect'],
               },
@@ -135,28 +136,23 @@ describe('parse-vitest-report', () => {
 
       const result = parseVitestResults(mockVitestResults);
 
-      expect(result.success).toBe(false);
       expect(result.summary?.total).toBe(4);
       expect(result.summary?.passed).toBe(1);
-      expect(result.summary?.failed).toBe(3);
       expect(result.summary?.uniqueErrorCount).toBe(3);
       expect(result.summary?.categorizedErrors).toEqual({
         HOOK_USAGE_ERROR: {
+          uniqueCount: 1,
           count: 1,
-          description: 'React hook was used incorrectly',
-          examples: ['Error: Invalid hook call'],
           matchedDependencies: [],
         },
         MISSING_THEME_PROVIDER: {
-          count: 1,
-          description: 'Component attempted to access theme values without a theme provider',
-          examples: ['Error: Cannot read property "x" of undefined'],
+          uniqueCount: 1,
+          count: 2,
           matchedDependencies: ['styled-components'],
         },
         MODULE_IMPORT_ERROR: {
+          uniqueCount: 1,
           count: 1,
-          description: 'A required dependency could not be resolved',
-          examples: ['Error: Module not found: react-router'],
           matchedDependencies: [],
         },
       });
@@ -249,7 +245,6 @@ describe('parse-vitest-report', () => {
 
       expect(result.summary?.total).toBe(4);
       expect(result.summary?.passed).toBe(3);
-      expect(result.summary?.failed).toBe(1);
     });
 
     it('should handle zero total tests', () => {
@@ -265,7 +260,6 @@ describe('parse-vitest-report', () => {
 
       expect(result.summary?.total).toBe(0);
       expect(result.summary?.successRate).toBe(0);
-      expect(result.summary?.failureRate).toBe(0);
     });
   });
 });

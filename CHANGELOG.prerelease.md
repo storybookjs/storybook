@@ -1,7 +1,5 @@
 ## 10.2.0-beta.0
 
-- CLIInitiate: Simplify the CLI init port flag detection - [#33546](https://github.com/storybookjs/storybook/pull/33546), thanks @ndelangen!
-- Initiate: Fix used port flag handling - [#33544](https://github.com/storybookjs/storybook/pull/33544), thanks @ndelangen!
 - Manager: Fix system query parameters being overridable - [#33535](https://github.com/storybookjs/storybook/pull/33535), thanks @JReinhold!
 - NextJSVite: Upgrade plugin - [#33538](https://github.com/storybookjs/storybook/pull/33538), thanks @ndelangen!
 

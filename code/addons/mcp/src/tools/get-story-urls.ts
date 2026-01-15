@@ -1,10 +1,8 @@
 import type { McpServer } from 'tmcp';
-import path from 'node:path';
-import { storyNameFromExport } from 'storybook/internal/csf';
-import { logger } from 'storybook/internal/node-logger';
 import * as v from 'valibot';
 import { collectTelemetry } from '../telemetry.ts';
 import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
+import { findStoryIds } from '../utils/find-story-ids.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 import { StoryInputArray } from '../types.ts';
@@ -37,46 +35,18 @@ export async function addGetStoryUrlsTool(
 				}
 
 				const index = await fetchStoryIndex(origin);
-				const entriesList = Object.values(index.entries);
+				const { found, notFound } = findStoryIds(index, input.stories);
 
 				const result: string[] = [];
-				let foundStoryCount = 0;
 
-				for (const {
-					exportName,
-					explicitStoryName,
-					absoluteStoryPath,
-				} of input.stories) {
-					const relativePath = `./${path.relative(process.cwd(), absoluteStoryPath)}`;
+				// Add URLs for found stories
+				for (const { id } of found) {
+					result.push(`${origin}/?path=/story/${id}`);
+				}
 
-					logger.debug('Searching for:');
-					logger.debug({
-						exportName,
-						explicitStoryName,
-						absoluteStoryPath,
-						relativePath,
-					});
-
-					const foundStoryId = entriesList.find(
-						(entry) =>
-							entry.importPath === relativePath &&
-							[explicitStoryName, storyNameFromExport(exportName)].includes(
-								entry.name,
-							),
-					)?.id;
-
-					if (foundStoryId) {
-						logger.debug(`Found story ID: ${foundStoryId}`);
-						result.push(`${origin}/?path=/story/${foundStoryId}`);
-						foundStoryCount++;
-					} else {
-						logger.debug('No story found');
-						let errorMessage = `No story found for export name "${exportName}" with absolute file path "${absoluteStoryPath}"`;
-						if (!explicitStoryName) {
-							errorMessage += ` (did you forget to pass the explicit story name?)`;
-						}
-						result.push(errorMessage);
-					}
+				// Add error messages for not-found stories
+				for (const { errorMessage } of notFound) {
+					result.push(errorMessage);
 				}
 
 				if (!disableTelemetry) {
@@ -85,7 +55,7 @@ export async function addGetStoryUrlsTool(
 						server,
 						toolset: 'dev',
 						inputStoryCount: input.stories.length,
-						outputStoryCount: foundStoryCount,
+						outputStoryCount: found.length,
 					});
 				}
 

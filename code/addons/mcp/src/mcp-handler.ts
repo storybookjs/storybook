@@ -15,6 +15,7 @@ import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
+import { addRunStoryTestsTool } from './tools/run-story-tests.ts';
 import { estimateTokens } from './utils/estimate-tokens.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
@@ -50,6 +51,9 @@ const initializeMCPServer = async (options: Options) => {
 	// Register dev addon tools
 	await addGetStoryUrlsTool(server);
 	await addGetUIBuildingInstructionsTool(server);
+
+	// Register test addon tools
+	await addRunStoryTestsTool(server);
 
 	// Only register the additional tools if the component manifest feature is enabled
 	const manifestStatus = await getManifestStatus(options);
@@ -204,6 +208,7 @@ export function getToolsets(
 	const toolsets: AddonOptionsOutput['toolsets'] = {
 		dev: false,
 		docs: false,
+		test: false,
 	};
 
 	// The format of the header is a comma-separated list of enabled toolsets

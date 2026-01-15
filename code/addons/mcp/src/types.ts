@@ -7,11 +7,13 @@ export const AddonOptions = v.object({
 		v.object({
 			dev: v.exactOptional(v.boolean(), true),
 			docs: v.exactOptional(v.boolean(), true),
+			test: v.exactOptional(v.boolean(), true),
 		}),
 		{
 			// Default values for toolsets
 			dev: true,
 			docs: true,
+			test: true,
 		},
 	),
 	experimentalFormat: v.optional(v.picklist(['xml', 'markdown']), 'markdown'),

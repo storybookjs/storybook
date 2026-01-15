@@ -1,7 +1,12 @@
 import type { McpServer } from 'tmcp';
 import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls.ts';
+import {
+	getAddonVitestConstants,
+	RUN_STORY_TESTS_TOOL_NAME,
+} from './run-story-tests.ts';
 import { collectTelemetry } from '../telemetry.ts';
 import storyInstructionsTemplate from '../storybook-story-instructions.md';
+import storyTestingInstructionsTemplate from '../story-testing-instructions.md';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 
@@ -58,10 +63,25 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 						: frameworkPreset?.name;
 				const renderer = frameworkToRendererMap[framework!];
 
-				const uiInstructions = storyInstructionsTemplate
+				// Build UI instructions with framework/renderer
+				let uiInstructions = storyInstructionsTemplate
 					.replace('{{FRAMEWORK}}', framework)
 					.replace('{{RENDERER}}', renderer ?? framework)
 					.replace('{{GET_STORY_URLS_TOOL_NAME}}', GET_STORY_URLS_TOOL_NAME);
+
+				// Conditionally append story testing instructions if test toolset is enabled and addon-vitest is available
+				const testToolsetAvailable =
+					(server.ctx.custom?.toolsets?.test ?? true) &&
+					!!(await getAddonVitestConstants());
+
+				if (testToolsetAvailable) {
+					const storyTestingInstructions =
+						storyTestingInstructionsTemplate.replaceAll(
+							'{{RUN_STORY_TESTS_TOOL_NAME}}',
+							RUN_STORY_TESTS_TOOL_NAME,
+						);
+					uiInstructions = `${uiInstructions}\n\n${storyTestingInstructions}`;
+				}
 
 				return {
 					content: [{ type: 'text' as const, text: uiInstructions }],

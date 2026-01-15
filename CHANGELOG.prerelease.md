@@ -1,3 +1,12 @@
+## 10.2.0-alpha.19
+
+- CLIInitiate: Simplify the CLI init port flag detection - [#33546](https://github.com/storybookjs/storybook/pull/33546), thanks @ndelangen!
+- CSF-Factories: Allow kebab-case HTML attribute names in web components args - [#33526](https://github.com/storybookjs/storybook/pull/33526), thanks @kasperpeulen!
+- CSF-Factories: Export WebComponentsTypes and VueTypes - [#33521](https://github.com/storybookjs/storybook/pull/33521), thanks @kasperpeulen!
+- Initiate: Fix used port flag handling - [#33544](https://github.com/storybookjs/storybook/pull/33544), thanks @ndelangen!
+- Manager: Fix system query parameters being overridable - [#33535](https://github.com/storybookjs/storybook/pull/33535), thanks @JReinhold!
+- NextJSVite: Upgrade plugin - [#33538](https://github.com/storybookjs/storybook/pull/33538), thanks @ndelangen!
+
 ## 10.2.0-alpha.18
 
 - Build: Fix `ejslint` execution path in lint-staged - [#33504](https://github.com/storybookjs/storybook/pull/33504), thanks @Yeonny0723!

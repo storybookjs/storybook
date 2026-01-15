@@ -156,6 +156,17 @@ export async function initiate(options: CommandOptions): Promise<void> {
   });
 
   if (initiateResult?.shouldRunDev) {
+    const defaultPort = 6006;
+    const availablePort = await getServerPort(defaultPort);
+    const useAlternativePort = availablePort !== defaultPort;
+
+    if (useAlternativePort) {
+      initiateResult.storybookCommand = initiateResult.storybookCommand?.replace(
+        `-p ${defaultPort}`,
+        `-p ${availablePort}`
+      );
+    }
+
     await runStorybookDev(initiateResult);
   }
 }
@@ -182,37 +193,25 @@ async function runStorybookDev(result: {
       parts.push('--silent');
     }
 
-    // npm needs extra -- to pass flags to the command
-    // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`
-    const doesNeedExtraDash =
-      packageManager.type === PackageManagerName.NPM ||
-      packageManager.type === PackageManagerName.BUN;
+    const supportSbFlags = projectType !== ProjectType.ANGULAR;
 
-    if (doesNeedExtraDash && projectType !== ProjectType.ANGULAR) {
-      parts.push('--');
-    }
+    if (supportSbFlags) {
+      // npm needs extra -- to pass flags to the command
+      // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`
+      const doesNeedExtraDash =
+        packageManager.type === PackageManagerName.NPM ||
+        packageManager.type === PackageManagerName.BUN;
 
-    if (supportsOnboarding && shouldOnboard) {
-      parts.push('--initial-path=/onboarding');
-    }
-
-    // Check if default port 6006 is available
-    const defaultPort = 6006;
-    const availablePort = await getServerPort(defaultPort);
-    const useAlternativePort = availablePort !== defaultPort;
-
-    if (useAlternativePort) {
-      const numberString = defaultPort.toString();
-      const findPortNumberIndex = parts.findIndex((flag) => flag === numberString);
-
-      if (findPortNumberIndex !== -1) {
-        parts[findPortNumberIndex] = availablePort.toString();
-      } else {
-        parts.push(`-p`, `${availablePort}`);
+      if (doesNeedExtraDash) {
+        parts.push('--');
       }
-    }
 
-    parts.push('--quiet');
+      if (supportsOnboarding && shouldOnboard) {
+        parts.push('--initial-path=/onboarding');
+      }
+
+      parts.push('--quiet');
+    }
 
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues

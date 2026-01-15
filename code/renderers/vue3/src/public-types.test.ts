@@ -170,7 +170,7 @@ describe('Story args can be inferred', () => {
     });
 
     const Basic: StoryObj<typeof meta> = {
-      args: { decoratorArg: ', decoratorArg2: ', label: 'good' },
+      args: { decoratorArg: '', decoratorArg2: '', label: 'good' },
     };
 
     type Expected = StoryAnnotations<VueRenderer, Props, SetOptional<Props, 'disabled'>>;

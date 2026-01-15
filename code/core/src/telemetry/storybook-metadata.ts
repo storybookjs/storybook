@@ -222,6 +222,7 @@ export const computeStorybookMetadata = async ({
     storybookPackages,
     addons,
     hasStorybookEslint,
+    packageJsonType: packageJson.type ?? 'unknown',
   };
 };
 

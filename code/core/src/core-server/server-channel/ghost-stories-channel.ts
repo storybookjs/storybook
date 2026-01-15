@@ -35,12 +35,16 @@ export function initGhostStoriesChannel(
     try {
       const ghostRunStart = Date.now();
       const lastEvents = await getLastEvents();
-      const sessionId = await getSessionId();
       const lastInit = lastEvents?.init;
-      const lastGhostStoriesRun = lastEvents?.['ghost-stories'];
+      if (!lastEvents || !lastInit) {
+        return;
+      }
+
+      const sessionId = await getSessionId();
+      const lastGhostStoriesRun = lastEvents['ghost-stories'];
       if (
         lastGhostStoriesRun ||
-        (lastInit?.body?.sessionId && lastInit?.body?.sessionId !== sessionId)
+        (lastInit.body?.sessionId && lastInit.body.sessionId !== sessionId)
       ) {
         return;
       }
@@ -70,9 +74,8 @@ export function initGhostStoriesChannel(
       if (candidatesResult.error) {
         stats.totalRunDuration = Date.now() - ghostRunStart;
         telemetry('ghost-stories', {
-          success: false,
-          error: candidatesResult.error,
           stats,
+          runError: candidatesResult.error,
         });
         return;
       }
@@ -80,9 +83,8 @@ export function initGhostStoriesChannel(
       if (candidatesResult.candidates.length === 0) {
         stats.totalRunDuration = Date.now() - ghostRunStart;
         telemetry('ghost-stories', {
-          success: false,
-          error: 'No candidates found',
           stats,
+          runError: 'No candidates found',
         });
         return;
       }
@@ -92,19 +94,22 @@ export function initGhostStoriesChannel(
       const testRunResult = await runStoryTests(candidatesResult.candidates);
       stats.totalRunDuration = Date.now() - ghostRunStart;
       stats.testRunDuration = testRunResult.duration;
+      if (testRunResult.runError) {
+        telemetry('ghost-stories', {
+          stats,
+          runError: testRunResult.runError,
+        });
+        return;
+      }
+
       telemetry('ghost-stories', {
-        ...(testRunResult.error !== undefined ? { error: testRunResult.error } : {}),
-        success: testRunResult.success,
         stats,
         results: testRunResult.summary,
       });
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-
+    } catch {
       telemetry('ghost-stories', {
-        success: false,
-        error: errorMessage,
         stats,
+        runError: 'Unknown error during ghost run',
       });
     } finally {
       // we don't currently do anything with this, but will be useful in the future

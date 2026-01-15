@@ -137,7 +137,6 @@ describe('ghostStoriesChannel', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFile.mockResolvedValue(
         JSON.stringify({
-          success: true,
           numTotalTests: 2,
           numPassedTests: 2,
           numFailedTests: 0,
@@ -186,7 +185,6 @@ describe('ghostStoriesChannel', () => {
 
       // Telemetry is called with the correct data
       expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
-        success: true,
         stats: {
           globMatchCount: 10,
           candidateAnalysisDuration: expect.any(Number),
@@ -199,8 +197,6 @@ describe('ghostStoriesChannel', () => {
         results: {
           total: 2,
           passed: 2,
-          failed: 0,
-          failureRate: 0,
           successRate: 1,
           successRateWithoutEmptyRender: 1,
           categorizedErrors: expect.any(Object),
@@ -238,7 +234,6 @@ describe('ghostStoriesChannel', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFile.mockResolvedValue(
         JSON.stringify({
-          success: false,
           numTotalTests: 2,
           numPassedTests: 0,
           numFailedTests: 2,
@@ -291,7 +286,6 @@ describe('ghostStoriesChannel', () => {
       expect(mockTelemetry.telemetry).toHaveBeenCalledWith(
         'ghost-stories',
         expect.objectContaining({
-          success: false,
           stats: {
             globMatchCount: 10,
             candidateAnalysisDuration: expect.any(Number),
@@ -304,8 +298,6 @@ describe('ghostStoriesChannel', () => {
           results: expect.objectContaining({
             total: 2,
             passed: 0,
-            failed: 2,
-            failureRate: 1,
             successRate: 0,
             // categorizedErrors is now an object with categories as keys
             categorizedErrors: expect.any(Object),
@@ -437,8 +429,7 @@ describe('ghostStoriesChannel', () => {
 
         expect(mockStoryGeneration.getComponentCandidates).toHaveBeenCalled();
         expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
-          success: false,
-          error: 'Failed to analyze components',
+          runError: 'Failed to analyze components',
           stats: {
             globMatchCount: 0,
             candidateAnalysisDuration: 0,
@@ -478,8 +469,7 @@ describe('ghostStoriesChannel', () => {
 
         expect(mockStoryGeneration.getComponentCandidates).toHaveBeenCalled();
         expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
-          success: false,
-          error: 'No candidates found',
+          runError: 'No candidates found',
           stats: {
             globMatchCount: 5,
             candidateAnalysisDuration: expect.any(Number),
@@ -523,8 +513,7 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
-          success: false,
-          error: 'JSON report not found',
+          runError: 'JSON report not found',
           stats: {
             globMatchCount: 5,
             candidateAnalysisDuration: 0,
@@ -561,7 +550,6 @@ describe('ghostStoriesChannel', () => {
         mockFs.existsSync.mockReturnValue(true);
         mockFs.readFile.mockResolvedValue(
           JSON.stringify({
-            success: false,
             numTotalTests: 2,
             numPassedTests: 0,
             numFailedTests: 2,
@@ -578,8 +566,7 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
-          success: false,
-          error: 'Startup Error',
+          runError: 'Startup Error',
           stats: {
             globMatchCount: 5,
             candidateAnalysisDuration: 0,
@@ -605,8 +592,7 @@ describe('ghostStoriesChannel', () => {
         });
 
         expect(mockTelemetry.telemetry).toHaveBeenCalledWith('ghost-stories', {
-          success: false,
-          error: 'Cache error',
+          runError: 'Unknown error during ghost run',
           stats: {},
         });
       });

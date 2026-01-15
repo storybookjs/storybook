@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 
 import MyPage from './Page.vue';
 
-// Example of using custom args that don''t map to component props
+// Example of using custom args that don't map to component props
 type PageArgs = WithCustomArgs<typeof MyPage, { footer?: string }>;
 
 const meta = {

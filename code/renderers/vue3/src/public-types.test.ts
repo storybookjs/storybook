@@ -7,12 +7,14 @@ import type { Canvas, ComponentAnnotations, StoryAnnotations } from 'storybook/i
 import { expectTypeOf } from 'expect-type';
 import type { SetOptional } from 'type-fest';
 import { h } from 'vue';
+import { defineComponent } from 'vue';
+
 
 import BaseLayout from './__tests__/BaseLayout.vue';
 import Button from './__tests__/Button.vue';
 import Decorator2TsVue from './__tests__/Decorator2.vue';
 import DecoratorTsVue from './__tests__/Decorator.vue';
-import type { ComponentPropsAndSlots, Decorator, Meta, StoryObj } from './public-types';
+import type { ComponentPropsAndSlots, Decorator, Meta, StoryObj, WithCustomArgs } from './public-types';
 import type { VueRenderer } from './types';
 
 type ButtonProps = ComponentPropsAndSlots<typeof Button>;
@@ -211,15 +213,10 @@ it('mount accepts a Component', () => {
 });
 
 
-// Test for WithCustomArgs type helper
-import { describe, it } from 'vitest';
-import { expectTypeOf } from 'expect-type';
-import { defineComponent } from 'vue';
 
-import type { Meta, StoryObj, WithCustomArgs } from '../public-types';
 
 describe('WithCustomArgs', () => {
-  it('should allow custom args that don''t map to component props', () => {
+  it(`should allow custom args that don't map to component props`, () => {
     const MyComponent = defineComponent({
       props: {
         title: { type: String, required: true },

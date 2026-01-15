@@ -52,8 +52,8 @@ function isUserCode(moduleName: string) {
 
   return Boolean(
     !moduleName.startsWith('vite/') &&
-      !moduleName.startsWith('\0') &&
-      moduleName !== 'react/jsx-runtime'
+    !moduleName.startsWith('\0') &&
+    moduleName !== 'react/jsx-runtime'
   );
 }
 

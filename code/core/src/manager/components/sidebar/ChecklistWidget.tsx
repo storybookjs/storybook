@@ -121,6 +121,7 @@ const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
   }),
   ({ theme, isSkipped }) =>
     isSkipped && {
+      alignSelf: 'flex-start',
       '&:after': {
         content: '""',
         position: 'absolute',

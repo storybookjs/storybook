@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "10.2.0-alpha.9",
+  "version": "10.2.0-beta.0",
   "description": "Storybook Docs: Document UI components automatically with stories and MDX",
   "keywords": [
     "docs",
@@ -81,7 +81,7 @@
   "dependencies": {
     "@mdx-js/react": "^3.0.0",
     "@storybook/csf-plugin": "workspace:*",
-    "@storybook/icons": "^2.0.0",
+    "@storybook/icons": "^2.0.1",
     "@storybook/react-dom-shim": "workspace:*",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
@@ -105,7 +105,7 @@
     "rehype-slug": "^6.0.0",
     "telejson": "8.0.0",
     "tocbot": "^4.20.1",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "vite": "^7.0.4"
   },
   "peerDependencies": {

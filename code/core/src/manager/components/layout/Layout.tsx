@@ -11,13 +11,16 @@ import { Notifications } from '../../container/Notifications';
 import { MobileNavigation } from '../mobile/navigation/MobileNavigation';
 import { useLayout } from './LayoutProvider';
 import { useDragging } from './useDragging';
+import { useLandmarkIndicator } from './useLandmarkIndicator';
 
 interface InternalLayoutState {
   isDragging: boolean;
 }
 
-interface ManagerLayoutState
-  extends Pick<API_Layout, 'navSize' | 'bottomPanelHeight' | 'rightPanelWidth' | 'panelPosition'> {
+interface ManagerLayoutState extends Pick<
+  API_Layout,
+  'navSize' | 'bottomPanelHeight' | 'rightPanelWidth' | 'panelPosition'
+> {
   viewMode: API_ViewMode;
 }
 
@@ -156,6 +159,9 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     isDragging,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
 
+  // Install landmark navigation listener in parent container of all landmarks.
+  useLandmarkIndicator();
+
   return (
     <LayoutContainer
       navSize={navSize}
@@ -167,39 +173,35 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       showPanel={showPanel}
     >
       {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
-      {isDesktop && (
-        <>
+      <>
+        {isDesktop && (
           <SidebarContainer>
             <Drag ref={sidebarResizerRef} />
             {slots.slotSidebar}
           </SidebarContainer>
-
-          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
-
-          {showPanel && (
-            <PanelContainer position={panelPosition}>
-              <Drag
-                orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
-                position={panelPosition === 'bottom' ? 'left' : 'right'}
-                ref={panelResizerRef}
-              />
-              {slots.slotPanel}
-            </PanelContainer>
-          )}
-        </>
-      )}
-
-      {isMobile && (
-        <>
+        )}
+        {isMobile && (
           <OrderedMobileNavigation
             menu={slots.slotSidebar}
             panel={slots.slotPanel}
             showPanel={showPanel}
           />
-          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
-          <Notifications />
-        </>
-      )}
+        )}
+
+        <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
+
+        {isDesktop && showPanel && (
+          <PanelContainer position={panelPosition}>
+            <Drag
+              orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
+              position={panelPosition === 'bottom' ? 'left' : 'right'}
+              ref={panelResizerRef}
+            />
+            {slots.slotPanel}
+          </PanelContainer>
+        )}
+        {isMobile && <Notifications />}
+      </>
     </LayoutContainer>
   );
 };

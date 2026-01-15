@@ -4,6 +4,7 @@ import actionAnnotations, { type ActionsTypes } from '../actions/preview';
 import backgroundsAnnotations, { type BackgroundTypes } from '../backgrounds/preview';
 import componentTestingAnnotations from '../component-testing/preview';
 import { type ControlsTypes } from '../controls/preview';
+import ghostStoriesAnnotations from '../core-server/utils/ghost-stories/test-annotations';
 import highlightAnnotations, { type HighlightTypes } from '../highlight/preview';
 import measureAnnotations, { type MeasureTypes } from '../measure/preview';
 import outlineAnnotations, { type OutlineTypes } from '../outline/preview';
@@ -47,5 +48,7 @@ export function getCoreAnnotations() {
     (componentTestingAnnotations.default ?? componentTestingAnnotations)(),
     // @ts-expect-error CJS fallback
     (testAnnotations.default ?? testAnnotations)(),
+    // @ts-expect-error CJS fallback
+    (ghostStoriesAnnotations.default ?? ghostStoriesAnnotations)(),
   ];
 }

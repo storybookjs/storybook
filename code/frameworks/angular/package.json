@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "10.2.0-alpha.9",
+  "version": "10.2.0-beta.0",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -78,10 +78,10 @@
     "@angular/platform-browser": "^19.1.1",
     "@angular/platform-browser-dynamic": "^19.1.1",
     "@storybook/core-webpack": "workspace:*",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "rimraf": "^6.0.1",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "webpack": "5",
     "zone.js": "^0.15.0"
   },

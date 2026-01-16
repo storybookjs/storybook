@@ -12,7 +12,7 @@ import { styled } from 'storybook/theming';
 import { Shortcut } from '../../Shortcut';
 import { NumericInput } from '../NumericInput';
 
-const ZOOM_LEVELS = [0.25, 0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 2, 3, 4] as const;
+const ZOOM_LEVELS = [0.25, 0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 2, 3, 4, 8] as const;
 const INITIAL_ZOOM_LEVEL = 1;
 
 const ZoomButton = styled(Button)({
@@ -93,7 +93,7 @@ export const Zoom = memo<{
                 }
                 value={`${Math.round(value * 100)}%`}
                 minValue={1}
-                maxValue={1000}
+                maxValue={800}
                 setValue={(value: string) => {
                   const zoomLevel = parseInt(value, 10) / 100;
                   if (!Number.isNaN(zoomLevel)) {

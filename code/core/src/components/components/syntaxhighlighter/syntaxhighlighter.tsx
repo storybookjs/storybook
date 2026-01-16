@@ -101,10 +101,13 @@ const Scroller = styled(UnstyledScroller)(
   {
     position: 'relative',
     width: 'fit-content',
+    maxWidth: '100%',
     '> div': {
       width: 'fit-content',
+      maxWidth: '100%',
       '> div > pre': {
         width: 'fit-content',
+        maxWidth: '100%',
       },
     },
   },
@@ -142,9 +145,11 @@ const processLineNumber = (row: any) => {
   const processedLineNumberNode = {
     ...lineNumberNode,
     children: [],
+    // empty the line-number element
     properties: {
       ...lineNumberNode.properties,
       'data-line-number': lineNumber,
+      // remove the userSelect: none style, which will produce extra empty lines when copy-pasting in firefox
       style: { ...lineNumberNode.properties.style, userSelect: 'auto' },
     },
   };

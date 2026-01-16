@@ -104,9 +104,9 @@ export default function Onboarding({
         userAgent,
       });
       setStep('7:FinishedOnboarding');
-      selectStory('configure-your-project--docs');
+      api.selectFirstStory();
     },
-    [api, selectStory, userAgent]
+    [api, userAgent]
   );
 
   useEffect(() => {

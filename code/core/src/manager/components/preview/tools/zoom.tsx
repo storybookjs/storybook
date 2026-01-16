@@ -197,6 +197,12 @@ const ZoomWrapper = memo<{
       action: zoomIn,
     });
     api.setAddonShortcut('zoom', {
+      label: 'Zoom in',
+      defaultShortcut: ['alt', '+'],
+      actionName: 'zoomIn',
+      action: zoomIn,
+    });
+    api.setAddonShortcut('zoom', {
       label: 'Zoom out',
       defaultShortcut: ['alt', '-'],
       actionName: 'zoomOut',

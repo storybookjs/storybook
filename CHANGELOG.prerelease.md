@@ -1,3 +1,48 @@
+## 10.2.0-beta.1
+
+- CSF-Factories: Allow kebab-case HTML attribute names in web components args - [#33526](https://github.com/storybookjs/storybook/pull/33526), thanks @kasperpeulen!
+- CSF-Factories: Export WebComponentsTypes and VueTypes - [#33521](https://github.com/storybookjs/storybook/pull/33521), thanks @kasperpeulen!
+
+## 10.2.0-beta.0
+
+- Manager: Fix system query parameters being overridable - [#33535](https://github.com/storybookjs/storybook/pull/33535), thanks @JReinhold!
+- NextJSVite: Upgrade plugin - [#33538](https://github.com/storybookjs/storybook/pull/33538), thanks @ndelangen!
+
+## 10.2.0-alpha.18
+
+- Build: Fix `ejslint` execution path in lint-staged - [#33504](https://github.com/storybookjs/storybook/pull/33504), thanks @Yeonny0723!
+- CLI: Detect free port when running dev during initiate - [#33532](https://github.com/storybookjs/storybook/pull/33532), thanks @ndelangen!
+- Core: Improve path handling in arg types data extraction - [#33536](https://github.com/storybookjs/storybook/pull/33536), thanks @yannbf!
+- Core: Refactor channel initialization - [#33520](https://github.com/storybookjs/storybook/pull/33520), thanks @yannbf!
+- Telemetry: Add `packageJson.type` - [#33525](https://github.com/storybookjs/storybook/pull/33525), thanks @ndelangen!
+- UI: Improve landmark navigation - [#33457](https://github.com/storybookjs/storybook/pull/33457), thanks @Sidnioulz!
+
+## 10.2.0-alpha.17
+
+- Core: Improve the story generation experience - [#33259](https://github.com/storybookjs/storybook/pull/33259), thanks @yannbf!
+
+## 10.2.0-alpha.16
+
+- Addon Pseudo States: Fix stylesheet rewrite for `:not()` with parenthesis in inner selector - [#33491](https://github.com/storybookjs/storybook/pull/33491), thanks @ghengeveld!
+- CSF: Add CSF Factories for Vue3, Web Components, and Angular - [#33365](https://github.com/storybookjs/storybook/pull/33365), thanks @kasperpeulen!
+
+## 10.2.0-alpha.15
+
+- Core: Add global error boundary for Manager UI - [#33211](https://github.com/storybookjs/storybook/pull/33211), thanks @copilot-swe-agent!
+- Core: Fix play function `mount` detection when destructuring in the function body - [#33367](https://github.com/storybookjs/storybook/pull/33367), thanks @ghengeveld!
+- Core: Honor BROWSER shell scripts before xdg-open - [#33292](https://github.com/storybookjs/storybook/pull/33292), thanks @robbchar!
+- Core: Redesign and refactor Viewports tool - [#33290](https://github.com/storybookjs/storybook/pull/33290), thanks @ghengeveld!
+- Core: Render sidebar toggle on settings pages - [#33501](https://github.com/storybookjs/storybook/pull/33501), thanks @ghengeveld!
+- Core: Support disabling Checklist widget through feature config - [#33430](https://github.com/storybookjs/storybook/pull/33430), thanks @ghengeveld!
+- Core: Use canonical links in sidebar and menu - [#33400](https://github.com/storybookjs/storybook/pull/33400), thanks @Sidnioulz!
+- Core: Zoom tool reimplementation - [#33375](https://github.com/storybookjs/storybook/pull/33375), thanks @ghengeveld!
+- Manifests: Add support for summaries in MDX files - [#33475](https://github.com/storybookjs/storybook/pull/33475), thanks @JReinhold!
+- Revert "ReactDocgen: Try using the latest version of the original" - [#33499](https://github.com/storybookjs/storybook/pull/33499), thanks @ndelangen!
+- TypeScript: Support `exactOptionalPropertyTypes` for public API types - [#33149](https://github.com/storybookjs/storybook/pull/33149), thanks @copilot-swe-agent!
+- UI: Fix regression in select close handler focus - [#33470](https://github.com/storybookjs/storybook/pull/33470), thanks @Sidnioulz!
+- UI: Fix search highlight visibility in High Contrast Mode - [#33427](https://github.com/storybookjs/storybook/pull/33427), thanks @Maelryn!
+- Webpack: Revert "disable `bugfixes` property in swc and babel - [#33498](https://github.com/storybookjs/storybook/pull/33498), thanks @ndelangen!
+
 ## 10.2.0-alpha.14
 
 - ReactDocgen: Swap `@storybook/react-docgen-typescript-plugin` to `react-docgen-typescript-plugin` - [#33454](https://github.com/storybookjs/storybook/pull/33454), thanks @ndelangen!

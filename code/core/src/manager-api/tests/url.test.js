@@ -364,10 +364,21 @@ describe('getStoryHrefs', () => {
     store.setState(state);
 
     const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
-      queryParams: { one: 1, foo: { bar: 'baz' } },
+      queryParams: {
+        one: 1,
+        foo: { bar: 'baz' },
+        id: 'not-allowed-in-preview',
+        viewMode: 'not-allowed-in-preview',
+      },
     });
     expect(managerHref).toContain('&args=a:1&globals=b:2&one=1&foo.bar=baz');
     expect(previewHref).toContain('&args=a:1&globals=b:2&one=1&foo.bar=baz');
+
+    expect(managerHref).toContain('id=not-allowed-in-preview');
+    expect(previewHref).not.toContain('id=not-allowed-in-preview');
+
+    expect(managerHref).toContain('viewMode=not-allowed-in-preview');
+    expect(previewHref).not.toContain('viewMode=not-allowed-in-preview');
   });
 
   it('correctly preserves args and globals encoding', () => {

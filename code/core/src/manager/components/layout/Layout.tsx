@@ -11,6 +11,7 @@ import { Notifications } from '../../container/Notifications';
 import { MobileNavigation } from '../mobile/navigation/MobileNavigation';
 import { useLayout } from './LayoutProvider';
 import { useDragging } from './useDragging';
+import { useLandmarkIndicator } from './useLandmarkIndicator';
 
 interface InternalLayoutState {
   isDragging: boolean;
@@ -154,6 +155,9 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     showPages,
     showPanel,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
+
+  // Install landmark navigation listener in parent container of all landmarks.
+  useLandmarkIndicator();
 
   return (
     <LayoutContainer>

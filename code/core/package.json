@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.2.0-alpha.14",
+  "version": "10.2.0-beta.1",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -228,6 +228,7 @@
     "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
     "@react-aria/interactions": "^3.25.5",
+    "@react-aria/landmark": "^3.0.8",
     "@react-aria/overlays": "^3.29.1",
     "@react-aria/tabs": "^3.10.7",
     "@react-aria/toolbar": "3.0.0-beta.20",

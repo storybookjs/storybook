@@ -203,7 +203,7 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
 
   return (
     <PopoverProvider
-      ariaLabel="Argument value details"
+      ariaLabel="Arg value details"
       placement="bottom"
       visible={isOpen}
       onVisibleChange={(isVisible) => {

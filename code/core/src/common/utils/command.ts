@@ -128,28 +128,37 @@ function tryCommandVariations(
   args: string[],
   options: Options
 ): ResultPromise {
-  let lastError: any;
+  // Start with the first command - this gives us a real ResultPromise
+  const firstAttempt = execa(commandVariations[0], args, options);
 
-  const tryNext = (index: number): ResultPromise => {
-    if (index >= commandVariations.length) {
-      throw lastError;
+  // If there's only one variation, return it directly (no casting needed)
+  if (commandVariations.length === 1) {
+    return firstAttempt;
+  }
+
+  // For multiple variations, we need to handle retries
+  // We'll wrap the promise but preserve the process properties from the first attempt
+  const retryWrapper = firstAttempt.catch((error: any) => {
+    if (!shouldRetry(error, commandVariations.length === 1)) {
+      throw error;
     }
 
-    const cmd = commandVariations[index];
+    logger.debug(`Command "${commandVariations[0]}" not found, trying next variation...`);
 
-    return execa(cmd, args, options).catch((error: any) => {
-      lastError = error;
+    // Try remaining variations recursively
+    return tryCommandVariations(commandVariations.slice(1), args, options);
+  });
 
-      if (!shouldRetry(error, index === commandVariations.length - 1)) {
-        throw error;
-      }
-
-      logger.debug(`Command "${cmd}" not found, trying next variation...`);
-      return tryNext(index + 1);
-    });
-  };
-
-  return tryNext(0);
+  // Copy process properties from firstAttempt to retryWrapper
+  // This allows callers to access pid, stdin, stdout, stderr if needed
+  return Object.assign(retryWrapper, {
+    pid: firstAttempt.pid,
+    stdin: firstAttempt.stdin,
+    stdout: firstAttempt.stdout,
+    stderr: firstAttempt.stderr,
+    all: firstAttempt.all,
+    kill: firstAttempt.kill.bind(firstAttempt),
+  }) as ResultPromise;
 }
 
 /**

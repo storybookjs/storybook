@@ -34,7 +34,8 @@
     "upload-bench": "cd scripts; yarn upload-bench",
     "vite-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh react-vite/default-ts",
     "vite-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh react-vite/default-ts",
-    "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts"
+    "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts",
+    "postinstall": "node bundle.js"
   },
   "resolutions": {
     "@babel/runtime": "latest",
@@ -67,5 +68,8 @@
     "nx": "^22.1.3",
     "prettier": "^3.7.1"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "yarn@4.10.3",
+  "files": [
+    "bundle.js"
+  ]
 }

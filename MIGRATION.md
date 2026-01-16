@@ -629,7 +629,7 @@ PopoverProvider is based on react-aria. It must have a single child that acts as
 
 ##### Added: ariaLabel
 
-The `ariaLabel` prop was added to provide an accessible label for the popover dialog. This label is announced by screen readers when the popover opens. **This prop will become mandatory in Storybook 11.** Provide a concise description of the popover's purpose.
+The `ariaLabel` prop was added in Storybook 10.2 to provide an accessible label for the popover dialog. This label is announced by screen readers when the popover opens. `ariaLabel` will become mandatory in Storybook 11.
 
 ```tsx
 <PopoverProvider ariaLabel="Share options" popover={<ShareMenu />}>

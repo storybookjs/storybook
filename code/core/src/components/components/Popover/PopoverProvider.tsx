@@ -1,6 +1,5 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
 import React, { cloneElement, useCallback, useState } from 'react';
-import type { FocusableElement } from '@react-types/shared';
 
 import { deprecate } from 'storybook/internal/client-logger';
 

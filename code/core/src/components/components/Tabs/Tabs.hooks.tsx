@@ -69,7 +69,7 @@ export function useList(list: ChildrenListComplete) {
       return (
         <>
           <PopoverProvider
-            ariaLabel="More tabs"
+            ariaLabel="Additional tabs"
             visible={isTooltipVisible}
             onVisibleChange={setTooltipVisible}
             placement="bottom"

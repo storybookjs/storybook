@@ -196,7 +196,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
       onMouseEnter: handlers.onMouseEnter,
       node: shouldRender ? (
         <PopoverProvider
-          ariaLabel="Story actions"
+          ariaLabel="Context menu"
           placement="bottom-end"
           defaultVisible={false}
           visible={isOpen}

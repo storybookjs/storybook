@@ -104,9 +104,11 @@ export const PopoverProvider = ({
     >
       <Pressable>
         {
+          // React-aria does not inject aria-haspopup='dialog' to support legacy screen readers, so we do it ourselves.
+          // @ts-expect-error react-aria does not allow passing valid ARIA attributes to Pressable children
           cloneElement(children, {
             'aria-haspopup': 'dialog',
-          } as DOMAttributes<Element>) as ReactElement<DOMAttributes<FocusableElement>, string>
+          })
         }
       </Pressable>
       <PopoverUpstream

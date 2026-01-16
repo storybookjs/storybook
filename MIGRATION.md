@@ -637,10 +637,6 @@ The `ariaLabel` prop was added to provide an accessible label for the popover di
 </PopoverProvider>
 ```
 
-##### Automatic aria-haspopup
-
-PopoverProvider now automatically sets `aria-haspopup="dialog"` on the trigger element. You no longer need to manually add this attribute to your trigger buttons.
-
 #### WithTooltip Component API Changes
 
 The WithTooltip component has been reimplemented from the ground up, under the new name `TooltipProvider`. The new implementation will replace `WithTooltip` entirely in Storybook 11. Below is a summary of the changes between both APIs, which will take full effect in Storybook 11.

@@ -1,3 +1,8 @@
+## 10.2.0-beta.1
+
+- CSF-Factories: Allow kebab-case HTML attribute names in web components args - [#33526](https://github.com/storybookjs/storybook/pull/33526), thanks @kasperpeulen!
+- CSF-Factories: Export WebComponentsTypes and VueTypes - [#33521](https://github.com/storybookjs/storybook/pull/33521), thanks @kasperpeulen!
+
 ## 10.2.0-beta.0
 
 - Manager: Fix system query parameters being overridable - [#33535](https://github.com/storybookjs/storybook/pull/33535), thanks @JReinhold!

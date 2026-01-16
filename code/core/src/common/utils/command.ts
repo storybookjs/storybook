@@ -130,15 +130,14 @@ function tryCommandVariations(
 ): ResultPromise {
   let lastError: any;
 
-  const tryNext = async (index: number): Promise<any> => {
+  const tryNext = (index: number): ResultPromise => {
     if (index >= commandVariations.length) {
       throw lastError;
     }
 
     const cmd = commandVariations[index];
-    try {
-      return await execa(cmd, args, options);
-    } catch (error: any) {
+
+    return execa(cmd, args, options).catch((error: any) => {
       lastError = error;
 
       if (!shouldRetry(error, index === commandVariations.length - 1)) {
@@ -147,10 +146,10 @@ function tryCommandVariations(
 
       logger.debug(`Command "${cmd}" not found, trying next variation...`);
       return tryNext(index + 1);
-    }
+    });
   };
 
-  return tryNext(0) as ResultPromise;
+  return tryNext(0);
 }
 
 /**

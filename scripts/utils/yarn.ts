@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
-import type { TemplateKey } from '../get-template';
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { exec } from './exec';
 
 export type YarnOptions = {
@@ -84,7 +84,7 @@ export const addWorkaroundResolutions = async ({
   cwd,
   dryRun,
   key,
-}: YarnOptions & { key?: TemplateKey }) => {
+}: YarnOptions & { key?: AllTemplatesKey }) => {
   logger.info(`🔢 Adding resolutions for workarounds`);
 
   if (dryRun) {
@@ -131,7 +131,7 @@ export const configureYarn2ForVerdaccio = async ({
   dryRun,
   debug,
   key,
-}: YarnOptions & { key: TemplateKey }) => {
+}: YarnOptions & { key: AllTemplatesKey }) => {
   const command = [
     // We don't want to use the cache or we might get older copies of our built packages
     // (with identical versions), as yarn (correctly I guess) assumes the same version hasn't changed

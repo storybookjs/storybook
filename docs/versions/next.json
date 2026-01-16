@@ -1,1 +1,1 @@
-{"version":"10.2.0-alpha.17","info":{"plain":"- Core: Improve the story generation experience - [#33259](https://github.com/storybookjs/storybook/pull/33259), thanks @yannbf!"}}
+{"version":"10.2.0-beta.1","info":{"plain":"- CSF-Factories: Allow kebab-case HTML attribute names in web components args - [#33526](https://github.com/storybookjs/storybook/pull/33526), thanks @kasperpeulen!\n- CSF-Factories: Export WebComponentsTypes and VueTypes - [#33521](https://github.com/storybookjs/storybook/pull/33521), thanks @kasperpeulen!"}}

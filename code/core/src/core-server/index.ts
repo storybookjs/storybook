@@ -30,3 +30,5 @@ export {
   fullTestProviderStore as internal_fullTestProviderStore,
   universalTestProviderStore as internal_universalTestProviderStore,
 } from './stores/test-provider';
+
+export { getServerPort } from './utils/server-address';

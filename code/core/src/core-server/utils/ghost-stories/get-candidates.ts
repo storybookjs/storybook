@@ -185,8 +185,7 @@ export async function getComponentCandidates({
       candidates,
       globMatchCount,
     };
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+  } catch {
     return {
       candidates: [],
       error: 'Failed to find candidates',

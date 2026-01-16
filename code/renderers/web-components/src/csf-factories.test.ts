@@ -205,3 +205,23 @@ it('Components without Props can be used', () => {
 
   const Basic = meta.story();
 });
+
+// https://github.com/storybookjs/storybook/issues/33524
+it('✅ Kebab-case HTML attribute names are allowed in args', () => {
+  const meta = preview.meta({
+    component: 'my-button',
+    args: {
+      label: 'hello',
+      'aria-label': 'my button', // kebab-case attribute
+    },
+  });
+
+  const Basic = meta.story({
+    args: {
+      'data-testid': 'button-1', // kebab-case attribute
+    },
+  });
+
+  expect(meta.input.args?.['aria-label']).toBe('my button');
+  expect(Basic.input.args?.['data-testid']).toBe('button-1');
+});

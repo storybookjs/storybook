@@ -25,6 +25,34 @@ describe('categorize-render-errors', () => {
         });
       });
 
+      describe('TEST_FILE_IMPORT_ERROR', () => {
+        it('should categorize test file import errors', () => {
+          expect(
+            categorizeError(
+              'Failed to import test file /foo/node_modules/@storybook/addon-vitest/dist/vitest-plugin/setup-file.js'
+            ).category
+          ).toBe(ERROR_CATEGORIES.TEST_FILE_IMPORT_ERROR);
+
+          expect(
+            categorizeError('Failed to import test file /path/to/test/setup.ts').category
+          ).toBe(ERROR_CATEGORIES.TEST_FILE_IMPORT_ERROR);
+        });
+      });
+
+      describe('DYNAMIC_MODULE_IMPORT_ERROR', () => {
+        it('should categorize dynamic module import errors', () => {
+          expect(
+            categorizeError(
+              'TypeError: Failed to fetch dynamically imported module: http://localhost:63315/node_modules/.cache/storybook/2523d14eb1a348695c30002850a8852e9305e60b397e9b529978c17a0d2cd524/sb-vitest/deps/react-18-PYSEDAWB-3KPRILU2.js?v=6f767e0c'
+            ).category
+          ).toBe(ERROR_CATEGORIES.DYNAMIC_MODULE_IMPORT_ERROR);
+
+          expect(categorizeError('Failed to fetch dynamically imported module').category).toBe(
+            ERROR_CATEGORIES.DYNAMIC_MODULE_IMPORT_ERROR
+          );
+        });
+      });
+
       describe('HOOK_USAGE_ERROR', () => {
         it('should categorize all hook usage errors appropriately', () => {
           expect(

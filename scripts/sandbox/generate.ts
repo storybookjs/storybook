@@ -321,7 +321,7 @@ const runGenerators = async (
 
   const hasGenerationErrors = generationResults.some((result) => result.status === 'rejected');
 
-  if (!isCI) {
+  if (!isCI || process.env.STORYBOOK_SANDBOX_GENERATE) {
     if (hasGenerationErrors) {
       console.log('failed:');
       console.log(

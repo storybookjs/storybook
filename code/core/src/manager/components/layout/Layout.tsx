@@ -163,7 +163,6 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
 
   return (
     <LayoutContainer>
-      {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
       <>
         {isDesktop && (
           <SidebarContainer style={{ width: navSize }}>
@@ -185,8 +184,11 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           rightPanelWidth={rightPanelWidth}
           bottomPanelHeight={bottomPanelHeight}
         >
-          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
-
+          {showPages ? (
+            <PagesContainer>{slots.slotPages}</PagesContainer>
+          ) : (
+            <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
+          )}
           {isDesktop && showPanel && (
             <PanelContainer
               position={panelPosition}
@@ -271,6 +273,7 @@ const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
 const PagesContainer = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
+  flexGrow: 1,
   backgroundColor: theme.appContentBg,
   zIndex: 1,
 }));

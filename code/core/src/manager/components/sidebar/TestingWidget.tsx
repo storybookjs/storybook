@@ -36,10 +36,10 @@ const HoverCard = styled(Card)({
   },
 });
 
-const Collapsible = styled.div(({ theme }) => ({
+const Collapsible = styled.div({
   overflow: 'hidden',
-  boxShadow: `inset 0 -1px 0 ${theme.appBorderColor}`,
-}));
+  boxShadow: `inset 0 -1px 0 var(--sb-appBorderColor)`,
+});
 
 const Content = styled.div({
   display: 'flex',
@@ -113,12 +113,12 @@ const StatusButton = styled(ActionList.Toggle)<{
     (theme.base === 'light'
       ? {
           background: {
-            negative: theme.background.negative,
-            warning: theme.background.warning,
+            negative: 'var(--sb-background-negative)',
+            warning: 'var(--sb-background-warning)',
           }[status],
           color: {
-            negative: theme.color.negativeText,
-            warning: theme.color.warningText,
+            negative: 'var(--sb-color-negativeText)',
+            warning: 'var(--sb-color-warningText)',
           }[status],
         }
       : {
@@ -127,19 +127,19 @@ const StatusButton = styled(ActionList.Toggle)<{
             warning: `${theme.color.warning}22`,
           }[status],
           color: {
-            negative: theme.color.negative,
-            warning: theme.color.warning,
+            negative: 'var(--sb-color-negative)',
+            warning: 'var(--sb-color-warning)',
           }[status],
         })
 );
 
-const TestProvider = styled.div(({ theme }) => ({
+const TestProvider = styled.div({
   padding: 4,
 
   '&:not(:last-child)': {
-    boxShadow: `inset 0 -1px 0 ${theme.appBorderColor}`,
+    boxShadow: `inset 0 -1px 0 var(--sb-appBorderColor)`,
   },
-}));
+});
 
 interface TestingModuleProps {
   registeredTestProviders: Addon_Collection<Addon_TestProviderType>;

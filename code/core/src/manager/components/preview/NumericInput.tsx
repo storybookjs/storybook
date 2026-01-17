@@ -14,46 +14,44 @@ import { Form } from 'storybook/internal/components';
 import { useId } from '@react-aria/utils';
 import { styled } from 'storybook/theming';
 
-const Wrapper = styled.div<{ after?: ReactNode; before?: ReactNode }>(
-  ({ after, before, theme }) => ({
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
+const Wrapper = styled.div<{ after?: ReactNode; before?: ReactNode }>(({ after, before }) => ({
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
+  width: '100%',
+  height: 32,
+  paddingInline: 9,
+  fontSize: 'var(--sb-typography-size-s1)',
+  color: 'var(--sb-textMutedColor)',
+  background: 'var(--sb-input-background)',
+  boxShadow: `var(--sb-input-border) 0 0 0 1px inset`,
+  borderRadius: 'var(--sb-input-borderRadius)',
+  svg: {
+    display: 'block',
+  },
+  input: {
     width: '100%',
-    height: 32,
-    paddingInline: 9,
-    fontSize: theme.typography.size.s1,
-    color: theme.textMutedColor,
-    background: theme.input.background,
-    boxShadow: `${theme.input.border} 0 0 0 1px inset`,
-    borderRadius: theme.input.borderRadius,
-    svg: {
-      display: 'block',
-    },
-    input: {
-      width: '100%',
-      height: '100%',
-      minHeight: '100%',
-      flex: '1 1 auto',
-      paddingInline: 0,
-      fontSize: 'inherit',
-      background: 'transparent',
-      border: 'none',
+    height: '100%',
+    minHeight: '100%',
+    flex: '1 1 auto',
+    paddingInline: 0,
+    fontSize: 'inherit',
+    background: 'transparent',
+    border: 'none',
+    boxShadow: 'none',
+    color: 'var(--sb-input-color)',
+    '&:focus, &:focus-visible': {
       boxShadow: 'none',
-      color: theme.input.color,
-      '&:focus, &:focus-visible': {
-        boxShadow: 'none',
-        outline: 'none',
-      },
+      outline: 'none',
     },
-    '&:has(input:focus-visible)': {
-      outline: `2px solid ${theme.color.secondary}`,
-      outlineOffset: -2,
-    },
-    ...(after && { paddingRight: 2 }),
-    ...(before && { paddingLeft: 2 }),
-  })
-);
+  },
+  '&:has(input:focus-visible)': {
+    outline: `2px solid var(--sb-color-secondary)`,
+    outlineOffset: -2,
+  },
+  ...(after && { paddingRight: 2 }),
+  ...(before && { paddingLeft: 2 }),
+}));
 
 interface NumericInputProps extends Omit<ComponentProps<typeof Form.Input>, 'value'> {
   label?: string;

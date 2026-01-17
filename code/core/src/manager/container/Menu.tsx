@@ -25,9 +25,9 @@ export type MenuItem = NormalLink & {
   internal?: boolean;
 };
 
-const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
-  color: theme.color.secondary,
-}));
+const ProgressCircle = styled(ProgressSpinner)({
+  color: 'var(--sb-color-secondary)',
+});
 
 export const useMenu = ({
   api,

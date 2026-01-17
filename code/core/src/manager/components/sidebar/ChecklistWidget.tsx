@@ -93,17 +93,17 @@ const CollapseToggle = styled(ActionList.Button)({
   },
 });
 
-const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
-  color: theme.color.secondary,
-}));
+const ProgressCircle = styled(ProgressSpinner)({
+  color: 'var(--sb-color-secondary)',
+});
 
-const Checked = styled(StatusPassIcon)(({ theme }) => ({
+const Checked = styled(StatusPassIcon)({
   padding: 1,
   borderRadius: '50%',
-  background: theme.color.positive,
-  color: theme.background.content,
+  background: 'var(--sb-color-positive)',
+  color: 'var(--sb-background-content)',
   animation: `${fadeScaleIn} 500ms forwards`,
-}));
+});
 
 const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
   ({ theme, isCompleted, isSkipped }) => ({
@@ -111,15 +111,15 @@ const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
     margin: '0 -2px',
     padding: '0 2px',
     color: isSkipped
-      ? theme.color.mediumdark
+      ? 'var(--sb-color-mediumdark)'
       : isCompleted
         ? theme.base === 'dark'
-          ? theme.color.positive
-          : theme.color.positiveText
-        : theme.color.defaultText,
+          ? 'var(--sb-color-positive)'
+          : 'var(--sb-color-positiveText)'
+        : 'var(--sb-color-defaultText)',
     transition: 'color 500ms',
   }),
-  ({ theme, isSkipped }) =>
+  ({ isSkipped }) =>
     isSkipped && {
       alignSelf: 'flex-start',
       '&:after': {
@@ -129,7 +129,7 @@ const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
         left: 0,
         width: '100%',
         height: 1,
-        background: theme.color.mediumdark,
+        background: 'var(--sb-color-mediumdark)',
         animation: `${expand} 500ms forwards`,
         transformOrigin: 'left',
       },

@@ -47,7 +47,7 @@ const StyledButton = styled(Button)<{
     height: height || 28,
 
     '&:hover': {
-      color: theme.color.secondary,
+      color: 'var(--sb-color-secondary)',
       background:
         theme.base === 'dark'
           ? darken(0.3, theme.color.secondary)
@@ -66,8 +66,8 @@ const StyledButton = styled(Button)<{
     },
 
     '&:focus': {
-      color: theme.color.secondary,
-      borderColor: theme.color.secondary,
+      color: 'var(--sb-color-secondary)',
+      borderColor: 'var(--sb-color-secondary)',
       outlineOffset: -2,
 
       '&:not(:focus-visible)': {
@@ -75,10 +75,10 @@ const StyledButton = styled(Button)<{
       },
     },
   }),
-  ({ theme, selectedItem }) =>
+  ({ selectedItem }) =>
     selectedItem && {
       '&:hover': {
-        boxShadow: `inset 0 0 0 2px ${theme.color.secondary}`,
+        boxShadow: `inset 0 0 0 2px var(--sb-color-secondary)`,
         background: 'rgba(255, 255, 255, 0.2)',
       },
     }

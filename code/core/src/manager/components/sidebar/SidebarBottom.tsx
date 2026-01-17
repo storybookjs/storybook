@@ -54,7 +54,7 @@ const Spacer = styled.div({
   pointerEvents: 'none',
 });
 
-const Content = styled.div(({ theme }) => ({
+const Content = styled.div({
   position: 'absolute',
   zIndex: 1,
   bottom: 0,
@@ -64,21 +64,21 @@ const Content = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   gap: 12,
-  color: theme.color.defaultText,
-  fontSize: theme.typography.size.s1,
+  color: 'var(--sb-color-defaultText)',
+  fontSize: 'var(--sb-typography-size-s1)',
 
   '&:empty': {
     display: 'none',
   },
 
-  '--card-box-shadow': `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app}`,
+  '--card-box-shadow': `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px var(--sb-background-app)`,
 
   // Integrators can use these to style their custom additions
-  '--sb-sidebar-bottom-card-background': theme.background.content,
-  '--sb-sidebar-bottom-card-border': `1px solid ${theme.appBorderColor}`,
-  '--sb-sidebar-bottom-card-border-radius': `${theme.appBorderRadius + 1}px`,
-  '--sb-sidebar-bottom-card-box-shadow': `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app}`,
-}));
+  '--sb-sidebar-bottom-card-background': 'var(--sb-background-content)',
+  '--sb-sidebar-bottom-card-border': `1px solid var(--sb-appBorderColor)`,
+  '--sb-sidebar-bottom-card-border-radius': `calc(var(--sb-appBorderRadius) + 1px)`,
+  '--sb-sidebar-bottom-card-box-shadow': `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px var(--sb-background-app)`,
+});
 
 interface SidebarBottomProps {
   api: API;

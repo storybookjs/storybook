@@ -29,11 +29,11 @@ const parseValue = (value: string): any => {
 };
 
 const StyledExpected = styled.span(({ theme }) => ({
-  color: theme.base === 'light' ? theme.color.positiveText : theme.color.positive,
+  color: theme.base === 'light' ? 'var(--sb-color-positiveText)' : 'var(--sb-color-positive)',
 }));
 
 const StyledReceived = styled.span(({ theme }) => ({
-  color: theme.base === 'light' ? theme.color.negativeText : theme.color.negative,
+  color: theme.base === 'light' ? 'var(--sb-color-negativeText)' : 'var(--sb-color-negative)',
 }));
 
 export const Received = ({ value, parsed }: { value: any; parsed?: boolean }) =>

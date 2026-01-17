@@ -84,11 +84,11 @@ function valueToId(parentId: string, { value }: InternalOption | ResetOption): s
   return `${parentId}-opt-${String(value) ?? 'sb-reset'}`;
 }
 
-const SelectedOptionCount = styled.span(({ theme }) => ({
+const SelectedOptionCount = styled.span({
   appearance: 'none',
-  color: theme.textMutedColor,
+  color: 'var(--sb-textMutedColor)',
   fontSize: 12,
-}));
+});
 
 function setSelectedFromDefault(
   options: SelectProps['options'],
@@ -114,7 +114,9 @@ const StyledButton = styled(Button)<ButtonProps & { $hasSelection?: boolean; $is
           boxShadow: 'none',
           background: transparentize(0.93, theme.barSelectedColor),
           color:
-            theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
+            theme.base === 'light'
+              ? darken(0.1, theme.color.secondary)
+              : 'var(--sb-color-secondary)',
         }
       : {}
 );

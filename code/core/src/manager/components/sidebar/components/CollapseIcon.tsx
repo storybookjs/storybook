@@ -3,7 +3,7 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-export const CollapseIconWrapper = styled.div<{ isExpanded: boolean }>(({ theme, isExpanded }) => ({
+export const CollapseIconWrapper = styled.div<{ isExpanded: boolean }>(({ isExpanded }) => ({
   width: 8,
   height: 8,
   display: 'flex',
@@ -11,7 +11,7 @@ export const CollapseIconWrapper = styled.div<{ isExpanded: boolean }>(({ theme,
   alignItems: 'center',
   transform: isExpanded ? 'rotateZ(90deg)' : 'none',
   transition: 'transform .1s ease-out',
-  color: theme.textMutedColor,
+  color: 'var(--sb-textMutedColor)',
 }));
 
 export const CollapseIcon: FC<ComponentProps<typeof CollapseIconWrapper>> = (props) => (

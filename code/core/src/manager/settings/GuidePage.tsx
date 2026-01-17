@@ -9,32 +9,32 @@ import { styled } from 'storybook/theming';
 import { useChecklist } from '../components/sidebar/useChecklist';
 import { Checklist } from './Checklist/Checklist';
 
-const Container = styled.div(({ theme }) => ({
+const Container = styled.div({
   display: 'flex',
   flexDirection: 'column',
   maxWidth: 600,
   margin: '0 auto',
   padding: '48px 20px',
   gap: 32,
-  fontSize: theme.typography.size.s2,
+  fontSize: `var(--sb-typography-size-s2)`,
   '--transition-duration': '0.2s',
-}));
+});
 
-const Intro = styled.div(({ theme }) => ({
+const Intro = styled.div({
   display: 'flex',
   flexDirection: 'column',
   gap: 8,
 
   '& h1': {
-    fontSize: theme.typography.size.m3,
-    fontWeight: theme.typography.weight.bold,
+    fontSize: `var(--sb-typography-size-m3)`,
+    fontWeight: 'var(--sb-typography-weight-bold)',
     margin: 0,
   },
 
   '& > p': {
     margin: 0,
   },
-}));
+});
 
 export const GuidePage = () => {
   const checklist = useChecklist();

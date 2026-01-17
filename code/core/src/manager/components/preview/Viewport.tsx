@@ -19,7 +19,7 @@ type DragSide = 'none' | 'both' | 'bottom' | 'right';
 const ViewportWrapper = styled.div<{
   active: boolean;
   isDefault: boolean;
-}>(({ active, isDefault, theme }) => ({
+}>(({ active, isDefault }) => ({
   gridArea: '1 / 1',
   alignSelf: 'start',
   justifySelf: 'start',
@@ -34,14 +34,14 @@ const ViewportWrapper = styled.div<{
 
   '&:has([data-size-input="width"]:focus-visible)': {
     '[data-dragging]': {
-      borderRightColor: theme.color.secondary,
-      boxShadow: `4px 0 5px -2px ${theme.background.hoverable}`,
+      borderRightColor: 'var(--sb-color-secondary)',
+      boxShadow: `4px 0 5px -2px var(--sb-background-hoverable)`,
     },
   },
   '&:has([data-size-input="height"]:focus-visible)': {
     '[data-dragging]': {
-      borderBottomColor: theme.color.secondary,
-      boxShadow: `0 4px 5px -2px ${theme.background.hoverable}`,
+      borderBottomColor: 'var(--sb-color-secondary)',
+      boxShadow: `0 4px 5px -2px var(--sb-background-hoverable)`,
     },
   },
 }));
@@ -59,31 +59,31 @@ const ViewportDimensions = styled.div({
 const FrameWrapper = styled.div<{
   isDefault: boolean;
   'data-dragging': DragSide;
-}>(({ isDefault, 'data-dragging': dragging, theme }) => ({
+}>(({ isDefault, 'data-dragging': dragging }) => ({
   position: 'relative',
   minWidth: VIEWPORT_MIN_WIDTH,
   minHeight: VIEWPORT_MIN_HEIGHT,
   boxSizing: 'content-box', // we're sizing the contents, not the box itself
-  border: `1px solid ${theme.button.border}`,
+  border: `1px solid var(--sb-button-border)`,
   borderWidth: isDefault ? 0 : 1,
   borderRadius: isDefault ? 0 : 4,
   transition: 'border-color 0.2s, box-shadow 0.2s',
   '&:has([data-side="right"]:hover), &[data-dragging="right"]': {
-    borderRightColor: theme.color.secondary,
-    boxShadow: `4px 0 5px -2px ${theme.background.hoverable}`,
+    borderRightColor: 'var(--sb-color-secondary)',
+    boxShadow: `4px 0 5px -2px var(--sb-background-hoverable)`,
     '[data-side="right"]::after': {
       opacity: 1,
     },
   },
   '&:has([data-side="bottom"]:hover), &[data-dragging="bottom"]': {
-    borderBottomColor: theme.color.secondary,
-    boxShadow: `0 4px 5px -2px ${theme.background.hoverable}`,
+    borderBottomColor: 'var(--sb-color-secondary)',
+    boxShadow: `0 4px 5px -2px var(--sb-background-hoverable)`,
     '[data-side="bottom"]::after': {
       opacity: 1,
     },
   },
   '&:has([data-side="both"]:hover), &[data-dragging="both"]': {
-    boxShadow: `3px 3px 5px -2px ${theme.background.hoverable}`,
+    boxShadow: `3px 3px 5px -2px var(--sb-background-hoverable)`,
     '&::after, [data-side]::after': {
       opacity: 1,
     },
@@ -102,10 +102,10 @@ const FrameWrapper = styled.div<{
     background: `linear-gradient(to top left,
       rgba(0,0,0,0) 0%,
       rgba(0,0,0,0) calc(25% - 1px),
-      ${theme.color.secondary} 25%,
+      var(--sb-color-secondary) 25%,
       rgba(0,0,0,0) calc(25% + 1px),
       rgba(0,0,0,0) calc(45% - 1px),
-      ${theme.color.secondary} 45%,
+      var(--sb-color-secondary) 45%,
       rgba(0,0,0,0) calc(45% + 1px),
       rgba(0,0,0,0) 100%)`,
   },
@@ -119,7 +119,7 @@ const DragHandle = styled.div<{
   'data-side': DragSide;
 }>(
   { display: 'none' },
-  ({ theme, isDefault }) =>
+  ({ isDefault }) =>
     !isDefault && {
       display: 'block',
       position: 'absolute',
@@ -144,7 +144,7 @@ const DragHandle = styled.div<{
           left: '50%',
           transform: 'translate(-50%, -50%)',
           borderRadius: 4,
-          backgroundColor: theme.background.hoverable,
+          backgroundColor: 'var(--sb-background-hoverable)',
           padding: '2px 4px',
           opacity: 0,
           transition: 'opacity 0.2s',
@@ -163,7 +163,7 @@ const DragHandle = styled.div<{
           left: '50%',
           transform: 'translate(-50%, -50%)',
           borderRadius: 4,
-          backgroundColor: theme.background.hoverable,
+          backgroundColor: 'var(--sb-background-hoverable)',
           padding: '2px 4px',
           opacity: 0,
           transition: 'opacity 0.2s',

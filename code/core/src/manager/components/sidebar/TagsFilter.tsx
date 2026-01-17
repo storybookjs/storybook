@@ -15,13 +15,13 @@ const TAGS_FILTER = 'tags-filter';
 
 const BUILT_IN_TAGS = new Set<string>(Object.values(Tag));
 
-const StyledButton = styled(Button)<{ isHighlighted: boolean }>(({ isHighlighted, theme }) => ({
+const StyledButton = styled(Button)<{ isHighlighted: boolean }>(({ isHighlighted }) => ({
   '&:focus-visible': {
     outlineOffset: 4,
   },
   ...(isHighlighted && {
-    background: theme.background.hoverable,
-    color: theme.color.secondary,
+    background: 'var(--sb-background-hoverable)',
+    color: 'var(--sb-color-secondary)',
   }),
 }));
 
@@ -39,7 +39,7 @@ const remove = (set: Set<string>, id: string) => {
 const equal = (left: Set<string>, right: Set<string>) =>
   left.size === right.size && new Set([...left, ...right]).size === left.size;
 
-const TagSelected = styled(Badge)(({ theme }) => ({
+const TagSelected = styled(Badge)({
   position: 'absolute',
   top: 7,
   right: 7,
@@ -51,11 +51,11 @@ const TagSelected = styled(Badge)(({ theme }) => ({
   height: 6,
   minWidth: 6,
   lineHeight: 'px',
-  boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
-  fontSize: theme.typography.size.s1 - 1,
-  background: theme.barSelectedColor,
-  color: theme.color.inverseText,
-}));
+  boxShadow: `var(--sb-barSelectedColor) 0 0 0 1px inset`,
+  fontSize: `calc(var(--sb-typography-size-s1) - 1px)`,
+  background: 'var(--sb-barSelectedColor)',
+  color: 'var(--sb-color-inverseText)',
+});
 
 export interface TagsFilterProps {
   api: API;

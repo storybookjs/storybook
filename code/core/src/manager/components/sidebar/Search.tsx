@@ -63,7 +63,7 @@ const ScreenReaderLabel = styled.label({
   overflow: 'hidden',
 });
 
-const SearchField = styled.div<{ isMobile: boolean }>(({ theme, isMobile }) => ({
+const SearchField = styled.div<{ isMobile: boolean }>(({ isMobile }) => ({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'center',
@@ -71,42 +71,42 @@ const SearchField = styled.div<{ isMobile: boolean }>(({ theme, isMobile }) => (
   flexGrow: 1,
   height: isMobile ? 36 : 32,
   width: '100%',
-  boxShadow: `${theme.button.border} 0 0 0 1px inset`,
-  borderRadius: theme.appBorderRadius + 2,
+  boxShadow: `var(--sb-button-border) 0 0 0 1px inset`,
+  borderRadius: 'calc(var(--sb-appBorderRadius) + 2px)',
 
   '&:has(input:focus), &:has(input:active)': {
-    background: theme.background.app,
-    outline: `2px solid ${theme.color.secondary}`,
+    background: 'var(--sb-background-app)',
+    outline: `2px solid var(--sb-color-secondary)`,
     outlineOffset: 2,
   },
 }));
 
-const IconWrapper = styled.div(({ theme, onClick }) => ({
+const IconWrapper = styled.div(({ onClick }) => ({
   cursor: onClick ? 'pointer' : 'default',
   flex: '0 0 28px',
   height: '100%',
   pointerEvents: onClick ? 'auto' : 'none',
-  color: theme.textMutedColor,
+  color: 'var(--sb-textMutedColor)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
 }));
 
-const Input = styled.input<{ isMobile: boolean }>(({ theme, isMobile }) => ({
+const Input = styled.input<{ isMobile: boolean }>(({ isMobile }) => ({
   appearance: 'none',
   height: 28,
   width: '100%',
   padding: 0,
   border: 0,
   background: 'transparent',
-  fontSize: isMobile ? '16px' : `${theme.typography.size.s1 + 1}px`,
+  fontSize: isMobile ? '16px' : `calc(var(--sb-typography-size-s1) + 1px)`,
   fontFamily: 'inherit',
   transition: 'all 150ms',
-  color: theme.color.defaultText,
+  color: 'var(--sb-color-defaultText)',
   outline: 0,
 
   '&::placeholder': {
-    color: theme.textMutedColor,
+    color: 'var(--sb-textMutedColor)',
     opacity: 1,
   },
   '&:valid ~ code, &:focus ~ code': {
@@ -131,11 +131,11 @@ const FocusKey = styled.code(({ theme }) => ({
   margin: 5,
   marginTop: 6,
   height: 16,
-  fontFamily: theme.typography.fonts.base,
+  fontFamily: 'var(--sb-typography-fonts-base)',
   lineHeight: '16px',
   textAlign: 'center',
   fontSize: '11px',
-  color: theme.base === 'light' ? theme.color.dark : theme.textMutedColor,
+  color: theme.base === 'light' ? 'var(--sb-color-dark)' : 'var(--sb-textMutedColor)',
   userSelect: 'none',
   pointerEvents: 'none',
   display: 'flex',

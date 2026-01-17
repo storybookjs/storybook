@@ -9,15 +9,15 @@ import { styled } from 'storybook/theming';
 import { useViewport } from '../useViewport';
 import { iconsMap } from '../viewportIcons';
 
-const Dimensions = styled.div(({ theme }) => ({
+const Dimensions = styled.div({
   display: 'flex',
   gap: 2,
   marginLeft: 20,
-  fontFamily: theme.typography.fonts.mono,
-  fontSize: theme.typography.size.s1 - 1,
-  fontWeight: theme.typography.weight.regular,
-  color: theme.textMutedColor,
-}));
+  fontFamily: 'var(--sb-typography-fonts-mono)',
+  fontSize: `calc(var(--sb-typography-size-s1) - 1px)`,
+  fontWeight: 'var(--sb-typography-weight-regular)',
+  color: 'var(--sb-textMutedColor)',
+});
 
 export const ViewportTool = () => {
   const { name, value, isDefault, isLocked, options: viewportMap, reset, select } = useViewport();

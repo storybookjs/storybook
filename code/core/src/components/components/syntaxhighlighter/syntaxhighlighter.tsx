@@ -66,17 +66,17 @@ export interface WrapperProps {
 }
 
 const Wrapper = styled.div<WrapperProps>(
-  ({ theme }) => ({
+  {
     position: 'relative',
     overflow: 'hidden',
-    color: theme.color.defaultText,
-  }),
-  ({ theme, bordered }) =>
+    color: 'var(--sb-color-defaultText)',
+  },
+  ({ bordered }) =>
     bordered
       ? {
-          border: `1px solid ${theme.appBorderColor}`,
-          borderRadius: theme.borderRadius,
-          background: theme.background.content,
+          border: `1px solid var(--sb-appBorderColor)`,
+          borderRadius: 'var(--sb-appBorderRadius)',
+          background: 'var(--sb-background-content)',
         }
       : {},
   ({ showLineNumbers }) =>
@@ -117,13 +117,13 @@ const Pre = styled.pre<PreProps>(({ theme, padded }) => ({
 We can't use `code` since PrismJS races for it.
 See https://github.com/storybookjs/storybook/issues/18090
  */
-const Code = styled.div(({ theme }) => ({
+const Code = styled.div({
   flex: 1,
   paddingLeft: 2, // TODO: To match theming/global.ts for now
-  paddingRight: theme.layoutMargin,
+  paddingRight: 'var(--sb-layoutMargin)',
   opacity: 1,
-  fontFamily: theme.typography.fonts.mono,
-}));
+  fontFamily: 'var(--sb-typography-fonts-mono)',
+});
 
 const processLineNumber = (row: any) => {
   const children = [...row.children];

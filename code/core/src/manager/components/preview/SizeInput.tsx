@@ -6,9 +6,9 @@ import { Form } from 'storybook/internal/components';
 import { useId } from '@react-aria/utils';
 import { styled } from 'storybook/theming';
 
-const Wrapper = styled.span<{ prefix?: string }>(({ theme, prefix }) => ({
+const Wrapper = styled.span<{ prefix?: string }>(({ prefix }) => ({
   position: 'relative',
-  fontSize: theme.typography.size.s1,
+  fontSize: 'var(--sb-typography-size-s1)',
   input: {
     width: 70,
     height: 28,
@@ -18,7 +18,7 @@ const Wrapper = styled.span<{ prefix?: string }>(({ theme, prefix }) => ({
     fontSize: 'inherit',
     '&:focus': {
       boxShadow: 'none',
-      outline: `2px solid ${theme.color.secondary}`,
+      outline: `2px solid var(--sb-color-secondary)`,
       outlineOffset: -2,
     },
   },
@@ -34,7 +34,7 @@ const Wrapper = styled.span<{ prefix?: string }>(({ theme, prefix }) => ({
       bottom: 0,
       width: 20,
       zIndex: 1,
-      color: theme.textMutedColor,
+      color: 'var(--sb-textMutedColor)',
     },
   }),
 }));

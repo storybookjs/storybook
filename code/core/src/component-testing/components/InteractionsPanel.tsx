@@ -50,29 +50,31 @@ interface InteractionsPanelProps {
   api: API;
 }
 
-const Container = styled.div(({ theme }) => ({
+const Container = styled.div({
   height: '100%',
-  background: theme.background.content,
-}));
+  background: 'var(--sb-background-content)',
+});
 
 const CaughtException = styled.div(({ theme }) => ({
-  borderBottom: `1px solid ${theme.appBorderColor}`,
+  borderBottom: `1px solid var(--sb-appBorderColor)`,
   backgroundColor:
-    theme.base === 'dark' ? transparentize(0.93, theme.color.negative) : theme.background.warning,
+    theme.base === 'dark'
+      ? transparentize(0.93, theme.color.negative)
+      : 'var(--sb-background-warning)',
   padding: 15,
-  fontSize: theme.typography.size.s2 - 1,
+  fontSize: `calc(var(--sb-typography-size-s2) - 1px)`,
   lineHeight: '19px',
 }));
-const CaughtExceptionCode = styled.code(({ theme }) => ({
+const CaughtExceptionCode = styled.code({
   margin: '0 1px',
   padding: 3,
-  fontSize: theme.typography.size.s1 - 1,
+  fontSize: `calc(var(--sb-typography-size-s1) - 1px)`,
   lineHeight: 1,
   verticalAlign: 'top',
   background: 'rgba(0, 0, 0, 0.05)',
-  border: `1px solid ${theme.appBorderColor}`,
+  border: `1px solid var(--sb-appBorderColor)`,
   borderRadius: 3,
-}));
+});
 const CaughtExceptionTitle = styled.div({
   paddingBottom: 4,
   fontWeight: 'bold',
@@ -82,14 +84,14 @@ const CaughtExceptionDescription = styled.p({
   padding: '0 0 20px',
 });
 
-const CaughtExceptionStack = styled.pre(({ theme }) => ({
+const CaughtExceptionStack = styled.pre({
   margin: 0,
   padding: 0,
   '&:not(:last-child)': {
     paddingBottom: 16,
   },
-  fontSize: theme.typography.size.s1 - 1,
-}));
+  fontSize: `calc(var(--sb-typography-size-s1) - 1px)`,
+});
 
 export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   function InteractionsPanel({

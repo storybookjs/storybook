@@ -33,9 +33,9 @@ const Footer = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  color: theme.base === 'light' ? theme.color.dark : theme.color.lightest,
-  fontWeight: theme.typography.weight.regular,
-  fontSize: theme.typography.size.s2,
+  color: theme.base === 'light' ? 'var(--sb-color-dark)' : 'var(--sb-color-lightest)',
+  fontWeight: 'var(--sb-typography-weight-regular)',
+  fontSize: `var(--sb-typography-size-s2)`,
 }));
 
 const Actions = styled.div({
@@ -49,11 +49,11 @@ const Actions = styled.div({
 
 const StyledLink = styled(Link as any)(({ theme }) => ({
   '&&': {
-    fontWeight: theme.typography.weight.bold,
-    color: theme.base === 'light' ? theme.color.dark : theme.color.light,
+    fontWeight: 'var(--sb-typography-weight-bold)',
+    color: theme.base === 'light' ? 'var(--sb-color-dark)' : 'var(--sb-color-light)',
   },
   '&:hover': {
-    color: theme.base === 'light' ? theme.color.darkest : theme.color.lightest,
+    color: theme.base === 'light' ? 'var(--sb-color-darkest)' : 'var(--sb-color-lightest)',
   },
 }));
 

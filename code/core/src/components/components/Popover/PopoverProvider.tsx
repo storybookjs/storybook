@@ -1,5 +1,5 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import { Pressable } from '@react-aria/interactions';
 import { DialogTrigger } from 'react-aria-components/patched-dist/Dialog';
@@ -66,6 +66,11 @@ export const PopoverProvider = ({
   onVisibleChange,
   ...props
 }: PopoverProviderProps) => {
+  const elementRef = useRef<HTMLDivElement>(null);
+  const boundaryElement =
+    (globalThis.__STORYBOOK_PREVIEW__ && elementRef.current?.closest('[id^="sb-theme-"]')) ||
+    document.body;
+
   // Map Popper.js placement to react-aria placement best we can.
   const placement = convertToReactAriaPlacement(placementProp);
 
@@ -86,8 +91,13 @@ export const PopoverProvider = ({
       onOpenChange={onOpenChange}
       {...props}
     >
-      <Pressable>{children}</Pressable>
-      <PopoverUpstream placement={placement} offset={offset} style={{ outline: 'none' }}>
+      <Pressable ref={elementRef}>{children}</Pressable>
+      <PopoverUpstream
+        boundaryElement={boundaryElement}
+        placement={placement}
+        offset={offset}
+        style={{ outline: 'none' }}
+      >
         <Popover
           hasChrome={hasChrome}
           hideLabel={closeLabel}

@@ -22,6 +22,7 @@ import { sb } from 'storybook/test';
 import {
   Global,
   ThemeProvider,
+  ThemeVariables,
   convert,
   createReset,
   styled,
@@ -241,14 +242,27 @@ const decorators = [
           <Fragment>
             <ThemeProvider theme={convert(themes.light)}>
               <Global styles={createReset} />
+              <ThemeVariables />
             </ThemeProvider>
             <ThemeProvider theme={convert(themes.light)}>
-              <ThemeBlock side="left" data-side="left" layout={parameters.layout}>
+              <ThemeVariables rootSelector="#sb-theme-light" />
+              <ThemeBlock
+                id="sb-theme-light"
+                side="left"
+                data-side="left"
+                layout={parameters.layout}
+              >
                 <StoryFn />
               </ThemeBlock>
             </ThemeProvider>
             <ThemeProvider theme={convert(themes.dark)}>
-              <ThemeBlock side="right" data-side="right" layout={parameters.layout}>
+              <ThemeVariables rootSelector="#sb-theme-dark" />
+              <ThemeBlock
+                id="sb-theme-dark"
+                side="right"
+                data-side="right"
+                layout={parameters.layout}
+              >
                 <StoryFn />
               </ThemeBlock>
             </ThemeProvider>
@@ -260,15 +274,18 @@ const decorators = [
           <Fragment>
             <ThemeProvider theme={convert(themes.light)}>
               <Global styles={createReset} />
+              <ThemeVariables />
             </ThemeProvider>
             <StackContainer layout={parameters.layout}>
               <ThemeProvider theme={convert(themes.light)}>
-                <ThemeStack data-side="left" layout={parameters.layout}>
+                <ThemeVariables rootSelector="#sb-theme-light" />
+                <ThemeStack id="sb-theme-light" data-side="left" layout={parameters.layout}>
                   <StoryFn />
                 </ThemeStack>
               </ThemeProvider>
               <ThemeProvider theme={convert(themes.dark)}>
-                <ThemeStack data-side="right" layout={parameters.layout}>
+                <ThemeVariables rootSelector="#sb-theme-dark" />
+                <ThemeStack id="sb-theme-dark" data-side="right" layout={parameters.layout}>
                   <StoryFn />
                 </ThemeStack>
               </ThemeProvider>
@@ -281,6 +298,7 @@ const decorators = [
         return (
           <ThemeProvider theme={convert(themes[theme])}>
             <Global styles={createReset} />
+            <ThemeVariables />
             <ThemedSetRoot />
             {showPlayFnNotice && (
               <>

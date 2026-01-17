@@ -16,16 +16,15 @@ const Title = styled(({ active, loading, disabled, ...rest }: TitleProps) => <sp
   loading: boolean;
   disabled: boolean;
 }>(
-  ({ theme }) => ({
-    color: theme.color.defaultText,
-    // Previously was theme.typography.weight.normal but this weight does not exists in Theme
-    fontWeight: theme.typography.weight.regular,
-  }),
-  ({ active, theme }) =>
+  {
+    color: 'var(--sb-color-defaultText)',
+    fontWeight: 'var(--sb-typography-weight-regular)',
+  },
+  ({ active }) =>
     active
       ? {
-          color: theme.color.secondary,
-          fontWeight: theme.typography.weight.bold,
+          color: 'var(--sb-color-secondary)',
+          fontWeight: 'var(--sb-typography-weight-bold)',
         }
       : {},
   ({ loading, theme }) =>
@@ -36,12 +35,7 @@ const Title = styled(({ active, loading, disabled, ...rest }: TitleProps) => <sp
           ...theme.animation.inlineGlow,
         }
       : {},
-  ({ disabled, theme }) =>
-    disabled
-      ? {
-          color: theme.textMutedColor,
-        }
-      : {}
+  ({ disabled }) => (disabled ? { color: 'var(--sb-textMutedColor)' } : {})
 );
 
 export interface RightProps {
@@ -75,22 +69,12 @@ export interface CenterTextProps {
 }
 
 const CenterText = styled.span<CenterTextProps>(
-  ({ theme }) => ({
+  {
     fontSize: '11px',
     lineHeight: '14px',
-  }),
-  ({ active, theme }) =>
-    active
-      ? {
-          color: theme.color.secondary,
-        }
-      : {},
-  ({ theme, disabled }) =>
-    disabled
-      ? {
-          color: theme.textMutedColor,
-        }
-      : {}
+  },
+  ({ active }) => (active ? { color: 'var(--sb-color-secondary)' } : {}),
+  ({ disabled }) => (disabled ? { color: 'var(--sb-textMutedColor)' } : {})
 );
 
 export interface LeftProps {
@@ -98,12 +82,7 @@ export interface LeftProps {
 }
 
 const Left = styled.span<LeftProps>(
-  ({ active, theme }) =>
-    active
-      ? {
-          color: theme.color.secondary,
-        }
-      : {},
+  ({ active }) => (active ? { color: 'var(--sb-color-secondary)' } : {}),
   () => ({
     display: 'flex',
     maxWidth: 14,
@@ -117,15 +96,15 @@ export interface ItemProps {
 }
 
 const Item = styled.button<ItemProps>(
-  ({ theme }) => ({
+  {
     width: '100%',
     minWidth: 0, // required for overflow
     border: 'none',
-    borderRadius: theme.appBorderRadius,
+    borderRadius: 'var(--sb-appBorderRadius)',
     background: 'none',
-    fontSize: theme.typography.size.s1,
+    fontSize: 'var(--sb-typography-size-s1)',
     transition: 'background 150ms ease-out',
-    color: theme.color.dark,
+    color: 'var(--sb-color-dark)',
     textDecoration: 'none',
     justifyContent: 'space-between',
 
@@ -139,26 +118,26 @@ const Item = styled.button<ItemProps>(
     },
 
     '&:focus-visible': {
-      outline: `2px solid ${theme.color.secondary}`,
+      outline: `2px solid var(--sb-color-secondary)`,
       outlineOffset: 0,
     },
-  }),
-  ({ theme, href, onClick }) =>
+  },
+  ({ href, onClick }) =>
     (href || onClick) && {
       cursor: 'pointer',
       '&:hover': {
-        background: theme.background.hoverable,
+        background: 'var(--sb-background-hoverable)',
       },
       '&:hover svg': {
         opacity: 1,
       },
     },
-  ({ theme, as }) =>
+  ({ as }) =>
     as === 'label' && {
       '&:has(input:not(:disabled))': {
         cursor: 'pointer',
         '&:hover': {
-          background: theme.background.hoverable,
+          background: 'var(--sb-background-hoverable)',
         },
       },
     },

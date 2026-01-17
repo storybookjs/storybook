@@ -56,9 +56,9 @@ const ScrollAreaScrollbar = styled(ScrollAreaPrimitive.Scrollbar)<{
   },
 }));
 
-const ScrollAreaThumb = styled(ScrollAreaPrimitive.Thumb)(({ theme }) => ({
+const ScrollAreaThumb = styled(ScrollAreaPrimitive.Thumb)({
   flex: 1,
-  background: theme.textMutedColor,
+  background: 'var(--sb-textMutedColor)',
   opacity: 0.5,
   borderRadius: `var(--scrollbar-size)`,
   position: 'relative',
@@ -77,7 +77,7 @@ const ScrollAreaThumb = styled(ScrollAreaPrimitive.Thumb)(({ theme }) => ({
     width: '100%',
     height: '100%',
   },
-}));
+});
 
 export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
   (

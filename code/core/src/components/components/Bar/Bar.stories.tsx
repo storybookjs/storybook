@@ -5,12 +5,12 @@ import { styled } from 'storybook/theming';
 import preview from '../../../../../.storybook/preview';
 import { Bar } from './Bar';
 
-const Wrapper = styled.div(({ theme }) => ({
-  background: theme.background.app,
-  border: `1px solid ${theme.appBorderColor}`,
+const Wrapper = styled.div({
+  background: 'var(--sb-background-app)',
+  border: `1px solid var(--sb-appBorderColor)`,
   maxWidth: 500,
   height: 200,
-}));
+});
 
 const meta = preview.meta({
   component: Bar,

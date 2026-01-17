@@ -26,14 +26,14 @@ const BaseSelect = styled.select<SelectProps>(sizes, ({ theme }) => ({
   padding: '6px 30px 6px 10px',
   '@supports (appearance: base-select)': {
     appearance: 'base-select' as CSSProperties['appearance'],
-    background: theme.input.background,
+    background: 'var(--sb-input-background)',
     padding: '6px 10px',
   },
   transition: 'box-shadow 200ms ease-out, opacity 200ms ease-out',
-  color: theme.input.color || 'inherit',
-  boxShadow: `${theme.input.border} 0 0 0 1px inset`,
-  borderRadius: theme.input.borderRadius,
-  fontSize: theme.typography.size.s2 - 1,
+  color: 'var(--sb-input-color, inherit)',
+  boxShadow: `0 0 0 1px inset var(--sb-input-border)`,
+  borderRadius: 'var(--sb-input-borderRadius)',
+  fontSize: 'calc(var(--sb-typography-size-s2) - 1px)',
   lineHeight: '20px',
   boxSizing: 'border-box',
   border: 'none',
@@ -47,15 +47,15 @@ const BaseSelect = styled.select<SelectProps>(sizes, ({ theme }) => ({
     '& > svg': {
       width: 14,
       height: 14,
-      color: theme.textMutedColor,
+      color: 'var(--sb-textMutedColor)',
     },
   },
   '&:has(option:not([hidden]):checked)': {
-    color: theme.color.defaultText,
+    color: 'var(--sb-color-defaultText)',
   },
   '&:focus-visible, &:focus-within': {
     outline: 'none',
-    boxShadow: `${theme.color.secondary} 0 0 0 1px inset`,
+    boxShadow: `0 0 0 1px inset var(--sb-color-secondary)`,
   },
   '&::picker-icon': {
     display: 'none',
@@ -65,13 +65,13 @@ const BaseSelect = styled.select<SelectProps>(sizes, ({ theme }) => ({
     border: '1px solid #e4e4e7',
     padding: 4,
     marginTop: 4,
-    background: theme.base === 'light' ? lighten(theme.background.app) : theme.background.app,
+    background: theme.base === 'light' ? lighten(theme.background.app) : 'var(--sb-background-app)',
     filter: `
       drop-shadow(0 5px 5px rgba(0,0,0,0.05))
       drop-shadow(0 0 3px rgba(0,0,0,0.1))
     `,
-    borderRadius: theme.appBorderRadius + 2,
-    fontSize: theme.typography.size.s1,
+    borderRadius: 'calc(var(--sb-appBorderRadius) + 2px)',
+    fontSize: 'var(--sb-typography-size-s1)',
     cursor: 'default',
     transition: 'opacity 100ms ease-in-out, transform 100ms ease-in-out',
     transformOrigin: 'top',
@@ -92,21 +92,21 @@ const BaseSelect = styled.select<SelectProps>(sizes, ({ theme }) => ({
     borderRadius: 4,
     outline: 'none',
     cursor: 'pointer',
-    color: theme.color.defaultText,
+    color: 'var(--sb-color-defaultText)',
     '&::checkmark': {
       display: 'none',
     },
     '&:hover, &:focus-visible': {
-      backgroundColor: theme.background.hoverable,
+      backgroundColor: 'var(--sb-background-hoverable)',
     },
     '&:checked': {
-      color: theme.color.secondary,
-      fontWeight: theme.typography.weight.bold,
+      color: 'var(--sb-color-secondary)',
+      fontWeight: 'var(--sb-typography-weight-bold)',
     },
     '&:disabled': {
       backgroundColor: 'transparent',
       cursor: 'default',
-      color: theme.color.defaultText,
+      color: 'var(--sb-color-defaultText)',
     },
   },
 }));

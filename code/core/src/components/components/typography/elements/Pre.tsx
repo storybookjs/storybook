@@ -2,9 +2,9 @@ import { styled } from 'storybook/theming';
 
 import { withMargin, withReset } from '../lib/common';
 
-export const Pre = styled.pre(withReset, withMargin, ({ theme }) => ({
+export const Pre = styled.pre(withReset, withMargin, {
   // reset
-  fontFamily: theme.typography.fonts.mono,
+  fontFamily: 'var(--sb-typography-fonts-mono)',
   WebkitFontSmoothing: 'antialiased',
   MozOsxFontSmoothing: 'grayscale',
   lineHeight: '18px',
@@ -39,4 +39,4 @@ export const Pre = styled.pre(withReset, withMargin, ({ theme }) => ({
   '& code, & tt': {
     border: 'none',
   },
-}));
+});

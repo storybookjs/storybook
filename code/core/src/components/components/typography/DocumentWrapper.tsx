@@ -1,29 +1,29 @@
 import { styled } from 'storybook/theming';
 
 export const DocumentWrapper = styled.div(({ theme }) => ({
-  fontSize: `${theme.typography.size.s2}px`,
+  fontSize: 'var(--sb-typography-size-s2)',
   lineHeight: '1.6',
 
   h1: {
-    fontSize: `${theme.typography.size.l1}px`,
-    fontWeight: theme.typography.weight.bold,
+    fontSize: `var(--sb-typography-size-l1)`,
+    fontWeight: 'var(--sb-typography-weight-bold)',
   },
   h2: {
-    fontSize: `${theme.typography.size.m2}px`,
-    borderBottom: `1px solid ${theme.appBorderColor}`,
+    fontSize: 'var(--sb-typography-size-m2)',
+    borderBottom: `1px solid var(--sb-appBorderColor)`,
   },
   h3: {
-    fontSize: `${theme.typography.size.m1}px`,
+    fontSize: 'var(--sb-typography-size-m1)',
   },
   h4: {
-    fontSize: `${theme.typography.size.s3}px`,
+    fontSize: 'var(--sb-typography-size-s3)',
   },
   h5: {
-    fontSize: `${theme.typography.size.s2}px`,
+    fontSize: 'var(--sb-typography-size-s2)',
   },
   h6: {
-    fontSize: `${theme.typography.size.s2}px`,
-    color: theme.color.dark,
+    fontSize: 'var(--sb-typography-size-s2)',
+    color: 'var(--sb-color-dark)',
   },
   'pre:not(.prismjs)': {
     background: 'transparent',
@@ -63,7 +63,7 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
     marginBottom: '0 !important',
   },
   a: {
-    color: theme.color.secondary,
+    color: 'var(--sb-color-secondary)',
     textDecoration: 'none',
   },
   'a.absent': {
@@ -105,7 +105,7 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
   },
   hr: {
     border: '0 none',
-    borderTop: `1px solid ${theme.appBorderColor}`,
+    borderTop: `1px solid var(--sb-appBorderColor)`,
     height: 4,
     padding: 0,
   },
@@ -162,9 +162,9 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
   },
 
   blockquote: {
-    borderLeft: `4px solid ${theme.color.medium}`,
+    borderLeft: `4px solid var(--sb-color-medium)`,
     padding: '0 15px',
-    color: theme.color.dark,
+    color: 'var(--sb-color-dark)',
 
     '& > :first-of-type': {
       marginTop: 0,
@@ -180,27 +180,27 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
     borderCollapse: 'collapse',
 
     '& tr': {
-      borderTop: `1px solid ${theme.appBorderColor}`,
+      borderTop: `1px solid var(--sb-appBorderColor)`,
       backgroundColor: 'white',
       margin: 0,
       padding: 0,
 
       '& th': {
         fontWeight: 'bold',
-        border: `1px solid ${theme.appBorderColor}`,
+        border: `1px solid var(--sb-appBorderColor)`,
         textAlign: 'left',
         margin: 0,
         padding: '6px 13px',
       },
 
       '& td': {
-        border: `1px solid ${theme.appBorderColor}`,
+        border: `1px solid var(--sb-appBorderColor)`,
         textAlign: 'left',
         margin: 0,
         padding: '6px 13px',
       },
       '&:nth-of-type(2n)': {
-        backgroundColor: theme.color.lighter,
+        backgroundColor: 'var(--sb-color-lighter)',
       },
 
       '& th :first-of-type, & td :first-of-type': {
@@ -219,7 +219,7 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
     overflow: 'hidden',
 
     '& > span': {
-      border: `1px solid ${theme.color.medium}`,
+      border: `1px solid var(--sb-color-medium)`,
       display: 'block',
       float: 'left',
       overflow: 'hidden',
@@ -235,7 +235,7 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
 
     '& span span': {
       clear: 'both',
-      color: theme.color.darkest,
+      color: 'var(--sb-color-darkest)',
       display: 'block',
       padding: '5px 0 0',
     },
@@ -302,9 +302,9 @@ export const DocumentWrapper = styled.div(({ theme }) => ({
     margin: '0 2px',
     padding: '0 5px',
     whiteSpace: 'nowrap',
-    border: `1px solid ${theme.color.mediumlight}`,
-    backgroundColor: theme.color.lighter,
+    border: `1px solid var(--sb-color-mediumlight)`,
+    backgroundColor: 'var(--sb-color-lighter)',
     borderRadius: 3,
-    color: theme.base === 'dark' ? theme.color.darkest : theme.color.dark,
+    color: theme.base === 'dark' ? 'var(--sb-color-darkest)' : 'var(--sb-color-dark)',
   },
 }));

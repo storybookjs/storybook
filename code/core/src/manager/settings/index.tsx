@@ -20,9 +20,9 @@ import { WhatsNewPage } from './whats_new_page';
 
 const { document } = global;
 
-const Content = styled(ScrollArea)(({ theme }) => ({
-  background: theme.background.content,
-}));
+const Content = styled(ScrollArea)({
+  background: 'var(--sb-background-content)',
+});
 
 const SidebarToggle = styled.div({
   // Extra specificity is necessary here

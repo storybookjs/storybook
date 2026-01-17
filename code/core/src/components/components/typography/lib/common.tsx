@@ -1,12 +1,11 @@
-import { transparentize } from 'polished';
 import type { CSSObject, FunctionInterpolation } from 'storybook/theming';
 
-export const headerCommon: FunctionInterpolation = ({ theme }) => ({
+export const headerCommon: FunctionInterpolation = () => ({
   margin: '20px 0 8px',
   padding: 0,
   cursor: 'text',
   position: 'relative',
-  color: theme.color.defaultText,
+  color: 'var(--sb-color-defaultText)',
   '&:first-of-type': {
     marginTop: 0,
     paddingTop: 0,
@@ -26,16 +25,16 @@ export const codeCommon: FunctionInterpolation = ({ theme }) => ({
   whiteSpace: 'nowrap',
 
   borderRadius: 3,
-  fontSize: theme.typography.size.s2 - 1,
+  fontSize: 'calc(var(--sb-typography-size-s2) - 1px)',
 
   border: theme.base === 'light' ? '1px solid hsl(0 0 0 / 0.05)' : '1px solid hsl(0 0 100 / 0.05)',
-  color: theme.color.defaultText,
+  color: 'var(--sb-color-defaultText)',
   backgroundColor: theme.base === 'light' ? 'hsl(0 0 0 / 0.01)' : 'hsl(0 0 100 / 0.02)',
 });
 
-export const withReset: FunctionInterpolation = ({ theme }) => ({
-  fontFamily: theme.typography.fonts.base,
-  fontSize: theme.typography.size.s3,
+export const withReset: FunctionInterpolation = () => ({
+  fontFamily: 'var(--sb-typography-fonts-base)',
+  fontSize: 'var(--sb-typography-size-s3)',
   margin: 0,
 
   WebkitFontSmoothing: 'antialiased',

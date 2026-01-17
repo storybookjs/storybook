@@ -17,10 +17,10 @@ export interface HeadingProps {
   onMenuClick?: SidebarMenuProps['onClick'];
 }
 
-const BrandArea = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s2,
-  fontWeight: theme.typography.weight.bold,
-  color: theme.color.defaultText,
+const BrandArea = styled.div({
+  fontSize: 'var(--sb-typography-size-s2)',
+  fontWeight: 'var(--sb-typography-weight-bold)',
+  color: 'var(--sb-color-defaultText)',
   marginRight: 20,
   display: 'flex',
   width: '100%',
@@ -36,7 +36,7 @@ const BrandArea = styled.div(({ theme }) => ({
     display: 'block',
     flex: '1 1 auto',
   },
-}));
+});
 
 const HeadingWrapper = styled.div({
   display: 'flex',
@@ -47,12 +47,12 @@ const HeadingWrapper = styled.div({
   paddingLeft: 8,
 });
 
-const SkipToCanvasLink = styled(Button)(({ theme }) => ({
+const SkipToCanvasLink = styled(Button)({
   display: 'none',
   '@media (min-width: 600px)': {
     display: 'block',
     position: 'absolute',
-    fontSize: theme.typography.size.s1,
+    fontSize: 'var(--sb-typography-size-s1)',
     border: 0,
     width: 1,
     height: 1,
@@ -75,7 +75,7 @@ const SkipToCanvasLink = styled(Button)(({ theme }) => ({
       zIndex: 3,
     },
   },
-}));
+});
 
 export const Heading: FC<HeadingProps & ComponentProps<typeof HeadingWrapper>> = ({
   menuHighlighted = false,

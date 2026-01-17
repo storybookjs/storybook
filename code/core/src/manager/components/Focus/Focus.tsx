@@ -5,18 +5,18 @@ import { styled } from 'storybook/theming';
 import { useLocationHash } from '../../hooks/useLocation';
 
 const FocusOutline = styled.div<{ active?: boolean; outlineOffset?: number }>(
-  ({ theme, active = false, outlineOffset = 0 }) => ({
+  ({ active = false, outlineOffset = 0 }) => ({
     width: '100%',
     borderRadius: 'inherit',
     transition: 'outline-color var(--transition-duration, 0.2s)',
-    outline: `2px solid ${active ? theme.color.secondary : 'transparent'}`,
+    outline: `2px solid ${active ? 'var(--sb-color-secondary)' : 'transparent'}`,
     outlineOffset,
   })
 );
 
-const FocusProxy = styled(FocusOutline)<{ targetId: string }>(({ theme, targetId }) => ({
+const FocusProxy = styled(FocusOutline)<{ targetId: string }>(({ targetId }) => ({
   [`&:has([data-target-id="${targetId}"]:focus-visible)`]: {
-    outlineColor: theme.color.secondary,
+    outlineColor: 'var(--sb-color-secondary)',
   },
 }));
 

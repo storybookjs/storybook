@@ -165,21 +165,21 @@ export function filterToolsSide(
   return tools.filter(filter);
 }
 
-const StyledSection = styled.section(({ theme }) => ({
+const StyledSection = styled.section({
   position: 'relative',
   display: 'flex',
   alignItems: 'center',
-  color: theme.barTextColor,
+  color: 'var(--sb-barTextColor)',
   width: '100%',
   flexShrink: 0,
   overflowX: 'auto',
   overflowY: 'hidden',
-  boxShadow: `${theme.appBorderColor}  0 -1px 0 0 inset`,
-  background: theme.barBg,
-  scrollbarColor: `${theme.barTextColor} ${theme.barBg}`,
+  boxShadow: `var(--sb-appBorderColor)  0 -1px 0 0 inset`,
+  background: 'var(--sb-barBg)',
+  scrollbarColor: `var(--sb-barTextColor) var(--sb-barBg)`,
   scrollbarWidth: 'thin',
   zIndex: 4,
-}));
+});
 
 const StyledToolbar = styled(AbstractToolbar)({
   flex: 1,

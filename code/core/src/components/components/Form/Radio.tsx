@@ -1,10 +1,10 @@
 import React from 'react';
 
-import { color, styled } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 const Input = styled.input(({ theme }) => ({
   appearance: 'none',
-  backgroundColor: theme.input.background,
+  backgroundColor: 'var(--sb-input-background)',
   border: `1px solid ${theme.base === 'dark' ? 'hsl(0 0 100 / 0.4)' : 'hsl(0 0 0 / 0.44)'}`,
   borderRadius: 8,
   display: 'grid',
@@ -20,19 +20,19 @@ const Input = styled.input(({ theme }) => ({
   },
   '&:disabled': {
     backgroundColor: 'transparent',
-    borderColor: theme.input.border,
+    borderColor: 'var(--sb-input-border)',
   },
   '&:disabled:checked': {
-    backgroundColor: theme.base === 'dark' ? color.dark : theme.color.mediumdark,
-    borderColor: theme.base === 'dark' ? color.dark : theme.color.mediumdark,
+    backgroundColor: theme.base === 'dark' ? 'var(--sb-color-dark)' : 'var(--sb-color-mediumdark)',
+    borderColor: theme.base === 'dark' ? 'var(--sb-color-dark)' : 'var(--sb-color-mediumdark)',
   },
   '&:checked': {
-    backgroundColor: color.secondary,
-    borderColor: color.secondary,
-    boxShadow: `inset 0 0 0 2px ${theme.input.background}`,
+    backgroundColor: 'var(--sb-color-secondary)',
+    borderColor: 'var(--sb-color-secondary)',
+    boxShadow: `inset 0 0 0 2px var(--sb-input-background)`,
   },
   '&:enabled:focus-visible': {
-    outline: `2px solid ${theme.color.secondary}`,
+    outline: `2px solid var(--sb-color-secondary)`,
     outlineOffset: 2,
   },
 }));

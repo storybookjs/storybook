@@ -11,9 +11,9 @@ import { isReactChildString } from '../lib/isReactChildString';
 const isInlineCodeRegex = /[\n\r]/g;
 
 const DefaultCodeBlock = styled.code(
-  ({ theme }) => ({
+  {
     // from reset
-    fontFamily: theme.typography.fonts.mono,
+    fontFamily: 'var(--sb-typography-fonts-mono)',
     WebkitFontSmoothing: 'antialiased',
     MozOsxFontSmoothing: 'grayscale',
     display: 'inline-block',
@@ -21,17 +21,17 @@ const DefaultCodeBlock = styled.code(
     paddingRight: 2,
     verticalAlign: 'baseline',
     color: 'inherit',
-  }),
+  },
   codeCommon
 );
 
 const StyledSyntaxHighlighter = styled(SyntaxHighlighter)(({ theme }) => ({
   // DocBlocks-specific styling and overrides
-  fontFamily: theme.typography.fonts.mono,
-  fontSize: `${theme.typography.size.s2 - 1}px`,
+  fontFamily: 'var(--sb-typography-fonts-mono)',
+  fontSize: 'calc(var(--sb-typography-size-s2) - 1px)',
   lineHeight: '19px',
   margin: '25px 0 40px',
-  borderRadius: theme.appBorderRadius,
+  borderRadius: 'var(--sb-appBorderRadius)',
   boxShadow:
     theme.base === 'light' ? 'rgba(0, 0, 0, 0.10) 0 1px 3px 0' : 'rgba(0, 0, 0, 0.20) 0 2px 5px 0',
   'pre.prismjs': {

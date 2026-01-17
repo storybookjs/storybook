@@ -37,6 +37,7 @@ export { createGlobal, createReset } from './global';
 export * from './create';
 export * from './convert';
 export * from './ensure';
+export { ThemeVariables } from './ThemeVariables';
 
 export { lightenColor as lighten, darkenColor as darken, getPreferredColorScheme } from './utils';
 

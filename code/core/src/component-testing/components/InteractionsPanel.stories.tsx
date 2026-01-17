@@ -12,9 +12,9 @@ import { getCalls, getInteractions } from '../mocks';
 import { InteractionsPanel } from './InteractionsPanel';
 import ToolbarStories from './Toolbar.stories';
 
-const StyledWrapper = styled.div(({ theme }) => ({
-  backgroundColor: theme.background.content,
-  color: theme.color.defaultText,
+const StyledWrapper = styled.div({
+  backgroundColor: 'var(--sb-background-content)',
+  color: 'var(--sb-color-defaultText)',
   display: 'block',
   height: '100%',
   position: 'absolute',
@@ -22,7 +22,7 @@ const StyledWrapper = styled.div(({ theme }) => ({
   right: 0,
   bottom: 0,
   overflow: 'auto',
-}));
+});
 
 const interactions = getInteractions(CallStates.DONE);
 const managerContext: any = {

@@ -26,11 +26,11 @@ const slide = keyframes({
   },
 });
 
-const CardContent = styled.div(({ theme }) => ({
-  borderRadius: theme.appBorderRadius,
-  backgroundColor: theme.background.content,
+const CardContent = styled.div({
+  borderRadius: 'var(--sb-appBorderRadius)',
+  backgroundColor: 'var(--sb-background-content)',
   position: 'relative',
-}));
+});
 
 const CardOutline = styled.div<{
   animation?: 'none' | 'rainbow' | 'spin';
@@ -40,9 +40,9 @@ const CardOutline = styled.div<{
   width: '100%',
   padding: 1,
   overflow: 'hidden',
-  backgroundColor: theme.background.content,
-  borderRadius: theme.appBorderRadius + 1,
-  boxShadow: `inset 0 0 0 1px ${(animation === 'none' && color && theme.color[color]) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
+  backgroundColor: 'var(--sb-background-content)',
+  borderRadius: 'calc(var(--sb-appBorderRadius) + 1px)',
+  boxShadow: `inset 0 0 0 1px ${(animation === 'none' && color && theme.color[color]) || 'var(--sb-appBorderColor)'}, var(--card-box-shadow, transparent 0 0)`,
   transition: 'box-shadow 1s',
 
   '@supports (interpolate-size: allow-keywords)': {

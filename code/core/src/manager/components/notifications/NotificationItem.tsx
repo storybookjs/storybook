@@ -36,23 +36,23 @@ const Notification = styled.div<{ duration?: number }>(
   ({ theme }) => ({
     position: 'relative',
     display: 'flex',
-    border: `1px solid ${theme.appBorderColor}`,
+    border: `1px solid var(--sb-appBorderColor)`,
     padding: '12px 6px 12px 12px',
-    borderRadius: theme.appBorderRadius + 1,
+    borderRadius: `calc(var(--sb-appBorderRadius) + 1px)`,
     alignItems: 'center',
 
     animation: `${slideIn} 500ms`,
     background: theme.base === 'light' ? 'hsla(203, 50%, 20%, .97)' : 'hsla(203, 30%, 95%, .97)',
     boxShadow: `0 2px 5px 0 rgba(0, 0, 0, 0.05), 0 5px 15px 0 rgba(0, 0, 0, 0.1)`,
-    color: theme.color.inverseText,
+    color: 'var(--sb-color-inverseText)',
     textDecoration: 'none',
     overflow: 'hidden',
 
     [MEDIA_DESKTOP_BREAKPOINT]: {
-      boxShadow: `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app}`,
+      boxShadow: `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px var(--sb-background-app)`,
     },
   }),
-  ({ duration, theme }) =>
+  ({ duration }) =>
     duration && {
       '&::after': {
         content: '""',
@@ -61,7 +61,7 @@ const Notification = styled.div<{ duration?: number }>(
         bottom: 0,
         left: 0,
         height: 3,
-        background: theme.color.secondary,
+        background: 'var(--sb-color-secondary)',
         animation: `${grow} ${duration}ms linear forwards reverse`,
       },
     }
@@ -103,27 +103,27 @@ const NotificationIconWrapper = styled.div({
   },
 });
 
-const NotificationTextWrapper = styled.div(({ theme }) => ({
+const NotificationTextWrapper = styled.div({
   width: '100%',
   display: 'flex',
   flexDirection: 'column',
-  color: theme.color.inverseText,
-}));
+  color: 'var(--sb-color-inverseText)',
+});
 
-const Headline = styled.div(({ theme }) => ({
+const Headline = styled.div({
   height: '100%',
   alignItems: 'center',
   whiteSpace: 'balance',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
-  fontSize: theme.typography.size.s1,
+  fontSize: 'var(--sb-typography-size-s1)',
   lineHeight: '16px',
-  fontWeight: theme.typography.weight.bold,
-}));
+  fontWeight: 'var(--sb-typography-weight-bold)',
+});
 
 const SubHeadline = styled.div(({ theme }) => ({
   color: transparentize(0.25, theme.color.inverseText),
-  fontSize: theme.typography.size.s1 - 1,
+  fontSize: 'calc(var(--sb-typography-size-s1) - 1px)',
   lineHeight: '14px',
   marginTop: 2,
   whiteSpace: 'balance',

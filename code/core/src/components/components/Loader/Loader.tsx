@@ -52,26 +52,26 @@ const ProgressTrack = styled.div(({ theme }) => ({
   cursor: 'progress',
 }));
 
-const ProgressBar = styled.div(({ theme }) => ({
+const ProgressBar = styled.div({
   position: 'absolute',
   top: 0,
   left: 0,
   height: '100%',
-  background: theme.color.secondary,
-}));
+  background: 'var(--sb-color-secondary)',
+});
 
-const ProgressMessage = styled.div(({ theme }) => ({
+const ProgressMessage = styled.div({
   minHeight: '2em',
-  fontSize: `${theme.typography.size.s1}px`,
-  color: theme.textMutedColor,
-}));
+  fontSize: 'var(--sb-typography-size-s1)',
+  color: 'var(--sb-textMutedColor)',
+});
 
-const ErrorIcon = styled(LightningOffIcon)(({ theme }) => ({
+const ErrorIcon = styled(LightningOffIcon)({
   width: 20,
   height: 20,
   marginBottom: '0.5rem',
-  color: theme.textMutedColor,
-}));
+  color: 'var(--sb-textMutedColor)',
+});
 
 const ellipsis = keyframes`
   from { content: "..." }

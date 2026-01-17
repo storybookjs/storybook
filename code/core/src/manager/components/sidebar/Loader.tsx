@@ -16,15 +16,13 @@ const Loadingitem = styled.div<{
     marginBottom: 4,
     alignItems: 'center',
     overflow: 'hidden',
+    background: 'var(--sb-appBorderColor)',
   },
   ({ depth = 0 }) => ({
     marginLeft: depth * 15,
     maxWidth: 85 - depth * 5,
   }),
-  ({ theme }) => theme.animation.inlineGlow,
-  ({ theme }) => ({
-    background: theme.appBorderColor,
-  })
+  ({ theme }) => theme.animation.inlineGlow
 );
 
 export const Contained = styled.div({

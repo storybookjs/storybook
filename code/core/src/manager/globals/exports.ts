@@ -364,6 +364,7 @@ export default {
     'ClassNames',
     'Global',
     'ThemeProvider',
+    'ThemeVariables',
     'background',
     'color',
     'convert',

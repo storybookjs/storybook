@@ -28,10 +28,10 @@ export interface AddonPanelProps {
   hasScrollbar?: boolean;
 }
 
-const Div = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s2 - 1,
+const Div = styled.div({
+  fontSize: `calc(var(--sb-typography-size-s2) - 1px)`,
   height: '100%',
-}));
+});
 
 export const AddonPanel = ({ active, children, hasScrollbar = true }: AddonPanelProps) => {
   return (

@@ -30,14 +30,14 @@ const clean = (obj: { [key: string]: any }) =>
     {} as typeof obj
   );
 
-const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI, theme }) => ({
+const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI }) => ({
   height: '100%',
   maxHeight: '100vh',
   paddingBottom: showSaveFromUI ? 41 : 0,
-  backgroundColor: theme.background.content,
+  backgroundColor: 'var(--sb-background-content)',
 
   table: {
-    backgroundColor: theme.background.app,
+    backgroundColor: 'var(--sb-background-app)',
   },
 }));
 

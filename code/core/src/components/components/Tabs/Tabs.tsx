@@ -23,12 +23,12 @@ export interface WrapperProps {
 }
 
 const Wrapper = styled.div<WrapperProps>(
-  ({ theme, bordered }) =>
+  ({ bordered }) =>
     bordered
       ? {
           backgroundClip: 'padding-box',
-          border: `1px solid ${theme.appBorderColor}`,
-          borderRadius: theme.appBorderRadius,
+          border: `1px solid var(--sb-appBorderColor)`,
+          borderRadius: 'var(--sb-appBorderRadius)',
           overflow: 'hidden',
           boxSizing: 'border-box',
         }
@@ -77,14 +77,14 @@ const Content = styled.div<ContentProps>(
     position: 'relative',
     container: 'tab-content / inline-size',
   },
-  ({ theme }) => ({
-    fontSize: theme.typography.size.s2 - 1,
-    background: theme.background.content,
-  }),
-  ({ bordered, theme }) =>
+  {
+    fontSize: 'calc(var(--sb-typography-size-s2) - 1px)',
+    background: 'var(--sb-background-content)',
+  },
+  ({ bordered }) =>
     bordered
       ? {
-          borderRadius: `0 0 ${theme.appBorderRadius - 1}px ${theme.appBorderRadius - 1}px`,
+          borderRadius: `0 0 calc(var(--sb-appBorderRadius) - 1px) calc(var(--sb-appBorderRadius) - 1px)`,
         }
       : {},
   ({ absolute, bordered }) =>

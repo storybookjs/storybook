@@ -34,7 +34,7 @@ const StyledTabButton = styled.button<{
       display: 'none',
     },
   },
-  ({ theme }) => ({
+  {
     padding: '0 15px',
     transition: 'color 0.2s linear, border-bottom-color 0.2s linear',
     height: 40,
@@ -49,20 +49,20 @@ const StyledTabButton = styled.button<{
 
     '&:focus-visible': {
       outline: '0 none',
-      boxShadow: `inset 0 0 0 2px ${theme.barSelectedColor}`,
+      boxShadow: `inset 0 0 0 2px var(--sb-barSelectedColor)`,
     },
-  }),
-  ({ isSelected, theme }) =>
+  },
+  ({ isSelected }) =>
     isSelected
       ? {
-          color: theme.barSelectedColor,
-          borderBottomColor: theme.barSelectedColor,
+          color: 'var(--sb-barSelectedColor)',
+          borderBottomColor: 'var(--sb-barSelectedColor)',
         }
       : {
-          color: theme.barTextColor,
+          color: 'var(--sb-barTextColor)',
           borderBottomColor: 'transparent',
           '&:hover': {
-            color: theme.barHoverColor,
+            color: 'var(--sb-barHoverColor)',
           },
         }
 );
@@ -99,16 +99,16 @@ const SCROLL_BUTTON_WIDTH = 28; // 16 width + 6 + 6 padding
 const ScrollButtonContainer = styled.div<{
   $showStartBorder?: boolean;
   $showEndBorder?: boolean;
-}>(({ $showStartBorder, $showEndBorder, theme }) => ({
+}>(({ $showStartBorder, $showEndBorder }) => ({
   flexShrink: 0,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   padding: 6,
   boxShadow: $showStartBorder
-    ? `inset 1px 0 0 ${theme.appBorderColor}`
+    ? `inset 1px 0 0 var(--sb-appBorderColor)`
     : $showEndBorder
-      ? `inset -1px 0 0 ${theme.appBorderColor}`
+      ? `inset -1px 0 0 var(--sb-appBorderColor)`
       : 'none',
 }));
 

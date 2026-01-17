@@ -100,8 +100,8 @@ export const Container = styled.div<{
   width?: number | string;
   height?: number | string;
 }>(
-  ({ theme }) => ({
-    backgroundColor: theme.background.bar,
+  {
+    backgroundColor: 'var(--sb-background-bar)',
     borderRadius: 6,
     boxShadow: '0px 4px 67px 0px #00000040',
     position: 'absolute',
@@ -111,8 +111,8 @@ export const Container = styled.div<{
     '&:focus-visible': {
       outline: 'none',
     },
-  }),
-  ({ theme, width, height, $variant, $status, $transitionDuration }) =>
+  },
+  ({ width, height, $variant, $status, $transitionDuration }) =>
     $variant === 'dialog'
       ? {
           top: '50%',
@@ -143,7 +143,7 @@ export const Container = styled.div<{
           width: width ?? '100%',
           height: height ?? '80%',
           maxWidth: '100%',
-          background: theme.background.content,
+          background: 'var(--sb-background-content)',
           '@supports (interpolate-size: allow-keywords)': {
             interpolateSize: 'allow-keywords',
           },
@@ -253,18 +253,18 @@ export const Header = ({
 
 export const Title = styled((props: ComponentProps<typeof Heading>) => (
   <Heading level={2} {...props} />
-))(({ theme }) => ({
+))({
   margin: 0,
-  fontSize: theme.typography.size.s3,
-  fontWeight: theme.typography.weight.bold,
-}));
+  fontSize: 'var(--sb-typography-size-s3)',
+  fontWeight: 'var(--sb-typography-weight-bold)',
+});
 
-export const Description = styled(Text)(({ theme }) => ({
+export const Description = styled(Text)({
   position: 'relative',
   zIndex: 1,
   margin: 0,
-  fontSize: theme.typography.size.s2,
-}));
+  fontSize: 'var(--sb-typography-size-s2)',
+});
 
 export const Actions = styled.div({
   display: 'flex',
@@ -272,21 +272,21 @@ export const Actions = styled.div({
   gap: 8,
 });
 
-export const ErrorWrapper = styled.div(({ theme }) => ({
+export const ErrorWrapper = styled.div({
   maxHeight: 100,
   overflow: 'auto',
   '@media (prefers-reduced-motion: no-preference)': {
     animation: `${expand} 300ms, ${fadeIn} 300ms`,
   },
-  backgroundColor: theme.background.critical,
-  color: theme.color.lightest,
-  fontSize: theme.typography.size.s2,
+  backgroundColor: 'var(--sb-background-critical)',
+  color: 'var(--sb-color-lightest)',
+  fontSize: 'var(--sb-typography-size-s2)',
 
   '& > div': {
     position: 'relative',
     padding: '8px 16px',
   },
-}));
+});
 
 export const Error = ({
   children,

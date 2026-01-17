@@ -233,12 +233,12 @@ export const Viewport = ({
       if (dragRefX.current && (dragSide.current === 'both' || dragSide.current === 'right')) {
         const newWidth = Math.max(VIEWPORT_MIN_WIDTH, dragStart.current[0] + e.clientX);
         targetRef.current.style.width = `${newWidth}px`;
-        dragRefX.current.dataset.value = `${newWidth / scale}`;
+        dragRefX.current.dataset.value = `${Math.round(newWidth / scale)}`;
       }
       if (dragRefY.current && (dragSide.current === 'both' || dragSide.current === 'bottom')) {
         const newHeight = Math.max(VIEWPORT_MIN_HEIGHT, dragStart.current[1] + e.clientY);
         targetRef.current.style.height = `${newHeight}px`;
-        dragRefY.current.dataset.value = `${newHeight / scale}`;
+        dragRefY.current.dataset.value = `${Math.round(newHeight / scale)}`;
       }
       if (dragScrollTarget.current) {
         dragScrollTarget.current.scrollIntoView({ block: 'center', inline: 'center' });

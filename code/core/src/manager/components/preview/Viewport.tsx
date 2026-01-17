@@ -223,12 +223,9 @@ export const Viewport = ({
   const dragRefXY = useRef<HTMLDivElement>(null);
   const dragSide = useRef<DragSide>('none');
   const dragStart = useRef<[number, number] | undefined>();
+  const dragScrollTarget = useRef<Element | null | undefined>(null);
 
   useEffect(() => {
-    const scrollRight = targetRef.current?.querySelector('[data-edge="right"]');
-    const scrollBottom = targetRef.current?.querySelector('[data-edge="bottom"]');
-    const scrollBoth = targetRef.current?.querySelector('[data-edge="both"]');
-
     const onDrag = (e: MouseEvent) => {
       if (!targetRef.current || !dragStart.current) {
         return;
@@ -243,14 +240,8 @@ export const Viewport = ({
         targetRef.current.style.height = `${newHeight}px`;
         dragRefY.current.dataset.value = `${newHeight / scale}`;
       }
-      if (dragSide.current === 'both') {
-        scrollBoth?.scrollIntoView({ block: 'center', inline: 'center' });
-      }
-      if (dragSide.current === 'right') {
-        scrollRight?.scrollIntoView({ block: 'center', inline: 'center' });
-      }
-      if (dragSide.current === 'bottom') {
-        scrollBottom?.scrollIntoView({ block: 'center', inline: 'center' });
+      if (dragScrollTarget.current) {
+        dragScrollTarget.current.scrollIntoView({ block: 'center', inline: 'center' });
       }
     };
 
@@ -275,6 +266,9 @@ export const Viewport = ({
         (targetRef.current?.clientWidth ?? 0) - e.clientX,
         (targetRef.current?.clientHeight ?? 0) - e.clientY,
       ];
+      dragScrollTarget.current = targetRef.current?.querySelector(
+        `[data-edge="${dragSide.current}"]`
+      );
       setDragging(dragSide.current);
     };
 

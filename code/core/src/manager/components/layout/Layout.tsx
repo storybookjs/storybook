@@ -274,18 +274,16 @@ const PagesContainer = styled.div(({ theme }) => ({
 }));
 
 const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(
-  ({ theme }) => ({
+  ({ theme, position }) => ({
     gridArea: 'panel',
     position: 'relative',
     backgroundColor: theme.appContentBg,
+    borderTop: position === 'bottom' ? `1px solid ${theme.appBorderColor}` : undefined,
+    borderLeft: position === 'right' ? `1px solid ${theme.appBorderColor}` : undefined,
     '& > aside': {
       overflow: 'hidden',
     },
-  }),
-  ({ theme, position }) =>
-    position === 'bottom' && { boxShadow: `0 -1px 0 0 ${theme.appBorderColor}` },
-  ({ theme, position }) =>
-    position === 'right' && { boxShadow: `-1px 0 0 0 ${theme.appBorderColor}` }
+  })
 );
 
 const Drag = styled.div<{

@@ -5,13 +5,13 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import { getCodeSnippet } from './generateCodeSnippet';
+import { type CodeSnippetOptions, getCodeSnippet } from './generateCodeSnippet';
 
-function generateExample(code: string) {
+function generateExample(code: string, options?: CodeSnippetOptions) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
 
   const snippets = Object.keys(csf._storyExports)
-    .map((name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle'))
+    .map((name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle', options))
     .filter(Boolean);
 
   return recast.print(t.program(snippets)).code;
@@ -592,4 +592,109 @@ test('allow top level export functions', async () => {
         );
     }"
   `);
+});
+
+// jsxOnly option tests
+
+test('jsxOnly: Default', () => {
+  const input = withCSF3(`
+    export const Default: Story = {};
+  `);
+  expect(generateExample(input, { jsxOnly: true })).toMatchInlineSnapshot(
+    `"<Button>Click me</Button>;"`
+  );
+});
+
+test('jsxOnly: with args', () => {
+  const input = withCSF3(dedent`
+    export const WithEmoji: Story = {
+      args: {
+        children: '🚀Launch'
+      }
+    };
+  `);
+  expect(generateExample(input, { jsxOnly: true })).toMatchInlineSnapshot(
+    `"<Button>🚀Launch</Button>;"`
+  );
+});
+
+test('jsxOnly: custom render with arrow function', () => {
+  const input = withCSF3(dedent`
+    export const CustomRender: Story = { render: () => <Button label="String"></Button> }
+  `);
+  expect(generateExample(input, { jsxOnly: true })).toMatchInlineSnapshot(
+    `"<Button label="String"></Button>;"`
+  );
+});
+
+test('jsxOnly: custom render with args spread', () => {
+  const input = withCSF3(
+    `export const CustomRenderWithOverideArgs = {
+      render: (args) => <Button {...args} override="overide">Render</Button>,
+      args: { foo: 'bar', override: 'value' }
+    };`
+  );
+  expect(generateExample(input, { jsxOnly: true })).toMatchInlineSnapshot(
+    `"<Button foo="bar" override="overide">Render</Button>;"`
+  );
+});
+
+test('jsxOnly: render with block body', () => {
+  const input = withCSF3(
+    `export const CustomRenderBlockBody = {
+      render: (args) => { return <Button {...args}>Render</Button> },
+      args: { foo: 'bar' }
+    };`
+  );
+  expect(generateExample(input, { jsxOnly: true })).toMatchInlineSnapshot(
+    `"<Button foo="bar">Render</Button>;"`
+  );
+});
+
+test('jsxOnly: synthesizes self-closing when no children', () => {
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    const meta: Meta<typeof Button> = {
+      component: Button,
+    };
+    export default meta;
+
+    export const NoChildren: Story = {};
+  `;
+  expect(generateExample(input, { jsxOnly: true })).toMatchInlineSnapshot(`"<Button />;"`);
+});
+
+test('jsxOnly: CSF4', () => {
+  const input = withCSF4(`
+    export const Default = meta.story({});
+  `);
+  expect(generateExample(input, { jsxOnly: true })).toMatchInlineSnapshot(
+    `"<Button>Click me</Button>;"`
+  );
+});
+
+test('jsxOnly: deeply nested components', () => {
+  const input = withCSF3(dedent`
+    export const DeepNestedProp: Story = {
+      render: (args) => (
+        <Button>
+          <Level1>
+            <Leaf val={args.foo} />
+          </Level1>
+        </Button>
+      ),
+      args: { foo: 'bar' }
+    };
+  `);
+  expect(generateExample(input, { jsxOnly: true })).toMatchInlineSnapshot(
+    `
+    "<Button>
+        <Level1>
+            <Leaf val="bar" />
+        </Level1>
+    </Button>;"
+  `
+  );
 });

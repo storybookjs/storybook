@@ -502,10 +502,31 @@ export interface StorybookConfigRaw {
      * examples a lot faster, more readable and more accurate. They are not dynamic though, it won't
      * change if you change when using the control panel.
      *
+     * Can be set to `true` to enable with default options, or an object to configure:
+     *
+     * - `jsxOnly`: When true, outputs only the JSX element without the wrapper function. For example,
+     *   `<Button primary />` instead of `const Story = () => <Button primary />`
+     *
+     * @example
+     *
+     * ```ts
+     * // Enable with default options (includes wrapper function)
+     * features: {
+     *   experimentalCodeExamples: true;
+     * }
+     *
+     * // Enable with JSX-only output
+     * features: {
+     *   experimentalCodeExamples: {
+     *     jsxOnly: true;
+     *   }
+     * }
+     * ```
+     *
      * @default false
      * @experimental This feature is in early development and may change significantly in future releases.
      */
-    experimentalCodeExamples?: boolean;
+    experimentalCodeExamples?: boolean | { jsxOnly?: boolean };
   };
 
   build?: TestBuildConfig;

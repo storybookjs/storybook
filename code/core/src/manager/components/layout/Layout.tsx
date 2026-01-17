@@ -203,14 +203,14 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
                 position={panelPosition === 'bottom' ? 'left' : 'right'}
                 ref={panelResizerRef}
               />
-              <div
+              <PanelSlot
                 hidden={
                   (panelPosition === 'bottom' ? bottomPanelHeight === 0 : rightPanelWidth === 0) ||
                   undefined
                 }
               >
                 {slots.slotPanel}
-              </div>
+              </PanelSlot>
             </PanelContainer>
           )}
         </ContentPanelWrapper>
@@ -286,6 +286,10 @@ const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(
     borderLeft: position === 'right' ? `1px solid ${theme.appBorderColor}` : undefined,
   })
 );
+
+const PanelSlot = styled.div({
+  height: '100%',
+});
 
 const Drag = styled.div<{ orientation?: 'horizontal' | 'vertical'; position?: 'left' | 'right' }>(
   ({ theme }) => ({

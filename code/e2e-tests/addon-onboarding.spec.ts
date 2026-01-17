@@ -54,8 +54,9 @@ test.describe('addon-onboarding', () => {
     await page.locator('#referrer').selectOption('Web Search');
     await page.getByRole('button', { name: 'Submit' }).click();
 
-    await expect(
-      sbPage.previewIframe().getByRole('heading', { name: 'Configure your project' })
-    ).toBeVisible();
+    // After completing onboarding, verify we navigate to a story (first story in the index)
+    await expect(sbPage.page).toHaveURL(/\/(story|docs)\//);
+    // Verify the preview iframe has loaded content
+    await sbPage.waitUntilLoaded();
   });
 });

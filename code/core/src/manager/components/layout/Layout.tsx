@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 
 import { Match } from 'storybook/internal/router';
@@ -164,13 +165,15 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
 
   return (
     <LayoutContainer
-      navSize={navSize}
-      rightPanelWidth={rightPanelWidth}
-      bottomPanelHeight={bottomPanelHeight}
       panelPosition={managerLayoutState.panelPosition}
-      isDragging={isDragging}
-      viewMode={managerLayoutState.viewMode}
       showPanel={showPanel}
+      style={
+        {
+          '--nav-width': `${navSize}px`,
+          '--right-panel-width': `${rightPanelWidth}px`,
+          '--bottom-panel-height': `${bottomPanelHeight}px`,
+        } as CSSProperties
+      }
     >
       {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
       <>
@@ -194,6 +197,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           <PanelContainer position={panelPosition}>
             <Drag
               orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
+              overlapping={panelPosition === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
               position={panelPosition === 'bottom' ? 'left' : 'right'}
               ref={panelResizerRef}
             />
@@ -206,38 +210,37 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
   );
 };
 
-const LayoutContainer = styled.div<LayoutState & { showPanel: boolean }>(
-  ({ navSize, rightPanelWidth, bottomPanelHeight, viewMode, panelPosition, showPanel }) => {
-    return {
-      width: '100%',
-      height: ['100vh', '100dvh'], // This array is a special Emotion syntax to set a fallback if 100dvh is not supported
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-      colorScheme: 'light dark',
+const LayoutContainer = styled.div<{
+  panelPosition: LayoutState['panelPosition'];
+  showPanel: boolean;
+}>(({ panelPosition, showPanel }) => ({
+  width: '100%',
+  height: ['100vh', '100dvh'],
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+  colorScheme: 'light dark',
 
-      [MEDIA_DESKTOP_BREAKPOINT]: {
-        display: 'grid',
-        gap: 0,
-        gridTemplateColumns: `minmax(0, ${navSize}px) minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, ${rightPanelWidth}px)`,
-        gridTemplateRows: `1fr minmax(0, ${bottomPanelHeight}px)`,
-        gridTemplateAreas: (() => {
-          if (!showPanel) {
-            // showPanel is false by default when viewMode is not 'story', but can be overridden by the user
-            return `"sidebar content content"
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    display: 'grid',
+    gap: 0,
+    gridTemplateColumns: `minmax(0, var(--nav-width)) minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, var(--right-panel-width))`,
+    gridTemplateRows: `1fr minmax(0, var(--bottom-panel-height))`,
+    gridTemplateAreas: (() => {
+      if (!showPanel) {
+        // showPanel is false by default when viewMode is not 'story', but can be overridden by the user
+        return `"sidebar content content"
                   "sidebar content content"`;
-          }
-          if (panelPosition === 'right') {
-            return `"sidebar content panel"
+      }
+      if (panelPosition === 'right') {
+        return `"sidebar content panel"
                   "sidebar content panel"`;
-          }
-          return `"sidebar content content"
+      }
+      return `"sidebar content content"
                 "sidebar panel   panel"`;
-        })(),
-      },
-    };
-  }
-);
+    })(),
+  },
+}));
 
 const SidebarContainer = styled.div(({ theme }) => ({
   backgroundColor: theme.appBg,
@@ -271,16 +274,25 @@ const PagesContainer = styled.div(({ theme }) => ({
 }));
 
 const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(
-  ({ theme, position }) => ({
+  ({ theme }) => ({
     gridArea: 'panel',
     position: 'relative',
     backgroundColor: theme.appContentBg,
-    borderTop: position === 'bottom' ? `1px solid ${theme.appBorderColor}` : undefined,
-    borderLeft: position === 'right' ? `1px solid ${theme.appBorderColor}` : undefined,
-  })
+    '& > aside': {
+      overflow: 'hidden',
+    },
+  }),
+  ({ theme, position }) =>
+    position === 'bottom' && { boxShadow: `0 -1px 0 0 ${theme.appBorderColor}` },
+  ({ theme, position }) =>
+    position === 'right' && { boxShadow: `-1px 0 0 0 ${theme.appBorderColor}` }
 );
 
-const Drag = styled.div<{ orientation?: 'horizontal' | 'vertical'; position?: 'left' | 'right' }>(
+const Drag = styled.div<{
+  orientation?: 'horizontal' | 'vertical';
+  overlapping?: boolean;
+  position?: 'left' | 'right';
+}>(
   ({ theme }) => ({
     position: 'absolute',
     opacity: 0,
@@ -297,41 +309,39 @@ const Drag = styled.div<{ orientation?: 'horizontal' | 'vertical'; position?: 'l
       opacity: 1,
     },
   }),
-  ({ orientation = 'vertical', position = 'left' }) => {
-    if (orientation === 'vertical') {
-      return {
-        width: position === 'left' ? 10 : 13,
-        height: '100%',
-        top: 0,
-        right: position === 'left' ? '-7px' : undefined,
-        left: position === 'right' ? '-7px' : undefined,
-
-        '&:after': {
-          width: 1,
+  ({ orientation = 'vertical', overlapping = true, position = 'left' }) =>
+    orientation === 'vertical'
+      ? {
+          width: overlapping ? (position === 'left' ? 10 : 13) : 7,
           height: '100%',
-          marginLeft: position === 'left' ? 3 : 6,
-        },
+          top: 0,
+          right: position === 'left' ? -7 : undefined,
+          left: position === 'right' ? -7 : undefined,
 
-        '&:hover': {
-          cursor: 'col-resize',
-        },
-      };
-    }
-    return {
-      width: '100%',
-      height: '13px',
-      top: '-7px',
-      left: 0,
+          '&:after': {
+            width: 1,
+            height: '100%',
+            marginLeft: position === 'left' ? 3 : 6,
+          },
 
-      '&:after': {
-        width: '100%',
-        height: 1,
-        marginTop: 6,
-      },
+          '&:hover': {
+            cursor: 'col-resize',
+          },
+        }
+      : {
+          width: '100%',
+          height: overlapping ? 13 : 7,
+          top: -7,
+          left: 0,
 
-      '&:hover': {
-        cursor: 'row-resize',
-      },
-    };
-  }
+          '&:after': {
+            width: '100%',
+            height: 1,
+            marginTop: 6,
+          },
+
+          '&:hover': {
+            cursor: 'row-resize',
+          },
+        }
 );

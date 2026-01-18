@@ -512,13 +512,13 @@ export interface StorybookConfigRaw {
      * ```ts
      * // Enable with default options (includes wrapper function)
      * features: {
-     *   experimentalCodeExamples: true;
+     *   experimentalCodeExamples: true,
      * }
      *
      * // Enable with JSX-only output
      * features: {
      *   experimentalCodeExamples: {
-     *     jsxOnly: true;
+     *     jsxOnly: true,
      *   }
      * }
      * ```

@@ -15,8 +15,8 @@ export interface JsDocTags {
 }
 
 export interface PropSummaryValue {
-  summary?: string;
-  detail?: string;
+  summary?: string | undefined;
+  detail?: string | undefined;
 }
 
 export type PropType = PropSummaryValue;

@@ -182,4 +182,7 @@ async function run() {
   });
 }
 
-run();
+run().catch((e) => {
+  process.stderr.write(`${e.toString()}\n`);
+  process.exit(1);
+});

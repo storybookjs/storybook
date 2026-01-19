@@ -214,10 +214,10 @@ describe('initModule', () => {
       initialGlobals: { a: 1, b: 1 },
     });
     expect(navigate).toHaveBeenCalledWith(
-      '/story/test--story&globals=a:2;b:!undefined',
+      '/story/test--story&globals=a:2',
       expect.objectContaining({ replace: true })
     );
-    expect(store.getState().customQueryParams).toEqual({ globals: 'a:2;b:!undefined' });
+    expect(store.getState().customQueryParams).toEqual({ globals: 'a:2' });
   });
 
   it('adds url params alphabetically', async () => {
@@ -235,7 +235,12 @@ describe('initModule', () => {
       }),
     });
 
-    channel.emit(GLOBALS_UPDATED, { userGlobals: { g: 2 }, storyGlobals: {}, globals: { g: 2 } });
+    channel.emit(GLOBALS_UPDATED, {
+      userGlobals: { g: 2 },
+      storyGlobals: {},
+      globals: { g: 2 },
+      initialGlobals: {},
+    });
     expect(navigate).toHaveBeenCalledWith(
       '/story/test--story&full=1&globals=g:2',
       expect.objectContaining({ replace: true })

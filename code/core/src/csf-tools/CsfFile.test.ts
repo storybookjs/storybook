@@ -3002,21 +3002,33 @@ describe('CsfFile', () => {
         `);
       });
 
-      it('mixed factories and non-factories', () => {
-        expect(() =>
-          parse(
-            dedent`
+      it('skips non-factory exports in factory files', () => {
+        const parsed = loadCsf(
+          dedent`
             import { config } from '#.storybook/preview'
             const meta = config.meta({ component: 'foo' });
             export const A = meta.story({})
             export const B = {}
-        `
-          )
-        ).toThrowErrorMatchingInlineSnapshot(`
-          [MixedFactoryError: CSF: expected factory story (line 4, col 17)
+            export const someHelper = () => {}
+          `,
+          { makeTitle }
+        ).parse();
+        // Only factory stories are indexed, non-factory exports are skipped
+        expect(Object.keys(parsed._stories)).toEqual(['A']);
+      });
 
-          More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
-        `);
+      it('excludeStories still works with factories', () => {
+        const parsed = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo', excludeStories: ['B'] });
+            export const A = meta.story({})
+            export const B = meta.story({})
+          `,
+          { makeTitle }
+        ).parse();
+        // B is excluded via excludeStories
+        expect(Object.keys(parsed._stories)).toEqual(['A']);
       });
 
       it('factory stories in non-factory file', () => {

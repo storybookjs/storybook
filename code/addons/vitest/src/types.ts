@@ -2,6 +2,10 @@ import type { experimental_UniversalStore } from 'storybook/internal/core-server
 import type { PreviewAnnotation, Status, StoryId } from 'storybook/internal/types';
 import type { API_HashEntry } from 'storybook/internal/types';
 
+// import type { A11yReport } from '@storybook/addon-a11y';
+// TODO: There's a type error in axe-core that makes this error during production builds
+type A11yReport = any;
+
 export interface VitestError extends Error {
   VITEST_TEST_PATH?: string;
   VITEST_TEST_NAME?: string;
@@ -41,6 +45,7 @@ export type CurrentRun = {
     warning: number;
     error: number;
   };
+  a11yReports: Record<StoryId, A11yReport[]>;
   totalTestCount: number | undefined;
   storyIds: StoryId[] | undefined;
   startedAt: number | undefined;

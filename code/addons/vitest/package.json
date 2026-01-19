@@ -80,6 +80,7 @@
     "@storybook/icons": "^2.0.1"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "workspace:*",
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.19.1",

@@ -8,6 +8,8 @@ import type {
   TestProviderStoreById,
 } from 'storybook/internal/types';
 
+import type { A11yReport } from '@storybook/addon-a11y';
+
 import { throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
 
@@ -17,7 +19,14 @@ import {
   STATUS_TYPE_ID_SCREENSHOT,
   storeOptions,
 } from '../constants';
-import type { RunTrigger, StoreEvent, StoreState, TriggerRunEvent, VitestError } from '../types';
+import type {
+  CurrentRun,
+  RunTrigger,
+  StoreEvent,
+  StoreState,
+  TriggerRunEvent,
+  VitestError,
+} from '../types';
 import { errorToErrorLike } from '../utils';
 import { VitestManager } from './vitest-manager';
 
@@ -207,20 +216,26 @@ export class TestManager {
 
     this.componentTestStatusStore.set(componentTestStatuses);
 
-    const a11yStatuses = testCaseResultsToFlush
-      .flatMap(({ storyId, reports }) =>
-        reports
-          ?.filter((r) => r.type === 'a11y')
-          .map((a11yReport) => ({
-            storyId,
-            typeId: STATUS_TYPE_ID_A11Y,
-            value: testStateToStatusValueMap[a11yReport.status],
-            title: 'Accessibility tests',
-            description: '',
-            sidebarContextMenu: false,
-          }))
-      )
-      .filter((a11yStatus) => a11yStatus !== undefined);
+    const a11yReportsByStoryId: CurrentRun['a11yReports'] = {};
+    const a11yStatuses: typeof componentTestStatuses = [];
+
+    for (const { storyId, reports } of testCaseResultsToFlush) {
+      const storyA11yReports = reports?.filter((r) => r.type === 'a11y');
+      if (!storyA11yReports?.length) {
+        continue;
+      }
+      a11yReportsByStoryId[storyId] = storyA11yReports.map((r) => r.result) as A11yReport[];
+      for (const a11yReport of storyA11yReports) {
+        a11yStatuses.push({
+          storyId,
+          typeId: STATUS_TYPE_ID_A11Y,
+          value: testStateToStatusValueMap[a11yReport.status],
+          title: 'Accessibility tests',
+          description: '',
+          sidebarContextMenu: false,
+        });
+      }
+    }
 
     if (a11yStatuses.length > 0) {
       this.a11yStatusStore.set(a11yStatuses);
@@ -257,6 +272,10 @@ export class TestManager {
           a11yCount: { success: a11ySuccess, warning: a11yWarning, error: a11yError },
           componentTestStatuses: s.currentRun.componentTestStatuses.concat(componentTestStatuses),
           a11yStatuses: s.currentRun.a11yStatuses.concat(a11yStatuses),
+          a11yReports: {
+            ...s.currentRun.a11yReports,
+            ...a11yReportsByStoryId,
+          },
           // in some cases successes and errors can exceed the anticipated totalTestCount
           // e.g. when testing more tests than the stories we know about upfront
           // in those cases, we set the totalTestCount to the sum of successes and errors

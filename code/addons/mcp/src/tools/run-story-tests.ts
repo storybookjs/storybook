@@ -6,11 +6,10 @@ import { findStoryIds } from '../utils/find-story-ids.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 import { StoryInputArray } from '../types.ts';
-import type {
-	TestRunResult,
-	TriggerTestRunResponsePayload,
-} from '@storybook/addon-vitest/constants';
+import type { TriggerTestRunResponsePayload } from '@storybook/addon-vitest/constants';
 import type Channel from 'storybook/internal/channels';
+import type { StoryId } from 'storybook/internal/csf';
+import type { A11yReport } from '@storybook/addon-a11y';
 
 export const RUN_STORY_TESTS_TOOL_NAME = 'run-story-tests';
 
@@ -41,7 +40,7 @@ export async function addRunStoryTestsTool(
 	server.tool(
 		{
 			name: RUN_STORY_TESTS_TOOL_NAME,
-			title: 'Run Storybook Tests',
+			title: 'Storybook Tests',
 			description: `Run tests for one or more stories.`,
 			schema: RunStoryTestsInput,
 			enabled: () => {
@@ -91,20 +90,33 @@ export async function addRunStoryTestsTool(
 				logger.info(`Running tests for story IDs: ${storyIds.join(', ')}`);
 
 				// Trigger test run via channel events
-				const testResults = await triggerTestRunViaChannel(
+				const responsePayload = await triggerTestRunViaChannel(
 					channel,
 					addonVitestConstants!.TRIGGER_TEST_RUN_REQUEST,
 					addonVitestConstants!.TRIGGER_TEST_RUN_RESPONSE,
 					storyIds,
 				);
 
-				logger.debug('Test results:');
-				logger.debug(JSON.stringify(testResults, null, 2));
+				const testResults = responsePayload.result;
+				if (!testResults) {
+					throw new Error('Test run response missing result data');
+				}
 
-				let textResult = '';
+				logger.debug('Test results received from addon-vitest');
+				logger.warn(
+					JSON.stringify(
+						{
+							testResults,
+						},
+						null,
+						2,
+					),
+				);
+
+				const sections: string[] = [];
 
 				if (testResults.componentTestCount.error === 0) {
-					textResult += `## Passing Stories\n\n- ${storyIds.join('\n- ')}`;
+					sections.push(`## Passing Stories\n\n- ${storyIds.join('\n- ')}`);
 				} else {
 					const componentTestStatuses = testResults.componentTestStatuses;
 
@@ -116,92 +128,99 @@ export async function addRunStoryTestsTool(
 					);
 
 					if (passingStories.length > 0) {
-						textResult += `## Passing Stories
-
-- ${passingStories.map((status) => status.storyId).join('\n- ')}
-
-`;
+						sections.push(
+							`## Passing Stories\n\n- ${passingStories.map((status) => status.storyId).join('\n- ')}`,
+						);
 					}
 
 					if (failingStories.length > 0) {
-						textResult += `## Failing Stories
-
-${failingStories
-	.map(
-		(status) => `### ${status.storyId}
-
-${status.description}`,
-	)
-	.join('\n\n')}
-
-`;
+						sections.push(
+							`## Failing Stories\n\n${failingStories
+								.map(
+									(status) => `### ${status.storyId}\n\n${status.description}`,
+								)
+								.join('\n\n')}`,
+						);
 					}
 				}
 
-				// Add a11y violations section
-				const a11yViolations = testResults.a11yStatuses.filter(
-					(status) =>
-						status.value === 'status-value:error' ||
-						status.value === 'status-value:warning',
-				);
+				const a11yReports = testResults.a11yReports as Record<
+					StoryId,
+					A11yReport[]
+				>;
+				if (a11yReports && Object.keys(a11yReports).length > 0) {
+					const a11yViolationSections: string[] = [];
 
-				if (a11yViolations.length > 0) {
-					const a11yErrors = a11yViolations.filter(
-						(status) => status.value === 'status-value:error',
-					);
-					const a11yWarnings = a11yViolations.filter(
-						(status) => status.value === 'status-value:warning',
-					);
+					for (const [storyId, reports] of Object.entries(a11yReports)) {
+						for (const report of reports) {
+							// Check if report is an error
+							if ('error' in report && report.error) {
+								a11yViolationSections.push(
+									`### ${storyId} - Error\n\n${report.error.message}`,
+								);
+								continue;
+							}
 
-					textResult += `## Accessibility Violations
+							const violations = (report as any).violations || [];
 
-`;
+							if (violations.length > 0) {
+								for (const violation of violations) {
+									const nodes = violation.nodes
+										.map((node: any) => {
+											const inspectLink = node.linkPath
+												? `${origin}${node.linkPath}`
+												: undefined;
+											const parts = [] as string[];
 
-					if (a11yErrors.length > 0) {
-						textResult += `### Errors
+											if (node.impact) {
+												parts.push(`- **Impact**: ${node.impact}`);
+											}
 
-${a11yErrors
-	.map(
-		(status) => `#### ${status.storyId}
+											if (node.failureSummary || node.message) {
+												parts.push(
+													`  **Message**: ${node.failureSummary || node.message}`,
+												);
+											}
 
-${status.description}`,
-	)
-	.join('\n\n')}
+											parts.push(
+												`  **Element**: ${node.html || '(no html available)'}`,
+											);
 
-`;
+											if (inspectLink) {
+												parts.push(`  **Inspect**: ${inspectLink}`);
+											}
+
+											return parts.join('\n');
+										})
+										.join('\n');
+
+									a11yViolationSections.push(
+										`### ${storyId} - ${violation.id}\n\n${violation.description}\n\n#### Affected Elements\n${nodes}`,
+									);
+								}
+							}
+						}
 					}
 
-					if (a11yWarnings.length > 0) {
-						textResult += `### Warnings
-
-${a11yWarnings
-	.map(
-		(status) => `#### ${status.storyId}
-
-${status.description}`,
-	)
-	.join('\n\n')}
-
-`;
+					if (a11yViolationSections.length > 0) {
+						sections.push(
+							`## Accessibility Violations\n\n${a11yViolationSections.join('\n\n')}`,
+						);
 					}
 				}
 
 				if (testResults.unhandledErrors.length > 0) {
-					textResult += `## Unhandled Errors
-
-${testResults.unhandledErrors
-	.map(
-		(unhandledError) =>
-			`### ${unhandledError.name || 'Unknown Error'}
-
-**Error message**: ${unhandledError.message || 'No message available'}
-**Path**: ${unhandledError.VITEST_TEST_PATH || 'No path available'}
-**Test name**: ${unhandledError.VITEST_TEST_NAME || 'No test name available'}
-**Stack trace**:
-${unhandledError.stack || 'No stack trace available'}`,
-	)
-	.join('\n\n')}`;
+					sections.push(
+						`## Unhandled Errors\n\n${testResults.unhandledErrors
+							.map(
+								(unhandledError) =>
+									`### ${unhandledError.name || 'Unknown Error'}\n\n**Error message**: ${unhandledError.message || 'No message available'}\n**Path**: ${unhandledError.VITEST_TEST_PATH || 'No path available'}\n**Test name**: ${unhandledError.VITEST_TEST_NAME || 'No test name available'}\n**Stack trace**:\n${unhandledError.stack || 'No stack trace available'}`,
+							)
+							.join('\n\n')}`,
+					);
 				}
+
+				const textResult = sections.join('\n\n');
 
 				return {
 					content: [
@@ -218,14 +237,6 @@ ${unhandledError.stack || 'No stack trace available'}`,
 	);
 }
 
-type TestRunResultSummary = {
-	componentTestCount: TestRunResult['componentTestCount'];
-	componentTestStatuses: TestRunResult['componentTestStatuses'];
-	a11yCount: TestRunResult['a11yCount'];
-	a11yStatuses: TestRunResult['a11yStatuses'];
-	unhandledErrors: TestRunResult['unhandledErrors'];
-};
-
 /**
  * Trigger a test run via Storybook channel events.
  * This is the channel-based API for triggering tests in addon-vitest.
@@ -235,7 +246,7 @@ function triggerTestRunViaChannel(
 	triggerTestRunRequestEventName: string,
 	triggerTestRunResponseEventName: string,
 	storyIds: string[],
-): Promise<TestRunResultSummary> {
+): Promise<TriggerTestRunResponsePayload> {
 	return new Promise((resolve, reject) => {
 		const requestId = `mcp-${Date.now()}`;
 
@@ -249,13 +260,7 @@ function triggerTestRunViaChannel(
 			switch (payload.status) {
 				case 'completed':
 					if (payload.result) {
-						resolve({
-							componentTestCount: payload.result.componentTestCount,
-							componentTestStatuses: payload.result.componentTestStatuses,
-							a11yCount: payload.result.a11yCount,
-							a11yStatuses: payload.result.a11yStatuses,
-							unhandledErrors: payload.result.unhandledErrors,
-						});
+						resolve(payload);
 					} else {
 						reject(new Error('Test run completed but no result was returned'));
 					}
@@ -277,12 +282,11 @@ function triggerTestRunViaChannel(
 
 		channel.on(triggerTestRunResponseEventName, handleResponse);
 
-		const request: import('@storybook/addon-vitest/constants').TriggerTestRunRequestPayload =
-			{
-				requestId,
-				actor: 'addon-mcp',
-				storyIds,
-			};
+		const request = {
+			requestId,
+			actor: 'addon-mcp',
+			storyIds,
+		} as const;
 
 		channel.emit(triggerTestRunRequestEventName, request);
 	});

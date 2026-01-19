@@ -224,6 +224,7 @@ const LayoutContainer = styled.div<{
   [MEDIA_DESKTOP_BREAKPOINT]: {
     display: 'grid',
     gap: 0,
+    // This uses CSS variables to prevent Emotion from generating a new CSS className for every possible value
     gridTemplateColumns: `minmax(0, var(--nav-width)) minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, var(--right-panel-width))`,
     gridTemplateRows: `1fr minmax(0, var(--bottom-panel-height))`,
     gridTemplateAreas: (() => {
@@ -286,6 +287,12 @@ const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(
   })
 );
 
+/**
+ * Drag handle for the sidebar and panel resizers. Can be horizontal (bottom panel) or vertical
+ * (sidebar or right panel). Can optionally be set to not overlap the content area (only render
+ * outside of it), which is necessary when the panel is collapsed to prevent a layout shift when
+ * scrollIntoView is used.
+ */
 const Drag = styled.div<{
   orientation?: 'horizontal' | 'vertical';
   overlapping?: boolean;

@@ -10,7 +10,12 @@ import type { Compiler } from 'webpack';
 
 function getMockerRuntime(): string {
   return readFileSync(
-    join(resolvePackageDir('@storybook/builder-webpack5'), 'dist', 'mocker-runtime', 'mocker-runtime.js'),
+    join(
+      resolvePackageDir('@storybook/builder-webpack5'),
+      'dist',
+      'mocker-runtime',
+      'mocker-runtime.js'
+    ),
     'utf-8'
   );
 }

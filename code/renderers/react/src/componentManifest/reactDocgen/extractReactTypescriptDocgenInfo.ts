@@ -112,7 +112,7 @@ export const extractArgTypesFromDocgenTypescript = async ({
 }: GetArgTypesDataOptions) => {
   try {
     // Using dynamic import for react-docgen-typescript
-    const { withCompilerOptions } = await import('react-docgen-typescript');
+    const { withCompilerOptions } = (await import('react-docgen-typescript')).default;
 
     // Default options that match Storybook's expected behavior
     const defaultOptions: ReactDocgenTypescriptOptions = {

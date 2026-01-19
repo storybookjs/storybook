@@ -66,9 +66,8 @@ interface MainAreaContainerProps {
 }
 
 /**
- * Shows Router-controlled pages (e.g. settings/about), inside a landmark for navigability. Assumes
- * that the main preview area is not concurrently reachable by assistive technologies, since these
- * components both define a `main` role.
+ * Shows Router-controlled pages (e.g. settings/about), inside a landmark for navigability, OR shows
+ * the preview area. Ensures a single `main` landmark exists at a time.
  */
 const MainAreaContainer = React.memo<MainAreaContainerProps>(function MainAreaContainer({
   showPages,
@@ -77,19 +76,13 @@ const MainAreaContainer = React.memo<MainAreaContainerProps>(function MainAreaCo
 }) {
   return (
     <>
-      {showPages && <PagesContainer>{slotPages}</PagesContainer>}
-      <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
-        {({ match }) => (
-          <MainInnerContainer
-            shown={!!match}
-            // Ensures only one main landmark is in the Accessibility Object Model at any given time
-            hidden={showPages ? true : undefined}
-            aria-hidden={showPages ? true : undefined}
-          >
-            {slotMain}
-          </MainInnerContainer>
-        )}
-      </Match>
+      {showPages ? (
+        <PagesContainer>{slotPages}</PagesContainer>
+      ) : (
+        <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
+          {({ match }) => <MainInnerContainer shown={!!match}>{slotMain}</MainInnerContainer>}
+        </Match>
+      )}
     </>
   );
 });

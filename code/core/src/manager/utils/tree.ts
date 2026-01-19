@@ -65,7 +65,7 @@ export function getPath(item: Item, ref: Pick<RefType, 'id' | 'title' | 'index'>
 }
 
 export const searchItem = (item: Item, ref: Parameters<typeof getPath>[1]): SearchItem => {
-  return { ...item, refId: ref.id, path: getPath(item, ref) };
+  return { ...item, refId: ref.id, name: item.name, path: getPath(item, ref) };
 };
 
 export function cycle<T>(array: T[], index: number, delta: number): number {

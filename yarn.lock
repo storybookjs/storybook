@@ -8127,8 +8127,11 @@ __metadata:
     webpack-hot-middleware: "npm:^2.25.1"
     webpack-virtual-modules: "npm:^0.6.0"
   peerDependencies:
+    msw: ^2.7.0
     storybook: "workspace:^"
   peerDependenciesMeta:
+    msw:
+      optional: true
     typescript:
       optional: true
   languageName: unknown

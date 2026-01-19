@@ -33,6 +33,13 @@ const config: BuildEntries = {
         dts: false,
       },
     ],
+    browser: [
+      {
+        exportEntries: ['./mocker-runtime'],
+        entryPoint: './src/mocker-runtime/mocker-runtime.js',
+        dts: false,
+      },
+    ],
   },
   extraOutputs: {
     './templates/virtualModuleModernEntry.js': './templates/virtualModuleModernEntry.js',

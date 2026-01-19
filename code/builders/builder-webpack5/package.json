@@ -34,6 +34,7 @@
     "./loaders/export-order-loader": "./dist/loaders/export-order-loader.js",
     "./loaders/storybook-mock-transform-loader": "./dist/loaders/storybook-mock-transform-loader.js",
     "./loaders/webpack-automock-loader": "./dist/loaders/webpack-automock-loader.js",
+    "./mocker-runtime": "./dist/mocker-runtime/mocker-runtime.js",
     "./package.json": "./package.json",
     "./presets/custom-webpack-preset": "./dist/presets/custom-webpack-preset.js",
     "./presets/preview-preset": "./dist/presets/preview-preset.js",
@@ -78,9 +79,13 @@
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
+    "msw": "^2.7.0",
     "storybook": "workspace:^"
   },
   "peerDependenciesMeta": {
+    "msw": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

@@ -1,9 +1,19 @@
-import { getMockerRuntime } from 'storybook/internal/mocking-utils';
+import { readFileSync } from 'node:fs';
+
+import { resolvePackageDir } from 'storybook/internal/common';
 
 // HtmlWebpackPlugin is a standard part of Storybook's Webpack setup.
 // We can assume it's available as a dependency.
 import type HtmlWebpackPlugin from 'html-webpack-plugin';
+import { join } from 'pathe';
 import type { Compiler } from 'webpack';
+
+function getMockerRuntime(): string {
+  return readFileSync(
+    join(resolvePackageDir('@storybook/builder-webpack5'), 'dist', 'mocker-runtime', 'mocker-runtime.js'),
+    'utf-8'
+  );
+}
 
 const PLUGIN_NAME = 'WebpackInjectMockerRuntimePlugin';
 

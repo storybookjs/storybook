@@ -196,16 +196,7 @@ async function generateExportsFile(prettierConfig: prettier.Options | null): Pro
   );
 }
 
-async function prebuildMockerRuntime() {
-  console.log('\nPre-building mocker runtime...');
-  const scriptPath = join(import.meta.dirname, 'prebuild-mocker-runtime.ts');
-
-  // Import and run the prebuild script
-  await import(pathToFileURL(scriptPath).href);
-}
-
-// Run both prebuild tasks
-Promise.all([generateSourceFiles(), prebuildMockerRuntime()]).catch((error) => {
+generateSourceFiles().catch((error) => {
   console.error('Error during prebuild:', error);
   process.exit(1);
 });

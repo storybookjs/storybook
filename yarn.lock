@@ -8310,12 +8310,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/docs-mdx@npm:4.0.0-next.3":
-  version: 4.0.0-next.3
-  resolution: "@storybook/docs-mdx@npm:4.0.0-next.3"
+"@storybook/docs-mdx@npm:3.2.0--canary.16.3ffdb30.0":
+  version: 3.2.0--canary.16.3ffdb30.0
+  resolution: "@storybook/docs-mdx@npm:3.2.0--canary.16.3ffdb30.0"
   dependencies:
     acorn: "npm:^8.12.1"
-  checksum: 10c0/7d9e689df6a098b0c294f3e835a5a1323460c80b8a33195f811f7de215c6abaf452988851a219ebd59fa472107747b8f54ab2b82d6044c81a76a7e4dc09e506c
+  checksum: 10c0/c9d707a928fef8e48e26f49ca74483aec69f6c887fcc2e6d104c4125a74440aca71cbe22fbb51df53432890a93be27b78396da89dc581373d1396b1be1d760b1
   languageName: node
   linkType: hard
 
@@ -28591,7 +28591,7 @@ __metadata:
     "@react-stately/tabs": "npm:^3.8.5"
     "@react-types/shared": "npm:^3.32.0"
     "@rolldown/pluginutils": "npm:1.0.0-beta.18"
-    "@storybook/docs-mdx": "npm:4.0.0-next.3"
+    "@storybook/docs-mdx": "npm:3.2.0--canary.16.3ffdb30.0"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.1"
     "@tanstack/react-virtual": "npm:^3.3.0"

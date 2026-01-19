@@ -143,6 +143,9 @@ export async function buildDevStandalone(
     await warnWhenUsingArgTypesRegex(previewConfigPath, config);
   } catch (e) {}
 
+  const server = await getServer(options);
+  const channel = getServerChannel(server);
+
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account
   // We hope to remove this in SB8
@@ -153,6 +156,7 @@ export async function buildDevStandalone(
     ],
     ...options,
     isCritical: true,
+    channel,
   });
 
   const { renderer, builder, disableTelemetry } = await presets.apply('core', {});
@@ -209,12 +213,11 @@ export async function buildDevStandalone(
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
+    channel,
   });
 
   const features = await presets.apply('features');
   global.FEATURES = features;
-  const server = await getServer(options);
-  const channel = getServerChannel(server);
   await presets.apply('experimental_serverChannel', channel);
 
   const fullOptions: Options = {

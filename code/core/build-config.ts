@@ -190,6 +190,11 @@ const config: BuildEntries = {
         entryPoint: './src/manager/globals-runtime.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./internal/mocking-utils/mocker-runtime'],
+        entryPoint: './src/mocking-utils/mocker-runtime.js',
+        dts: false,
+      },
     ],
     globalizedRuntime: [
       {

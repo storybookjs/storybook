@@ -7889,13 +7889,18 @@ __metadata:
     glob: "npm:^10.5.0"
     knitwork: "npm:^1.1.0"
     magic-string: "npm:^0.30.0"
+    msw: "npm:^2.7.0"
     pathe: "npm:^1.1.2"
     slash: "npm:^5.0.0"
     ts-dedent: "npm:^2.0.0"
     vite: "npm:^7.0.4"
   peerDependencies:
+    msw: ^2.7.0
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+  peerDependenciesMeta:
+    msw:
+      optional: true
   languageName: unknown
   linkType: soft
 

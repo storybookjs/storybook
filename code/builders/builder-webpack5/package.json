@@ -34,7 +34,6 @@
     "./loaders/export-order-loader": "./dist/loaders/export-order-loader.js",
     "./loaders/storybook-mock-transform-loader": "./dist/loaders/storybook-mock-transform-loader.js",
     "./loaders/webpack-automock-loader": "./dist/loaders/webpack-automock-loader.js",
-    "./mocker-runtime": "./dist/mocker-runtime/mocker-runtime.js",
     "./package.json": "./package.json",
     "./presets/custom-webpack-preset": "./dist/presets/custom-webpack-preset.js",
     "./presets/preview-preset": "./dist/presets/preview-preset.js",
@@ -53,7 +52,6 @@
   ],
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
-    "@vitest/mocker": "3.2.4",
     "case-sensitive-paths-webpack-plugin": "^2.4.0",
     "cjs-module-lexer": "^1.2.3",
     "css-loader": "^7.1.2",
@@ -73,20 +71,15 @@
     "@types/node": "^22.19.1",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/webpack-hot-middleware": "^2.25.6",
-    "msw": "^2.7.0",
     "pretty-hrtime": "^1.0.3",
     "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "msw": "^2.7.0",
     "storybook": "workspace:^"
   },
   "peerDependenciesMeta": {
-    "msw": {
-      "optional": true
-    },
     "typescript": {
       "optional": true
     }

@@ -1,8 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-import { resolvePackageDir } from 'storybook/internal/common';
+import { getMockerRuntime } from 'storybook/internal/mocking-utils';
 
 import { exactRegex } from '@rolldown/pluginutils';
 import { dedent } from 'ts-dedent';
@@ -25,33 +21,13 @@ export const viteInjectMockerRuntime = (options: {
     name: 'vite:storybook-inject-mocker-runtime',
     buildStart() {
       if (viteConfig.command === 'build') {
+        // Emit the pre-bundled mocker runtime as an asset
         this.emitFile({
-          type: 'chunk',
-          id: join(
-            resolvePackageDir('storybook'),
-            'assets',
-            'server',
-            'mocker-runtime.template.js'
-          ),
+          type: 'asset',
           fileName: entryPath.slice(1),
+          source: getMockerRuntime(),
         });
       }
-    },
-    config() {
-      return {
-        optimizeDeps: {
-          include: ['@vitest/mocker', '@vitest/mocker/browser'],
-        },
-        resolve: {
-          // Aliasing necessary for package managers like pnpm, since resolving modules from a virtual module
-          // leads to errors, if the imported module is not a dependency of the project.
-          // By resolving the module to the real path, we can avoid this issue.
-          alias: {
-            '@vitest/mocker/browser': fileURLToPath(import.meta.resolve('@vitest/mocker/browser')),
-            '@vitest/mocker': fileURLToPath(import.meta.resolve('@vitest/mocker')),
-          },
-        },
-      };
     },
     configResolved(config) {
       viteConfig = config;
@@ -82,10 +58,7 @@ export const viteInjectMockerRuntime = (options: {
     },
     async load(id) {
       if (exactRegex(id).test(entryPath)) {
-        return readFileSync(
-          join(resolvePackageDir('storybook'), 'assets', 'server', 'mocker-runtime.template.js'),
-          'utf-8'
-        );
+        return getMockerRuntime();
       }
 
       return null;

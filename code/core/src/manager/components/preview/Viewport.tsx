@@ -223,29 +223,25 @@ export const Viewport = ({
   const dragRefXY = useRef<HTMLDivElement>(null);
   const dragSide = useRef<DragSide>('none');
   const dragStart = useRef<[number, number] | undefined>();
+  const dragScrollTarget = useRef<Element | null | undefined>(null);
 
   useEffect(() => {
-    const scrollRight = targetRef.current?.querySelector('[data-edge="right"]');
-    const scrollBottom = targetRef.current?.querySelector('[data-edge="bottom"]');
-    const scrollBoth = targetRef.current?.querySelector('[data-edge="both"]');
-
     const onDrag = (e: MouseEvent) => {
-      if (dragSide.current === 'both' || dragSide.current === 'right') {
-        targetRef.current!.style.width = `${dragStart.current![0] + e.clientX}px`;
-        dragRefX.current!.dataset.value = `${dragStart.current![0] + e.clientX}`;
+      if (!targetRef.current || !dragStart.current) {
+        return;
       }
-      if (dragSide.current === 'both' || dragSide.current === 'bottom') {
-        targetRef.current!.style.height = `${dragStart.current![1] + e.clientY}px`;
-        dragRefY.current!.dataset.value = `${dragStart.current![1] + e.clientY}`;
+      if (dragRefX.current && (dragSide.current === 'both' || dragSide.current === 'right')) {
+        const newWidth = Math.max(VIEWPORT_MIN_WIDTH, dragStart.current[0] + e.clientX);
+        targetRef.current.style.width = `${newWidth}px`;
+        dragRefX.current.dataset.value = `${Math.round(newWidth / scale)}`;
       }
-      if (dragSide.current === 'both') {
-        scrollBoth?.scrollIntoView({ block: 'center', inline: 'center' });
+      if (dragRefY.current && (dragSide.current === 'both' || dragSide.current === 'bottom')) {
+        const newHeight = Math.max(VIEWPORT_MIN_HEIGHT, dragStart.current[1] + e.clientY);
+        targetRef.current.style.height = `${newHeight}px`;
+        dragRefY.current.dataset.value = `${Math.round(newHeight / scale)}`;
       }
-      if (dragSide.current === 'right') {
-        scrollRight?.scrollIntoView({ block: 'center', inline: 'center' });
-      }
-      if (dragSide.current === 'bottom') {
-        scrollBottom?.scrollIntoView({ block: 'center', inline: 'center' });
+      if (dragScrollTarget.current) {
+        dragScrollTarget.current.scrollIntoView({ block: 'center', inline: 'center' });
       }
     };
 
@@ -253,10 +249,12 @@ export const Viewport = ({
       window.removeEventListener('mouseup', onEnd);
       window.removeEventListener('mousemove', onDrag);
       setDragging('none');
-      const { clientWidth, clientHeight } = targetRef.current!;
-      const scale = Number(targetRef.current!.dataset.scale) || 1;
-      resize(`${Math.round(clientWidth / scale)}px`, `${Math.round(clientHeight / scale)}px`);
       dragStart.current = undefined;
+      if (targetRef.current) {
+        const { clientWidth, clientHeight, dataset } = targetRef.current;
+        const scale = Number(dataset.scale) || 1;
+        resize(`${Math.round(clientWidth / scale)}px`, `${Math.round(clientHeight / scale)}px`);
+      }
     };
 
     const onStart = (e: MouseEvent) => {
@@ -268,20 +266,31 @@ export const Viewport = ({
         (targetRef.current?.clientWidth ?? 0) - e.clientX,
         (targetRef.current?.clientHeight ?? 0) - e.clientY,
       ];
+      dragScrollTarget.current = targetRef.current?.querySelector(
+        `[data-edge="${dragSide.current}"]`
+      );
       setDragging(dragSide.current);
     };
 
     const handles = [dragRefX.current, dragRefY.current, dragRefXY.current];
     handles.forEach((el) => el?.addEventListener('mousedown', onStart));
     return () => handles.forEach((el) => el?.removeEventListener('mousedown', onStart));
-  }, [resize]);
+  }, [resize, scale]);
 
-  const frameStyles = useMemo(() => {
+  const dimensions = useMemo(() => {
     const { number: nx, unit: ux = 'px' } = parseNumber(width) ?? { number: 0, unit: 'px' };
     const { number: ny, unit: uy = 'px' } = parseNumber(height) ?? { number: 0, unit: 'px' };
+    const frameWidth = Math.max(VIEWPORT_MIN_WIDTH, nx * scale);
+    const frameHeight = Math.max(VIEWPORT_MIN_HEIGHT, ny * scale);
     return {
-      width: `${nx * scale}${ux}`,
-      height: `${ny * scale}${uy}`,
+      frame: {
+        width: `${frameWidth}${ux}`,
+        height: `${frameHeight}${uy}`,
+      },
+      display: {
+        width: `${nx}${ux === 'px' ? '' : ux}`,
+        height: `${ny}${uy === 'px' ? '' : uy}`,
+      },
     };
   }, [width, height, scale]);
 
@@ -343,7 +352,7 @@ export const Viewport = ({
         isDefault={isDefault}
         data-dragging={dragging}
         data-scale={scale}
-        style={isDefault ? { height: '100%', width: '100%' } : frameStyles}
+        style={isDefault ? { height: '100%', width: '100%' } : dimensions.frame}
         ref={targetRef}
       >
         <div
@@ -367,13 +376,13 @@ export const Viewport = ({
           ref={dragRefX}
           isDefault={isDefault}
           data-side="right"
-          data-value={width.replace('px', '')}
+          data-value={dimensions.display.width}
         />
         <DragHandle
           ref={dragRefY}
           isDefault={isDefault}
           data-side="bottom"
-          data-value={height.replace('px', '')}
+          data-value={dimensions.display.height}
         />
         <DragHandle ref={dragRefXY} isDefault={isDefault} data-side="both" />
       </FrameWrapper>

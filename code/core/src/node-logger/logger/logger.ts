@@ -166,16 +166,26 @@ type BoxOptions = {
 } & clack.BoxOptions;
 
 export const logBox = (message: string, { title, ...options }: BoxOptions = {}) => {
-  if (shouldLog('info')) {
-    logTracker.addLog('info', message);
-    if (isClackEnabled()) {
-      clack.box(message, title, {
-        ...options,
-        width: options.width ?? 'auto',
-      });
-    } else {
-      console.log(message);
+  try {
+    if (shouldLog('info')) {
+      logTracker.addLog('info', message);
+      if (isClackEnabled()) {
+        clack.box(message, title, {
+          ...options,
+          width: options.width ?? 'auto',
+        });
+      } else {
+        console.log(message);
+      }
     }
+  } catch {
+    /**
+     * Clack.logBox can throw with "Invalid count value"-errors
+     *
+     * Possibly it may only happen on CI, but considering rendering a box is not critical, we will
+     * just log the message to the console and discard the error.
+     */
+    clack.log.message(message);
   }
 };
 

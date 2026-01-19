@@ -1,3 +1,30 @@
+## 10.2.0-beta.3
+
+- Core: Support defineConfig when setting up ESLint plugin - [#32878](https://github.com/storybookjs/storybook/pull/32878), thanks @copilot-swe-agent!
+- Core: Viewport UX fixes - [#33557](https://github.com/storybookjs/storybook/pull/33557), thanks @ghengeveld!
+- NextJSVite: Add `@opentelemetry/api` to `optimizeDeps` - [#33577](https://github.com/storybookjs/storybook/pull/33577), thanks @ndelangen!
+- TypeScript: Reduce `cannot be named` errors - [#33344](https://github.com/storybookjs/storybook/pull/33344), thanks @icopp!
+
+## 10.2.0-beta.2
+
+- CSF-Factories: Skip non-factory exports instead of throwing error - [#33550](https://github.com/storybookjs/storybook/pull/33550), thanks @kasperpeulen!
+- Core: Add zoom level 8 and limit manual input to 800% - [#33561](https://github.com/storybookjs/storybook/pull/33561), thanks @ghengeveld!
+- Core: Fix Checklist behavior with hidden sidebar - [#33556](https://github.com/storybookjs/storybook/pull/33556), thanks @ghengeveld!
+- Core: Fix viewport args handling and reset option - [#33560](https://github.com/storybookjs/storybook/pull/33560), thanks @ghengeveld!
+- Dependencies: Update `baseline-browser-mapping` - [#33576](https://github.com/storybookjs/storybook/pull/33576), thanks @ndelangen!
+- Onboarding: Fix navigation to first story when configure-your-project entry missing - [#33559](https://github.com/storybookjs/storybook/pull/33559), thanks @copilot-swe-agent!
+- Zoom: Keyboardshortcut for the `plus` key - [#33565](https://github.com/storybookjs/storybook/pull/33565), thanks @ndelangen!
+
+## 10.2.0-beta.1
+
+- CSF-Factories: Allow kebab-case HTML attribute names in web components args - [#33526](https://github.com/storybookjs/storybook/pull/33526), thanks @kasperpeulen!
+- CSF-Factories: Export WebComponentsTypes and VueTypes - [#33521](https://github.com/storybookjs/storybook/pull/33521), thanks @kasperpeulen!
+
+## 10.2.0-beta.0
+
+- Manager: Fix system query parameters being overridable - [#33535](https://github.com/storybookjs/storybook/pull/33535), thanks @JReinhold!
+- NextJSVite: Upgrade plugin - [#33538](https://github.com/storybookjs/storybook/pull/33538), thanks @ndelangen!
+
 ## 10.2.0-alpha.18
 
 - Build: Fix `ejslint` execution path in lint-staged - [#33504](https://github.com/storybookjs/storybook/pull/33504), thanks @Yeonny0723!

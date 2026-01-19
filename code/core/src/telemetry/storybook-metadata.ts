@@ -62,7 +62,12 @@ export const sanitizeAddonName = (name: string) => {
     .replace(/\$SNIP?/g, '');
 
   let prefix = '';
-  if(cleaned.startsWith('file') || cleaned.startsWith('.') || cleaned.startsWith('/') || cleaned.includes(':')) {
+  if (
+    cleaned.startsWith('file') ||
+    cleaned.startsWith('.') ||
+    cleaned.startsWith('/') ||
+    cleaned.includes(':')
+  ) {
     prefix = 'CUSTOM:';
   }
 
@@ -72,7 +77,9 @@ export const sanitizeAddonName = (name: string) => {
   }
 
   const parts = cleaned.split('/').filter(Boolean);
-  const addonLike = [...parts].reverse().find((part) => part.includes('addon-') || part.includes('-addon'));
+  const addonLike = [...parts]
+    .reverse()
+    .find((part) => part.includes('addon-') || part.includes('-addon'));
 
   if (addonLike) {
     return `${prefix}${addonLike}`;

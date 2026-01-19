@@ -1,20 +1,21 @@
-import { beforeEach, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
 import { fsMocks } from '../fixtures';
-import { getComponentDocgen } from './extractDocgenInfo';
+import { getComponentDocgen } from './extractReactDocgenInfo';
 
-beforeEach(() => {
-  vi.spyOn(process, 'cwd').mockReturnValue('/app');
-  vol.fromJSON(fsMocks, '/app');
-});
+describe('getComponentDocgen', () => {
+  beforeEach(() => {
+    vi.spyOn(process, 'cwd').mockReturnValue('/app');
+    vol.fromJSON(fsMocks, '/app');
+  });
 
-// Tests for getComponentDocgen function
-test('getComponentDocgen - extracts component name and docgen from a simple component file', () => {
-  const componentFilePath = '/app/src/components/Button.tsx';
-  const componentCode = dedent`
+  // Tests for getComponentDocgen function
+  test('extracts component name and docgen from a simple component file', () => {
+    const componentFilePath = '/app/src/components/Button.tsx';
+    const componentCode = dedent`
     import React from 'react';
 
     interface ButtonProps {
@@ -30,22 +31,22 @@ test('getComponentDocgen - extracts component name and docgen from a simple comp
     };
   `;
 
-  vol.fromJSON({
-    [componentFilePath]: componentCode,
+    vol.fromJSON({
+      [componentFilePath]: componentCode,
+    });
+
+    const result = getComponentDocgen(componentFilePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.componentName).toBe('Button');
+    expect(result?.reactDocgen.type).toBe('success');
+    // @ts-expect-error fix this later
+    expect(result?.reactDocgen.data.displayName).toBe('Button');
   });
 
-  const result = getComponentDocgen(componentFilePath);
-
-  expect(result).not.toBeNull();
-  expect(result?.componentName).toBe('Button');
-  expect(result?.reactDocgen.type).toBe('success');
-  // @ts-expect-error fix this later
-  expect(result?.reactDocgen.data.displayName).toBe('Button');
-});
-
-test('getComponentDocgen - extracts default export component when no name specified', () => {
-  const componentFilePath = '/app/src/components/Icon.tsx';
-  const componentCode = dedent`
+  test('extracts default export component when no name specified', () => {
+    const componentFilePath = '/app/src/components/Icon.tsx';
+    const componentCode = dedent`
     import React from 'react';
 
     interface IconProps {
@@ -63,22 +64,22 @@ test('getComponentDocgen - extracts default export component when no name specif
     export default Icon;
   `;
 
-  vol.fromJSON({
-    [componentFilePath]: componentCode,
+    vol.fromJSON({
+      [componentFilePath]: componentCode,
+    });
+
+    const result = getComponentDocgen(componentFilePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.componentName).toBe('Icon');
+    expect(result?.reactDocgen.type).toBe('success');
+    // @ts-expect-error fix this later
+    expect(result?.reactDocgen.data.displayName).toBe('Icon');
   });
 
-  const result = getComponentDocgen(componentFilePath);
-
-  expect(result).not.toBeNull();
-  expect(result?.componentName).toBe('Icon');
-  expect(result?.reactDocgen.type).toBe('success');
-  // @ts-expect-error fix this later
-  expect(result?.reactDocgen.data.displayName).toBe('Icon');
-});
-
-test('getComponentDocgen - finds specific component by name when multiple exports exist', () => {
-  const componentFilePath = '/app/src/components/Form.tsx';
-  const componentCode = dedent`
+  test('finds specific component by name when multiple exports exist', () => {
+    const componentFilePath = '/app/src/components/Form.tsx';
+    const componentCode = dedent`
     import React from 'react';
 
     /**
@@ -96,27 +97,27 @@ test('getComponentDocgen - finds specific component by name when multiple export
     };
   `;
 
-  vol.fromJSON({
-    [componentFilePath]: componentCode,
+    vol.fromJSON({
+      [componentFilePath]: componentCode,
+    });
+
+    const inputResult = getComponentDocgen(componentFilePath, 'Input');
+    const labelResult = getComponentDocgen(componentFilePath, 'Label');
+
+    expect(inputResult).not.toBeNull();
+    expect(inputResult?.componentName).toBe('Input');
+    // @ts-expect-error fix this later
+    expect(inputResult?.reactDocgen.data.displayName).toBe('Input');
+
+    expect(labelResult).not.toBeNull();
+    expect(labelResult?.componentName).toBe('Label');
+    // @ts-expect-error fix this later
+    expect(labelResult?.reactDocgen.data.displayName).toBe('Label');
   });
 
-  const inputResult = getComponentDocgen(componentFilePath, 'Input');
-  const labelResult = getComponentDocgen(componentFilePath, 'Label');
-
-  expect(inputResult).not.toBeNull();
-  expect(inputResult?.componentName).toBe('Input');
-  // @ts-expect-error fix this later
-  expect(inputResult?.reactDocgen.data.displayName).toBe('Input');
-
-  expect(labelResult).not.toBeNull();
-  expect(labelResult?.componentName).toBe('Label');
-  // @ts-expect-error fix this later
-  expect(labelResult?.reactDocgen.data.displayName).toBe('Label');
-});
-
-test('getComponentDocgen - returns null for non-existent component name', () => {
-  const componentFilePath = '/app/src/components/Button.tsx';
-  const componentCode = dedent`
+  test('returns null for non-existent component name', () => {
+    const componentFilePath = '/app/src/components/Button.tsx';
+    const componentCode = dedent`
     import React from 'react';
 
     export const Button: React.FC = () => {
@@ -124,18 +125,18 @@ test('getComponentDocgen - returns null for non-existent component name', () => 
     };
   `;
 
-  vol.fromJSON({
-    [componentFilePath]: componentCode,
+    vol.fromJSON({
+      [componentFilePath]: componentCode,
+    });
+
+    const result = getComponentDocgen(componentFilePath, 'NonExistentComponent');
+
+    expect(result).toBeNull();
   });
 
-  const result = getComponentDocgen(componentFilePath, 'NonExistentComponent');
-
-  expect(result).toBeNull();
-});
-
-test('getComponentDocgen - returns null for file with no components', () => {
-  const utilityFilePath = '/app/src/utils/helpers.ts';
-  const utilityCode = dedent`
+  test('returns null for file with no components', () => {
+    const utilityFilePath = '/app/src/utils/helpers.ts';
+    const utilityCode = dedent`
     export const formatDate = (date: Date): string => {
       return date.toISOString();
     };
@@ -145,26 +146,26 @@ test('getComponentDocgen - returns null for file with no components', () => {
     };
   `;
 
-  vol.fromJSON({
-    [utilityFilePath]: utilityCode,
+    vol.fromJSON({
+      [utilityFilePath]: utilityCode,
+    });
+
+    const result = getComponentDocgen(utilityFilePath);
+
+    expect(result).toBeNull();
   });
 
-  const result = getComponentDocgen(utilityFilePath);
+  test('handles file read errors gracefully', () => {
+    const nonExistentFilePath = '/app/src/components/NonExistent.tsx';
 
-  expect(result).toBeNull();
-});
+    const result = getComponentDocgen(nonExistentFilePath);
 
-test('getComponentDocgen - handles file read errors gracefully', () => {
-  const nonExistentFilePath = '/app/src/components/NonExistent.tsx';
+    expect(result).toBeNull();
+  });
 
-  const result = getComponentDocgen(nonExistentFilePath);
-
-  expect(result).toBeNull();
-});
-
-test('getComponentDocgen - works with TypeScript class components', () => {
-  const componentFilePath = '/app/src/components/LegacyButton.tsx';
-  const componentCode = dedent`
+  test('works with TypeScript class components', () => {
+    const componentFilePath = '/app/src/components/LegacyButton.tsx';
+    const componentCode = dedent`
     import React from 'react';
 
     interface ButtonProps {
@@ -181,22 +182,22 @@ test('getComponentDocgen - works with TypeScript class components', () => {
     }
   `;
 
-  vol.fromJSON({
-    [componentFilePath]: componentCode,
+    vol.fromJSON({
+      [componentFilePath]: componentCode,
+    });
+
+    const result = getComponentDocgen(componentFilePath);
+
+    expect(result).not.toBeNull();
+    expect(result?.componentName).toBe('LegacyButton');
+    expect(result?.reactDocgen.type).toBe('success');
+    // @ts-expect-error fix this later
+    expect(result?.reactDocgen.data.displayName).toBe('LegacyButton');
   });
 
-  const result = getComponentDocgen(componentFilePath);
-
-  expect(result).not.toBeNull();
-  expect(result?.componentName).toBe('LegacyButton');
-  expect(result?.reactDocgen.type).toBe('success');
-  // @ts-expect-error fix this later
-  expect(result?.reactDocgen.data.displayName).toBe('LegacyButton');
-});
-
-test('getComponentDocgen - extracts JSDoc comments and component information', () => {
-  const componentFilePath = '/app/src/components/DetailedButton.tsx';
-  const componentCode = dedent`
+  test('extracts JSDoc comments and component information', () => {
+    const componentFilePath = '/app/src/components/DetailedButton.tsx';
+    const componentCode = dedent`
     import React from 'react';
 
     interface DetailedButtonProps {
@@ -280,22 +281,22 @@ test('getComponentDocgen - extracts JSDoc comments and component information', (
     };
   `;
 
-  vol.fromJSON({
-    [componentFilePath]: componentCode,
-  });
+    vol.fromJSON({
+      [componentFilePath]: componentCode,
+    });
 
-  const result = getComponentDocgen(componentFilePath);
+    const result = getComponentDocgen(componentFilePath);
 
-  expect(result).not.toBeNull();
-  expect(result?.componentName).toBe('DetailedButton');
-  expect(result?.reactDocgen.type).toBe('success');
+    expect(result).not.toBeNull();
+    expect(result?.componentName).toBe('DetailedButton');
+    expect(result?.reactDocgen.type).toBe('success');
 
-  // @ts-expect-error fix this later
-  const argTypesData = result?.reactDocgen.data;
-  expect(argTypesData?.displayName).toBe('DetailedButton');
-  expect(argTypesData?.description).toContain('detailed button component');
-  // Note: react-docgen may not always extract detailed prop types depending on configuration
-  expect(argTypesData?.props).toMatchInlineSnapshot(`
+    // @ts-expect-error fix this later
+    const argTypesData = result?.reactDocgen.data;
+    expect(argTypesData?.displayName).toBe('DetailedButton');
+    expect(argTypesData?.description).toContain('detailed button component');
+    // Note: react-docgen may not always extract detailed prop types depending on configuration
+    expect(argTypesData?.props).toMatchInlineSnapshot(`
     {
       "children": {
         "description": "",
@@ -737,4 +738,5 @@ test('getComponentDocgen - extracts JSDoc comments and component information', (
       },
     }
   `);
+  });
 });

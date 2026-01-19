@@ -1,14 +1,21 @@
+import path, { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { getProjectRoot } from 'storybook/internal/common';
+import type { ArgTypes } from 'storybook/internal/csf';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
+import {
+  type GetArgTypesDataOptions,
+  extractArgTypesFromDocgen,
+} from './componentManifest/reactDocgen/extractDocgenInfo';
 
 export const addons: PresetProperty<'addons'> = [
   import.meta.resolve('@storybook/react-dom-shim/preset'),
 ];
 
-export { componentManifestGenerator as experimental_componentManifestGenerator } from './componentManifest/generator';
+export { manifests as experimental_manifests } from './componentManifest/generator';
 
 export { enrichCsf as experimental_enrichCsf } from './enrichCsf';
 
@@ -61,7 +68,38 @@ export const resolvedReact = async (existing: any) => {
       react: resolvePackageDir('react'),
       reactDom: resolvePackageDir('react-dom'),
     };
-  } catch (e) {
+  } catch {
     return existing;
   }
 };
+
+export async function internal_getArgTypesData(
+  _input: unknown,
+  options: GetArgTypesDataOptions
+): Promise<ArgTypes | null> {
+  const { componentFilePath, componentExportName } = (options ?? {}) as GetArgTypesDataOptions;
+
+  if (!componentFilePath) {
+    return null;
+  }
+
+  const argTypesData = extractArgTypesFromDocgen({
+    componentFilePath: path.isAbsolute(componentFilePath)
+      ? componentFilePath
+      : join(getProjectRoot(), componentFilePath),
+    componentExportName,
+  });
+  if (!argTypesData?.props) {
+    return null;
+  }
+
+  const argTypes: ArgTypes = {};
+  for (const [propName, propInfo] of Object.entries(argTypesData.props)) {
+    argTypes[propName] = {
+      name: propName,
+      type: propInfo.required ? { ...propInfo.type, required: true } : propInfo.type,
+    };
+  }
+
+  return argTypes;
+}

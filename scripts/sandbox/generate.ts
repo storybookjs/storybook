@@ -1,6 +1,5 @@
 import { cp, mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { readFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join, relative } from 'node:path';
 
 import * as ghActions from '@actions/core';
@@ -309,10 +308,6 @@ const runGenerators = async (
               recursive: true,
               force: true,
             });
-            await rm(join(homedir(), '.yarn', 'berry'), {
-              recursive: true,
-              force: true,
-            });
           }
 
           // Clean up the temporary base directory
@@ -326,7 +321,7 @@ const runGenerators = async (
 
   const hasGenerationErrors = generationResults.some((result) => result.status === 'rejected');
 
-  if (!isCI) {
+  if (!isCI || process.env.STORYBOOK_SANDBOX_GENERATE) {
     if (hasGenerationErrors) {
       console.log('failed:');
       console.log(

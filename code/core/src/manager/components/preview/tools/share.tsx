@@ -1,43 +1,22 @@
 import React, { useMemo, useState } from 'react';
 
-import {
-  Button,
-  PopoverProvider,
-  TooltipLinkList,
-  getStoryHref,
-} from 'storybook/internal/components';
+import { Button, PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { BugIcon, LinkIcon, ShareIcon } from '@storybook/icons';
+import { LinkIcon, ShareAltIcon, ShareIcon } from '@storybook/icons';
 
 import copy from 'copy-to-clipboard';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
-import { Consumer, types, useStorybookApi } from 'storybook/manager-api';
-import type { Combo } from 'storybook/manager-api';
+import { Consumer, types } from 'storybook/manager-api';
+import type { API, Combo } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { Shortcut } from '../../../container/Menu';
+import { Shortcut } from '../../Shortcut';
 
-const { PREVIEW_URL, document } = global as any;
-
-const mapper = ({ state }: Combo) => {
-  const { storyId, refId, refs } = state;
-  const { location } = document;
-  // @ts-expect-error (non strict)
-  const ref = refs[refId];
-  let baseUrl = `${location.origin}${location.pathname}`;
-
-  if (!baseUrl.endsWith('/')) {
-    baseUrl += '/';
-  }
-
-  return {
-    refId,
-    baseUrl: ref ? `${ref.url}/iframe.html` : (PREVIEW_URL as string) || `${baseUrl}iframe.html`,
-    storyId,
-    queryParams: state.customQueryParams,
-  };
+const mapper = ({ api, state }: Combo) => {
+  const { storyId, refId } = state;
+  return { api, refId, storyId };
 };
 
 const QRContainer = styled.div(() => ({
@@ -77,28 +56,27 @@ const QRDescription = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-function ShareMenu({
-  baseUrl,
+const ShareMenu = React.memo(function ShareMenu({
+  api,
   storyId,
-  queryParams,
-  qrUrl,
-  isDevelopment,
+  refId,
 }: {
-  baseUrl: string;
+  api: API;
   storyId: string;
-  queryParams: Record<string, any>;
-  qrUrl: string;
-  isDevelopment: boolean;
+  refId: string | undefined;
 }) {
-  const api = useStorybookApi();
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
   const [copied, setCopied] = useState(false);
   const copyStoryLink = shortcutKeys?.copyStoryLink;
+  const openInIsolation = shortcutKeys?.openInIsolation;
 
   const links = useMemo(() => {
     const copyTitle = copied ? 'Copied!' : 'Copy story link';
-    const baseLinks = [
+    const originHrefs = api.getStoryHrefs(storyId, { base: 'origin', refId });
+    const networkHrefs = api.getStoryHrefs(storyId, { base: 'network', refId });
+
+    return [
       [
         {
           id: 'copy-link',
@@ -106,7 +84,7 @@ function ShareMenu({
           icon: <LinkIcon />,
           right: enableShortcuts ? <Shortcut keys={copyStoryLink} /> : null,
           onClick: () => {
-            copy(window.location.href);
+            copy(originHrefs.managerHref);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           },
@@ -114,71 +92,58 @@ function ShareMenu({
         {
           id: 'open-new-tab',
           title: 'Open in isolation mode',
-          icon: <BugIcon />,
-          onClick: () => {
-            const href = getStoryHref(baseUrl, storyId, queryParams);
-            window.open(href, '_blank', 'noopener,noreferrer');
-          },
+          icon: <ShareAltIcon />,
+          right: enableShortcuts ? <Shortcut keys={openInIsolation} /> : null,
+          href: originHrefs.previewHref,
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
+      ],
+      [
+        {
+          id: 'qr-section',
+          content: (
+            <QRContainer>
+              <QRImage value={networkHrefs.managerHref} />
+              <QRContent>
+                <QRTitle>Scan to open</QRTitle>
+                <QRDescription>
+                  {global.CONFIG_TYPE === 'DEVELOPMENT'
+                    ? 'Device must be on the same network.'
+                    : 'View story on another device.'}
+                </QRDescription>
+              </QRContent>
+            </QRContainer>
+          ),
         },
       ],
     ];
+  }, [api, storyId, refId, copied, enableShortcuts, copyStoryLink, openInIsolation]);
 
-    baseLinks.push([
-      {
-        id: 'qr-section',
-        // @ts-expect-error (non strict)
-        content: (
-          <QRContainer>
-            <QRImage value={qrUrl} />
-            <QRContent>
-              <QRTitle>Scan to open</QRTitle>
-              <QRDescription>
-                {isDevelopment
-                  ? 'Device must be on the same network.'
-                  : 'View story on another device.'}
-              </QRDescription>
-            </QRContent>
-          </QRContainer>
-        ),
-      },
-    ]);
-
-    return baseLinks;
-  }, [baseUrl, storyId, queryParams, copied, qrUrl, enableShortcuts, copyStoryLink, isDevelopment]);
-
-  return <TooltipLinkList links={links} style={{ width: 210 }} />;
-}
+  return <TooltipLinkList links={links} style={{ width: 240 }} />;
+});
 
 export const shareTool: Addon_BaseType = {
   title: 'share',
   id: 'share',
   type: types.TOOL,
   match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
-  render: () => {
-    return (
-      <Consumer filter={mapper}>
-        {({ baseUrl, storyId, queryParams }) => {
-          const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
-          const storyUrl = global.STORYBOOK_NETWORK_ADDRESS
-            ? new URL(window.location.search, global.STORYBOOK_NETWORK_ADDRESS).href
-            : window.location.href;
-
-          return storyId ? (
-            <PopoverProvider
-              hasChrome
-              placement="bottom"
-              padding={0}
-              popover={
-                <ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: storyUrl, isDevelopment }} />
-              }
-            >
-              <Button padding="small" variant="ghost" ariaLabel="Share" tooltip="Share...">
-                <ShareIcon />
-              </Button>
-            </PopoverProvider>
-          ) : null;
-        }}
-      </Consumer>
-    );
-  },
+  render: () => (
+    <Consumer filter={mapper}>
+      {({ api, storyId, refId }) =>
+        storyId ? (
+          <PopoverProvider
+            hasChrome
+            placement="bottom"
+            padding={0}
+            popover={<ShareMenu {...{ api, storyId, refId }} />}
+          >
+            <Button padding="small" variant="ghost" ariaLabel="Share" tooltip="Share...">
+              <ShareIcon />
+            </Button>
+          </PopoverProvider>
+        ) : null
+      }
+    </Consumer>
+  ),
 };

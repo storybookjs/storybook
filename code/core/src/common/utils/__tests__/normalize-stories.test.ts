@@ -1,4 +1,4 @@
-/// <reference types="@testing-library/jest-dom" />;
+/// <reference types="@testing-library/jest-dom" />
 import { sep } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';

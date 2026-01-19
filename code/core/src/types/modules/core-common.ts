@@ -354,14 +354,14 @@ export interface ComponentManifest {
   id: string;
   path: string;
   name: string;
-  description?: string;
-  import?: string;
-  summary?: string;
+  description?: string | undefined;
+  import?: string | undefined;
+  summary?: string | undefined;
   stories: {
     name: string;
-    snippet?: string;
-    description?: string;
-    summary?: string;
+    snippet?: string | undefined;
+    description?: string | undefined;
+    summary?: string | undefined;
     error?: { name: string; message: string };
   }[];
   jsDocTags: Record<string, string[]>;
@@ -373,9 +373,9 @@ export interface ComponentsManifest {
   components: Record<string, ComponentManifest>;
 }
 
-export type ComponentManifestGenerator = (
-  storyIndexGenerator: StoryIndexGenerator
-) => Promise<ComponentsManifest>;
+type ManifestName = string;
+
+export type Manifests = { components?: ComponentsManifest } & Record<ManifestName, unknown>;
 
 export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
 
@@ -392,7 +392,7 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
-  experimental_componentManifestGenerator?: ComponentManifestGenerator;
+  experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
@@ -452,6 +452,13 @@ export interface StorybookConfigRaw {
      * @default true
      */
     actions?: boolean;
+
+    /**
+     * Enable the onboarding checklist sidebar widget
+     *
+     * @default true
+     */
+    sidebarOnboardingChecklist?: boolean;
 
     /**
      * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
@@ -531,6 +538,8 @@ export interface StorybookConfigRaw {
   previewAnnotations?: Entry[];
 
   experimental_indexers?: Indexer[];
+
+  storyIndexGenerator?: StoryIndexGenerator;
 
   experimental_devServer?: ServerApp;
 

@@ -15,7 +15,7 @@ import {
   type API_StoryEntry,
 } from 'storybook/internal/types';
 
-import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
+import { type API, Tag, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
 import { ADDON_ID as ADDON_A11Y_ID } from '../../../../addons/a11y/src/constants';
@@ -168,6 +168,7 @@ export const checklistData = {
           action: {
             label: 'Start',
             onClick: ({ api }) => {
+              api.toggleNav(true);
               const path = api.getUrlState().path || '';
               if (path.startsWith('/story/')) {
                 document.location.href = `/?path=${path}&onboarding=true`;
@@ -581,7 +582,8 @@ export default {
             ),
           action: {
             label: 'Start',
-            onClick: () =>
+            onClick: ({ api }) => {
+              api.toggleNav(true);
               TourGuide.render({
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore Circular reference in Step type
@@ -613,7 +615,8 @@ export default {
                     hideNextButton: true,
                   },
                 ],
-              }),
+              });
+            },
           },
           content: ({ api }) => (
             <>
@@ -672,7 +675,7 @@ export default {
           criteria: 'At least one story with a play or test function',
           subscribe: subscribeToIndex((entries) =>
             Object.values(entries).some(
-              (entry) => entry.tags?.includes('play-fn') || entry.tags?.includes('test-fn')
+              (entry) => entry.tags?.includes(Tag.PLAY_FN) || entry.tags?.includes(Tag.TEST_FN)
             )
           ),
           content: ({ api }) => (
@@ -1084,7 +1087,7 @@ export const Disabled: Story = {
           label: 'Automatically document your components',
           criteria: 'At least one component with the autodocs tag applied',
           subscribe: subscribeToIndex((entries) =>
-            Object.values(entries).some((entry) => entry.tags?.includes('autodocs'))
+            Object.values(entries).some((entry) => entry.tags?.includes(Tag.AUTODOCS))
           ),
           content: ({ api }) => (
             <>

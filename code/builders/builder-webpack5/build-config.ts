@@ -2,6 +2,13 @@ import type { BuildEntries } from '../../../scripts/build/utils/entry-utils';
 
 const config: BuildEntries = {
   entries: {
+    runtime: [
+      {
+        exportEntries: ['./mocker-runtime'],
+        entryPoint: './src/mocker-runtime/mocker-runtime.js',
+        dts: false,
+      },
+    ],
     node: [
       {
         exportEntries: ['.'],
@@ -30,13 +37,6 @@ const config: BuildEntries = {
       {
         exportEntries: ['./loaders/webpack-automock-loader'],
         entryPoint: './src/loaders/webpack-automock-loader.ts',
-        dts: false,
-      },
-    ],
-    browser: [
-      {
-        exportEntries: ['./mocker-runtime'],
-        entryPoint: './src/mocker-runtime/mocker-runtime.js',
         dts: false,
       },
     ],

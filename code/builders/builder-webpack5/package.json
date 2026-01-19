@@ -73,6 +73,7 @@
     "@types/node": "^22.19.1",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/webpack-hot-middleware": "^2.25.6",
+    "msw": "^2.7.0",
     "pretty-hrtime": "^1.0.3",
     "sirv": "^2.0.4",
     "slash": "^5.0.0",

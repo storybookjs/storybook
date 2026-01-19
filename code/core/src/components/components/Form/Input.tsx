@@ -1,6 +1,7 @@
 import React, { type HTMLProps } from 'react';
 import { forwardRef } from 'react';
 
+import { useId } from '@react-aria/utils';
 import { styled } from 'storybook/theming';
 
 import {
@@ -62,13 +63,19 @@ export const Input = Object.assign(
       { size, valid, align, value, suffix, ...props },
       ref
     ) {
+      const suffixId = useId();
       return (
         <Wrapper>
-          <input {...props} value={value} ref={ref} />
+          <input
+            {...props}
+            value={value}
+            ref={ref}
+            aria-describedby={suffix ? suffixId : undefined}
+          />
           {suffix && (
             <Mask aria-hidden>
               <span>{value}</span>
-              <span>{suffix}</span>
+              <span id={suffixId}>{suffix}</span>
             </Mask>
           )}
         </Wrapper>

@@ -74,7 +74,7 @@
     "node >= 20"
   ],
   "dependencies": {
-    "@chromatic-com/storybook": "^4.1.3",
+    "@chromatic-com/storybook": "^5.0.0",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-designs": "^11.0.3",

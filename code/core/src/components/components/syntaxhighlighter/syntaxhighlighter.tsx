@@ -155,6 +155,7 @@ const processLineNumber = (row: any) => {
     properties: {
       ...lineNumberNode.properties,
       // add a data-line-number attribute to line-number element, so we can access the line number with `content: attr(data-line-number)`
+      // add a data-line-number attribute to line-number element, so we can access the line number with `content: attr(data-line-number)`
       'data-line-number': lineNumber,
       // remove the userSelect: none style, which will produce extra empty lines when copy-pasting in firefox
       style: { ...lineNumberNode.properties.style, userSelect: 'auto' },

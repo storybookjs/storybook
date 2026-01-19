@@ -10,7 +10,6 @@ const meta = {
   title: 'ToggleButton',
   component: ToggleButton,
   tags: ['autodocs'],
-  parameters: { layout: 'fullscreen' },
   args: { ariaLabel: false, children: 'Click me' },
 } satisfies Meta<typeof ToggleButton>;
 

@@ -11,6 +11,7 @@ import { ChecklistWidget } from './ChecklistWidget';
 const managerContext: any = {
   state: {},
   api: {
+    getIsNavShown: () => true,
     getData: fn().mockName('api::getData'),
     getIndex: fn().mockName('api::getIndex'),
     getUrlState: fn().mockName('api::getUrlState'),

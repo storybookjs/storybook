@@ -6,6 +6,11 @@ import { findStoryIds } from '../utils/find-story-ids.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 import { StoryInputArray } from '../types.ts';
+import type {
+	TestRunResult,
+	TriggerTestRunResponsePayload,
+} from '@storybook/addon-vitest/constants';
+import type Channel from 'storybook/internal/channels';
 
 export const RUN_STORY_TESTS_TOOL_NAME = 'run-story-tests';
 
@@ -88,7 +93,8 @@ export async function addRunStoryTestsTool(
 				// Trigger test run via channel events
 				const testResults = await triggerTestRunViaChannel(
 					channel,
-					addonVitestConstants!,
+					addonVitestConstants!.TRIGGER_TEST_RUN_REQUEST,
+					addonVitestConstants!.TRIGGER_TEST_RUN_RESPONSE,
 					storyIds,
 				);
 
@@ -212,48 +218,13 @@ ${unhandledError.stack || 'No stack trace available'}`,
 	);
 }
 
-interface Channel {
-	on(event: string, callback: (payload: unknown) => void): void;
-	off(event: string, callback: (payload: unknown) => void): void;
-	emit(event: string, payload: unknown): void;
-}
-
-interface AddonVitestConstants {
-	TRIGGER_TEST_RUN_REQUEST: string;
-	TRIGGER_TEST_RUN_RESPONSE: string;
-}
-
-interface TestRunResult {
-	storyIds?: string[];
-	componentTestCount: {
-		success: number;
-		error: number;
-	};
-	a11yCount: {
-		success: number;
-		warning: number;
-		error: number;
-	};
-	componentTestStatuses: Array<{
-		storyId: string;
-		typeId: string;
-		value: string;
-		description: string;
-	}>;
-	a11yStatuses: Array<{
-		storyId: string;
-		typeId: string;
-		value: string;
-		description: string;
-	}>;
-	unhandledErrors: Array<{
-		name?: string;
-		message?: string;
-		stack?: string;
-		VITEST_TEST_PATH?: string;
-		VITEST_TEST_NAME?: string;
-	}>;
-}
+type TestRunResultSummary = {
+	componentTestCount: TestRunResult['componentTestCount'];
+	componentTestStatuses: TestRunResult['componentTestStatuses'];
+	a11yCount: TestRunResult['a11yCount'];
+	a11yStatuses: TestRunResult['a11yStatuses'];
+	unhandledErrors: TestRunResult['unhandledErrors'];
+};
 
 /**
  * Trigger a test run via Storybook channel events.
@@ -261,30 +232,27 @@ interface TestRunResult {
  */
 function triggerTestRunViaChannel(
 	channel: Channel,
-	constants: AddonVitestConstants,
+	triggerTestRunRequestEventName: string,
+	triggerTestRunResponseEventName: string,
 	storyIds: string[],
-): Promise<TestRunResult> {
+): Promise<TestRunResultSummary> {
 	return new Promise((resolve, reject) => {
 		const requestId = `mcp-${Date.now()}`;
 
-		const handleResponse = (payloadUnknown: unknown) => {
-			const payload =
-				payloadUnknown as import('@storybook/addon-vitest/constants').TriggerTestRunResponsePayload;
-
+		const handleResponse = (payload: TriggerTestRunResponsePayload) => {
 			if (payload.requestId !== requestId) {
 				return;
 			}
 
-			channel.off(constants.TRIGGER_TEST_RUN_RESPONSE, handleResponse);
+			channel.off(triggerTestRunResponseEventName, handleResponse);
 
 			switch (payload.status) {
 				case 'completed':
 					if (payload.result) {
 						resolve({
-							storyIds: payload.result.storyIds,
 							componentTestCount: payload.result.componentTestCount,
-							a11yCount: payload.result.a11yCount,
 							componentTestStatuses: payload.result.componentTestStatuses,
+							a11yCount: payload.result.a11yCount,
 							a11yStatuses: payload.result.a11yStatuses,
 							unhandledErrors: payload.result.unhandledErrors,
 						});
@@ -307,7 +275,7 @@ function triggerTestRunViaChannel(
 			}
 		};
 
-		channel.on(constants.TRIGGER_TEST_RUN_RESPONSE, handleResponse);
+		channel.on(triggerTestRunResponseEventName, handleResponse);
 
 		const request: import('@storybook/addon-vitest/constants').TriggerTestRunRequestPayload =
 			{
@@ -316,6 +284,6 @@ function triggerTestRunViaChannel(
 				storyIds,
 			};
 
-		channel.emit(constants.TRIGGER_TEST_RUN_REQUEST, request);
+		channel.emit(triggerTestRunRequestEventName, request);
 	});
 }

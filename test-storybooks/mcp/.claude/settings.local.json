@@ -1,11 +1,16 @@
 {
-	"permissions": {
-		"allow": [
-			"mcp__storybook-addon-mcp__get-storybook-story-instructions",
-			"mcp__storybook-addon-mcp__get-story-urls",
-			"mcp__storybook-addon-mcp__list-all-documentation",
-			"mcp__storybook-addon-mcp__get-documentation"
-		]
-	},
-	"enabledMcpjsonServers": ["storybook-addon-mcp", "storybook-mcp"]
+  "permissions": {
+    "allow": [
+      "mcp__storybook-addon-mcp__get-storybook-story-instructions",
+      "mcp__storybook-addon-mcp__get-story-urls",
+      "mcp__storybook-addon-mcp__list-all-documentation",
+      "mcp__storybook-addon-mcp__get-documentation",
+      "mcp__storybook-mcp__list-all-documentation",
+      "mcp__storybook-mcp__run-story-tests"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "storybook-addon-mcp",
+    "storybook-mcp"
+  ]
 }

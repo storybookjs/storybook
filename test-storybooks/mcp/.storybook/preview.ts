@@ -8,6 +8,9 @@ const preview: Preview = {
 				date: /Date$/,
 			},
 		},
+		a11y: {
+			test: 'todo',
+		},
 	},
 	initialGlobals: {
 		background: { value: 'light' },

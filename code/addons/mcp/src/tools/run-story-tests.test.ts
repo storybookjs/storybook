@@ -9,6 +9,10 @@ import {
 import type { AddonContext } from '../types.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
 import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
+import type {
+	TestRunResult,
+	TriggerTestRunResponsePayload,
+} from '@storybook/addon-vitest/constants';
 
 vi.mock('storybook/internal/csf', () => ({
 	storyNameFromExport: (exportName: string) => exportName,
@@ -19,12 +23,6 @@ vi.mock('storybook/internal/node-logger', () => ({
 		info: vi.fn(),
 		debug: vi.fn(),
 	},
-}));
-
-// Mock the dynamic import for addon-vitest constants
-vi.mock('@storybook/addon-vitest/constants', () => ({
-	TRIGGER_TEST_RUN_REQUEST: 'storybook/test/trigger-test-run-request',
-	TRIGGER_TEST_RUN_RESPONSE: 'storybook/test/trigger-test-run-response',
 }));
 
 describe('getAddonVitestConstants', () => {
@@ -47,35 +45,7 @@ describe('runStoryTestsTool', () => {
 		emit: Mock;
 	};
 
-	interface TestResult {
-		storyIds: string[];
-		componentTestCount: { success: number; error: number };
-		a11yCount: { success: number; warning: number; error: number };
-		componentTestStatuses: Array<{
-			storyId: string;
-			typeId: string;
-			value: string;
-			description: string;
-		}>;
-		a11yStatuses: Array<{
-			storyId: string;
-			typeId: string;
-			value: string;
-			description: string;
-		}>;
-		unhandledErrors: Array<{
-			name?: string;
-			message?: string;
-			stack?: string;
-			VITEST_TEST_PATH?: string;
-			VITEST_TEST_NAME?: string;
-		}>;
-	}
-
-	type ChannelResponse =
-		| { status: 'completed'; result: TestResult }
-		| { status: 'error'; error: { message: string } }
-		| { status: 'cancelled' };
+	type ChannelResponse = Omit<TriggerTestRunResponsePayload, 'requestId'>;
 
 	const createTestContext = (): AddonContext => {
 		mockChannel = {
@@ -197,7 +167,13 @@ describe('runStoryTestsTool', () => {
 		setupChannelResponse({
 			status: 'completed',
 			result: {
+				triggeredBy: 'external:addon-mcp',
+				config: { coverage: false, a11y: false },
 				storyIds: ['button--primary'],
+				totalTestCount: 1,
+				startedAt: Date.now(),
+				finishedAt: Date.now(),
+				coverageSummary: undefined,
 				componentTestCount: { success: 1, error: 0 },
 				a11yCount: { success: 1, warning: 0, error: 0 },
 				componentTestStatuses: [
@@ -205,6 +181,7 @@ describe('runStoryTestsTool', () => {
 						storyId: 'button--primary',
 						typeId: 'storybook/component-test',
 						value: 'status-value:success',
+						title: 'Component Test',
 						description: '',
 					},
 				],
@@ -238,7 +215,13 @@ describe('runStoryTestsTool', () => {
 		setupChannelResponse({
 			status: 'completed',
 			result: {
+				triggeredBy: 'external:addon-mcp',
+				config: { coverage: false, a11y: false },
 				storyIds: ['button--primary'],
+				totalTestCount: 1,
+				startedAt: Date.now(),
+				finishedAt: Date.now(),
+				coverageSummary: undefined,
 				componentTestCount: { success: 0, error: 1 },
 				a11yCount: { success: 0, warning: 0, error: 0 },
 				componentTestStatuses: [
@@ -246,6 +229,7 @@ describe('runStoryTestsTool', () => {
 						storyId: 'button--primary',
 						typeId: 'storybook/component-test',
 						value: 'status-value:error',
+						title: 'Component Test',
 						description: 'Expected element to be visible',
 					},
 				],
@@ -276,7 +260,13 @@ describe('runStoryTestsTool', () => {
 		setupChannelResponse({
 			status: 'completed',
 			result: {
+				triggeredBy: 'external:addon-mcp',
+				config: { coverage: false, a11y: false },
 				storyIds: ['button--primary', 'button--secondary'],
+				totalTestCount: 2,
+				startedAt: Date.now(),
+				finishedAt: Date.now(),
+				coverageSummary: undefined,
 				componentTestCount: { success: 1, error: 1 },
 				a11yCount: { success: 0, warning: 0, error: 0 },
 				componentTestStatuses: [
@@ -284,12 +274,14 @@ describe('runStoryTestsTool', () => {
 						storyId: 'button--primary',
 						typeId: 'storybook/component-test',
 						value: 'status-value:success',
+						title: 'Component Test',
 						description: '',
 					},
 					{
 						storyId: 'button--secondary',
 						typeId: 'storybook/component-test',
 						value: 'status-value:error',
+						title: 'Component Test',
 						description: 'Expected button text to be "Secondary"',
 					},
 				],
@@ -324,7 +316,13 @@ describe('runStoryTestsTool', () => {
 		setupChannelResponse({
 			status: 'completed',
 			result: {
+				triggeredBy: 'external:addon-mcp',
+				config: { coverage: false, a11y: true },
 				storyIds: ['button--primary'],
+				totalTestCount: 1,
+				startedAt: Date.now(),
+				finishedAt: Date.now(),
+				coverageSummary: undefined,
 				componentTestCount: { success: 1, error: 0 },
 				a11yCount: { success: 0, warning: 1, error: 1 },
 				componentTestStatuses: [
@@ -332,6 +330,7 @@ describe('runStoryTestsTool', () => {
 						storyId: 'button--primary',
 						typeId: 'storybook/component-test',
 						value: 'status-value:success',
+						title: 'Component Test',
 						description: '',
 					},
 				],
@@ -340,6 +339,7 @@ describe('runStoryTestsTool', () => {
 						storyId: 'button--primary',
 						typeId: 'storybook/a11y',
 						value: 'status-value:error',
+						title: 'Accessibility',
 						description:
 							'Color contrast ratio is insufficient: 2.5:1 (required: 4.5:1)',
 					},
@@ -347,6 +347,7 @@ describe('runStoryTestsTool', () => {
 						storyId: 'button--secondary',
 						typeId: 'storybook/a11y',
 						value: 'status-value:warning',
+						title: 'Accessibility',
 						description:
 							'Interactive element should have a visible focus style',
 					},
@@ -387,7 +388,13 @@ describe('runStoryTestsTool', () => {
 		setupChannelResponse({
 			status: 'completed',
 			result: {
+				triggeredBy: 'external:addon-mcp',
+				config: { coverage: false, a11y: false },
 				storyIds: ['button--primary'],
+				totalTestCount: 1,
+				startedAt: Date.now(),
+				finishedAt: Date.now(),
+				coverageSummary: undefined,
 				componentTestCount: { success: 0, error: 1 },
 				a11yCount: { success: 0, warning: 0, error: 0 },
 				componentTestStatuses: [],

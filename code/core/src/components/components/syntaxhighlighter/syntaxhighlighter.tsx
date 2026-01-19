@@ -85,6 +85,7 @@ const Wrapper = styled.div<WrapperProps>(
   ({ showLineNumbers }) =>
     showLineNumbers
       ? {
+          // use the before pseudo element to display line numbers
           '.react-syntax-highlighter-line-number::before': {
             content: 'attr(data-line-number)',
           },
@@ -125,9 +126,13 @@ const Pre = styled.pre<PreProps>(({ theme, padded }) => ({
   padding: padded ? theme.layoutMargin : 0,
 }));
 
+/*
+We can't use `code` since PrismJS races for it.
+See https://github.com/storybookjs/storybook/issues/18090
+ */
 const Code = styled.div(({ theme }) => ({
   flex: 1,
-  paddingLeft: 2,
+  paddingLeft: 2, // TODO: To match theming/global.ts for now
   opacity: 1,
   fontFamily: theme.typography.fonts.mono,
 }));
@@ -144,10 +149,12 @@ const processLineNumber = (row: any) => {
   const lineNumber = lineNumberNode.children[0].value;
   const processedLineNumberNode = {
     ...lineNumberNode,
+    // empty the line-number element
     children: [],
     // empty the line-number element
     properties: {
       ...lineNumberNode.properties,
+      // add a data-line-number attribute to line-number element, so we can access the line number with `content: attr(data-line-number)`
       'data-line-number': lineNumber,
       // remove the userSelect: none style, which will produce extra empty lines when copy-pasting in firefox
       style: { ...lineNumberNode.properties.style, userSelect: 'auto' },
@@ -157,6 +164,10 @@ const processLineNumber = (row: any) => {
   return { ...row, children };
 };
 
+/**
+ * A custom renderer for handling `span.linenumber` element in each line of code, which is enabled
+ * by default if no renderer is passed in from the parent component
+ */
 const defaultRenderer: SyntaxHighlighterRenderer = ({ rows, stylesheet, useInlineStyles }) => {
   return rows.map((node: any, i: number) => {
     return createElement({
@@ -185,6 +196,8 @@ const wrapRenderer = (
 export interface SyntaxHighlighterState {
   copied: boolean;
 }
+
+// copied from @types/react-syntax-highlighter/index.d.ts
 
 export const SyntaxHighlighter = ({
   children,

@@ -187,6 +187,14 @@ const RelativeActionBar = styled(ActionBar)({
   alignSelf: 'flex-end',
 });
 
+/**
+ * A preview component for showing one or more component `Story` items. The preview also shows the
+ * source for the component as a drop-down.
+ */
+/**
+ * A preview component for showing one or more component `Story` items. The preview also shows the
+ * source for the component as a drop-down.
+ */
 export const Preview: FC<PreviewProps> = ({
   isLoading,
   isColumn,

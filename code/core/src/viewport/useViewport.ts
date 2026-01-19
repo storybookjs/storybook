@@ -35,7 +35,10 @@ const cycle = (
       : keys[nextIndex];
 };
 
-const normalizeGlobal = (value: string | GlobalState, defaultIsRotated?: boolean): GlobalState =>
+const normalizeGlobal = (
+  value: string | GlobalState | GlobalStateUpdate,
+  defaultIsRotated?: boolean
+): GlobalState =>
   typeof value === 'string'
     ? { value, isRotated: defaultIsRotated }
     : { value: value?.value, isRotated: value?.isRotated ?? defaultIsRotated };
@@ -163,7 +166,7 @@ export const useViewport = () => {
     );
 
   const update = useCallback(
-    (input: GlobalStateUpdate) => updateGlobals({ [PARAM_KEY]: input }),
+    (input: GlobalStateUpdate) => updateGlobals({ [PARAM_KEY]: normalizeGlobal(input, false) }),
     [updateGlobals]
   );
 

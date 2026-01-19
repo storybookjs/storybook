@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 
 import { Match } from 'storybook/internal/router';
@@ -162,7 +163,17 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
   useLandmarkIndicator();
 
   return (
-    <LayoutContainer>
+    <LayoutContainer
+      panelPosition={managerLayoutState.panelPosition}
+      showPanel={showPanel}
+      style={
+        {
+          '--nav-width': `${navSize}px`,
+          '--right-panel-width': `${rightPanelWidth}px`,
+          '--bottom-panel-height': `${bottomPanelHeight}px`,
+        } as CSSProperties
+      }
+    >
       <>
         {isDesktop && (
           <SidebarContainer style={{ width: navSize }}>
@@ -190,16 +201,10 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
             <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
           )}
           {isDesktop && showPanel && (
-            <PanelContainer
-              position={panelPosition}
-              style={
-                panelPosition === 'right'
-                  ? { width: `${rightPanelWidth}px` }
-                  : { height: `${bottomPanelHeight}px` }
-              }
-            >
+            <PanelContainer position={panelPosition}>
               <Drag
                 orientation={panelPosition === 'bottom' ? 'horizontal' : 'vertical'}
+                overlapping={panelPosition === 'bottom' ? !!bottomPanelHeight : !!rightPanelWidth}
                 position={panelPosition === 'bottom' ? 'left' : 'right'}
                 ref={panelResizerRef}
               />
@@ -270,11 +275,15 @@ const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
   },
 }));
 
+// TODO main?
 const PagesContainer = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   flexGrow: 1,
-  backgroundColor: theme.appContentBg,
+  // backgroundColor: theme.appContentBg,
+  // FIXME debug
+  backgroundColor: 'pink', // theme.appContentBg,
+  border: '2px solid orange',
   zIndex: 1,
 }));
 
@@ -284,6 +293,9 @@ const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(
     backgroundColor: theme.appContentBg,
     borderTop: position === 'bottom' ? `1px solid ${theme.appBorderColor}` : undefined,
     borderLeft: position === 'right' ? `1px solid ${theme.appBorderColor}` : undefined,
+    '& > aside': {
+      overflow: 'hidden',
+    },
   })
 );
 
@@ -291,7 +303,17 @@ const PanelSlot = styled.div({
   height: '100%',
 });
 
-const Drag = styled.div<{ orientation?: 'horizontal' | 'vertical'; position?: 'left' | 'right' }>(
+/**
+ * Drag handle for the sidebar and panel resizers. Can be horizontal (bottom panel) or vertical
+ * (sidebar or right panel). Can optionally be set to not overlap the content area (only render
+ * outside of it), which is necessary when the panel is collapsed to prevent a layout shift when
+ * scrollIntoView is used.
+ */
+const Drag = styled.div<{
+  orientation?: 'horizontal' | 'vertical';
+  overlapping?: boolean;
+  position?: 'left' | 'right';
+}>(
   ({ theme }) => ({
     position: 'absolute',
     opacity: 0,
@@ -308,41 +330,39 @@ const Drag = styled.div<{ orientation?: 'horizontal' | 'vertical'; position?: 'l
       opacity: 1,
     },
   }),
-  ({ orientation = 'vertical', position = 'left' }) => {
-    if (orientation === 'vertical') {
-      return {
-        width: position === 'left' ? 10 : 13,
-        height: '100%',
-        top: 0,
-        right: position === 'left' ? '-7px' : undefined,
-        left: position === 'right' ? '-7px' : undefined,
-
-        '&:after': {
-          width: 1,
+  ({ orientation = 'vertical', overlapping = true, position = 'left' }) =>
+    orientation === 'vertical'
+      ? {
+          width: overlapping ? (position === 'left' ? 10 : 13) : 7,
           height: '100%',
-          marginLeft: position === 'left' ? 3 : 6,
-        },
+          top: 0,
+          right: position === 'left' ? -7 : undefined,
+          left: position === 'right' ? -7 : undefined,
 
-        '&:hover': {
-          cursor: 'col-resize',
-        },
-      };
-    }
-    return {
-      width: '100%',
-      height: '13px',
-      top: '-7px',
-      left: 0,
+          '&:after': {
+            width: 1,
+            height: '100%',
+            marginLeft: position === 'left' ? 3 : 6,
+          },
 
-      '&:after': {
-        width: '100%',
-        height: 1,
-        marginTop: 6,
-      },
+          '&:hover': {
+            cursor: 'col-resize',
+          },
+        }
+      : {
+          width: '100%',
+          height: overlapping ? 13 : 7,
+          top: -7,
+          left: 0,
 
-      '&:hover': {
-        cursor: 'row-resize',
-      },
-    };
-  }
+          '&:after': {
+            width: '100%',
+            height: 1,
+            marginTop: 6,
+          },
+
+          '&:hover': {
+            cursor: 'row-resize',
+          },
+        }
 );

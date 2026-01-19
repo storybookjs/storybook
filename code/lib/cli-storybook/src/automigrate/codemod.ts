@@ -32,7 +32,7 @@ export interface FileInfo {
  * ```
  */
 export async function runCodemod(
-  globPattern: string = '**/*.stories.*',
+  globPattern = '**/*.{stories,story}.{m,}{ts,js}x?',
   transform: (source: FileInfo, ...rest: any) => Promise<string>,
   { dryRun = false, skipFormatting = false }: { dryRun?: boolean; skipFormatting?: boolean } = {}
 ) {

@@ -27,7 +27,7 @@ async function runStoriesCodemod(options: {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
-        initialValue: '**/*.stories.*',
+        initialValue: '**/*.{stories,story}.{m,}{ts,js}x?',
       });
     }
 

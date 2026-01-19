@@ -168,6 +168,7 @@ export const checklistData = {
           action: {
             label: 'Start',
             onClick: ({ api }) => {
+              api.toggleNav(true);
               const path = api.getUrlState().path || '';
               if (path.startsWith('/story/')) {
                 document.location.href = `/?path=${path}&onboarding=true`;
@@ -581,7 +582,8 @@ export default {
             ),
           action: {
             label: 'Start',
-            onClick: () =>
+            onClick: ({ api }) => {
+              api.toggleNav(true);
               TourGuide.render({
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore Circular reference in Step type
@@ -613,7 +615,8 @@ export default {
                     hideNextButton: true,
                   },
                 ],
-              }),
+              });
+            },
           },
           content: ({ api }) => (
             <>

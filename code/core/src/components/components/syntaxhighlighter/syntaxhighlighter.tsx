@@ -151,7 +151,6 @@ const processLineNumber = (row: any) => {
     ...lineNumberNode,
     // empty the line-number element
     children: [],
-    // empty the line-number element
     properties: {
       ...lineNumberNode.properties,
       // add a data-line-number attribute to line-number element, so we can access the line number with `content: attr(data-line-number)`

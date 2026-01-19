@@ -43,8 +43,9 @@ const options = {
   maxPatternLength: 32,
   minMatchCharLength: 1,
   keys: [
-    { name: 'name', weight: 0.7 },
+    { name: 'name', weight: 0.6 },
     { name: 'path', weight: 0.3 },
+    { name: 'headings', weight: 0.1 },
   ],
 } as FuseOptions<SearchItem>;
 
@@ -182,25 +183,29 @@ export const Search = React.memo<SearchProps>(function Search({
   const searchShortcut = api ? shortcutToHumanString(api.getShortcutKeys().search) : '/';
 
   const makeFuse = useCallback(() => {
-    const list = dataset.entries.reduce<SearchItem[]>((acc, [refId, { index, allStatuses }]) => {
-      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
+    const list: SearchItem[] = [];
 
-      if (index) {
-        acc.push(
-          ...Object.values(index).map((item) => {
-            const storyStatuses = allStatuses?.[item.id];
-            const mostCriticalStatusValue = storyStatuses
-              ? getMostCriticalStatusValue(Object.values(storyStatuses).map((s) => s.value))
-              : null;
-            return {
-              ...searchItem(item, dataset.hash[refId]),
-              status: mostCriticalStatusValue ?? groupStatus[item.id] ?? null,
-            };
-          })
-        );
+    for (const [refId, { index, allStatuses }] of dataset.entries) {
+      if (!index) {
+        continue;
       }
-      return acc;
-    }, []);
+
+      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
+      const datasetValues = Object.values(index);
+
+      for (const datasetValue of datasetValues) {
+        const storyStatuses = allStatuses?.[datasetValue.id];
+        const mostCriticalStatusValue = storyStatuses
+          ? getMostCriticalStatusValue(Object.values(storyStatuses).map((s) => s.value))
+          : null;
+
+        list.push({
+          ...searchItem(datasetValue, dataset.hash[refId]),
+          status: mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null,
+        });
+      }
+    }
+
     return new Fuse(list, options);
   }, [dataset]);
 

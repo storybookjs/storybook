@@ -1,3 +1,10 @@
+## 10.2.0-beta.3
+
+- Core: Support defineConfig when setting up ESLint plugin - [#32878](https://github.com/storybookjs/storybook/pull/32878), thanks @copilot-swe-agent!
+- Core: Viewport UX fixes - [#33557](https://github.com/storybookjs/storybook/pull/33557), thanks @ghengeveld!
+- NextJSVite: Add `@opentelemetry/api` to `optimizeDeps` - [#33577](https://github.com/storybookjs/storybook/pull/33577), thanks @ndelangen!
+- TypeScript: Reduce `cannot be named` errors - [#33344](https://github.com/storybookjs/storybook/pull/33344), thanks @icopp!
+
 ## 10.2.0-beta.2
 
 - CSF-Factories: Skip non-factory exports instead of throwing error - [#33550](https://github.com/storybookjs/storybook/pull/33550), thanks @kasperpeulen!

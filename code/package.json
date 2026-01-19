@@ -220,5 +220,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "10.2.0-beta.3"
 }

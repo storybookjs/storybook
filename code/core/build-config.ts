@@ -190,6 +190,11 @@ const config: BuildEntries = {
         entryPoint: './src/manager/globals-runtime.ts',
         dts: false,
       },
+      /**
+       * It is required to be a runtime entry point, because it is used to inject the mocker runtime
+       * into the preview iframe in builder-vite and builder-webpack5. To guarantee that the mocker
+       * runtime is transpiled correctly, code splitting needs to be disabled for this entry point.
+       */
       {
         exportEntries: ['./internal/mocking-utils/mocker-runtime'],
         entryPoint: './src/mocking-utils/mocker-runtime.js',

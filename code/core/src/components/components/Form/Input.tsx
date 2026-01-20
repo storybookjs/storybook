@@ -83,6 +83,7 @@ export const Input = Object.assign(
     })
   )<InputProps>(styles, sizes, alignment, validation, {
     minHeight: 32,
+    width: '100%',
   }),
   {
     displayName: 'Input',

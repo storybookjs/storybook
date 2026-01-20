@@ -160,8 +160,8 @@ describe('MCP Endpoint E2E Tests', () => {
 			const response = await mcpRequest('tools/list');
 
 			expect(response.result).toHaveProperty('tools');
-			// Dev and docs tools should be present
-			expect(response.result.tools).toHaveLength(4);
+			// Dev, docs, and test tools should be present
+			expect(response.result.tools).toHaveLength(5);
 
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[
@@ -226,6 +226,41 @@ describe('MCP Endpoint E2E Tests', () => {
 				    },
 				    "name": "get-storybook-story-instructions",
 				    "title": "Storybook Story Development Instructions",
+				  },
+				  {
+				    "description": "Run tests for one or more stories.",
+				    "inputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "stories": {
+				          "items": {
+				            "properties": {
+				              "absoluteStoryPath": {
+				                "type": "string",
+				              },
+				              "explicitStoryName": {
+				                "type": "string",
+				              },
+				              "exportName": {
+				                "type": "string",
+				              },
+				            },
+				            "required": [
+				              "exportName",
+				              "absoluteStoryPath",
+				            ],
+				            "type": "object",
+				          },
+				          "type": "array",
+				        },
+				      },
+				      "required": [
+				        "stories",
+				      ],
+				      "type": "object",
+				    },
+				    "name": "run-story-tests",
+				    "title": "Storybook Tests",
 				  },
 				  {
 				    "description": "List all available UI components and documentation entries from the Storybook",
@@ -420,6 +455,14 @@ describe('MCP Endpoint E2E Tests', () => {
 				const Small = () => <Button onClick={fn()} size="small" label="Button" />;
 				\`\`\`
 
+				### With A11y Violation
+
+				\`\`\`
+				import { Button } from "@my-org/my-component-library";
+
+				const WithA11yViolation = () => <Button onClick={fn()} primary label="Button" backgroundColor="#ccc" />;
+				\`\`\`
+
 				## Props
 
 				\`\`\`
@@ -472,6 +515,91 @@ describe('MCP Endpoint E2E Tests', () => {
 				  "isError": true,
 				}
 			`);
+		});
+	});
+
+	describe('Tool: run-story-tests', () => {
+		it('should run tests for a story and report accessibility violations', async () => {
+			const cwd = process.cwd();
+			const storyPath = cwd.endsWith('/apps/internal-storybook')
+				? `${cwd}/stories/components/Button.stories.ts`
+				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
+
+			const response = await mcpRequest('tools/call', {
+				name: 'run-story-tests',
+				arguments: {
+					stories: [
+						{
+							exportName: 'WithA11yViolation',
+							absoluteStoryPath: storyPath,
+						},
+					],
+				},
+			});
+
+			expect(response.result).toHaveProperty('content');
+			expect(response.result.content).toHaveLength(1);
+
+			const text = response.result.content[0].text;
+
+			// Should show the story passes component tests
+			expect(text).toContain('## Passing Stories');
+			expect(text).toContain('example-button--with-a-11-y-violation');
+
+			// Should report accessibility violations
+			expect(text).toContain('## Accessibility Violations');
+			expect(text).toContain('color-contrast');
+			expect(text).toContain('**Impact**:');
+			expect(text).toContain('**Element**:');
+		});
+
+		it('should run tests for multiple stories', async () => {
+			const cwd = process.cwd();
+			const storyPath = cwd.endsWith('/apps/internal-storybook')
+				? `${cwd}/stories/components/Button.stories.ts`
+				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
+
+			const response = await mcpRequest('tools/call', {
+				name: 'run-story-tests',
+				arguments: {
+					stories: [
+						{
+							exportName: 'Primary',
+							absoluteStoryPath: storyPath,
+						},
+						{
+							exportName: 'Secondary',
+							absoluteStoryPath: storyPath,
+						},
+					],
+				},
+			});
+
+			expect(response.result).toHaveProperty('content');
+			const text = response.result.content[0].text;
+
+			// Should show passing stories
+			expect(text).toContain('## Passing Stories');
+			expect(text).toContain('example-button--primary');
+			expect(text).toContain('example-button--secondary');
+		});
+
+		it('should return error for non-existent story', async () => {
+			const response = await mcpRequest('tools/call', {
+				name: 'run-story-tests',
+				arguments: {
+					stories: [
+						{
+							exportName: 'NonExistent',
+							absoluteStoryPath: `${process.cwd()}/stories/components/NonExistent.stories.ts`,
+						},
+					],
+				},
+			});
+
+			expect(response.result).toHaveProperty('content');
+			const text = response.result.content[0].text;
+			expect(text).toContain('No stories found matching the provided input');
 		});
 	});
 

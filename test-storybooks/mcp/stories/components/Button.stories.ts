@@ -55,3 +55,12 @@ export const Small: Story = {
 		label: 'Button',
 	},
 };
+
+export const WithA11yViolation: Story = {
+	args: {
+		primary: true,
+		label: 'Button',
+		// Use a light gray background color that violates color contrast requirements
+		backgroundColor: '#ccc',
+	},
+};

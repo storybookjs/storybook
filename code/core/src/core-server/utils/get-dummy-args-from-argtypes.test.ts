@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { SBType } from '../../types';
 import {
   generateDummyArgsFromArgTypes,
   generateDummyValueFromSBType,
@@ -99,11 +100,17 @@ describe('new-story-docgen', () => {
 
     it('generates array values', () => {
       expect(
-        generateDummyValueFromSBType({ name: 'array', value: { name: 'other', value: 'X' } })
+        generateDummyValueFromSBType({
+          name: 'array',
+          value: [{ name: 'other', value: 'X' }] as unknown as SBType,
+        })
       ).toEqual([]);
-      expect(generateDummyValueFromSBType({ name: 'array', value: { name: 'number' } })).toEqual([
-        0,
-      ]);
+      expect(
+        generateDummyValueFromSBType({
+          name: 'array',
+          value: [{ name: 'number' }] as unknown as SBType,
+        })
+      ).toEqual([0]);
     });
 
     it('generates tuple values', () => {

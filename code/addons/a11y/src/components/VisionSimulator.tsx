@@ -36,8 +36,9 @@ const ColorIcon = styled.span<{ $filter: string }>(
 );
 
 export const VisionSimulator = () => {
-  const [globals, updateGlobals] = useGlobals();
+  const [globals, updateGlobals, storyGlobals] = useGlobals();
   const value = globals[VISION_GLOBAL_KEY];
+  const isLocked = storyGlobals[VISION_GLOBAL_KEY] !== undefined;
 
   const options = Object.entries(filters).map(([key, { label, percentage }]) => ({
     title: label,
@@ -52,7 +53,10 @@ export const VisionSimulator = () => {
         resetLabel="Reset color filter"
         onReset={() => updateGlobals({ [VISION_GLOBAL_KEY]: undefined })}
         icon={<AccessibilityIcon />}
-        ariaLabel="Vision simulator"
+        disabled={isLocked}
+        ariaLabel={isLocked ? 'Vision filter set by story globals' : 'Vision filter'}
+        ariaDescription="Select a vision filter among predefined options, or reset to remove the filter."
+        tooltip={isLocked ? 'Vision filter set by story globals' : 'Change vision filter'}
         defaultOptions={value}
         options={options}
         onSelect={(selected) => updateGlobals({ [VISION_GLOBAL_KEY]: selected })}

@@ -74,5 +74,5 @@ export const extractArgTypesFromDocgen = ({
     return null;
   }
 
-  return extractArgTypes({ __docgenInfo: docgen.reactDocgen }) ?? {};
+  return extractArgTypes({ __docgenInfo: docgen.reactDocgen.data }) ?? {};
 };

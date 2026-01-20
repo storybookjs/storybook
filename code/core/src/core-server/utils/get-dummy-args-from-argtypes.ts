@@ -228,10 +228,10 @@ export function generateDummyValueFromSBType(
 
     case 'array': {
       // If we don't know what the element is, be conservative and return empty.
-      if (sbType.value.name === 'other') {
+      if (sbType.value?.length < 1 || sbType.value[0]?.name === 'other') {
         return [];
       }
-      return [generateDummyValueFromSBType(sbType.value, propName, options)];
+      return [generateDummyValueFromSBType(sbType.value[0], propName, options)];
     }
 
     case 'tuple':

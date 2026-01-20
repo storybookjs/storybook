@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -28,6 +28,36 @@ const meta: Meta<Button> = {
 };
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
+
+const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    arrow: {
+      options: Object.keys(arrows), // An array of serializable values
+      mapping: arrows, // Maps serializable option values to complex arg values
+      control: {
+        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+        labels: {
+          // 'labels' maps option values to string labels
+          ArrowUp: 'Up',
+          ArrowDown: 'Down',
+          ArrowLeft: 'Left',
+          ArrowRight: 'Right',
+        },
+      },
+    },
+  },
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
@@ -62,7 +92,7 @@ export default meta;
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Button from './Button.svelte';
 
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
@@ -150,7 +180,7 @@ export default {
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
@@ -216,10 +246,15 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+import { html } from 'lit';
 
-const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+const arrows = {
+  Up: html`<icon-arrow-up></icon-arrow-up>`,
+  Down: html`<icon-arrow-down></icon-arrow-down>`,
+  Left: html`<icon-arrow-left></icon-arrow-left>`,
+  Right: html`<icon-arrow-right></icon-arrow-right>`,
+};
 
 export default {
   component: 'demo-button',
@@ -229,25 +264,23 @@ export default {
       mapping: arrows, // Maps serializable option values to complex arg values
       control: {
         type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-        labels: {
-          // 'labels' maps option values to string labels
-          ArrowUp: 'Up',
-          ArrowDown: 'Down',
-          ArrowLeft: 'Left',
-          ArrowRight: 'Right',
-        },
       },
     },
   },
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+import { html } from 'lit';
+
 import type { Meta } from '@storybook/web-components-vite';
 
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
-
-const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+const arrows = {
+  Up: html`<icon-arrow-up></icon-arrow-up>`,
+  Down: html`<icon-arrow-down></icon-arrow-down>`,
+  Left: html`<icon-arrow-left></icon-arrow-left>`,
+  Right: html`<icon-arrow-right></icon-arrow-right>`,
+};
 
 const meta: Meta = {
   component: 'demo-button',
@@ -257,19 +290,64 @@ const meta: Meta = {
       mapping: arrows, // Maps serializable option values to complex arg values
       control: {
         type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-        labels: {
-          // 'labels' maps option values to string labels
-          ArrowUp: 'Up',
-          ArrowDown: 'Down',
-          ArrowLeft: 'Left',
-          ArrowRight: 'Right',
-        },
       },
     },
   },
 };
 
 export default meta;
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const arrows = {
+  Up: html`<icon-arrow-up></icon-arrow-up>`,
+  Down: html`<icon-arrow-down></icon-arrow-down>`,
+  Left: html`<icon-arrow-left></icon-arrow-left>`,
+  Right: html`<icon-arrow-right></icon-arrow-right>`,
+};
+
+const meta = preview.meta({
+  component: 'demo-button',
+  argTypes: {
+    arrow: {
+      options: Object.keys(arrows), // An array of serializable values
+      mapping: arrows, // Maps serializable option values to complex arg values
+      control: {
+        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const arrows = {
+  Up: html`<icon-arrow-up></icon-arrow-up>`,
+  Down: html`<icon-arrow-down></icon-arrow-down>`,
+  Left: html`<icon-arrow-left></icon-arrow-left>`,
+  Right: html`<icon-arrow-right></icon-arrow-right>`,
+};
+
+const meta = preview.meta({
+  component: 'demo-button',
+  argTypes: {
+    arrow: {
+      options: Object.keys(arrows), // An array of serializable values
+      mapping: arrows, // Maps serializable option values to complex arg values
+      control: {
+        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+      },
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -306,7 +384,70 @@ const meta = preview.meta({
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Button } from './Button';
+
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
+
+const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    arrow: {
+      options: Object.keys(arrows), // An array of serializable values
+      mapping: arrows, // Maps serializable option values to complex arg values
+      control: {
+        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+        labels: {
+          // 'labels' maps option values to string labels
+          ArrowUp: 'Up',
+          ArrowDown: 'Down',
+          ArrowLeft: 'Left',
+          ArrowRight: 'Right',
+        },
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
+
+const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    arrow: {
+      options: Object.keys(arrows), // An array of serializable values
+      mapping: arrows, // Maps serializable option values to complex arg values
+      control: {
+        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
+        labels: {
+          // 'labels' maps option values to string labels
+          ArrowUp: 'Up',
+          ArrowDown: 'Down',
+          ArrowLeft: 'Left',
+          ArrowRight: 'Right',
+        },
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
 
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
 

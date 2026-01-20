@@ -1,9 +1,7 @@
-```ts filename="Page.stories.ts" renderer="angular" language="ts"
-import { moduleMetadata } from '@storybook/angular';
-
-import type { Meta, StoryObj } from '@storybook/angular';
-
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import { CommonModule } from '@angular/common';
+
+import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { Button } from './button.component';
 import { Header } from './header.component';
@@ -30,6 +28,37 @@ export const LoggedIn: Story = {
     ...HeaderStories.LoggedIn.args,
   },
 };
+```
+
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { CommonModule } from '@angular/common';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+import { Header } from './header.component';
+import { Page } from './page.component';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+  decorators: [
+    moduleMetadata({
+      declarations: [Button, Header],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
 ```
 
 ```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
@@ -127,7 +156,7 @@ export const LoggedIn: Story = {
 <Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Page from './Page.svelte';
 
 //👇 Imports all Header stories
@@ -160,7 +189,7 @@ export const LoggedIn = {
 <Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -183,7 +212,7 @@ export const LoggedIn: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Page from './Page.vue';
 
 //👇 Imports all Header stories
@@ -212,7 +241,7 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Page from './Page.vue';
@@ -246,7 +275,71 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const LoggedIn = meta.story({
+  render: (args) => ({
+    components: { Page },
+    setup() {
+      return { args };
+    },
+    template: '<page v-bind="args" />',
+  }),
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const LoggedIn = meta.story({
+  render: (args) => ({
+    components: { Page },
+    setup() {
+      return { args };
+    },
+    template: '<page v-bind="args" />',
+  }),
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
+```
+
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 // 👇 Imports all Header stories
 import * as HeaderStories from './Header.stories';
 
@@ -261,7 +354,7 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // 👇 Imports all Header stories
@@ -279,6 +372,40 @@ export const LoggedIn: Story = {
     ...HeaderStories.LoggedIn.args,
   },
 };
+```
+
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: 'demo-page',
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
+```
+
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: 'demo-page',
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
 ```
 
 ```ts filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

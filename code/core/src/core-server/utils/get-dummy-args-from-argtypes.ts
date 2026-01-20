@@ -271,7 +271,7 @@ export function generateDummyValueFromSBType(
         return undefined;
       }
 
-      return value ?? propName;
+      return null;
     }
   }
 }

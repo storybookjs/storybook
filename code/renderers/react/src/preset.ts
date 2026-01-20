@@ -133,17 +133,5 @@ export async function internal_getArgTypesData(
     });
   }
 
-  if (!argTypesData?.props) {
-    return null;
-  }
-
-  const argTypes: ArgTypes = {};
-  for (const [propName, propInfo] of Object.entries(argTypesData.props)) {
-    argTypes[propName] = {
-      name: propName,
-      type: propInfo.required ? { ...propInfo.type, required: true } : propInfo.type,
-    };
-  }
-
-  return argTypes;
+  return argTypesData;
 }

@@ -1,5 +1,6 @@
 import type { SBType } from 'storybook/internal/csf';
 
+import { dirname } from 'path';
 import type {
   ElementsType,
   LiteralType,
@@ -124,3 +125,23 @@ export function mapCommonTypes(typeName: string): SBType | null {
 
   return null;
 }
+
+export const getTsConfig = async () => {
+  try {
+    const ts = await import('typescript');
+    const tsconfigPath = ts.findConfigFile(process.cwd(), ts.sys.fileExists);
+    console.log({ tsconfigPath });
+    if (tsconfigPath === undefined) {
+      return {};
+    }
+    const basePath = dirname(tsconfigPath);
+    const { config, error } = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
+    if (error) {
+      return {};
+    }
+
+    return ts.parseJsonConfigFileContent(config, ts.sys, basePath, {}, tsconfigPath).options;
+  } catch {
+    return {};
+  }
+};

@@ -83,7 +83,7 @@ export const Basic = meta.story({
 />
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import MockDate from 'mockdate';
 
 import Page from './Page.svelte';
@@ -161,7 +161,7 @@ export const Basic = {
 />
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

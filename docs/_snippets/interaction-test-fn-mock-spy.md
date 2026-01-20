@@ -137,7 +137,7 @@ export const FilledForm = {
 />
 ```
 
-```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { fn, expect } from 'storybook/test';
@@ -195,7 +195,7 @@ export const FilledForm: Story = {
 />
 ```
 
-```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { fn, expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm.svelte';

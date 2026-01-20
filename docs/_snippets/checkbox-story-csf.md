@@ -52,7 +52,7 @@ export const Unchecked = meta.story({
 />
 ```
 
-```js filename="Checkbox.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Checkbox.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Checkbox from './Checkbox.svelte';
 
 export default {
@@ -99,7 +99,7 @@ export const Unchecked = {
 />
 ```
 
-```ts filename="Checkbox.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Checkbox.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

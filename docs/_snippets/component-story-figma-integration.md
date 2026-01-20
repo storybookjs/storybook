@@ -144,7 +144,7 @@ export const Example: Story = {
 />
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import MyComponent from './MyComponent.svelte';
 
 // More on default export: https://storybook.js.org/docs/writing-stories/#default-export
@@ -184,7 +184,7 @@ export const Example = {
 />
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

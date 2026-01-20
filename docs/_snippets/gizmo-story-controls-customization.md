@@ -173,7 +173,7 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="Gizmo.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Gizmo.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Gizmo from './Gizmo.svelte';
 
 export default {
@@ -342,7 +342,7 @@ export default {
 </script>
 ```
 
-```ts filename="Gizmo.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Gizmo.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 

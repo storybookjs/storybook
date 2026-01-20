@@ -164,7 +164,7 @@ export const Empty: Story = {};
 <Story name="Empty" />
 ```
 
-```js filename="List.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="List.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import List from './List.svelte';
 
 export default {
@@ -190,7 +190,7 @@ export const Empty = {};
 <Story name="Empty" />
 ```
 
-```ts filename="List.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="List.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

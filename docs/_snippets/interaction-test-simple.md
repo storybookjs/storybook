@@ -107,7 +107,7 @@ export const Opens = {
 />
 ```
 
-```ts filename="Dialog.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Dialog.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { expect } from 'storybook/test';
@@ -153,7 +153,7 @@ export const Opens: Story = {
 />
 ```
 
-```js filename="Dialog.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Dialog.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { expect } from 'storybook/test';
 
 import { Dialog } from './Dialog.svelte';

@@ -91,7 +91,7 @@ export const SaveFlow = meta.story({
   }} />
 ```
 
-```js filename="NoteUI.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="NoteUI.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { expect } from 'storybook/test';
 
 // 👇 Automocked module resolves to '../app/__mocks__/actions'
@@ -153,7 +153,7 @@ export const SaveFlow = {
   }} />
 ```
 
-```ts filename="NoteUI.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="NoteUI.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { expect } from 'storybook/test';

@@ -58,7 +58,7 @@ export const Basic = meta.story({
 <Story name="Default" args={{ something: 'Something else' }} />
 ```
 
-```js filename="components/MyComponent/MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="components/MyComponent/MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import MyComponent from './MyComponent.svelte';
 
 export default {
@@ -103,7 +103,7 @@ export const Basic = {
 <Story name="Default" args={{ something: 'Something else'}} />
 ```
 
-```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

@@ -195,7 +195,7 @@ export const Primary: Story = {
 />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Button from './Button.svelte';
 
 export default {
@@ -212,7 +212,7 @@ export const Primary = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

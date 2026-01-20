@@ -181,7 +181,7 @@ export const ExampleStory = {
 />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // ...rest of story file
 
 export const ExampleStory: Story = {
@@ -230,7 +230,7 @@ export const ExampleStory: Story = {
 />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 // ...rest of story file
 
 export const ExampleStory = {

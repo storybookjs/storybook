@@ -52,7 +52,7 @@ export const UndocumentedStory = meta.story({
 <Story name="UndocumentedStory" tags={['!autodocs']} />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Button from './Button.svelte';
 
 export default {
@@ -99,7 +99,7 @@ export const UndocumentedStory = {
 <Story name="UndocumentedStory" tags={['!autodocs']} />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

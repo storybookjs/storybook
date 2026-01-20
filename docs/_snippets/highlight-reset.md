@@ -138,7 +138,7 @@ export const ResetHighlight: Story = {
 />
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
@@ -191,7 +191,7 @@ export const ResetHighlight = {
 />
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

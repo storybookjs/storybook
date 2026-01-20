@@ -73,7 +73,7 @@ export const Simple = meta.story({
 />
 ```
 
-```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import DocumentScreen from './YourPage.svelte';
 
 // 👇 Imports the required stories
@@ -141,7 +141,7 @@ export const Simple = {
 />
 ```
 
-```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

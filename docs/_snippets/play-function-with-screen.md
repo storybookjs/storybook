@@ -67,7 +67,7 @@ export const Open = meta.story({
   }} />
 ```
 
-```js filename="Dialog.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Dialog.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Dialog from './Dialog.svelte';
 
 export default {
@@ -128,7 +128,7 @@ export const Open = {
   }} />
 ```
 
-```ts filename="Dialog.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Dialog.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { screen } from 'storybook/test';

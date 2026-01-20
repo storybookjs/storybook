@@ -115,7 +115,7 @@ export const FilledForm = meta.story({
 />
 ```
 
-```js filename="RegistrationForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="RegistrationForm.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import RegistrationForm from './RegistrationForm.svelte';
 
 export default {
@@ -225,7 +225,7 @@ export const FilledForm = {
 />
 ```
 
-```ts filename="RegistrationForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="RegistrationForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

@@ -204,7 +204,7 @@ export const Primary: Story = {
 />
 ```
 
-```js filename="TodoItem.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="TodoItem.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import TodoItem from './TodoItem.svelte';
 
 export default {
@@ -260,7 +260,7 @@ export const Primary = {
 />
 ```
 
-```ts filename="TodoItem.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="TodoItem.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

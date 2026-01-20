@@ -156,7 +156,7 @@ export const LoggedIn: Story = {
 <Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Page from './Page.svelte';
 
 //👇 Imports all Header stories
@@ -189,7 +189,7 @@ export const LoggedIn = {
 <Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

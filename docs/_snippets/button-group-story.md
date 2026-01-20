@@ -167,7 +167,7 @@ export const Pair: Story = {
 />
 ```
 
-```js filename="ButtonGroup.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="ButtonGroup.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import ButtonGroup from '../ButtonGroup.svelte';
 
 //👇 Imports the Button stories
@@ -208,7 +208,7 @@ export const Pair = {
 />
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="ButtonGroup.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

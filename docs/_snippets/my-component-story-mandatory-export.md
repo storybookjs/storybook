@@ -44,7 +44,7 @@ export default meta;
 </script>
 ```
 
-```js filename="MyComponent.story.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="MyComponent.story.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -105,7 +105,7 @@ export default {
 </script>
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="MyComponent.stories.ts|tsx" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 

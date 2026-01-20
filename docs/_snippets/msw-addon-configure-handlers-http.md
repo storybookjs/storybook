@@ -197,7 +197,7 @@ export const MockedError = meta.story({
 />
 ```
 
-```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { http, HttpResponse, delay } from 'msw';
 
 import DocumentScreen from './YourPage.svelte';
@@ -389,7 +389,7 @@ export const MockedError = {
 />
 ```
 
-```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

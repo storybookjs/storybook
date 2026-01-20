@@ -109,7 +109,7 @@ export const RegexExclude = meta.story({
 />
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import YourComponent from './YourComponent.svelte';
 
 export default {
@@ -213,7 +213,7 @@ export const RegexExclude = {
 />
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 

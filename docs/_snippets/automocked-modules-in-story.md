@@ -158,7 +158,7 @@ export const LogIn = {
 />
 ```
 
-```ts filename="AuthButton.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="AuthButton.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { expect, mocked } from 'storybook/test';
@@ -225,7 +225,7 @@ export const LogIn: Story = {
 />
 ```
 
-```js filename="AuthButton.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="AuthButton.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { expect } from 'storybook/test';
 
 import { AuthButton } from './AuthButton.svelte';

@@ -71,7 +71,7 @@ export const ChristmasUI = meta.story({
 />
 ```
 
-```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 import MockDate from 'mockdate';
 
 // ...rest of story file
@@ -108,7 +108,7 @@ export const ChristmasUI: Story = {
 />
 ```
 
-```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import MockDate from 'mockdate';
 
 // ...rest of story file

@@ -47,7 +47,7 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="Example.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Example.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Example from './Example.svelte';
 
 export default {
@@ -90,7 +90,7 @@ export default {
 </script>
 ```
 
-```ts filename="Example.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Example.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 

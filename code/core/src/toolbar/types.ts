@@ -26,7 +26,7 @@ export interface NormalizedToolbarConfig {
   /** The label to show for this toolbar item */
   title?: string;
   /** Choose an icon to show for this toolbar item */
-  icon: IconsProps['icon'];
+  icon?: IconsProps['icon'];
   /** Set to true to prevent default update of icon to match any present selected items icon */
   preventDynamicIcon?: boolean;
   items: ToolbarItem[];
@@ -35,16 +35,27 @@ export interface NormalizedToolbarConfig {
   dynamicTitle?: boolean;
 }
 
-export type NormalizedToolbarArgType = InputType & {
+export type NormalizedToolbarArgType = {
+  name: string;
+  description: string;
+  defaultValue?: any;
   toolbar: NormalizedToolbarConfig;
 };
 
-export type ToolbarConfig = NormalizedToolbarConfig & {
-  items: string[] | ToolbarItem[];
+export type ToolbarConfig = Omit<NormalizedToolbarConfig, 'items'> & {
+  items: (string | ToolbarItem)[];
 };
 
-export type ToolbarArgType = InputType & {
-  toolbar: ToolbarConfig;
+export type ToolbarArgType = {
+  name?: string;
+  description?: string;
+  defaultValue?: any;
+  toolbar?: ToolbarConfig;
+  /**
+   * @deprecated This loose index signature has been added for compatibility with InputType, and
+   *   will be removed in Storybook 11
+   */
+  [key: string]: any;
 };
 
 export type ToolbarMenuProps = NormalizedToolbarArgType & { id: string };

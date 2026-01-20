@@ -245,29 +245,7 @@ Additionally, the [`router` object](https://nextjs.org/docs/pages/api-reference/
 
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
-```ts title=".storybook/preview.js|ts"
-import type { Preview } from '@storybook/nextjs';
-
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from "@storybook/nextjs/router.mock";
-
-const preview: Preview = {
-  parameters: {
-    nextjs: {
-      // 👇 Override the default router properties
-      router: {
-        basePath: '/app/',
-      },
-    },
-  },
-  async beforeEach() {
-    // 👇 Manipulate the default router method mocks
-    getRouter().push.mockImplementation(() => {
-      /* ... */
-    });
-  },
-};
-```
+<CodeSnippets path="nextjs-router-override-in-preview.md" />
 
 ### Next.js navigation
 
@@ -373,29 +351,7 @@ Additionally, the [`router` object](https://nextjs.org/docs/app/api-reference/fu
 
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
-```ts title=".storybook/preview.js|ts"
-import type { Preview } from '@storybook/nextjs';
-
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from '@storybook/nextjs/navigation.mock';
-
-const preview: Preview = {
-  parameters: {
-    nextjs: {
-      // 👇 Override the default navigation properties
-      navigation: {
-        pathname: '/app/',
-      },
-    },
-  },
-  async beforeEach() {
-    // 👇 Manipulate the default navigation method mocks
-    getRouter().push.mockImplementation(() => {
-      /* ... */
-    });
-  },
-};
-```
+<CodeSnippets path="nextjs-navigation-override-in-preview.md" />
 
 ### Next.js Head
 
@@ -901,22 +857,7 @@ This module exports mocked implementations of the `next/router` module's exports
 
 You can pass an options object for additional configuration if needed:
 
-```js title=".storybook/main.js"
-import * as path from 'path';
-
-export default {
-  // ...
-  framework: {
-    name: '@storybook/nextjs',
-    options: {
-      image: {
-        loading: 'eager',
-      },
-      nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
-    },
-  },
-};
-```
+<CodeSnippets path="nextjs-framework-options-next-config-path.md" />
 
 The available options are:
 

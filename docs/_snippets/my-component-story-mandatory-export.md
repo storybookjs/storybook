@@ -1,7 +1,7 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 const meta: Meta<MyComponent> = {
   /* 👇 The title prop is optional.
@@ -44,7 +44,7 @@ export default meta;
 </script>
 ```
 
-```js filename="MyComponent.story.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="MyComponent.story.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -105,7 +105,7 @@ export default {
 </script>
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="MyComponent.stories.ts|tsx" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
@@ -129,7 +129,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
@@ -181,48 +181,4 @@ const meta: Meta = {
 };
 
 export default meta;
-```
-
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Path/To/MyComponent',
-  component: MyComponent,
-  decorators: [
-    /* ... */
-  ],
-  parameters: {
-    /* ... */
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { MyComponent } from './MyComponent';
-
-const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'Path/To/MyComponent',
-  component: MyComponent,
-  decorators: [
-    /* ... */
-  ],
-  parameters: {
-    /* ... */
-  },
-});
 ```

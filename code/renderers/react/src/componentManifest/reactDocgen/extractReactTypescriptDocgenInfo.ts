@@ -4,7 +4,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import type { ParserOptions as ReactDocgenTypescriptOptions } from 'react-docgen-typescript';
 
-import { type GetArgTypesDataOptions, mapCommonTypes } from './utils';
+import { type GetArgTypesDataOptions, getTsConfig, mapCommonTypes } from './utils';
 
 interface PropFilterProps {
   parent?: { fileName: string };
@@ -124,18 +124,15 @@ export const extractArgTypesFromDocgenTypescript = async ({
       savePropValueAsString: true,
     };
 
+    const tsConfig = await getTsConfig();
+
     const mergedOptions = {
       ...defaultOptions,
       ...reactDocgenTypescriptOptions,
       // Always ensure savePropValueAsString is true for consistency
       savePropValueAsString: true,
     };
-
-    const parser = withCompilerOptions(
-      { esModuleInterop: true, jsx: 2 /* React */ },
-      mergedOptions
-    );
-
+    const parser = withCompilerOptions(tsConfig, mergedOptions);
     const docgens = parser.parse(componentFilePath) as ComponentDocgenResult[];
 
     if (!docgens || docgens.length === 0) {

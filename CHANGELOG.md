@@ -1,3 +1,10 @@
+## 10.1.12
+
+- AddonVitest: Improve perf & fix loading incorrect `.env` file - [#33469](https://github.com/storybookjs/storybook/pull/33469), thanks @ndelangen!
+- Core: Fix onboarding visual bugs, survey telemetry and modal dismissal - [#33326](https://github.com/storybookjs/storybook/pull/33326), thanks @ghengeveld!
+- UI: Fix regression in select close handler focus - [#33470](https://github.com/storybookjs/storybook/pull/33470), thanks @Sidnioulz!
+- UI: Improve landmark navigation - [#33457](https://github.com/storybookjs/storybook/pull/33457), thanks @Sidnioulz!
+
 ## 10.1.11
 
 - React: Fix several CSF factory bugs  - [#33354](https://github.com/storybookjs/storybook/pull/33354), thanks @kasperpeulen!

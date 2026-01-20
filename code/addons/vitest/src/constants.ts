@@ -28,7 +28,7 @@ export const storeOptions = {
     watching: false,
     cancelling: false,
     fatalError: undefined,
-    indexUrl: undefined,
+    index: { entries: {}, v: 5 },
     previewAnnotations: [],
     currentRun: {
       triggeredBy: undefined,

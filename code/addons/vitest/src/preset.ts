@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -8,7 +7,9 @@ import {
   loadPreviewOrConfigFile,
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
+import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import {
+  type StoryIndexGenerator,
   experimental_UniversalStore,
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
@@ -81,6 +82,9 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     return channel;
   }
 
+  const storyIndexGenerator =
+    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+
   const fsCache = createFileSystemCache({
     basePath: resolvePathInStorybookCache(ADDON_ID.replace('/', '-')),
     ns: 'storybook',
@@ -98,6 +102,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     initialState: {
       ...storeOptions.initialState,
       previewAnnotations: (previewAnnotations ?? []).concat(previewPath ?? []),
+      index: await storyIndexGenerator.getIndex(),
       ...selectCachedState(cachedState),
     },
     leader: true,
@@ -108,6 +113,11 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     }
   });
   const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
+
+  channel.on(STORY_INDEX_INVALIDATED, async () => {
+    const index = await storyIndexGenerator.getIndex();
+    store.setState((s) => ({ ...s, index }));
+  });
 
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
     testProviderStore.setState('test-provider-state:running');

@@ -1,5 +1,5 @@
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
-import type { PreviewAnnotation, Status, StoryId } from 'storybook/internal/types';
+import type { PreviewAnnotation, Status, StoryId, StoryIndex } from 'storybook/internal/types';
 import type { API_HashEntry } from 'storybook/internal/types';
 
 // import type { A11yReport } from '@storybook/addon-a11y';
@@ -66,9 +66,7 @@ export type StoreState = {
   };
   watching: boolean;
   cancelling: boolean;
-  // TODO: Avoid needing to do a fetch request server-side to retrieve the index
-  // e.g. http://localhost:6006/index.json
-  indexUrl: string | undefined;
+  index: StoryIndex;
   previewAnnotations: PreviewAnnotation[];
   fatalError:
     | {

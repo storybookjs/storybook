@@ -27,8 +27,8 @@ export const normalizeArgType = (
         if (item.type === 'reset' && toolbar.icon) {
           item.icon = toolbar.icon;
           item.hideIcon = true;
-        item.value = undefined;
-      }
+          item.value = undefined;
+        }
 
         return { ...defaultItemValues, ...item };
       }),

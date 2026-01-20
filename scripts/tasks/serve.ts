@@ -1,7 +1,7 @@
 import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
-import type { TemplateKey } from '../get-template';
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { getPort } from '../sandbox/utils/getPort';
 import { type Task } from '../task';
 import { ROOT_DIRECTORY } from '../utils/constants';
@@ -11,7 +11,7 @@ export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
   : 8001;
 
-function getServePort(key: TemplateKey) {
+function getServePort(key: AllTemplatesKey) {
   return process.env.NX_CLI_SET === 'true' ? getPort({ selectedTask: 'serve', key }) : PORT;
 }
 

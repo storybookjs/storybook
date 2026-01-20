@@ -884,7 +884,11 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setFieldValue(['tags'], ['vitest']);
   }
 
-  if (template.modifications?.skipMocking) {
+  const isCoreRenderer =
+    template.expected.renderer.startsWith('@storybook/') &&
+    template.expected.renderer !== '@storybook/server';
+
+  if (template.modifications?.skipMocking || !isCoreRenderer) {
     await writeConfig(previewConfig);
     return;
   }

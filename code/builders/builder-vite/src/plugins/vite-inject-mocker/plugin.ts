@@ -1,7 +1,7 @@
 import { resolvePackageDir } from 'storybook/internal/common';
 
 import { join } from 'pathe';
-import type { ViteDevServer } from 'vite';
+import type { ResolvedConfig, ViteDevServer } from 'vite';
 
 const entryPath = '/vite-inject-mocker-entry.js';
 
@@ -18,9 +18,28 @@ export const viteInjectMockerRuntime = (options: {
     'mocker-runtime.js'
   );
 
+  let viteConfig: ResolvedConfig;
+
   return {
     name: 'vite:storybook-inject-mocker-runtime',
     enforce: 'pre',
+    buildStart() {
+      if (viteConfig.command === 'build') {
+        this.emitFile({
+          type: 'chunk',
+          id: join(
+            resolvePackageDir('storybook'),
+            'assets',
+            'server',
+            'mocker-runtime.template.js'
+          ),
+          fileName: entryPath.slice(1),
+        });
+      }
+    },
+    configResolved(config) {
+      viteConfig = config;
+    },
     configureServer(server_) {
       server = server_;
       if (options.previewConfigPath) {

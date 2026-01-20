@@ -5,10 +5,12 @@ import type { Options } from 'storybook/internal/types';
 function createMockOptions({
 	featureFlag = false,
 	hasManifests = false,
+	hasLegacyComponentManifestGenerator = false,
 	hasFeaturesObject = true,
 }: {
 	featureFlag?: boolean;
 	hasManifests?: boolean;
+	hasLegacyComponentManifestGenerator?: boolean;
 	hasFeaturesObject?: boolean;
 } = {}): Options {
 	return {
@@ -20,7 +22,12 @@ function createMockOptions({
 						: {};
 				}
 				if (key === 'experimental_manifests') {
-					return hasManifests ? vi.fn() : undefined;
+					return hasManifests
+						? { components: { v: 1, components: {} } }
+						: undefined;
+				}
+				if (key === 'experimental_componentManifestGenerator') {
+					return hasLegacyComponentManifestGenerator ? vi.fn() : undefined;
 				}
 				return undefined;
 			}),
@@ -31,12 +38,18 @@ function createMockOptions({
 describe('getManifestStatus', () => {
 	it.each([
 		{
-			description: 'both feature flag and generator are present',
+			description: 'both feature flag and manifests are present',
 			options: { featureFlag: true, hasManifests: true },
 			expected: { available: true, hasManifests: true, hasFeatureFlag: true },
 		},
 		{
-			description: 'missing generator (unsupported framework)',
+			description:
+				'both feature flag and legacy component manifest generator are present',
+			options: { featureFlag: true, hasLegacyComponentManifestGenerator: true },
+			expected: { available: true, hasManifests: true, hasFeatureFlag: true },
+		},
+		{
+			description: 'missing manifests (unsupported framework)',
 			options: { featureFlag: true, hasManifests: false },
 			expected: { available: false, hasManifests: false, hasFeatureFlag: true },
 		},

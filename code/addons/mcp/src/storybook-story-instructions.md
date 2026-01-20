@@ -110,6 +110,34 @@ export const LoggedIn: Story = {
 
 Before doing this ensure you have mocked the import in the preview file.
 
+### Play Function Parameters
+
+- The play function has a `canvas` parameter that can be used directly with testing-library-like query methods.
+- It also has a `canvasElement` which is the actual DOM element.
+- The `within`-function imported from `storybook/test` transforms a DOM element to an object with query methods, similar to `canvas`.
+
+**DO NOT** use `within(canvas)` - it is redundant because `canvas` already has the query methods, `canvas` is not a DOM element.
+
+```ts
+// ✅ Correct: Use canvas directly
+play: async ({ canvas }) => {
+	await canvas.getByLabelText('Submit').click();
+};
+
+// ⚠️ Also acceptable: Use `canvasElement` with `within`
+import { within } from 'storybook/test';
+
+play: async ({ canvasElement }) => {
+	const canvas = within(canvasElement);
+	await canvas.getByLabelText('Submit').click();
+};
+
+// ❌ Wrong: Do NOT use within(canvas)
+play: async ({ canvas }) => {
+	const screen = within(canvas); // Error!
+};
+```
+
 ### Key Requirements
 
 - **Node.js 20+**, **TypeScript 4.9+**, **Vite 5+**

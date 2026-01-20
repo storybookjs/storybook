@@ -1,5 +1,19 @@
 # @storybook/addon-mcp
 
+## 0.2.0
+
+### Minor Changes
+
+- [#118](https://github.com/storybookjs/mcp/pull/118) [`bafbfc6`](https://github.com/storybookjs/mcp/commit/bafbfc661f93f32024ce75d553f2b7bc90954508) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Renamed tool `get-ui-building-instructions` to `get-storybook-story-instructions` to increase the likelihood of Agents calling the MCP tool.
+
+  Further updates:
+  - Updated storybook-story building instructions template to be more specific about what a good story is.
+  - Added an extensive description for the `get-storybook-story-instructions` tool to give agents more information of when to call the MCP tool
+
+### Patch Changes
+
+- [#128](https://github.com/storybookjs/mcp/pull/128) [`20d97e2`](https://github.com/storybookjs/mcp/commit/20d97e26020c47eca3816888811c557c42a45342) Thanks [@JReinhold](https://github.com/JReinhold)! - Fix disabled docs toolset in Storybook version prior to v10.2.0-alpha.10
+
 ## 0.1.8
 
 ### Patch Changes

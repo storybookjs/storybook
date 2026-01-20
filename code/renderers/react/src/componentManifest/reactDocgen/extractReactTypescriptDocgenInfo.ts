@@ -48,7 +48,10 @@ export const extractArgTypesFromDocgenTypescript = async ({
       // Always ensure savePropValueAsString is true for consistency
       savePropValueAsString: true,
     };
-    const parser = withCompilerOptions(tsConfig, mergedOptions);
+    const parser = withCompilerOptions(
+      { ...tsConfig, noErrorTruncation: true, strict: true },
+      mergedOptions
+    );
     const docgens = parser.parse(componentFilePath) as ComponentDocgenResult[];
 
     if (!docgens || docgens.length === 0) {

@@ -227,11 +227,13 @@ export function generateDummyValueFromSBType(
     }
 
     case 'array': {
+      const v = sbType.value as unknown as SBType[];
+
       // If we don't know what the element is, be conservative and return empty.
-      if (sbType.value?.length < 1 || sbType.value[0]?.name === 'other') {
+      if (v?.length < 1 || v[0]?.name === 'other') {
         return [];
       }
-      return [generateDummyValueFromSBType(sbType.value[0], propName, options)];
+      return [generateDummyValueFromSBType(v[0], propName, options)];
     }
 
     case 'tuple':

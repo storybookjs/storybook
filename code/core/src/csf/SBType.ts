@@ -9,7 +9,7 @@ export type SBScalarType = SBBaseType & {
 
 export type SBArrayType = SBBaseType & {
   name: 'array';
-  value: SBType[];
+  value: SBType;
 };
 export type SBNodeType = SBBaseType & {
   // Framework-specific “renderable node” (e.g. ReactNode, Vue VNode).

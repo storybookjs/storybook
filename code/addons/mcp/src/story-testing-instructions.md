@@ -12,8 +12,10 @@ After making ANY changes to UI components or stories, you MUST immediately run t
    - DO NOT move on to other tasks
    - DO NOT ignore the failures
    - DO NOT ask the user what to do
-   - ANALYZE the failure output carefully
-   - FIX the root cause of each failure
+   - ANALYZE the failure output carefully, including:
+     - Component test failures
+     - **Accessibility (a11y) violations with their impact levels (critical, serious, moderate, minor)**
+   - FIX the root cause of each failure, ensuring all accessibility violations are addressed
    - RE-RUN the tests immediately after fixing
 
 3. **Iterate until success**: You MUST continue the fix → test → fix cycle until ALL tests pass. There is no acceptable number of failures. Zero failures is the only acceptable outcome.
@@ -31,6 +33,17 @@ Run tests after ANY of the following:
 - Refactoring component structure
 - Fixing bugs in components
 - Adding or modifying component event handlers
+
+### Accessibility Violations
+
+The test results include accessibility violations with varying impact levels:
+
+- **Critical**: Must be fixed immediately - these violate WCAG compliance
+- **Serious**: High priority - significant accessibility issues for users with disabilities
+- **Moderate**: Should be fixed - noticeable impact on accessibility
+- **Minor**: Lower priority - minor accessibility improvements
+
+**You MUST address all a11y violations flagged by tests**, regardless of impact level. Do not consider the task complete until accessibility violations are resolved.
 
 ### Failure to Comply
 

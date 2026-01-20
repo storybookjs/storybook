@@ -63,7 +63,6 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 						: frameworkPreset?.name;
 				const renderer = frameworkToRendererMap[framework!];
 
-				// Build UI instructions with framework/renderer
 				let uiInstructions = storyInstructionsTemplate
 					.replace('{{FRAMEWORK}}', framework)
 					.replace('{{RENDERER}}', renderer ?? framework)

@@ -90,7 +90,7 @@ export async function addRunStoryTestsTool(
 				logger.info(`Running tests for story IDs: ${storyIds.join(', ')}`);
 
 				// Trigger test run via channel events
-				const responsePayload = await triggerTestRunViaChannel(
+				const responsePayload = await triggerTestRun(
 					channel,
 					addonVitestConstants!.TRIGGER_TEST_RUN_REQUEST,
 					addonVitestConstants!.TRIGGER_TEST_RUN_RESPONSE,
@@ -241,7 +241,7 @@ export async function addRunStoryTestsTool(
  * Trigger a test run via Storybook channel events.
  * This is the channel-based API for triggering tests in addon-vitest.
  */
-function triggerTestRunViaChannel(
+function triggerTestRun(
 	channel: Channel,
 	triggerTestRunRequestEventName: string,
 	triggerTestRunResponseEventName: string,

@@ -22,6 +22,7 @@ vi.mock('storybook/internal/node-logger', () => ({
 	logger: {
 		info: vi.fn(),
 		debug: vi.fn(),
+		warn: vi.fn(),
 	},
 }));
 
@@ -186,6 +187,7 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
+				a11yReports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -234,6 +236,7 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
+				a11yReports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -248,9 +251,7 @@ describe('runStoryTestsTool', () => {
 
 			### button--primary
 
-			Expected element to be visible
-
-			"
+			Expected element to be visible"
 		`);
 	});
 
@@ -286,6 +287,7 @@ describe('runStoryTestsTool', () => {
 					},
 				],
 				a11yStatuses: [],
+				a11yReports: {},
 				unhandledErrors: [],
 			},
 		});
@@ -304,9 +306,7 @@ describe('runStoryTestsTool', () => {
 
 			### button--secondary
 
-			Expected button text to be "Secondary"
-
-			"
+			Expected button text to be \"Secondary\""
 		`);
 	});
 
@@ -334,24 +334,27 @@ describe('runStoryTestsTool', () => {
 						description: '',
 					},
 				],
-				a11yStatuses: [
-					{
-						storyId: 'button--primary',
-						typeId: 'storybook/a11y',
-						value: 'status-value:error',
-						title: 'Accessibility',
-						description:
-							'Color contrast ratio is insufficient: 2.5:1 (required: 4.5:1)',
-					},
-					{
-						storyId: 'button--secondary',
-						typeId: 'storybook/a11y',
-						value: 'status-value:warning',
-						title: 'Accessibility',
-						description:
-							'Interactive element should have a visible focus style',
-					},
-				],
+				a11yStatuses: [],
+				a11yReports: {
+					'button--primary': [
+						{
+							violations: [
+								{
+									id: 'color-contrast',
+									description: 'Color contrast ratio is insufficient',
+									nodes: [
+										{
+											html: '<button style="color: #fff; background: #ccc;">Click me</button>',
+											impact: 'critical',
+											failureSummary: '2.5:1 (required: 4.5:1)',
+											linkPath: '/inspect/button--primary?inspectPath=button.0',
+										},
+									],
+								},
+							],
+						},
+					],
+				},
 				unhandledErrors: [],
 			},
 		});
@@ -364,21 +367,19 @@ describe('runStoryTestsTool', () => {
 		expect(response.result?.content[0].text).toMatchInlineSnapshot(`
 			"## Passing Stories
 
-			- button--primary## Accessibility Violations
+			- button--primary
 
-			### Errors
+			## Accessibility Violations
 
-			#### button--primary
+			### button--primary - color-contrast
 
-			Color contrast ratio is insufficient: 2.5:1 (required: 4.5:1)
+			Color contrast ratio is insufficient
 
-			### Warnings
-
-			#### button--secondary
-
-			Interactive element should have a visible focus style
-
-			"
+			#### Affected Elements
+			- **Impact**: critical
+			  **Message**: 2.5:1 (required: 4.5:1)
+			  **Element**: <button style="color: #fff; background: #ccc;">Click me</button>
+			  **Inspect**: http://localhost:6006/inspect/button--primary?inspectPath=button.0"
 		`);
 	});
 
@@ -399,6 +400,7 @@ describe('runStoryTestsTool', () => {
 				a11yCount: { success: 0, warning: 0, error: 0 },
 				componentTestStatuses: [],
 				a11yStatuses: [],
+				a11yReports: {},
 				unhandledErrors: [
 					{
 						name: 'ReferenceError',

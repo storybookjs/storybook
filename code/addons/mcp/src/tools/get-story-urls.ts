@@ -39,12 +39,10 @@ export async function addGetStoryUrlsTool(
 
 				const result: string[] = [];
 
-				// Add URLs for found stories
 				for (const { id } of found) {
 					result.push(`${origin}/?path=/story/${id}`);
 				}
 
-				// Add error messages for not-found stories
 				for (const { errorMessage } of notFound) {
 					result.push(errorMessage);
 				}

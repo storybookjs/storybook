@@ -46,6 +46,10 @@ const Wrapper = styled.div<{ after?: ReactNode; before?: ReactNode }>(
         outline: 'none',
       },
     },
+    'input + div': {
+      paddingInline: 0,
+      fontSize: 'inherit',
+    },
     '&:has(input:focus-visible)': {
       outline: `2px solid ${theme.color.secondary}`,
       outlineOffset: -2,
@@ -76,8 +80,8 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
     setValue,
     minValue = -Infinity,
     maxValue = Infinity,
-    unit,
-    baseUnit,
+    unit: fixedUnit,
+    baseUnit = fixedUnit,
     className,
     style,
     ...props
@@ -96,12 +100,12 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
 
   const parseValue = useCallback(
     (value: string) => {
-      const [, inputValue, inputUnit = unit || baseUnit || ''] =
-        value.match(/(-?\d+(?:\.\d+)?)(\%|[a-z]{0,4})?$/) || [];
+      const [, inputValue, unit = fixedUnit || baseUnit || ''] =
+        value.match(/(-?\d+(?:\.\d+)?)(\%|[a-z]{1,4})?$/) || [];
       const number = Math.max(minValue, Math.min(parseFloat(inputValue), maxValue));
-      return { number, unit: inputUnit };
+      return { number, unit };
     },
-    [minValue, maxValue, unit, baseUnit]
+    [minValue, maxValue, fixedUnit, baseUnit]
   );
 
   const updateValue = useCallback(
@@ -177,6 +181,7 @@ export const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(func
         id={id}
         ref={inputRef}
         value={inputValue}
+        suffix={fixedUnit ? fixedUnit : inputValue && baseUnit}
         onChange={onChange}
         onFocus={setInputSelection}
         onBlur={updateInputValue}

@@ -2,19 +2,19 @@
 
 <style>
   /* While we aren't showing the main block yet, but still preparing, we want everything the user has rendered, which may or may not be in #storybook-root, to be display none */
-  .sb-show-preparing-story:not(.sb-show-main) > :not(.sb-preparing-story) {
+  .sb-show-preparing-story:not(.sb-show-main)> :not(.sb-preparing-story) {
     display: none;
   }
 
-  .sb-show-preparing-docs:not(.sb-show-main) > :not(.sb-preparing-docs) {
+  .sb-show-preparing-docs:not(.sb-show-main)> :not(.sb-preparing-docs) {
     display: none;
   }
 
   /* Hide our own blocks when we aren't supposed to be showing them */
-  :not(.sb-show-preparing-story) > .sb-preparing-story,
-  :not(.sb-show-preparing-docs) > .sb-preparing-docs,
-  :not(.sb-show-nopreview) > .sb-nopreview,
-  :not(.sb-show-errordisplay) > .sb-errordisplay {
+  :not(.sb-show-preparing-story)>.sb-preparing-story,
+  :not(.sb-show-preparing-docs)>.sb-preparing-docs,
+  :not(.sb-show-nopreview)>.sb-nopreview,
+  :not(.sb-show-errordisplay)>.sb-errordisplay {
     display: none;
   }
 
@@ -34,7 +34,8 @@
   }
 
   /* Vertical centering fix for IE11 */
-  @media screen and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  @media screen and (-ms-high-contrast: none),
+  (-ms-high-contrast: active) {
     .sb-show-main.sb-main-centered:after {
       content: '';
       min-height: inherit;
@@ -110,7 +111,13 @@
     margin: auto;
     padding: 30px;
     border-radius: 10px;
-    background: rgba(0, 0, 0, 0.03);
+    background: rgb(247, 247, 247);
+    color: rgb(46, 52, 56);
+
+    & * {
+      background: rgb(247, 247, 247);
+      color: rgb(46, 52, 56);
+    }
   }
 
   .sb-nopreview_heading {
@@ -124,10 +131,33 @@
     width: 100vw;
     min-height: 100vh;
     box-sizing: border-box;
+  }
+
+  .sb-errordisplay_main {
+    margin: auto;
+    padding: 24px;
+    display: flex;
+    box-sizing: border-box;
+
+    flex-direction: column;
+    min-height: 100%;
+    width: 100%;
+    border-radius: 6px;
+    background: white;
+    color: black;
+    border: 1px solid #ff0000;
+    box-shadow: 0 0 64px rgba(0, 0, 0, 0.1);
+    gap: 24px;
 
     & ol {
       padding-left: 18px;
       margin: 0;
+    }
+
+    /* Redefine colors to ensure readability regardless of user-provided * selectors. */
+    * {
+      background: white;
+      color: black;
     }
 
     & h1 {
@@ -158,7 +188,7 @@
       margin: 0;
     }
 
-    & li + li {
+    & li+li {
       margin: 0;
       padding: 0;
       padding-top: 12px;
@@ -167,47 +197,37 @@
     & a {
       color: currentColor;
     }
+
+    & .sb-errordisplay_code {
+      padding: 10px;
+      flex: 1;
+      background: #242424;
+      color: #c6c6c6;
+      box-sizing: border-box;
+
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 19px;
+      border-radius: 4px;
+
+      font-family:
+        'Operator Mono', 'Fira Code Retina', 'Fira Code', 'FiraCode-Retina', 'Andale Mono',
+        'Lucida Console', Consolas, Monaco, monospace;
+      margin: 0;
+      overflow: auto;
+
+      & code {
+        background-color: inherit;
+        color: inherit;
+      }
+    }
+
+    & .sb-errordisplay pre {
+      white-space: pre-wrap;
+      white-space: revert;
+    }
   }
 
-  .sb-errordisplay_main {
-    margin: auto;
-    padding: 24px;
-    display: flex;
-    box-sizing: border-box;
-
-    flex-direction: column;
-    min-height: 100%;
-    width: 100%;
-    border-radius: 6px;
-    background: white;
-    border: 1px solid #ff0000;
-    box-shadow: 0 0 64px rgba(0, 0, 0, 0.1);
-    gap: 24px;
-  }
-
-  .sb-errordisplay_code {
-    padding: 10px;
-    flex: 1;
-    background: #242424;
-    color: #c6c6c6;
-    box-sizing: border-box;
-
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 19px;
-    border-radius: 4px;
-
-    font-family:
-      'Operator Mono', 'Fira Code Retina', 'Fira Code', 'FiraCode-Retina', 'Andale Mono',
-      'Lucida Console', Consolas, Monaco, monospace;
-    margin: 0;
-    overflow: auto;
-  }
-
-  .sb-errordisplay pre {
-    white-space: pre-wrap;
-    white-space: revert;
-  }
 
   @-webkit-keyframes sb-rotate360 {
     from {
@@ -230,6 +250,7 @@
   }
 
   @-webkit-keyframes sb-glow {
+
     0%,
     100% {
       opacity: 1;
@@ -241,6 +262,7 @@
   }
 
   @keyframes sb-glow {
+
     0%,
     100% {
       opacity: 1;

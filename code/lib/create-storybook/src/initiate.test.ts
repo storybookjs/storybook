@@ -18,6 +18,10 @@ const getCliIntegrationFromAncestry =
 
 vi.mock('storybook/internal/telemetry');
 
+vi.mock('storybook/internal/core-server', () => ({
+  getServerPort: vi.fn().mockResolvedValue(6006),
+}));
+
 describe('getStorybookVersionFromAncestry', () => {
   it('possible storybook path', () => {
     const ancestry = [{ command: 'node' }, { command: 'storybook@7.0.0' }, { command: 'npm' }];

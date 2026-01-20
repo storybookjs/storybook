@@ -176,41 +176,45 @@ async function runStorybookDev(result: {
   try {
     const supportsOnboarding = FeatureCompatibilityService.supportsOnboarding(projectType);
 
-    const flags = [];
+    const parts = storybookCommand.split(' ');
 
     if (packageManager.type === 'npm') {
-      flags.push('--silent');
+      parts.push('--silent');
     }
 
-    // npm needs extra -- to pass flags to the command
-    // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`
-    const doesNeedExtraDash =
-      packageManager.type === PackageManagerName.NPM ||
-      packageManager.type === PackageManagerName.BUN;
+    const supportSbFlags = projectType !== ProjectType.ANGULAR;
 
-    if (doesNeedExtraDash && projectType !== ProjectType.ANGULAR) {
-      flags.push('--');
+    if (supportSbFlags) {
+      // npm needs extra -- to pass flags to the command
+      // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`
+      const doesNeedExtraDash =
+        packageManager.type === PackageManagerName.NPM ||
+        packageManager.type === PackageManagerName.BUN;
+
+      if (doesNeedExtraDash) {
+        parts.push('--');
+      }
+
+      const defaultPort = 6006;
+      const availablePort = await getServerPort(defaultPort);
+      const useAlternativePort = availablePort !== defaultPort;
+
+      if (useAlternativePort) {
+        parts.push(`-p`, `${availablePort}`);
+
+        if (supportsOnboarding && shouldOnboard) {
+          parts.push('--initial-path=/onboarding');
+        }
+
+        parts.push('--quiet');
+      }
     }
-
-    if (supportsOnboarding && shouldOnboard) {
-      flags.push('--initial-path=/onboarding');
-    }
-
-    // Check if default port 6006 is available
-    const defaultPort = 6006;
-    const availablePort = await getServerPort(defaultPort);
-    const useAlternativePort = availablePort !== defaultPort;
-
-    if (useAlternativePort) {
-      flags.push(`--port=${availablePort}`);
-    }
-
-    flags.push('--quiet');
 
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
-    const [command, ...args] = [...storybookCommand.split(' '), ...flags];
+    const [command, ...args] = [...parts];
+
     await executeCommand({
       command: command,
       args,

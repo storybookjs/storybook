@@ -71,7 +71,7 @@ export const Undo = meta.story({
 
 export const MaxZoom = meta.story({
   args: {
-    value: 4,
+    value: 8,
   },
 });
 

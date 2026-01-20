@@ -60,6 +60,15 @@ type InferWebComponentsTypes<T, TArgs, Decorators> = WebComponentsTypes &
   T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
 
 /**
+ * Infers args from a web component's HTMLElement type, allowing both camelCase properties and
+ * kebab-case HTML attribute names (e.g., 'aria-label', 'data-testid', 'static-color').
+ */
+type InferArgsFromComponent<C extends keyof HTMLElementTagNameMap> = Partial<
+  HTMLElementTagNameMap[C]
+> &
+  Record<`${string}-${string}`, unknown>;
+
+/**
  * Web Components-specific Preview interface that provides type-safe CSF factory methods.
  *
  * Use `preview.meta()` to create a meta configuration for a component, and then `meta.story()` to
@@ -94,22 +103,20 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
     C extends keyof HTMLElementTagNameMap,
     Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
     // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<HTMLElementTagNameMap[C] & T['args']>,
+    TMetaArgs extends InferArgsFromComponent<C> & Partial<T['args']>,
   >(
     meta: {
       component?: C;
       args?: TMetaArgs;
       decorators?: Decorators | Decorators[];
     } & Omit<
-      ComponentAnnotations<WebComponentsTypes & T, Partial<HTMLElementTagNameMap[C]> & T['args']>,
+      ComponentAnnotations<WebComponentsTypes & T, InferArgsFromComponent<C> & T['args']>,
       'decorators' | 'component' | 'args'
     >
   ): WebComponentsMeta<
-    InferWebComponentsTypes<T, Partial<HTMLElementTagNameMap[C]>, Decorators>,
+    InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>,
     Omit<
-      ComponentAnnotations<
-        InferWebComponentsTypes<T, Partial<HTMLElementTagNameMap[C]>, Decorators>
-      >,
+      ComponentAnnotations<InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>>,
       'args'
     > & {
       args: {} extends TMetaArgs ? {} : TMetaArgs;

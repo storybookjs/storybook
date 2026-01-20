@@ -44,12 +44,56 @@ export const metaFrameworks = {
 } as Record<string, string>;
 
 export const sanitizeAddonName = (name: string) => {
-  return cleanPaths(name)
+  const normalized = name.replace(/\\/g, '/');
+
+  let candidate: string = normalized;
+
+  if (normalized.includes('/node_modules/')) {
+    // common case for package manager cache/pnp mode so we take the segment after node_modules
+    candidate = normalized.split('/node_modules/').pop() ?? normalized;
+  }
+
+  const cleaned = cleanPaths(candidate)
+    .replace(/^file:\/\//i, '')
+    .replace(/\/+$/, '')
     .replace(/\/dist\/.*/, '')
     .replace(/\.[mc]?[tj]?s[x]?$/, '')
-    .replace(/\/register$/, '')
-    .replace(/\/manager$/, '')
-    .replace(/\/preset$/, '');
+    .replace(/\/(register|manager|preset|index)$/, '')
+    .replace(/\$SNIP?/g, '');
+
+  let prefix = '';
+  if (
+    cleaned.startsWith('file') ||
+    cleaned.startsWith('.') ||
+    cleaned.startsWith('/') ||
+    cleaned.includes(':')
+  ) {
+    prefix = 'CUSTOM:';
+  }
+
+  const scopedMatches = cleaned.match(/@[^/]+\/[^/]+/g);
+  if (scopedMatches?.length) {
+    return scopedMatches.at(-1) as string;
+  }
+
+  const parts = cleaned.split('/').filter(Boolean);
+  const addonLike = [...parts]
+    .reverse()
+    .find((part) => part.includes('addon-') || part.includes('-addon'));
+
+  if (addonLike) {
+    return `${prefix}${addonLike}`;
+  }
+
+  if (parts.length >= 2 && parts[parts.length - 2].startsWith('@')) {
+    return `${prefix}${parts[parts.length - 2]}/${parts[parts.length - 1]}`;
+  }
+
+  if (parts.length) {
+    return `${prefix}${parts[parts.length - 1]}`;
+  }
+
+  return `${prefix}${candidate}`;
 };
 
 // Analyze a combination of information from main.js and package.json

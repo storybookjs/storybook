@@ -217,6 +217,10 @@ export const ChecklistWidget = () => {
     timeout: animated ? 300 : 0,
   });
 
+  if (!api.getIsNavShown()) {
+    return null;
+  }
+
   return (
     <CollapsibleWithMargin collapsed={!hasItems || !loaded}>
       <HoverCard id="storybook-checklist-widget" outlineAnimation="rainbow">

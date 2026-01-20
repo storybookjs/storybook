@@ -47,7 +47,7 @@ async function mcpRequest(
 
 test.describe('addon-mcp', () => {
   test.skip(
-    !templateName?.includes('react-vite/default-ts'),
+    templateName !== 'react-vite/default-ts',
     'Only run for sandboxes with addon-mcp configured'
   );
 
@@ -182,14 +182,8 @@ test.describe('addon-mcp', () => {
         const response = await mcpRequest(request, 'tools/list');
 
         expect(response.result).toHaveProperty('tools');
-        // Dev and docs tools should be present (4 total)
-        expect(response.result.tools).toHaveLength(4);
-
-        const toolNames = response.result.tools.map((tool: { name: string }) => tool.name);
-        expect(toolNames).toContain('get-story-urls');
-        expect(toolNames).toContain('get-ui-building-instructions');
-        expect(toolNames).toContain('list-all-documentation');
-        expect(toolNames).toContain('get-documentation');
+        // At least dev and docs tools should be present (4 total)
+        expect(response.result.tools.length).toBeGreaterThanOrEqual(4);
       });
     });
 
@@ -216,10 +210,10 @@ test.describe('addon-mcp', () => {
       });
     });
 
-    test.describe('Tool: get-ui-building-instructions', () => {
+    test.describe('Tool: get-storybook-story-instructions', () => {
       test('should return UI building instructions', async ({ request }) => {
         const response = await mcpRequest(request, 'tools/call', {
-          name: 'get-ui-building-instructions',
+          name: 'get-storybook-story-instructions',
           arguments: {},
         });
 

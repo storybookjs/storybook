@@ -1,7 +1,5 @@
-```ts filename="List.stories.ts" renderer="angular" language="ts"
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { moduleMetadata } from '@storybook/angular';
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
@@ -35,6 +33,42 @@ export const OneItem: Story = {
   `,
   }),
 };
+```
+
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { CommonModule } from '@angular/common';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import preview from '../.storybook/preview';
+
+import { List } from './list.component';
+import { ListItem } from './list-item.component';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+  decorators: [
+    moduleMetadata({
+      declarations: [List, ListItem],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+export const Empty = meta.story();
+
+export const OneItem = meta.story({
+  args: {},
+  render: (args) => ({
+    props: args,
+    template: `
+      <app-list>
+        <app-list-item></app-list-item>
+      </app-list>
+  `,
+  }),
+});
 ```
 
 ```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
@@ -191,7 +225,7 @@ export const OneItem: Story = {
 </Story>
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js"
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -211,7 +245,7 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="web-components" language="ts"
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -236,7 +270,49 @@ export const OneItem: Story = {
 };
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js"
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-list',
+  subcomponents: { ListItem: 'demo-list-item' }, // 👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story();
+
+export const OneItem = meta.story({
+  render: () => html`
+    <demo-list>
+      <demo-list-item></demo-list-item>
+    </demo-list>
+  `,
+});
+```
+
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-list',
+  subcomponents: { ListItem: 'demo-list-item' }, // 👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story();
+
+export const OneItem = meta.story({
+  render: () => html`
+    <demo-list>
+      <demo-list-item></demo-list-item>
+    </demo-list>
+  `,
+});
+```
+
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import List from './List.vue';
 import ListItem from './ListItem.vue';
 
@@ -256,14 +332,14 @@ export const OneItem = {
   render: (args) => ({
     components: { List, ListItem },
     setup() {
-      return { args }
-    }
+      return { args };
+    },
     template: '<List v-bind="args"><ListItem /></List>',
   }),
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './List.vue';
@@ -288,11 +364,71 @@ export const OneItem: Story = {
   render: (args) => ({
     components: { List, ListItem },
     setup() {
-      return { args }
-    }
+      return { args };
+    },
     template: '<List v-bind="args"><ListItem /></List>',
   }),
 };
+```
+
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './List.vue';
+import ListItem from './ListItem.vue';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story({
+  render: () => ({
+    components: { List },
+    template: '<List/>',
+  }),
+});
+
+export const OneItem = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { args };
+    },
+    template: '<List v-bind="args"><ListItem /></List>',
+  }),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './List.vue';
+import ListItem from './ListItem.vue';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story({
+  render: () => ({
+    components: { List },
+    template: '<List/>',
+  }),
+});
+
+export const OneItem = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { args };
+    },
+    template: '<List v-bind="args"><ListItem /></List>',
+  }),
+});
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

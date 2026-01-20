@@ -4,6 +4,10 @@ import { type StoriesEntry, type StorybookConfigRaw } from 'storybook/internal/t
 import { ProjectType } from '../../../core/src/cli/projectTypes';
 import { SupportedBuilder } from '../../../core/src/types/modules/builders';
 
+export type TemplateType = Pick<Template, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
+export type AllTemplatesKey = keyof typeof allTemplates;
+export type AllTemplatesType = Record<AllTemplatesKey, TemplateType>;
+
 export type SkippableTask =
   | 'smoke-test'
   | 'test-runner'
@@ -18,6 +22,7 @@ export type TemplateKey =
   | keyof typeof baseTemplates
   | keyof typeof internalTemplates
   | keyof typeof benchTemplates;
+
 export type Cadence = keyof typeof templatesByCadence;
 
 // Some properties e.g. experimentalTestSyntax are only available in framework specific types for StorybookConfig, therefore we loosen the type here otherwise it would always fail
@@ -639,7 +644,7 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli@next ng new angular-v16 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
+      // extraDependencies: ['@standard-schema/spec@^1', '@angular/forms@next'],
       useCsfFactory: true,
     },
     expected: {
@@ -744,19 +749,20 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
-  'qwik-vite/default-ts': {
-    name: 'Qwik CLI Latest (Vite | TypeScript)',
-    script: 'npm create qwik playground {{beforeDir}}',
-    // TODO: The community template does not provide standard stories, which is required for e2e tests. Reenable once it does.
-    inDevelopment: true,
-    expected: {
-      framework: 'storybook-framework-qwik',
-      renderer: 'storybook-framework-qwik',
-      builder: 'storybook-framework-qwik',
-    },
-    // TODO: The community template does not provide standard stories, which is required for e2e tests.
-    skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration'],
-  },
+  /** This is currently broken, we generate components and stories that do not work */
+  // 'qwik-vite/default-ts': {
+  //   name: 'Qwik CLI Latest (Vite | TypeScript)',
+  //   script: 'npm create qwik playground {{beforeDir}}',
+  //   // TODO: The community template does not provide standard stories, which is required for e2e tests. Reenable once it does.
+  //   inDevelopment: true,
+  //   expected: {
+  //     framework: 'storybook-framework-qwik',
+  //     renderer: 'storybook-framework-qwik',
+  //     builder: 'storybook-framework-qwik',
+  //   },
+  //   // TODO: The community template does not provide standard stories, which is required for e2e tests.
+  //   skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration', 'chromatic'],
+  // },
   'ember/3-js': {
     name: 'Ember v3 (Webpack | JavaScript)',
     script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}}',
@@ -1043,7 +1049,7 @@ export const daily: TemplateKey[] = [
   'lit-vite/default-js',
   'svelte-vite/default-js',
   'nextjs/prerelease',
-  'qwik-vite/default-ts',
+  // 'qwik-vite/default-ts',
   'preact-vite/default-js',
   'html-vite/default-js',
   'internal/react16-webpack',

@@ -55,7 +55,6 @@ export const viteInjectMockerRuntime = (options: {
     },
     resolveId(source) {
       if (source === entryPath) {
-        // Return the actual file path so Vite can resolve relative imports
         return mockerRuntimePath;
       }
       return undefined;

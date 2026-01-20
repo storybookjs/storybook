@@ -909,9 +909,6 @@ export default {
   framework: {
     name: '@storybook/nextjs',
     options: {
-      image: {
-        loading: 'eager',
-      },
       nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
     },
   },
@@ -926,12 +923,6 @@ Type: `Record<string, any>`
 
 Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For Next.js, available options can be found in the [Webpack builder docs](../../builders/webpack.mdx).
 
-#### `image`
-
-Type: `object`
-
-Props to pass to every instance of `next/image`. See [next/image docs](https://nextjs.org/docs/pages/api-reference/components/image) for more details.
-
 #### `nextConfigPath`
 
 Type: `string`
@@ -941,6 +932,12 @@ The absolute path to the `next.config.js` file. This is necessary if you have a 
 ### Parameters
 
 This framework contributes the following [parameters](../../writing-stories/parameters.mdx) to Storybook, under the `nextjs` namespace:
+
+#### `image`
+
+Type: `object`
+
+Props to pass to every instance of `next/image`. See [next/image docs](https://nextjs.org/docs/pages/api-reference/components/image) for more details.
 
 #### `appDirectory`
 
@@ -986,4 +983,3 @@ Type:
 ```
 
 The router object that is passed to the `next/router` context. See [Next.js's router docs](https://nextjs.org/docs/pages/building-your-application/routing) for more details.
-

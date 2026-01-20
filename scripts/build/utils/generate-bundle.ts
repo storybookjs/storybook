@@ -127,7 +127,7 @@ export async function generateBundle({
     external: [
       'msw/browser', 
       'msw/core/http',
-    ], // don't externalize anything, we're using aliases to bundle everything into the runtimes
+    ], // Prefer `alias` over `external` because we're using aliases to bundle everything into the runtimes
     alias: {
       // The following aliases ensures that the runtimes bundles in the actual sources of these modules
       // instead of attempting to resolve them to the dist files, because the dist files are not available yet.

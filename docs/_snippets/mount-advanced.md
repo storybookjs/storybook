@@ -11,7 +11,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -39,7 +39,7 @@ import { Page } from './Page';
 
 export default { component: Page };
 
-export const Default = {
+export const Basic = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -72,7 +72,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -103,7 +103,7 @@ import { Page } from './page.component';
 
 const meta = preview.meta({ component: Page });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -138,7 +138,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -167,7 +167,7 @@ import { Page } from './Page';
 
 export default { component: Page };
 
-export const Default = {
+export const Basic = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -201,7 +201,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -230,7 +230,7 @@ import { Page } from './Page';
 
 export default { component: Page };
 
-export const Default = {
+export const Basic = {
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -261,7 +261,7 @@ import { Page } from './Page';
 
 const meta = preview.meta({ component: Page });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -294,7 +294,7 @@ const meta = preview.meta({
   component: Page,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -324,7 +324,7 @@ import Page from './Page.vue';
 
 const meta = preview.meta({ component: Page });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },
@@ -357,7 +357,7 @@ import Page from './Page.vue';
 
 const meta = preview.meta({ component: Page });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   play: async ({ mount, args, userEvent }) => {
     const note = await db.note.create({
       data: { title: 'Mount inside of play' },

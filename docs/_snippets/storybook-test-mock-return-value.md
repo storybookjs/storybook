@@ -14,7 +14,7 @@ export default meta;
 
 type Story = StoryObj<Page>;
 
-export const Default: Story = {
+export const Basic: Story = {
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
@@ -36,7 +36,7 @@ const meta = preview.meta({
   component: Page,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
@@ -74,7 +74,7 @@ export default {
   component: Page,
 };
 
-export const Default = {
+export const Basic = {
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
@@ -92,7 +92,7 @@ export default {
   component: Page,
 };
 
-export const Default = {
+export const Basic = {
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
@@ -139,7 +139,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
@@ -165,7 +165,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
@@ -181,7 +181,7 @@ export default {
   component: 'my-page',
 };
 
-export const Default = {
+export const Basic = {
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
@@ -203,7 +203,7 @@ export default meta;
 
 type Story = StoryObj;
 
-export const Default: Story = {
+export const Basic: Story = {
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
@@ -221,7 +221,7 @@ const meta = preview.meta({
   component: 'my-page',
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
@@ -241,7 +241,7 @@ const meta = preview.meta({
   component: 'my-page',
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
@@ -263,7 +263,7 @@ const meta = preview.meta({
   component: Page,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
@@ -285,7 +285,7 @@ const meta = preview.meta({
   component: Page,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
@@ -307,7 +307,7 @@ const meta = preview.meta({
   component: Page,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
@@ -328,7 +328,7 @@ const meta = preview.meta({
   component: Page,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async beforeEach() {
     // 👇 Set the return value for the getUserFromSession function
     getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });

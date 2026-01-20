@@ -10,7 +10,7 @@ const meta: Meta<HistogramComponent> = {
 export default meta;
 type Story = StoryObj<HistogramComponent>;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -29,7 +29,7 @@ const meta = preview.meta({
   component: HistogramComponent,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -55,7 +55,7 @@ export default {
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const Default = {
+export const Basic = {
   render: (args) => createHistogram(args),
   args: {
     dataType: 'latency',
@@ -87,7 +87,7 @@ type Story = StoryObj<HistogramProps>;
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const Default: Story = {
+export const Basic: Story = {
   render: (args) => createHistogram(args),
   args: {
     dataType: 'latency',
@@ -113,7 +113,7 @@ export default {
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const Default = {
+export const Basic = {
   render: (args) => <Histogram {...args} />,
   args: {
     dataType: 'latency',
@@ -131,7 +131,7 @@ export default {
   component: Histogram,
 };
 
-export const Default = {
+export const Basic = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -154,7 +154,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -171,7 +171,7 @@ export default {
   component: Histogram,
 };
 
-export const Default = {
+export const Basic = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -193,7 +193,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -232,7 +232,7 @@ export default {
   component: Histogram,
 };
 
-export const Default = {
+export const Basic = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -277,7 +277,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -299,7 +299,7 @@ export default {
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const Default = {
+export const Basic = {
   render: (args) => ({
     components: { Histogram },
     setup() {
@@ -333,7 +333,7 @@ type Story = StoryObj<typeof meta>;
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const Default: Story = {
+export const Basic: Story = {
   render: (args) => ({
     components: { Histogram },
     setup() {
@@ -355,7 +355,7 @@ export default {
   component: 'histogram-component',
 };
 
-export const Default = {
+export const Basic = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -375,7 +375,7 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -392,7 +392,7 @@ const meta = preview.meta({
   component: 'histogram-component',
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -409,7 +409,7 @@ const meta = preview.meta({
   component: 'histogram-component',
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -433,7 +433,7 @@ const meta = preview.meta({
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const Default = meta.story({
+export const Basic = meta.story({
   render: (args) => ({
     components: { Histogram },
     setup() {
@@ -466,7 +466,7 @@ const meta = preview.meta({
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const Default = meta.story({
+export const Basic = meta.story({
   render: (args) => ({
     components: { Histogram },
     setup() {
@@ -492,7 +492,7 @@ const meta = preview.meta({
   component: Histogram,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -512,7 +512,7 @@ const meta = preview.meta({
   component: Histogram,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     dataType: 'latency',
     showHistogramLabels: true,

@@ -21,7 +21,7 @@ export default meta;
 
 type Story = StoryObj<Page>;
 
-export const Default: Story = {
+export const Basic: Story = {
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -48,7 +48,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -101,7 +101,7 @@ export default {
   },
 };
 
-export const Default = {
+export const Basic = {
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -126,7 +126,7 @@ export default {
   },
 };
 
-export const Default = {
+export const Basic = {
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -185,7 +185,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -216,7 +216,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -239,7 +239,7 @@ export default {
   },
 };
 
-export const Default = {
+export const Basic = {
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -267,7 +267,7 @@ export default meta;
 
 type Story = StoryObj;
 
-export const Default: Story = {
+export const Basic: Story = {
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -292,7 +292,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -317,7 +317,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -344,7 +344,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -373,7 +373,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -400,7 +400,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },
@@ -429,7 +429,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ... This will run with the mocked Date
   },

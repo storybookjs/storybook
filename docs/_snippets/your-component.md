@@ -11,7 +11,7 @@ const meta: Meta<YourComponent> = {
 export default meta;
 type Story = StoryObj<YourComponent>;
 
-export const FirstStory: Story = {
+export const Basic: Story = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -28,7 +28,7 @@ const meta = preview.meta({
   component: YourComponent,
 });
 
-export const FirstStory = meta.story({
+export const Basic = meta.story({
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -52,7 +52,7 @@ export default {
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const FirstStory = {
+export const Basic = {
   render: (args) => createYourComponent(args),
   args: {
     // 👇 The args you need here will depend on your component
@@ -82,7 +82,7 @@ type Story = StoryObj<ComponentProps>;
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const FirstStory: Story = {
+export const Basic: Story = {
   render: (args) => createYourComponent(args),
   args: {
     // 👇 The args you need here will depend on your component
@@ -106,7 +106,7 @@ export default {
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const FirstStory = {
+export const Basic = {
   render: (args) => <YourComponent {...args} />,
   args: {
     //👇 The args you need here will depend on your component
@@ -122,7 +122,7 @@ export default {
   component: YourComponent,
 };
 
-export const FirstStory = {
+export const Basic = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -143,7 +143,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const FirstStory: Story = {
+export const Basic: Story = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -158,7 +158,7 @@ export default {
   component: YourComponent,
 };
 
-export const FirstStory = {
+export const Basic = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -178,7 +178,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const FirstStory: Story = {
+export const Basic: Story = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -198,7 +198,7 @@ export const FirstStory: Story = {
 </script>
 
 <Story
-  name="FirstStory"
+  name="Basic"
   args={{
     /*👇 The args you need here will depend on your component */
   }}
@@ -213,7 +213,7 @@ export default {
   component: YourComponent,
 };
 
-export const FirstStory = {
+export const Basic = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -233,7 +233,7 @@ export const FirstStory = {
 </script>
 
 <Story
-  name="FirstStory"
+  name="Basic"
   args={{
     /*👇 The args you need here will depend on your component */
   }}
@@ -254,7 +254,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const FirstStory: Story = {
+export const Basic: Story = {
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -274,7 +274,7 @@ export default {
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const FirstStory = {
+export const Basic = {
   render: (args) => ({
     components: { YourComponent },
     setup() {
@@ -306,7 +306,7 @@ type Story = StoryObj<typeof meta>;
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const Primary: Story = {
+export const Basic: Story = {
   render: (args) => ({
     components: { YourComponent },
     setup() {
@@ -335,7 +335,7 @@ const meta = preview.meta({
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const Primary = meta.story({
+export const Basic = meta.story({
   render: (args) => ({
     components: { YourComponent },
     setup() {
@@ -366,7 +366,7 @@ const meta = preview.meta({
  * See https://storybook.js.org/docs/api/csf
  * to learn how to use render functions.
  */
-export const FirstStory = meta.story({
+export const Basic = meta.story({
   render: (args) => ({
     components: { YourComponent },
     setup() {
@@ -386,7 +386,7 @@ export default {
   component: 'demo-your-component',
 };
 
-export const FirstStory = {
+export const Basic = {
   args: {
     // 👇 The args you need here will depend on your component
   },
@@ -404,7 +404,7 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const FirstStory: Story = {
+export const Basic: Story = {
   args: {
     // 👇 The args you need here will depend on your component
   },
@@ -419,7 +419,7 @@ const meta = preview.meta({
   component: 'demo-your-component',
 });
 
-export const FirstStory = meta.story({
+export const Basic = meta.story({
   args: {
     // 👇 The args you need here will depend on your component
   },
@@ -434,7 +434,7 @@ const meta = preview.meta({
   component: 'demo-your-component',
 });
 
-export const FirstStory = meta.story({
+export const Basic = meta.story({
   args: {
     // 👇 The args you need here will depend on your component
   },
@@ -451,7 +451,7 @@ const meta = preview.meta({
   component: YourComponent,
 });
 
-export const FirstStory = meta.story({
+export const Basic = meta.story({
   args: {
     //👇 The args you need here will depend on your component
   },
@@ -468,7 +468,7 @@ const meta = preview.meta({
   component: YourComponent,
 });
 
-export const FirstStory = meta.story({
+export const Basic = meta.story({
   args: {
     //👇 The args you need here will depend on your component
   },

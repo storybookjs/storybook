@@ -1,6 +1,5 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata, argsToTemplate } from '@storybook/angular';
+import { type Meta, type StoryObj, moduleMetadata, argsToTemplate } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 

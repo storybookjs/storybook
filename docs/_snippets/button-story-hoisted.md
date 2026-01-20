@@ -34,7 +34,7 @@ const meta = preview.meta({
 });
 
 // This is the only named export in the file, and it matches the component name
-export const Button = meta.story({});
+export const Button = meta.story();
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -109,7 +109,7 @@ const meta = preview.meta({
 });
 
 // This is the only named export in the file, and it matches the component name
-export const Button = meta.story({});
+export const Button = meta.story();
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
@@ -121,7 +121,7 @@ const meta = preview.meta({
 });
 
 // This is the only named export in the file, and it matches the component name
-export const Button = meta.story({});
+export const Button = meta.story();
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

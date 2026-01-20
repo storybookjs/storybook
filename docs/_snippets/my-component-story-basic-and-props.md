@@ -10,7 +10,7 @@ const meta: Meta<MyComponent> = {
 export default meta;
 type Story = StoryObj<MyComponent>;
 
-export const Default: Story = {};
+export const Basic: Story = {};
 
 export const WithProp: Story = {
   render: () => ({
@@ -30,7 +30,7 @@ const meta = preview.meta({
   component: MyComponent,
 });
 
-export const Default = meta.story({});
+export const Basic = meta.story();
 
 export const WithProp = meta.story({
   render: () => ({
@@ -84,7 +84,7 @@ const meta = preview.meta({
   component: MyComponent,
 });
 
-export const Basic = meta.story({});
+export const Basic = meta.story();
 
 export const WithProp = meta.story({
   render: () => <MyComponent prop="value" />,
@@ -100,7 +100,7 @@ const meta = preview.meta({
   component: MyComponent,
 });
 
-export const Basic = meta.story({});
+export const Basic = meta.story();
 
 export const WithProp = meta.story({
   render: () => <MyComponent prop="value" />,
@@ -374,7 +374,7 @@ const meta = preview.meta({
   component: 'my-component',
 });
 
-export const Basic = meta.story({});
+export const Basic = meta.story();
 
 export const WithProp = meta.story({
   render: () => html`<my-component prop="value" />`,
@@ -390,7 +390,7 @@ const meta = preview.meta({
   component: 'my-component',
 });
 
-export const Basic = meta.story({});
+export const Basic = meta.story();
 
 export const WithProp = meta.story({
   render: () => html`<my-component prop="value" />`,

@@ -99,8 +99,7 @@ export const Empty = meta.story({
   args: { items: [] },
 });
 
-export const OneItem = meta.story({
-  ...ListTemplate,
+export const OneItem = Empty.extend({
   args: {
     items: [{ ...Unchecked.input.args }],
   },
@@ -141,11 +140,7 @@ export const Empty = {
 export const OneItem = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
 ```
@@ -229,11 +224,7 @@ export const Empty = {
 export const OneItem = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
 ```
@@ -395,11 +386,7 @@ export const Empty = {
 export const OneItem = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
 ```
@@ -446,11 +433,7 @@ export const Empty: Story = {
 export const OneItem: Story = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
 ```
@@ -489,11 +472,7 @@ export const Empty = meta.story({
 
 export const OneItem = Empty.extend({
   args: {
-    items: [
-      {
-        ...Unchecked.input.args,
-      },
-    ],
+    items: [{ ...Unchecked.input.args }],
   },
 });
 ```
@@ -534,11 +513,7 @@ export const Empty = meta.story({
 
 export const OneItem = Empty.extend({
   args: {
-    items: [
-      {
-        ...Unchecked.input.args,
-      },
-    ],
+    items: [{ ...Unchecked.input.args }],
   },
 });
 ```
@@ -573,11 +548,7 @@ export const Empty = {
 export const OneItem = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
 ```
@@ -616,11 +587,7 @@ export const Empty: Story = {
 export const OneItem: Story = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
 ```
@@ -652,11 +619,7 @@ export const Empty = meta.story({
 
 export const OneItem = Empty.extend({
   args: {
-    items: [
-      {
-        ...Unchecked.input.args,
-      },
-    ],
+    items: [{ ...Unchecked.input.args }],
   },
 });
 ```
@@ -688,11 +651,7 @@ export const Empty = meta.story({
 
 export const OneItem = Empty.extend({
   args: {
-    items: [
-      {
-        ...Unchecked.input.args,
-      },
-    ],
+    items: [{ ...Unchecked.input.args }],
   },
 });
 ```
@@ -727,11 +686,7 @@ export const Empty = meta.story({
 
 export const OneItem = Empty.extend({
   args: {
-    items: [
-      {
-        ...Unchecked.input.args,
-      },
-    ],
+    items: [{ ...Unchecked.input.args }],
   },
 });
 ```
@@ -767,11 +722,7 @@ export const Empty = meta.story({
 
 export const OneItem = Empty.extend({
   args: {
-    items: [
-      {
-        ...Unchecked.input.args,
-      },
-    ],
+    items: [{ ...Unchecked.input.args }],
   },
 });
 ```

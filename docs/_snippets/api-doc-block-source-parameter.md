@@ -13,7 +13,7 @@ type Story = StoryObj<Button>;
 export const Basic: Story = {
   parameters: {
     docs: {
-      source: { language: 'tsx' },
+      source: { language: 'ts' },
     },
   },
 };
@@ -31,7 +31,7 @@ const meta = preview.meta({
 export const Basic = meta.story({
   parameters: {
     docs: {
-      source: { language: 'tsx' },
+      source: { language: 'ts' },
     },
   },
 });
@@ -83,7 +83,7 @@ export default {
 export const Basic = {
   parameters: {
     docs: {
-      source: { language: 'jsx' },
+      source: { language: 'js' },
     },
   },
 };
@@ -147,7 +147,7 @@ type Story = StoryObj<typeof meta>;
 export const Basic: Story = {
   parameters: {
     docs: {
-      source: { language: 'tsx' },
+      source: { language: 'ts' },
     },
   },
 };
@@ -155,14 +155,13 @@ export const Basic: Story = {
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
-  title: 'Button',
   component: 'demo-button',
 };
 
 export const Basic = {
   parameters: {
     docs: {
-      source: { language: 'tsx' },
+      source: { language: 'js' },
     },
   },
 };
@@ -172,7 +171,6 @@ export const Basic = {
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
-  title: 'Button',
   component: 'demo-button',
 };
 
@@ -182,7 +180,7 @@ type Story = StoryObj;
 export const Basic: Story = {
   parameters: {
     docs: {
-      source: { language: 'tsx' },
+      source: { language: 'ts' },
     },
   },
 };
@@ -192,7 +190,6 @@ export const Basic: Story = {
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
-  title: 'Button',
   component: 'demo-button',
 });
 
@@ -209,7 +206,6 @@ export const Basic = meta.story({
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
-  title: 'Button',
   component: 'demo-button',
 });
 
@@ -271,7 +267,7 @@ const meta = preview.meta({
 export const Basic = meta.story({
   parameters: {
     docs: {
-      source: { language: 'html' },
+      source: { language: 'vue' },
     },
   },
 });
@@ -291,7 +287,7 @@ const meta = preview.meta({
 export const Basic = meta.story({
   parameters: {
     docs: {
-      source: { language: 'html' },
+      source: { language: 'vue' },
     },
   },
 });

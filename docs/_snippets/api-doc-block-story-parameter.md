@@ -155,7 +155,6 @@ export const Basic: Story = {
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
-  title: 'Button',
   component: 'demo-button',
 };
 
@@ -172,7 +171,6 @@ export const Basic = {
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
-  title: 'Button',
   component: 'demo-button',
 };
 
@@ -192,7 +190,6 @@ export const Basic: Story = {
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
-  title: 'Button',
   component: 'demo-button',
 });
 
@@ -209,7 +206,6 @@ export const Basic = meta.story({
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
-  title: 'Button',
   component: 'demo-button',
 });
 

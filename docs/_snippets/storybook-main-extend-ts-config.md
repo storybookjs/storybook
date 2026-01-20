@@ -37,8 +37,6 @@ export default defineMain({
   framework: '@storybook/vue3-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   typescript: {
-    check: false,
-    checkOptions: {},
     skipCompiler: false,
   },
 });
@@ -65,8 +63,6 @@ export default defineMain({
   framework: '@storybook/web-components-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   typescript: {
-    check: false,
-    checkOptions: {},
     skipCompiler: false,
   },
 });

@@ -148,7 +148,7 @@ export default {
   tags: ['skip-test'],
 };
 
-export const ExcludeStory = {
+export const SkipStory = {
   //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
   tags: ['skip-test'],
 };
@@ -166,7 +166,7 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const ExcludeStory: Story = {
+export const SkipStory: Story = {
   //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
   tags: ['skip-test'],
 };
@@ -181,7 +181,7 @@ const meta = preview.meta({
   tags: ['skip-test'],
 });
 
-export const ExcludeStory = meta.story({
+export const SkipStory = meta.story({
   //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
   tags: ['skip-test'],
 });
@@ -196,7 +196,7 @@ const meta = preview.meta({
   tags: ['skip-test'],
 });
 
-export const ExcludeStory = meta.story({
+export const SkipStory = meta.story({
   //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
   tags: ['skip-test'],
 });

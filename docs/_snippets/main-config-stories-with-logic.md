@@ -76,7 +76,8 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import { defineMain, type StoriesEntry } from '@storybook/vue3-vite/node';
+import { defineMain } from '@storybook/vue3-vite/node';
+import type { StoriesEntry } from 'storybook/internal/types';
 
 async function findStories(): Promise<StoriesEntry[]> {
   // your custom logic returns a list of files
@@ -127,7 +128,8 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import { defineMain, type StoriesEntry } from '@storybook/web-components-vite/node';
+import { defineMain } from '@storybook/web-components-vite/node';
+import type { StoriesEntry } from 'storybook/internal/types';
 
 async function findStories(): Promise<StoriesEntry[]> {
   // your custom logic returns a list of files

@@ -56,7 +56,7 @@ const meta = preview.meta({
   ],
 });
 
-export const Empty = meta.story({});
+export const Empty = meta.story();
 
 export const OneItem = meta.story({
   args: {},
@@ -280,7 +280,7 @@ const meta = preview.meta({
   subcomponents: { ListItem: 'demo-list-item' }, // 👈 Adds the ListItem component as a subcomponent
 });
 
-export const Empty = meta.story({});
+export const Empty = meta.story();
 
 export const OneItem = meta.story({
   render: () => html`
@@ -301,7 +301,7 @@ const meta = preview.meta({
   subcomponents: { ListItem: 'demo-list-item' }, // 👈 Adds the ListItem component as a subcomponent
 });
 
-export const Empty = meta.story({});
+export const Empty = meta.story();
 
 export const OneItem = meta.story({
   render: () => html`

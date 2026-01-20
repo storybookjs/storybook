@@ -224,7 +224,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Primary: Story = {
+export const Text: Story = {
   render: ({ label, click }) => ({
     Component: Button,
     props: {
@@ -281,7 +281,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Primary: Story = {
+export const Text: Story = {
   render: (args) => ({
     components: { Button },
     setup() {
@@ -309,7 +309,7 @@ const meta = preview.meta({
   component: Button,
 });
 
-export const Primary = meta.story({
+export const Text = meta.story({
   render: (args) => ({
     components: { Button },
     setup() {

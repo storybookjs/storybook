@@ -141,8 +141,7 @@ export const Unchecked: Story = {
 
 ```js filename="Checkbox.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
-  title: 'Checkbox',
-  component: 'checkbox',
+  component: 'demo-checkbox',
 };
 
 export const Unchecked = {
@@ -156,7 +155,7 @@ export const Unchecked = {
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
-  component: 'checkbox-element',
+  component: 'demo-checkbox',
 };
 
 export default meta;
@@ -173,8 +172,7 @@ export const Unchecked: Story = {
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
-  title: 'Checkbox',
-  component: 'checkbox',
+  component: 'demo-checkbox',
 });
 
 export const Unchecked = meta.story({
@@ -188,7 +186,7 @@ export const Unchecked = meta.story({
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
-  component: 'checkbox-element',
+  component: 'demo-checkbox',
 });
 
 export const Unchecked = meta.story({

@@ -102,7 +102,7 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
+import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-button',

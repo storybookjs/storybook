@@ -10,7 +10,7 @@ const meta: Meta<MyComponent> = {
 export default meta;
 type Story = StoryObj<MyComponent>;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
@@ -26,7 +26,7 @@ const meta = preview.meta({
   component: MyComponent,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
@@ -40,7 +40,7 @@ export default {
   component: MyComponent,
 };
 
-export const Default = {
+export const Basic = {
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
@@ -60,7 +60,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
@@ -72,7 +72,7 @@ export default {
   component: 'my-component',
 };
 
-export const Default = {
+export const Basic = {
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
@@ -89,7 +89,7 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
@@ -103,7 +103,7 @@ const meta = preview.meta({
   component: 'my-component',
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
@@ -117,7 +117,7 @@ const meta = preview.meta({
   component: 'my-component',
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
@@ -133,7 +133,7 @@ const meta = preview.meta({
   component: MyComponent,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
@@ -151,7 +151,7 @@ const meta = preview.meta({
   component: MyComponent,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
@@ -167,7 +167,7 @@ const meta = preview.meta({
   component: MyComponent,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },
@@ -183,7 +183,7 @@ const meta = preview.meta({
   component: MyComponent,
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     exampleProp: process.env.EXAMPLE_VAR,
   },

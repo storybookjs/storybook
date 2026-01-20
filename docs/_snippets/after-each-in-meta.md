@@ -14,7 +14,7 @@ export default meta;
 
 type Story = StoryObj<Page>;
 
-export const Default: Story = {
+export const Basic: Story = {
   async play({ canvas }) {
     // ...
   },
@@ -34,7 +34,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ...
   },
@@ -73,7 +73,7 @@ export default {
   },
 };
 
-export const Default = {
+export const Basic = {
   async play({ canvas }) {
     // ...
   },
@@ -91,7 +91,7 @@ export default {
   },
 };
 
-export const Default = {
+export const Basic = {
   async play({ canvas }) {
     // ...
   },
@@ -136,7 +136,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   async play({ canvas }) {
     // ...
   },
@@ -160,7 +160,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   async play({ canvas }) {
     // ...
   },
@@ -176,7 +176,7 @@ export default {
   },
 };
 
-export const Default = {
+export const Basic = {
   async play({ canvas }) {
     // ...
   },
@@ -197,7 +197,7 @@ export default meta;
 
 type Story = StoryObj;
 
-export const Default: Story = {
+export const Basic: Story = {
   async play({ canvas }) {
     // ...
   },
@@ -215,7 +215,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ...
   },
@@ -233,7 +233,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ...
   },
@@ -253,7 +253,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ...
   },
@@ -274,7 +274,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ...
   },
@@ -294,7 +294,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ...
   },
@@ -316,7 +316,7 @@ const meta = preview.meta({
   },
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   async play({ canvas }) {
     // ...
   },

@@ -45,7 +45,7 @@ const meta = preview.meta({
   component: LoginForm,
 });
 
-export const EmptyForm = meta.story({});
+export const EmptyForm = meta.story();
 
 export const FilledForm = meta.story({
   play: async ({ canvas, userEvent }) => {
@@ -593,7 +593,7 @@ const meta = preview.meta({
   component: 'demo-login-form',
 });
 
-export const EmptyForm = meta.story({});
+export const EmptyForm = meta.story();
 
 export const FilledForm = meta.story({
   play: async ({ canvas, userEvent }) => {
@@ -624,7 +624,7 @@ const meta = preview.meta({
   component: 'demo-login-form',
 });
 
-export const EmptyForm = meta.story({});
+export const EmptyForm = meta.story();
 
 export const FilledForm = meta.story({
   play: async ({ canvas, userEvent }) => {

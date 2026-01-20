@@ -1,7 +1,10 @@
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
+import {
+  type Meta,
+  type StoryObj,
+  componentWrapperDecorator,
+  moduleMetadata,
+} from '@storybook/angular';
 
 import { Button } from './button.component';
 import { Parent } from './parent.component'; // Parent contains ng-content

@@ -52,7 +52,6 @@ import { setup } from '@storybook/vue3-vite';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
-
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 setup((app) => {
@@ -72,7 +71,7 @@ export default {
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="library (CSF 3)"
-import { setup, Preview } from '@storybook/vue3-vite';
+import { setup, type Preview } from '@storybook/vue3-vite';
 
 import { createPinia } from 'pinia';
 
@@ -98,7 +97,6 @@ import { setup, type Preview } from '@storybook/vue3-vite';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
-
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 setup((app) => {
@@ -144,7 +142,6 @@ import { definePreview, setup } from '@storybook/vue3-vite';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
-
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 setup((app) => {
@@ -188,7 +185,6 @@ import { definePreview, setup } from '@storybook/vue3-vite';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
-
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 setup((app) => {

@@ -15,7 +15,7 @@ const meta: Meta<MyComponent> = {
 export default meta;
 type Story = StoryObj<MyComponent>;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     something: 'Something else',
   },
@@ -36,7 +36,7 @@ const meta = preview.meta({
   title: 'components/MyComponent/MyComponent',
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     something: 'Something else',
   },
@@ -66,7 +66,7 @@ export default {
   title: 'components/MyComponent/MyComponent',
 };
 
-export const Default = {
+export const Basic = {
   args: {
     something: 'Something else',
   },
@@ -81,7 +81,7 @@ export default {
   title: 'components/MyComponent/MyComponent',
 };
 
-export const Default = {
+export const Basic = {
   args: {
     something: 'Something else',
   },
@@ -121,7 +121,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     something: 'Something else',
   },
@@ -146,7 +146,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     something: 'Something else',
   },
@@ -159,7 +159,7 @@ export default {
   title: 'components/MyComponent/MyComponent',
 };
 
-export const Default = {
+export const Basic = {
   args: {
     something: 'Something else',
   },
@@ -177,7 +177,7 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const Default: Story = {
+export const Basic: Story = {
   args: {
     something: 'Something else',
   },
@@ -192,7 +192,7 @@ const meta = preview.meta({
   title: 'components/MyComponent/MyComponent',
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     something: 'Something else',
   },
@@ -207,7 +207,7 @@ const meta = preview.meta({
   title: 'components/MyComponent/MyComponent',
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     something: 'Something else',
   },
@@ -228,7 +228,7 @@ const meta = preview.meta({
   title: 'components/MyComponent/MyComponent',
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     something: 'Something else',
   },
@@ -246,7 +246,7 @@ const meta = preview.meta({
   title: 'components/MyComponent/MyComponent',
 });
 
-export const Default = meta.story({
+export const Basic = meta.story({
   args: {
     something: 'Something else',
   },

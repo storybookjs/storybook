@@ -35,7 +35,7 @@ export default config;
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs)
 import { defineMain } from '@storybook/your-framework/node';
 
 import custom from '../webpack.config.js'; // 👈 Custom Webpack configuration being imported.
@@ -55,7 +55,7 @@ export default defineMain({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs)
 import { defineMain } from '@storybook/your-framework/node';
 
 import custom from '../webpack.config.js'; // 👈 Custom Webpack configuration being imported.
@@ -85,40 +85,6 @@ export default defineMain({
       ...config,
       module: { ...config.module, rules: [...config.module.rules, ...custom.module.rules] },
     };
-  },
-});
-```
-
-```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/web-components-vite/node';
-
-import custom from '../vite.config.js'; // 👈 Custom Vite configuration being imported.
-
-export default defineMain({
-  framework: '@storybook/web-components-vite',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  async viteFinal(config) {
-    const { mergeConfig } = await import('vite');
-
-    return mergeConfig(config, custom);
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import { defineMain } from '@storybook/web-components-vite/node';
-
-import custom from '../vite.config.js'; // 👈 Custom Vite configuration being imported.
-
-export default defineMain({
-  framework: '@storybook/web-components-vite',
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  async viteFinal(config) {
-    const { mergeConfig } = await import('vite');
-
-    return mergeConfig(config, custom);
   },
 });
 ```

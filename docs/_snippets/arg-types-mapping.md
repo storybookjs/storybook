@@ -1,45 +1,3 @@
-```ts filename="Example.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta } from '@storybook/angular';
-
-import { Example } from './example.component';
-
-const meta: Meta<Example> = {
-  component: Example,
-  argTypes: {
-    label: {
-      control: { type: 'select' },
-      options: ['Normal', 'Bold', 'Italic'],
-      mapping: {
-        Bold: <b>Bold</b>,
-        Italic: <i>Italic</i>,
-      },
-    },
-  },
-};
-
-export default meta;
-```
-
-```ts filename="Example.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Example } from './example.component';
-
-const meta = preview.meta({
-  component: Example,
-  argTypes: {
-    label: {
-      control: { type: 'select' },
-      options: ['Normal', 'Bold', 'Italic'],
-      mapping: {
-        Bold: <b>Bold</b>,
-        Italic: <i>Italic</i>,
-      },
-    },
-  },
-});
-```
-
 ```svelte filename="Example.stories.svelte" renderer="svelte" language="js"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -264,48 +222,6 @@ const meta = preview.meta({
       mapping: {
         Bold: <b>Bold</b>,
         Italic: <i>Italic</i>,
-      },
-    },
-  },
-});
-```
-
-```ts filename="Example.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import Example from './Example.vue';
-
-const meta = preview.meta({
-  component: Example,
-  argTypes: {
-    label: {
-      control: { type: 'select' },
-      options: ['Normal', 'Bold', 'Italic'],
-      mapping: {
-        Bold: 'Bold',
-        Italic: 'Italic',
-      },
-    },
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Example.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import Example from './Example.vue';
-
-const meta = preview.meta({
-  component: Example,
-  argTypes: {
-    label: {
-      control: { type: 'select' },
-      options: ['Normal', 'Bold', 'Italic'],
-      mapping: {
-        Bold: 'Bold',
-        Italic: 'Italic',
       },
     },
   },

@@ -296,7 +296,6 @@
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
     "modern-tar": "^0.5.5",
-    "msw": "^2.0.0",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "p-limit": "^7.2.0",
@@ -341,13 +340,9 @@
     "zod": "^3.25.76"
   },
   "peerDependencies": {
-    "msw": "^2.0.0",
     "prettier": "^2 || ^3"
   },
   "peerDependenciesMeta": {
-    "msw": {
-      "optional": true
-    },
     "prettier": {
       "optional": true
     }

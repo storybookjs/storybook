@@ -124,7 +124,10 @@ export async function generateBundle({
     target: BROWSER_TARGETS,
     supported: SUPPORTED_FEATURES,
     splitting: false,
-    external: [], // don't externalize anything, we're using aliases to bundle everything into the runtimes
+    external: [
+      'msw/browser', 
+      'msw/core/http',
+    ], // don't externalize anything, we're using aliases to bundle everything into the runtimes
     alias: {
       // The following aliases ensures that the runtimes bundles in the actual sources of these modules
       // instead of attempting to resolve them to the dist files, because the dist files are not available yet.

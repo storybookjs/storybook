@@ -1,6 +1,6 @@
 {
   "name": "@storybook/html-vite",
-  "version": "10.2.0-alpha.9",
+  "version": "10.2.0-beta.5",
   "description": "Storybook for HTML and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -50,8 +50,8 @@
     "@storybook/html": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.8.3"
+    "@types/node": "^22.19.1",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

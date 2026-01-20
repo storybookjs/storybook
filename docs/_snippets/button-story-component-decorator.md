@@ -1,17 +1,14 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
-import type { Meta } from '@storybook/angular';
-
-import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import { type Meta, componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
 
 import { Button } from './button.component';
-
 import { Parent } from './parent.component'; // Parent contains ng-content
 
 const meta: Meta<Button> = {
   component: Button,
   decorators: [
     moduleMetadata({
-      declarations: [ParentComponent],
+      declarations: [Parent],
     }),
     // With template
     componentWrapperDecorator((story) => `<div style="margin: 3em">${story}</div>`),
@@ -23,9 +20,29 @@ const meta: Meta<Button> = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="html" language="js"
-import { createButton } from './Button';
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
 
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+import { Parent } from './parent.component'; // Parent contains ng-content
+
+const meta = preview.meta({
+  component: Button,
+  decorators: [
+    moduleMetadata({
+      declarations: [Parent],
+    }),
+    // With template
+    componentWrapperDecorator((story) => `<div style="margin: 3em">${story}</div>`),
+    // With component which contains ng-content
+    componentWrapperDecorator(Parent),
+  ],
+});
+```
+
+```js filename="Button.stories.js" renderer="html" language="js"
 export default {
   /* 👇 The title prop is optional.
    * See https://storybook.js.org/docs/configure/#configure-story-loading
@@ -41,21 +58,12 @@ export default {
     },
   ],
 };
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary = {
-  render: (args) => createButton(args),
-};
 ```
 
 ```ts filename="Button.stories.ts" renderer="html" language="ts"
-import type { Meta, StoryObj } from '@storybook/html';
+import type { Meta } from '@storybook/html';
 
-import { createButton, ButtonArgs } from './Button';
+import { ButtonArgs } from './Button';
 
 const meta: Meta<ButtonArgs> = {
   /* 👇 The title prop is optional.
@@ -74,11 +82,6 @@ const meta: Meta<ButtonArgs> = {
 };
 
 export default meta;
-type Story = StoryObj<ButtonArgs>;
-
-export const Primary: Story = {
-  render: (args) => createButton(args),
-};
 ```
 
 ```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
@@ -99,7 +102,7 @@ export default {
 
 ```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
+import type { Meta } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
@@ -166,7 +169,7 @@ export default meta;
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Button from './Button.svelte';
 import MarginDecorator from './MarginDecorator.svelte';
 
@@ -190,7 +193,7 @@ export default {
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
@@ -205,7 +208,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Button from './Button.vue';
 
 export default {
@@ -214,7 +217,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -227,19 +230,41 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  decorators: [() => ({ template: '<div style="margin: 3em;"><story /></div>' })],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  decorators: [() => ({ template: '<div style="margin: 3em;"><story /></div>' })],
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
   component: 'demo-button',
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 };
-
-export const Example = {};
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+import type { Meta } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
@@ -249,9 +274,28 @@ const meta: Meta = {
 };
 
 export default meta;
-type Story = StoryObj;
+```
 
-export const Example: Story = {};
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
+});
 ```
 
 ```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

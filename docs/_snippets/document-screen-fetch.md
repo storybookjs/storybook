@@ -1,4 +1,4 @@
-```ts filename="YourPage.component.ts" renderer="angular" language="ts"
+```ts filename="your-page.component.ts" renderer="angular" language="ts"
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
@@ -35,7 +35,7 @@ export class DocumentScreen implements OnInit {
         this.loading = false;
         this.user = data.user;
         this.document = data.document;
-        this.documents.data.subdocuments;
+        this.subdocuments = data.subdocuments;
       },
       error: (error) => {
         this.error = true;
@@ -370,7 +370,7 @@ export function DocumentScreen() {
   import DocumentList from './DocumentList';
 
   export default defineComponent({
-    name: 'SampleRestComponent',
+    name: 'DocumentScreen',
     components: {
       PageLayout,
       DocumentHeader,
@@ -434,7 +434,7 @@ class DocumentScreen extends LitElement {
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-        response.json();
+        return response.json();
       })
       .then((data) => {
         this._status = 'success';

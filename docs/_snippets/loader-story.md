@@ -1,7 +1,5 @@
-```ts filename="TodoItem.stories.ts" renderer="angular" language="ts"
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { moduleMetadata } from '@storybook/angular';
+```ts filename="TodoItem.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
@@ -38,6 +36,45 @@ export const Primary: Story = {
     }),
   ],
 };
+```
+
+```ts filename="TodoItem.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { CommonModule } from '@angular/common';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import preview from '../.storybook/preview';
+
+import { TodoItem } from './TodoItem';
+
+const meta = preview.meta({
+  component: TodoItem,
+  decorators: [
+    moduleMetadata({
+      declarations: [TodoItem],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Primary = meta.story({
+  render: (args, { loaded: { todo } }) => ({
+    props: {
+      args,
+      todo,
+    },
+  }),
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
 ```
 
 ```jsx filename="TodoItem.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
@@ -167,7 +204,7 @@ export const Primary: Story = {
 />
 ```
 
-```js filename="TodoItem.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="TodoItem.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import TodoItem from './TodoItem.svelte';
 
 export default {
@@ -223,7 +260,7 @@ export const Primary = {
 />
 ```
 
-```ts filename="TodoItem.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="TodoItem.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -257,7 +294,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="TodoItem.stories.js" renderer="vue" language="js"
+```js filename="TodoItem.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import TodoItem from './TodoItem.vue';
 
 export default {
@@ -285,7 +322,7 @@ export const Primary = {
 };
 ```
 
-```ts filename="TodoItem.stories.ts" renderer="vue" language="ts"
+```ts filename="TodoItem.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import TodoItem from './TodoItem.vue';
@@ -318,7 +355,69 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="TodoItem.stories.js" renderer="web-components" language="js"
+```ts filename="TodoItem.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import TodoItem from './TodoItem.vue';
+
+const meta = preview.meta({
+  component: TodoItem,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Primary = meta.story({
+  render: (args, { loaded: { todo } }) => ({
+    components: { TodoItem },
+    setup() {
+      return { args, todo: todo };
+    },
+    template: '<TodoItem :todo="todo" />',
+  }),
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="TodoItem.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import TodoItem from './TodoItem.vue';
+
+const meta = preview.meta({
+  component: TodoItem,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Primary = meta.story({
+  render: (args, { loaded: { todo } }) => ({
+    components: { TodoItem },
+    setup() {
+      return { args, todo: todo };
+    },
+    template: '<TodoItem :todo="todo" />',
+  }),
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
+```
+
+```js filename="TodoItem.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
  * See https://storybook.js.org/docs/api/csf
@@ -338,7 +437,7 @@ export const Primary = {
 };
 ```
 
-```ts filename="TodoItem.stories.ts" renderer="web-components" language="ts"
+```ts filename="TodoItem.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 /*
@@ -361,6 +460,50 @@ export const Primary: Story = {
     }),
   ],
 };
+```
+
+```ts filename="TodoItem.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+const meta = preview.meta({
+  component: 'demo-todo-item',
+  render: (args, { loaded: { todo } }) => TodoItem({ ...args, ...todo }),
+});
+
+export const Primary = meta.story({
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
+```
+
+```js filename="TodoItem.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+const meta = preview.meta({
+  component: 'demo-todo-item',
+  render: (args, { loaded: { todo } }) => TodoItem({ ...args, ...todo }),
+});
+
+export const Primary = meta.story({
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

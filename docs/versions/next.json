@@ -1,1 +1,1 @@
-{"version":"10.2.0-alpha.9","info":{"plain":"- Core and Vite: Use story index as source of truth for Vite paths - [#30612](https://github.com/storybookjs/storybook/pull/30612), thanks @JReinhold!"}}
+{"version":"10.2.0-beta.5","info":{"plain":"- Addon A11y: Lock vision filter dropdown for stories with `vision` global - [#33599](https://github.com/storybookjs/storybook/pull/33599), thanks @ghengeveld!"}}

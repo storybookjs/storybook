@@ -27,12 +27,7 @@ export const viteInjectMockerRuntime = (options: {
       if (viteConfig.command === 'build') {
         this.emitFile({
           type: 'chunk',
-          id: join(
-            resolvePackageDir('storybook'),
-            'assets',
-            'server',
-            'mocker-runtime.template.js'
-          ),
+          id: join(resolvePackageDir('storybook'), 'dist', 'mocking-utils', 'mocker-runtime.js'),
           fileName: entryPath.slice(1),
         });
       }

@@ -17,7 +17,7 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
-import type Channel from '../channels';
+import Channel from '../channels';
 import { resolvePackageDir } from '../shared/utils/module';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
@@ -69,8 +69,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     .resolve('storybook/internal/core-server/presets/common-override-preset');
 
   logger.step('Loading presets');
-  // TODO: what to actually do with the channel here?
-  const channel = null as unknown as Channel;
+
+  // no-op channel, as it's only relevant in dev mode
+  const channel = new Channel({});
   let presets = await loadAllPresets({
     corePresets: [commonPreset, ...corePresets],
     overridePresets: [commonOverridePreset],

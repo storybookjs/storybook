@@ -1,3 +1,4 @@
+import { Channel } from 'storybook/internal/channels';
 import { cache } from 'storybook/internal/common';
 import { buildIndexStandalone, withTelemetry } from 'storybook/internal/core-server';
 import type { BuilderOptions, CLIBaseOptions } from 'storybook/internal/types';
@@ -23,6 +24,7 @@ export const buildIndex = async (
     ...options,
     corePresets: [],
     overridePresets: [],
+    channel: new Channel({}),
   };
   await withTelemetry('index', { cliOptions, presetOptions }, () => buildIndexStandalone(options));
 };

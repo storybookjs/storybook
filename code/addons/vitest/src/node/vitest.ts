@@ -11,7 +11,6 @@ import {
   ADDON_ID,
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
-  STATUS_TYPE_ID_SCREENSHOT,
   storeOptions,
 } from '../constants';
 import type { ErrorLike, FatalErrorEvent, StoreEvent, StoreState } from '../types';
@@ -42,7 +41,6 @@ new TestManager({
   store,
   componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
   a11yStatusStore: getStatusStore(STATUS_TYPE_ID_A11Y),
-  screenshotStatusStore: getStatusStore(STATUS_TYPE_ID_SCREENSHOT),
   testProviderStore: getTestProviderStore(ADDON_ID),
   onReady: () => {
     process.send?.({ type: 'ready' });

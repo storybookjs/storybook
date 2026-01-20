@@ -13,12 +13,7 @@ import type { A11yReport } from '@storybook/addon-a11y';
 import { throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
 
-import {
-  STATUS_TYPE_ID_A11Y,
-  STATUS_TYPE_ID_COMPONENT_TEST,
-  STATUS_TYPE_ID_SCREENSHOT,
-  storeOptions,
-} from '../constants';
+import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
 import type {
   CurrentRun,
   RunTrigger,
@@ -35,7 +30,6 @@ export type TestManagerOptions = {
   store: experimental_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
-  screenshotStatusStore: StatusStoreByTypeId;
   testProviderStore: TestProviderStoreById;
   onError?: (message: string, error: Error) => void;
   onReady?: () => void;
@@ -58,8 +52,6 @@ export class TestManager {
 
   private a11yStatusStore: TestManagerOptions['a11yStatusStore'];
 
-  private screenshotStatusStore: TestManagerOptions['screenshotStatusStore'];
-
   private testProviderStore: TestManagerOptions['testProviderStore'];
 
   private onReady?: TestManagerOptions['onReady'];
@@ -76,7 +68,6 @@ export class TestManager {
     this.store = options.store;
     this.componentTestStatusStore = options.componentTestStatusStore;
     this.a11yStatusStore = options.a11yStatusStore;
-    this.screenshotStatusStore = options.screenshotStatusStore;
     this.testProviderStore = options.testProviderStore;
     this.onReady = options.onReady;
     this.storybookOptions = options.storybookOptions;

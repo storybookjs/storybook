@@ -50,7 +50,7 @@ To use Controls, you need to write your stories using [args](../writing-stories/
 
   {/* prettier-ignore-end */}
 
-  When you set the `component` annotation of the default export of your story file, it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component.
+  When you set the `component` annotation of the meta (or default export) of your story file, it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component.
 
   {/* prettier-ignore-start */}
 
@@ -82,7 +82,7 @@ To use Controls, you need to write your stories using [args](../writing-stories/
     Enabling this feature will generate a `storybook-docgen/index.json` automatically with each build. For more information on how the metadata is generated, refer to [documentation](https://github.com/storybookjs/storybook/tree/next/code/frameworks/ember) for the Ember framework.
   </Callout>
 
-  When you set the `component` annotation of the default export of your story file, it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component.
+  When you set the `component` annotation of the meta (or default export) of your story file, it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component.
 
   {/* prettier-ignore-start */}
 
@@ -92,7 +92,7 @@ To use Controls, you need to write your stories using [args](../writing-stories/
 </IfRenderer>
 
 <IfRenderer renderer="react">
-  By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the default export of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component using [`react-docgen`](https://github.com/reactjs/react-docgen), a documentation generator for React components that also includes first-class support for TypeScript.
+  By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component using [`react-docgen`](https://github.com/reactjs/react-docgen), a documentation generator for React components that also includes first-class support for TypeScript.
 
   {/* prettier-ignore-start */}
 
@@ -102,7 +102,7 @@ To use Controls, you need to write your stories using [args](../writing-stories/
 </IfRenderer>
 
 <IfRenderer renderer="vue">
-  By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the default export of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component using [`vue-docgen-api`](https://github.com/vue-styleguidist/vue-styleguidist/tree/dev/packages/vue-docgen-api), including first-class support for Vue's `props`, `events`, and `slots`.
+  By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component using [`vue-docgen-api`](https://github.com/vue-styleguidist/vue-styleguidist/tree/dev/packages/vue-docgen-api), including first-class support for Vue's `props`, `events`, and `slots`.
 
   {/* prettier-ignore-start */}
 
@@ -120,7 +120,7 @@ To use Controls, you need to write your stories using [args](../writing-stories/
 
   {/* prettier-ignore-end */}
 
-  When you set the `component` annotation of the default export of your story file, it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component.
+  When you set the `component` annotation of the meta (or default export) of your story file, it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component.
 
   {/* prettier-ignore-start */}
 
@@ -130,7 +130,7 @@ To use Controls, you need to write your stories using [args](../writing-stories/
 </IfRenderer>
 
 <IfRenderer renderer={[ 'html', 'svelte', 'preact', 'qwik', 'solid' ]}>
-  By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the default export of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component provided by the framework you've chosen to use.
+  By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component provided by the framework you've chosen to use.
 
   {/* prettier-ignore-start */}
 
@@ -167,7 +167,7 @@ We can specify which controls get used by declaring a custom [argType](../api/ar
 
 <If notRenderer="svelte">
 
-  `ArgTypes` can also contain arbitrary annotations, which the user can override. Since `variant` is a component property, let's put that annotation on the default export.
+  `ArgTypes` can also contain arbitrary annotations, which the user can override. Since `variant` is a component property, let's put that annotation on the meta (or default export).
 
 </If>
 

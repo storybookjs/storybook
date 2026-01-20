@@ -54,7 +54,7 @@ const meta = preview.meta({
 ```
 
 ```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import { Button } from './Button';
+import Button from './Button.svelte';
 
 export default {
   component: Button,
@@ -106,7 +106,7 @@ export default {
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
-import { Button } from './Button';
+import Button from './Button.svelte';
 
 const meta = {
   component: Button,

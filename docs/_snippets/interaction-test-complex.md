@@ -30,7 +30,7 @@ export const Submits: Story = {
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -73,7 +73,7 @@ export const Submits = meta.story({
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -119,7 +119,7 @@ export const Submits: Story = {
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -160,7 +160,7 @@ export const Submits = {
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -205,7 +205,7 @@ export const Submits = {
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -251,7 +251,7 @@ export const Submits: Story = {
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -296,7 +296,7 @@ export const Submits: Story = {
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -337,7 +337,7 @@ export const Submits = {
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -381,7 +381,7 @@ export const Submits: Story = {
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -421,7 +421,7 @@ export const Submits = {
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -463,7 +463,7 @@ export const Submits = meta.story({
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -505,7 +505,7 @@ export const Submits = meta.story({
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -548,7 +548,7 @@ export const Submits = meta.story({
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -593,7 +593,7 @@ export const Submits = meta.story({
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -636,7 +636,7 @@ export const Submits = meta.story({
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
@@ -681,7 +681,7 @@ export const Submits = meta.story({
     const titleInput = await canvas.findByLabelText('Enter a title for your event');
     await userEvent.type(titleInput, 'Holiday party');
 
-    const submitButton = canvas.getByRole('button', { text: 'Plan event' });
+    const submitButton = canvas.getByRole('button', { name: 'Plan event' });
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly

@@ -15,7 +15,7 @@ export default {
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="Without globals API"
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+import type { Meta } from 'storybook-solidjs-vite';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import { MyComponent } from './MyComponent';
@@ -34,7 +34,7 @@ export default meta;
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
+import type { Meta } from '@storybook/angular';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
@@ -89,7 +89,7 @@ export default {
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
+import type { Meta } from '@storybook/your-framework';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
@@ -166,7 +166,7 @@ export default {
 
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+import type { Meta } from '@storybook/your-framework';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
@@ -202,7 +202,7 @@ export default {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import type { Meta } from '@storybook/vue3-vite';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
@@ -274,7 +274,7 @@ export default {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
+import type { Meta } from '@storybook/web-components-vite';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 

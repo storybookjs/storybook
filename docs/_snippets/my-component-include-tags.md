@@ -148,8 +148,8 @@ export default {
   tags: ['test-only'],
 };
 
-export const ExcludeStory = {
-  //👇 Adds the `test-only` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+export const IncludeStory = {
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
   tags: ['test-only'],
 };
 ```
@@ -166,8 +166,8 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const ExcludeStory: Story = {
-  //👇 Adds the `test-only` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+export const IncludeStory: Story = {
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
   tags: ['test-only'],
 };
 ```
@@ -181,8 +181,8 @@ const meta = preview.meta({
   tags: ['test-only'],
 });
 
-export const ExcludeStory = meta.story({
-  //👇 Adds the `test-only` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+export const IncludeStory = meta.story({
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
   tags: ['test-only'],
 });
 ```
@@ -196,8 +196,8 @@ const meta = preview.meta({
   tags: ['test-only'],
 });
 
-export const ExcludeStory = meta.story({
-  //👇 Adds the `test-only` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+export const IncludeStory = meta.story({
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
   tags: ['test-only'],
 });
 ```

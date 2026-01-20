@@ -50,14 +50,14 @@ export const Primary = meta.story({
 
 export const Secondary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: '😄👍😍💯',
   },
 });
 
 export const Tertiary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: '📚📕📈🤓',
   },
 });
@@ -602,14 +602,14 @@ export const Primary = meta.story({
 
 export const Secondary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: '😄👍😍💯',
   },
 });
 
 export const Tertiary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: '📚📕📈🤓',
   },
 });
@@ -631,14 +631,14 @@ export const Primary = meta.story({
 
 export const Secondary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: '😄👍😍💯',
   },
 });
 
 export const Tertiary = meta.story({
   args: {
-    ...Primary.args,
+    ...Primary.input.args,
     label: '📚📕📈🤓',
   },
 });

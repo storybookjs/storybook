@@ -137,7 +137,7 @@ export default {
 };
 ```
 
-```ts filename="Button.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {

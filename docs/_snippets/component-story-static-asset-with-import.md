@@ -255,7 +255,7 @@ const image = {
 export const WithAnImage = {
   render: () => ({
     setup() {
-      //👇 Returns the content of the image object create above.
+      //👇 Returns the content of the image object created above.
       return { image };
     },
     template: `<img v-bind="image"/>`,
@@ -285,7 +285,7 @@ type Story = StoryObj<typeof meta>;
 export const WithAnImage: Story = {
   render: () => ({
     setup() {
-      //👇 Returns the content of the image object create above.
+      //👇 Returns the content of the image object created above.
       return { image };
     },
     template: `<img v-bind="image"/>`,
@@ -312,7 +312,7 @@ const image = {
 export const WithAnImage = meta.story({
   render: () => ({
     setup() {
-      //👇 Returns the content of the image object create above.
+      //👇 Returns the content of the image object created above.
       return { image };
     },
     template: `<img v-bind="image"/>`,
@@ -341,7 +341,7 @@ const image = {
 export const WithAnImage = meta.story({
   render: () => ({
     setup() {
-      //👇 Returns the content of the image object create above.
+      //👇 Returns the content of the image object created above.
       return { image };
     },
     template: `<img v-bind="image"/>`,

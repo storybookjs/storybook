@@ -484,7 +484,7 @@ export const Secondary: Story = {
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
-  component: 'my-component',
+  component: 'demo-button',
   parameters: {
     docs: {
       // 👇 Enable Code panel for all stories in this file

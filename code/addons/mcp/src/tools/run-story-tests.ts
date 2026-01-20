@@ -102,17 +102,6 @@ export async function addRunStoryTestsTool(
 					throw new Error('Test run response missing result data');
 				}
 
-				logger.debug('Test results received from addon-vitest');
-				logger.warn(
-					JSON.stringify(
-						{
-							testResults,
-						},
-						null,
-						2,
-					),
-				);
-
 				const sections: string[] = [];
 
 				if (testResults.componentTestCount.error === 0) {

@@ -1,3 +1,7 @@
+## 10.2.0-beta.5
+
+- Addon A11y: Lock vision filter dropdown for stories with `vision` global - [#33599](https://github.com/storybookjs/storybook/pull/33599), thanks @ghengeveld!
+
 ## 10.2.0-beta.4
 
 - Addon Vitest: Improve error message in testing widget modal - [#33481](https://github.com/storybookjs/storybook/pull/33481), thanks @yannbf!

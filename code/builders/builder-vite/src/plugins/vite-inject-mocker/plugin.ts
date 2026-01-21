@@ -1,21 +1,15 @@
-import { resolvePackageDir } from 'storybook/internal/common';
+import { fileURLToPath } from 'node:url';
 
-import { join } from 'pathe';
-import type { ResolvedConfig, ViteDevServer } from 'vite';
+import type { ResolvedConfig } from 'vite';
 
-const entryPath = '/vite-inject-mocker-entry.js';
-
-let server: ViteDevServer;
+const ENTRY_PATH = '/vite-inject-mocker-entry.js';
 
 export const viteInjectMockerRuntime = (options: {
   previewConfigPath?: string | null;
 }): import('vite').Plugin => {
   // Get the actual file path so Vite can resolve relative imports
-  const mockerRuntimePath = join(
-    resolvePackageDir('storybook'),
-    'dist',
-    'mocking-utils',
-    'mocker-runtime.js'
+  const mockerRuntimePath = fileURLToPath(
+    import.meta.resolve('storybook/internal/mocking-utils/mocker-runtime')
   );
 
   let viteConfig: ResolvedConfig;
@@ -27,16 +21,15 @@ export const viteInjectMockerRuntime = (options: {
       if (viteConfig.command === 'build') {
         this.emitFile({
           type: 'chunk',
-          id: join(resolvePackageDir('storybook'), 'dist', 'mocking-utils', 'mocker-runtime.js'),
-          fileName: entryPath.slice(1),
+          id: mockerRuntimePath,
+          fileName: ENTRY_PATH.slice(1),
         });
       }
     },
     configResolved(config) {
       viteConfig = config;
     },
-    configureServer(server_) {
-      server = server_;
+    configureServer(server) {
       if (options.previewConfigPath) {
         server.watcher.on('change', (file) => {
           if (file === options.previewConfigPath) {
@@ -49,7 +42,7 @@ export const viteInjectMockerRuntime = (options: {
       }
     },
     resolveId(source) {
-      if (source === entryPath) {
+      if (source === ENTRY_PATH) {
         return mockerRuntimePath;
       }
       return undefined;
@@ -58,7 +51,7 @@ export const viteInjectMockerRuntime = (options: {
       const headTag = html.match(/<head[^>]*>/);
 
       if (headTag) {
-        const entryCode = `<script type="module" src="${entryPath}"></script>`;
+        const entryCode = `<script type="module" src="${ENTRY_PATH}"></script>`;
         const headTagIndex = html.indexOf(headTag[0]);
         const newHtml =
           html.slice(0, headTagIndex + headTag[0].length) +

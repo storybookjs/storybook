@@ -196,7 +196,4 @@ async function generateExportsFile(prettierConfig: prettier.Options | null): Pro
   );
 }
 
-generateSourceFiles().catch((error) => {
-  console.error('Error during prebuild:', error);
-  process.exit(1);
-});
+generateSourceFiles();

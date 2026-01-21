@@ -12,7 +12,7 @@ export default {
           return { greeting, globals };
         },
         template: `
-          <div lang={{globals?.locale || 'en'}}>
+          <div :lang={{globals?.locale || 'en'}}>
             <p>Greeting: {{greeting}}</p>
             <story />
           </div>
@@ -38,7 +38,7 @@ const preview: Preview = {
           return { greeting, globals };
         },
         template: `
-          <div lang={{globals?.locale || 'en'}}>
+          <div :lang={{globals?.locale || 'en'}}>
             <p>Greeting: {{greeting}}</p>
             <story />
           </div>

@@ -56,7 +56,7 @@ export class VersionService {
         return svMatch[1].toLowerCase().includes('add') ? 'sv add' : 'sv create';
       }
       // Check for create-rsbuild or create rsbuild
-      const rsbuildMatch = ancestor.command?.match(/(?:^|\s)create[\s\-]?rsbuild/i);
+      const rsbuildMatch = ancestor.command?.match(/(?:^|\s)create[\s\-]rsbuild/i);
       if (rsbuildMatch) {
         return 'create-rsbuild';
       }

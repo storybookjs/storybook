@@ -156,6 +156,14 @@ describe('VersionService', () => {
       expect(integration).toBe('create-rsbuild');
     });
 
+    it('should NOT detect creatersbuild without separator', () => {
+      const ancestry = [{ command: 'npx creatersbuild' }];
+
+      const integration = versionService.getCliIntegrationFromAncestry(ancestry as any);
+
+      expect(integration).toBeUndefined();
+    });
+
     it('should detect @tanstack/start command', () => {
       const ancestry = [{ command: 'npx @tanstack/start@latest create my-app' }];
 

@@ -10,9 +10,9 @@
 		"typecheck": "tsc"
 	},
 	"devDependencies": {
-		"@storybook/addon-docs": "10.2.0-beta.5",
+		"@storybook/addon-docs": "catalog:",
 		"@storybook/addon-mcp": "workspace:*",
-		"@storybook/react-vite": "10.2.0-beta.5",
+		"@storybook/react-vite": "catalog:",
 		"@types/react": "^18.2.65",
 		"@types/react-dom": "^18.2.21",
 		"@vitejs/plugin-react": "^5.1.1",

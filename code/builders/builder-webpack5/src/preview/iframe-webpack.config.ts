@@ -1,4 +1,4 @@
-import { join, posix, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -126,8 +126,7 @@ export default async (
       logging: 'error',
     },
     watchOptions: {
-      // Ignore node_modules and the output directory to avoid rebuild loops
-      ignored: ['**/node_modules', posix.resolve(workingDir, outputDir)],
+      ignored: /node_modules/,
     },
     externals,
     ignoreWarnings: [

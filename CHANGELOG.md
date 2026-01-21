@@ -10,6 +10,7 @@ Storybook 10.2 contains hundreds of fixes and improvement including:
 
 <details>
 <summary>List of all updates</summary>
+
 - Addon A11y: Lock vision filter dropdown for stories with `vision` global - [#33599](https://github.com/storybookjs/storybook/pull/33599), thanks @ghengeveld!
 - Addon Docs: Skip `!autodocs` stories when computing primary story - [#32712](https://github.com/storybookjs/storybook/pull/32712), thanks @ia319!
 - Addon Pseudo States: Fix stylesheet rewrite for `:not()` with parenthesis in inner selector - [#33491](https://github.com/storybookjs/storybook/pull/33491), thanks @ghengeveld!
@@ -109,6 +110,7 @@ Storybook 10.2 contains hundreds of fixes and improvement including:
 - Vue3: Update renderer's setup function to allow passing generic HostElement type - [#32029](https://github.com/storybookjs/storybook/pull/32029), thanks @DamianGlowala!
 - Webpack: Revert "disable `bugfixes` property in swc and babel - [#33498](https://github.com/storybookjs/storybook/pull/33498), thanks @ndelangen!
 - Zoom: Keyboardshortcut for the `plus` key - [#33565](https://github.com/storybookjs/storybook/pull/33565), thanks @ndelangen!
+
 </details>
 
 ## 10.1.11

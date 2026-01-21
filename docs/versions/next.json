@@ -1,1 +1,1 @@
-{"version":"10.2.0-beta.5","info":{"plain":"- Addon A11y: Lock vision filter dropdown for stories with `vision` global - [#33599](https://github.com/storybookjs/storybook/pull/33599), thanks @ghengeveld!"}}
+{"version":"10.3.0-alpha.0","info":{"plain":"- CLI: Fix onboarding not opening - [#33609](https://github.com/storybookjs/storybook/pull/33609), thanks @ndelangen!"}}

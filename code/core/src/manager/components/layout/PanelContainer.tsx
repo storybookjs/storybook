@@ -5,7 +5,7 @@ import { styled } from 'storybook/theming';
 import type { API_Layout } from '../../../types';
 import { Drag } from './Drag';
 
-interface PagesContainerProps {
+interface PanelContainerProps {
   children: React.ReactNode;
   bottomPanelHeight: number;
   rightPanelWidth: number;
@@ -33,7 +33,7 @@ const PanelSlot = styled.div({
  * reopen the panel. The panel is always rendered (to preserve internal state), but it's excluded
  * from the Accessibility Object Model when effectively collapsed.
  */
-const PanelContainer = React.memo<PagesContainerProps>(function PagesContainer(props) {
+const PanelContainer = React.memo<PanelContainerProps>(function PanelContainer(props) {
   const { children, bottomPanelHeight, rightPanelWidth, panelResizerRef, position } = props;
 
   const shouldHidePanelContent =

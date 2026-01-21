@@ -85,7 +85,10 @@ export class WebpackMockPlugin {
       );
       this.candidateSpecifiers = new Set(resolved.map((m) => m.path));
       this.lastPreviewMtime = mTimePreviewConfig;
-      logger.info(`Mock map updated with ${resolved.length} mocks.`);
+
+      if (resolved.length > 0) {
+        logger.info(`Mock map updated with ${resolved.length} mocks.`);
+      }
     };
 
     compiler.hooks.beforeRun.tap(PLUGIN_NAME, updateMocks); // for build

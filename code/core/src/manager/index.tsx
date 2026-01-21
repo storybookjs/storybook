@@ -90,6 +90,13 @@ const Main: FC<{ provider: Provider }> = ({ provider }) => {
 };
 
 export function renderStorybookUI(domNode: HTMLElement, provider: Provider) {
+  if (window.location.pathname.endsWith('index.html')) {
+    const { pathname, search, hash } = window.location;
+    const newPath = pathname.replace(/index\.html$/, '');
+    window.location.replace(newPath + search + hash);
+    return;
+  }
+
   if (!(provider instanceof Provider)) {
     throw new ProviderDoesNotExtendBaseProviderError();
   }

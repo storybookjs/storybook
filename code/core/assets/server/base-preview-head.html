@@ -2,19 +2,19 @@
 
 <style>
   /* While we aren't showing the main block yet, but still preparing, we want everything the user has rendered, which may or may not be in #storybook-root, to be display none */
-  .sb-show-preparing-story:not(.sb-show-main)> :not(.sb-preparing-story) {
+  .sb-show-preparing-story:not(.sb-show-main) > :not(.sb-preparing-story) {
     display: none;
   }
 
-  .sb-show-preparing-docs:not(.sb-show-main)> :not(.sb-preparing-docs) {
+  .sb-show-preparing-docs:not(.sb-show-main) > :not(.sb-preparing-docs) {
     display: none;
   }
 
   /* Hide our own blocks when we aren't supposed to be showing them */
-  :not(.sb-show-preparing-story)>.sb-preparing-story,
-  :not(.sb-show-preparing-docs)>.sb-preparing-docs,
-  :not(.sb-show-nopreview)>.sb-nopreview,
-  :not(.sb-show-errordisplay)>.sb-errordisplay {
+  :not(.sb-show-preparing-story) > .sb-preparing-story,
+  :not(.sb-show-preparing-docs) > .sb-preparing-docs,
+  :not(.sb-show-nopreview) > .sb-nopreview,
+  :not(.sb-show-errordisplay) > .sb-errordisplay {
     display: none;
   }
 
@@ -34,8 +34,7 @@
   }
 
   /* Vertical centering fix for IE11 */
-  @media screen and (-ms-high-contrast: none),
-  (-ms-high-contrast: active) {
+  @media screen and (-ms-high-contrast: none), (-ms-high-contrast: active) {
     .sb-show-main.sb-main-centered:after {
       content: '';
       min-height: inherit;
@@ -188,7 +187,7 @@
       margin: 0;
     }
 
-    & li+li {
+    & li + li {
       margin: 0;
       padding: 0;
       padding-top: 12px;
@@ -228,7 +227,6 @@
     }
   }
 
-
   @-webkit-keyframes sb-rotate360 {
     from {
       transform: rotate(0deg);
@@ -250,7 +248,6 @@
   }
 
   @-webkit-keyframes sb-glow {
-
     0%,
     100% {
       opacity: 1;
@@ -262,7 +259,6 @@
   }
 
   @keyframes sb-glow {
-
     0%,
     100% {
       opacity: 1;

@@ -9,7 +9,7 @@ import {
 
 import type { PreviewWeb } from 'storybook/preview-api';
 import type { App } from 'vue';
-import { createApp, h, isReactive, isVNode, provide, reactive } from 'vue';
+import { createApp, h, isReactive, isVNode, reactive } from 'vue';
 
 import type { StoryFnVueReturnType, StoryID, VueRenderer } from './types';
 
@@ -87,7 +87,6 @@ export async function renderToCanvas(
         reactiveGlobals: storyContext.globals,
       };
       map.set(canvasElement, appState);
-      provide('globals', storyContext.globals);
       return () => {
         // not passing args here as props
         // treat the rootElement as a component without props

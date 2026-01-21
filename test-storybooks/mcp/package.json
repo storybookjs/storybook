@@ -10,15 +10,15 @@
 		"typecheck": "tsc"
 	},
 	"devDependencies": {
-		"@storybook/addon-docs": "catalog:",
+		"@storybook/addon-docs": "10.2.0-beta.5",
 		"@storybook/addon-mcp": "workspace:*",
-		"@storybook/react-vite": "catalog:",
+		"@storybook/react-vite": "10.2.0-beta.5",
 		"@types/react": "^18.2.65",
 		"@types/react-dom": "^18.2.21",
 		"@vitejs/plugin-react": "^5.1.1",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"storybook": "catalog:",
+		"storybook": "10.2.0-beta.5",
 		"tinyexec": "^1.0.2",
 		"vite": "catalog:"
 	}

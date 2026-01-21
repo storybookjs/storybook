@@ -102,8 +102,6 @@ export class WebpackMockPlugin {
 
         const isExternal = getIsExternal(path, importer);
         // Early filter only for external specifiers. Relative/local specifiers need resolution
-
-        // Early filter only for external specifiers. Relative/local specifiers need resolution
         if (isExternal && !this.candidateSpecifiers.has(path)) {
           return;
         }

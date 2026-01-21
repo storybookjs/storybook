@@ -201,13 +201,13 @@ async function runStorybookDev(result: {
 
       if (useAlternativePort) {
         parts.push(`-p`, `${availablePort}`);
-
-        if (supportsOnboarding && shouldOnboard) {
-          parts.push('--initial-path=/onboarding');
-        }
-
-        parts.push('--quiet');
       }
+
+      if (supportsOnboarding && shouldOnboard) {
+        parts.push('--initial-path=/onboarding');
+      }
+
+      parts.push('--quiet');
     }
 
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets

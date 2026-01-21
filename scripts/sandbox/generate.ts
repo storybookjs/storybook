@@ -64,13 +64,13 @@ const withLocalRegistry = async ({ action, cwd, env, debug }: LocalRegistryProps
     console.log(`📦 Configuring local registry: ${LOCAL_REGISTRY_URL}`);
     // NOTE: for some reason yarn prefers the npm registry in
     // local development, so always use npm
-    await runCommand(`npm config set registry ${LOCAL_REGISTRY_URL}`, { cwd, env }, debug);
+    await runCommand(`npm config set registry ${LOCAL_REGISTRY_URL} -g`, { cwd, env }, debug);
     await action();
   } catch (e) {
     error = e;
   } finally {
     console.log(`📦 Restoring registry: ${prevUrl}`);
-    await runCommand(`npm config set registry ${prevUrl}`, { cwd, env }, debug);
+    await runCommand(`npm config set registry ${prevUrl} -g`, { cwd, env }, debug);
 
     if (error) {
       throw error;
@@ -196,6 +196,8 @@ const runGenerators = async (
       limit(async () => {
         const baseDir = join(REPROS_DIRECTORY, dirName);
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
+        let createBaseDir: string | undefined;
+
         try {
           let flags: string[] = ['--no-dev'];
 
@@ -208,7 +210,7 @@ const runGenerators = async (
           await emptyDir(baseDir);
 
           // We do the creation inside a temp dir to avoid yarn container problems
-          const createBaseDir = await temporaryDirectory();
+          createBaseDir = await temporaryDirectory();
           if (!script.includes('pnp')) {
             try {
               await setupYarn({ cwd: createBaseDir });
@@ -307,6 +309,11 @@ const runGenerators = async (
               force: true,
             });
           }
+
+          // Clean up the temporary base directory
+          if (createBaseDir) {
+            await rm(createBaseDir, { recursive: true, force: true });
+          }
         }
       })
     )
@@ -314,7 +321,7 @@ const runGenerators = async (
 
   const hasGenerationErrors = generationResults.some((result) => result.status === 'rejected');
 
-  if (!isCI) {
+  if (!isCI || process.env.STORYBOOK_SANDBOX_GENERATE) {
     if (hasGenerationErrors) {
       console.log('failed:');
       console.log(

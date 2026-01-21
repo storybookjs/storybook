@@ -17,8 +17,9 @@ const addon2 = definePreviewAddon<Addon2Types>({});
 
 const preview = definePreview({ addons: [addon, addon2], renderToCanvas: () => {} });
 
-const meta = preview.meta({
-  render: () => 'hello',
+const meta = preview.type<{ args: { label: string } }>().meta({
+  args: { label: 'foo' },
+  render: ({ label }) => 'hello' + label,
 });
 
 test('addon parameters are inferred', () => {

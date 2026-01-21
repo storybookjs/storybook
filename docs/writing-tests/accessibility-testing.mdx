@@ -50,19 +50,17 @@ This allows you to run accessibility tests automatically with your component tes
 
 If you need to configure this manually (for example, if the automigration was skipped), you can add the following to your `.storybook/vitest.setup.ts`:
 
-```ts
-import * as previewAnnotations from '@storybook/preview-api';
-// Replace your-renderer with the renderer you are using, e.g. react, svelte, vue3, etc.
-import { setProjectAnnotations } from '@storybook/your-renderer';
+```ts title=".storybook/vitest.setup.js|ts"
+// Replace your-framework with the framework you are using, e.g., react-vite, nextjs-vite, etc.
+import { setProjectAnnotations } from '@storybook/your-framework';
 import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
 
-const annotations = setProjectAnnotations([
-  previewAnnotations,
-  a11yAddonAnnotations,
-]);
+import * as previewAnnotations from './preview';
 
-// Run Storybook's beforeAll hook
-beforeAll(annotations.beforeAll);
+const annotations = setProjectAnnotations([
+  a11yAddonAnnotations, 
+  previewAnnotations
+]);
 ```
 
 <If renderer="react">
@@ -155,7 +153,7 @@ You can configure accessibility tests with the `parameters.a11y.test` [parameter
 | `'todo'`  | Run accessibility tests; violations return a warning in the Storybook UI                 |
 | `'error'` | Run accessibility tests; violations return a failing test in the Storybook UI and CLI/CI |
 
-Like other parameters, you can define it at the project level in `.storybook/preview.js|ts`, the component level in the default export of the story file, or the individual story level. For example, to fail on accessibility tests for all stories in a file except one:
+Like other parameters, you can define it at the project level in `.storybook/preview.js|ts`, the component level in the meta (or default export) of the story file, or the individual story level. For example, to fail on accessibility tests for all stories in a file except one:
 
 <CodeSnippets path="addon-a11y-parameter-example.md" />
 
@@ -181,13 +179,13 @@ When you disable automated accessibility checks, the addon will not run any test
 
 <If renderer="svelte">
 
-  If you are using Svelte CSF, you can turn off automated accessibility checks for stories or components by adding globals to your story or adjusting the `defineMeta` function with the required configuration. With a regular CSF story, you can add the following to your story's export or component's default export:
+  If you are using Svelte CSF, you can turn off automated accessibility checks for stories or components by adding globals to your story or adjusting the `defineMeta` function with the required configuration. With a regular CSF story, you can add the following to your stories or meta (or default export):
 
 </If>
 
 <If notRenderer={['svelte']}>
 
-  Disable automated accessibility checks for stories or components by adding the following globals to your story's export or component's default export:
+  Disable automated accessibility checks for stories or components by adding the following globals to your stories or meta (or default export):
 
 </If>
 

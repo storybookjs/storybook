@@ -1,7 +1,7 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 import imageFile from './static/image.png';
 
@@ -26,6 +26,33 @@ export const WithAnImage: Story = {
     template: `<img src="{{src}}" alt="{{alt}}" />`,
   }),
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => ({
+    props: {
+      src: image.src,
+      alt: image.alt,
+    },
+    template: `<img src="{{src}}" alt="{{alt}}" />`,
+  }),
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
@@ -138,7 +165,7 @@ export const WithAnImage: Story = {
 </Story>
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import MyComponent from './MyComponent.svelte';
 
 import imageFile from './static/image.png';
@@ -183,7 +210,7 @@ export const WithAnImage = {
 </Story>
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -211,7 +238,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import MyComponent from './MyComponent.vue';
 
 import imageFile from './static/image.png';
@@ -228,7 +255,7 @@ const image = {
 export const WithAnImage = {
   render: () => ({
     setup() {
-      //👇 Returns the content of the image object create above.
+      //👇 Returns the content of the image object created above.
       return { image };
     },
     template: `<img v-bind="image"/>`,
@@ -236,7 +263,7 @@ export const WithAnImage = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
@@ -258,7 +285,7 @@ type Story = StoryObj<typeof meta>;
 export const WithAnImage: Story = {
   render: () => ({
     setup() {
-      //👇 Returns the content of the image object create above.
+      //👇 Returns the content of the image object created above.
       return { image };
     },
     template: `<img v-bind="image"/>`,
@@ -266,7 +293,63 @@ export const WithAnImage: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => ({
+    setup() {
+      //👇 Returns the content of the image object created above.
+      return { image };
+    },
+    template: `<img v-bind="image"/>`,
+  }),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => ({
+    setup() {
+      //👇 Returns the content of the image object created above.
+      return { image };
+    },
+    template: `<img v-bind="image"/>`,
+  }),
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 import imageFile from './static/image.png';
@@ -281,11 +364,11 @@ const image = {
 };
 
 export const WithAnImage = {
-  render: () => html`<img src="${image.src}" alt="${image.alt}" /> `,
+  render: () => html`<img src=${image.src} alt=${image.alt} /> `,
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -305,8 +388,50 @@ export default meta;
 type Story = StoryObj;
 
 export const WithAnImage: Story = {
-  render: () => html`<img src="${image.src}" alt="${image.alt}" />`,
+  render: () => html`<img src=${image.src} alt=${image.alt} />`,
 };
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => html`<img src=${image.src} alt=${image.alt} /> `,
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import preview from '../.storybook/preview';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: 'my-component',
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => html`<img src=${image.src} alt=${image.alt} />`,
+});
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

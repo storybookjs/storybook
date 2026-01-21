@@ -6,11 +6,25 @@ import {
   UPDATE_QUERY_PARAMS,
 } from 'storybook/internal/core-events';
 
+import { global } from '@storybook/global';
+
 import EventEmitter from 'events';
 
 import { init as initURL } from '../modules/url';
 
 vi.mock('storybook/internal/client-logger');
+vi.mock('@storybook/global', () => ({
+  global: {
+    window: {
+      location: {
+        hash: '',
+        href: 'http://localhost:6006',
+        origin: 'http://localhost:6006',
+      },
+    },
+    STORYBOOK_NETWORK_ADDRESS: 'http://192.168.1.1:6006/',
+  },
+}));
 
 const storyState = (storyId) => ({
   path: `/story/${storyId}`,
@@ -19,8 +33,6 @@ const storyState = (storyId) => ({
 });
 
 describe('initial state', () => {
-  const viewMode = 'story';
-
   describe('config query parameters', () => {
     it('handles full parameter', () => {
       const navigate = vi.fn();
@@ -202,10 +214,10 @@ describe('initModule', () => {
       initialGlobals: { a: 1, b: 1 },
     });
     expect(navigate).toHaveBeenCalledWith(
-      '/story/test--story&globals=a:2;b:!undefined',
+      '/story/test--story&globals=a:2',
       expect.objectContaining({ replace: true })
     );
-    expect(store.getState().customQueryParams).toEqual({ globals: 'a:2;b:!undefined' });
+    expect(store.getState().customQueryParams).toEqual({ globals: 'a:2' });
   });
 
   it('adds url params alphabetically', async () => {
@@ -223,7 +235,12 @@ describe('initModule', () => {
       }),
     });
 
-    channel.emit(GLOBALS_UPDATED, { userGlobals: { g: 2 }, storyGlobals: {}, globals: { g: 2 } });
+    channel.emit(GLOBALS_UPDATED, {
+      userGlobals: { g: 2 },
+      storyGlobals: {},
+      globals: { g: 2 },
+      initialGlobals: {},
+    });
     expect(navigate).toHaveBeenCalledWith(
       '/story/test--story&full=1&globals=g:2',
       expect.objectContaining({ replace: true })
@@ -234,5 +251,223 @@ describe('initModule', () => {
       '/story/test--story&args=a:1&full=1&globals=g:2',
       expect.objectContaining({ replace: true })
     );
+  });
+});
+
+describe('getStoryHrefs', () => {
+  let state = {};
+  const store = {
+    setState: (change) => {
+      state = { ...state, ...change };
+    },
+    getState: () => state,
+  };
+
+  it('returns manager and preview URLs for a story', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/?path=/story/test--story');
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('retains args and globals from the URL', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1&globals=b:2' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toContain('&args=a:1&globals=b:2');
+    expect(previewHref).toContain('&args=a:1&globals=b:2');
+  });
+
+  it('retains args with special values', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:!null;b:!hex(f00);c:!undefined' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toContain('&args=a:!null;b:!hex(f00);c:!undefined');
+    expect(previewHref).toContain('&args=a:!null;b:!hex(f00);c:!undefined');
+  });
+
+  it('drops args but retains globals when changing stories', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1&globals=b:2' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--another-story');
+    expect(managerHref).toEqual('/?path=/story/test--another-story&globals=b:2');
+    expect(previewHref).toEqual('/iframe.html?id=test--another-story&viewMode=story&globals=b:2');
+  });
+
+  it('supports disabling inheritance of args and globals', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1&globals=b:2' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
+      inheritArgs: false,
+      inheritGlobals: false,
+    });
+    expect(managerHref).toEqual('/?path=/story/test--story');
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('supports extra args and globals with merging', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1;b:2&globals=c:3;d:4' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
+      queryParams: { args: 'a:2;c:3', globals: 'd:5' },
+    });
+    expect(managerHref).toContain('&args=a:2;b:2;c:3&globals=c:3;d:5');
+    expect(previewHref).toContain('&args=a:2;b:2;c:3&globals=c:3;d:5');
+  });
+
+  it('supports additional query params, including nested objects', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1&globals=b:2' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
+      queryParams: {
+        one: 1,
+        foo: { bar: 'baz' },
+        id: 'not-allowed-in-preview',
+        viewMode: 'not-allowed-in-preview',
+      },
+    });
+    expect(managerHref).toContain('&args=a:1&globals=b:2&one=1&foo.bar=baz');
+    expect(previewHref).toContain('&args=a:1&globals=b:2&one=1&foo.bar=baz');
+
+    expect(managerHref).toContain('id=not-allowed-in-preview');
+    expect(previewHref).not.toContain('id=not-allowed-in-preview');
+
+    expect(managerHref).toContain('viewMode=not-allowed-in-preview');
+    expect(previewHref).not.toContain('viewMode=not-allowed-in-preview');
+  });
+
+  it('correctly preserves args and globals encoding', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=equal:g%3Dh&globals=ampersand:c%26d' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toContain('&args=equal:g%3Dh&globals=ampersand:c%26d');
+    expect(previewHref).toContain('&args=equal:g%3Dh&globals=ampersand:c%26d');
+  });
+
+  it('correctly encodes query params', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
+      queryParams: { equal: 'a=b', ampersand: 'c&d' },
+    });
+    expect(managerHref).toContain('&equal=a%3Db&ampersand=c%26d');
+    expect(previewHref).toContain('&equal=a%3Db&ampersand=c%26d');
+  });
+
+  it('supports returning absolute URLs using the base option', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const origin = api.getStoryHrefs('test--story', { base: 'origin' });
+    expect(origin.managerHref).toContain('http://localhost:6006/?path=');
+    expect(origin.previewHref).toContain('http://localhost:6006/iframe.html');
+
+    const network = api.getStoryHrefs('test--story', { base: 'network' });
+    expect(network.managerHref).toContain('http://192.168.1.1:6006/?path=');
+    expect(network.previewHref).toContain('http://192.168.1.1:6006/iframe.html');
+  });
+
+  it('supports linking to a ref, dropping globals in preview', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1&globals=b:2' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    store.setState({ refs: { external: { url: 'https://sb.example.com' } } });
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', { refId: 'external' });
+    expect(managerHref).toEqual('/?path=/story/external_test--story&globals=b:2');
+    expect(previewHref).toEqual(
+      'https://sb.example.com/iframe.html?id=test--story&viewMode=story&refId=external'
+    );
+  });
+
+  it('supports PREVIEW_URL override', () => {
+    global.PREVIEW_URL = 'https://custom.preview.url/';
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
+    expect(managerHref).toEqual('/?path=/story/test--story');
+    expect(previewHref).toEqual('https://custom.preview.url/?id=test--story&viewMode=story');
   });
 });

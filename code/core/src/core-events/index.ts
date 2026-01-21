@@ -88,9 +88,14 @@ enum events {
   ARGTYPES_INFO_RESPONSE = 'argtypesInfoResponse',
   CREATE_NEW_STORYFILE_REQUEST = 'createNewStoryfileRequest',
   CREATE_NEW_STORYFILE_RESPONSE = 'createNewStoryfileResponse',
+  // Story discovery and testing flow
+  GHOST_STORIES_REQUEST = 'ghostStoriesRequest',
+  GHOST_STORIES_RESPONSE = 'ghostStoriesResponse',
   // Open a file in the code editor
   OPEN_IN_EDITOR_REQUEST = 'openInEditorRequest',
   OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
+  // Emitted when the manager UI sets up a focus trap
+  MANAGER_INERT_ATTRIBUTE_CHANGED = 'managerInertAttributeChanged',
 }
 
 // Enables: `import Events from ...`
@@ -157,8 +162,11 @@ export const {
   SAVE_STORY_RESPONSE,
   ARGTYPES_INFO_REQUEST,
   ARGTYPES_INFO_RESPONSE,
+  GHOST_STORIES_REQUEST,
+  GHOST_STORIES_RESPONSE,
   OPEN_IN_EDITOR_REQUEST,
   OPEN_IN_EDITOR_RESPONSE,
+  MANAGER_INERT_ATTRIBUTE_CHANGED,
 } = events;
 
 export * from './data/create-new-story';

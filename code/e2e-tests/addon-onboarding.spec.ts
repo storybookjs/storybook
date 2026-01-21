@@ -1,4 +1,8 @@
+import { rm } from 'node:fs/promises';
+import { homedir } from 'node:os';
+
 import { expect, test } from '@playwright/test';
+import { join } from 'pathe';
 import process from 'process';
 
 import { SbPage, hasOnboardingFeature } from './util';
@@ -14,6 +18,11 @@ test.describe('addon-onboarding', () => {
     `Skipping ${templateName}, which does not have addon-onboarding set up.`
   );
   test('the onboarding flow', async ({ page }) => {
+    // eslint-disable-next-line playwright/no-conditional-in-test
+    if (process.env.CI) {
+      await rm(join(homedir(), '.storybook', 'settings.json'), { force: true });
+    }
+
     await page.goto(`${storybookUrl}/?path=/onboarding`);
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
@@ -45,8 +54,9 @@ test.describe('addon-onboarding', () => {
     await page.locator('#referrer').selectOption('Web Search');
     await page.getByRole('button', { name: 'Submit' }).click();
 
-    await expect(
-      sbPage.previewIframe().getByRole('heading', { name: 'Configure your project' })
-    ).toBeVisible();
+    // After completing onboarding, verify we navigate to a story (first story in the index)
+    await expect(sbPage.page).toHaveURL(/\/(story|docs)\//);
+    // Verify the preview iframe has loaded content
+    await sbPage.waitUntilLoaded();
   });
 });

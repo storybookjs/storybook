@@ -1,7 +1,9 @@
 import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { now, saveBench } from '../bench/utils';
+import { getPort } from '../sandbox/utils/getPort';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
 
@@ -9,18 +11,24 @@ export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
   : 6006;
 
+function getDevPort(key: AllTemplatesKey) {
+  return process.env.NX_CLI_SET === 'true' ? getPort({ selectedTask: 'dev', key }) : PORT;
+}
+
 export const dev: Task = {
   description: 'Run the sandbox in development mode',
   service: true,
   dependsOn: ['sandbox'],
-  async ready() {
-    return (await detectFreePort(PORT)) !== PORT;
+  async ready({ key }) {
+    const port = getDevPort(key);
+    return (await detectFreePort(port)) !== port;
   },
-  async run({ sandboxDir, selectedTask }, { dryRun, debug }) {
+  async run({ sandboxDir, key, selectedTask }, { dryRun, debug }) {
     const controller = new AbortController();
-    const devCommand = `yarn storybook --port ${PORT}${selectedTask === 'dev' ? '' : ' --ci'}`;
-    const start = now();
+    const port = getDevPort(key);
+    const devCommand = `yarn storybook --port ${port}${selectedTask === 'dev' ? '' : ' --ci'}`;
 
+    const start = now();
     exec(
       devCommand,
       { cwd: sandboxDir },
@@ -32,10 +40,18 @@ export const dev: Task = {
       }
     });
     const [devPreviewResponsive, devManagerResponsive] = await Promise.all([
-      waitOn({ resources: [`http://localhost:${PORT}/iframe.html`], interval: 16 }).then(() => {
+      waitOn({
+        resources: [`http://localhost:${port}/iframe.html`],
+        interval: 16,
+        timeout: 200000,
+      }).then(() => {
         return now() - start;
       }),
-      waitOn({ resources: [`http://localhost:${PORT}/index.html`], interval: 16 }).then(() => {
+      waitOn({
+        resources: [`http://localhost:${port}/index.html`],
+        interval: 16,
+        timeout: 200000,
+      }).then(() => {
         return now() - start;
       }),
     ]);

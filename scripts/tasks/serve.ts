@@ -1,25 +1,35 @@
 import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
-import type { Task } from '../task';
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import { getPort } from '../sandbox/utils/getPort';
+import { type Task } from '../task';
+import { ROOT_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
   : 8001;
 
+function getServePort(key: AllTemplatesKey) {
+  return process.env.NX_CLI_SET === 'true' ? getPort({ selectedTask: 'serve', key }) : PORT;
+}
+
 export const serve: Task = {
   description: 'Serve the build storybook for a sandbox',
   service: true,
   dependsOn: ['build'],
-  async ready() {
-    return (await detectFreePort(PORT)) !== PORT;
+  async ready({ key }) {
+    const port = getServePort(key);
+    return (await detectFreePort(port)) !== port;
   },
-  async run({ builtSandboxDir, codeDir }, { debug, dryRun }) {
+  async run({ builtSandboxDir, key }, { debug, dryRun }) {
+    const port = getServePort(key);
+
     const controller = new AbortController();
     exec(
-      `yarn http-server ${builtSandboxDir} --port ${PORT} -s`,
-      { cwd: codeDir },
+      `yarn http-server ${builtSandboxDir} --port ${port} -s`,
+      { cwd: ROOT_DIRECTORY },
       { dryRun, debug, signal: controller.signal as AbortSignal }
     ).catch((err) => {
       // If aborted, we want to make sure the rejection is handled.
@@ -27,7 +37,7 @@ export const serve: Task = {
         throw err;
       }
     });
-    await waitOn({ resources: [`tcp:127.0.0.1:${PORT}`], interval: 16 });
+    await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16, timeout: 200000 });
 
     return controller;
   },

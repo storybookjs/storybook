@@ -8,6 +8,7 @@ const LATEST_PROTOCOL_VERSION = '2025-11-21';
 import { MCP_APP_SIZE_CHANGED_EVENT } from '../../constants.ts';
 import { MCP_APP_PARAM } from '../../constants.ts';
 import type { PreviewStoriesOutput } from '../preview-stories.ts';
+import pkg from '../../../package.json' with { type: 'json' };
 
 interface McpUiHostStyles {
 	variables?: Record<string, string | undefined>;
@@ -139,7 +140,7 @@ function onHostNotification<T = unknown>(
 const initializeResult = (await sendHostRequest(METHODS.INITIALIZE, {
 	appInfo: {
 		name: 'storybook-story-preview',
-		version: '1.0.0',
+		version: pkg.version,
 	},
 	appCapabilities: {},
 	protocolVersion: LATEST_PROTOCOL_VERSION,

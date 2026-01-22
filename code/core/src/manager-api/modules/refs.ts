@@ -18,6 +18,7 @@ import {
   transformStoryIndexToStoriesHash,
 } from '../lib/stories';
 import type { ModuleFn } from '../lib/types';
+import { normalizeToDirectory } from './url';
 
 const { location, fetch } = global;
 
@@ -81,10 +82,9 @@ export const getSourceType = (source: string, refId?: string) => {
   const { origin: localOrigin, pathname: localPathname } = location;
   const { origin: sourceOrigin, pathname: sourcePathname } = new URL(source);
 
-  const localFull = `${localOrigin + localPathname}`.replace('/iframe.html', '').replace(/\/$/, '');
-  const sourceFull = `${sourceOrigin + sourcePathname}`
-    .replace('/iframe.html', '')
-    .replace(/\/$/, '');
+  // Use directory path for comparison
+  const localFull = `${localOrigin}${normalizeToDirectory(localPathname)}`.replace(/\/$/, '');
+  const sourceFull = `${sourceOrigin}${normalizeToDirectory(sourcePathname)}`.replace(/\/$/, '');
 
   if (localFull === sourceFull) {
     return ['local', sourceFull];

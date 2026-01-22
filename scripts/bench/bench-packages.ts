@@ -411,6 +411,9 @@ const run = async () => {
       '-p, --pull-request <number>',
       'The PR number to add compare results to. Only used together with --baseBranch',
       function parseInt(value) {
+        if (value === '0' || value === '') {
+          return null;
+        }
         const parsedValue = Number.parseInt(value);
         if (Number.isNaN(parsedValue)) {
           throw new InvalidArgumentError('Must be a number');

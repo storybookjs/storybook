@@ -73,7 +73,7 @@ const styleResets: CSSObject = {
   appearance: 'none',
   border: '0 none',
   boxSizing: 'inherit',
-  display: ' block',
+  display: 'block',
   margin: ' 0',
   background: 'transparent',
   padding: 0,

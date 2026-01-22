@@ -5,7 +5,7 @@ export function errorToErrorLike(error: Error): ErrorLike {
     message: error.message,
     name: error.name,
     // avoid duplicating the error message in the stack trace
-    stack: error.stack?.replace(error.message, ''),
+    stack: error.message + ' ' + error.stack?.replace(error.message, ''),
     cause: error.cause && error.cause instanceof Error ? errorToErrorLike(error.cause) : undefined,
   };
 }

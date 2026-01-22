@@ -6,15 +6,15 @@ tab:
   title: CSF Next (Preview)
 ---
 
-<If notRenderer="react">
+<If notRenderer={['react', 'vue', 'angular', 'web-components']}>
 
 <Callout variant="info">
-  CSF Next is currently only supported in [React](?renderer=react) projects.
+  CSF Next is currently only supported in [React](?renderer=react), [Vue](?renderer=vue), [Angular](?renderer=angular), and [Web Components](?renderer=web-components) projects.
 </Callout>
 
 </If>
 
-<If renderer="react">
+<If renderer={['react', 'vue', 'angular', 'web-components']}>
 
 <Callout variant="warning" icon="🧪">
   This is a [**preview**](../../releases/features.mdx#preview) feature and (though unlikely) the API may change in future releases. We [welcome feedback](https://github.com/storybookjs/storybook/discussions/30112) and contributions to help improve this feature.
@@ -128,6 +128,37 @@ Alternatively, you can [configure an alias in your builder](../../writing-storie
 </details>
 
 </Callout>
+
+#### `preview.type.meta`
+
+By default, `preview.meta` will infer the type of your component's props automatically. However, if you need to extend or modify the inferred types, you can use the `preview.type` function to specify custom types.
+
+This example is for React, but the same API applies to all supported renderers.
+
+```tsx title="Button.stories.ts|tsx"
+import * as React from 'react';
+
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
+
+const meta = preview.type<{ args: CustomProps }>().meta({
+  component: Button,
+  // 👇 Correct types
+  render: ({ customProp, ...args }) => <>{customProp} <Button {...args} /></>,
+});
+
+export const Primary = meta.story({
+  // 👇 Correct types
+  args: {
+    customProp: 'Hello, world!',
+  },
+});
+```
+
+For more information on typing your stories, refer to the [writing stories in TypeScript guide](../../writing-stories/typescript.mdx).
 
 ### `meta.story`
 
@@ -362,7 +393,38 @@ import { Button } from './Button';
 - };
 ```
 
-Note that importing or manually applying any type to the meta or stories is no longer necessary. Thanks to the factory function pattern, the types are now inferred automatically.
+Note that importing or manually applying the component props type to the meta or stories is no longer necessary. Thanks to the factory function pattern, the types are now inferred automatically.
+
+<details>
+<summary>Handling complex types</summary>
+
+If you were previously using complex types for your meta or stories, such as intersection types to add custom args, you can now use the [`preview.type.meta`](#previewtypemeta) pattern to explicitly specify types.
+
+```diff title="Button.stories.js|ts"
++ import preview from '../.storybook/preview';
+- import type { Meta, StoryObj } from '@storybook/your-framework';
+
+import { Button } from './Button';
+
+type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
+
++ const meta = preview.type<{ args: CustomProps }>().meta({
+- const meta = {
+    // ...meta object is unchanged
++ });
+- } satisfies Meta<CustomProps>;
+- export default meta;
+
+- type Story = StoryObj<typeof meta>;
+
++ export const Primary = meta.story({
+- export const Primary: Story = {
+    // ...story object is unchanged
++ });
+- };
+```
+
+</details>
 
 **3.1 Reusing story properties**
 

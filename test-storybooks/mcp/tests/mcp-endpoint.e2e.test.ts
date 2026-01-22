@@ -166,7 +166,12 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[
 				  {
-				    "description": "Get the URL for one or more stories.",
+				    "_meta": {
+				      "ui": {
+				        "resourceUri": "ui://preview-stories/preview.html",
+				      },
+				    },
+				    "description": "Use this tool to preview one or more stories, rendering them as an MCP App using the UI Resource or returning the raw URL for users to visit.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -197,8 +202,73 @@ describe('MCP Endpoint E2E Tests', () => {
 				      ],
 				      "type": "object",
 				    },
-				    "name": "get-story-urls",
-				    "title": "Get stories' URLs",
+				    "name": "preview-stories",
+				    "outputSchema": {
+				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "properties": {
+				        "stories": {
+				          "items": {
+				            "anyOf": [
+				              {
+				                "properties": {
+				                  "name": {
+				                    "type": "string",
+				                  },
+				                  "previewUrl": {
+				                    "type": "string",
+				                  },
+				                  "title": {
+				                    "type": "string",
+				                  },
+				                },
+				                "required": [
+				                  "title",
+				                  "name",
+				                  "previewUrl",
+				                ],
+				                "type": "object",
+				              },
+				              {
+				                "properties": {
+				                  "error": {
+				                    "type": "string",
+				                  },
+				                  "input": {
+				                    "properties": {
+				                      "absoluteStoryPath": {
+				                        "type": "string",
+				                      },
+				                      "explicitStoryName": {
+				                        "type": "string",
+				                      },
+				                      "exportName": {
+				                        "type": "string",
+				                      },
+				                    },
+				                    "required": [
+				                      "exportName",
+				                      "absoluteStoryPath",
+				                    ],
+				                    "type": "object",
+				                  },
+				                },
+				                "required": [
+				                  "input",
+				                  "error",
+				                ],
+				                "type": "object",
+				              },
+				            ],
+				          },
+				          "type": "array",
+				        },
+				      },
+				      "required": [
+				        "stories",
+				      ],
+				      "type": "object",
+				    },
+				    "title": "Preview stories",
 				  },
 				  {
 				    "description": "Instructions on how to do UI component development. 
@@ -243,7 +313,7 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 	});
 
-	describe('Tool: get-story-urls', () => {
+	describe('Tool: preview-stories', () => {
 		it('should return story URLs for valid stories', async () => {
 			const cwd = process.cwd();
 			const storyPath = cwd.endsWith('/apps/internal-storybook')
@@ -251,7 +321,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				: `${cwd}/apps/internal-storybook/stories/components/Button.stories.ts`;
 
 			const response = await mcpRequest('tools/call', {
-				name: 'get-story-urls',
+				name: 'preview-stories',
 				arguments: {
 					stories: [
 						{
@@ -270,13 +340,22 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "type": "text",
 				    },
 				  ],
+				  "structuredContent": {
+				    "stories": [
+				      {
+				        "name": "Primary",
+				        "previewUrl": "http://localhost:6006/?path=/story/example-button--primary",
+				        "title": "Example/Button",
+				      },
+				    ],
+				  },
 				}
 			`);
 		});
 
 		it('should return error message for non-existent story', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-story-urls',
+				name: 'preview-stories',
 				arguments: {
 					stories: [
 						{
@@ -479,7 +558,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
-				  "get-story-urls",
+				  "preview-stories",
 				  "get-ui-building-instructions",
 				]
 			`);

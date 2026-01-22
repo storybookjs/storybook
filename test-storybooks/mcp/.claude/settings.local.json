@@ -2,7 +2,7 @@
 	"permissions": {
 		"allow": [
 			"mcp__storybook-addon-mcp__get-ui-building-instructions",
-			"mcp__storybook-addon-mcp__get-story-urls",
+			"mcp__storybook-addon-mcp__preview-stories",
 			"mcp__storybook-addon-mcp__list-all-documentation",
 			"mcp__storybook-addon-mcp__get-documentation"
 		]

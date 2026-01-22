@@ -85,7 +85,7 @@ describe('getUIBuildingInstructionsTool', () => {
 		// Check that no placeholders remain
 		expect(instructions).not.toContain('{{FRAMEWORK}}');
 		expect(instructions).not.toContain('{{RENDERER}}');
-		expect(instructions).not.toContain('{{GET_STORY_URLS_TOOL_NAME}}');
+		expect(instructions).not.toContain('{{PREVIEW_STORIES_TOOL_NAME}}');
 	});
 
 	it('should handle Vue framework', async () => {

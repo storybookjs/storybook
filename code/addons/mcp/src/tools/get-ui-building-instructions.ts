@@ -46,7 +46,7 @@ export async function addGetUIBuildingInstructionsTool(
 				const uiInstructions = uiInstructionsTemplate
 					.replace('{{FRAMEWORK}}', framework)
 					.replace('{{RENDERER}}', renderer ?? framework)
-					.replace('{{GET_STORY_URLS_TOOL_NAME}}', PREVIEW_STORIES_TOOL_NAME);
+					.replace('{{PREVIEW_STORIES_TOOL_NAME}}', PREVIEW_STORIES_TOOL_NAME);
 
 				return {
 					content: [{ type: 'text' as const, text: uiInstructions }],

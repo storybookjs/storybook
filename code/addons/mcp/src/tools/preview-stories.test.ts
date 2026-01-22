@@ -28,7 +28,7 @@ describe('previewStoriesTool', () => {
 			{
 				name: 'test-server',
 				version: '1.0.0',
-				description: 'Test server for get-story-urls tool',
+				description: 'Test server for preview-stories tool',
 			},
 			{
 				adapter,
@@ -92,6 +92,15 @@ describe('previewStoriesTool', () => {
 					text: 'http://localhost:6006/?path=/story/button--primary',
 				},
 			],
+			structuredContent: {
+				stories: [
+					{
+						title: 'Button',
+						name: 'Primary',
+						previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+					},
+				],
+			},
 		});
 		expect(fetchStoryIndexSpy).toHaveBeenCalledWith('http://localhost:6006');
 	});
@@ -142,6 +151,25 @@ describe('previewStoriesTool', () => {
 					text: 'http://localhost:6006/?path=/story/input--default',
 				},
 			],
+			structuredContent: {
+				stories: [
+					{
+						title: 'Button',
+						name: 'Primary',
+						previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+					},
+					{
+						title: 'Button',
+						name: 'Secondary',
+						previewUrl: 'http://localhost:6006/?path=/story/button--secondary',
+					},
+					{
+						title: 'Input',
+						name: 'Default',
+						previewUrl: 'http://localhost:6006/?path=/story/input--default',
+					},
+				],
+			},
 		});
 	});
 
@@ -207,6 +235,15 @@ describe('previewStoriesTool', () => {
 					text: 'http://localhost:6006/?path=/story/button--primary',
 				},
 			],
+			structuredContent: {
+				stories: [
+					{
+						title: 'Button',
+						name: 'Primary',
+						previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+					},
+				],
+			},
 		});
 	});
 

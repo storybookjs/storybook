@@ -39,7 +39,6 @@
 		"@tmcp/adapter-valibot": "catalog:",
 		"@tmcp/transport-http": "catalog:",
 		"tmcp": "catalog:",
-		"@mcp-ui/server": "^5.16.3",
 		"valibot": "catalog:"
 	},
 	"devDependencies": {

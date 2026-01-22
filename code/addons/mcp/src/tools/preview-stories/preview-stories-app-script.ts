@@ -7,7 +7,6 @@ const LATEST_PROTOCOL_VERSION = '2025-11-21';
 
 import { MCP_APP_SIZE_CHANGED_EVENT } from '../../constants.ts';
 import { MCP_APP_PARAM } from '../../constants.ts';
-// Import types from get-story-urls tool
 import type { PreviewStoriesOutput } from '../preview-stories.ts';
 
 interface McpUiHostStyles {

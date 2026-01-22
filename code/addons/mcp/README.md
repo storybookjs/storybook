@@ -125,6 +125,7 @@ This addon should work with any MCP-compatible client that supports the `tool` c
 - [Cline](https://docs.cline.bot/mcp/configuring-mcp-servers)
 - [Zed Editor](https://zed.dev/docs/ai/mcp#as-custom-servers)
 - [Continue](https://docs.continue.dev/customize/deep-dives/mcp#how-to-configure-mcp-servers)
+- [Codex](https://github.com/openai/codex/blob/main/docs/config.md#mcp_servers)
 
 For clients not listed above, consult their documentation for MCP server configuration. The server configuration typically requires:
 

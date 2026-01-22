@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "10.2.0-alpha.5",
+  "version": "10.3.0-alpha.0",
   "description": "A Storybook builder to dev and build with Vite",
   "keywords": [
     "storybook",
@@ -51,10 +51,10 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "es-module-lexer": "^1.5.0",
-    "glob": "^10.0.0",
+    "glob": "^10.5.0",
     "knitwork": "^1.1.0",
     "magic-string": "^0.30.0",
     "pathe": "^1.1.2",

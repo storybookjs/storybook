@@ -18,7 +18,7 @@ async function run({ template }: RunOptions) {
 if (esMain(import.meta.url)) {
   program
     .description('Retrieve the sandbox directory for template name')
-    .option('--template <template>', 'Template name');
+    .requiredOption('--template <template>', 'Template name');
 
   program.parse(process.argv);
 

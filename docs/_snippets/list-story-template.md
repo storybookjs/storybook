@@ -1,7 +1,5 @@
-```ts filename="List.stories.ts" renderer="angular" language="ts"
-import type { Meta, StoryObj } from '@storybook/angular';
-
-import { moduleMetadata } from '@storybook/angular';
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
@@ -55,6 +53,59 @@ export const OneItem: Story = {
 };
 ```
 
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { CommonModule } from '@angular/common';
+
+import { moduleMetadata } from '@storybook/angular';
+
+import preview from '../.storybook/preview';
+
+import { List } from './list.component';
+import { ListItem } from './list-item.component';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+  decorators: [
+    moduleMetadata({
+      declarations: [List, ListItem],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+const ListTemplate = {
+  render: (args) => ({
+    props: args,
+    template: `
+      <app-list>
+        <div *ngFor="let item of items">
+          <app-list-item [item]="item"></app-list-item>
+        </div>
+      </app-list>
+    `,
+  }),
+};
+
+export const Empty = meta.story({
+  ...ListTemplate,
+  args: { items: [] },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [{ ...Unchecked.input.args }],
+  },
+});
+```
+
 ```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -89,11 +140,7 @@ export const Empty = {
 export const OneItem = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
 ```
@@ -177,11 +224,7 @@ export const Empty = {
 export const OneItem = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
 ```
@@ -306,7 +349,7 @@ export const OneItem = {
 />
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js"
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import List from './List.vue';
 import ListItem from './ListItem.vue';
 
@@ -343,16 +386,12 @@ export const Empty = {
 export const OneItem = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './List.vue';
@@ -394,16 +433,92 @@ export const Empty: Story = {
 export const OneItem: Story = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './List.vue';
+import ListItem from './ListItem.vue';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { ...args };
+    },
+    template: `
+      <List v-bind="args">
+        <div v-for="item in items" :key="item.title">
+          <ListItem :item="item"/>
+        </div>
+      </List>
+    `,
+  }),
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [{ ...Unchecked.input.args }],
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import List from './List.vue';
+import ListItem from './ListItem.vue';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story({
+  render: (args) => ({
+    components: { List, ListItem },
+    setup() {
+      return { ...args };
+    },
+    template: `
+      <List v-bind="args">
+        <div v-for="item in items" :key="item.title">
+          <ListItem :item="item"/>
+        </div>
+      </List>
+    `,
+  }),
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [{ ...Unchecked.input.args }],
+  },
+});
+```
+
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 
@@ -433,16 +548,12 @@ export const Empty = {
 export const OneItem = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
 ```
 
-```ts filename="List.stories.ts" renderer="web-components" language="ts"
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -476,13 +587,73 @@ export const Empty: Story = {
 export const OneItem: Story = {
   ...ListTemplate,
   args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
+    items: [{ ...Unchecked.args }],
   },
 };
+```
+
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
+
+import preview from '../.storybook/preview';
+
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: 'demo-list',
+});
+
+export const Empty = meta.story({
+  render: ({ items, ...args }) => {
+    return html`
+      <demo-list>
+        ${repeat(items, (item) => html`<demo-list-item>${item}</demo-list-item>`)}
+      </demo-list>
+    `;
+  },
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [{ ...Unchecked.input.args }],
+  },
+});
+```
+
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
+
+import preview from '../.storybook/preview';
+
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: 'demo-list',
+});
+
+export const Empty = meta.story({
+  render: ({ items, ...args }) => {
+    return html`
+      <demo-list>
+        ${repeat(items, (item) => html`<demo-list-item>${item}</demo-list-item>`)}
+      </demo-list>
+    `;
+  },
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [{ ...Unchecked.input.args }],
+  },
+});
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -515,11 +686,7 @@ export const Empty = meta.story({
 
 export const OneItem = Empty.extend({
   args: {
-    items: [
-      {
-        ...Unchecked.input.args,
-      },
-    ],
+    items: [{ ...Unchecked.input.args }],
   },
 });
 ```
@@ -555,11 +722,7 @@ export const Empty = meta.story({
 
 export const OneItem = Empty.extend({
   args: {
-    items: [
-      {
-        ...Unchecked.input.args,
-      },
-    ],
+    items: [{ ...Unchecked.input.args }],
   },
 });
 ```

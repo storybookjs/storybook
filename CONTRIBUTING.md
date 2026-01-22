@@ -160,7 +160,7 @@ If you want to make code changes to Storybook packages while running a sandbox, 
 
 1. In a second terminal, run `yarn build --watch <package-1> <package-2>` in the `code/` directory.
 
-For example, if you want to build the `@storybook/react`, `@storybook/core-server`, `@storybook/api`, and `@storybook/addon-docs` packages, you would run: 
+For example, to build the `@storybook/react`, `storybook` itself, `@storybook/builder-vite`, and `@storybook/addon-docs` packages, you would run: 
 
 ```shell 
 # Navigate to the code directory 
@@ -171,10 +171,11 @@ yarn build --watch react core-server api addon-docs
 
 Most package names can be found after `@storybook/` in the published package.
 
-For instance, to build the `@storybook/react @storybook/core-server @storybook/api @storybook/addon-docs` packages at the same time in watch mode:
+For instance, to build the `@storybook/react storybook @storybook/builder-vite @storybook/addon-docs` packages at the same time in watch mode:
 
 ```shell 
-cd code yarn build --watch react core-server api addon-docs 
+cd code
+yarn build --watch react storybook builder-vite addon-docs 
 ```
 
 2. If you are running the sandbox in ["linked"](https://yarnpkg.com/cli/link) mode (the default), you should see the changes reflected on a refresh (you may need to restart it if changing server packages) 
@@ -198,12 +199,23 @@ yarn task --prod
 
 ```shell
 # Builds the specified packages in production mode
-yarn build --prod --watch angular core addon-docs
+yarn build --prod --watch angular storybook addon-docs
 ```
 
 ### Running against different sandbox templates 
 
 You can pick a specific template to use as your sandbox by running `yarn task`, which will prompt you to make further choices about which template you want and which task you want to run.
+
+### Focussing on fixing a sandbox in CI
+
+Our CI runs many sandboxes, especially when selecting the `ci:daily` workflow.
+
+When a particular sandbox is failing, it's preferred to debug locally, but if this is somehow not possible, you can force the Ci to focus on a selection of sandboxes instead of running all. Here's the process of how:
+
+Inside of here you can edit the filter-function:
+https://github.com/storybookjs/storybook/blob/3d49093954243d4d520774243866de840f298bf4/scripts/ci/main.ts#L70-L88
+
+In fact you can filter on any job you wish, only running `test-runner`, `e2e`, `vite`-sandboxes, etc.
 
 ## Troubleshooting 
 

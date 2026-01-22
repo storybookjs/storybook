@@ -2108,8 +2108,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           metaId: component-id
           tags:
@@ -2131,8 +2130,7 @@ describe('CsfFile', () => {
           type: story
           subtype: story
           name: A
-        - importPath: foo/bar.stories.js
-          exportName: B
+        - exportName: B
           title: custom foo title
           metaId: component-id
           tags:
@@ -2174,8 +2172,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           metaId: component-id
           tags:
@@ -2214,8 +2211,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           tags:
             - component-tag
@@ -2283,8 +2279,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2323,8 +2318,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2362,8 +2356,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          rawComponentPath: ../src/Component.js
+        - rawComponentPath: ../src/Component.js
           exportName: A
           title: custom foo title
           tags: []
@@ -2402,8 +2395,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          rawComponentPath: some-library
+        - rawComponentPath: some-library
           exportName: A
           title: custom foo title
           tags: []
@@ -2877,6 +2869,50 @@ describe('CsfFile', () => {
                 moduleMock: false
         `);
       });
+
+      it('meta variable with .type() chaining', () => {
+        expect(
+          parse(
+            dedent`
+              import { config } from '#.storybook/preview'
+              const meta = config.type<{ args: { label: string } }>().meta({ component: 'foo' });
+              export const A = meta.story({})
+              export const B = meta.story({})
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+            - id: default-title--b
+              name: B
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
     });
     describe('errors', () => {
       it('multiple meta variables', () => {
@@ -2966,21 +3002,33 @@ describe('CsfFile', () => {
         `);
       });
 
-      it('mixed factories and non-factories', () => {
-        expect(() =>
-          parse(
-            dedent`
+      it('skips non-factory exports in factory files', () => {
+        const parsed = loadCsf(
+          dedent`
             import { config } from '#.storybook/preview'
             const meta = config.meta({ component: 'foo' });
             export const A = meta.story({})
             export const B = {}
-        `
-          )
-        ).toThrowErrorMatchingInlineSnapshot(`
-          [MixedFactoryError: CSF: expected factory story (line 4, col 17)
+            export const someHelper = () => {}
+          `,
+          { makeTitle }
+        ).parse();
+        // Only factory stories are indexed, non-factory exports are skipped
+        expect(Object.keys(parsed._stories)).toEqual(['A']);
+      });
 
-          More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
-        `);
+      it('excludeStories still works with factories', () => {
+        const parsed = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo', excludeStories: ['B'] });
+            export const A = meta.story({})
+            export const B = meta.story({})
+          `,
+          { makeTitle }
+        ).parse();
+        // B is excluded via excludeStories
+        expect(Object.keys(parsed._stories)).toEqual(['A']);
       });
 
       it('factory stories in non-factory file', () => {

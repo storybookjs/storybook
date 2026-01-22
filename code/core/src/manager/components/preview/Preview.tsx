@@ -12,6 +12,7 @@ import type { TabListState } from '@react-stately/tabs';
 import { Helmet } from 'react-helmet-async';
 import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-api';
 
+import { useLandmark } from '../../hooks/useLandmark';
 import { FramesRenderer } from './FramesRenderer';
 import { ToolbarComp } from './Toolbar';
 import { ApplyWrappers } from './Wrappers';
@@ -20,6 +21,7 @@ import * as S from './utils/components';
 import type { PreviewProps } from './utils/types';
 
 const canvasMapper = ({ state, api }: Combo) => ({
+  api,
   storyId: state.storyId,
   refId: state.refId,
   viewMode: state.viewMode,
@@ -110,6 +112,12 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
     }
   }, [entry, viewMode, storyId, api]);
 
+  const mainRef = useRef<HTMLElement>(null);
+  const { landmarkProps } = useLandmark(
+    { 'aria-labelledby': 'main-preview-heading', role: 'main' },
+    mainRef
+  );
+
   return (
     <Fragment>
       {previewId === 'main' && (
@@ -127,7 +135,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
             tools={tools}
             toolsExtra={toolsExtra}
           />
-          <S.FrameWrap aria-labelledby="main-preview-heading">
+          <S.FrameWrap ref={mainRef} {...landmarkProps}>
             <h2 id="main-preview-heading" className="sb-sr-only">
               Main preview area
             </h2>
@@ -153,6 +161,7 @@ const Canvas: FC<{
   return (
     <Consumer filter={canvasMapper}>
       {({
+        api,
         entry,
         refs,
         customCanvas,
@@ -202,7 +211,7 @@ const Canvas: FC<{
                       customCanvas(storyId, viewMode, id, baseUrl, scale, queryParams)
                     ) : (
                       <FramesRenderer
-                        baseUrl={baseUrl}
+                        api={api}
                         refs={refs}
                         scale={scale}
                         entry={entry}

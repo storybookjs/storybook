@@ -6,7 +6,7 @@ sidebar:
   title: Next.js (Vite)
 ---
 
-Storybook for Next.js (Vite) is the **recommended** [framework](../../contribute/framework.mdx) for developing and testing UI components in isolation for [Next.js](https://nextjs.org/) applications. It uses [Vite](https://vitejs.dev/) for faster builds, better performance and [Storybook Testing](https://storybook.js.org/docs/writing-tests) support.
+Storybook for Next.js (Vite) is the **recommended** [framework](../../contribute/framework.mdx) for developing and testing UI components in isolation for [Next.js](https://nextjs.org/) applications. It uses [Vite](https://vitejs.dev/) for faster builds, better performance and [Storybook Testing](../../writing-tests/index.mdx) support.
 
 ## Install
 
@@ -14,8 +14,7 @@ To install Storybook in an existing Next.js project, run this command in your pr
 
 <CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
-You can then get started [writing stories](/docs/get-started/whats-a-story/), [running tests](/docs/writing-tests/) and [documenting your components](/docs/writing-docs/). For more control over the installation process, refer to the [installation guide](/docs/install/).
-
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
 ### Requirements
 
@@ -55,9 +54,6 @@ To build Storybook, run:
 <CodeSnippets path="build-storybook-production-mode.md" />
 
 You will find the output in the configured `outputDir` (default is `storybook-static`).
-
-
-
 
 ## Configure
 
@@ -248,29 +244,7 @@ Additionally, the [`router` object](https://nextjs.org/docs/pages/api-reference/
 
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
-```ts title=".storybook/preview.js|ts"
-import type { Preview } from '@storybook/nextjs-vite';
-
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from "@storybook/nextjs-vite/router.mock";
-
-const preview: Preview = {
-  parameters: {
-    nextjs: {
-      // 👇 Override the default router properties
-      router: {
-        basePath: '/app/',
-      },
-    },
-  },
-  async beforeEach() {
-    // 👇 Manipulate the default router method mocks
-    getRouter().push.mockImplementation(() => {
-      /* ... */
-    });
-  },
-};
-```
+<CodeSnippets path="nextjs-router-override-in-preview.md" />
 
 ### Next.js navigation
 
@@ -382,82 +356,66 @@ Additionally, the [`router` object](https://nextjs.org/docs/app/api-reference/fu
 
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
-```ts title=".storybook/preview.js|ts"
-import type { Preview } from '@storybook/nextjs-vite';
-
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from '@storybook/nextjs-vite/navigation.mock';
-
-const preview: Preview = {
-  parameters: {
-    nextjs: {
-      // 👇 Override the default navigation properties
-      navigation: {
-        pathname: '/app/',
-      },
-    },
-  },
-  async beforeEach() {
-    // 👇 Manipulate the default navigation method mocks
-    getRouter().push.mockImplementation(() => {
-      /* ... */
-    });
-  },
-};
-```
+<CodeSnippets path="nextjs-navigation-override-in-preview.md" />
 
 ### Next.js Head
 
 [`next/head`](https://nextjs.org/docs/pages/api-reference/components/head) is supported out of the box. You can use it in your stories like you would in your Next.js application. Please keep in mind, that the Head `children` are placed into the head element of the iframe that Storybook uses to render your stories.
 
-### Styling
 
-#### Sass/Scss
+## Next.js styling
 
-[Global Sass/Scss stylesheets](https://nextjs.org/docs/pages/building-your-application/styling/sass) are supported without any additional configuration as well. Just import them into [`.storybook/preview.js|ts`](../../configure/index.mdx#configure-story-rendering)
+### Sass/Scss
 
-```js title=".storybook/preview.js|ts"
-import '../styles/globals.scss';
-```
+[Global Sass/SCSS stylesheets](https://nextjs.org/docs/pages/building-your-application/styling/sass) are also supported without any additional configuration. Just import them into [the preview config file](../../configure/index.mdx#configure-story-rendering).
 
-This will automatically include any of your [custom Sass configurations](https://nextjs.org/docs/pages/building-your-application/styling/sass#customizing-sass-options) in your `next.config.js` file.
+{/* prettier-ignore-start */}
 
-```js title="next.config.js"
-import * as path from 'path';
+<CodeSnippets path="nextjs-styling-sass-preview.md" />
 
-export default {
-  // Any options here are included in Sass compilation for your stories
-  sassOptions: {
-    includePaths: [path.join(process.cwd(), 'styles')],
-  },
-};
-```
+{/* prettier-ignore-end */}
 
-#### CSS/Sass/Scss Modules
+This will automatically include any of your [custom Sass configurations](https://nextjs.org/docs/pages/building-your-application/styling/sass#customizing-sass-options) in your Next.js config file.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="nextjs-styling-sass-config.md" />
+
+{/* prettier-ignore-end */}
+
+### CSS/Sass/Scss Modules
 
 [CSS modules](https://nextjs.org/docs/pages/building-your-application/styling/css-modules) work as expected.
 
-```jsx title="src/components/Button.jsx"
-// This import will work in Storybook
-import styles from './Button.module.css';
-// Sass/Scss is also supported
-// import styles from './Button.module.scss'
-// import styles from './Button.module.sass'
+{/* prettier-ignore-start */}
 
-export function Button() {
-  return (
-    <button type="button" className={styles.error}>
-      Destroy
-    </button>
-  );
-}
-```
+<CodeSnippets path="nextjs-styling-css-modules.md" />
 
-#### PostCSS
+{/* prettier-ignore-end */}
+
+### Styled JSX
+
+The built-in CSS-in-JS solution for Next.js is [styled-jsx](https://nextjs.org/docs/pages/building-your-application/styling/css-in-js), and this framework supports that out of the box, too, with zero config.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="nextjs-styling-styled-jsx-component.md" />
+
+{/* prettier-ignore-end */}
+
+### Tailwind
+
+Tailwind in Next.js [is supported via PostCSS](https://nextjs.org/docs/app/getting-started/css#tailwind-css). Storybook will automatically handle the PostCSS config for you, including any custom PostCSS configuration, so that you can import your global CSS directly into [the preview config file](../../configure/index.mdx#configure-story-rendering):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="nextjs-styling-tailwind.md" />
+
+{/* prettier-ignore-end */}
+
+### PostCSS
 
 Next.js lets you [customize PostCSS config](https://nextjs.org/docs/pages/building-your-application/configuring/post-css). Thus this framework will automatically handle your PostCSS config for you.
-
-This allows for cool things like zero-config Tailwind! (See [Next.js' example](https://github.com/vercel/next.js/tree/canary/packages/create-next-app/templates/default-tw))
 
 ### Imports
 #### Absolute imports
@@ -638,7 +596,7 @@ To enable this set the `experimentalRSC` feature flag in your `.storybook/main.j
 
 Setting this flag automatically wraps your story in a [Suspense](https://react.dev/reference/react/Suspense) wrapper, which is able to render asynchronous components in NextJS's version of React.
 
-If this wrapper causes problems in any of your existing stories, you can selectively disable it using the `react.rsc` [parameter](https://storybook.js.org/docs/writing-stories/parameters) at the global/component/story level:
+If this wrapper causes problems in any of your existing stories, you can selectively disable it using the `react.rsc` [parameter](../../writing-stories/parameters.mdx) at the global/component/story level:
 
 {/* prettier-ignore-start */}
 
@@ -653,7 +611,6 @@ If your server components access data via the network, we recommend using the [M
 In the future we will provide better mocking support in Storybook and support for [Server Actions](https://nextjs.org/docs/app/api-reference/functions/server-actions).
 
 ## FAQ
-
 
 ### How do I migrate from the `nextjs` (Webpack 5) addon?
 
@@ -673,7 +630,7 @@ This automigration tool performs the following actions:
 
 <Callout variant="info">
 
-If your project has custom Webpack configurations in `.storybook/main.js|ts` (via `webpackFinal`), you'll need to migrate those to Vite configuration (via `viteFinal`) after running this automigration. See the [Vite builder documentation](../builders/vite.mdx#migrating-from-webpack) for more information.
+If your project has custom Webpack configurations in `.storybook/main.js|ts` (via `webpackFinal`), you'll need to migrate those to Vite configuration (via `viteFinal`) after running this automigration. See the [Vite builder documentation](../../builders/vite.mdx#migrating-from-webpack) for more information.
 
 </Callout>
 
@@ -710,8 +667,6 @@ Finally, if you were using Storybook plugins to integrate with Next.js, those ar
 <CodeSnippets path="nextjs-remove-addons.md" />
 
 {/* prettier-ignore-end */}
-
-
 
 ### Stories for pages/components which fetch data
 
@@ -868,22 +823,7 @@ This module exports mocked implementations of the `next/router` module's exports
 
 You can pass an options object for additional configuration if needed:
 
-```js title=".storybook/main.js"
-import * as path from 'path';
-
-export default {
-  // ...
-  framework: {
-    name: '@storybook/nextjs-vite',
-    options: {
-      image: {
-        loading: 'eager',
-      },
-      nextConfigPath: path.resolve(process.cwd(), 'next.config.js'),
-    },
-  },
-};
-```
+<CodeSnippets path="nextjs-framework-options-next-config-path.md" />
 
 The available options are:
 

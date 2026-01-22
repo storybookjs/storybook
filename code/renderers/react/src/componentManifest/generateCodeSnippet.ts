@@ -222,13 +222,15 @@ export function getCodeSnippet(
   const name = t.jsxIdentifier(componentName);
   const openingElAttrs = invalidSpread ? [...injectedAttrs, invalidSpread] : injectedAttrs;
 
+  const children = toJsxChildren(merged.children);
+  const selfClosing = children.length === 0;
   const arrow = t.arrowFunctionExpression(
     [],
     t.jsxElement(
-      t.jsxOpeningElement(name, openingElAttrs, false),
-      t.jsxClosingElement(name),
-      toJsxChildren(merged.children),
-      false
+      t.jsxOpeningElement(name, openingElAttrs, selfClosing),
+      selfClosing ? null : t.jsxClosingElement(name),
+      children,
+      selfClosing
     )
   );
 

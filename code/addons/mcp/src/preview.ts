@@ -8,13 +8,13 @@
  * which is set by the MCP Apps preview.html wrapper.
  */
 
-const MCP_APP_PARAM = 'mcp-app';
+import { MCP_APP_SIZE_CHANGED_EVENT } from './constants';
+import { MCP_APP_PARAM } from './constants';
 
 // Only run if we're in the special MCP App iframe context
 const isMcpApp = new URLSearchParams(window.location.search).has(MCP_APP_PARAM);
 
 if (isMcpApp) {
-	const STORYBOOK_MCP_SIZE_CHANGED = 'storybook-mcp:size-changed';
 	const SIZE_CHANGE_THRESHOLD = 2; // Only report changes > 2px to avoid oscillation
 
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -30,12 +30,9 @@ if (isMcpApp) {
 		}
 
 		lastSentHeight = height;
-		console.log(
-			`[MCP App] Reporting size change from previewAnnotation: ${height}px`,
-		);
 		window.parent.postMessage(
 			{
-				type: STORYBOOK_MCP_SIZE_CHANGED,
+				type: MCP_APP_SIZE_CHANGED_EVENT,
 				height,
 			},
 			'*',

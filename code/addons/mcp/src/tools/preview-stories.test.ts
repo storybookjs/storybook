@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import {
-	addGetStoryUrlsTool,
+	addPreviewStoriesTool,
 	PREVIEW_STORIES_TOOL_NAME,
-} from './get-story-urls.ts';
+} from './preview-stories.ts';
 import type { AddonContext } from '../types.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
 import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
@@ -13,7 +13,7 @@ vi.mock('storybook/internal/csf', () => ({
 	storyNameFromExport: (exportName: string) => exportName,
 }));
 
-describe('getStoryUrlsTool', () => {
+describe('previewStoriesTool', () => {
 	let server: McpServer<any, AddonContext>;
 	let fetchStoryIndexSpy: any;
 	const testContext: AddonContext = {
@@ -55,7 +55,7 @@ describe('getStoryUrlsTool', () => {
 			},
 		);
 
-		await addGetStoryUrlsTool(server);
+		await addPreviewStoriesTool(server);
 
 		// Mock fetchStoryIndex to return the fixture
 		fetchStoryIndexSpy = vi.spyOn(fetchStoryIndex, 'fetchStoryIndex');
@@ -274,7 +274,7 @@ describe('getStoryUrlsTool', () => {
 		expect(telemetry).toHaveBeenCalledWith(
 			'addon-mcp',
 			expect.objectContaining({
-				event: 'tool:getStoryUrls',
+				event: 'tool:previewStories',
 				mcpSessionId: 'test-session',
 				toolset: 'dev',
 				inputStoryCount: 1,

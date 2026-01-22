@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<style></style>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			html[data-theme='light'] {
+				color-scheme: light;
+			}
+			html[data-theme='dark'] {
+				color-scheme: dark;
+			}
+			html,
+			body {
+				width: 100%;
+				margin: 0;
+				padding: 0;
+				background-color: var(--color-background-secondary);
+			}
+			body {
+				display: flex;
+				flex-direction: column;
+				gap: 1rem;
+			}
+			:root {
+				/*
+				These are fallback values, if the MCP client doesn't set them.
+				See https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/draft/apps.mdx#theming
+				*/
+				--color-text-primary: light-dark(black, white);
+				--color-border-primary: light-dark(#ccc, #444);
+				--color-background-secondary: light-dark(#f9f9f9, #1e1e1e);
+				--font-sans:
+					-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Oxygen-Sans',
+					Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+				--font-heading-xs-size: 1rem;
+				--font-heading-xs-line-height: 1.25;
+				--border-width-regular: 1px;
+			}
+			.story-heading {
+				font-family: var(--font-sans);
+				font-size: var(--font-heading-xs-size);
+				line-height: var(--font-heading-xs-line-height);
+				color: var(--color-text-primary);
+				padding: 0.5rem 0;
+			}
+			.story-iframe {
+				background-color: white;
+				border: var(--border-width-regular) solid var(--color-border-primary);
+			}
+			body:has(> article:only-child) h1 {
+				/* if there is only one story rendered, hide its heading */
+				display: none;
+			}
+		</style>
+		<template id="preview-template">
+			<article>
+				<h1 class="story-heading"></h1>
+				<iframe class="story-iframe"></iframe>
+			</article>
+		</template>
+		<script type="module">
+			<!-- APP_SCRIPT_PLACEHOLDER -->
+		</script>
+	</head>
+	<body></body>
+</html>

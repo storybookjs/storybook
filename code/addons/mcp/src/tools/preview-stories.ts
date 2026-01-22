@@ -1,6 +1,6 @@
 import type { McpServer } from 'tmcp';
 import path from 'node:path';
-import { createUIResource } from '@mcp-ui/server';
+import url from 'node:url';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import * as v from 'valibot';
@@ -9,16 +9,17 @@ import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 import { StoryInput, StoryInputArray } from '../types.ts';
-import previewHtml from './preview.html';
+import appTemplate from './preview-stories/preview-stories-app-template.html';
+import fs from 'node:fs/promises';
 
 export const PREVIEW_STORIES_TOOL_NAME = 'preview-story';
 export const PREVIEW_STORIES_RESOURCE_URI = `ui://${PREVIEW_STORIES_TOOL_NAME}/preview.html`;
 
-const GetStoryUrlsInput = v.object({
+const PreviewStoriesInput = v.object({
 	stories: StoryInputArray,
 });
 
-const GetStoryUrlsOutput = v.object({
+const PreviewStoriesOutput = v.object({
 	stories: v.array(
 		v.union([
 			v.object({
@@ -34,33 +35,31 @@ const GetStoryUrlsOutput = v.object({
 	),
 });
 
-type GetStoryUrlsInput = v.InferOutput<typeof GetStoryUrlsInput>;
-type GetStoryUrlsOutput = v.InferOutput<typeof GetStoryUrlsOutput>;
+type PreviewStoriesInput = v.InferOutput<typeof PreviewStoriesInput>;
+export type PreviewStoriesOutput = v.InferOutput<typeof PreviewStoriesOutput>;
 
-export async function addGetStoryUrlsTool(
+export async function addPreviewStoriesTool(
 	server: McpServer<any, AddonContext>,
 ) {
-	// // console.log(previewHtml);
-	// const storyPreviewResource = createUIResource({
-	// 	uri: GET_STORY_URLS_RESOURCE_URI,
-	// 	encoding: 'text',
-	// 	content: {
-	// 		type: 'rawHtml',
-	// 		htmlString: previewHtml,
-	// 	},
-	// 	uiMetadata: {
-	// 		'preferred-frame-size': ['100%', '1200px'],
-	// 	},
-	// 	adapters: {
-	// 		mcpApps: { enabled: true },
-	// 	},
-	// });
+	const previewStoryAppScript = await fs.readFile(
+		url.fileURLToPath(
+			import.meta.resolve(
+				'@storybook/addon-mcp/internal/preview-stories-app-script',
+			),
+		),
+		'utf-8',
+	);
 
+	const appHtml = appTemplate.replace(
+		'<!-- APP_SCRIPT_PLACEHOLDER -->',
+		previewStoryAppScript,
+	);
 	server.resource(
 		{
 			name: PREVIEW_STORIES_RESOURCE_URI,
 			description: 'App Resource for the Get Story tool',
 			uri: PREVIEW_STORIES_RESOURCE_URI,
+			//@ts-expect-error tmcp types doesn't know this is valid
 			mimeType: 'text/html;profile=mcp-app',
 		},
 		() => {
@@ -70,7 +69,7 @@ export async function addGetStoryUrlsTool(
 					{
 						uri: PREVIEW_STORIES_RESOURCE_URI,
 						mimeType: 'text/html;profile=mcp-app',
-						text: previewHtml,
+						text: appHtml,
 						_meta: {
 							ui: {
 								prefersBorder: false,
@@ -94,8 +93,8 @@ export async function addGetStoryUrlsTool(
 			name: PREVIEW_STORIES_TOOL_NAME,
 			title: 'Preview stories',
 			description: `Use this tool to preview one or more stories, rendering them as an MCP App using the UI Resource or returning the raw URL for users to visit.`,
-			schema: GetStoryUrlsInput,
-			outputSchema: GetStoryUrlsOutput,
+			schema: PreviewStoriesInput,
+			outputSchema: PreviewStoriesOutput,
 			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
 			_meta: { ui: { resourceUri: PREVIEW_STORIES_RESOURCE_URI } },
 		},
@@ -110,7 +109,7 @@ export async function addGetStoryUrlsTool(
 				const index = await fetchStoryIndex(origin);
 				const entriesList = Object.values(index.entries);
 
-				const structuredResult: GetStoryUrlsOutput['stories'] = [];
+				const structuredResult: PreviewStoriesOutput['stories'] = [];
 				const textResult: string[] = [];
 
 				for (const inputParams of input.stories) {
@@ -159,7 +158,7 @@ export async function addGetStoryUrlsTool(
 
 				if (!disableTelemetry) {
 					await collectTelemetry({
-						event: 'tool:getStoryUrls',
+						event: 'tool:previewStories',
 						server,
 						toolset: 'dev',
 						inputStoryCount: input.stories.length,

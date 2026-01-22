@@ -17,6 +17,7 @@
 	"exports": {
 		"./preset": "./dist/preset.js",
 		"./preview": "./dist/preview.js",
+		"./internal/preview-stories-app-script": "./dist/preview-stories-app-script.js",
 		"./package.json": "./package.json"
 	},
 	"files": [

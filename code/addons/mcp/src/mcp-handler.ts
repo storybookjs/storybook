@@ -2,7 +2,7 @@ import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
-import { addGetStoryUrlsTool } from './tools/get-story-urls.ts';
+import { addPreviewStoriesTool } from './tools/preview-stories.ts';
 import { addGetUIBuildingInstructionsTool } from './tools/get-ui-building-instructions.ts';
 import {
 	addListAllDocumentationTool,
@@ -49,7 +49,7 @@ const initializeMCPServer = async (options: Options) => {
 	}
 
 	// Register dev addon tools
-	await addGetStoryUrlsTool(server);
+	await addPreviewStoriesTool(server);
 	await addGetUIBuildingInstructionsTool(server);
 
 	// Only register the additional tools if the component manifest feature is enabled

@@ -73,9 +73,3 @@ export type StoryInput = v.InferOutput<typeof StoryInput>;
  */
 export const StoryInputArray = v.array(StoryInput);
 export type StoryInputArray = v.InferOutput<typeof StoryInputArray>;
-
-/**
- * Schema for the output URL array.
- */
-export const StoryUrlArray = v.array(v.string());
-export type StoryUrlArray = v.InferOutput<typeof StoryUrlArray>;

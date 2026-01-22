@@ -1,5 +1,5 @@
 import type { McpServer } from 'tmcp';
-import { PREVIEW_STORIES_TOOL_NAME } from './get-story-urls.ts';
+import { PREVIEW_STORIES_TOOL_NAME } from './preview-stories.ts';
 import { collectTelemetry } from '../telemetry.ts';
 import uiInstructionsTemplate from '../ui-building-instructions.md';
 import { errorToMCPContent } from '../utils/errors.ts';

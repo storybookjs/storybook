@@ -5,8 +5,7 @@
  */
 const LATEST_PROTOCOL_VERSION = '2025-11-21';
 
-import { MCP_APP_SIZE_CHANGED_EVENT } from '../../constants.ts';
-import { MCP_APP_PARAM } from '../../constants.ts';
+import { MCP_APP_SIZE_CHANGED_EVENT, MCP_APP_PARAM } from '../../constants.ts';
 import type { PreviewStoriesOutput } from '../preview-stories.ts';
 import pkg from '../../../package.json' with { type: 'json' };
 
@@ -104,11 +103,6 @@ function sendHostRequest(
 	window.parent.postMessage({ jsonrpc: '2.0', id, method, params }, '*');
 
 	window.addEventListener('message', function listener(event: MessageEvent) {
-		const data = event.data as {
-			id?: number;
-			result?: McpUiInitializeResult;
-			error?: unknown;
-		};
 		if (event.data?.id !== id) {
 			return;
 		}

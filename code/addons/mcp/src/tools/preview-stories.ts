@@ -51,13 +51,13 @@ export async function addPreviewStoriesTool(
 	);
 
 	const appHtml = appTemplate.replace(
-		'<!-- APP_SCRIPT_PLACEHOLDER -->',
+		'// APP_SCRIPT_PLACEHOLDER',
 		previewStoryAppScript,
 	);
 	server.resource(
 		{
 			name: PREVIEW_STORIES_RESOURCE_URI,
-			description: 'App Resource for the Get Story tool',
+			description: 'App resource for the Preview Stories tool',
 			uri: PREVIEW_STORIES_RESOURCE_URI,
 			//@ts-expect-error tmcp types doesn't know this is valid
 			mimeType: 'text/html;profile=mcp-app',

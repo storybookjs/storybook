@@ -65,7 +65,6 @@ export async function addGetStoryUrlsTool(
 		},
 		() => {
 			const origin = server.ctx.custom!.origin;
-			console.log({ origin });
 			return {
 				contents: [
 					{
@@ -74,7 +73,7 @@ export async function addGetStoryUrlsTool(
 						text: previewHtml,
 						_meta: {
 							ui: {
-								prefersBorders: true,
+								prefersBorder: false,
 								domain: origin,
 								csp: {
 									connectDomains: [origin],

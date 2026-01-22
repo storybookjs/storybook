@@ -3,7 +3,7 @@ import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
 import { addPreviewStoriesTool } from './tools/preview-stories.ts';
-import { addGetUIBuildingInstructionsTool } from './tools/get-ui-building-instructions.ts';
+import { addGetUIBuildingInstructionsTool } from './tools/get-storybook-story-instructions.ts';
 import {
 	addListAllDocumentationTool,
 	addGetDocumentationTool,

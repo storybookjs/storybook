@@ -23,6 +23,7 @@ module.exports = {
     'jsx-a11y/no-autofocus': 'warn',
     'import-x/extensions': 'off', // for mjs, we sometimes need extensions
     'jsx-a11y/control-has-associated-label': 'off',
+    'local-rules/label-in-name': 'warn',
     '@typescript-eslint/dot-notation': [
       'error',
       {

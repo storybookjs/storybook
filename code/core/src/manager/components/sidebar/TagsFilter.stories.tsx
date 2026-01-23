@@ -8,6 +8,8 @@ import type {
   StoryIndexEntry,
 } from 'storybook/internal/types';
 
+import { global } from '@storybook/global';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { deepMerge } from '@vitest/utils';
@@ -29,7 +31,7 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
 }> {
   api: ReturnType<typeof initLayout>['api'];
   store: ReturnType<typeof createTestingStore>;
-  channel: Channel;
+  channel: API_Provider<API>['channel'];
   mounted: boolean;
 
   constructor(props: {
@@ -50,7 +52,7 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
     });
 
     // Mock channel and provider.
-    this.channel = new Channel({});
+    this.channel = new Channel({}) satisfies API_Provider<API>['channel'];
     const provider: API_Provider<API> = {
       getConfig: () => ({}),
       handleAPI: () => {},
@@ -87,7 +89,6 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
     }
 
     this.api = api as API;
-    this.state = this.store.getState();
   }
 
   componentDidMount() {
@@ -177,11 +178,6 @@ export const ClosedWithSelection: Story = {
     },
   },
 };
-
-// We can't properly test resetting to default, because resetting goes through
-// global.TAGS_OPTIONS, which I didn't manage to mock. Setting defaultIncludedTagFilters
-// still causes the API resetTagFilters function to reset based on the global rather than
-// the initial state mocked in the story.
 
 export const Clear = {
   ...ClosedWithSelection,

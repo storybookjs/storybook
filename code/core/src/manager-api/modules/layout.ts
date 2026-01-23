@@ -261,7 +261,7 @@ const recomputeFilters = (fullAPI: Parameters<ModuleFn>[0]['fullAPI'], store: St
     return Object.values(
       set.reduce(
         (acc, tag) => {
-          if (tag in BUILT_IN_FILTERS) {
+          if (Object.hasOwn(BUILT_IN_FILTERS, tag)) {
             acc['built-in'].push(BUILT_IN_FILTERS[tag as keyof typeof BUILT_IN_FILTERS]);
           } else {
             acc.user.push(USER_TAG_FILTER(tag));
@@ -714,7 +714,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ fullAPI, store, provider, sin
     },
 
     getFilterFunction(tag: Tag): FilterFunction | null {
-      if (tag in BUILT_IN_FILTERS) {
+      if (Object.hasOwn(BUILT_IN_FILTERS, tag)) {
         return BUILT_IN_FILTERS[tag as keyof typeof BUILT_IN_FILTERS];
       } else {
         return USER_TAG_FILTER(tag);

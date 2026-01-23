@@ -12,6 +12,7 @@ const config = defineMain({
 	],
 	addons: [
 		'@storybook/addon-docs',
+		'@storybook/addon-themes',
 		{
 			name: '@storybook/addon-mcp',
 			options: {

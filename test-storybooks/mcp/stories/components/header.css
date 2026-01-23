@@ -1,15 +1,23 @@
 .wrapper {
 	font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-	border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+	border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.1));
 	padding: 15px 20px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	background-color: var(--color-bg, #ffffff);
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease;
 }
 
 svg {
 	display: inline-block;
 	vertical-align: top;
+}
+
+svg g path:first-child {
+	fill: var(--color-logo-bg, #ffffff);
 }
 
 h1 {
@@ -19,6 +27,7 @@ h1 {
 	margin: 6px 0 6px 10px;
 	display: inline-block;
 	vertical-align: top;
+	color: var(--color-text, #333);
 }
 
 button + button {
@@ -26,7 +35,7 @@ button + button {
 }
 
 .welcome {
-	color: #333;
+	color: var(--color-text, #333);
 	font-size: 14px;
 	margin-right: 10px;
 }

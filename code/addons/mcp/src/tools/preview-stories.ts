@@ -5,6 +5,7 @@ import { storyNameFromExport } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import * as v from 'valibot';
 import { collectTelemetry } from '../telemetry.ts';
+import { buildArgsParam } from '../utils/build-args-param.ts';
 import { fetchStoryIndex } from '../utils/fetch-story-index.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
@@ -135,7 +136,20 @@ export async function addPreviewStoriesTool(
 
 					if (foundStory) {
 						logger.debug(`Found story ID: ${foundStory.id}`);
-						const previewUrl = `${origin}/?path=/story/${foundStory.id}`;
+						let previewUrl = `${origin}/?path=/story/${foundStory.id}`;
+
+						// Add props as args query param if provided
+						const argsParam = buildArgsParam(inputParams.props ?? {});
+						if (argsParam) {
+							previewUrl += `&args=${argsParam}`;
+						}
+
+						// Add globals query param if provided
+						const globalsParam = buildArgsParam(inputParams.globals ?? {});
+						if (globalsParam) {
+							previewUrl += `&globals=${globalsParam}`;
+						}
+
 						structuredResult.push({
 							title: foundStory.title,
 							name: foundStory.name,

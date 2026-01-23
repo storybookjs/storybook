@@ -38,6 +38,7 @@
 		"@storybook/mcp": "workspace:*",
 		"@tmcp/adapter-valibot": "catalog:",
 		"@tmcp/transport-http": "catalog:",
+		"picoquery": "^2.5.0",
 		"tmcp": "catalog:",
 		"valibot": "catalog:"
 	},

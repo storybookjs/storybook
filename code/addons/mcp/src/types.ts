@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import type { Options } from 'storybook/internal/types';
 import type { StorybookContext } from '@storybook/mcp';
+import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tools/get-storybook-story-instructions';
 
 export const AddonOptions = v.object({
 	toolsets: v.optional(
@@ -59,12 +60,37 @@ export const StoryInput = v.object({
 	 * Optional explicit story name if different from the export name.
 	 * This is used when a story has a custom name defined.
 	 */
-	explicitStoryName: v.optional(v.string()),
+	explicitStoryName: v.pipe(
+		v.optional(v.string()),
+		v.description(
+			`If the story has an explicit name set via the "name" propoerty, that is different from the export name, provide it here.
+Otherwise don't set this.`,
+		),
+	),
 
 	/**
 	 * Absolute file path to the story file.
 	 */
 	absoluteStoryPath: v.string(),
+
+	/**
+	 * Optional props to pass to the story.
+	 */
+	props: v.pipe(
+		v.optional(v.record(v.string(), v.any())),
+		v.description(`Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+but you want to customize some args or other props.
+You can look up the component's documentation using the ${GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME} tool to see what props are available.`),
+	),
+
+	/**
+	 * Optional globals to set for the story.
+	 */
+	globals: v.pipe(
+		v.optional(v.record(v.string(), v.any())),
+		v.description(`Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).`),
+	),
 });
 export type StoryInput = v.InferOutput<typeof StoryInput>;
 

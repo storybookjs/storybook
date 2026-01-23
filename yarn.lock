@@ -2834,6 +2834,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@github/mini-throttle@npm:^2.1.1":
+  version: 2.1.1
+  resolution: "@github/mini-throttle@npm:2.1.1"
+  checksum: 10c0/a2861c204fb9342084d9710c98c5808e33bc796ac55b6b9796d085605e97e207ebb81fd60f50a9cf63f879df13a23eea504ce6c7185fd378f474a12709f2e59f
+  languageName: node
+  linkType: hard
+
+"@github/relative-time-element@npm:^4.5.0":
+  version: 4.5.1
+  resolution: "@github/relative-time-element@npm:4.5.1"
+  checksum: 10c0/b486465184a9486d76846b3decf23dbd83b7afdc6c90e054ce45bb30c6f1da3f0811a85c3d61857cff455865d28338f0d8aa67098c04889be5f9a143381ae398
+  languageName: node
+  linkType: hard
+
+"@github/tab-container-element@npm:^4.8.2":
+  version: 4.8.2
+  resolution: "@github/tab-container-element@npm:4.8.2"
+  checksum: 10c0/d550460ea7260d5753734a95dc0442bfa209531e22a6cafdb58b32ac22d5e2526534152cde33d155f2e06ff2517a657c0df65a1e9e4a378c9c2fbd4feff5027a
+  languageName: node
+  linkType: hard
+
 "@glimmer/vm-babel-plugins@npm:0.80.3":
   version: 0.80.3
   resolution: "@glimmer/vm-babel-plugins@npm:0.80.3"
@@ -3940,7 +3961,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lit-labs/react@npm:^1.0.2":
+"@lit-labs/react@npm:1.2.1, @lit-labs/react@npm:^1.0.2":
   version: 1.2.1
   resolution: "@lit-labs/react@npm:1.2.1"
   checksum: 10c0/c92364101348400a06c3eb45a6384ca7d47c32765fdcad892827b360d0bad6cef7916f9a17744f2f471a5da3d7d73750767b885fc1521cd5e5e724badb71f014
@@ -3951,6 +3972,13 @@ __metadata:
   version: 1.4.0
   resolution: "@lit-labs/ssr-dom-shim@npm:1.4.0"
   checksum: 10c0/eb8b4c6ed83db48e2f2c8c038f88e0ac302214918e5c1209458cb82a35ce27ce586100c5692885b2c5520f6941b2c3512f26c4d7b7dd48f13f17f1668553395a
+  languageName: node
+  linkType: hard
+
+"@lit-labs/ssr-dom-shim@npm:^1.2.0":
+  version: 1.5.1
+  resolution: "@lit-labs/ssr-dom-shim@npm:1.5.1"
+  checksum: 10c0/2b10a42db0af33a4db32b3aa34db0f546aaa6794acdfc173499e999b4423102a1c9d15687679c674f07fa799cf740b5f5641c2ca6eee5d4af30c762a1e3b8c4f
   languageName: node
   linkType: hard
 
@@ -5033,6 +5061,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@oddbird/popover-polyfill@npm:^0.5.2":
+  version: 0.5.2
+  resolution: "@oddbird/popover-polyfill@npm:0.5.2"
+  checksum: 10c0/d9ed7ae0cb760f69ddf64edb0419a77ae74a3dee40dec5c991b84e7c679cdb92760616dd2de46c088fa53072eb4bf7f5d4db5e5d618d9e3e3c32e63a6625c210
+  languageName: node
+  linkType: hard
+
 "@one-ini/wasm@npm:0.1.1":
   version: 0.1.1
   resolution: "@one-ini/wasm@npm:0.1.1"
@@ -5271,6 +5306,79 @@ __metadata:
   version: 2.11.8
   resolution: "@popperjs/core@npm:2.11.8"
   checksum: 10c0/4681e682abc006d25eb380d0cf3efc7557043f53b6aea7a5057d0d1e7df849a00e281cd8ea79c902a35a414d7919621fc2ba293ecec05f413598e0b23d5a1e63
+  languageName: node
+  linkType: hard
+
+"@primer/behaviors@npm:^1.9.1":
+  version: 1.10.0
+  resolution: "@primer/behaviors@npm:1.10.0"
+  checksum: 10c0/34514ea1a966994a489e45ef48d1e8f70836dddd928d6354e05f0f4e398e6e093f779d58cc0cbb1ce380c1758ec488261dae9fe6a397d80dfa9339ab72234dd5
+  languageName: node
+  linkType: hard
+
+"@primer/live-region-element@npm:^0.7.1":
+  version: 0.7.2
+  resolution: "@primer/live-region-element@npm:0.7.2"
+  dependencies:
+    "@lit-labs/ssr-dom-shim": "npm:^1.2.0"
+  checksum: 10c0/e7143a62be00ad731ffe7ea832400b3e2b4b85e14ce06c48c00eaea99c894c4ec57af37e9f063499c3f9a8df31db086147b0741a41cae4690a7975acf53f922d
+  languageName: node
+  linkType: hard
+
+"@primer/octicons-react@npm:^19.21.0":
+  version: 19.21.2
+  resolution: "@primer/octicons-react@npm:19.21.2"
+  peerDependencies:
+    react: ">=16.3"
+  checksum: 10c0/5b80e40336ddff3144b5d9f653aa16a82cfbe026bed66de827a92d207bf46646c93871096ee052e794ae9baa9348f84801b69b2b9a2e5fcbbce4e80c0267cc59
+  languageName: node
+  linkType: hard
+
+"@primer/primitives@npm:10.x || 11.x":
+  version: 11.3.2
+  resolution: "@primer/primitives@npm:11.3.2"
+  checksum: 10c0/0eafdda3c5128caab0cfb2820a31ed3a8d26212be34003857b4491aed33173e8b17ed4bb64829c3fe0a56702dce3932f2785cfe116ccb77fb441e611aa276d17
+  languageName: node
+  linkType: hard
+
+"@primer/react@npm:^38.7.1":
+  version: 38.7.1
+  resolution: "@primer/react@npm:38.7.1"
+  dependencies:
+    "@github/mini-throttle": "npm:^2.1.1"
+    "@github/relative-time-element": "npm:^4.5.0"
+    "@github/tab-container-element": "npm:^4.8.2"
+    "@lit-labs/react": "npm:1.2.1"
+    "@oddbird/popover-polyfill": "npm:^0.5.2"
+    "@primer/behaviors": "npm:^1.9.1"
+    "@primer/live-region-element": "npm:^0.7.1"
+    "@primer/octicons-react": "npm:^19.21.0"
+    "@primer/primitives": "npm:10.x || 11.x"
+    clsx: "npm:^2.1.1"
+    color2k: "npm:^2.0.3"
+    deepmerge: "npm:^4.3.1"
+    focus-visible: "npm:^5.2.1"
+    history: "npm:^5.0.0"
+    hsluv: "npm:1.0.1"
+    lodash.isempty: "npm:^4.4.0"
+    lodash.isobject: "npm:^3.0.2"
+    react-compiler-runtime: "npm:^1.0.0"
+    react-intersection-observer: "npm:^9.16.0"
+  peerDependencies:
+    "@types/react": 18.x || 19.x
+    "@types/react-dom": 18.x || 19.x
+    "@types/react-is": 18.x || 19.x
+    react: 18.x || 19.x
+    react-dom: 18.x || 19.x
+    react-is: 18.x || 19.x
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    "@types/react-dom":
+      optional: true
+    "@types/react-is":
+      optional: true
+  checksum: 10c0/80804d033001395b20420afe50c97f30f97685e96e34f3a087f6c825b9acf9d0fe766e9969a33e0fd2ff2a9122bd35ff8c04b744359d88744a6af352cbe267fe
   languageName: node
   linkType: hard
 
@@ -8170,6 +8278,7 @@ __metadata:
   dependencies:
     "@chromatic-com/storybook": "npm:^4.1.2"
     "@playwright/test": "npm:1.52.0"
+    "@primer/react": "npm:^38.7.1"
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/addon-designs": "npm:^11.0.1"
     "@storybook/addon-docs": "workspace:*"
@@ -14131,6 +14240,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"color2k@npm:^2.0.3":
+  version: 2.0.3
+  resolution: "color2k@npm:2.0.3"
+  checksum: 10c0/e7c13d212c9d1abb1690e378bbc0a6fb1751e4b02e9a73ba3b2ade9d54da673834597d342791d577d1ce400ec486c7f92c5098f9fa85cd113bcfde57420a2bb9
+  languageName: node
+  linkType: hard
+
 "colorette@npm:2.0.20, colorette@npm:^2.0.10, colorette@npm:^2.0.20":
   version: 2.0.20
   resolution: "colorette@npm:2.0.20"
@@ -18048,6 +18164,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"focus-visible@npm:^5.2.1":
+  version: 5.2.1
+  resolution: "focus-visible@npm:5.2.1"
+  checksum: 10c0/1c0e4e8b22be8684a664acc340efd6a41aafb560ce09979186a1c934de321ce8d6a3d7175c946aab1c87409b0e10f623274d7ce7d42ff16a0e4dc862fa151623
+  languageName: node
+  linkType: hard
+
 "follow-redirects@npm:^1.0.0, follow-redirects@npm:^1.15.6":
   version: 1.15.6
   resolution: "follow-redirects@npm:1.15.6"
@@ -19402,6 +19525,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"history@npm:^5.0.0":
+  version: 5.3.0
+  resolution: "history@npm:5.3.0"
+  dependencies:
+    "@babel/runtime": "npm:^7.7.6"
+  checksum: 10c0/812ec839386222d6437bd78d9f05db32e47d105ada0ad8834b32626919dd2fee7a10001bc489510f93a8069d02f118214bd8d42a82f7cf9daf8e84fbcbbb2016
+  languageName: node
+  linkType: hard
+
 "hmac-drbg@npm:^1.0.1":
   version: 1.0.1
   resolution: "hmac-drbg@npm:1.0.1"
@@ -19438,6 +19570,13 @@ __metadata:
     readable-stream: "npm:^2.0.1"
     wbuf: "npm:^1.1.0"
   checksum: 10c0/55b9e824430bab82a19d079cb6e33042d7d0640325678c9917fcc020c61d8a08ca671b6c942c7f0aae9bb6e4b67ffb50734a72f9e21d66407c3138c1983b70f0
+  languageName: node
+  linkType: hard
+
+"hsluv@npm:1.0.1":
+  version: 1.0.1
+  resolution: "hsluv@npm:1.0.1"
+  checksum: 10c0/2c4714266950f8c1d114b1a766ac2c18af4019c4f8256a8b0f5ad14182bf2548b9ceb34e7e1037f679144e20a860b081c0aa2ac2927f781e8ca739cb8288e4e4
   languageName: node
   linkType: hard
 
@@ -21993,6 +22132,13 @@ __metadata:
   version: 3.0.3
   resolution: "lodash.isboolean@npm:3.0.3"
   checksum: 10c0/0aac604c1ef7e72f9a6b798e5b676606042401dd58e49f051df3cc1e3adb497b3d7695635a5cbec4ae5f66456b951fdabe7d6b387055f13267cde521f10ec7f7
+  languageName: node
+  linkType: hard
+
+"lodash.isempty@npm:^4.4.0":
+  version: 4.4.0
+  resolution: "lodash.isempty@npm:4.4.0"
+  checksum: 10c0/6c7eaa0802398736809b9e8aed8b8ac1abca9be71788fd719ba9d7f5b4c23e8dc63b7f049df4131713dda30a2fdedc2f655268e9deb8cd5a985dfc934afca194
   languageName: node
   linkType: hard
 
@@ -26498,6 +26644,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-compiler-runtime@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "react-compiler-runtime@npm:1.0.0"
+  peerDependencies:
+    react: ^17.0.0 || ^18.0.0 || ^19.0.0 || ^0.0.0-experimental
+  checksum: 10c0/e081192380ae32d18bebaf341071ae8aecf80f4401b188f80e4b77e8d8995bb4c7175b8c3f75e8307019eac2015edf45c7999f788dcfcd99fdbe2ba9a2d465a4
+  languageName: node
+  linkType: hard
+
 "react-docgen-typescript@npm:^2.2.2":
   version: 2.4.0
   resolution: "react-docgen-typescript@npm:2.4.0"
@@ -26644,6 +26799,19 @@ __metadata:
   peerDependencies:
     react: ^16.8.4 || ^17.0.0 || ^18.0.0
   checksum: 10c0/8f9b23c21b4d95722e28c9455c2bf00fd9437347714382594461f98e5b9954d60864d0f4e74e881639b065e752a97ba52a65e39930c234072e5bff291bb02b5e
+  languageName: node
+  linkType: hard
+
+"react-intersection-observer@npm:^9.16.0":
+  version: 9.16.0
+  resolution: "react-intersection-observer@npm:9.16.0"
+  peerDependencies:
+    react: ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    react-dom:
+      optional: true
+  checksum: 10c0/2aee5103fb460c6e5a3ab5a4fdc8c69a5215e23699a12d7857f25ba765fed48eacbed94ca835d79edf00c0edcc9c4fbb5bb057a373402d0551718546810e0e48
   languageName: node
   linkType: hard
 

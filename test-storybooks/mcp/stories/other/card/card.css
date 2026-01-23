@@ -1,18 +1,22 @@
 .storybook-card {
 	font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-	border: 1px solid #e1e5e9;
+	border: 1px solid var(--color-border-strong, #e1e5e9);
 	border-radius: 8px;
 	padding: 16px;
 	max-width: 300px;
-	background-color: white;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	background-color: var(--color-bg, white);
+	box-shadow: 0 2px 4px var(--color-card-shadow, rgba(0, 0, 0, 0.1));
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		box-shadow 0.2s ease;
 }
 
 .storybook-card__title {
 	margin: 0 0 12px 0;
 	font-size: 18px;
 	font-weight: 700;
-	color: #333;
+	color: var(--color-text, #333);
 }
 
 .storybook-card__image {
@@ -27,7 +31,7 @@
 	margin: 0 0 16px 0;
 	font-size: 14px;
 	line-height: 1.5;
-	color: #666;
+	color: var(--color-text-secondary, #666);
 }
 
 .storybook-card__button {
@@ -41,10 +45,10 @@
 	display: inline-block;
 	line-height: 1;
 	color: white;
-	background-color: #1ea7fd;
+	background-color: var(--color-primary, #1ea7fd);
 	transition: background-color 0.2s ease;
 }
 
 .storybook-card__button:hover {
-	background-color: #1890d4;
+	background-color: var(--color-primary-hover, #1890d4);
 }

@@ -6,7 +6,7 @@ import {
 	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
 } from './get-storybook-story-instructions.ts';
 import type { AddonContext } from '../types.ts';
-import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls.ts';
+import { PREVIEW_STORIES_TOOL_NAME } from './preview-stories.ts';
 
 describe('getUIBuildingInstructionsTool', () => {
 	let server: McpServer<any, AddonContext>;
@@ -80,12 +80,12 @@ describe('getUIBuildingInstructionsTool', () => {
 		// Check that placeholders were replaced
 		expect(instructions).toContain('@storybook/react-vite');
 		expect(instructions).toContain('@storybook/react');
-		expect(instructions).toContain(GET_STORY_URLS_TOOL_NAME);
+		expect(instructions).toContain(PREVIEW_STORIES_TOOL_NAME);
 
 		// Check that no placeholders remain
 		expect(instructions).not.toContain('{{FRAMEWORK}}');
 		expect(instructions).not.toContain('{{RENDERER}}');
-		expect(instructions).not.toContain('{{GET_STORY_URLS_TOOL_NAME}}');
+		expect(instructions).not.toContain('{{PREVIEW_STORIES_TOOL_NAME}}');
 	});
 
 	it('should handle Vue framework', async () => {

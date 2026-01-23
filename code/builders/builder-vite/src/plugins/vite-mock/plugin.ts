@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import {
   babelParser,
   extractMockCalls,
+  findMockRedirect,
   getAutomockCode,
   getRealPath,
   rewriteSbMockImportCalls,
@@ -10,7 +11,6 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import type { CoreConfig } from 'storybook/internal/types';
 
-import { findMockRedirect } from '@vitest/mocker/redirect';
 import { normalize } from 'pathe';
 import type { Plugin, ResolvedConfig } from 'vite';
 

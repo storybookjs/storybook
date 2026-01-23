@@ -43,14 +43,17 @@ export function renderComponentsManifest(
 
   const analyses = entries.map(([, c]) => analyzeComponent(c));
   const docsAnalyses = docsEntries.map(([, d]) => analyzeDoc(d));
+  const attachedDocs = analyses.reduce((sum, a) => sum + a.totalDocs, 0);
+  const attachedDocsWithError = analyses.reduce((sum, a) => sum + a.docsErrors, 0);
+  const unattachedDocsWithError = docsAnalyses.filter((a) => a.hasError).length;
   const totals = {
     components: entries.length,
     componentsWithPropTypeError: analyses.filter((a) => a.hasPropTypeError).length,
     infos: analyses.filter((a) => a.hasWarns).length,
     stories: analyses.reduce((sum, a) => sum + a.totalStories, 0),
     storyErrors: analyses.reduce((sum, a) => sum + a.storyErrors, 0),
-    docs: docsEntries.length,
-    docsWithError: docsAnalyses.filter((a) => a.hasError).length,
+    docs: docsEntries.length + attachedDocs,
+    docsWithError: unattachedDocsWithError + attachedDocsWithError,
   };
 
   // Top filters (clickable), no <b> tags; 1px active ring lives in CSS via :target
@@ -72,11 +75,11 @@ export function renderComponentsManifest(
         ? `<span class="filter-pill ok" aria-disabled="true">${totals.stories} ${plural(totals.stories, 'story', 'stories')} ok</span>`
         : '';
   const docsPill =
-    totals.docsWithError > 0
-      ? `<a class="filter-pill err" data-k="doc-errors" href="#filter-doc-errors">${totals.docsWithError}/${totals.docs} doc ${plural(totals.docsWithError, 'error')}</a>`
-      : totals.docs > 0
-        ? `<span class="filter-pill ok" aria-disabled="true">${totals.docs} ${plural(totals.docs, 'doc')} ok</span>`
-        : '';
+    totals.docs > 0
+      ? totals.docsWithError > 0
+        ? `<a class="filter-pill info" data-k="docs" href="#filter-docs">${totals.docsWithError}/${totals.docs} doc ${plural(totals.docsWithError, 'error')}</a>`
+        : `<a class="filter-pill ok" data-k="docs" href="#filter-docs">${totals.docs} ${plural(totals.docs, 'doc')} ok</a>`
+      : '';
 
   const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`)).join('');
   const docsGrid = docsEntries.map(([key, d], idx) => renderDocCard(key, d, `doc-${idx}`)).join('');
@@ -234,7 +237,9 @@ export function renderComponentsManifest(
       #filter-all:target ~ header .filter-pill[data-k='all'],
       #filter-errors:target ~ header .filter-pill[data-k='errors'],
       #filter-infos:target ~ header .filter-pill[data-k='infos'],
-      #filter-story-errors:target ~ header .filter-pill[data-k='story-errors'] {
+      #filter-story-errors:target ~ header .filter-pill[data-k='story-errors'],
+      #filter-doc-errors:target ~ header .filter-pill[data-k='docs'],
+      #filter-docs:target ~ header .filter-pill[data-k='docs'] {
           box-shadow: 0 0 0 var(--active-ring) currentColor;
           border-color: currentColor;
       }
@@ -243,7 +248,9 @@ export function renderComponentsManifest(
       #filter-all,
       #filter-errors,
       #filter-infos,
-      #filter-story-errors {
+      #filter-story-errors,
+      #filter-doc-errors,
+      #filter-docs {
           display: none;
       }
 
@@ -561,6 +568,15 @@ export function renderComponentsManifest(
           display: none;
       }
 
+      #filter-docs:target ~ main .card:has(> .tg-docs),
+      #filter-docs:target ~ main .card.is-doc {
+          display: block;
+      }
+
+      #filter-docs:target ~ main .card:not(:has(> .tg-docs)):not(.is-doc) {
+          display: none;
+      }
+
       #filter-all:target ~ main .card {
           display: block;
       }
@@ -670,6 +686,7 @@ export function renderComponentsManifest(
 <span id="filter-infos"></span>
 <span id="filter-story-errors"></span>
 <span id="filter-doc-errors"></span>
+<span id="filter-docs"></span>
 <header>
   <div class="wrap">
     <h1>Manifest Debugger</h1>
@@ -790,7 +807,7 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
 
   return `
 <article
-  class="card ${a.hasError ? 'has-doc-error' : 'no-doc-error'}"
+  class="card is-doc ${a.hasError ? 'has-doc-error' : 'no-doc-error'}"
   role="listitem"
   aria-label="${esc(d.name || key)}">
   <div class="head">

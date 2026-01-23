@@ -182,10 +182,25 @@ describe('MCP Endpoint E2E Tests', () => {
 				                "type": "string",
 				              },
 				              "explicitStoryName": {
+				                "description": "If the story has an explicit name set via the "name" propoerty, that is different from the export name, provide it here.
+				Otherwise don't set this.",
 				                "type": "string",
 				              },
 				              "exportName": {
 				                "type": "string",
+				              },
+				              "globals": {
+				                "additionalProperties": {},
+				                "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
+				                "type": "object",
+				              },
+				              "props": {
+				                "additionalProperties": {},
+				                "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				but you want to customize some args or other props.
+				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				                "type": "object",
 				              },
 				            },
 				            "required": [
@@ -239,10 +254,25 @@ describe('MCP Endpoint E2E Tests', () => {
 				                        "type": "string",
 				                      },
 				                      "explicitStoryName": {
+				                        "description": "If the story has an explicit name set via the "name" propoerty, that is different from the export name, provide it here.
+				Otherwise don't set this.",
 				                        "type": "string",
 				                      },
 				                      "exportName": {
 				                        "type": "string",
+				                      },
+				                      "globals": {
+				                        "additionalProperties": {},
+				                        "description": "Optional Storybook globals to set for the story preview. Globals are used for things like theme, locale, viewport, and other cross-cutting concerns.
+				Common globals include 'theme' (e.g., 'dark', 'light'), 'locale' (e.g., 'en', 'fr'), and 'backgrounds' (e.g., { value: '#000' }).",
+				                        "type": "object",
+				                      },
+				                      "props": {
+				                        "additionalProperties": {},
+				                        "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
+				but you want to customize some args or other props.
+				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				                        "type": "object",
 				                      },
 				                    },
 				                    "required": [

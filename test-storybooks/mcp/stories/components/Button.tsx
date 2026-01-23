@@ -40,8 +40,6 @@ export const Button = ({
 	const mode = primary
 		? 'storybook-button--primary'
 		: 'storybook-button--secondary';
-	const truncatedLabel =
-		label.length > 30 ? `${label.substring(0, 30)}...` : label;
 	return (
 		<button
 			type="button"
@@ -51,7 +49,7 @@ export const Button = ({
 			style={{ backgroundColor }}
 			{...props}
 		>
-			{truncatedLabel}
+			{label}
 		</button>
 	);
 };

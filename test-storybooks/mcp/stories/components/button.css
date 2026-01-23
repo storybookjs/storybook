@@ -35,9 +35,3 @@
 	font-size: 16px;
 	padding: 12px 24px;
 }
-
-@media (prefers-color-scheme: dark) {
-	.storybook-button {
-		border: 2px solid green;
-	}
-}

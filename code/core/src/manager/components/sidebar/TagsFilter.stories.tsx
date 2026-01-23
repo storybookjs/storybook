@@ -95,6 +95,10 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
     this.mounted = true;
   }
 
+  componentWillUnmount() {
+    this.mounted = false;
+  }
+
   render() {
     const { children, args } = this.props;
     return (

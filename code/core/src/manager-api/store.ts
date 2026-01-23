@@ -123,6 +123,17 @@ export default class Store {
   }
 }
 
+/** Store guaranteed not to read from storage, for testing purposes. */
+class InMemoryStore extends Store {
+  constructor({ setState, getState }: Upstream) {
+    super({ allowPersistence: false, setState, getState });
+  }
+
+  getInitialState(base: State) {
+    return base;
+  }
+}
+
 /**
  * Factory function to create a valid Store instance for testing purposes. Provides a simple
  * in-memory store without persistence logic. Useful for mocking the store in stories.
@@ -155,5 +166,5 @@ export function createTestingStore(
     },
   };
 
-  return new Store(upstream);
+  return new InMemoryStore(upstream);
 }

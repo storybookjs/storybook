@@ -16,7 +16,6 @@
 	"type": "module",
 	"exports": {
 		"./preset": "./dist/preset.js",
-		"./preview-annotation": "./dist/preview.js",
 		"./internal/preview-stories-app-script": "./dist/preview-stories-app-script.js",
 		"./package.json": "./package.json"
 	},

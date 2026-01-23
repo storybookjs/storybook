@@ -4,17 +4,12 @@ import { AddonOptions } from './types.ts';
 import * as v from 'valibot';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
 import htmlTemplate from './template.html';
-import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
 export const previewAnnotations: PresetPropertyFn<
 	'previewAnnotations'
 > = async (existingAnnotations = []) => {
-	return [
-		...existingAnnotations,
-		fileURLToPath(
-			import.meta.resolve('@storybook/addon-mcp/preview-annotation'),
-		),
-	];
+	return [...existingAnnotations, path.join(import.meta.dirname, 'preview.js')];
 };
 
 export const experimental_devServer: PresetPropertyFn<

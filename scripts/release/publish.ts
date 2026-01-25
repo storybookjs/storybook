@@ -111,7 +111,7 @@ const isCurrentVersionPublished = async ({
 
 const buildAllPackages = async () => {
   console.log(`🏗️ Building all packages...`);
-  await execaCommand('yarn task --task=compile --start-from=compile --no-link', {
+  await execaCommand('pnpm task --task=compile --start-from=compile --no-link', {
     stdio: 'inherit',
     cleanup: true,
     cwd: CODE_DIR_PATH,
@@ -129,7 +129,7 @@ const publishAllPackages = async ({
   dryRun?: boolean;
 }) => {
   console.log(`📦 Publishing all packages...`);
-  const command = `yarn workspaces foreach --all --parallel --no-private --verbose npm publish --tolerate-republish --tag ${tag}`;
+  const command = `pnpm -r publish --no-git-checks --tag ${tag}`;
   if (verbose) {
     console.log(`📦 Executing: ${command}`);
   }
@@ -140,11 +140,9 @@ const publishAllPackages = async ({
   }
 
   /**
-   * 'yarn npm publish' will fail if just one package fails to publish. But it will continue through
-   * with all the other packages, and --tolerate-republish makes it okay to publish the same version
-   * again. So we can safely retry the whole publishing process if it fails. It's not uncommon for
-   * the registry to fail often, which Yarn catches by checking the registry after a package has
-   * been published.
+   * 'pnpm publish' will fail if just one package fails to publish. But it will continue through
+   * with all the other packages. So we can safely retry the whole publishing process if it fails.
+   * It's not uncommon for the registry to fail often.
    */
   await pRetry(
     () =>

@@ -4,20 +4,20 @@
   "includedScripts": [],
   "targets": {
     "pretty-docs": {
-      "command": "yarn docs:prettier:check",
+      "command": "pnpm docs:prettier:check",
       "cache": true,
       "inputs": ["{workspaceRoot}/docs/**/*"]
     },
     "check": {
       "dependsOn": [],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn check" },
+      "options": { "cwd": "{projectRoot}", "command": "pnpm check" },
       "inputs": ["default"],
       "cache": true
     },
     "lint": {
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn lint" },
+      "options": { "cwd": "{projectRoot}", "command": "pnpm lint" },
       "cache": true,
       "inputs": ["default"],
       "configurations": { "production": {} }
@@ -25,7 +25,7 @@
     "test": {
       "dependsOn": [{ "projects": ["core"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn test" },
+      "options": { "cwd": "{projectRoot}", "command": "pnpm test" },
       "cache": true,
       "inputs": ["default", "all-production"],
       "configurations": { "production": {} }

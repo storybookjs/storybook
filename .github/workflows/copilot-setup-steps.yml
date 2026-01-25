@@ -33,4 +33,4 @@ jobs:
           install-code-deps: true
 
       - name: Compile
-        run: yarn nx run-many --targets compile
+        run: pnpm nx run-many --targets compile

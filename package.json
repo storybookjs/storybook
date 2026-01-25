@@ -16,56 +16,103 @@
     ]
   },
   "scripts": {
-    "ci-tests": "cd code; yarn ci-tests",
-    "get-report-message": "cd scripts; yarn get-report-message",
-    "get-sandbox-dir": "cd scripts; yarn get-sandbox-dir",
-    "i": "yarn",
-    "knip": "cd code; yarn knip",
-    "lint": "cd code; yarn lint",
+    "ci-tests": "cd code && pnpm ci-tests",
+    "get-report-message": "cd scripts && pnpm get-report-message",
+    "get-sandbox-dir": "cd scripts && pnpm get-sandbox-dir",
+    "i": "pnpm install",
+    "knip": "cd code && pnpm knip",
+    "lint": "cd code && pnpm lint",
     "nx": "nx",
-    "pretty-docs": "cd scripts; yarn install >/dev/null; yarn docs:prettier:write",
-    "start": "yarn task --task dev --template react-vite/default-ts --start-from=install",
+    "pretty-docs": "cd scripts && pnpm install >/dev/null && pnpm docs:prettier:write",
+    "start": "pnpm task --task dev --template react-vite/default-ts --start-from=install",
     "svelte-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh svelte-kit/skeleton-ts",
     "svelte-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh svelte-kit/skeleton-ts svelte",
     "svelte-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh svelte-kit/skeleton-ts",
-    "task": "yarn --cwd=./scripts task",
-    "test": "cd code; yarn test",
-    "test:watch": "cd code; yarn test:watch",
-    "upload-bench": "cd scripts; yarn upload-bench",
+    "task": "pnpm --dir ./scripts task",
+    "test": "cd code && pnpm test",
+    "test:watch": "cd code && pnpm test:watch",
+    "upload-bench": "cd scripts && pnpm upload-bench",
     "vite-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh react-vite/default-ts",
     "vite-ecosystem-ci:build": "./scripts/ecosystem-ci/build.sh react-vite/default-ts",
     "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts"
   },
-  "resolutions": {
-    "@babel/runtime": "latest",
-    "@babel/traverse": "latest",
-    "@babel/types": "^7.28.4",
-    "@playwright/test": "1.52.0",
-    "@testing-library/user-event@npm:^14.4.0": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
-    "@testing-library/user-event@npm:^14.6.1": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
-    "@types/babel__traverse@npm:*": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
-    "@types/babel__traverse@npm:^7.18.0": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
-    "@types/node": "^22.0.0",
-    "@types/react": "^18.0.0",
-    "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
-    "aria-query@5.3.0": "^5.3.0",
-    "esbuild": "^0.27.0",
-    "playwright": "1.52.0",
-    "playwright-core": "1.52.0",
-    "react": "^18.2.0",
-    "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19",
-    "typescript": "^5.9.3"
-  },
   "devDependencies": {
     "@nx/workspace": "^22.1.3",
     "@playwright/test": "^1.52.0",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.0",
     "@types/kill-port": "^2.0.3",
+    "comment-json": "^4.2.3",
+    "estree-walker": "^3.0.3",
     "http-server": "^14.1.1",
     "jiti": "^2.6.1",
     "kill-port": "^2.0.1",
+    "magic-string": "^0.30.17",
     "nx": "^22.1.3",
-    "prettier": "^3.7.1"
+    "pathe": "^1.1.2",
+    "picocolors": "^1.1.1",
+    "prettier": "^3.7.1",
+    "prettier-plugin-brace-style": "^0.8.1",
+    "prettier-plugin-css-order": "^2.1.2",
+    "prettier-plugin-curly": "^0.4.1",
+    "prettier-plugin-jsdoc": "^1.7.0",
+    "prettier-plugin-merge": "^0.8.0",
+    "react-joyride": "^2.9.3",
+    "resolve": "^1.22.11",
+    "tinyglobby": "^0.2.15",
+    "tsconfig-paths": "^4.2.0"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "pnpm@10.28.1",
+  "pnpm": {
+    "shamefully-hoist": true,
+    "publicHoistPattern": [
+      "*"
+    ],
+    "patchedDependencies": {
+      "@testing-library/user-event@14.6.1": ".yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
+      "@types/babel__traverse@7.20.6": ".yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
+      "@vitest/expect@3.2.4": ".yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
+      "react-aria-components@1.12.2": ".yarn/patches/react-aria-components-npm-1.12.2-6c5dcdafab.patch"
+    },
+    "overrides": {
+      "@babel/runtime": "latest",
+      "@babel/traverse": "latest",
+      "@babel/types": "^7.28.4",
+      "@playwright/test": "1.52.0",
+      "@types/node": "^22.0.0",
+      "@types/react": "^18.0.0",
+      "aria-query@5.3.0": "^5.3.0",
+      "esbuild": "^0.27.0",
+      "playwright": "1.52.0",
+      "playwright-core": "1.52.0",
+      "react": "^18.2.0",
+      "serialize-javascript": "^3.1.0",
+      "type-fest": "~2.19",
+      "typescript": "^5.9.3"
+    },
+    "supportedArchitectures": {
+      "cpu": [
+        "current",
+        "x64",
+        "arm64"
+      ],
+      "os": [
+        "current",
+        "linux",
+        "darwin"
+      ]
+    },
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "core-js",
+      "core-js-pure",
+      "esbuild",
+      "fast-folder-size",
+      "husky",
+      "lmdb",
+      "msgpackr-extract",
+      "nx",
+      "sharp",
+      "unrs-resolver"
+    ]
+  }
 }

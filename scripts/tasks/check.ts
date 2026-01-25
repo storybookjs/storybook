@@ -8,8 +8,8 @@ const amountOfVCPUs = 4;
 
 const parallel = `--parallel=${process.env.CI ? amountOfVCPUs - 1 : maxConcurrentTasks}`;
 
-const linkCommand = `yarn nx run-many -t check ${parallel}`;
-const nolinkCommand = `yarn nx run-many -t check -c production ${parallel}`;
+const linkCommand = `pnpm nx run-many -t check ${parallel}`;
+const nolinkCommand = `pnpm nx run-many -t check -c production ${parallel}`;
 
 export const check: Task = {
   description: 'Typecheck the source code of the monorepo',

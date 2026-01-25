@@ -1,0 +1,10 @@
+packages:
+  - 'code'
+  - 'code/addons/*'
+  - 'code/builders/*'
+  - 'code/core'
+  - 'code/frameworks/*'
+  - 'code/lib/*'
+  - 'code/presets/*'
+  - 'code/renderers/*'
+  - 'scripts'

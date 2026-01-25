@@ -116,16 +116,17 @@ Here's a highlight of notable directories and files:
 │   ├── writing-stories
 │   └── writing-tests
 ├── node_modules
-├── package.json                      # Root of the yarn monorepo
+├── package.json                      # Root of the pnpm monorepo
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
 ├── prettier.config.mjs
 ├── scripts                           # Build and Helper Scripts
-├── test-storybooks
-│   ├── ember-cli
-│   ├── external-docs
-│   ├── portable-stories-kitchen-sink
-│   ├── server-kitchen-sink
-│   └── standalone-preview
-└── yarn.lock
+└── test-storybooks
+    ├── ember-cli
+    ├── external-docs
+    ├── portable-stories-kitchen-sink
+    ├── server-kitchen-sink
+    └── standalone-preview
 ```
 
 ### Fork the repository 
@@ -142,51 +143,54 @@ git branch --set-upstream-to upstream/main main
 
 ### Running the local development environment 
 
-If you're interested in contributing to Storybook's codebase, you can run it locally to get a feel for the codebase and the development environment. To get started with the development environment, you should always run `yarn start` from the root directory. Running `yarn start` will install the required dependencies, build the project, including the packages, and generate a sandbox environment using React with TypeScript with a set of test stories to help you get started.
+If you're interested in contributing to Storybook's codebase, you can run it locally to get a feel for the codebase and the development environment. To get started with the development environment, you should always run `pnpm start` from the root directory. Running `pnpm start` will install the required dependencies, build the project, including the packages, and generate a sandbox environment using React with TypeScript with a set of test stories to help you get started.
 
 ```shell
-# Navigate to the root directory of the Storybook repository 
-cd path/to/your/storybook/fork 
+# Navigate to the root directory of the Storybook repository
+cd path/to/your/storybook/fork
+
+# Enable corepack (if not already enabled)
+corepack enable
 
 # Install the required dependencies
-yarn
-# start the development environment 
-yarn start
+pnpm install
+# start the development environment
+pnpm start
 ```
 
 ### Making code changes 
 
-If you want to make code changes to Storybook packages while running a sandbox, you'll need to do the following: 
+If you want to make code changes to Storybook packages while running a sandbox, you'll need to do the following:
 
-1. In a second terminal, run `yarn build --watch <package-1> <package-2>` in the `code/` directory.
+1. In a second terminal, run `pnpm build --watch <package-1> <package-2>` in the `code/` directory.
 
-For example, to build the `@storybook/react`, `storybook` itself, `@storybook/builder-vite`, and `@storybook/addon-docs` packages, you would run: 
+For example, to build the `@storybook/react`, `storybook` itself, `@storybook/builder-vite`, and `@storybook/addon-docs` packages, you would run:
 
-```shell 
-# Navigate to the code directory 
-cd path/to/your/storybook/fork/code 
+```shell
+# Navigate to the code directory
+cd path/to/your/storybook/fork/code
 
-# Build the specified packages in watch mode 
-yarn build --watch react core-server api addon-docs 
+# Build the specified packages in watch mode
+pnpm build --watch react core-server api addon-docs
 
 Most package names can be found after `@storybook/` in the published package.
 
 For instance, to build the `@storybook/react storybook @storybook/builder-vite @storybook/addon-docs` packages at the same time in watch mode:
 
-```shell 
+```shell
 cd code
-yarn build --watch react storybook builder-vite addon-docs 
+pnpm build --watch react storybook builder-vite addon-docs
 ```
 
-2. If you are running the sandbox in ["linked"](https://yarnpkg.com/cli/link) mode (the default), you should see the changes reflected on a refresh (you may need to restart it if changing server packages) 
+2. If you are running the sandbox in "linked" mode (the default), you should see the changes reflected on a refresh (you may need to restart it if changing server packages)
 
-3. If you are running the sandbox in "unlinked" mode, you'll need to rerun the sandbox from the `publish` step to see the changes: 
+3. If you are running the sandbox in "unlinked" mode, you'll need to rerun the sandbox from the `publish` step to see the changes:
 
-```shell 
-yarn task --task dev --template <your template> --start-from=publish 
-``` 
+```shell
+pnpm task --task dev --template <your template> --start-from=publish
+```
 
-4. If you have made any changes inside `/code` or other packages, remember to run `yarn test` inside the package to ensure that your changes do not break any tests. 
+4. If you have made any changes inside `/code` or other packages, remember to run `pnpm test` inside the package to ensure that your changes do not break any tests. 
 
 ### Angular-specific code
 
@@ -194,17 +198,17 @@ If you are working on Angular-specific code, you will need to append `--prod` to
 
 ```shell
 # Starts the build process in production mode
-yarn task --prod
+pnpm task --prod
 ```
 
 ```shell
 # Builds the specified packages in production mode
-yarn build --prod --watch angular storybook addon-docs
+pnpm build --prod --watch angular storybook addon-docs
 ```
 
-### Running against different sandbox templates 
+### Running against different sandbox templates
 
-You can pick a specific template to use as your sandbox by running `yarn task`, which will prompt you to make further choices about which template you want and which task you want to run.
+You can pick a specific template to use as your sandbox by running `pnpm task`, which will prompt you to make further choices about which template you want and which task you want to run.
 
 ### Focussing on fixing a sandbox in CI
 
@@ -217,11 +221,11 @@ https://github.com/storybookjs/storybook/blob/3d49093954243d4d520774243866de840f
 
 In fact you can filter on any job you wish, only running `test-runner`, `e2e`, `vite`-sandboxes, etc.
 
-## Troubleshooting 
+## Troubleshooting
 
-### The initialization process throws an error 
+### The initialization process throws an error
 
-If you run `yarn start` and encounter the following error, try rerunning `yarn start` a second time: 
+If you run `pnpm start` and encounter the following error, try rerunning `pnpm start` a second time: 
 
 ```shell 
 > NX ENOENT: no such file or directory, open 'storybook/code/node_modules/nx/package.json' 

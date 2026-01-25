@@ -39,7 +39,7 @@ jobs:
         id: check-frozen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:is-pr-frozen --patch
+        run: pnpm release:is-pr-frozen --patch
 
       - name: Cancel when frozen
         if: steps.check-frozen.outputs.frozen == 'true' && github.event_name != 'workflow_dispatch'
@@ -54,7 +54,7 @@ jobs:
         id: unreleased-changes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:unreleased-changes-exists --unpicked-patches
+        run: pnpm release:unreleased-changes-exists --unpicked-patches
 
       - name: Fetch next branch
         run:
@@ -69,7 +69,7 @@ jobs:
         run: |
           git config --global user.name 'storybook-bot'
           git config --global user.email '32066757+storybook-bot@users.noreply.github.com'
-          yarn release:pick-patches
+          pnpm release:pick-patches
 
       - name: Cancel when no patches to pick
         if: steps.pick-patches.outputs.no-patch-prs == 'true'
@@ -84,14 +84,14 @@ jobs:
         id: bump-version
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'
         run: |
-          yarn release:version --deferred --release-type patch --verbose
+          pnpm release:version --deferred --release-type patch --verbose
 
       # We need the current version to set the branch name, even when not bumping the version
       - name: Get current version
         id: current-version
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'false'
         run: |
-          yarn release:get-current-version --verbose
+          pnpm release:get-current-version --verbose
 
       - name: Set version output
         id: versions
@@ -104,7 +104,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn release:write-changelog ${{ steps.versions.outputs.next }} --unpicked-patches --verbose
+          pnpm release:write-changelog ${{ steps.versions.outputs.next }} --unpicked-patches --verbose
 
       - name: "Commit changes to branch: version-patch-from-${{ steps.versions.outputs.current }}"
         working-directory: .
@@ -113,14 +113,21 @@ jobs:
           git config --global user.email '32066757+storybook-bot@users.noreply.github.com'
           git checkout -b version-patch-from-${{ steps.versions.outputs.current }}
           git add .
-          git commit -m "Write changelog for ${{ steps.versions.outputs.next }} [skip ci]" || true
+          git commit -m "Write changelog for ${{ steps.versions.outputs.next }} [skip ci]" || {
+            if git diff --staged --quiet; then
+              echo "No changes to commit (this is expected if changelog was already written)"
+            else
+              echo "ERROR: git commit failed with staged changes"
+              exit 1
+            fi
+          }
           git push --force origin version-patch-from-${{ steps.versions.outputs.current }}
 
       - name: Generate PR description
         id: description
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:generate-pr-description --unpicked-patches --manual-cherry-picks='${{ steps.pick-patches.outputs.failed-cherry-picks }}' ${{ steps.unreleased-changes.outputs.has-changes-to-release == 'true' && format('{0}={1} {2}={3}', '--current-version', steps.versions.outputs.current, '--next-version', steps.versions.outputs.next) || '' }} --verbose
+        run: pnpm release:generate-pr-description --unpicked-patches --manual-cherry-picks='${{ steps.pick-patches.outputs.failed-cherry-picks }}' ${{ steps.unreleased-changes.outputs.has-changes-to-release == 'true' && format('{0}={1} {2}={3}', '--current-version', steps.versions.outputs.current, '--next-version', steps.versions.outputs.next) || '' }} --verbose
 
       - name: Create or update pull request with release
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'

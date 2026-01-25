@@ -11,20 +11,25 @@ export type Workspace = { name: string; location: string };
  * to the code directory.
  */
 export async function getCodeWorkspaces(includePrivate = true) {
-  const { stdout } = await execaCommand(
-    `yarn workspaces list --json ${includePrivate ? '' : '--no-private'}`,
-    {
-      cwd: ROOT_DIRECTORY,
-      shell: true,
-    }
-  );
-  return (JSON.parse(`[${stdout.split('\n').join(',')}]`) as Workspace[])
-    .filter(({ name }: any) => name !== '@storybook/root' && name !== '@storybook/scripts')
-    .map((it) => {
+  const { stdout } = await execaCommand(`pnpm ls -r --json --depth=-1`, {
+    cwd: ROOT_DIRECTORY,
+    shell: true,
+  });
+  const workspaces = JSON.parse(stdout) as Array<{
+    name: string;
+    path: string;
+    private?: boolean;
+  }>;
+  return workspaces
+    .filter((pkg) => pkg.name !== '@storybook/root' && pkg.name !== '@storybook/scripts')
+    .filter((pkg) => includePrivate || !pkg.private)
+    .map((pkg) => {
+      // Convert absolute path to relative location from code directory
+      const relativePath = pkg.path.replace(ROOT_DIRECTORY + '/', '');
       return {
-        name: it.name,
+        name: pkg.name,
         // strip code from the location for backwards compatibility
-        location: it.location === 'code' ? '.' : it.location.replace('code/', ''),
+        location: relativePath === 'code' ? '.' : relativePath.replace('code/', ''),
       };
     }) as Workspace[];
 }
@@ -35,7 +40,7 @@ export async function workspacePath(type: string, packageName: string) {
   const workspaces = await getWorkspacesMemo();
   const workspace = workspaces.find((w) => w.name === packageName);
   if (!workspace) {
-    throw new Error(`Unknown ${type} '${packageName}', not in yarn workspace!`);
+    throw new Error(`Unknown ${type} '${packageName}', not in pnpm workspace!`);
   }
   return workspace.location;
 }

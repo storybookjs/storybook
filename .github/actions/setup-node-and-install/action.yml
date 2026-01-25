@@ -15,27 +15,31 @@ runs:
       with:
         node-version-file: '.nvmrc'
 
+    - name: Enable corepack
+      shell: bash
+      run: corepack enable
+
     - name: Update npm to latest
       shell: bash
       run: npm install -g npm@latest
 
-    - name: Cache dependencies
+    - name: Cache pnpm store
       uses: actions/cache@v4
       with:
         path: |
-          ~/.yarn/berry/cache
-        key: yarn-v1-${{ hashFiles('yarn.lock') }}
+          ~/.local/share/pnpm/store
+        key: pnpm-v1-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
-          yarn-v1-${{ hashFiles('yarn.lock') }}
-          yarn-v1
+          pnpm-v1-${{ hashFiles('pnpm-lock.yaml') }}
+          pnpm-v1
 
     - name: Install script dependencies
       shell: bash
       working-directory: scripts
-      run: yarn install
+      run: pnpm install
 
     - name: Install code dependencies
       if: inputs.install-code-deps == 'true'
       shell: bash
       working-directory: code
-      run: yarn install
+      run: pnpm install

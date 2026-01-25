@@ -177,27 +177,27 @@ Looking for a first issue to tackle?
 
 Storybook is organized as a monorepo. Useful scripts include:
 
-#### `yarn start`
+#### `pnpm start`
 
 > Runs a sandbox template storybook with test stories
 
-#### `yarn task`
+#### `pnpm task`
 
 > As above, but gives you options to customize the sandbox (e.g. selecting other frameworks)
 
-#### `yarn lint`
+#### `pnpm lint`
 
 > boolean check if code conforms to linting rules - uses remark & eslint
 
-- `yarn lint:js` - will check js
-- `yarn lint:md` - will check markdown + code samples
-- `yarn lint:js --fix` - will automatically fix js
+- `pnpm lint:js` - will check js
+- `pnpm lint:md` - will check markdown + code samples
+- `pnpm lint:js --fix` - will automatically fix js
 
-#### `yarn test`
+#### `pnpm test`
 
-> boolean check if unit tests all pass - uses jest
+> boolean check if unit tests all pass - uses vitest
 
-- `yarn run test --core --watch` - will run core tests in watch-mode
+- `pnpm run test --core --watch` - will run core tests in watch-mode
 
 ### Sponsors
 

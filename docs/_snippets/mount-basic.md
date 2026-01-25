@@ -28,6 +28,27 @@ export const ChristmasUI: Story = {
 };
 ```
 
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import Page from './page.component';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const ChristmasUI = meta.story({
+  async play({ mount }) {
+    MockDate.set('2024-12-25');
+    // 👇 Render the component with the mocked date
+    await mount();
+    // ...rest of test
+  },
+});
+```
+
 ```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -50,7 +71,7 @@ export const ChristmasUI: Story = {
 />
 ```
 
-```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 import MockDate from 'mockdate';
 
 // ...rest of story file
@@ -87,7 +108,7 @@ export const ChristmasUI: Story = {
 />
 ```
 
-```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import MockDate from 'mockdate';
 
 // ...rest of story file
@@ -131,6 +152,48 @@ import MockDate from 'mockdate';
 import preview from '../.storybook/preview';
 
 import Page from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const ChristmasUI = meta.story({
+  async play({ mount }) {
+    MockDate.set('2024-12-25');
+    // 👇 Render the component with the mocked date
+    await mount();
+    // ...rest of test
+  },
+});
+```
+
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const ChristmasUI = meta.story({
+  async play({ mount }) {
+    MockDate.set('2024-12-25');
+    // 👇 Render the component with the mocked date
+    await mount();
+    // ...rest of test
+  },
+});
+```
+
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import Page from './Page.vue';
 
 const meta = preview.meta({
   component: Page,

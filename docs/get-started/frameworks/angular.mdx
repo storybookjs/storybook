@@ -108,60 +108,13 @@ Add the following option to your Storybook Builder:
 
 Go to your `.storybook/preview.ts` and add the following:
 
-```ts title=".storybook/preview.ts"
-import type { Preview } from '@storybook/angular';
-
-// 👇 Add these
-import { setCompodocJson } from '@storybook/addon-docs/angular';
-import docJson from '../documentation.json';
-setCompodocJson(docJson);
-
-const preview: Preview = {};
-export default preview;
-```
+<CodeSnippets path="angular-add-compodoc.md" />
 
 ### Application-wide providers
 
 If your component relies on application-wide providers, like the ones defined by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any other modules that use the forRoot pattern to provide a [`ModuleWithProviders`](https://angular.dev/api/core/ModuleWithProviders), you can apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to all stories for that component. This will provide them with the [bootstrapApplication function](https://angular.dev/api/platform-browser/bootstrapApplication), used to bootstrap the component in Storybook.
 
-```ts title="ChipsModule.stories.ts"
-import { Meta, applicationConfig, StoryObj } from '@storybook/angular';
-
-import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
-import { importProvidersFrom } from '@angular/core';
-
-import { ChipsModule } from './angular-src/chips.module';
-
-const meta: Meta<ChipsModule> = {
-  component: ChipsModule,
-  decorators: [
-    // Apply application config to all stories
-    applicationConfig({
-      // List of providers and environment providers that should be available to the root component and all its children.
-      providers: [
-        ...
-        // Import application-wide providers from a module
-        importProvidersFrom(BrowserAnimationsModule)
-        // Or use provide-style functions if available instead, e.g.
-        provideAnimations()
-      ],
-    }),
-  ],
-};
-
-export default meta;
-type Story = StoryObj<ChipsModule>;
-
-export const WithCustomApplicationProvider: Story = {
-  render: () => ({
-    // Apply application config to a specific story
-    applicationConfig: {
-      // The providers will be merged with the ones defined in the applicationConfig decorator's providers array of the global meta object
-      providers: [...],
-    }
-  })
-}
-```
+<CodeSnippets path="angular-application-providers-in-meta-and-story.md" />
 
 ### Angular dependencies
 
@@ -351,18 +304,7 @@ The full list of options can be found in the Angular builder schemas:
 
 You can pass an options object for additional configuration if needed:
 
-```js title=".storybook/main.ts"
-import type { StorybookConfig } from '@storybook/angular';
-
-const config: StorybookConfig = {
-  framework: {
-    name: '@storybook/angular',
-    options: {
-      // ...
-    },
-  },
-};
-```
+<CodeSnippets path="angular-framework-options.md" />
 
 The available options are:
 

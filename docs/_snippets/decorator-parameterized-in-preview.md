@@ -1,6 +1,5 @@
-```ts filename=".storybook/preview.ts" renderer="angular" language="ts"
-import type { Preview } from '@storybook/angular';
-import { componentWrapperDecorator } from '@storybook/angular';
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import { type Preview, componentWrapperDecorator } from '@storybook/angular';
 
 const preview: Preview = {
   decorators: [
@@ -158,7 +157,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js"
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF 3"
 export default {
   decorators: [
     // 👇 Defining the decorator in the preview file applies it to all stories
@@ -180,7 +179,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Preview } from '@storybook/vue3-vite';
 
 const preview: Preview = {
@@ -282,7 +281,7 @@ export default preview;
 </div>
 ```
 
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts"
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Preview } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -310,7 +309,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="Preview"
+```js filename=".storybook/preview.js" renderer="web-components" language="js"  tabTitle="CSF 3"
 import { html } from 'lit';
 
 const preview = {
@@ -402,6 +401,134 @@ export default definePreview({
         default:
           // In the default case, don't apply a layout
           return <Story />;
+      }
+    },
+  ],
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (_, { parameters }) => {
+      // 👇 Make it configurable by reading from parameters
+      const { pageLayout } = parameters;
+      switch (pageLayout) {
+        case 'page':
+          // Your page layout is probably a little more complex than this
+          return { template: '<div class="page-layout"><story/></div>' };
+        case 'page-mobile':
+          return { template: '<div class="page-mobile-layout"><story/></div>' };
+        default:
+          // In the default case, don't apply a layout
+          return { template: '<story/>' };
+      }
+    },
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from '@storybook/vue3-vite';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (_, { parameters }) => {
+      // 👇 Make it configurable by reading from parameters
+      const { pageLayout } = parameters;
+      switch (pageLayout) {
+        case 'page':
+          // Your page layout is probably a little more complex than this
+          return { template: '<div class="page-layout"><story/></div>' };
+        case 'page-mobile':
+          return { template: '<div class="page-mobile-layout"><story/></div>' };
+        default:
+          // In the default case, don't apply a layout
+          return { template: '<story/>' };
+      }
+    },
+  ],
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview, componentWrapperDecorator } from '@storybook/angular';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    componentWrapperDecorator((story, { parameters }) => {
+      // 👇 Make it configurable by reading from parameters
+      const { pageLayout } = parameters;
+      switch (pageLayout) {
+        case 'page':
+          //  Your page layout is probably a little more complex than this
+          return `<div class="page-layout">${story}</div>`;
+        case 'page-mobile':
+          return `<div class="page-mobile-layout">${story}</div>`;
+        default:
+          // In the default case, don't apply a layout
+          return story;
+      }
+    }),
+  ],
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (story, { parameters }) => {
+      // 👇 Make it configurable by reading from parameters
+      const { pageLayout } = parameters;
+      switch (pageLayout) {
+        case 'page':
+          // Your page layout is probably a little more complex than this
+          return html`<div class="page-layout">${story()}</div>`;
+        case 'page-mobile':
+          return html`<div class="page-mobile-layout">${story()}</div>`;
+        default:
+          // In the default case, don't apply a layout
+          return story();
+      }
+    },
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
+import { definePreview } from '@storybook/web-components-vite';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (story, { parameters }) => {
+      // 👇 Make it configurable by reading from parameters
+      const { pageLayout } = parameters;
+      switch (pageLayout) {
+        case 'page':
+          // Your page layout is probably a little more complex than this
+          return html`<div class="page-layout">${story()}</div>`;
+        case 'page-mobile':
+          return html`<div class="page-mobile-layout">${story()}</div>`;
+        default:
+          // In the default case, don't apply a layout
+          return story();
       }
     },
   ],

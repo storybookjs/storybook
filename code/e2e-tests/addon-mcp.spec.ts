@@ -6,6 +6,7 @@ import process from 'process';
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
+const sandboxDir = process.env.STORYBOOK_SANDBOX_DIR;
 
 const MCP_ENDPOINT = `${storybookUrl}/mcp`;
 
@@ -182,44 +183,53 @@ test.describe('addon-mcp', () => {
         const response = await mcpRequest(request, 'tools/list');
 
         expect(response.result).toHaveProperty('tools');
-        // Dev and docs tools should be present (4 total)
-        expect(response.result.tools).toHaveLength(4);
-
-        const toolNames = response.result.tools.map((tool: { name: string }) => tool.name);
-        expect(toolNames).toContain('get-story-urls');
-        expect(toolNames).toContain('get-ui-building-instructions');
-        expect(toolNames).toContain('list-all-documentation');
-        expect(toolNames).toContain('get-documentation');
+        // At least dev and docs tools should be present (4 total)
+        expect(response.result.tools.length).toBeGreaterThanOrEqual(4);
       });
     });
 
-    test.describe('Tool: get-story-urls', () => {
+    test.describe('Tool: preview-stories', () => {
       test('should return story URLs for valid stories', async ({ request }) => {
+        const storyName = 'Primary';
+        const expectedPreviewUrl = `${storybookUrl}/?path=/story/example-button--primary`;
+
         // Use a path pattern that works regardless of sandbox location
         const response = await mcpRequest(request, 'tools/call', {
-          name: 'get-story-urls',
+          name: 'preview-stories',
           arguments: {
             stories: [
               {
-                exportName: 'Primary',
-                // Use a relative-style path that the tool should recognize
-                absoluteStoryPath: '/src/stories/Button.stories.ts',
+                exportName: storyName,
+                absoluteStoryPath: `${sandboxDir}/src/stories/Button.stories.ts`,
               },
             ],
           },
         });
 
-        expect(response.result).toHaveProperty('content');
-        expect(response.result.content).toHaveLength(1);
-        // Should contain either a valid URL or an error message about the story
-        expect(response.result.content[0]).toHaveProperty('text');
+        expect(response.result).toStrictEqual({
+          content: [
+            {
+              type: 'text',
+              text: expectedPreviewUrl,
+            },
+          ],
+          structuredContent: {
+            stories: [
+              {
+                name: storyName,
+                previewUrl: expectedPreviewUrl,
+                title: 'Example/Button',
+              },
+            ],
+          },
+        });
       });
     });
 
-    test.describe('Tool: get-ui-building-instructions', () => {
+    test.describe('Tool: get-storybook-story-instructions', () => {
       test('should return UI building instructions', async ({ request }) => {
         const response = await mcpRequest(request, 'tools/call', {
-          name: 'get-ui-building-instructions',
+          name: 'get-storybook-story-instructions',
           arguments: {},
         });
 

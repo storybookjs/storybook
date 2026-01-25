@@ -24,6 +24,9 @@ patchedDependencies:
   '@testing-library/user-event@14.6.1':
     hash: a3e39991be230ba02820728bf5d2b3a095e8e84684576f62e84dbd24040776fd
     path: .yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch
+  '@types/babel__traverse@7.28.0':
+    hash: 387fe6270542e719edea378a30bbc825d329e1304343963b72dc37142b23a1b9
+    path: patches/@types__babel__traverse@7.28.0.patch
   '@vitest/expect@3.2.4':
     hash: 71ad7c7893e14650e6c1eff670fe126b18b3071122a4eea157212129a5320e15
     path: .yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch
@@ -24038,7 +24041,7 @@ snapshots:
       '@babel/types': 7.28.6
       '@types/babel__generator': 7.27.0
       '@types/babel__template': 7.4.4
-      '@types/babel__traverse': 7.28.0
+      '@types/babel__traverse': 7.28.0(patch_hash=387fe6270542e719edea378a30bbc825d329e1304343963b72dc37142b23a1b9)
 
   '@types/babel__generator@7.27.0':
     dependencies:
@@ -24053,7 +24056,7 @@ snapshots:
       '@babel/parser': 7.28.6
       '@babel/types': 7.28.6
 
-  '@types/babel__traverse@7.28.0':
+  '@types/babel__traverse@7.28.0(patch_hash=387fe6270542e719edea378a30bbc825d329e1304343963b72dc37142b23a1b9)':
     dependencies:
       '@babel/types': 7.28.6
 
@@ -25799,14 +25802,14 @@ snapshots:
       '@babel/template': 7.28.6
       '@babel/types': 7.28.6
       '@types/babel__core': 7.20.5
-      '@types/babel__traverse': 7.28.0
+      '@types/babel__traverse': 7.28.0(patch_hash=387fe6270542e719edea378a30bbc825d329e1304343963b72dc37142b23a1b9)
 
   babel-plugin-jest-hoist@29.6.3:
     dependencies:
       '@babel/template': 7.28.6
       '@babel/types': 7.28.6
       '@types/babel__core': 7.20.5
-      '@types/babel__traverse': 7.28.0
+      '@types/babel__traverse': 7.28.0(patch_hash=387fe6270542e719edea378a30bbc825d329e1304343963b72dc37142b23a1b9)
 
   babel-plugin-macros@3.1.0:
     dependencies:
@@ -30944,7 +30947,7 @@ snapshots:
       '@babel/types': 7.28.6
       '@jest/transform': 27.5.1
       '@jest/types': 27.5.1
-      '@types/babel__traverse': 7.28.0
+      '@types/babel__traverse': 7.28.0(patch_hash=387fe6270542e719edea378a30bbc825d329e1304343963b72dc37142b23a1b9)
       '@types/prettier': 2.7.3
       babel-preset-current-node-syntax: 1.2.0(@babel/core@7.28.6)
       chalk: 4.1.2
@@ -34494,7 +34497,7 @@ snapshots:
       '@babel/traverse': 7.28.6
       '@babel/types': 7.28.6
       '@types/babel__core': 7.20.5
-      '@types/babel__traverse': 7.28.0
+      '@types/babel__traverse': 7.28.0(patch_hash=387fe6270542e719edea378a30bbc825d329e1304343963b72dc37142b23a1b9)
       '@types/doctrine': 0.0.9
       '@types/resolve': 1.20.6
       doctrine: 3.0.0
@@ -34509,7 +34512,7 @@ snapshots:
       '@babel/traverse': 7.28.6
       '@babel/types': 7.28.6
       '@types/babel__core': 7.20.5
-      '@types/babel__traverse': 7.28.0
+      '@types/babel__traverse': 7.28.0(patch_hash=387fe6270542e719edea378a30bbc825d329e1304343963b72dc37142b23a1b9)
       '@types/doctrine': 0.0.9
       '@types/resolve': 1.20.6
       doctrine: 3.0.0

@@ -69,7 +69,7 @@
     ],
     "patchedDependencies": {
       "@testing-library/user-event@14.6.1": ".yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
-      "@types/babel__traverse@7.20.6": ".yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
+      "@types/babel__traverse@7.28.0": "patches/@types__babel__traverse@7.28.0.patch",
       "@vitest/expect@3.2.4": ".yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
       "react-aria-components@1.12.2": ".yarn/patches/react-aria-components-npm-1.12.2-6c5dcdafab.patch"
     },

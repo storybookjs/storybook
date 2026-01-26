@@ -533,7 +533,8 @@ describe('previewStoriesTool', () => {
 						stories: [
 							{
 								exportName: 'Primary',
-								absoluteStoryPath: 'C:\\Users\\test\\project\\src\\Button.stories.tsx',
+								absoluteStoryPath:
+									'C:\\Users\\test\\project\\src\\Button.stories.tsx',
 							},
 						],
 					},
@@ -576,7 +577,8 @@ describe('previewStoriesTool', () => {
 						stories: [
 							{
 								exportName: 'NonExistent',
-								absoluteStoryPath: 'C:\\Users\\test\\project\\src\\NonExistent.stories.tsx',
+								absoluteStoryPath:
+									'C:\\Users\\test\\project\\src\\NonExistent.stories.tsx',
 							},
 						],
 					},
@@ -607,7 +609,8 @@ describe('previewStoriesTool', () => {
 						stories: [
 							{
 								exportName: 'Primary',
-								absoluteStoryPath: 'C:/Users/test/project/src/Button.stories.tsx',
+								absoluteStoryPath:
+									'C:/Users/test/project/src/Button.stories.tsx',
 							},
 						],
 					},

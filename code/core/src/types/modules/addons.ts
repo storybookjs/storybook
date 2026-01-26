@@ -1,6 +1,5 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
-import type { State } from '../../manager-api';
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { API_LayoutCustomisations, API_SidebarOptions } from './api';
@@ -25,7 +24,9 @@ import type { IndexEntry } from './indexer';
 
 export type Addon_Types = Exclude<
   Addon_TypesEnum,
-  Addon_TypesEnum.experimental_PAGE | Addon_TypesEnum.experimental_TEST_PROVIDER
+  | Addon_TypesEnum.experimental_PAGE
+  | Addon_TypesEnum.experimental_SHARE_PROVIDER
+  | Addon_TypesEnum.experimental_TEST_PROVIDER
 >;
 
 export interface Addon_ArgType<TArg = unknown> extends InputType {
@@ -325,6 +326,7 @@ export type Addon_Type =
   | Addon_BaseType
   | Addon_PageType
   | Addon_WrapperType
+  | Addon_ShareProviderType
   | Addon_TestProviderType;
 export interface Addon_BaseType {
   /**
@@ -345,6 +347,7 @@ export interface Addon_BaseType {
     Addon_Types,
     | Addon_TypesEnum.PREVIEW
     | Addon_TypesEnum.experimental_PAGE
+    | Addon_TypesEnum.experimental_SHARE_PROVIDER
     | Addon_TypesEnum.experimental_TEST_PROVIDER
   >;
   /**
@@ -441,6 +444,13 @@ export interface Addon_WrapperType {
   >;
 }
 
+export interface Addon_ShareProviderType {
+  type: Addon_TypesEnum.experimental_SHARE_PROVIDER;
+  /** The unique id of the share provider. */
+  id: string;
+  shareMenu: () => ReactNode;
+}
+
 export interface Addon_TestProviderType {
   type: Addon_TypesEnum.experimental_TEST_PROVIDER;
   /** The unique id of the test provider. */
@@ -453,12 +463,14 @@ type Addon_TypeBaseNames = Exclude<
   Addon_TypesEnum,
   | Addon_TypesEnum.PREVIEW
   | Addon_TypesEnum.experimental_PAGE
+  | Addon_TypesEnum.experimental_SHARE_PROVIDER
   | Addon_TypesEnum.experimental_TEST_PROVIDER
 >;
 
 export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_BaseType> {
   [Addon_TypesEnum.PREVIEW]: Addon_WrapperType;
   [Addon_TypesEnum.experimental_PAGE]: Addon_PageType;
+  [Addon_TypesEnum.experimental_SHARE_PROVIDER]: Addon_ShareProviderType;
   [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType;
 }
 
@@ -516,6 +528,8 @@ export enum Addon_TypesEnum {
    * @unstable
    */
   experimental_PAGE = 'page',
+  /** This adds items to the Share Menu in the toolbar. */
+  experimental_SHARE_PROVIDER = 'share-provider',
   /** This adds items to the Testing Module in the sidebar. */
   experimental_TEST_PROVIDER = 'test-provider',
 }

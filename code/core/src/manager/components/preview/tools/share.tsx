@@ -1,16 +1,13 @@
 import React, { useMemo, useState } from 'react';
 
 import { Button, PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
-import type { Addon_BaseType } from 'storybook/internal/types';
+import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { LinkIcon, ShareAltIcon, ShareIcon } from '@storybook/icons';
 
 import copy from 'copy-to-clipboard';
-import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { Consumer, types } from 'storybook/manager-api';
 import type { API, Combo } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
 
 import { Shortcut } from '../../Shortcut';
 
@@ -19,52 +16,13 @@ const mapper = ({ api, state }: Combo) => {
   return { api, refId, storyId };
 };
 
-const QRContainer = styled.div(() => ({
-  display: 'flex',
-  alignItems: 'center',
-  padding: 8,
-  maxWidth: 200,
-}));
-
-const QRImageContainer = styled.div(() => ({
-  width: 64,
-  height: 64,
-  marginRight: 12,
-  backgroundColor: 'white',
-  padding: 2,
-}));
-
-const QRImage = ({ value }: { value: string }) => {
-  const theme = useTheme();
-  return (
-    <QRImageContainer>
-      <QRCode value={value} marginSize={0} size={60} fgColor={theme.color.darkest} />
-    </QRImageContainer>
-  );
-};
-
-const QRContent = styled.div(() => ({}));
-
-const QRTitle = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-  fontSize: theme.typography.size.s1,
-  marginBottom: 4,
-}));
-
-const QRDescription = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s1,
-  color: theme.textMutedColor,
-}));
-
-const ShareMenu = React.memo(function ShareMenu({
-  api,
-  storyId,
-  refId,
-}: {
+interface ShareMenuProps {
   api: API;
   storyId: string;
   refId: string | undefined;
-}) {
+}
+
+const ShareMenu = React.memo(function ShareMenu({ api, storyId, refId }: ShareMenuProps) {
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
   const [copied, setCopied] = useState(false);
@@ -74,7 +32,7 @@ const ShareMenu = React.memo(function ShareMenu({
   const links = useMemo(() => {
     const copyTitle = copied ? 'Copied!' : 'Copy story link';
     const originHrefs = api.getStoryHrefs(storyId, { base: 'origin', refId });
-    const networkHrefs = api.getStoryHrefs(storyId, { base: 'network', refId });
+    const registeredShareProviders = api.getElements(Addon_TypesEnum.experimental_SHARE_PROVIDER);
 
     return [
       [
@@ -99,25 +57,11 @@ const ShareMenu = React.memo(function ShareMenu({
           rel: 'noopener noreferrer',
         },
       ],
-      [
-        {
-          id: 'qr-section',
-          content: (
-            <QRContainer>
-              <QRImage value={networkHrefs.managerHref} />
-              <QRContent>
-                <QRTitle>Scan to open</QRTitle>
-                <QRDescription>
-                  {global.CONFIG_TYPE === 'DEVELOPMENT'
-                    ? 'Device must be on the same network.'
-                    : 'View story on another device.'}
-                </QRDescription>
-              </QRContent>
-            </QRContainer>
-          ),
-        },
-      ],
-    ];
+      Object.values(registeredShareProviders).map((registeredShareProvider) => {
+        const { shareMenu, id } = registeredShareProvider;
+        return { id, content: shareMenu() };
+      }),
+    ].filter(Boolean);
   }, [api, storyId, refId, copied, enableShortcuts, copyStoryLink, openInIsolation]);
 
   return <TooltipLinkList links={links} style={{ width: 240 }} />;

@@ -151,3 +151,22 @@ export const WithSegmentDefinedForParams: Story = {
     },
   },
 };
+
+export const WithCatchAllSegment: Story = {
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+      navigation: {
+        segments: [['catchAll', ['as', 'many', 'as', 'you', 'want']]],
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Verify that the component renders without errors
+    await expect(canvas.getByText(/pathname:/)).toBeInTheDocument();
+    // Verify that params are properly set
+    const catchAllParam = await canvas.getByText(/catchAll:/);
+    await expect(catchAllParam).toBeInTheDocument();
+  },
+};

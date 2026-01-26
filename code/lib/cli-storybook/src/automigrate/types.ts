@@ -24,6 +24,8 @@ export interface RunOptions<ResultType> {
   skipInstall?: boolean;
   storybookVersion: string;
   storiesPaths: string[];
+  /** Skip prompts and use defaults (from --yes flag) */
+  yes?: boolean;
 }
 
 /**

@@ -19,11 +19,17 @@ async function runStoriesCodemod(options: {
   packageManager: JsPackageManager;
   useSubPathImports: boolean;
   previewConfigPath: string;
+  yes: boolean | undefined;
 }) {
-  const { dryRun, packageManager, ...codemodOptions } = options;
+  const { dryRun, packageManager, yes, ...codemodOptions } = options;
   try {
-    let globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
-    if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
+    const isNonInteractive = yes || optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
+    let globString = '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}';
+
+    if (isNonInteractive && optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
+      // Use sandbox-specific glob only in sandbox mode
+      globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
+    } else if (!isNonInteractive) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
@@ -52,10 +58,19 @@ async function runStoriesCodemod(options: {
 export const csfFactories: CommandFix = {
   id: 'csf-factories',
   promptType: 'command',
-  async run({ dryRun, mainConfig, mainConfigPath, previewConfigPath, packageManager, configDir }) {
+  async run({
+    dryRun,
+    mainConfig,
+    mainConfigPath,
+    previewConfigPath,
+    packageManager,
+    configDir,
+    yes,
+  }) {
     let useSubPathImports = true;
+    const isNonInteractive = yes || optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
 
-    if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
+    if (!isNonInteractive) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
         The CSF Factories format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
@@ -96,6 +111,7 @@ export const csfFactories: CommandFix = {
       packageManager,
       useSubPathImports,
       previewConfigPath: previewConfigPath!,
+      yes,
     });
 
     logger.step('Applying codemod on your main config...');

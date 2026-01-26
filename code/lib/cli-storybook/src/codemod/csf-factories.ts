@@ -22,12 +22,12 @@ async function runStoriesCodemod(options: {
 }) {
   const { dryRun, packageManager, ...codemodOptions } = options;
   try {
-    let globString = '{stories,src}/**/{Button,Header,Page}.stories.*';
+    let globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
     if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
-        initialValue: '**/*.stories.*',
+        initialValue: '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}',
       });
     }
 

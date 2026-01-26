@@ -1,4 +1,6 @@
-import { expect, fireEvent, fn } from 'storybook/test';
+import { useState } from 'react';
+
+import { expect, fireEvent, fn, mocked } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { NumericInput } from './NumericInput';
@@ -8,6 +10,12 @@ const meta = preview.meta({
   tags: ['autodocs'],
   args: {
     setValue: fn(),
+  },
+  render: (args) => {
+    const [value, setValue] = useState(args.value);
+    args.value = value;
+    args.setValue = mocked(args.setValue).mockImplementation(setValue);
+    return <NumericInput {...args} />;
   },
 });
 
@@ -55,7 +63,7 @@ export const WithExplicitUnit = meta.story({
     fireEvent.keyDown(input, { key: 'ArrowUp' });
     fireEvent.keyDown(input, { key: 'ArrowUp' });
     fireEvent.keyDown(input, { key: 'ArrowDown' });
-    expect(input).toHaveValue('11vw');
+    expect(input).toHaveValue('11');
     expect(args.setValue).toHaveBeenNthCalledWith(1, '11vw');
     expect(args.setValue).toHaveBeenNthCalledWith(2, '12vw');
     expect(args.setValue).toHaveBeenNthCalledWith(3, '11vw');

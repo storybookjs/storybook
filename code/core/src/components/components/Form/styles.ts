@@ -73,7 +73,7 @@ const styleResets: CSSObject = {
   appearance: 'none',
   border: '0 none',
   boxSizing: 'inherit',
-  display: ' block',
+  display: 'block',
   margin: ' 0',
   background: 'transparent',
   padding: 0,
@@ -107,8 +107,9 @@ export const styles = (({ theme }: { theme: StorybookTheme }) => ({
     },
   },
 
-  '&[disabled]': {
+  '&[disabled], &[aria-disabled="true"]': {
     background: theme.base === 'light' ? theme.color.lighter : 'transparent',
+    cursor: 'not-allowed',
   },
 
   '&:-webkit-autofill': { WebkitBoxShadow: `0 0 0 3em ${theme.color.lightest} inset` },

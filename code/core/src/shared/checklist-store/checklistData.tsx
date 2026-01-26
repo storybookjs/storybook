@@ -168,6 +168,7 @@ export const checklistData = {
           action: {
             label: 'Start',
             onClick: ({ api }) => {
+              api.toggleNav(true);
               const path = api.getUrlState().path || '';
               if (path.startsWith('/story/')) {
                 document.location.href = `/?path=${path}&onboarding=true`;
@@ -576,12 +577,16 @@ export default {
           label: 'Test your components',
           criteria: 'Component tests are run from the test widget in the sidebar',
           subscribe: ({ done }) =>
-            internal_universalTestProviderStore.onStateChange(
-              (state) => state['storybook/test'] === 'test-provider-state:succeeded' && done()
-            ),
+            internal_universalTestProviderStore.onStateChange((state) => {
+              if (state['storybook/test'] === 'test-provider-state:running') {
+                TourGuide.render(null);
+                done();
+              }
+            }),
           action: {
             label: 'Start',
-            onClick: () =>
+            onClick: ({ api }) => {
+              api.toggleNav(true);
               TourGuide.render({
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore Circular reference in Step type
@@ -613,7 +618,8 @@ export default {
                     hideNextButton: true,
                   },
                 ],
-              }),
+              });
+            },
           },
           content: ({ api }) => (
             <>

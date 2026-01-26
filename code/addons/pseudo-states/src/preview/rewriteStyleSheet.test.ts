@@ -412,6 +412,14 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
+  it('supports ":has" inside and outside of ":not"', () => {
+    const sheet = new Sheet(':has(:not(:hover, :has(:focus), :has(:active))) { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      ':has(:not(:hover, :has(:focus), :has(:active))), :has(:not(.pseudo-hover, :has(.pseudo-focus), :has(.pseudo-active))), :has(:not(.pseudo-hover-all *, .pseudo-focus-all :has(*), .pseudo-active-all :has(*))) { color: red }'
+    );
+  });
+
   it('skips escaped pseudo-selectors "\\:hover"', () => {
     const sheet = new Sheet('a\\:hover { color: red }');
     rewriteStyleSheet(sheet as any);

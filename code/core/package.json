@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.2.0-alpha.14",
+  "version": "10.3.0-alpha.0",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -126,6 +126,7 @@
       "types": "./dist/mocking-utils/index.d.ts",
       "default": "./dist/mocking-utils/index.js"
     },
+    "./internal/mocking-utils/mocker-runtime": "./dist/mocking-utils/mocker-runtime.js",
     "./internal/node-logger": {
       "types": "./dist/node-logger/index.d.ts",
       "default": "./dist/node-logger/index.js"
@@ -228,6 +229,7 @@
     "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
     "@react-aria/interactions": "^3.25.5",
+    "@react-aria/landmark": "^3.0.8",
     "@react-aria/overlays": "^3.29.1",
     "@react-aria/tabs": "^3.10.7",
     "@react-aria/toolbar": "3.0.0-beta.20",
@@ -254,6 +256,7 @@
     "@types/react-syntax-highlighter": "11.0.5",
     "@types/semver": "^7.7.1",
     "@types/ws": "^8",
+    "@vitest/mocker": "3.2.4",
     "@vitest/utils": "^3.2.4",
     "@yarnpkg/fslib": "2.10.3",
     "@yarnpkg/libzip": "2.3.0",

@@ -1,1 +1,1 @@
-{"version":"10.2.0-alpha.14","info":{"plain":"- ReactDocgen: Try using the latest version of the original - [#33454](https://github.com/storybookjs/storybook/pull/33454), thanks @ndelangen!\n- ReactDocgen: Try using the latest version of the original - [#33487](https://github.com/storybookjs/storybook/pull/33487), thanks @ndelangen!"}}
+{"version":"10.3.0-alpha.0","info":{"plain":"- CLI: Fix onboarding not opening - [#33609](https://github.com/storybookjs/storybook/pull/33609), thanks @ndelangen!"}}

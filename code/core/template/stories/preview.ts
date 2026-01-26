@@ -1,6 +1,4 @@
-import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
-
-import type { ReactRenderer } from '@storybook/react';
+import type { GlobalTypes, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 declare global {
   interface Window {
@@ -46,7 +44,7 @@ export const parameters = {
 
 export const loaders = [async () => ({ projectValue: 2 })];
 
-const testProjectDecorator = (storyFn: PartialStoryFn<ReactRenderer>, context: StoryContext) => {
+const testProjectDecorator = (storyFn: PartialStoryFn, context: StoryContext) => {
   if (context.parameters.useProjectDecorator) {
     return storyFn({ args: { ...context.args, text: `project ${context.args.text}` } });
   }
@@ -107,4 +105,4 @@ export const globalTypes = {
       ],
     },
   },
-};
+} satisfies GlobalTypes;

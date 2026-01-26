@@ -870,6 +870,9 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
       ? '../src/stories/components'
       : '../stories/components';
     previewConfig.setImport(null, storiesDir);
+    if (template.expected.renderer === '@storybook/vue3') {
+      previewConfig.setImport(null, '../src/stories/renderers/vue3/preview.js');
+    }
     previewConfig.setImport(
       { namespace: 'templateAnnotations' },
       '../template-stories/core/preview'
@@ -881,7 +884,11 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setFieldValue(['tags'], ['vitest']);
   }
 
-  if (template.modifications?.skipMocking) {
+  const isCoreRenderer =
+    template.expected.renderer.startsWith('@storybook/') &&
+    template.expected.renderer !== '@storybook/server';
+
+  if (template.modifications?.skipMocking || !isCoreRenderer) {
     await writeConfig(previewConfig);
     return;
   }

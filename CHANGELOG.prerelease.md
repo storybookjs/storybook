@@ -1,3 +1,91 @@
+## 10.3.0-alpha.0
+
+- CLI: Fix onboarding not opening - [#33609](https://github.com/storybookjs/storybook/pull/33609), thanks @ndelangen!
+
+## 10.2.0-beta.5
+
+- Addon A11y: Lock vision filter dropdown for stories with `vision` global - [#33599](https://github.com/storybookjs/storybook/pull/33599), thanks @ghengeveld!
+
+## 10.2.0-beta.4
+
+- Addon Vitest: Improve error message in testing widget modal - [#33481](https://github.com/storybookjs/storybook/pull/33481), thanks @yannbf!
+- Codemod: Fix glob string to only match stories files - [#33592](https://github.com/storybookjs/storybook/pull/33592), thanks @JReinhold!
+- Core: Add support for wrapped components in component transformer - [#33578](https://github.com/storybookjs/storybook/pull/33578), thanks @yannbf!
+- Core: Fix Date input layout - [#33595](https://github.com/storybookjs/storybook/pull/33595), thanks @ghengeveld!
+- Core: Fix `react-docgen-typescript` support in story creation - [#33586](https://github.com/storybookjs/storybook/pull/33586), thanks @yannbf!
+- Core: Fix import statement for `react-docgen-typescript` - [#33589](https://github.com/storybookjs/storybook/pull/33589), thanks @yannbf!
+- Core: Fix input width - [#33591](https://github.com/storybookjs/storybook/pull/33591), thanks @ghengeveld!
+- Core: Fix manual zoom input field UX - [#33581](https://github.com/storybookjs/storybook/pull/33581), thanks @ghengeveld!
+- Core: Improve addon sanitization - [#33554](https://github.com/storybookjs/storybook/pull/33554), thanks @yannbf!
+- Docgen: Update extraction of React docgen - [#33598](https://github.com/storybookjs/storybook/pull/33598), thanks @ndelangen!
+- Guide: Hide TourGuide as soon as tests start - [#33587](https://github.com/storybookjs/storybook/pull/33587), thanks @ghengeveld!
+- TypeScript: Improve globalTypes type-strictness - [#33313](https://github.com/storybookjs/storybook/pull/33313), thanks @mrginglymus!
+- UI: Ensure preview error displays use a readable text color - [#33580](https://github.com/storybookjs/storybook/pull/33580), thanks @Sidnioulz!
+- UI: Fix border color for Select picker - [#33585](https://github.com/storybookjs/storybook/pull/33585), thanks @ghengeveld!
+- UI: Fix empty sidebar after navigating from search - [#33590](https://github.com/storybookjs/storybook/pull/33590), thanks @Sidnioulz!
+
+## 10.2.0-beta.3
+
+- Core: Support defineConfig when setting up ESLint plugin - [#32878](https://github.com/storybookjs/storybook/pull/32878), thanks @copilot-swe-agent!
+- Core: Viewport UX fixes - [#33557](https://github.com/storybookjs/storybook/pull/33557), thanks @ghengeveld!
+- NextJSVite: Add `@opentelemetry/api` to `optimizeDeps` - [#33577](https://github.com/storybookjs/storybook/pull/33577), thanks @ndelangen!
+- TypeScript: Reduce `cannot be named` errors - [#33344](https://github.com/storybookjs/storybook/pull/33344), thanks @icopp!
+
+## 10.2.0-beta.2
+
+- CSF-Factories: Skip non-factory exports instead of throwing error - [#33550](https://github.com/storybookjs/storybook/pull/33550), thanks @kasperpeulen!
+- Core: Add zoom level 8 and limit manual input to 800% - [#33561](https://github.com/storybookjs/storybook/pull/33561), thanks @ghengeveld!
+- Core: Fix Checklist behavior with hidden sidebar - [#33556](https://github.com/storybookjs/storybook/pull/33556), thanks @ghengeveld!
+- Core: Fix viewport args handling and reset option - [#33560](https://github.com/storybookjs/storybook/pull/33560), thanks @ghengeveld!
+- Dependencies: Update `baseline-browser-mapping` - [#33576](https://github.com/storybookjs/storybook/pull/33576), thanks @ndelangen!
+- Onboarding: Fix navigation to first story when configure-your-project entry missing - [#33559](https://github.com/storybookjs/storybook/pull/33559), thanks @copilot-swe-agent!
+- Zoom: Keyboardshortcut for the `plus` key - [#33565](https://github.com/storybookjs/storybook/pull/33565), thanks @ndelangen!
+
+## 10.2.0-beta.1
+
+- CSF-Factories: Allow kebab-case HTML attribute names in web components args - [#33526](https://github.com/storybookjs/storybook/pull/33526), thanks @kasperpeulen!
+- CSF-Factories: Export WebComponentsTypes and VueTypes - [#33521](https://github.com/storybookjs/storybook/pull/33521), thanks @kasperpeulen!
+
+## 10.2.0-beta.0
+
+- Manager: Fix system query parameters being overridable - [#33535](https://github.com/storybookjs/storybook/pull/33535), thanks @JReinhold!
+- NextJSVite: Upgrade plugin - [#33538](https://github.com/storybookjs/storybook/pull/33538), thanks @ndelangen!
+
+## 10.2.0-alpha.18
+
+- Build: Fix `ejslint` execution path in lint-staged - [#33504](https://github.com/storybookjs/storybook/pull/33504), thanks @Yeonny0723!
+- CLI: Detect free port when running dev during initiate - [#33532](https://github.com/storybookjs/storybook/pull/33532), thanks @ndelangen!
+- Core: Improve path handling in arg types data extraction - [#33536](https://github.com/storybookjs/storybook/pull/33536), thanks @yannbf!
+- Core: Refactor channel initialization - [#33520](https://github.com/storybookjs/storybook/pull/33520), thanks @yannbf!
+- Telemetry: Add `packageJson.type` - [#33525](https://github.com/storybookjs/storybook/pull/33525), thanks @ndelangen!
+- UI: Improve landmark navigation - [#33457](https://github.com/storybookjs/storybook/pull/33457), thanks @Sidnioulz!
+
+## 10.2.0-alpha.17
+
+- Core: Improve the story generation experience - [#33259](https://github.com/storybookjs/storybook/pull/33259), thanks @yannbf!
+
+## 10.2.0-alpha.16
+
+- Addon Pseudo States: Fix stylesheet rewrite for `:not()` with parenthesis in inner selector - [#33491](https://github.com/storybookjs/storybook/pull/33491), thanks @ghengeveld!
+- CSF: Add CSF Factories for Vue3, Web Components, and Angular - [#33365](https://github.com/storybookjs/storybook/pull/33365), thanks @kasperpeulen!
+
+## 10.2.0-alpha.15
+
+- Core: Add global error boundary for Manager UI - [#33211](https://github.com/storybookjs/storybook/pull/33211), thanks @copilot-swe-agent!
+- Core: Fix play function `mount` detection when destructuring in the function body - [#33367](https://github.com/storybookjs/storybook/pull/33367), thanks @ghengeveld!
+- Core: Honor BROWSER shell scripts before xdg-open - [#33292](https://github.com/storybookjs/storybook/pull/33292), thanks @robbchar!
+- Core: Redesign and refactor Viewports tool - [#33290](https://github.com/storybookjs/storybook/pull/33290), thanks @ghengeveld!
+- Core: Render sidebar toggle on settings pages - [#33501](https://github.com/storybookjs/storybook/pull/33501), thanks @ghengeveld!
+- Core: Support disabling Checklist widget through feature config - [#33430](https://github.com/storybookjs/storybook/pull/33430), thanks @ghengeveld!
+- Core: Use canonical links in sidebar and menu - [#33400](https://github.com/storybookjs/storybook/pull/33400), thanks @Sidnioulz!
+- Core: Zoom tool reimplementation - [#33375](https://github.com/storybookjs/storybook/pull/33375), thanks @ghengeveld!
+- Manifests: Add support for summaries in MDX files - [#33475](https://github.com/storybookjs/storybook/pull/33475), thanks @JReinhold!
+- Revert "ReactDocgen: Try using the latest version of the original" - [#33499](https://github.com/storybookjs/storybook/pull/33499), thanks @ndelangen!
+- TypeScript: Support `exactOptionalPropertyTypes` for public API types - [#33149](https://github.com/storybookjs/storybook/pull/33149), thanks @copilot-swe-agent!
+- UI: Fix regression in select close handler focus - [#33470](https://github.com/storybookjs/storybook/pull/33470), thanks @Sidnioulz!
+- UI: Fix search highlight visibility in High Contrast Mode - [#33427](https://github.com/storybookjs/storybook/pull/33427), thanks @Maelryn!
+- Webpack: Revert "disable `bugfixes` property in swc and babel - [#33498](https://github.com/storybookjs/storybook/pull/33498), thanks @ndelangen!
+
 ## 10.2.0-alpha.14
 
 - ReactDocgen: Swap `@storybook/react-docgen-typescript-plugin` to `react-docgen-typescript-plugin` - [#33454](https://github.com/storybookjs/storybook/pull/33454), thanks @ndelangen!

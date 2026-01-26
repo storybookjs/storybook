@@ -97,12 +97,15 @@ const extractPseudoStates = (selector: string) => {
 };
 
 const rewriteNotSelectors = (selector: string, forShadowDOM: boolean) => {
-  return [...selector.matchAll(/:not\(([^)]+)\)/g)].reduce((acc, match) => {
-    const originalNot = match[0];
-    const selectorList = match[1];
-    const rewrittenNot = rewriteNotSelector(selectorList, forShadowDOM);
-    return acc.replace(originalNot, rewrittenNot);
-  }, selector);
+  // Accept up to 3 levels of nested parentheses.
+  return [...selector.matchAll(/:not\((?:[^()]|\([^()]+\)|\((?:[^()]|\([^()]+\))+\))+\)/g)].reduce(
+    (acc, [originalNot]) => {
+      const selectorList = originalNot.match(/^:not\((.+)\)$/)?.[1] ?? '';
+      const rewrittenNot = rewriteNotSelector(selectorList, forShadowDOM);
+      return acc.replace(originalNot, rewrittenNot);
+    },
+    selector
+  );
 };
 
 const rewriteNotSelector = (negatedSelectorList: string, forShadowDOM: boolean) => {

@@ -124,6 +124,11 @@ export class AddonVitestService {
 
     let result: 'installed' | 'skipped' | 'aborted' | 'failed';
 
+    if (process.env.STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION) {
+      result = 'skipped';
+      return { errors, result };
+    }
+
     try {
       const shouldBeInstalled = options.yes
         ? true

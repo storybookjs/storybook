@@ -26,6 +26,8 @@ export interface GenerateStoryOptions {
    * @default true
    */
   checkFileExists?: boolean;
+
+  ignoreStoryId?: boolean;
 }
 
 /**
@@ -76,7 +78,13 @@ export async function generateStoryFile(
 
     const relativeStoryFilePath = relative(getProjectRoot(), storyFilePath);
 
-    const { storyId, kind } = await getStoryId({ storyFilePath, exportedStoryName }, options);
+    let storyId: string | undefined;
+    let kind: string | undefined;
+    if (!generateOptions.ignoreStoryId) {
+      const result = await getStoryId({ storyFilePath, exportedStoryName }, options);
+      storyId = result.storyId;
+      kind = result.kind;
+    }
 
     if (checkFileExists && existsSync(storyFilePath)) {
       return {

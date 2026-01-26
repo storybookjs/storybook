@@ -52,6 +52,16 @@ const mergeSerializedParams = (params: string, extraParams: string) => {
     .join(';');
 };
 
+// Normalize pathname to directory path
+// e.g. '/index.html' -> '/', '/storybook/' -> '/storybook/'
+export const normalizeToDirectory = (pathname: string): string => {
+  if (pathname.endsWith('/')) {
+    return pathname;
+  }
+  const lastSlash = pathname.lastIndexOf('/');
+  return lastSlash >= 0 ? pathname.slice(0, lastSlash + 1) : '/';
+};
+
 // Initialize the state based on the URL.
 // NOTE:
 //   Although we don't change the URL when you change the state, we do support setting initial state
@@ -247,10 +257,11 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         throw new Error(`Invalid refId: ${refId}`);
       }
 
-      const originAddress = global.window.location.origin + location.pathname;
+      const basePath = normalizeToDirectory(location.pathname || '/');
+      const originAddress = global.window.location.origin + basePath;
       const networkAddress = global.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
       const managerBase =
-        base === 'origin' ? originAddress : base === 'network' ? networkAddress : location.pathname;
+        base === 'origin' ? originAddress : base === 'network' ? networkAddress : basePath;
       const previewBase = refId
         ? refs[refId].url + '/iframe.html'
         : global.PREVIEW_URL || `${managerBase}iframe.html`;

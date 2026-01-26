@@ -20,17 +20,18 @@ async function runStoriesCodemod(options: {
   useSubPathImports: boolean;
   previewConfigPath: string;
   yes: boolean | undefined;
+  glob: string | undefined;
 }) {
-  const { dryRun, packageManager, yes, ...codemodOptions } = options;
+  const { dryRun, packageManager, yes, glob, ...codemodOptions } = options;
   try {
     const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
     const isNonInteractive = yes || inSandbox;
-    let globString = '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}';
+    let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}';
 
-    if (inSandbox) {
-      // Sandbox always uses limited glob for faster testing
+    if (!glob && inSandbox) {
+      // Sandbox uses limited glob for faster testing (unless glob explicitly provided)
       globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
-    } else if (!isNonInteractive) {
+    } else if (!glob && !isNonInteractive) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
@@ -67,8 +68,9 @@ export const csfFactories: CommandFix = {
     packageManager,
     configDir,
     yes,
+    glob,
   }) {
-    let useSubPathImports = true;
+    let useSubPathImports = false;
     const isNonInteractive = yes || optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
 
     if (!isNonInteractive) {
@@ -113,6 +115,7 @@ export const csfFactories: CommandFix = {
       useSubPathImports,
       previewConfigPath: previewConfigPath!,
       yes,
+      glob,
     });
 
     logger.step('Applying codemod on your main config...');

@@ -47,7 +47,7 @@ export const sandbox = async ({
   const packageManager = JsPackageManagerFactory.getPackageManager({
     force: pkgMgr,
   });
-  const latestVersion = (await packageManager.latestVersion('storybook'))!;
+  const latestVersion = (await packageManager.latestVersion('storybook@latest')) ?? '0.0.0';
   let nextVersion = '0.0.0';
   try {
     nextVersion = (await packageManager.latestVersion('storybook@next')) ?? '0.0.0';

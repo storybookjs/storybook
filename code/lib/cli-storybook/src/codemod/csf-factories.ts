@@ -23,17 +23,18 @@ async function runStoriesCodemod(options: {
 }) {
   const { dryRun, packageManager, yes, ...codemodOptions } = options;
   try {
-    const isNonInteractive = yes || optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
+    const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
+    const isNonInteractive = yes || inSandbox;
     let globString = '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}';
 
-    if (isNonInteractive && optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
-      // Use sandbox-specific glob only in sandbox mode
+    if (inSandbox) {
+      // Sandbox always uses limited glob for faster testing
       globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
     } else if (!isNonInteractive) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
-        initialValue: '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}',
+        initialValue: globString,
       });
     }
 

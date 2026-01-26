@@ -1,0 +1,1 @@
+export { getPackageAliases } from './webpack';

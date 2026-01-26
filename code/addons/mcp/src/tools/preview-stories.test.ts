@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import {
@@ -497,6 +497,148 @@ describe('previewStoriesTool', () => {
 			name: 'Primary',
 			previewUrl:
 				'http://localhost:6006/?path=/story/button--primary&args=label:Dark+Mode+Button&globals=theme:dark',
+		});
+	});
+
+	describe('Windows paths', () => {
+		const originalCwd = process.cwd;
+		const windowsCwd = 'C:\\Users\\test\\project';
+
+		beforeEach(() => {
+			// Mock process.cwd to return a Windows path
+			Object.defineProperty(process, 'cwd', {
+				value: () => windowsCwd,
+				writable: true,
+				configurable: true,
+			});
+		});
+
+		afterEach(() => {
+			// Restore original process.cwd
+			Object.defineProperty(process, 'cwd', {
+				value: originalCwd,
+				writable: true,
+				configurable: true,
+			});
+		});
+
+		it('should return story URL for a valid story with Windows absolute path', async () => {
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: PREVIEW_STORIES_TOOL_NAME,
+					arguments: {
+						stories: [
+							{
+								exportName: 'Primary',
+								absoluteStoryPath:
+									'C:\\Users\\test\\project\\src\\Button.stories.tsx',
+							},
+						],
+					},
+				},
+			};
+
+			const response = await server.receive(request, {
+				sessionId: 'test-session',
+				custom: testContext,
+			});
+
+			expect(response.result).toEqual({
+				content: [
+					{
+						type: 'text',
+						text: 'http://localhost:6006/?path=/story/button--primary',
+					},
+				],
+				structuredContent: {
+					stories: [
+						{
+							title: 'Button',
+							name: 'Primary',
+							previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+						},
+					],
+				},
+			});
+			expect(fetchStoryIndexSpy).toHaveBeenCalledWith('http://localhost:6006');
+		});
+
+		it('should return error message for story not found with Windows path', async () => {
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: PREVIEW_STORIES_TOOL_NAME,
+					arguments: {
+						stories: [
+							{
+								exportName: 'NonExistent',
+								absoluteStoryPath:
+									'C:\\Users\\test\\project\\src\\NonExistent.stories.tsx',
+							},
+						],
+					},
+				},
+			};
+
+			const response = await server.receive(request, {
+				sessionId: 'test-session',
+				custom: testContext,
+			});
+
+			expect(response.result?.content[0].type).toBe('text');
+			expect(response.result?.content[0].text).toContain('No story found');
+			expect(response.result?.content[0].text).toContain('NonExistent');
+			expect(response.result?.content[0].text).toContain(
+				'did you forget to pass the explicit story name?',
+			);
+		});
+
+		it('should handle Windows path with mixed forward and backslashes', async () => {
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: PREVIEW_STORIES_TOOL_NAME,
+					arguments: {
+						stories: [
+							{
+								exportName: 'Primary',
+								absoluteStoryPath:
+									'C:/Users/test/project/src/Button.stories.tsx',
+							},
+						],
+					},
+				},
+			};
+
+			const response = await server.receive(request, {
+				sessionId: 'test-session',
+				custom: testContext,
+			});
+
+			expect(response.result).toEqual({
+				content: [
+					{
+						type: 'text',
+						text: 'http://localhost:6006/?path=/story/button--primary',
+					},
+				],
+				structuredContent: {
+					stories: [
+						{
+							title: 'Button',
+							name: 'Primary',
+							previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+						},
+					],
+				},
+			});
 		});
 	});
 });

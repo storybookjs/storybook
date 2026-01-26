@@ -12,6 +12,7 @@ import type { AddonContext } from '../types.ts';
 import { StoryInput, StoryInputArray } from '../types.ts';
 import appTemplate from './preview-stories/preview-stories-app-template.html';
 import fs from 'node:fs/promises';
+import { slash } from '../utils/slash.ts';
 
 export const PREVIEW_STORIES_TOOL_NAME = 'preview-stories';
 export const PREVIEW_STORIES_RESOURCE_URI = `ui://${PREVIEW_STORIES_TOOL_NAME}/preview.html`;
@@ -116,7 +117,11 @@ export async function addPreviewStoriesTool(
 				for (const inputParams of input.stories) {
 					const { exportName, explicitStoryName, absoluteStoryPath } =
 						inputParams;
-					const relativePath = `./${path.relative(process.cwd(), absoluteStoryPath)}`;
+					// Normalize paths to forward slashes for cross-platform compatibility
+					// Storybook import paths always use forward slashes
+					const normalizedCwd = slash(process.cwd());
+					const normalizedAbsolutePath = slash(absoluteStoryPath);
+					const relativePath = `./${path.posix.relative(normalizedCwd, normalizedAbsolutePath)}`;
 
 					logger.debug('Searching for:');
 					logger.debug({

@@ -122,6 +122,7 @@ export const automigrate = async ({
   isLatest,
   storiesPaths,
   hasCsfFactoryPreview,
+  glob,
 }: AutofixOptions): Promise<{
   fixResults: Record<string, FixStatus>;
   preCheckFailure?: PreCheckFailure;
@@ -147,6 +148,7 @@ export const automigrate = async ({
       storybookVersion,
       storiesPaths,
       yes,
+      glob,
     });
 
     return null;

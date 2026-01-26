@@ -48,13 +48,27 @@ export const sandbox = async ({
     force: pkgMgr,
   });
   const latestVersion = (await packageManager.latestVersion('storybook'))!;
-  const nextVersion = (await packageManager.latestVersion('storybook@next')) ?? '0.0.0';
+  let nextVersion = '0.0.0';
+  try {
+    nextVersion = (await packageManager.latestVersion('storybook@next')) ?? '0.0.0';
+  } catch {
+    nextVersion = '0.0.0';
+  }
+
+  logger.debug(`latestVersion: ${latestVersion}`);
+  logger.debug(`nextVersion: ${nextVersion}`);
+
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, isPrerelease ? nextVersion : latestVersion);
 
   const downloadType = !isOutdated && init ? 'after-storybook' : 'before-storybook';
   const branch = isPrerelease ? 'next' : 'main';
+
+  logger.debug(`isPrerelease: ${isPrerelease}`);
+  logger.debug(`isOutdated: ${isOutdated}`);
+  logger.debug(`downloadType: ${downloadType}`);
+  logger.debug(`branch: ${branch}`);
 
   const messages = {
     welcome: `Creating a Storybook ${picocolors.bold(currentVersion)} sandbox..`,

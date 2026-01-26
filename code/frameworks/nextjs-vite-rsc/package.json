@@ -1,0 +1,109 @@
+{
+  "name": "@storybook/nextjs-vite",
+  "version": "10.0.0-beta.2",
+  "description": "Storybook for Next.js and Vite: Develop, document, and test UI components in isolation",
+  "keywords": [
+    "storybook",
+    "storybook-framework",
+    "next",
+    "next.js",
+    "vite",
+    "component",
+    "components"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/nextjs-vite",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/frameworks/nextjs"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./cache.mock": {
+      "types": "./dist/export-mocks/cache/index.d.ts",
+      "default": "./dist/export-mocks/cache/index.js"
+    },
+    "./headers.mock": {
+      "types": "./dist/export-mocks/headers/index.d.ts",
+      "default": "./dist/export-mocks/headers/index.js"
+    },
+    "./navigation.mock": {
+      "types": "./dist/export-mocks/navigation/index.d.ts",
+      "default": "./dist/export-mocks/navigation/index.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "default": "./dist/node/index.js"
+    },
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    },
+    "./router.mock": {
+      "types": "./dist/export-mocks/router/index.d.ts",
+      "default": "./dist/export-mocks/router/index.js"
+    },
+    "./vite-plugin": {
+      "types": "./dist/vite-plugin/index.d.ts",
+      "default": "./dist/vite-plugin/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "template/cli/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "scripts": {
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
+  },
+  "dependencies": {
+    "@storybook/builder-vite": "workspace:*",
+    "@storybook/react": "workspace:*",
+    "@storybook/react-vite": "workspace:*",
+    "styled-jsx": "5.1.6",
+    "vite-plugin-storybook-nextjs": "^2.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "next": "^15.2.3",
+    "postcss-load-config": "^6.0.1",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "next": "^14.1.0 || ^15.0.0",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "storybook": "workspace:^",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+}

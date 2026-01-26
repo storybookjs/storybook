@@ -57,11 +57,11 @@ const ShareMenu = React.memo(function ShareMenu({ api, storyId, refId }: ShareMe
           rel: 'noopener noreferrer',
         },
       ],
-      Object.values(registeredShareProviders).map((registeredShareProvider) => {
+      ...Object.values(registeredShareProviders).map((registeredShareProvider) => {
         const { shareMenu, id } = registeredShareProvider;
-        return { id, content: shareMenu() };
+        return [{ id, content: shareMenu() }];
       }),
-    ].filter(Boolean);
+    ];
   }, [api, storyId, refId, copied, enableShortcuts, copyStoryLink, openInIsolation]);
 
   return <TooltipLinkList links={links} style={{ width: 240 }} />;

@@ -117,8 +117,7 @@ export async function addPreviewStoriesTool(
 				for (const inputParams of input.stories) {
 					const { exportName, explicitStoryName, absoluteStoryPath } =
 						inputParams;
-					// Normalize paths to forward slashes for cross-platform compatibility
-					// Storybook import paths always use forward slashes
+
 					const normalizedCwd = slash(process.cwd());
 					const normalizedAbsolutePath = slash(absoluteStoryPath);
 					const relativePath = `./${path.posix.relative(normalizedCwd, normalizedAbsolutePath)}`;

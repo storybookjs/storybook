@@ -1,5 +1,11 @@
 # @storybook/addon-mcp
 
+## 0.2.2
+
+### Patch Changes
+
+- [#137](https://github.com/storybookjs/mcp/pull/137) [`56be9e7`](https://github.com/storybookjs/mcp/commit/56be9e70919771b42e1be43c388f8a7cd62ce20f) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Fix preview-stories tool on Windows
+
 ## 0.2.1
 
 ### Patch Changes

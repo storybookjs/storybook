@@ -71,16 +71,18 @@ export const sandbox = async ({
     prerelease: picocolors.yellow('This is a pre-release version.'),
   };
 
-  logger.logBox(
-    [messages.welcome]
-      .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
-      .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
-      .concat(isPrerelease ? [messages.prerelease] : [])
-      .join('\n'),
-    {
-      rounded: true,
-    }
-  );
+  try {
+    logger.logBox(
+      [messages.welcome]
+        .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
+        .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
+        .concat(isPrerelease ? [messages.prerelease] : [])
+        .join('\n'),
+      {
+        rounded: true,
+      }
+    );
+  } catch {}
 
   if (!selectedConfig) {
     const filterRegex = new RegExp(`^${filterValue || ''}`, 'i');

@@ -39,7 +39,10 @@ const handleCommandFailure =
     try {
       const logFile = await logTracker.writeToFile(logFilePath);
       logger.log(`Debug logs are written to: ${logFile}`);
-    } catch {}
+    } catch (e) {
+      logger.error('Error writing debug logs to file');
+      logger.error(String(e));
+    }
     logger.outro('');
     process.exit(1);
   };
@@ -247,7 +250,7 @@ command('sandbox [filterValue]')
   .action((filterValue, options) => {
     logger.intro(`Creating a Storybook sandbox...`);
     sandbox({ filterValue, ...options })
-      .catch(handleCommandFailure)
+      .catch(handleCommandFailure(options.logfile))
       .finally(() => {
         logger.outro('Done!');
       });

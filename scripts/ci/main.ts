@@ -91,7 +91,7 @@ function generateConfig(workflow: Workflow) {
    * const filteredTodos = todos.filter((job) => !!job.id.includes('qwik'));
    * ```
    */
-  const filteredJobs = jobs.filter((job) => !!job);
+  const filteredJobs = jobs.filter((job) => !!job.id.startsWith('lit-latest--vite---javascript'));
 
   const isDebugging = filteredJobs.length !== jobs.length;
 

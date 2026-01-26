@@ -1,1 +1,1 @@
-{"version":"10.2.0","info":{"plain":""}}
+{"version":"10.2.1","info":{"plain":"- Builder-Webpack5: Fix @vitest/mocker resolution issue - [#33315](https://github.com/storybookjs/storybook/pull/33315), thanks @valentinpalkovic!\n- CLI: Add init telemetry for CLI integrations - [#33603](https://github.com/storybookjs/storybook/pull/33603), thanks @shilman!"}}

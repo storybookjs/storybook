@@ -8,7 +8,7 @@ import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
 import { Tag } from '../../../shared/constants/tags';
-import { renderComponentsManifest } from './render-components-manifest';
+import { type DocsManifest, renderComponentsManifest } from './render-components-manifest';
 
 async function getManifests(presets: Presets) {
   const generator = await presets.apply('storyIndexGenerator');
@@ -37,10 +37,13 @@ export async function writeManifests(outputDir: string, presets: Presets) {
         writeFile(join(outputDir, 'manifests', `${name}.json`), JSON.stringify(content))
       )
     );
-    if ('components' in manifests) {
+    if ('components' in manifests || 'docs' in manifests) {
       await writeFile(
         join(outputDir, 'manifests', 'components.html'),
-        renderComponentsManifest(manifests.components as ComponentsManifest)
+        renderComponentsManifest(
+          manifests.components as ComponentsManifest | undefined,
+          manifests.docs as DocsManifest | undefined
+        )
       );
     }
   } catch (e) {
@@ -72,17 +75,18 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
   app.get('/manifests/components.html', async (req, res) => {
     try {
       const manifests = await getManifests(presets);
-      const manifest = manifests.components;
+      const componentsManifest = manifests.components;
+      const docsManifest = manifests.docs as DocsManifest | undefined;
 
-      if (!manifest) {
+      if (!componentsManifest && !docsManifest) {
         res.statusCode = 404;
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.end(`<pre>No components manifest configured.</pre>`);
+        res.end(`<pre>No components or docs manifest configured.</pre>`);
         return;
       }
 
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.end(renderComponentsManifest(manifest));
+      res.end(renderComponentsManifest(componentsManifest, docsManifest));
     } catch (e) {
       res.statusCode = 500;
       res.setHeader('Content-Type', 'text/html; charset=utf-8');

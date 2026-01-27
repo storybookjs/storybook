@@ -2114,18 +2114,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@chromatic-com/storybook@npm:^4.1.3":
-  version: 4.1.3
-  resolution: "@chromatic-com/storybook@npm:4.1.3"
+"@chromatic-com/storybook@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "@chromatic-com/storybook@npm:5.0.0"
   dependencies:
     "@neoconfetti/react": "npm:^1.0.0"
-    chromatic: "npm:^13.3.3"
+    chromatic: "npm:^13.3.4"
     filesize: "npm:^10.0.12"
     jsonfile: "npm:^6.1.0"
     strip-ansi: "npm:^7.1.0"
   peerDependencies:
-    storybook: ^0.0.0-0 || ^9.0.0 || ^9.1.0-0 || ^9.2.0-0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0
-  checksum: 10c0/31d1cc7e98489238a22c7560677bf07235b87c48dc1f39faf1fdc7dda2f41221709c10af2a5fcb10e46bea7b80cc81badf08aba7015f0c5b8d0a9e037e92e1bf
+    storybook: ^0.0.0-0 || ^10.1.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0
+  checksum: 10c0/8e4dcba6c70b2943a5b68fd3d690084328844d757fffccef26adebf1eadfc3b0d2fee80280e57c40d6897dee3ab9c6c202de46eb1de39991d316df5e36b4fe89
   languageName: node
   linkType: hard
 
@@ -7830,7 +7830,6 @@ __metadata:
   dependencies:
     "@storybook/csf-plugin": "workspace:*"
     "@types/node": "npm:^22.19.1"
-    "@vitest/mocker": "npm:3.2.4"
     empathic: "npm:^2.0.0"
     es-module-lexer: "npm:^1.5.0"
     glob: "npm:^10.5.0"
@@ -7854,7 +7853,6 @@ __metadata:
     "@types/node": "npm:^22.19.1"
     "@types/pretty-hrtime": "npm:^1.0.0"
     "@types/webpack-hot-middleware": "npm:^2.25.6"
-    "@vitest/mocker": "npm:3.2.4"
     case-sensitive-paths-webpack-plugin: "npm:^2.4.0"
     cjs-module-lexer: "npm:^1.2.3"
     css-loader: "npm:^7.1.2"
@@ -7915,7 +7913,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/code@workspace:code"
   dependencies:
-    "@chromatic-com/storybook": "npm:^4.1.3"
+    "@chromatic-com/storybook": "npm:^5.0.0"
     "@playwright/test": "npm:1.52.0"
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/addon-designs": "npm:^11.0.3"
@@ -12391,11 +12389,11 @@ __metadata:
   linkType: hard
 
 "baseline-browser-mapping@npm:^2.8.25":
-  version: 2.8.29
-  resolution: "baseline-browser-mapping@npm:2.8.29"
+  version: 2.9.15
+  resolution: "baseline-browser-mapping@npm:2.9.15"
   bin:
     baseline-browser-mapping: dist/cli.js
-  checksum: 10c0/bb5f082d91b59c885504fd4ff999bd890c39e8b818afe00f15f0dfcdb7f7b80a655ad57429563091c0d3722649ba4a2f023ca3ede02e022b12ba6b0322a3314e
+  checksum: 10c0/e5c8cb8600fcbed8132f122b737b00b5b3fcf25a119ea5e42476e6d6b2263274ddc5df16d4cffebbcd46974b691008558973b06100508903ea8a382a5edd34ab
   languageName: node
   linkType: hard
 
@@ -13412,7 +13410,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chromatic@npm:^13.3.3, chromatic@npm:^13.3.4":
+"chromatic@npm:^13.3.4":
   version: 13.3.4
   resolution: "chromatic@npm:13.3.4"
   peerDependencies:
@@ -28448,6 +28446,7 @@ __metadata:
     "@types/semver": "npm:^7.7.1"
     "@types/ws": "npm:^8"
     "@vitest/expect": "npm:3.2.4"
+    "@vitest/mocker": "npm:3.2.4"
     "@vitest/spy": "npm:3.2.4"
     "@vitest/utils": "npm:^3.2.4"
     "@yarnpkg/fslib": "npm:2.10.3"

@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -20,7 +20,27 @@ const meta: Meta<Button> = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+});
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
   component: 'demo-button',
   parameters: {
@@ -36,7 +56,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -54,6 +74,42 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+});
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
@@ -97,7 +153,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Button from './Button.vue';
 
 export default {
@@ -115,7 +171,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -135,6 +191,48 @@ const meta = {
 } satisfies Meta<typeof Button>;
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
@@ -159,7 +257,7 @@ export default meta;
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Button from './Button.svelte';
 
 export default {
@@ -199,7 +297,7 @@ export default {
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 

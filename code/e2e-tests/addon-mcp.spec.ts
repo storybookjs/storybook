@@ -1,4 +1,6 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
+import path from 'node:path';
+
 import type { APIRequestContext } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 import process from 'process';
@@ -6,7 +8,7 @@ import process from 'process';
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
-const sandboxDir = process.env.STORYBOOK_SANDBOX_DIR;
+const sandboxDir = process.env.STORYBOOK_SANDBOX_DIR!;
 
 const MCP_ENDPOINT = `${storybookUrl}/mcp`;
 
@@ -200,7 +202,7 @@ test.describe('addon-mcp', () => {
             stories: [
               {
                 exportName: storyName,
-                absoluteStoryPath: `${sandboxDir}/src/stories/Button.stories.ts`,
+                absoluteStoryPath: path.join(sandboxDir, 'src', 'stories', 'Button.stories.ts'),
               },
             ],
           },

@@ -347,7 +347,7 @@ describe('preview specific functionality', () => {
         import { type Preview } from '@storybook/react-vite';
         export const decorators = []
         const preview = {
-          
+
           parameters: {
             options: {}
           }
@@ -366,6 +366,44 @@ describe('preview specific functionality', () => {
           options: {},
         },
       });
+    `);
+  });
+
+  it('should add default export when preview only has side-effect imports', async () => {
+    await expect(
+      transform(dedent`
+        import './preview.scss'
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { definePreview } from '@storybook/react-vite';
+
+      import './preview.scss';
+
+      export default definePreview({});
+    `);
+  });
+
+  it('should add default export when preview file is empty', async () => {
+    await expect(transform('')).resolves.toMatchInlineSnapshot(`
+      import { definePreview } from '@storybook/react-vite';
+
+      export default definePreview({});
+    `);
+  });
+
+  it('should add default export when preview only has multiple side-effect imports', async () => {
+    await expect(
+      transform(dedent`
+        import './preview.scss'
+        import './global.css'
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { definePreview } from '@storybook/react-vite';
+
+      import './preview.scss';
+      import './global.css';
+
+      export default definePreview({});
     `);
   });
 });

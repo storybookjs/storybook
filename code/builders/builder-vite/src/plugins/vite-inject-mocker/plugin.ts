@@ -1,63 +1,35 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolvePackageDir } from 'storybook/internal/common';
+import type { ResolvedConfig } from 'vite';
 
-import { exactRegex } from '@rolldown/pluginutils';
-import { dedent } from 'ts-dedent';
-import type { ResolvedConfig, ViteDevServer } from 'vite';
-
-const entryPath = '/vite-inject-mocker-entry.js';
-
-const entryCode = dedent`
-    <script type="module" src=".${entryPath}"></script>
-  `;
-
-let server: ViteDevServer;
+const ENTRY_PATH = '/vite-inject-mocker-entry.js';
 
 export const viteInjectMockerRuntime = (options: {
   previewConfigPath?: string | null;
 }): import('vite').Plugin => {
+  // Get the actual file path so Vite can resolve relative imports
+  const mockerRuntimePath = fileURLToPath(
+    import.meta.resolve('storybook/internal/mocking-utils/mocker-runtime')
+  );
+
   let viteConfig: ResolvedConfig;
 
   return {
     name: 'vite:storybook-inject-mocker-runtime',
+    enforce: 'pre',
     buildStart() {
       if (viteConfig.command === 'build') {
         this.emitFile({
           type: 'chunk',
-          id: join(
-            resolvePackageDir('storybook'),
-            'assets',
-            'server',
-            'mocker-runtime.template.js'
-          ),
-          fileName: entryPath.slice(1),
+          id: mockerRuntimePath,
+          fileName: ENTRY_PATH.slice(1),
         });
       }
-    },
-    config() {
-      return {
-        optimizeDeps: {
-          include: ['@vitest/mocker', '@vitest/mocker/browser'],
-        },
-        resolve: {
-          // Aliasing necessary for package managers like pnpm, since resolving modules from a virtual module
-          // leads to errors, if the imported module is not a dependency of the project.
-          // By resolving the module to the real path, we can avoid this issue.
-          alias: {
-            '@vitest/mocker/browser': fileURLToPath(import.meta.resolve('@vitest/mocker/browser')),
-            '@vitest/mocker': fileURLToPath(import.meta.resolve('@vitest/mocker')),
-          },
-        },
-      };
     },
     configResolved(config) {
       viteConfig = config;
     },
-    configureServer(server_) {
-      server = server_;
+    configureServer(server) {
       if (options.previewConfigPath) {
         server.watcher.on('change', (file) => {
           if (file === options.previewConfigPath) {
@@ -69,31 +41,17 @@ export const viteInjectMockerRuntime = (options: {
         });
       }
     },
-    resolveId: {
-      filter: {
-        id: [exactRegex(entryPath)],
-      },
-      handler(id) {
-        if (exactRegex(id).test(entryPath)) {
-          return id;
-        }
-        return null;
-      },
-    },
-    async load(id) {
-      if (exactRegex(id).test(entryPath)) {
-        return readFileSync(
-          join(resolvePackageDir('storybook'), 'assets', 'server', 'mocker-runtime.template.js'),
-          'utf-8'
-        );
+    resolveId(source) {
+      if (source === ENTRY_PATH) {
+        return mockerRuntimePath;
       }
-
-      return null;
+      return undefined;
     },
     transformIndexHtml(html: string) {
       const headTag = html.match(/<head[^>]*>/);
 
       if (headTag) {
+        const entryCode = `<script type="module" src="${ENTRY_PATH}"></script>`;
         const headTagIndex = html.indexOf(headTag[0]);
         const newHtml =
           html.slice(0, headTagIndex + headTag[0].length) +

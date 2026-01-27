@@ -1,11 +1,10 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
-import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata, argsToTemplate } from '@storybook/angular';
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import { type Meta, type StoryObj, moduleMetadata, argsToTemplate } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
-import { Layout } from './Layout.component';
-import { MyComponent } from './MyComponent.component';
+import { Layout } from './layout.component';
+import { MyComponent } from './my-component.component';
 
 const meta: Meta<MyComponent> = {
   component: MyComponent,
@@ -36,6 +35,44 @@ export const Example: Story = {
     `,
   }),
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { moduleMetadata, argsToTemplate } from '@storybook/angular';
+
+import { CommonModule } from '@angular/common';
+
+import preview from '../.storybook/preview';
+
+import { Layout } from './layout.component';
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+  decorators: [
+    moduleMetadata({
+      declarations: [Layout],
+      imports: [CommonModule],
+    }),
+  ],
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: (args) => ({
+    props: args,
+    template: `
+      <app-layout>
+        <header>
+          <h1>Example</h1>
+        </header>
+        <article>
+          <app-my-component ${argsToTemplate(args)}></app-my-component>
+        </article>
+      </app-layout>
+    `,
+  }),
+});
 ```
 
 ```jsx filename="MyComponent.stories.js|jsx" renderer="preact" language="js"
@@ -116,6 +153,56 @@ export const Example: Story = {
 };
 ```
 
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Layout } from './Layout';
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => (
+    <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  ),
+});
+```
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Layout } from './Layout';
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => (
+    <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  ),
+});
+```
+
 ```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
 import { Layout } from './Layout';
 import { MyComponent } from './MyComponent';
@@ -168,7 +255,7 @@ export const Example: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Layout from './Layout.vue';
 import MyComponent from './MyComponent.vue';
 
@@ -194,7 +281,7 @@ export const Example = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Layout from './Layout.vue';
@@ -225,7 +312,63 @@ export const Example: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Layout from './Layout.vue';
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => ({
+    components: { Layout, MyComponent },
+    template: `
+      <Layout>
+        <header>
+          <h1>Example</h1>
+        </header>
+        <article>
+          <MyComponent />
+        </article>
+      </Layout>
+    `,
+  }),
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Layout from './Layout.vue';
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => ({
+    components: { Layout, MyComponent },
+    template: `
+      <Layout>
+        <header>
+          <h1>Example</h1>
+        </header>
+        <article>
+          <MyComponent />
+        </article>
+      </Layout>
+    `,
+  }),
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { html } from 'lit';
 
 export default {
@@ -235,19 +378,19 @@ export default {
 // This story uses a render function to fully control how the component renders.
 export const Example = {
   render: () => html`
-    <layout>
+    <my-layout>
       <header>
         <h1>Example</h1>
       </header>
       <article>
         <my-component />
       </article>
-    </layout>
+    </my-layout>
   `,
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -262,67 +405,63 @@ type Story = StoryObj;
 // This story uses a render function to fully control how the component renders.
 export const Example: Story = {
   render: () => html`
-    <layout>
+    <my-layout>
       <header>
         <h1>Example</h1>
       </header>
       <article>
         <my-component />
       </article>
-    </layout>
+    </my-layout>
   `,
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
 import preview from '../.storybook/preview';
 
-import { Layout } from './Layout';
-import { MyComponent } from './MyComponent';
-
 const meta = preview.meta({
-  component: MyComponent,
+  component: 'my-component',
 });
 
 // This story uses a render function to fully control how the component renders.
 export const Example = meta.story({
-  render: () => (
-    <Layout>
+  render: () => html`
+    <my-layout>
       <header>
         <h1>Example</h1>
       </header>
       <article>
-        <MyComponent />
+        <my-component />
       </article>
-    </Layout>
-  ),
+    </my-layout>
+  `,
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { Layout } from './Layout';
-import { MyComponent } from './MyComponent';
-
 const meta = preview.meta({
-  component: MyComponent,
+  component: 'my-component',
 });
 
 // This story uses a render function to fully control how the component renders.
 export const Example = meta.story({
-  render: () => (
-    <Layout>
+  render: () => html`
+    <my-layout>
       <header>
         <h1>Example</h1>
       </header>
       <article>
-        <MyComponent />
+        <my-component />
       </article>
-    </Layout>
-  ),
+    </my-layout>
+  `,
 });
 ```
 

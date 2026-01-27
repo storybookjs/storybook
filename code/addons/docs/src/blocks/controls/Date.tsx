@@ -38,40 +38,32 @@ export const formatTime = (value: Date | number) => {
   return `${hours}:${minutes}`;
 };
 
-const FormInput = styled(Form.Input)(({ theme, readOnly }) =>
-  readOnly
-    ? {
-        background: theme.base === 'light' ? theme.color.lighter : 'transparent',
-      }
-    : {}
-);
+const FormInput = styled(Form.Input)(({ theme }) => ({
+  '&[readonly]': {
+    background: theme.base === 'light' ? theme.color.lighter : 'transparent',
+  },
+  '&::-webkit-calendar-picker-indicator': {
+    opacity: 0.5,
+    height: 12,
+    filter: theme.base === 'light' ? undefined : 'invert(1)',
+  },
+}));
 
-const FlexSpaced = styled.fieldset(({ theme }) => ({
+const FlexSpaced = styled.fieldset({
   flex: 1,
   display: 'flex',
   border: 0,
   marginInline: 0,
   padding: 0,
+  gap: 10,
 
-  input: {
-    marginLeft: 10,
-    flex: 1,
-    height: 32, // hardcode height bc Chromium bug https://bugs.chromium.org/p/chromium/issues/detail?id=417606
-
-    '&::-webkit-calendar-picker-indicator': {
-      opacity: 0.5,
-      height: 12,
-      filter: theme.base === 'light' ? undefined : 'invert(1)',
-    },
+  'div:first-of-type': {
+    flex: 4,
   },
-  'input:first-of-type': {
-    marginLeft: 0,
-    flexGrow: 4,
+  'div:last-of-type': {
+    flex: 3,
   },
-  'input:last-of-type': {
-    flexGrow: 3,
-  },
-}));
+});
 
 export type DateProps = ControlProps<DateValue> & DateConfig;
 export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onBlur, argType }) => {

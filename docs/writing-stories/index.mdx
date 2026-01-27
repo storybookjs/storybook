@@ -44,7 +44,7 @@ components/
 
   We define stories according to the [Component Story Format](../api/csf.mdx) (CSF), an ES6 module-based standard that is easy to write and portable between tools.
 
-  The key ingredients are the [default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export) that describes the component, and [named exports](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_named_exports) that describe the stories.
+  The key ingredients are the meta (or [default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export)) that describes the component, and [named exports](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_named_exports) that describe the stories.
 
 </If>
 
@@ -64,7 +64,7 @@ components/
 
 <If notRenderer="svelte">
 
-  The *default* export metadata controls how Storybook lists your stories and provides information used by addons. For example, here’s the default export for a story file `Button.stories.js|ts`:
+  The *default* export metadata controls how Storybook lists your stories and provides information used by addons. For example, here’s the meta (or default export) for a story file `Button.stories.js|ts`:
 
   {/* prettier-ignore-start */}
 
@@ -175,7 +175,7 @@ Note how the template snippet or `render` function spreads `args` onto the Butto
 
 </Callout>
 
-You can re-use the same render function across stories by applying it at the meta level. For Svelte CSF, this can be done by defining the template snippet outside of the story and assigning it to the `render` property of the `defineMeta` function. For CSF, you can define a `render` function in the default export.
+You can re-use the same render function across stories by applying it at the meta level. For Svelte CSF, this can be done by defining the template snippet outside of the story and assigning it to the `render` property of the `defineMeta` function. For CSF, you can define a `render` function in the meta (or default export).
 
 ```svelte title="Button.stories.svelte"
 <script module>
@@ -208,7 +208,7 @@ Finally, `render` functions and template snippets receive a second `context` arg
 
 <If notRenderer="svelte">
 
-By default, stories will render the component defined in the meta (default export), with the `args` passed to it. If you need to render something else, you can provide a function to the `render` property that returns the desired output.
+By default, stories will render the component defined in the meta (or default export), with the `args` passed to it. If you need to render something else, you can provide a function to the `render` property that returns the desired output.
 
 For example, if you want to render a `Button` inside an `Alert`, you can define a custom render function like this:
 

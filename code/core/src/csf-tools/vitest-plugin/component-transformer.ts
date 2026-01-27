@@ -212,6 +212,23 @@ const collectComponentExports = (program: t.Program, fileName: string) => {
         return;
       }
 
+      if (t.isCallExpression(declaration)) {
+        // Handle wrapped component exports e.g.
+        // export default someWrapper(Component)
+        const identifierName = createComponentNameFromFileName(fileName);
+        const identifier = path.scope.generateUidIdentifier(identifierName);
+        const variableDeclaration = t.variableDeclaration('const', [
+          t.variableDeclarator(identifier, declaration),
+        ]);
+        variableDeclaration.loc = node.loc;
+        path.insertBefore(variableDeclaration);
+        node.declaration = identifier;
+
+        // Assume wrapped exports are components without detecting JSX to filter out. We can do that if needed in the future based on feedback.
+        components.push({ exportedName: identifierName, localIdentifier: identifier });
+        return;
+      }
+
       if (t.isIdentifier(declaration)) {
         const binding = path.scope.getBinding(declaration.name);
         if (!binding) {

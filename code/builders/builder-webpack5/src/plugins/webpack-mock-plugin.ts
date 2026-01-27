@@ -4,12 +4,12 @@ import { fileURLToPath } from 'node:url';
 import {
   babelParser,
   extractMockCalls,
+  findMockRedirect,
   getIsExternal,
   resolveExternalModule,
   resolveWithExtensions,
 } from 'storybook/internal/mocking-utils';
 
-import { findMockRedirect } from '@vitest/mocker/redirect';
 import type { Compiler } from 'webpack';
 
 // --- Type Definitions ---

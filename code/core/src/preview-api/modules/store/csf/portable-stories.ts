@@ -169,7 +169,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
         // TODO: Consolidate this renderContext with Context in SB 10.0
         // Change renderToCanvas function to only use the context object
         // and to make the renderContext an internal implementation detail
-        // wasnt'possible so far because showError and showException are not part of the story context (yet)
+        // wasn't possible so far because showError and showException are not part of the story context (yet)
         const unmount = await story.renderToCanvas?.(
           {
             componentId: story.componentId,

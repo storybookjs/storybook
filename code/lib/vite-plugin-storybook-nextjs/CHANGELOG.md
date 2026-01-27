@@ -1,3 +1,15 @@
+# v3.1.10 (Tue Jan 27 2026)
+
+#### 🐛 Bug Fix
+
+- Support latest prerelease [#85](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/85) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v3.1.9 (Wed Jan 14 2026)
 
 #### 🐛 Bug Fix

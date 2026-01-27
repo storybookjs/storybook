@@ -28,17 +28,17 @@ export function registerIndexJsonRoute({
   storyIndexGeneratorPromise,
   workingDir = process.cwd(),
   configDir,
-  serverChannel,
+  channel,
   normalizedStories,
 }: {
   app: Polka;
   storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
-  serverChannel: ServerChannel;
+  channel: ServerChannel;
   workingDir?: string;
   configDir?: string;
   normalizedStories: NormalizedStoriesSpecifier[];
 }) {
-  const maybeInvalidate = debounce(() => serverChannel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
+  const maybeInvalidate = debounce(() => channel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
     edges: ['leading', 'trailing'],
   });
   watchStorySpecifiers(normalizedStories, { workingDir }, async (path, removed) => {

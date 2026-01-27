@@ -1,4 +1,5 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
+import type { Channel } from 'storybook/internal/channels';
 import type { FileSystemCache } from 'storybook/internal/common';
 import { type StoryIndexGenerator } from 'storybook/internal/core-server';
 import { type CsfFile } from 'storybook/internal/csf-tools';
@@ -18,10 +19,6 @@ import type { SupportedRenderer } from './renderers';
 
 export type BuilderName = 'webpack5' | '@storybook/builder-webpack5' | string;
 export type RendererName = string;
-
-interface ServerChannel {
-  emit(type: string, args?: any): void;
-}
 
 export interface CoreConfig {
   builder?:
@@ -221,6 +218,7 @@ export interface BuilderOptions {
 export interface StorybookConfigOptions {
   presets: Presets;
   presetsList?: LoadedPreset[];
+  channel: Channel;
 }
 
 export type Options = LoadOptions &
@@ -259,7 +257,7 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
     startTime: ReturnType<typeof process.hrtime>;
     router: ServerApp;
     server: HttpServer;
-    channel: ServerChannel;
+    channel: Channel;
   }) => Promise<void | {
     stats?: BuilderStats;
     totalTime: ReturnType<typeof process.hrtime>;

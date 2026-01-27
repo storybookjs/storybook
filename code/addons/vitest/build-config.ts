@@ -13,6 +13,10 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        exportEntries: ['./preview'],
+        entryPoint: './src/preview.ts',
+      },
+      {
         exportEntries: ['./internal/setup-file'],
         entryPoint: './src/vitest-plugin/setup-file.ts',
         dts: false,
@@ -24,6 +28,10 @@ const config: BuildEntries = {
       },
     ],
     node: [
+      {
+        exportEntries: ['./constants'],
+        entryPoint: './src/constants.ts',
+      },
       {
         exportEntries: ['./preset'],
         entryPoint: './src/preset.ts',

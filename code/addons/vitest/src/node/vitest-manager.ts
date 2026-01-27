@@ -10,7 +10,7 @@ import type {
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
-import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
+import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import path, { dirname, join, normalize } from 'pathe';
@@ -183,24 +183,12 @@ export class VitestManager {
     });
   }
 
-  private async fetchStories(requestStoryIds?: string[]): Promise<StoryIndexEntry[]> {
-    const indexUrl = this.testManager.store.getState().indexUrl;
-    if (!indexUrl) {
-      throw new Error(
-        'Tried to fetch stories to test, but the index URL was not set in the store yet.'
-      );
+  private getStories(requestStoryIds?: string[]): StoryIndexEntry[] {
+    const index = this.testManager.store.getState().index;
+    if (requestStoryIds) {
+      return requestStoryIds.map((id) => index.entries[id]) as StoryIndexEntry[];
     }
-    try {
-      const index = (await Promise.race([
-        fetch(indexUrl).then((res) => res.json()),
-        new Promise((_, reject) => setTimeout(reject, 3000, new Error('Request took too long'))),
-      ])) as StoryIndex;
-      const storyIds = requestStoryIds || Object.keys(index.entries);
-      return storyIds.map((id) => index.entries[id]).filter((story) => story.type === 'story');
-    } catch (e: any) {
-      log('Failed to fetch story index: ' + e.message);
-      return [];
-    }
+    return Object.values(index.entries).filter((entry) => entry.type === 'story');
   }
 
   private filterTestSpecifications(
@@ -279,7 +267,7 @@ export class VitestManager {
     await this.cancelCurrentRun();
 
     const testSpecifications = await this.getStorybookTestSpecifications();
-    const allStories = await this.fetchStories();
+    const allStories = this.getStories();
 
     const filteredStories = runPayload.storyIds
       ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
@@ -394,7 +382,7 @@ export class VitestManager {
       previewAnnotationSpecifications.concat(setupFilesSpecifications);
 
     const testSpecifications = await this.getStorybookTestSpecifications();
-    const allStories = await this.fetchStories();
+    const allStories = this.getStories();
 
     let affectsGlobalFiles = false;
 

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { Channel } from 'storybook/internal/channels';
 import type { Options, Presets } from 'storybook/internal/types';
 
 import { loadConfigFromFile } from 'vite';
@@ -17,6 +18,7 @@ const dummyOptions: Options = {
   configType: 'DEVELOPMENT',
   configDir: '',
   packageJson: {},
+  channel: new Channel({}),
   presets: {
     apply: async (key: string) =>
       ({

@@ -1,7 +1,8 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { writeFileSync, readFileSync, mkdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { runCodemod } from './index';
 
@@ -40,10 +41,11 @@ describe('runCodemod', () => {
   /**
    * https://github.com/storybookjs/storybook/issues/33639
    *
-   * Reproduces the bug where csf-2-to-3 silently fails because filenames
-   * are incorrectly quoted when passed to spawnSync.
+   * Reproduces the bug where csf-2-to-3 silently fails because filenames are incorrectly quoted
+   * when passed to spawnSync.
    *
-   * Test file from: https://github.com/seb-oss/green/blob/b634df24d2dae157300f73b711e569d1755eb138/libs/react-charts/src/lib/chart.stories.tsx
+   * Test file from:
+   * https://github.com/seb-oss/green/blob/b634df24d2dae157300f73b711e569d1755eb138/libs/react-charts/src/lib/chart.stories.tsx
    */
   it('should transform CSF2 Template.bind({}) files with csf-2-to-3', async () => {
     const storyFile = join(tempDir, 'chart.stories.tsx');

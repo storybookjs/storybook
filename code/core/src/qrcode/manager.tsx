@@ -48,7 +48,7 @@ const QRDescription = styled.div(({ theme }) => ({
 export default addons.register(ADDON_ID, () => {
   addons.add(ADDON_ID, {
     type: types.experimental_SHARE_PROVIDER,
-    shareMenu: () => {
+    render: () => {
       const api = useStorybookApi();
       const { id: storyId, refId } = api.getCurrentStoryData() ?? {};
       if (!storyId) {

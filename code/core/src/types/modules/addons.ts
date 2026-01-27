@@ -448,7 +448,7 @@ export interface Addon_ShareProviderType {
   type: Addon_TypesEnum.experimental_SHARE_PROVIDER;
   /** The unique id of the share provider. */
   id: string;
-  shareMenu: () => ReactNode;
+  render: () => ReactNode;
 }
 
 export interface Addon_TestProviderType {

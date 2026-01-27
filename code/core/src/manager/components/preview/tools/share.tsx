@@ -58,8 +58,8 @@ const ShareMenu = React.memo(function ShareMenu({ api, storyId, refId }: ShareMe
         },
       ],
       ...Object.values(registeredShareProviders).map((registeredShareProvider) => {
-        const { shareMenu, id } = registeredShareProvider;
-        return [{ id, content: shareMenu() }];
+        const { id, render } = registeredShareProvider;
+        return [{ id, content: render() }];
       }),
     ];
   }, [api, storyId, refId, copied, enableShortcuts, copyStoryLink, openInIsolation]);

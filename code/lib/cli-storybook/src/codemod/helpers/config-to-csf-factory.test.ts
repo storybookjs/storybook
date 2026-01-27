@@ -378,8 +378,8 @@ describe('preview specific functionality', () => {
     ).resolves.toMatchInlineSnapshot(`
       import { definePreview } from '@storybook/react-vite';
 
-      import './preview.scss';
       import './global.css';
+      import './preview.scss';
 
       export default definePreview({});
     `);

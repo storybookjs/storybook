@@ -112,7 +112,7 @@ export const OnPhone = {
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { Button } from './Button';
+import Button from './Button.svelte';
 
 const meta = {
   component: Button,
@@ -279,6 +279,7 @@ export const OnPhone = meta.story({
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
 const meta = preview.meta({

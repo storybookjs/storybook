@@ -5,7 +5,7 @@ import { mocked } from 'storybook/test';
 // 👇 Automocked module resolves to '../lib/__mocks__/session'
 import { getUserFromSession } from '../lib/session';
 
-import { Page } from './Page';
+import { Page } from './Page.component';
 
 const meta: Meta<Page> = {
   component: Page,
@@ -30,7 +30,7 @@ import preview from '../.storybook/preview';
 // 👇 Automocked module resolves to '../lib/__mocks__/session'
 import { getUserFromSession } from '../lib/session';
 
-import { Page } from './Page';
+import { Page } from './Page.component';
 
 const meta = preview.meta({
   component: Page,
@@ -53,7 +53,7 @@ export const Basic = meta.story({
 
   import Page from './Page.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     component: Page,
   });
 </script>
@@ -110,7 +110,7 @@ export const Basic = {
 
   import Page from './Page.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     component: Page,
   });
 </script>

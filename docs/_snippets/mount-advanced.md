@@ -131,7 +131,7 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.svelte';
 
 const meta = { component: Page } satisfies Meta<typeof Page>;
 export default meta;
@@ -163,7 +163,7 @@ export const Basic: Story = {
 ```js filename="Page.stories.js" renderer="svelte" language="js"
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.svelte';
 
 export default { component: Page };
 
@@ -189,12 +189,12 @@ export const Basic = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue3" language="ts"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.vue';
 
 const meta = { component: Page } satisfies Meta<typeof Page>;
 export default meta;
@@ -223,10 +223,10 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="vue3" language="js"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
-import { Page } from './Page';
+import Page from './Page.vue';
 
 export default { component: Page };
 

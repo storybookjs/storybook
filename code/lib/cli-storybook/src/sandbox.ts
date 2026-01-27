@@ -47,14 +47,23 @@ export const sandbox = async ({
   const packageManager = JsPackageManagerFactory.getPackageManager({
     force: pkgMgr,
   });
-  const latestVersion = (await packageManager.latestVersion('storybook'))!;
+  const latestVersion = (await packageManager.latestVersion('storybook')) ?? '0.0.0';
   const nextVersion = (await packageManager.latestVersion('storybook@next')) ?? '0.0.0';
+
+  logger.debug(`latestVersion: ${latestVersion}`);
+  logger.debug(`nextVersion: ${nextVersion}`);
+
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, isPrerelease ? nextVersion : latestVersion);
 
   const downloadType = !isOutdated && init ? 'after-storybook' : 'before-storybook';
   const branch = isPrerelease ? 'next' : 'main';
+
+  logger.debug(`isPrerelease: ${isPrerelease}`);
+  logger.debug(`isOutdated: ${isOutdated}`);
+  logger.debug(`downloadType: ${downloadType}`);
+  logger.debug(`branch: ${branch}`);
 
   const messages = {
     welcome: `Creating a Storybook ${picocolors.bold(currentVersion)} sandbox..`,
@@ -71,16 +80,18 @@ export const sandbox = async ({
     prerelease: picocolors.yellow('This is a pre-release version.'),
   };
 
-  logger.logBox(
-    [messages.welcome]
-      .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
-      .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
-      .concat(isPrerelease ? [messages.prerelease] : [])
-      .join('\n'),
-    {
-      rounded: true,
-    }
-  );
+  try {
+    logger.logBox(
+      [messages.welcome]
+        .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
+        .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
+        .concat(isPrerelease ? [messages.prerelease] : [])
+        .join('\n'),
+      {
+        rounded: true,
+      }
+    );
+  } catch {}
 
   if (!selectedConfig) {
     const filterRegex = new RegExp(`^${filterValue || ''}`, 'i');

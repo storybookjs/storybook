@@ -47,7 +47,6 @@
   ],
   "dependencies": {
     "@storybook/csf-plugin": "workspace:*",
-    "@vitest/mocker": "3.2.4",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {

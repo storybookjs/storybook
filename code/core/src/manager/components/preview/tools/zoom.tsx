@@ -56,7 +56,8 @@ export const Zoom = memo<{
   zoomIn: () => void;
   zoomOut: () => void;
   zoomTo: (value: number) => void;
-}>(function Zoom({ value, zoomIn, zoomOut, zoomTo }) {
+  zoomBy: (delta: number) => void;
+}>(function Zoom({ value, zoomIn, zoomOut, zoomTo, zoomBy }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -149,6 +150,35 @@ export const Zoom = memo<{
         variant="ghost"
         ariaLabel="Change zoom level"
         active={value !== INITIAL_ZOOM_LEVEL}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown') {
+            zoomBy(-0.01);
+            e.preventDefault();
+          } else if (e.key === 'ArrowUp') {
+            zoomBy(0.01);
+            e.preventDefault();
+          } else if (e.key === 'PageDown') {
+            zoomOut();
+            e.preventDefault();
+          } else if (e.key === 'PageUp') {
+            zoomIn();
+            e.preventDefault();
+          } else if (e.key === 'Home') {
+            zoomTo(ZOOM_LEVELS[ZOOM_LEVELS.length - 1]);
+            e.preventDefault();
+          } else if (e.key === 'End') {
+            zoomTo(ZOOM_LEVELS[0]);
+            e.preventDefault();
+          }
+        }}
+        onWheel={(e) => {
+          if (e.deltaY < 0) {
+            zoomIn();
+          } else if (e.deltaY > 0) {
+            zoomOut();
+          }
+          e.preventDefault();
+        }}
       >
         {Math.round(value * 100)}%
       </ZoomButton>
@@ -175,6 +205,13 @@ const ZoomWrapper = memo<{
       set(lowerZoomLevel);
     }
   }, [set, value]);
+
+  const zoomBy = useCallback(
+    (delta: number) => {
+      set(Math.max(0.01, value + delta));
+    },
+    [set, value]
+  );
 
   const zoomTo = useCallback(
     (value: number) => {
@@ -210,7 +247,7 @@ const ZoomWrapper = memo<{
     });
   }, [api, zoomIn, zoomOut, zoomTo]);
 
-  return <Zoom key="zoom" {...{ value, zoomIn, zoomOut, zoomTo }} />;
+  return <Zoom key="zoom" {...{ value, zoomIn, zoomOut, zoomTo, zoomBy }} />;
 });
 
 export const zoomTool: Addon_BaseType = {

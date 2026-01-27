@@ -26,7 +26,7 @@ export const Basic: Story = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -54,7 +54,7 @@ export const Basic = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -88,7 +88,7 @@ export const Basic: Story = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -119,7 +119,7 @@ export const Basic = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });
@@ -154,7 +154,7 @@ export const Basic: Story = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -183,7 +183,7 @@ export const Basic = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -217,7 +217,7 @@ export const Basic: Story = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -246,7 +246,7 @@ export const Basic = {
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 };
@@ -276,7 +276,7 @@ export const Basic = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });
@@ -309,7 +309,7 @@ export const Basic = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });
@@ -340,7 +340,7 @@ export const Basic = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });
@@ -373,7 +373,7 @@ export const Basic = meta.story({
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
   },
   argTypes: {
-    // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
     params: { control: { disable: true } },
   },
 });

@@ -171,13 +171,13 @@ export async function configToCsfFactory(
      * Scenario 4: No exports (empty file or only side-effect imports)
      *
      * ```
-     * import './preview.scss'
+     * import './preview.scss';
      * ```
      *
      * Transform into: `import './preview.scss'; export default definePreview({})`
      *
-     * This is needed because story files using CSF factories import from preview,
-     * so the preview file must have a default export.
+     * This is needed because story files using CSF factories import from preview, so the preview
+     * file must have a default export.
      */
     const defineConfigCall = t.callExpression(t.identifier(methodName), [t.objectExpression([])]);
     programNode.body.push(t.exportDefaultDeclaration(defineConfigCall));

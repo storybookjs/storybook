@@ -55,6 +55,7 @@ import * as React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+
 import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 
@@ -85,6 +86,7 @@ import * as React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
+
 import addonDocs from '@storybook/addon-docs';
 import { DocsContainer } from '@storybook/addon-docs/blocks';
 

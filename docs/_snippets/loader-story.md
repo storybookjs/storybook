@@ -3,7 +3,7 @@ import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
-import { TodoItem } from './TodoItem';
+import { TodoItem } from './TodoItem.component';
 
 const meta: Meta<TodoItem> = {
   component: TodoItem,
@@ -45,7 +45,7 @@ import { moduleMetadata } from '@storybook/angular';
 
 import preview from '../.storybook/preview';
 
-import { TodoItem } from './TodoItem';
+import { TodoItem } from './TodoItem.component';
 
 const meta = preview.meta({
   component: TodoItem,
@@ -534,6 +534,7 @@ export const Primary = meta.story({
 
 ```jsx filename="TodoItem.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { TodoItem } from './TodoItem';
 
 const meta = preview.meta({

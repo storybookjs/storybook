@@ -24,14 +24,13 @@ async function runStoriesCodemod(options: {
 }) {
   const { dryRun, packageManager, yes, glob, ...codemodOptions } = options;
   try {
-    const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
-    const isNonInteractive = yes || inSandbox;
+    const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
     let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}';
 
     if (!glob && inSandbox) {
       // Sandbox uses limited glob for faster testing (unless glob explicitly provided)
       globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
-    } else if (!glob && !isNonInteractive) {
+    } else if (!glob && !yes) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
@@ -70,10 +69,11 @@ export const csfFactories: CommandFix = {
     yes,
     glob,
   }) {
-    let useSubPathImports = false;
-    const isNonInteractive = yes || optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
+    const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
+    // Defaults to false for users and true in sandbox
+    let useSubPathImports = inSandbox;
 
-    if (!isNonInteractive) {
+    if (!yes && !inSandbox) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
         The CSF Factories format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.

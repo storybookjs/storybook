@@ -45,30 +45,32 @@ const QRDescription = styled.div(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
+const ShareProviderRender = () => {
+  const api = useStorybookApi();
+  const { id: storyId, refId } = api.getCurrentStoryData() ?? {};
+  if (!storyId) {
+    return null;
+  }
+
+  const networkHrefs = api.getStoryHrefs(storyId, { base: 'network', refId });
+  return (
+    <QRContainer>
+      <QRImage value={networkHrefs.managerHref} />
+      <QRContent>
+        <QRTitle>Scan to open</QRTitle>
+        <QRDescription>
+          {global.CONFIG_TYPE === 'DEVELOPMENT'
+            ? 'Device must be on the same network.'
+            : 'View story on another device.'}
+        </QRDescription>
+      </QRContent>
+    </QRContainer>
+  );
+};
+
 export default addons.register(ADDON_ID, () => {
   addons.add(ADDON_ID, {
     type: types.experimental_SHARE_PROVIDER,
-    render: () => {
-      const api = useStorybookApi();
-      const { id: storyId, refId } = api.getCurrentStoryData() ?? {};
-      if (!storyId) {
-        return null;
-      }
-
-      const networkHrefs = api.getStoryHrefs(storyId, { base: 'network', refId });
-      return (
-        <QRContainer>
-          <QRImage value={networkHrefs.managerHref} />
-          <QRContent>
-            <QRTitle>Scan to open</QRTitle>
-            <QRDescription>
-              {global.CONFIG_TYPE === 'DEVELOPMENT'
-                ? 'Device must be on the same network.'
-                : 'View story on another device.'}
-            </QRDescription>
-          </QRContent>
-        </QRContainer>
-      );
-    },
+    render: () => <ShareProviderRender />,
   });
 });

@@ -601,5 +601,48 @@ describe('AddonVitestService', () => {
       expect(result.reasons).toBeDefined();
       expect(result.reasons!.length).toBe(2);
     });
+
+    it('should validate mergeConfig with plain object literal', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        'export default mergeConfig(viteConfig, { test: { name: "node" } })'
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should validate mergeConfig with defineConfig call', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        'export default mergeConfig(viteConfig, defineConfig({ test: { name: "node" } }))'
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should validate mergeConfig with multiple plain objects', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        'export default mergeConfig({ test: {} }, { plugins: [] })'
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should reject mergeConfig with invalid object (non-object argument)', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue('export default mergeConfig(viteConfig, "string")');
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('invalid Vitest config'))).toBe(true);
+    });
   });
 });

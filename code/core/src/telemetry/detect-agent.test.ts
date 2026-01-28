@@ -16,27 +16,28 @@ describe('detectAgent', () => {
         },
       })
     ).toEqual({ isAgent: true, agent: { name: 'amp' } });
+
+    expect(
+      detectAgent({
+        stdoutIsTTY: true,
+        env: {
+          CLAUDECODE: '1',
+          GEMINI_CLI: '1',
+          CODEX_SANDBOX: '1',
+          CURSOR_AGENT: '1',
+          AGENT: 'something',
+        },
+      })
+    ).toEqual({ isAgent: true, agent: { name: 'claude-code' } });
   });
 
-  expect(
-    detectAgent({
-      stdoutIsTTY: true,
-      env: {
-        CLAUDECODE: '1',
-        GEMINI_CLI: '1',
-        CODEX_SANDBOX: '1',
-        CURSOR_AGENT: '1',
-        AGENT: 'something',
-      },
-    })
-  ).toEqual({ isAgent: true, agent: { name: 'claude-code' } });
-});
-
-it('detects Gemini CLI via GEMINI_CLI', () => {
-  expect(detectAgent({ stdoutIsTTY: true, env: { GEMINI_CLI: '1' } })).toEqual({
-    isAgent: true,
-    agent: { name: 'gemini-cli' },
+  it('detects Gemini CLI via GEMINI_CLI', () => {
+    expect(detectAgent({ stdoutIsTTY: true, env: { GEMINI_CLI: '1' } })).toEqual({
+      isAgent: true,
+      agent: { name: 'gemini-cli' },
+    });
   });
+
   it('detects OpenAI Codex via CODEX_SANDBOX', () => {
     expect(detectAgent({ stdoutIsTTY: true, env: { CODEX_SANDBOX: '1' } })).toEqual({
       isAgent: true,
@@ -84,6 +85,7 @@ it('detects Gemini CLI via GEMINI_CLI', () => {
   it('returns isAgent=false when there are no signals', () => {
     expect(detectAgent({ stdoutIsTTY: false, env: {} })).toEqual({ isAgent: false });
   });
+
   it('applies heuristics even when CI is set (no CI special-casing)', () => {
     expect(
       detectAgent({

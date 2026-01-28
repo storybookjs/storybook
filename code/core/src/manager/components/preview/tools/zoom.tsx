@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react';
 import React, { Component, createContext, memo, useCallback, useEffect, useRef } from 'react';
 
-import { ActionList, Button, PopoverProvider } from 'storybook/internal/components';
+import { ActionList, ToggleButton, PopoverProvider } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { UndoIcon, ZoomIcon } from '@storybook/icons';
@@ -15,7 +15,7 @@ import { NumericInput } from '../NumericInput';
 const ZOOM_LEVELS = [0.25, 0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 2, 3, 4, 8] as const;
 const INITIAL_ZOOM_LEVEL = 1;
 
-const ZoomButton = styled(Button)({
+const ZoomButton = styled(ToggleButton)({
   minWidth: 48,
 });
 
@@ -148,7 +148,7 @@ export const Zoom = memo<{
         padding="small"
         variant="ghost"
         ariaLabel="Change zoom level"
-        active={value !== INITIAL_ZOOM_LEVEL}
+        pressed={value !== INITIAL_ZOOM_LEVEL}
       >
         {Math.round(value * 100)}%
       </ZoomButton>

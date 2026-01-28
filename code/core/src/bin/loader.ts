@@ -27,13 +27,49 @@ export const supportedExtensions = [
   '.tsx',
 ] as const;
 
+const jsToTsExtensionMap: Record<string, readonly string[]> = {
+  '.js': ['.ts', '.tsx'],
+  '.mjs': ['.mts'],
+  '.cjs': ['.cts'],
+  '.jsx': ['.tsx'],
+};
+
 /**
  * Resolves an extensionless file path by trying different extensions. Returns the path with the
  * correct extension if found, otherwise returns the original path.
+ * Also handles .js → .ts resolution for TypeScript projects using moduleResolution "Node16"
+ * or "NodeNext", where imports use .js extensions but source files are .ts.
  */
 export function resolveWithExtension(importPath: string, currentFilePath: string): string {
-  // If the import already has an extension, return it as-is
-  if (path.extname(importPath)) {
+  const extImportPath = path.extname(importPath);
+  const currentDir = path.dirname(currentFilePath);
+
+  // Handle .js/.mjs/.cjs/.jsx imports that might need to resolve to TypeScript files
+  if (extImportPath && extImportPath in jsToTsExtensionMap) {
+    const absolutePath = path.resolve(currentDir, importPath);
+
+    // If the JS file exists, use it as-is
+    if (existsSync(absolutePath)) {
+      return importPath;
+    }
+
+    // Try TypeScript alternatives (.js → .ts/.tsx, .mjs → .mts, etc.)
+    const basePath = importPath.slice(0, -extImportPath.length);
+    const tsExtensions = jsToTsExtensionMap[extImportPath];
+
+    for (const tsExt of tsExtensions) {
+      const candidatePath = path.resolve(currentDir, `${basePath}${tsExt}`);
+      if (existsSync(candidatePath)) {
+        return `${basePath}${tsExt}`;
+      }
+    }
+
+    // No TypeScript alternative found, return original path
+    return importPath;
+  }
+
+  // If the import has a non-JS extension, return it as-is
+  if (extImportPath) {
     return importPath;
   }
 
@@ -43,8 +79,6 @@ export function resolveWithExtension(importPath: string, currentFilePath: string
     https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensions
   `);
 
-  // Resolve the import path relative to the current file
-  const currentDir = path.dirname(currentFilePath);
   const absolutePath = path.resolve(currentDir, importPath);
 
   for (const ext of supportedExtensions) {

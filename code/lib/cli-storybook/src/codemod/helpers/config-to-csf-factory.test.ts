@@ -406,4 +406,16 @@ describe('preview specific functionality', () => {
       export default definePreview({});
     `);
   });
+
+  it('should not add default export when preview has re-exports', async () => {
+    await expect(
+      transform(dedent`
+        export { withTheme } from './decorators'
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { definePreview } from '@storybook/react-vite';
+
+      export { withTheme } from './decorators';
+    `);
+  });
 });

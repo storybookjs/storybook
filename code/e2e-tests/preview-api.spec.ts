@@ -3,7 +3,7 @@ import process from 'process';
 
 import { SbPage } from './util';
 
-const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
+const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -68,7 +68,7 @@ test.describe('preview-api', () => {
     await expect(labelControl).toBeVisible();
 
     await labelControl.fill('');
-    await labelControl.type('Changed arg', { delay: 50 });
+    await labelControl.pressSequentially('Changed arg', { delay: 50 });
     await labelControl.blur();
 
     await expect(root.getByText('Loaded. Changed arg')).toBeVisible();

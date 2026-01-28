@@ -1,3 +1,8 @@
+## 10.2.1
+
+- Builder-Webpack5: Fix @vitest/mocker resolution issue - [#33315](https://github.com/storybookjs/storybook/pull/33315), thanks @valentinpalkovic!
+- CLI: Add init telemetry for CLI integrations - [#33603](https://github.com/storybookjs/storybook/pull/33603), thanks @shilman!
+
 ## 10.2.0
 
 > Improved UI and story authoring ergonomics

@@ -57,8 +57,6 @@ export type StorybookMetadata = {
   storybookVersionSpecifier: string;
   generatedAt?: number;
   userSince?: number;
-  /** Whether this process is likely invoked by an AI agent */
-  isAgent?: boolean;
   /** If we can identify the agent, report it; otherwise `unknown` when detected heuristically. */
   agent?: AgentInfo;
   language: 'typescript' | 'javascript';

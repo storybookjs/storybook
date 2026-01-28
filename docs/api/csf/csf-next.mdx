@@ -542,6 +542,35 @@ While using CSF Next, you can still use the older formats, as long as they are n
 
 Yes, the [doc blocks](../../writing-docs/doc-blocks.mdx) used to reference stories in MDX files support the CSF Next format with no changes needed.
 
+<If renderer="vue">
+
+### How do I use generic Vue components?
+
+Generic Vue components (using `<script lang="ts" setup generic="T">`) work seamlessly with CSF Next. Simply pass the type parameter directly to the component:
+
+```ts title="GenericList.stories.ts"
+import preview from '#.storybook/preview';
+
+import GenericList from './GenericList.vue';
+
+const meta = preview.meta({
+  // 👇 Pass the type parameter directly
+  component: GenericList<{ id: number; name: string }>,
+});
+
+export const Example = meta.story({
+  args: {
+    items: [{ id: 1, name: 'John Doe' }],
+    // 👇 item is correctly typed as { id: number; name: string }
+    getLabel: (item) => item.name,
+  },
+});
+```
+
+This solves a [long-standing type inference issue](https://github.com/storybookjs/storybook/issues/24238) where the generic type `T` would default to `unknown` in prior CSF versions.
+
+</If>
+
 ### How can I know more about this format and provide feedback?
 
 For more information on this experimental format's original proposal, refer to its [RFC on GitHub](https://github.com/storybookjs/storybook/discussions/30112). We welcome your comments!

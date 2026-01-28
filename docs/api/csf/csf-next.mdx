@@ -290,6 +290,17 @@ You can automatically upgrade all of your project's stories from CSF 3 to CSF Ne
 
 <CodeSnippets path="csf-factories-automigrate.md" />
 
+<Callout variant="info" icon="💡">
+
+**Monorepos:** If your project has multiple Storybook configurations, run the command with the `-c` flag pointing to each config directory:
+
+```shell
+npx storybook automigrate csf-factories -c apps/admin/.storybook
+npx storybook automigrate csf-factories -c apps/website/.storybook
+```
+
+</Callout>
+
 It will run through each of the manual upgrade steps below on all of your story files.
 
 <details>

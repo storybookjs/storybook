@@ -2,6 +2,7 @@ import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/type
 
 import type { DetectResult } from 'package-manager-detector';
 
+import type { AgentInfo } from './detect-agent';
 import type { KnownPackagesList } from './get-known-packages';
 import type { MonorepoType } from './get-monorepo-type';
 
@@ -56,6 +57,8 @@ export type StorybookMetadata = {
   storybookVersionSpecifier: string;
   generatedAt?: number;
   userSince?: number;
+  /** If we can identify the agent, report it; otherwise `unknown` when detected heuristically. */
+  agent?: AgentInfo;
   language: 'typescript' | 'javascript';
   framework?: {
     name?: string;

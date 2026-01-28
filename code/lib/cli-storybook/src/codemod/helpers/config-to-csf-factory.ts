@@ -167,30 +167,20 @@ export async function configToCsfFactory(
     // Add the new export default declaration
     programNode.body.push(t.exportDefaultDeclaration(defineConfigCall));
   } else if (configType === 'preview') {
-    // Check if the file has any exports at all (including re-exports)
-    const hasAnyExports = programNode.body.some(
-      (node) =>
-        t.isExportDefaultDeclaration(node) ||
-        t.isExportNamedDeclaration(node) ||
-        t.isExportAllDeclaration(node)
-    );
-
-    if (!hasAnyExports) {
-      /**
-       * Scenario 4: No exports (empty file or only side-effect imports)
-       *
-       * ```
-       * import './preview.scss';
-       * ```
-       *
-       * Transform into: `import './preview.scss'; export default definePreview({})`
-       *
-       * This is needed because story files using CSF factories import from preview, so the preview
-       * file must have a default export.
-       */
-      const defineConfigCall = t.callExpression(t.identifier(methodName), [t.objectExpression([])]);
-      programNode.body.push(t.exportDefaultDeclaration(defineConfigCall));
-    }
+    /**
+     * Scenario 4: No exports (empty file or only side-effect imports)
+     *
+     * ```
+     * import './preview.scss';
+     * ```
+     *
+     * Transform into: `import './preview.scss'; export default definePreview({})`
+     *
+     * This is needed because story files using CSF factories import from preview, so the preview
+     * file must have a default export.
+     */
+    const defineConfigCall = t.callExpression(t.identifier(methodName), [t.objectExpression([])]);
+    programNode.body.push(t.exportDefaultDeclaration(defineConfigCall));
   }
 
   const configImport = t.importDeclaration(

@@ -130,7 +130,7 @@ export const LogIn = {
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import { expect, mocked } from 'storybook/test';
 
-  import { AuthButton } from './AuthButton.svelte';
+  import AuthButton from './AuthButton.svelte';
 
   import { v4 as uuidv4 } from 'uuid';
   import { getUserFromSession } from '../lib/session';
@@ -163,7 +163,7 @@ export const LogIn = {
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { expect, mocked } from 'storybook/test';
 
-import { AuthButton } from './AuthButton.svelte';
+import AuthButton from './AuthButton.svelte';
 
 import { v4 as uuidv4 } from 'uuid';
 import { getUserFromSession } from '../lib/session';
@@ -228,7 +228,7 @@ export const LogIn: Story = {
 ```js filename="AuthButton.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { expect } from 'storybook/test';
 
-import { AuthButton } from './AuthButton.svelte';
+import AuthButton from './AuthButton.svelte';
 
 import { v4 as uuidv4 } from 'uuid';
 import { getUserFromSession } from '../lib/session';

@@ -10,6 +10,8 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
+import { TrashIcon } from '@storybook/icons';
+
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 import { TreeView } from '@primer/react';
 import type { API } from 'storybook/manager-api';
@@ -70,14 +72,10 @@ export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'gro
 );
 
 const StyledTreeItem = styled(TreeView.Item)(({ theme }) => ({
-  // Old code?
-  // position: 'relative',
-  // '--tree-node-background-hover': 'var(--background-hover, var(--background-app))',
-  // [MEDIA_DESKTOP_BREAKPOINT]: {
-  //   '--tree-node-background-hover': 'var(--background-app)',
-  // },
-
-  display: 'flex',
+  '--tree-node-background-hover': 'var(--background-hover, var(--background-app))',
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    '--tree-node-background-hover': 'var(--background-app)',
+  },
 
   // TODO find css class name
   '& .collapse-button': {
@@ -302,60 +300,52 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   }, [contextMenu, item, api, refId]);
 
   const itemContent = (
-    <div>
-      <StyledTreeItem
-        id={id}
-        expanded={hasChildren ? isExpanded : undefined}
-        onExpandedChange={
-          hasChildren ? () => setExpanded({ ids: [item.id], value: !isExpanded }) : undefined
-        }
-        // style={
-        //   {
-        //     position: 'relative',
-        //     '--tree-node-background-hover': theme.background.content,
-        //     [MEDIA_DESKTOP_BREAKPOINT]: {
-        //       '--tree-node-background-hover': theme.background.app,
-        //     },
-        //   } as React.CSSProperties
-        // }
-        // FIXME: we can't pass these events, must review the preloading strat
-        // onFocus={handleFocus}
-        // onMouseEnter={handleMouseEnter}
-        // FIXME: make this a global kb shortcut and have it identify the currently highlighted item
-        // onKeyDown={handleKeyDown}
-        aria-label={ariaLabel}
-        // data-selected={isSelected}
-        // data-ref-id={refId}
-        // data-item-id={item.id}
-        // data-parent-id={(item as any).parent}
-        // data-nodetype={
-        //   item.type === 'story' && (item as any).subtype === 'test'
-        //     ? ('test' as const)
-        //     : item.type === 'docs'
-        //       ? ('document' as const)
-        //       : item.type === 'component'
-        //         ? ('component' as const)
-        //         : item.type === 'group'
-        //           ? ('group' as const)
-        //           : ('story' as const)
-        // }
-      >
-        {item.type !== 'root' && (
-          <TreeView.LeadingVisual>
-            <TypeIconWithSymbol
-              type={
-                item.type === 'story' && 'subtype' in item && item.subtype === 'test'
-                  ? 'test'
-                  : item.type
-              }
-            />
-          </TreeView.LeadingVisual>
-        )}
+    <StyledTreeItem
+      id={id}
+      expanded={hasChildren ? isExpanded : undefined}
+      onExpandedChange={
+        hasChildren ? () => setExpanded({ ids: [item.id], value: !isExpanded }) : undefined
+      }
+      current={isSelected}
+      // FIXME: we can't pass these events, must review the preloading strat
+      // onFocus={handleFocus}
+      // onMouseEnter={handleMouseEnter}
+      // FIXME: make this a global kb shortcut and have it identify the currently highlighted item
+      // onKeyDown={handleKeyDown}
+      aria-label={ariaLabel}
+      // data-selected={isSelected}
+      // data-ref-id={refId}
+      // data-item-id={item.id}
+      // data-parent-id={(item as any).parent}
+      // data-nodetype={
+      //   item.type === 'story' && (item as any).subtype === 'test'
+      //     ? ('test' as const)
+      //     : item.type === 'docs'
+      //       ? ('document' as const)
+      //       : item.type === 'component'
+      //         ? ('component' as const)
+      //         : item.type === 'group'
+      //           ? ('group' as const)
+      //           : ('story' as const)
+      // }
+    >
+      {item.type !== 'root' && (
+        <TreeView.LeadingVisual>
+          <TypeIconWithSymbol
+            type={
+              item.type === 'story' && 'subtype' in item && item.subtype === 'test'
+                ? 'test'
+                : item.type
+            }
+          />
+        </TreeView.LeadingVisual>
+      )}
 
-        {item.renderLabel?.(item || [], api, renderContext) || item.name}
+      {item.renderLabel?.(item || [], api, renderContext) || item.name}
 
-        {statusIcon && (
-          <TreeView.TrailingVisual>
+      {(statusIcon || hasContextMenu) && (
+        <TreeView.TrailingVisual>
+          {statusIcon && (
             <StatusButton
               ariaLabel={`Test status: ${statusValue.replace('status-value:', '')}`}
               data-testid="tree-status-button"
@@ -365,47 +355,47 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
             >
               {statusIcon}
             </StatusButton>
-            )
-          </TreeView.TrailingVisual>
-        )}
+          )}
+          {hasContextMenu && contextMenu.node}
+        </TreeView.TrailingVisual>
+      )}
 
-        {isSelected && (
-          <SkipToContentLink asChild ariaLabel={false}>
-            <a href="#storybook-preview-wrapper">Skip to content</a>
-          </SkipToContentLink>
-        )}
+      {isSelected && (
+        <SkipToContentLink asChild ariaLabel={false}>
+          <a href="#storybook-preview-wrapper">Skip to content</a>
+        </SkipToContentLink>
+      )}
 
-        {hasContextMenu && contextMenu.node}
-
-        {hasChildren && (
-          <TreeView.SubTree>
-            {item.resolvedChildren?.map((childItem) => {
-              return (
-                <TreeNode
-                  key={childItem.id}
-                  item={childItem}
-                  refId={refId}
-                  docsMode={docsMode}
-                  isDevelopment={isDevelopment}
-                  isOrphan={false}
-                  isSelected={selectedStoryId === childItem.id}
-                  selectedStoryId={selectedStoryId}
-                  isExpanded={isExpanded}
-                  setExpanded={setExpanded}
-                  onSelectStoryId={onSelectStoryId}
-                  statuses={statuses}
-                  groupStatus={groupStatus}
-                  api={api}
-                  data={data}
-                />
-              );
-            })}
-          </TreeView.SubTree>
-        )}
-      </StyledTreeItem>
-    </div>
+      {hasChildren && (
+        <TreeView.SubTree>
+          {item.resolvedChildren?.map((childItem) => {
+            return (
+              <TreeNode
+                key={childItem.id}
+                item={childItem}
+                refId={refId}
+                docsMode={docsMode}
+                isDevelopment={isDevelopment}
+                isOrphan={false}
+                isSelected={selectedStoryId === childItem.id}
+                selectedStoryId={selectedStoryId}
+                isExpanded={isExpanded}
+                setExpanded={setExpanded}
+                onSelectStoryId={onSelectStoryId}
+                statuses={statuses}
+                groupStatus={groupStatus}
+                api={api}
+                data={data}
+              />
+            );
+          })}
+        </TreeView.SubTree>
+      )}
+    </StyledTreeItem>
   );
 
+  // FIXME not working with the TreeView.Item component
+  // TODO: use useTooltip lower level hook
   if (tooltipContent) {
     return (
       <TooltipProvider triggerOnFocusOnly={true} tooltip={tooltipContent}>

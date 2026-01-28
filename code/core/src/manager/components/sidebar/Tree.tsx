@@ -11,6 +11,8 @@ import type {
 } from 'storybook/internal/types';
 
 import { TreeView } from '@primer/react';
+import { level } from 'npmlog';
+import { hidden } from 'picocolors';
 import { useStorybookApi } from 'storybook/manager-api';
 import type {
   API,
@@ -35,7 +37,97 @@ export const ContextMenu = {
 };
 
 const StyledTreeView = styled(TreeView)(({ theme }) => ({
-  // TODO
+  // TODO add this class to our existing utility
+  '.PRIVATE_VisuallyHidden': {
+    height: '1px',
+    margin: '-1px',
+    overflow: 'hidden',
+    padding: 0,
+    position: 'absolute',
+    width: '1px',
+    clip: 'rect(0,0,0,0)',
+    borderWidth: 0,
+    whiteSpace: 'nowrap',
+  },
+
+  listStyle: 'none',
+  margin: 0,
+  padding: 0,
+
+  /** Item */
+  '.PRIVATE_TreeView-item': {
+    outline: 'none',
+  },
+
+  '.PRIVATE_TreeView-item:focus-visible>div': {
+    boxShadow: `inset 0 0 0 .125rem ${theme.color.secondary}`,
+  },
+
+  '.PRIVATE_TreeView-item[aria-current=true] > .PRIVATE_TreeView-item-container': {
+    backgroundColor: theme.color.secondary,
+    color: theme.color.seafoam,
+  },
+
+  /** Item container (item content without the subtree) */
+  '.PRIVATE_TreeView-item-container': {
+    '--level': 1,
+    '--toggle-width': '1rem',
+    '--min-item-height': '2rem',
+    borderRadius: theme.appBorderRadius,
+    color: theme.color.defaultText,
+    cursor: 'pointer',
+    display: 'grid',
+    fontSize: theme.typography.size.s2,
+    gridTemplateAreas: '"spacer toggle content trailingAction"',
+    gridTemplateColumns: 'var(--spacer-width) var(--toggle-width) 1fr auto',
+    position: 'relative',
+    width: '100%',
+    '--spacer-width': 'calc((var(--level) - 1)*(var(--toggle-width)/2))',
+  },
+
+  '.PRIVATE_TreeView-item-container:hover': {
+    backgroundColor:
+      'var(--control-transparent-bgColor-hover,var(--color-action-list-item-default-hover-bg))',
+  },
+
+  /** Item toggle button */
+
+  /** Item content */
+  '.PRIVATE_TreeView-item-content': {
+    display: 'flex',
+    gap: '.5rem',
+    gridArea: 'content',
+    height: '100%',
+    lineHeight: '24px',
+    padding: '0 .5rem',
+    paddingBottom: `calc((var(--min-item-height) - ${theme.typography.size.m2})/2)`,
+    paddingTop: `calc((var(--min-item-height) - ${theme.typography.size.m2})/2)`,
+  },
+
+  /** Item trailing action */
+  '.PRIVATE_TreeView-item-visual': {
+    color: theme.color.mediumdark, // muted
+    display: 'flex',
+    gridArea: 'trailingAction',
+  },
+
+  '@media (forced-colors:active)': {
+    '.PRIVATE_TreeView-item:focus-visible>div': {
+      outline: '2px solid HighlightText',
+      outlineOffset: -2,
+    },
+    '.PRIVATE_TreeView-item-container:hover': {
+      outline: '2px solid transparent',
+      outlineOffset: -2,
+    },
+  },
+
+  '@media (pointer: coarse)': {
+    '.PRIVATE_TreeView-item-container': {
+      '--toggle-width': '1.5rem',
+      '--min-item-height': '2.75rem',
+    },
+  },
 }));
 
 interface TreeProps {
@@ -347,8 +439,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
             isOrphan={true}
             isSelected={selectedStoryId === item.id}
             selectedStoryId={selectedStoryId}
-            isExpanded={!!expanded[item.id]}
-            setExpanded={setExpanded}
+            // isExpanded={!!expanded[item.id]}
+            // setExpanded={setExpanded}
             onSelectStoryId={onSelectStoryId}
             statuses={allStatuses?.[item.id] ?? {}}
             groupStatus={groupStatus}

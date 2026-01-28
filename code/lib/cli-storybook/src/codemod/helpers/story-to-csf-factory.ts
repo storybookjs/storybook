@@ -5,7 +5,7 @@ import { logger } from 'storybook/internal/node-logger';
 import path from 'path';
 
 import type { FileInfo } from '../../automigrate/codemod';
-import { cleanupTypeImports } from './csf-factories-utils';
+import { addImportToTop, cleanupTypeImports } from './csf-factories-utils';
 import { removeUnusedTypes } from './remove-unused-types';
 
 const typesDisallowList = [
@@ -324,7 +324,7 @@ export async function storyToCsfFactory(
       [t.importDefaultSpecifier(t.identifier(sbConfigImportName))],
       t.stringLiteral(previewPath)
     );
-    programNode.body.unshift(configImport);
+    addImportToTop(programNode, configImport);
   }
 
   removeUnusedTypes(programNode, csf._ast);

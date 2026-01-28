@@ -506,6 +506,7 @@ export const Basic = meta.story({
 
 ```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Histogram } from './Histogram';
 
 const meta = preview.meta({

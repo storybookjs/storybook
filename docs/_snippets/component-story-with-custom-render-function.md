@@ -492,3 +492,31 @@ export const Example = meta.story({
   {/snippet}
 </Story>
 ```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Layout from './Layout.svelte';
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="Example"
+>
+  {#snippet template(args)}
+   <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  {/snippet}
+</Story>
+```

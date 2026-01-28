@@ -7,6 +7,7 @@ import picocolors from 'picocolors';
 
 import type { FileInfo } from '../../automigrate/codemod';
 import {
+  addImportToTop,
   cleanupTypeImports,
   getConfigProperties,
   removeExportDeclarations,
@@ -212,7 +213,7 @@ export async function configToCsfFactory(
     }
   } else {
     // if not, add import { defineMain } from '@storybook/framework'
-    programNode.body.unshift(configImport);
+    addImportToTop(programNode, configImport);
   }
 
   // Remove type imports – now inferred – from @storybook/* packages

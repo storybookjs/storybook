@@ -1,7 +1,7 @@
 // this file tests Typescript types that's why there are no assertions
 import { describe, expect, expectTypeOf, it, test } from 'vitest';
 
-import type { Canvas, ComponentAnnotations, StoryAnnotations } from 'storybook/internal/types';
+import type { Canvas } from 'storybook/internal/types';
 
 import { h } from 'vue';
 
@@ -9,6 +9,7 @@ import BaseLayout from './__tests__/BaseLayout.vue';
 import Button from './__tests__/Button.vue';
 import Decorator2TsVue from './__tests__/Decorator2.vue';
 import DecoratorTsVue from './__tests__/Decorator.vue';
+import GenericComponent from './__tests__/GenericComponent.vue';
 import { __definePreview } from './preview';
 import type { ComponentPropsAndSlots, Decorator, Meta, StoryObj } from './public-types';
 
@@ -195,5 +196,36 @@ it('allow types to be inferred from render as well', () => {
 
   const Story = meta.story({
     args: { disabled: true },
+  });
+});
+
+describe('Generic components (issue #24238)', () => {
+  // Generic Vue components with TypeScript generics work with CSF factories
+  // by passing the type parameter directly: GenericComponent<ConcreteType>
+  // See: https://github.com/storybookjs/storybook/issues/24238
+
+  it('✅ Generic components work by passing type parameter directly', () => {
+    const meta = preview.meta({
+      component: GenericComponent<{ id: number; name: string }>,
+    });
+
+    const Story = meta.story({
+      args: {
+        items: [
+          {
+            id: 1,
+            name: 'John Doe',
+          },
+        ],
+        getLabel: (item) => {
+          // item is correctly typed as { id: number; name: string }
+          expectTypeOf(item).toMatchObjectType<{ id: number; name: string }>();
+          return item.name;
+        },
+      },
+    });
+
+    // Verify the story has the correct args
+    expect(Story.input.args?.items).toHaveLength(1);
   });
 });

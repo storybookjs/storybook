@@ -10,9 +10,12 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
-import { TreeView } from '@primer/react';
-import { level } from 'npmlog';
-import { hidden } from 'picocolors';
+import { Collection } from '@react-aria/collections';
+import {
+  Tree as AriaTree,
+  TreeItem,
+  TreeItemContent,
+} from 'react-aria-components/patched-dist/Tree';
 import { useStorybookApi } from 'storybook/manager-api';
 import type {
   API,
@@ -36,7 +39,7 @@ export const ContextMenu = {
   ListItem,
 };
 
-const StyledTreeView = styled(TreeView)(({ theme }) => ({
+const StyledAriaTree = styled(AriaTree)(({ theme }) => ({
   // TODO add this class to our existing utility
   '.PRIVATE_VisuallyHidden': {
     height: '1px',
@@ -152,10 +155,12 @@ const indexToTree = (index: API_IndexHash): API_IndexTree => {
   // First pass over index to identify every node's children, and add root nodes to tree
   for (const item of Object.values(index)) {
     if (item.type === 'root' || !item.parent) {
-      tree.push({ ...item, resolvedChildren: [] });
+      /** @ts-expect-error DEBUG */
+      tree.push({ ...item, resolvedChildren: [], key: item.id });
     } else {
       children[item.parent] = children[item.parent] || [];
-      children[item.parent].push(item);
+      /** @ts-expect-error DEBUG */
+      children[item.parent].push({ ...item, key: item.id });
     }
   }
 
@@ -424,12 +429,40 @@ export const Tree = React.memo<TreeProps>(function Tree({
   //   api,
   // ]);
 
+  function renderNode(node: API_TreeEntry) {
+    console.log(node);
+    return (
+      <TreeItem id={node.id} textValue={node.name}>
+        <TreeItemContent>
+          {node.type} {node.name}
+        </TreeItemContent>
+        {node.resolvedChildren && (
+          <Collection items={node.resolvedChildren}>{renderNode}</Collection>
+        )}
+      </TreeItem>
+    );
+  }
+
   return (
     <StatusContext.Provider value={{ data: collapsedData, allStatuses, groupStatus }}>
       {/* <div ref={containerRef}> */}
       {/* FIXME: this ref makes little sense. Why does useExpanded need it!? */}
-      <StyledTreeView aria-label="TODO">
-        {tree.map((item) => (
+      <StyledAriaTree
+        aria-label="Stories"
+        selectionMode="none"
+        // defaultExpandedKeys={[]} // TODO
+        // selectionMode="single"
+        // selectedKeys={selectedStoryId ? new Set([selectedStoryId]) : new Set()}
+        // onSelectionChange={(keys) => {
+        //   const selectedKey = Array.from(keys)[0];
+        //   if (selectedKey && typeof selectedKey === 'string') {
+        //     onSelectStoryId(selectedKey);
+        //     // TODO navigate
+        //   }
+        // }}
+      >
+        <Collection items={tree}>{renderNode}</Collection>
+        {/* {tree.map((item) => (
           <TreeNode
             key={item.id}
             item={item}
@@ -439,18 +472,16 @@ export const Tree = React.memo<TreeProps>(function Tree({
             isOrphan={true}
             isSelected={selectedStoryId === item.id}
             selectedStoryId={selectedStoryId}
-            // isExpanded={!!expanded[item.id]}
-            // setExpanded={setExpanded}
+            isExpanded={!!expanded[item.id]}
+            setExpanded={setExpanded}
             onSelectStoryId={onSelectStoryId}
             statuses={allStatuses?.[item.id] ?? {}}
             groupStatus={groupStatus}
             api={api}
             data={data}
-            // collapsedData={collapsedData}
-            // isDisplayed={isDisplayed}
           />
-        ))}
-      </StyledTreeView>
+        ))} */}
+      </StyledAriaTree>
       {/* </div> */}
     </StatusContext.Provider>
   );

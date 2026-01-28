@@ -13,7 +13,7 @@ import type {
 import { TrashIcon } from '@storybook/icons';
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
-import { TreeView } from '@primer/react';
+import { TreeItem as AriaTreeItem } from 'react-aria-components/patched-dist/Tree';
 import type { API } from 'storybook/manager-api';
 import { shortcutMatchesShortcut, shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
@@ -71,7 +71,7 @@ export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'gro
   })
 );
 
-const StyledTreeItem = styled(TreeView.Item)(({ theme }) => ({
+const StyledTreeItem = styled(AriaTreeItem)(({ theme }) => ({
   '--tree-node-background-hover': 'var(--background-hover, var(--background-app))',
   [MEDIA_DESKTOP_BREAKPOINT]: {
     '--tree-node-background-hover': 'var(--background-app)',
@@ -300,19 +300,23 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   }, [contextMenu, item, api, refId]);
 
   const itemContent = (
-    <StyledTreeItem
+    <AriaTreeItem
+      textValue={item.name}
+      aria-label={ariaLabel}
       id={id}
-      expanded={hasChildren ? isExpanded : undefined}
-      onExpandedChange={
-        hasChildren ? () => setExpanded({ ids: [item.id], value: !isExpanded }) : undefined
-      }
-      current={isSelected}
+
+      // PRIMER ONLY
+      // expanded={hasChildren ? isExpanded : undefined}
+      // onExpandedChange={
+      //   hasChildren ? () => setExpanded({ ids: [item.id], value: !isExpanded }) : undefined
+      // }
+      // current={isSelected}
+
       // FIXME: we can't pass these events, must review the preloading strat
       // onFocus={handleFocus}
       // onMouseEnter={handleMouseEnter}
       // FIXME: make this a global kb shortcut and have it identify the currently highlighted item
       // onKeyDown={handleKeyDown}
-      aria-label={ariaLabel}
       // data-selected={isSelected}
       // data-ref-id={refId}
       // data-item-id={item.id}
@@ -329,8 +333,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       //           : ('story' as const)
       // }
     >
-      {item.type !== 'root' && (
-        <TreeView.LeadingVisual>
+      {/* {item.type !== 'root' && (
+        <div className="leading-visual">
           <TypeIconWithSymbol
             type={
               item.type === 'story' && 'subtype' in item && item.subtype === 'test'
@@ -338,13 +342,13 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
                 : item.type
             }
           />
-        </TreeView.LeadingVisual>
-      )}
+        </div>
+      )} */}
 
       {item.renderLabel?.(item || [], api, renderContext) || item.name}
 
-      {(statusIcon || hasContextMenu) && (
-        <TreeView.TrailingVisual>
+      {/* {(statusIcon || hasContextMenu) && (
+        <div className="trailing-visual">
           {statusIcon && (
             <StatusButton
               ariaLabel={`Test status: ${statusValue.replace('status-value:', '')}`}
@@ -357,7 +361,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
             </StatusButton>
           )}
           {hasContextMenu && contextMenu.node}
-        </TreeView.TrailingVisual>
+        </div>
       )}
 
       {isSelected && (
@@ -366,8 +370,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
         </SkipToContentLink>
       )}
 
-      {hasChildren && (
-        <TreeView.SubTree>
+      {hasChildren && isExpanded && (
+        <div className="subtree">
           {item.resolvedChildren?.map((childItem) => {
             return (
               <TreeNode
@@ -389,20 +393,20 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
               />
             );
           })}
-        </TreeView.SubTree>
-      )}
-    </StyledTreeItem>
+        </div>
+      )} */}
+    </AriaTreeItem>
   );
 
   // FIXME not working with the TreeView.Item component
   // TODO: use useTooltip lower level hook
-  if (tooltipContent) {
-    return (
-      <TooltipProvider triggerOnFocusOnly={true} tooltip={tooltipContent}>
-        {itemContent}
-      </TooltipProvider>
-    );
-  }
+  // if (tooltipContent) {
+  //   return (
+  //     <TooltipProvider triggerOnFocusOnly={true} tooltip={tooltipContent}>
+  //       {itemContent}
+  //     </TooltipProvider>
+  //   );
+  // }
 
   return itemContent;
 });

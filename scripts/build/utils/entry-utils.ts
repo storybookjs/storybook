@@ -78,6 +78,7 @@ export const getExternal = async (cwd: string) => {
     '@testing-library/user-event',
     'chai',
     '@vitest/expect',
+    '@vitest/mocker',
     '@vitest/spy',
     '@vitest/utils',
   ];

@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/angular';
 
 import { action } from 'storybook/actions';
@@ -14,6 +14,22 @@ const meta: Meta<Button> = {
 };
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+import Button from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
@@ -34,7 +50,7 @@ export default meta;
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import { action } from 'storybook/actions';
 
 import Button from './Button.svelte';
@@ -80,7 +96,7 @@ export default {
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
@@ -118,7 +134,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.js" renderer="web-components" language="js"
+```ts filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 import { action } from 'storybook/actions';
 
 export default {
@@ -130,7 +146,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/web-components-vite';
 
 import { action } from 'storybook/actions';
@@ -146,10 +162,38 @@ const meta: Meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
 import preview from '../.storybook/preview';
 
+const meta = preview.meta({
+  component: 'demo-button',
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
 
 import Button from './Button';
 
@@ -165,10 +209,45 @@ const meta = preview.meta({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { action } from 'storybook/actions';
 
+import preview from '../.storybook/preview';
+
 import Button from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
 
 const meta = preview.meta({
   component: Button,

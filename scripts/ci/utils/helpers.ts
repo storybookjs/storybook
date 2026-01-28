@@ -224,7 +224,7 @@ export const workflow = {
         'discord/status': {
           only_for_branches: ['main', 'next', 'next-release', 'latest-release'].join(','),
           fail_only: true,
-          failure_message: `yarn get-report-message ${workflow} ${template}`,
+          failure_message: `$(yarn get-report-message ${workflow} ${template})`,
         },
       },
     ];

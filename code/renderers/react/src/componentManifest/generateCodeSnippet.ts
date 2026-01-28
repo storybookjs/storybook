@@ -3,11 +3,21 @@ import { type CsfFile } from 'storybook/internal/csf-tools';
 
 import { invariant } from './utils';
 
+export interface CodeSnippetOptions {
+  /**
+   * When true, returns only the JSX element without the wrapper function. e.g., `<Button primary
+   * />` instead of `const Story = () => <Button primary />`
+   */
+  jsxOnly?: boolean;
+}
+
 export function getCodeSnippet(
   csf: CsfFile,
   storyName: string,
-  componentName?: string
-): t.VariableDeclaration | t.FunctionDeclaration {
+  componentName?: string,
+  options?: CodeSnippetOptions
+): t.VariableDeclaration | t.FunctionDeclaration | t.ExpressionStatement {
+  const { jsxOnly = false } = options ?? {};
   const storyDeclaration = csf._storyDeclarationPath[storyName];
   const metaObj = csf._metaNode;
 
@@ -158,6 +168,51 @@ export function getCodeSnippet(
   const invalidEntries = entries.filter(([k, v]) => !isValidJsxAttrName(k) && v != null);
   const injectedAttrs = validEntries.map(([k, v]) => toAttr(k, v)).filter((a) => a != null);
 
+  // Helper to wrap JSX in wrapper function or return as expression statement
+  const wrapResult = (
+    jsx: t.JSXElement | t.JSXFragment
+  ): t.VariableDeclaration | t.ExpressionStatement => {
+    if (jsxOnly) {
+      return t.expressionStatement(jsx);
+    }
+    return t.variableDeclaration('const', [
+      t.variableDeclarator(t.identifier(storyName), t.arrowFunctionExpression([], jsx)),
+    ]);
+  };
+
+  // Helper to extract JSX from function body
+  const extractJsxFromFunction = (
+    fn: t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration
+  ): t.JSXElement | t.JSXFragment | null => {
+    if (t.isArrowFunctionExpression(fn)) {
+      if (t.isJSXElement(fn.body) || t.isJSXFragment(fn.body)) {
+        return fn.body;
+      }
+      if (t.isBlockStatement(fn.body)) {
+        for (const stmt of fn.body.body) {
+          if (t.isReturnStatement(stmt) && stmt.argument) {
+            if (t.isJSXElement(stmt.argument) || t.isJSXFragment(stmt.argument)) {
+              return stmt.argument;
+            }
+          }
+        }
+      }
+    }
+    if (
+      (t.isFunctionDeclaration(fn) || t.isFunctionExpression(fn)) &&
+      t.isBlockStatement(fn.body)
+    ) {
+      for (const stmt of fn.body.body) {
+        if (t.isReturnStatement(stmt) && stmt.argument) {
+          if (t.isJSXElement(stmt.argument) || t.isJSXFragment(stmt.argument)) {
+            return stmt.argument;
+          }
+        }
+      }
+    }
+    return null;
+  };
+
   // If we have a function, transform returned JSX
   if (storyFn) {
     const fn = storyFn.node;
@@ -166,10 +221,7 @@ export function getCodeSnippet(
       const spreadRes = transformArgsSpreadsInJsx(fn.body, merged);
       const inlineRes = inlineArgsInJsx(spreadRes.node, merged);
       if (spreadRes.changed || inlineRes.changed) {
-        const newFn = t.arrowFunctionExpression([], inlineRes.node, fn.async);
-        return t.variableDeclaration('const', [
-          t.variableDeclarator(t.identifier(storyName), newFn),
-        ]);
+        return wrapResult(inlineRes.node);
       }
     }
 
@@ -183,6 +235,7 @@ export function getCodeSnippet(
 
     if (stmts) {
       let changed = false;
+      let transformedJsx: t.JSXElement | t.JSXFragment | null = null;
       const newBody = stmts.map((stmt) => {
         if (
           t.isReturnStatement(stmt) &&
@@ -193,6 +246,7 @@ export function getCodeSnippet(
           const inlineRes = inlineArgsInJsx(spreadRes.node, merged);
           if (spreadRes.changed || inlineRes.changed) {
             changed = true;
+            transformedJsx = inlineRes.node;
             return t.returnStatement(inlineRes.node);
           }
         }
@@ -200,6 +254,9 @@ export function getCodeSnippet(
       });
 
       if (changed) {
+        if (jsxOnly && transformedJsx) {
+          return t.expressionStatement(transformedJsx);
+        }
         return t.isFunctionDeclaration(fn)
           ? t.functionDeclaration(fn.id, [], t.blockStatement(newBody), fn.generator, fn.async)
           : t.variableDeclaration('const', [
@@ -211,6 +268,13 @@ export function getCodeSnippet(
       }
     }
 
+    // No args transformation - return original or extract JSX if jsxOnly
+    if (jsxOnly) {
+      const jsx = extractJsxFromFunction(fn);
+      if (jsx) {
+        return t.expressionStatement(jsx);
+      }
+    }
     return t.isFunctionDeclaration(fn)
       ? fn
       : t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), fn)]);
@@ -224,17 +288,14 @@ export function getCodeSnippet(
 
   const children = toJsxChildren(merged.children);
   const selfClosing = children.length === 0;
-  const arrow = t.arrowFunctionExpression(
-    [],
-    t.jsxElement(
-      t.jsxOpeningElement(name, openingElAttrs, selfClosing),
-      selfClosing ? null : t.jsxClosingElement(name),
-      children,
-      selfClosing
-    )
+  const jsxElement = t.jsxElement(
+    t.jsxOpeningElement(name, openingElAttrs, selfClosing),
+    selfClosing ? null : t.jsxClosingElement(name),
+    children,
+    selfClosing
   );
 
-  return t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), arrow)]);
+  return wrapResult(jsxElement);
 }
 
 /** Build a spread `{...{k: v}}` for props that aren't valid JSX attributes. */

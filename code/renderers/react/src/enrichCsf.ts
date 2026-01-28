@@ -12,6 +12,12 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
   if (!features.experimentalCodeExamples) {
     return;
   }
+
+  // Parse experimentalCodeExamples config
+  const codeExamplesConfig =
+    typeof features.experimentalCodeExamples === 'object' ? features.experimentalCodeExamples : {};
+  const jsxOnly = codeExamplesConfig.jsxOnly ?? false;
+
   return async (csf: CsfFile, csfSource: CsfFile) => {
     const promises = Object.keys(csf._stories).map(async (key) => {
       if (!csfSource._meta?.component) {
@@ -21,7 +27,7 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
       let node;
       let snippet;
       try {
-        node = getCodeSnippet(csfSource, key, csfSource._meta?.component);
+        node = getCodeSnippet(csfSource, key, csfSource._meta?.component, { jsxOnly });
       } catch (e) {
         if (!(e instanceof Error)) {
           return;

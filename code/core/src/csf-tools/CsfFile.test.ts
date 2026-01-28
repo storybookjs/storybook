@@ -2970,11 +2970,13 @@ describe('CsfFile', () => {
       });
 
       it('bad preview import', () => {
+        // Only throws when the variable is named "preview" to avoid false positives
+        // from libraries like Zod that have their own .meta() methods
         expect(() =>
           parse(
             dedent`
-            import { config } from '#.storybook/bad-preview'
-            const meta = config.meta({ component: 'foo' });
+            import { preview } from '#.storybook/bad-preview'
+            const meta = preview.meta({ component: 'foo' });
             export const A = meta.story({})
         `
           )
@@ -3046,6 +3048,61 @@ describe('CsfFile', () => {
 
           More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
         `);
+      });
+
+      it('ignores unrelated .meta() calls on imported variables (e.g., Zod v4)', () => {
+        // This should NOT throw - mySchema.meta() is not a CSF Factory call
+        // See: https://github.com/storybookjs/storybook/issues/33654
+        const parsed = loadCsf(
+          dedent`
+            import { mySchema } from './schemas';
+
+            const validatedSchema = mySchema.meta({ description: 'Value' });
+
+            export default {
+              title: 'Example',
+              component: () => null,
+            };
+
+            export const Default = {};
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(parsed._meta).toMatchInlineSnapshot(`
+          title: Example
+          component: () => null
+        `);
+        expect(Object.keys(parsed._stories)).toEqual(['Default']);
+      });
+
+      it('ignores chained .meta() calls from libraries like Zod', () => {
+        // More complex Zod-like patterns should also work
+        const parsed = loadCsf(
+          dedent`
+            import { z } from 'zod';
+            import { mySchema } from './schemas';
+
+            const workingSchema = z.object({
+              name: z.string().meta({ description: 'Name' }),
+            });
+
+            const failingSchema = z.object({
+              value: mySchema.meta({ description: 'Value' }),
+            });
+
+            export default {
+              title: 'Example',
+              component: () => null,
+            };
+
+            export const Default = {};
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(parsed._meta?.title).toBe('Example');
+        expect(Object.keys(parsed._stories)).toEqual(['Default']);
       });
     });
   });

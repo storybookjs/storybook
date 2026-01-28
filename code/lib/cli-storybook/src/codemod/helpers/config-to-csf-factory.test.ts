@@ -58,6 +58,28 @@ describe('main/preview codemod: general parsing functionality', () => {
       });
     `);
   });
+
+  it('should preserve leading comments when adding import', async () => {
+    await expect(
+      transform(dedent`
+        // @ts-check
+        /** @license MIT */
+        export default {
+          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
+          framework: '@storybook/react-vite',
+        };
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      // @ts-check
+      /** @license MIT */
+      import { defineMain } from '@storybook/react-vite/node';
+
+      export default defineMain({
+        stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
+        framework: '@storybook/react-vite',
+      });
+    `);
+  });
   it('should wrap defineMain call from const declared default export with different type annotations', async () => {
     const typedVariants = [
       'export default config;',

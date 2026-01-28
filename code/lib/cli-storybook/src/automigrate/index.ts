@@ -122,6 +122,7 @@ export const automigrate = async ({
   isLatest,
   storiesPaths,
   hasCsfFactoryPreview,
+  glob,
 }: AutofixOptions): Promise<{
   fixResults: Record<string, FixStatus>;
   preCheckFailure?: PreCheckFailure;
@@ -146,6 +147,8 @@ export const automigrate = async ({
       result: null,
       storybookVersion,
       storiesPaths,
+      yes,
+      glob,
     });
 
     return null;
@@ -380,6 +383,7 @@ export async function runFixes({
               skipInstall,
               storybookVersion,
               storiesPaths,
+              yes,
             });
             logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
 

@@ -11,10 +11,7 @@ export type AgentInfo = {
   name: KnownAgentName;
 };
 
-export type AgentDetection = {
-  isAgent: boolean;
-  agent?: AgentInfo;
-};
+export type AgentDetection = AgentInfo | undefined;
 
 type DetectAgentOptions = {
   stdoutIsTTY: boolean;
@@ -72,22 +69,22 @@ export const detectAgent = (options: DetectAgentOptions): AgentDetection => {
   // 1) Explicit agent variables (strong signal; allow even in CI/TTY)
   const explicit = detectExplicitAgent(env);
   if (explicit) {
-    return { isAgent: true, agent: explicit };
+    return explicit;
   }
 
   const stdoutIsTTY = options.stdoutIsTTY;
 
   // 2) Behavioral / fingerprint heuristics (exclude CI to reduce false positives)
   if (stdoutIsTTY) {
-    return { isAgent: false };
+    return undefined;
   }
 
   const isDumbTerm = env.TERM === 'dumb';
   const hasAgentPager = env.GIT_PAGER === 'cat';
 
   if (isDumbTerm || hasAgentPager) {
-    return { isAgent: true, agent: { name: 'unknown' } };
+    return { name: 'unknown' };
   }
 
-  return { isAgent: false };
+  return undefined;
 };

@@ -55,8 +55,7 @@ const agentDetection = detectAgent({ stdoutIsTTY: process.stdout.isTTY, env: pro
 const globalContext = {
   inCI,
   isTTY: process.stdout.isTTY,
-  isAgent: agentDetection.isAgent,
-  agent: agentDetection.agent,
+  agent: agentDetection,
   platform: getOperatingSystem(),
   nodeVersion: process.versions.node,
   storybookVersion: getVersionNumber(),

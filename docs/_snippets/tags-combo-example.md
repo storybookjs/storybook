@@ -1,7 +1,7 @@
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { Button } from './Button';
+import { Button } from './Button.component';
 
 const meta: Meta<Button> = {
   component: Button,
@@ -39,7 +39,7 @@ export const Combo: Story = {
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { Button } from './Button';
+import { Button } from './Button.component';
 
 const meta = preview.meta({
   component: Button,
@@ -206,10 +206,11 @@ export const Combo: Story = {
 };
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { Button } from './Button.svelte';
+
+  import Button from './Button.svelte';
 
   const { Story } = defineMeta({
     component: Button,
@@ -237,10 +238,11 @@ export const Combo: Story = {
 </Story>
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { Button } from './Button.svelte';
+
+  import Button from './Button.svelte';
 
   const { Story } = defineMeta({
     component: Button,
@@ -269,7 +271,7 @@ export const Combo: Story = {
 ```
 
 ```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
-import { Button } from './Button';
+import Button from './Button.vue';
 
 export default {
   component: Button,
@@ -305,7 +307,7 @@ export const Combo = {
 ```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
-import { Button } from './Button';
+import Button from './Button.vue';
 
 const meta = {
   component: Button,
@@ -344,7 +346,7 @@ export const Combo: Story = {
 ```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { Button } from './Button';
+import Button from './Button.vue';
 
 const meta = preview.meta({
   component: Button,
@@ -382,7 +384,7 @@ export const Combo = meta.story({
 ```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
 
-import { Button } from './Button';
+import Button from './Button.vue';
 
 const meta = preview.meta({
   component: Button,
@@ -589,6 +591,7 @@ export const Combo = meta.story({
 
 ```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
 const meta = preview.meta({

@@ -30,13 +30,14 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
 }) {
   const containerRef = useRef<HTMLElement>(null);
 
+  // TODO: what we want to remember is which Refs/Tree currently has focus.
   // Track highlighted nodes, keep it in sync with props and enable keyboard navigation
-  const [highlighted, setHighlighted, highlightedRef] = useHighlighted({
-    containerRef,
-    isLoading,
-    isBrowsing,
-    selected,
-  });
+  // const [highlighted, setHighlighted, highlightedRef] = useHighlighted({
+  //   containerRef,
+  //   isLoading,
+  //   isBrowsing,
+  //   selected,
+  // });
 
   const { landmarkProps } = useLandmark(
     { 'aria-labelledby': 'storybook-explorer-tree-heading', role: 'navigation' },
@@ -50,15 +51,15 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
       className={isBrowsing ? undefined : 'sb-sr-only'}
       ref={containerRef}
       id="storybook-explorer-tree"
-      data-highlighted-ref-id={highlighted?.refId}
-      data-highlighted-item-id={highlighted?.itemId}
+      // data-highlighted-ref-id={highlighted?.refId}
+      // data-highlighted-item-id={highlighted?.itemId}
       {...landmarkProps}
       {...restProps}
     >
       <h2 id="storybook-explorer-tree-heading" className="sb-sr-only">
         Stories
       </h2>
-      {highlighted && <HighlightStyles {...highlighted} />}
+      {/* {highlighted && <HighlightStyles {...highlighted} />} */}
       {dataset.entries.map(([refId, ref]) => (
         <Ref
           {...ref}
@@ -68,8 +69,8 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
           isDevelopment={isDevelopment}
           hasEntries={hasEntries}
           selectedStoryId={selected?.refId === ref.id ? selected.storyId : null}
-          highlightedRef={highlightedRef}
-          setHighlighted={setHighlighted}
+          // highlightedRef={highlightedRef}
+          // setHighlighted={setHighlighted}
         />
       ))}
     </nav>

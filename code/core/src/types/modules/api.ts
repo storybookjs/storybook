@@ -1,7 +1,9 @@
 import type { ReactElement } from 'react';
 
-import type { Channel } from '../../channels/index.ts';
-import type { State } from '../../manager-api/index.ts';
+import type { is } from '@babel/types';
+
+import type { Channel } from '../../channels.ts';
+import type { State } from '../../manager-api.ts';
 import type { RenderData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
 import type { Addon_RenderOptions } from './addons.ts';
@@ -9,7 +11,7 @@ import type {
   API_FilterFunction,
   API_HashEntry,
   API_IndexHash,
-  API_PreparedIndexEntry,
+  API_IndexTree,
 } from './api-stories.ts';
 import type { SetStoriesStory, SetStoriesStoryData } from './channelApi.ts';
 import type { DocsOptions } from './core-common.ts';

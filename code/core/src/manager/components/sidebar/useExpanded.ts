@@ -13,7 +13,7 @@ import { matchesKeyCode, matchesModifiers } from '../../keybinding.ts';
 import { getAncestorIds, getDescendantIds, isAncestor, scrollIntoView } from '../../utils/tree.ts';
 import type { Highlight } from './types.ts';
 
-const { document } = global;
+// const { document } = global;
 
 export type ExpandedState = Record<string, boolean>;
 
@@ -23,43 +23,42 @@ export interface ExpandAction {
 }
 
 export interface ExpandedProps {
-  containerRef: MutableRefObject<HTMLElement>;
-  isBrowsing: boolean;
+  // containerRef: MutableRefObject<HTMLElement>;
+  // isBrowsing: boolean;
   refId: string;
   data: StoriesHash;
   initialExpanded?: ExpandedState;
   rootIds: string[];
-  highlightedRef: MutableRefObject<Highlight>;
-  setHighlightedItemId: (storyId: string) => void;
+  // highlightedRef: MutableRefObject<Highlight>;
+  // setHighlightedItemId: (storyId: string) => void;
   selectedStoryId: string | null;
-  onSelectStoryId: (storyId: string) => void;
+  // onSelectStoryId: (storyId: string) => void;
 }
 
 const initializeExpanded = ({
   refId,
   data,
-  initialExpanded,
-  highlightedRef,
+  initialExpanded = {},
+  // highlightedRef,
   rootIds,
   selectedStoryId,
 }: {
   refId: string;
   data: StoriesHash;
   initialExpanded?: ExpandedState;
-  highlightedRef: MutableRefObject<Highlight>;
+  // highlightedRef: MutableRefObject<Highlight>;
   rootIds: string[];
   selectedStoryId: string | null;
 }) => {
   const selectedStory = selectedStoryId && data[selectedStoryId];
   const candidates = [...rootIds];
-  if (highlightedRef.current?.refId === refId) {
-    candidates.push(...getAncestorIds(data, highlightedRef.current?.itemId));
-  }
+  // if (highlightedRef.current?.refId === refId) {
+  //   candidates.push(...getAncestorIds(data, highlightedRef.current?.itemId));
+  // }
   if (selectedStory && 'children' in selectedStory && selectedStory.children?.length) {
     candidates.push(selectedStoryId);
   }
   return candidates.reduce<ExpandedState>(
-    // @ts-expect-error (non strict)
     (acc, id) => Object.assign(acc, { [id]: id in initialExpanded ? initialExpanded[id] : true }),
     {}
   );
@@ -68,16 +67,16 @@ const initializeExpanded = ({
 const noop = () => {};
 
 export const useExpanded = ({
-  containerRef,
-  isBrowsing,
+  // containerRef,
+  // isBrowsing,
   refId,
   data,
-  initialExpanded,
+  initialExpanded = {},
   rootIds,
-  highlightedRef,
-  setHighlightedItemId,
+  // highlightedRef,
+  // setHighlightedItemId,
   selectedStoryId,
-  onSelectStoryId,
+  // onSelectStoryId,
 }: ExpandedProps): [ExpandedState, Dispatch<ExpandAction>] => {
   const api = useStorybookApi();
 
@@ -88,63 +87,73 @@ export const useExpanded = ({
     {
       refId: string;
       data: StoriesHash;
-      highlightedRef: MutableRefObject<Highlight>;
+      // highlightedRef: MutableRefObject<Highlight>;
       rootIds: string[];
       initialExpanded: ExpandedState;
+      selectedStoryId: string | null;
     }
   >(
     (state, { ids, value }) =>
-      ids.reduce((acc, id) => Object.assign(acc, { [id]: value }), { ...state }),
-    // @ts-expect-error (non strict)
-    { refId, data, highlightedRef, rootIds, initialExpanded, selectedStoryId },
+      ids.reduce(
+        (acc, id) => {
+          // TODO/FIXME: check if this is truly needed, or if I can find another way to handle whatever happened in init.
+          // Always expand the parents of any expanded id.
+          const delta = value
+            ? Object.fromEntries(getAncestorIds(data, id).map((ancestorId) => [ancestorId, true]))
+            : { [id]: false };
+
+          return Object.assign(acc, delta);
+        },
+        { ...state }
+      ),
+    // { refId, data, highlightedRef, rootIds, initialExpanded, selectedStoryId },
+    { refId, data, rootIds, initialExpanded, selectedStoryId },
     initializeExpanded
   );
 
-  const getElementByDataItemId = useCallback(
-    (id: string) => containerRef.current?.querySelector(`[data-item-id="${id}"]`),
-    [containerRef]
-  );
+  // const getElementByDataItemId = useCallback(
+  //   (id: string) => containerRef.current?.querySelector(`[data-item-id="${id}"]`),
+  //   [containerRef]
+  // );
 
-  const highlightElement = useCallback(
-    (element: Element) => {
-      // @ts-expect-error (non strict)
-      setHighlightedItemId(element.getAttribute('data-item-id'));
-      scrollIntoView(element);
-    },
-    [setHighlightedItemId]
-  );
+  // const highlightElement = useCallback(
+  //   (element: Element) => {
+  //     // @ts-expect-error (non strict)
+  //     setHighlightedItemId(element.getAttribute('data-item-id'));
+  //     scrollIntoView(element);
+  //   },
+  //   [setHighlightedItemId]
+  // );
 
-  const updateExpanded = useCallback(
-    ({ ids, value }: ExpandAction) => {
-      // @ts-expect-error (non strict)
-      setExpanded({ ids, value });
-      if (ids.length === 1) {
-        const element = containerRef.current?.querySelector(
-          `[data-item-id="${ids[0]}"][data-ref-id="${refId}"]`
-        );
+  // const updateExpanded = useCallback(
+  //   ({ ids, value }: ExpandAction) => {
+  //     setExpanded({ ids, value });
+  //     if (ids.length === 1) {
+  //       const element = containerRef.current?.querySelector(
+  //         `[data-item-id="${ids[0]}"][data-ref-id="${refId}"]`
+  //       );
 
-        if (element) {
-          highlightElement(element);
-        }
-      }
-    },
-    [containerRef, highlightElement, refId]
-  );
+  //       if (element) {
+  //         highlightElement(element);
+  //       }
+  //     }
+  //   },
+  //   [containerRef, highlightElement, refId]
+  // );
 
   // Expand the whole ancestry of the currently selected story whenever it changes.
   useEffect(() => {
-    // @ts-expect-error (non strict)
-    setExpanded({ ids: getAncestorIds(data, selectedStoryId), value: true });
+    if (selectedStoryId) {
+      setExpanded({ ids: getAncestorIds(data, selectedStoryId), value: true });
+    }
   }, [data, selectedStoryId]);
 
   const collapseAll = useCallback(() => {
     const ids = Object.keys(data).filter((id) => !rootIds.includes(id));
-    // @ts-expect-error (non strict)
     setExpanded({ ids, value: false });
   }, [data, rootIds]);
 
   const expandAll = useCallback(() => {
-    // @ts-expect-error (non strict)
     setExpanded({ ids: Object.keys(data), value: true });
   }, [data]);
 
@@ -162,105 +171,5 @@ export const useExpanded = ({
     };
   }, [api, collapseAll, expandAll]);
 
-  // Expand, collapse or select nodes in the tree using keyboard shortcuts.
-  useEffect(() => {
-    const menuElement = document.getElementById('storybook-explorer-menu');
-
-    // Even though we ignore repeated events, use throttle because IE doesn't support event.repeat.
-    const navigateTree = throttle((event: KeyboardEvent) => {
-      const highlightedItemId =
-        highlightedRef.current?.refId === refId && highlightedRef.current?.itemId;
-
-      if (!isBrowsing || !containerRef.current || !highlightedItemId || event.repeat) {
-        return;
-      }
-
-      if (!matchesModifiers(false, event)) {
-        return;
-      }
-
-      const isEnter = matchesKeyCode('Enter', event);
-      const isSpace = matchesKeyCode('Space', event);
-      const isArrowLeft = matchesKeyCode('ArrowLeft', event);
-      const isArrowRight = matchesKeyCode('ArrowRight', event);
-
-      if (!(isEnter || isSpace || isArrowLeft || isArrowRight)) {
-        return;
-      }
-
-      const highlightedElement = getElementByDataItemId(highlightedItemId);
-
-      if (!highlightedElement || highlightedElement.getAttribute('data-ref-id') !== refId) {
-        return;
-      }
-
-      const target = event.target as Element;
-
-      // @ts-expect-error (non strict)
-      if (!isAncestor(menuElement, target) && !isAncestor(target, menuElement)) {
-        return;
-      }
-      if (target.hasAttribute('data-action')) {
-        if (isEnter || isSpace) {
-          return;
-        }
-        (target as HTMLButtonElement).blur();
-      }
-
-      const type = highlightedElement.getAttribute('data-nodetype');
-      if (
-        type &&
-        (isEnter || isSpace) &&
-        ['component', 'story', 'document', 'test'].includes(type)
-      ) {
-        onSelectStoryId(highlightedItemId);
-      }
-
-      const isExpanded = highlightedElement.getAttribute('aria-expanded');
-
-      if (isArrowLeft) {
-        if (isExpanded === 'true') {
-          // The highlighted node is expanded, so we collapse it.
-          // @ts-expect-error (non strict)
-          setExpanded({ ids: [highlightedItemId], value: false });
-          return;
-        }
-
-        const parentId = highlightedElement.getAttribute('data-parent-id');
-        const parentElement = parentId && getElementByDataItemId(parentId);
-        if (parentElement && parentElement.getAttribute('data-highlightable') === 'true') {
-          // The highlighted node isn't expanded, so we move the highlight to its parent instead.
-          highlightElement(parentElement);
-          return;
-        }
-
-        // The parent can't be highlighted, which means it must be a root.
-        // The highlighted node is already collapsed, so we collapse its descendants.
-        // @ts-expect-error (non strict)
-        setExpanded({ ids: getDescendantIds(data, highlightedItemId, true), value: false });
-        return;
-      }
-
-      if (isArrowRight) {
-        if (isExpanded === 'false') {
-          updateExpanded({ ids: [highlightedItemId], value: true });
-        } else if (isExpanded === 'true') {
-          updateExpanded({ ids: getDescendantIds(data, highlightedItemId, true), value: true });
-        }
-      }
-    }, 60);
-
-    document.addEventListener('keydown', navigateTree);
-    return () => document.removeEventListener('keydown', navigateTree);
-  }, [
-    containerRef,
-    isBrowsing,
-    refId,
-    data,
-    highlightedRef,
-    setHighlightedItemId,
-    onSelectStoryId,
-  ]);
-
-  return [expanded, updateExpanded];
+  return [expanded, setExpanded];
 };

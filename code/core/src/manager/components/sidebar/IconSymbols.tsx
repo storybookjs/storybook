@@ -12,7 +12,7 @@ const Svg = styled.svg`
   vertical-align: middle;
 `;
 
-// We are importing the icons from @storybook/icons as we need to add symbols inside of them.
+// We are hardcoding the icons from @storybook/icons as we need to add symbols inside of them.
 // This will allow to set icons once and use them everywhere.
 
 const GROUP_ID = 'icon--group';
@@ -162,7 +162,7 @@ export const UseSymbol: FC<{
   type:
     | 'group'
     | 'component'
-    | 'document'
+    | 'docs'
     | 'story'
     | 'test'
     | 'success'
@@ -181,7 +181,7 @@ export const UseSymbol: FC<{
     return <use xlinkHref={`#${COMPONENT_ID}`} />;
   }
 
-  if (type === 'document') {
+  if (type === 'docs') {
     return <use xlinkHref={`#${DOCUMENT_ID}`} />;
   }
 

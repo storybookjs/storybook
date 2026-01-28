@@ -128,7 +128,7 @@
     "wait-on": "^8.0.3"
   },
   "devDependencies": {
-    "oxfmt": "^0.41.0"
+    "@primer/react": "^38.7.1"
   },
   "dependenciesMeta": {
     "ejs": {

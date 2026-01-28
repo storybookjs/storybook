@@ -76,11 +76,19 @@ export type API_HashEntry =
 /**
  * The `IndexHash` is our manager-side representation of the `StoryIndex`. We create entries in the
  * hash not only for each story or docs entry, but also for each "group" of the component (split on
- * '/'), as that's how things are manipulated in the manager (i.e. in the sidebar)
+ * '/'), as that's how things are manipulated in parts of the manager (i.e. in search).
  */
 export interface API_IndexHash {
   [id: string]: API_HashEntry;
 }
+
+/**
+ * The `IndexTree` is a hierarchical representation of `IndexHash`, that can be navigated from roots
+ * to leaves. It is useful when rendering tree structures from the index (e.g. the sidebar Tree).
+ */
+export type API_TreeEntry = API_HashEntry & { resolvedChildren?: API_TreeEntry[] };
+export type API_IndexTree = API_TreeEntry[];
+
 // We used to received a bit more data over the channel on the SET_STORIES event, including
 // the full parameters for each story.
 export type API_PreparedIndexEntry = IndexEntry & {

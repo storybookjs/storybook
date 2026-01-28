@@ -18,8 +18,8 @@ export interface RefProps {
   isDevelopment: boolean;
   hasEntries: boolean;
   selectedStoryId: string | null;
-  highlightedRef: MutableRefObject<Highlight>;
-  setHighlighted: (highlight: Highlight) => void;
+  // highlightedRef: MutableRefObject<Highlight>;
+  // setHighlighted: (highlight: Highlight) => void;
 }
 
 const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({
@@ -56,6 +56,7 @@ const RefTitle = styled.div({
   marginLeft: 2,
 });
 
+// TODO review
 const CollapseButton = styled.button(({ theme }) => ({
   all: 'unset',
   display: 'flex',
@@ -85,8 +86,8 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
     isDevelopment,
     hasEntries,
     selectedStoryId,
-    highlightedRef,
-    setHighlighted,
+    // highlightedRef,
+    // setHighlighted,
     loginUrl,
     type,
     expanded = true,
@@ -117,10 +118,10 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
 
   const handleClick = useCallback(() => setExpanded((value) => !value), [setExpanded]);
 
-  const setHighlightedItemId = useCallback(
-    (itemId: string) => setHighlighted({ itemId, refId }),
-    [setHighlighted, refId]
-  );
+  // const setHighlightedItemId = useCallback(
+  //   (itemId: string) => setHighlighted({ itemId, refId }),
+  //   [setHighlighted, refId]
+  // );
 
   const onSelectStoryId = useCallback(
     (storyId: string) => api?.selectStory(storyId, undefined, { ref: isMain ? undefined : refId }),
@@ -141,7 +142,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
           <RefIndicator {...props} state={state} ref={indicatorRef} />
         </RefHead>
       )}
-      {isExpanded && (
+      {isExpanded && index && (
         <Wrapper data-title={title} isMain={isMain}>
           {/* @ts-expect-error (non strict) */}
           {state === 'auth' && <AuthBlock id={refId} loginUrl={loginUrl} />}
@@ -156,14 +157,12 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
               isDevelopment={isDevelopment}
               isMain={isMain}
               refId={refId}
-              // @ts-expect-error (non strict)
               data={index}
-              // @ts-expect-error (non strict)
-              docsMode={docsOptions.docsMode}
+              docsMode={docsOptions.docsMode ?? false}
               selectedStoryId={selectedStoryId}
               onSelectStoryId={onSelectStoryId}
-              highlightedRef={highlightedRef}
-              setHighlightedItemId={setHighlightedItemId}
+              // highlightedRef={highlightedRef}
+              // setHighlightedItemId={setHighlightedItemId}
             />
           )}
         </Wrapper>

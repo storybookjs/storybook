@@ -123,6 +123,7 @@ export interface API_Shortcuts {
   copyStoryLink: API_KeyCollection;
   goToPreviousLandmark: API_KeyCollection;
   goToNextLandmark: API_KeyCollection;
+  contextMenu: API_KeyCollection;
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: API_KeyCollection;
 }
@@ -165,6 +166,7 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   copyStoryLink: ['alt', 'shift', 'L'],
   goToPreviousLandmark: ['shift', 'F6'], // hardcoded in react-aria
   goToNextLandmark: ['F6'], // hardcoded in react-aria
+  contextMenu: [controlOrMetaKey(), 'shift', 'm'],
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
 });

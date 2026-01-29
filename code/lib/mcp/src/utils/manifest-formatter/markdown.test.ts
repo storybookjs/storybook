@@ -163,7 +163,6 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 			`);
 		});
 
-
 		it('should handle stories with description', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',

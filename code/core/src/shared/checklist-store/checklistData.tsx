@@ -577,9 +577,12 @@ export default {
           label: 'Test your components',
           criteria: 'Component tests are run from the test widget in the sidebar',
           subscribe: ({ done }) =>
-            internal_universalTestProviderStore.onStateChange(
-              (state) => state['storybook/test'] === 'test-provider-state:succeeded' && done()
-            ),
+            internal_universalTestProviderStore.onStateChange((state) => {
+              if (state['storybook/test'] === 'test-provider-state:running') {
+                TourGuide.render(null);
+                done();
+              }
+            }),
           action: {
             label: 'Start',
             onClick: ({ api }) => {

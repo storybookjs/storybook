@@ -118,6 +118,17 @@ async function handleRequest(
       throw new Error('Unexpected boolean response');
     }
     if (!response.ok) {
+      // Check for 401 responses that may contain loginUrl
+      if (response.status === 401) {
+        try {
+          const json = await response.json();
+          if (json.loginUrl) {
+            return { loginUrl: json.loginUrl };
+          }
+        } catch {
+          // Fall through to error handling if JSON parsing fails
+        }
+      }
       throw new Error(`Unexpected response not OK: ${response.statusText}`);
     }
 

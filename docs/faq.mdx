@@ -15,43 +15,13 @@ Storybook can be set up for both single-project and multi-project Angular worksp
 
 In case you are having trouble with Angular Ivy you can deactivate it in your `main.js|ts`:
 
-```js title=".storybook/main.js|ts"
-export default {
-  stories: [
-    /* ... */
-  ],
-  addons: [
-    /* ... */
-  ],
-  framework: {
-    name: '@storybook/angular',
-    options: {
-      enableIvy: false,
-    },
-  },
-};
-```
+<CodeSnippets path="angular-framework-options-enable-ivy-false.md" />
 
 ## How can I opt-out of Angular ngcc?
 
 In case you postinstall ngcc, you can disable it:
 
-```js title=".storybook/main.js|ts"
-export default {
-  stories: [
-    /* ... */
-  ],
-  addons: [
-    /* ... */
-  ],
-  framework: {
-    name: '@storybook/angular',
-    options: {
-      enableNgcc: false,
-    },
-  },
-};
-```
+<CodeSnippets path="angular-framework-options-enable-ngcc-false.md" />
 
 Please report any issues related to Ivy in our [GitHub Issue Tracker](https://github.com/storybookjs/storybook/labels/app%3A%20angular) as the support for View Engine will be dropped in a future release of Angular.
 
@@ -71,18 +41,9 @@ npm test -- --coverage --collectCoverageFrom='["src/**/*.{js,jsx}","!src/**/stor
 
 ## How do I setup Storybook to share Webpack configuration with Next.js?
 
-You can generally reuse Webpack rules by placing them in a file that is imported from both your `next.config.js` and your `.storybook/main.js|ts` files. For example:
+Storybook's [Next.js framework](./get-started/frameworks/nextjs.mdx) will read from your `next.config.js` file by default. If your configuration file is named or located differently, you can specify the path in your Storybook main configuration file:
 
-```js title=".storybook/main.js|ts"
-export default {
-  webpackFinal: async (baseConfig) => {
-    const nextConfig = await import('/path/to/next.config.js');
-
-    // merge whatever from nextConfig into the webpack config storybook will use
-    return { ...baseConfig, ...nextConfig };
-  },
-};
-```
+<CodeSnippets path="nextjs-framework-options-next-config-path.md" />
 
 ## How do I fix module resolution in special environments?
 
@@ -140,16 +101,7 @@ If your installed React Version equals or is higher than 18.0.0, the new React R
 
 You can opt-out from the new React Root API by setting the following property in your `.storybook/main.js|ts` file:
 
-```js title=".storybook/main.js|ts"
-export default {
-  framework: {
-    name: '@storybook/react-webpack5',
-    options: {
-      legacyRootApi: true,
-    },
-  },
-};
-```
+<CodeSnippets path="react-framework-options-legacy-root-api.md" />
 
 ## Why is there no addons channel?
 
@@ -189,19 +141,7 @@ Some description here
 
 And then refer to it in your Storybook config file:
 
-```ts title=".storybook/main.js|ts"
-const config = {
-  // define at least one local story/page here
-  stories: ['../Introduction.mdx'],
-  // define composed Storybooks here
-  refs: {
-    firstProject: { title: 'First', url: 'some-url' },
-    secondProject: { title: 'Second', url: 'other-url' },
-  },
-  // ...
-};
-export default config;
-```
+<CodeSnippets path="main-config-stories-only-mdx.md" />
 
 ## Which community addons are compatible with the latest version of Storybook?
 
@@ -398,7 +338,9 @@ See the following [issue](https://github.com/mdx-js/mdx/issues/1945) for more in
 
 ## Why are my mocked GraphQL queries failing with Storybook's MSW addon?
 
-If you're working with Vue 3, you'll need to install [`@vue/apollo-composable`](https://www.npmjs.com/package/@vue/apollo-composable). With Svelte, you'll need to install [`@rollup/plugin-replace`](https://www.npmjs.com/package/@rollup/plugin-replace) and update your `rollup.config` file to the following:
+If you're working with Vue 3, you'll need to install [`@vue/apollo-composable`](https://www.npmjs.com/package/@vue/apollo-composable).
+
+With Svelte, you'll need to install [`@rollup/plugin-replace`](https://www.npmjs.com/package/@rollup/plugin-replace) and update your `rollup.config` file to the following:
 
 ```js title="rollup.config.js"
 // Boilerplate imports
@@ -444,38 +386,6 @@ Storybook allows you to use most characters while naming your stories. Still, sp
 ## Why is Storybook's source loader returning undefined with curried functions?
 
 This is a known issue with Storybook. If you're interested in getting it fixed, open an issue with a [working reproduction](./contribute/how-to-reproduce.mdx) so that it can be triaged and fixed in future releases.
-
-## Why are my args no longer displaying the default values?
-
-Before version 6.3, unset args were set to the `argTypes.defaultValue` if specified or inferred from the component's properties (e.g., React's prop types, Angular inputs, Vue props). Starting with version 6.3, Storybook no longer infers default values but instead defines the arg's value as `undefined` when unset, allowing the framework to supply its default value.
-
-If you are using `argTypes.defaultValue` to fix the above, you no longer need to, and you can safely remove it from your stories.
-
-Additionally, suppose you were using `argTypes.defaultValue` or relying on inference to set a default value for an arg. In that case, you should define the arg's value at the component level instead:
-
-```js title="MyComponent.stories.js"
-export default {
-  component: MyComponent,
-  args: {
-    //👇 Defining the arg's value at the component level.
-    text: 'Something',
-  },
-};
-```
-
-For Storybook's Docs, you can manually configure the displayed value by configuring the `table.defaultValue` setting:
-
-```js title="MyComponent.stories.js"
-export default {
-  component: MyComponent,
-  argTypes: {
-    //👇 Defining the arg's display value in docs.
-    text: {
-      table: { defaultValue: { summary: 'SomeType<T>' } },
-    },
-  },
-};
-```
 
 ## Why isn't Storybook's test runner working?
 

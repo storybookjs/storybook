@@ -120,6 +120,7 @@ const Input = styled.input(({ theme, placeholder }) => ({
 
 const RawButton = styled(ToggleButton)({
   flexShrink: 0,
+  gap: '4px',
 
   // Hide text on small screens, show only icon for accessibility (WCAG 2.1 Reflow)
   '@media (max-width: 400px)': {

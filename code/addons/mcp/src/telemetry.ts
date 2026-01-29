@@ -21,6 +21,6 @@ export async function collectTelemetry({
 			...payload,
 		});
 	} catch (error) {
-		logger.debug(`Error collecting telemetry: ${error}`);
+		logger.debug(`Error collecting telemetry: ${String(error)}`);
 	}
 }

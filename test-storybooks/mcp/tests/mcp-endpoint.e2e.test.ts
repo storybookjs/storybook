@@ -69,7 +69,7 @@ async function waitForMcpEndpoint(
 				resolve();
 				return;
 			}
-		} catch (error) {
+		} catch {
 			// Server not ready yet
 		}
 

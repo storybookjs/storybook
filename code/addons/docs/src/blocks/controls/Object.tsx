@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Button, Form, ToggleButton } from 'storybook/internal/components';
 
-import { AddIcon, SubtractIcon } from '@storybook/icons';
+import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/object';
 import { type Theme, styled, useTheme } from 'storybook/theming';
@@ -19,6 +19,7 @@ type JsonTreeProps = ComponentProps<typeof JsonTree>;
 const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
+  flexWrap: 'wrap',
   isolation: 'isolate',
 
   '.rejt-tree': {
@@ -118,10 +119,14 @@ const Input = styled.input(({ theme, placeholder }) => ({
 }));
 
 const RawButton = styled(ToggleButton)({
-  position: 'absolute',
-  zIndex: 2,
-  top: 2,
-  right: 2,
+  flexShrink: 0,
+
+  // Hide text on small screens, show only icon for accessibility (WCAG 2.1 Reflow)
+  '@media (max-width: 400px)': {
+    '& > span': {
+      display: 'none',
+    },
+  },
 });
 
 const RawInput = styled(Form.Textarea)(({ theme }) => ({
@@ -256,7 +261,8 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
             setShowRaw((isRaw) => !isRaw);
           }}
         >
-          Edit JSON
+          <EditIcon />
+          <span>Edit JSON</span>
         </RawButton>
       )}
       {!showRaw ? (

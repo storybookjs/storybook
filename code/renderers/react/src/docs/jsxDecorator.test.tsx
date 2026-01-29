@@ -1,17 +1,16 @@
-/** @vitest-environment happy-dom */
-import type { Mock } from 'vitest';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { FC, PropsWithChildren } from 'react';
-import React, { Profiler, StrictMode, createElement } from 'react';
+import type { FC, PropsWithChildren } from "react";
+import React, { Profiler, StrictMode, createElement } from "react";
 
-import PropTypes from 'prop-types';
-import { addons, emitTransformCode, useState } from 'storybook/preview-api';
+import PropTypes from "prop-types";
+import { addons, emitTransformCode, useState } from "storybook/preview-api";
 
-import type { ReactRenderer, StoryContext } from '../types';
-import { getReactSymbolName, jsxDecorator, renderJsx } from './jsxDecorator';
+import type { ReactRenderer, StoryContext } from "../types";
+import { getReactSymbolName, jsxDecorator, renderJsx } from "./jsxDecorator";
 
-vi.mock('storybook/preview-api', () => ({
+vi.mock("storybook/preview-api", () => ({
   addons: {
     getChannel: vi.fn(),
   },
@@ -26,14 +25,14 @@ const mockedEmitTransformCode = vi.mocked(emitTransformCode);
 
 expect.addSnapshotSerializer({
   print: (val: any) => val,
-  test: (val) => typeof val === 'string',
+  test: (val) => typeof val === "string",
 });
 
-describe('converts React Symbol to displayName string', () => {
+describe("converts React Symbol to displayName string", () => {
   const symbolCases = [
-    ['react.suspense', 'React.Suspense'],
-    ['react.strict_mode', 'React.StrictMode'],
-    ['react.server_context.defaultValue', 'React.ServerContext.DefaultValue'],
+    ["react.suspense", "React.Suspense"],
+    ["react.strict_mode", "React.StrictMode"],
+    ["react.server_context.defaultValue", "React.ServerContext.DefaultValue"],
   ];
 
   it.each(symbolCases)('"%s" to "%s"', (symbol, expectedValue) => {
@@ -41,37 +40,65 @@ describe('converts React Symbol to displayName string', () => {
   });
 });
 
-describe('renderJsx', () => {
-  it('basic', () => {
+describe("renderJsx", () => {
+  it("basic", () => {
     expect(renderJsx(<div>hello</div>, {})).toMatchInlineSnapshot(`
       <div>
         hello
       </div>
     `);
   });
-  it('functions', () => {
-    const onClick = () => console.log('onClick');
-    expect(renderJsx(<div onClick={onClick}>hello</div>, {})).toMatchInlineSnapshot(`
+  it("preserves keys in generated JSX for array children", () => {
+    const el = (
+      <div>
+        {React.Children.toArray([
+          <span key="accordion1">One</span>,
+          <span key="accordion2">Two</span>,
+        ])}
+      </div>
+    );
+
+    const out = renderJsx(el, {});
+
+    expect(out).toContain('key="accordion1"');
+    expect(out).toContain('key="accordion2"');
+  });
+  it("preserves key props for array children", () => {
+    const out = renderJsx(
+      <div>
+        {[<span key="accordion1">One</span>, <span key="accordion2">Two</span>]}
+      </div>,
+      {}
+    );
+
+    expect(out).toContain('key="accordion1"');
+    expect(out).toContain('key="accordion2"');
+  });
+  it("functions", () => {
+    const onClick = () => console.log("onClick");
+    expect(renderJsx(<div onClick={onClick}>hello</div>, {}))
+      .toMatchInlineSnapshot(`
       <div onClick={() => {}}>
         hello
       </div>
     `);
   });
-  it('undefined values', () => {
-    expect(renderJsx(<div className={undefined}>hello</div>, {})).toMatchInlineSnapshot(`
+  it("undefined values", () => {
+    expect(renderJsx(<div className={undefined}>hello</div>, {}))
+      .toMatchInlineSnapshot(`
       <div>
         hello
       </div>
     `);
   });
-  it('null values', () => {
+  it("null values", () => {
     expect(renderJsx(<div>hello</div>, {})).toMatchInlineSnapshot(`
       <div>
         hello
       </div>
     `);
   });
-  it('large objects', () => {
+  it("large objects", () => {
     const obj = Array.from({ length: 20 }).reduce((acc, _, i) => {
       // @ts-expect-error (Converted from ts-ignore)
       acc[`key_${i}`] = `val_${i}`;
@@ -105,7 +132,7 @@ describe('renderJsx', () => {
     `);
   });
 
-  it('long arrays', () => {
+  it("long arrays", () => {
     const arr = Array.from({ length: 20 }, (_, i) => `item ${i}`);
     expect(renderJsx(<div data-val={arr} />, {})).toMatchInlineSnapshot(`
       <div
@@ -135,50 +162,53 @@ describe('renderJsx', () => {
     `);
   });
 
-  describe('forwardRef component', () => {
-    it('with no displayName', () => {
+  describe("forwardRef component", () => {
+    it("with no displayName", () => {
       const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
         function MyExoticComponent(props, _ref) {
           return <div>{props.children}</div>;
         }
       );
 
-      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
-        .toMatchInlineSnapshot(`
+      expect(
+        renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>)
+      ).toMatchInlineSnapshot(`
           <React.ForwardRef>
             I am forwardRef!
           </React.ForwardRef>
         `);
     });
 
-    it('with displayName coming from docgen', () => {
+    it("with displayName coming from docgen", () => {
       const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
         function MyExoticComponent(props, _ref) {
           return <div>{props.children}</div>;
         }
       );
       (MyExoticComponentRef as any).__docgenInfo = {
-        displayName: 'ExoticComponent',
+        displayName: "ExoticComponent",
       };
-      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
-        .toMatchInlineSnapshot(`
+      expect(
+        renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>)
+      ).toMatchInlineSnapshot(`
           <ExoticComponent>
             I am forwardRef!
           </ExoticComponent>
         `);
     });
 
-    it('with displayName coming from forwarded render function', () => {
+    it("with displayName coming from forwarded render function", () => {
       const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
         Object.assign(
           function MyExoticComponent(props: any, _ref: any) {
             return <div>{props.children}</div>;
           },
-          { displayName: 'ExoticComponent' }
+          { displayName: "ExoticComponent" }
         )
       );
-      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
-        .toMatchInlineSnapshot(`
+      expect(
+        renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>)
+      ).toMatchInlineSnapshot(`
         <ExoticComponent>
           I am forwardRef!
         </ExoticComponent>
@@ -186,12 +216,15 @@ describe('renderJsx', () => {
     });
   });
 
-  it('memo component', () => {
-    const MyMemoComponentRef: FC<PropsWithChildren> = React.memo(function MyMemoComponent(props) {
-      return <div>{props.children}</div>;
-    });
+  it("memo component", () => {
+    const MyMemoComponentRef: FC<PropsWithChildren> = React.memo(
+      function MyMemoComponent(props) {
+        return <div>{props.children}</div>;
+      }
+    );
 
-    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>)).toMatchInlineSnapshot(`
+    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>))
+      .toMatchInlineSnapshot(`
       <React.Memo>
         I am memo!
       </React.Memo>
@@ -199,16 +232,17 @@ describe('renderJsx', () => {
 
     // if docgenInfo is present, it should use the displayName from there
     (MyMemoComponentRef as any).__docgenInfo = {
-      displayName: 'MyMemoComponentRef',
+      displayName: "MyMemoComponentRef",
     };
-    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>)).toMatchInlineSnapshot(`
+    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>))
+      .toMatchInlineSnapshot(`
       <MyMemoComponentRef>
         I am memo!
       </MyMemoComponentRef>
     `);
   });
 
-  it('Profiler', () => {
+  it("Profiler", () => {
     expect(
       renderJsx(
         <Profiler id="profiler-test" onRender={() => {}}>
@@ -228,22 +262,23 @@ describe('renderJsx', () => {
     `);
   });
 
-  it('StrictMode', () => {
-    expect(renderJsx(<StrictMode>I am StrictMode</StrictMode>, {})).toMatchInlineSnapshot(`
+  it("StrictMode", () => {
+    expect(renderJsx(<StrictMode>I am StrictMode</StrictMode>, {}))
+      .toMatchInlineSnapshot(`
       <React.StrictMode>
         I am StrictMode
       </React.StrictMode>
     `);
   });
 
-  it('displayName coming from docgenInfo', () => {
+  it("displayName coming from docgenInfo", () => {
     function BasicComponent({ label }: any) {
       return <button>{label}</button>;
     }
     BasicComponent.__docgenInfo = {
-      description: 'Some description',
+      description: "Some description",
       methods: [],
-      displayName: 'Button',
+      displayName: "Button",
       props: {},
     };
 
@@ -260,7 +295,7 @@ describe('renderJsx', () => {
     ).toMatchInlineSnapshot(`<Button label={<p>Abcd</p>} />`);
   });
 
-  it('Suspense', () => {
+  it("Suspense", () => {
     expect(
       renderJsx(
         <React.Suspense fallback={null}>
@@ -277,8 +312,14 @@ describe('renderJsx', () => {
     `);
   });
 
-  it('should not add default props to string if the prop value has not changed', () => {
-    const Container = ({ className, children }: { className: string; children: string }) => {
+  it("should not add default props to string if the prop value has not changed", () => {
+    const Container = ({
+      className,
+      children,
+    }: {
+      className: string;
+      children: string;
+    }) => {
       return <div className={className}>{children}</div>;
     };
 
@@ -288,10 +329,11 @@ describe('renderJsx', () => {
     };
 
     Container.defaultProps = {
-      className: 'super-container',
+      className: "super-container",
     };
 
-    expect(renderJsx(<Container>yo dude</Container>, {})).toMatchInlineSnapshot(`
+    expect(renderJsx(<Container>yo dude</Container>, {}))
+      .toMatchInlineSnapshot(`
       <Container className="super-container">
         yo dude
       </Container>
@@ -300,9 +342,14 @@ describe('renderJsx', () => {
 });
 
 // @ts-expect-error (Converted from ts-ignore)
-const makeContext = (name: string, parameters: any, args: any, extra?: object): StoryContext => ({
+const makeContext = (
+  name: string,
+  parameters: any,
+  args: any,
+  extra?: object
+): StoryContext => ({
   id: `jsx-test--${name}`,
-  kind: 'js-text',
+  kind: "js-text",
   name,
   parameters,
   unmappedArgs: args,
@@ -310,7 +357,7 @@ const makeContext = (name: string, parameters: any, args: any, extra?: object): 
   ...extra,
 });
 
-describe('jsxDecorator', () => {
+describe("jsxDecorator", () => {
   const channel = { emit: vi.fn() };
   let mockContext: StoryContext<ReactRenderer>;
   let mockStoryFn: Mock;
@@ -322,15 +369,15 @@ describe('jsxDecorator', () => {
     mockedGetChannel.mockReturnValue(channel as any);
     vi.mocked(useState).mockReturnValue([undefined, mockSetSource]);
 
-    mockContext = makeContext('test', {}, { foo: 'bar' });
+    mockContext = makeContext("test", {}, { foo: "bar" });
     mockStoryFn = vi.fn().mockReturnValue(<div>Test Story</div>);
   });
 
-  it('should skip JSX rendering when source type is CODE', () => {
+  it("should skip JSX rendering when source type is CODE", () => {
     const context = {
       ...mockContext,
       parameters: {
-        docs: { source: { type: 'code' } },
+        docs: { source: { type: "code" } },
       },
       originalStoryFn: () => <div>Test Story</div>,
     };
@@ -340,11 +387,11 @@ describe('jsxDecorator', () => {
     expect(result).toEqual(<div>Test Story</div>);
   });
 
-  it('should skip JSX rendering when source code is provided', () => {
+  it("should skip JSX rendering when source code is provided", () => {
     const context = {
       ...mockContext,
       parameters: {
-        docs: { source: { code: 'const x = 1;' } },
+        docs: { source: { code: "const x = 1;" } },
       },
       originalStoryFn: () => <div>Test Story</div>,
     };
@@ -354,13 +401,13 @@ describe('jsxDecorator', () => {
     expect(result).toEqual(<div>Test Story</div>);
   });
 
-  it('should handle MDX elements correctly', () => {
+  it("should handle MDX elements correctly", () => {
     const mdxElement = {
-      type: { displayName: 'MDXCreateElement' },
+      type: { displayName: "MDXCreateElement" },
       props: {
-        mdxType: 'div',
-        originalType: 'div',
-        children: 'Hello MDX',
+        mdxType: "div",
+        originalType: "div",
+        children: "Hello MDX",
       },
     };
 
@@ -376,7 +423,7 @@ describe('jsxDecorator', () => {
 
     // First verify that useState was called with the correct JSX string
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
-      expect.stringContaining('Hello MDX'),
+      expect.stringContaining("Hello MDX"),
       context
     );
   });

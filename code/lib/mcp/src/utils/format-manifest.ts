@@ -9,13 +9,31 @@ const formatters: Record<OutputFormat, ManifestFormatter> = {
 };
 
 /**
- * Format a single component manifest.
+ * Format a single component manifest in summary mode (optimized for token usage).
+ * @param componentManifest - The component manifest to format
+ * @param format - The desired output format (defaults to 'markdown')
+ * @returns Formatted string representation of the component
  */
 export function formatComponentManifest(
 	componentManifest: ComponentManifest,
 	format: OutputFormat = 'markdown',
 ): string {
 	return formatters[format].formatComponentManifest(componentManifest);
+}
+
+/**
+ * Format a single story's documentation.
+ * @param componentManifest - The component manifest containing the story
+ * @param storyName - The name of the story to format
+ * @param format - The desired output format (defaults to 'markdown')
+ * @returns Formatted string representation of the story
+ */
+export function formatStoryDocumentation(
+	componentManifest: ComponentManifest,
+	storyName: string,
+	format: OutputFormat = 'markdown',
+): string {
+	return formatters[format].formatStoryDocumentation(componentManifest, storyName);
 }
 
 /**

@@ -153,24 +153,6 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 			`);
 		});
 
-		it('should format PascalCase story names correctly', () => {
-			const manifest: ComponentManifest = {
-				id: 'button',
-				name: 'Button',
-				path: 'src/components/Button.tsx',
-				stories: [
-					{
-						name: 'WithIcon',
-						snippet: '<Button icon="check">Save</Button>',
-					},
-				],
-			};
-
-			const result = markdownFormatter.formatComponentManifest(manifest);
-
-			expect(result).toContain('### With Icon');
-		});
-
 		it('should handle stories with description', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
@@ -228,6 +210,178 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 			const result = markdownFormatter.formatComponentManifest(manifest);
 
 			expect(result).not.toContain('## Stories');
+		});
+
+		it('should show first 3 stories in full and remaining 2 under Other Stories', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				path: 'src/components/Button.tsx',
+				import: 'import { Button } from "@/components";',
+				stories: [
+					{
+						name: 'Default',
+						snippet: '<Button>Default</Button>',
+					},
+					{
+						name: 'Primary',
+						snippet: '<Button variant="primary">Primary</Button>',
+					},
+					{
+						name: 'Secondary',
+						snippet: '<Button variant="secondary">Secondary</Button>',
+					},
+					{
+						name: 'Disabled',
+						id: 'button--disabled',
+						summary: 'Button in disabled state',
+						snippet: '<Button disabled>Disabled</Button>',
+					},
+					{
+						name: 'WithIcon',
+						id: 'button--with-icon',
+						description: 'Button with an icon',
+						snippet: '<Button icon="check">With Icon</Button>',
+					},
+				],
+				// Props are required to trigger the "Other Stories" section
+				reactDocgen: {
+					props: {
+						variant: {
+							type: { name: 'string' },
+						},
+					},
+				},
+			};
+
+			const result = markdownFormatter.formatComponentManifest(manifest);
+
+			expect(result).toMatchInlineSnapshot(`
+				"# Button
+
+				ID: button
+
+				## Stories
+
+				### Default
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button>Default</Button>
+				\`\`\`
+
+				### Primary
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button variant="primary">Primary</Button>
+				\`\`\`
+
+				### Secondary
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button variant="secondary">Secondary</Button>
+				\`\`\`
+
+				### Other Stories
+
+				- Disabled: Button in disabled state
+				- WithIcon: Button with an icon
+
+				## Props
+
+				\`\`\`
+				export type Props = {
+				  variant: string;
+				}
+				\`\`\`"
+			`);
+		});
+
+		it('should show all stories fully when component has no props', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				path: 'src/components/Button.tsx',
+				import: 'import { Button } from "@/components";',
+				stories: [
+					{
+						name: 'Default',
+						snippet: '<Button>Default</Button>',
+					},
+					{
+						name: 'Primary',
+						snippet: '<Button variant="primary">Primary</Button>',
+					},
+					{
+						name: 'Secondary',
+						snippet: '<Button variant="secondary">Secondary</Button>',
+					},
+					{
+						name: 'Disabled',
+						snippet: '<Button disabled>Disabled</Button>',
+					},
+					{
+						name: 'WithIcon',
+						snippet: '<Button icon="check">With Icon</Button>',
+					},
+				],
+				// No reactDocgen means no props - all stories should be shown fully
+			};
+
+			const result = markdownFormatter.formatComponentManifest(manifest);
+
+			expect(result).toMatchInlineSnapshot(`
+				"# Button
+
+				ID: button
+
+				## Stories
+
+				### Default
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button>Default</Button>
+				\`\`\`
+
+				### Primary
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button variant="primary">Primary</Button>
+				\`\`\`
+
+				### Secondary
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button variant="secondary">Secondary</Button>
+				\`\`\`
+
+				### Disabled
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button disabled>Disabled</Button>
+				\`\`\`
+
+				### WithIcon
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button icon="check">With Icon</Button>
+				\`\`\`"
+			`);
 		});
 	});
 

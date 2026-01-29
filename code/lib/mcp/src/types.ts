@@ -40,7 +40,7 @@ export type StorybookContext = {
 		resultText: string;
 	}) => void | Promise<void>;
 	/**
-	 * Optional handler called when get-component-documentation tool is invoked.
+	 * Optional handler called when get-documentation tool is invoked.
 	 * Receives the context, input parameters, and the found component (if any).
 	 */
 	onGetDocumentation?: (
@@ -70,8 +70,11 @@ const BaseManifest = v.object({
 
 const Story = v.object({
 	...BaseManifest.entries,
+	id: v.optional(v.string()),
 	snippet: v.optional(v.string()),
+	summary: v.optional(v.string()),
 });
+export type Story = v.InferOutput<typeof Story>;
 
 /**
  * A docs entry represents MDX documentation that can be attached to a component

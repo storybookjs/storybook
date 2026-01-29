@@ -107,7 +107,7 @@
 				},
 				{
 					"id": "button--with-sizes",
-					"name": "WithSizes",
+					"name": "With Sizes",
 					"description": "Buttons are available in three sizes: small, medium (default), and large.\n\nChoose the appropriate size based on the context and hierarchy of actions. Larger buttons are more prominent and easier to tap on mobile devices.",
 					"summary": "Button size variations",
 					"import": "import { Button } from '@storybook/design-system';",
@@ -257,7 +257,7 @@
 				},
 				{
 					"id": "card--with-header-and-footer",
-					"name": "WithHeaderAndFooter",
+					"name": "With Header and Footer",
 					"description": "A card with distinct header and footer sections.\n\nHeaders typically contain titles, subtitles, or avatars. Footers often contain actions like buttons or metadata like timestamps. The header and footer are visually separated from the main content area.",
 					"summary": "Card with header and footer sections",
 					"import": "import { Card } from '@storybook/design-system';",
@@ -299,7 +299,7 @@
 				},
 				{
 					"id": "card--user-profile",
-					"name": "UserProfile",
+					"name": "User Profile",
 					"description": "A real-world example of a user profile card.\n\nThis example demonstrates how to compose the Card component with other design system components to create a complete, functional UI element. It includes an avatar, user information, stats, and action buttons.",
 					"summary": "Complete user profile card example",
 					"import": "import { Card, Avatar, Button } from '@storybook/design-system';",
@@ -442,7 +442,7 @@
 				},
 				{
 					"id": "input--with-error",
-					"name": "WithError",
+					"name": "With Error",
 					"description": "An input displaying an error state with an error message.\n\nError messages should be clear, concise, and provide actionable guidance to help users fix the issue. The input border and message text are styled in red to indicate the error state.",
 					"summary": "Input with validation error",
 					"import": "import { Input } from '@storybook/design-system';",
@@ -456,7 +456,7 @@
 				},
 				{
 					"id": "input--with-helper-text",
-					"name": "WithHelperText",
+					"name": "With Helper Text",
 					"description": "An input with helper text providing additional context or instructions.\n\nHelper text appears below the input and provides guidance without being an error. Use it to clarify format expectations, character limits, or provide helpful hints.",
 					"summary": "Input with helper text for guidance",
 					"import": "import { Input } from '@storybook/design-system';",

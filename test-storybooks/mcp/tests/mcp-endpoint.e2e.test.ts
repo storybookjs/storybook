@@ -328,7 +328,11 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "List All Documentation",
 				  },
 				  {
-				    "description": "Get detailed documentation for a specific UI component or docs entry",
+				    "description": "Get documentation for a UI component or docs entry.
+
+				Returns the first 3 stories with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the get-documentation-for-story tool to fetch the story documentation for the specific story variant you need.
+
+				Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -512,13 +516,9 @@ describe('MCP Endpoint E2E Tests', () => {
 				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
 				\`\`\`
 
-				### Small
+				### Other Stories
 
-				\`\`\`
-				import { Button } from "@my-org/my-component-library";
-
-				const Small = () => <Button onClick={fn()} size="small" label="Button" />;
-				\`\`\`
+				- Small
 
 				## Props
 

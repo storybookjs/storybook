@@ -147,7 +147,7 @@ export const Zoom = memo<{
       <ZoomButton
         padding="small"
         variant="ghost"
-        ariaLabel="Change zoom level"
+        ariaLabel={false}
         pressed={value !== INITIAL_ZOOM_LEVEL}
       >
         {Math.round(value * 100)}%

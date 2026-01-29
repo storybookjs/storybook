@@ -13,8 +13,7 @@ export async function addListAllDocumentationTool(
 		{
 			name: LIST_TOOL_NAME,
 			title: 'List All Documentation',
-			description:
-				'List all available UI components and documentation entries from the Storybook',
+			description: 'List all available UI components and documentation entries from the Storybook',
 			enabled,
 		},
 		async () => {

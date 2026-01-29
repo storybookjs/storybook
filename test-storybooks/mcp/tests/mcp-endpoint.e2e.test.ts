@@ -10,11 +10,7 @@ let storybookProcess: ReturnType<typeof x> | null = null;
 /**
  * Helper to create MCP protocol requests
  */
-function createMCPRequestBody(
-	method: string,
-	params: any = {},
-	id: number = 1,
-) {
+function createMCPRequestBody(method: string, params: any = {}, id: number = 1) {
 	return {
 		jsonrpc: '2.0',
 		id,
@@ -49,10 +45,7 @@ async function mcpRequest(method: string, params: any = {}, id: number = 1) {
 /**
  * Wait for MCP endpoint to be ready by polling it directly
  */
-async function waitForMcpEndpoint(
-	maxAttempts = 90,
-	interval = 500,
-): Promise<void> {
+async function waitForMcpEndpoint(maxAttempts = 90, interval = 500): Promise<void> {
 	const { promise, resolve, reject } = Promise.withResolvers<void>();
 	let attempts = 0;
 
@@ -75,9 +68,7 @@ async function waitForMcpEndpoint(
 
 		if (attempts >= maxAttempts) {
 			clearInterval(intervalId);
-			reject(
-				new Error('MCP endpoint failed to start within the timeout period'),
-			);
+			reject(new Error('MCP endpoint failed to start within the timeout period'));
 		}
 	}, interval);
 

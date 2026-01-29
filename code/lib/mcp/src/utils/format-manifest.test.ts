@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-	formatComponentManifest,
-	formatManifestsToLists,
-} from './format-manifest';
+import { formatComponentManifest, formatManifestsToLists } from './format-manifest';
 import type { AllManifests, ComponentManifest } from '../types';
 
 describe('formatComponentManifest', () => {

@@ -16,9 +16,7 @@ import { Meta, Story } from '@storybook/blocks';
 import React from 'react';
 
 This is the content after imports.`;
-			expect(extractDocsSummary(content)).toBe(
-				'This is the content after imports.',
-			);
+			expect(extractDocsSummary(content)).toBe('This is the content after imports.');
 		});
 
 		it('should remove default imports', () => {
@@ -98,9 +96,7 @@ Styled content.`;
 
 		it('should handle multiple sibling elements', () => {
 			const content = `<p>First paragraph.</p> <p>Second paragraph.</p>`;
-			expect(extractDocsSummary(content)).toBe(
-				'First paragraph. Second paragraph.',
-			);
+			expect(extractDocsSummary(content)).toBe('First paragraph. Second paragraph.');
 		});
 	});
 
@@ -133,9 +129,7 @@ The Button component is used for user interactions.
     <p>Inner text content.</p>
   </CustomComponent>
 </div>`;
-			expect(extractDocsSummary(content)).toBe(
-				'Welcome to ! Inner text content.',
-			);
+			expect(extractDocsSummary(content)).toBe('Welcome to ! Inner text content.');
 		});
 
 		it('should handle empty content', () => {
@@ -186,9 +180,7 @@ import { Meta } from '@storybook/blocks';`;
 			const content = `Line one.
 Line two.
 Line three.`;
-			expect(extractDocsSummary(content)).toBe(
-				'Line one. Line two. Line three.',
-			);
+			expect(extractDocsSummary(content)).toBe('Line one. Line two. Line three.');
 		});
 
 		it('should trim leading and trailing whitespace', () => {

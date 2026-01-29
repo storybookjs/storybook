@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import {
-	addPreviewStoriesTool,
-	PREVIEW_STORIES_TOOL_NAME,
-} from './preview-stories.ts';
+import { addPreviewStoriesTool, PREVIEW_STORIES_TOOL_NAME } from './preview-stories.ts';
 import type { AddonContext } from '../types.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
 import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
@@ -458,8 +455,7 @@ describe('previewStoriesTool', () => {
 		expect(response.result?.structuredContent?.stories[0]).toEqual({
 			title: 'Button',
 			name: 'Primary',
-			previewUrl:
-				'http://localhost:6006/?path=/story/button--primary&globals=theme:dark;locale:fr',
+			previewUrl: 'http://localhost:6006/?path=/story/button--primary&globals=theme:dark;locale:fr',
 		});
 	});
 
@@ -533,8 +529,7 @@ describe('previewStoriesTool', () => {
 						stories: [
 							{
 								exportName: 'Primary',
-								absoluteStoryPath:
-									'C:\\Users\\test\\project\\src\\Button.stories.tsx',
+								absoluteStoryPath: 'C:\\Users\\test\\project\\src\\Button.stories.tsx',
 							},
 						],
 					},
@@ -577,8 +572,7 @@ describe('previewStoriesTool', () => {
 						stories: [
 							{
 								exportName: 'NonExistent',
-								absoluteStoryPath:
-									'C:\\Users\\test\\project\\src\\NonExistent.stories.tsx',
+								absoluteStoryPath: 'C:\\Users\\test\\project\\src\\NonExistent.stories.tsx',
 							},
 						],
 					},
@@ -609,8 +603,7 @@ describe('previewStoriesTool', () => {
 						stories: [
 							{
 								exportName: 'Primary',
-								absoluteStoryPath:
-									'C:/Users/test/project/src/Button.stories.tsx',
+								absoluteStoryPath: 'C:/Users/test/project/src/Button.stories.tsx',
 							},
 						],
 					},

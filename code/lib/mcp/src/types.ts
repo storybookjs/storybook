@@ -29,10 +29,7 @@ export type StorybookContext = {
 	 * replacing /mcp with /manifests/components.json.
 	 * Custom providers can use the request parameter to determine the manifest source, or ignore it entirely.
 	 */
-	manifestProvider?: (
-		request: Request | undefined,
-		path: string,
-	) => Promise<string>;
+	manifestProvider?: (request: Request | undefined, path: string) => Promise<string>;
 	/**
 	 * Optional handler called when list-all-documentation tool is invoked.
 	 * Receives the context and the component manifest.

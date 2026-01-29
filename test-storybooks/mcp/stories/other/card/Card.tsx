@@ -31,28 +31,13 @@ interface CardProps {
 /**
  * Card component with title, image, content, and action button
  */
-export const Card = ({
-	title,
-	imageUrl,
-	imageAlt,
-	content,
-	actionText,
-	onClick,
-}: CardProps) => {
+export const Card = ({ title, imageUrl, imageAlt, content, actionText, onClick }: CardProps) => {
 	return (
 		<div className="storybook-card">
 			<h3 className="storybook-card__title">{title}</h3>
-			<img
-				src={imageUrl}
-				alt={imageAlt || title}
-				className="storybook-card__image"
-			/>
+			<img src={imageUrl} alt={imageAlt || title} className="storybook-card__image" />
 			<p className="storybook-card__content">{content}</p>
-			<button
-				type="button"
-				className="storybook-card__button"
-				onClick={onClick}
-			>
+			<button type="button" className="storybook-card__button" onClick={onClick}>
 				{actionText}
 			</button>
 		</div>

@@ -111,9 +111,7 @@ describe('experimental_devServer', () => {
 		expect(mockRes.writeHead).not.toHaveBeenCalledWith(200, {
 			'Content-Type': 'text/html',
 		});
-		expect(mockRes.end).not.toHaveBeenCalledWith(
-			expect.stringContaining('<html'),
-		);
+		expect(mockRes.end).not.toHaveBeenCalledWith(expect.stringContaining('<html'));
 	});
 
 	it('should return the app instance', async () => {

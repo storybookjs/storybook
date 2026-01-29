@@ -4,10 +4,7 @@ import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
 import { addPreviewStoriesTool } from './tools/preview-stories.ts';
 import { addGetUIBuildingInstructionsTool } from './tools/get-storybook-story-instructions.ts';
-import {
-	addListAllDocumentationTool,
-	addGetDocumentationTool,
-} from '@storybook/mcp';
+import { addListAllDocumentationTool, addGetDocumentationTool } from '@storybook/mcp';
 import type { Options } from 'storybook/internal/types';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
@@ -55,9 +52,7 @@ const initializeMCPServer = async (options: Options) => {
 	// Only register the additional tools if the component manifest feature is enabled
 	const manifestStatus = await getManifestStatus(options);
 	if (manifestStatus.available) {
-		logger.info(
-			'Experimental components manifest feature detected - registering component tools',
-		);
+		logger.info('Experimental components manifest feature detected - registering component tools');
 		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;
 		await addListAllDocumentationTool(server, contextAwareEnabled);
 		await addGetDocumentationTool(server, contextAwareEnabled);
@@ -110,8 +105,7 @@ export const mcpServerHandler = async ({
 					event: 'tool:listAllDocumentation',
 					server,
 					toolset: 'docs',
-					componentCount: Object.keys(manifests.componentManifest.components)
-						.length,
+					componentCount: Object.keys(manifests.componentManifest.components).length,
 					docsCount: Object.keys(manifests.docsManifest?.docs || {}).length,
 					resultTokenCount: estimateTokens(resultText),
 				});
@@ -140,13 +134,10 @@ export const mcpServerHandler = async ({
 /**
  * Converts a Node.js IncomingMessage to a Web Request.
  */
-export async function incomingMessageToWebRequest(
-	req: IncomingMessage,
-): Promise<Request> {
+export async function incomingMessageToWebRequest(req: IncomingMessage): Promise<Request> {
 	// Construct URL from request, using host header if available for accuracy
 	const host = req.headers.host || 'localhost';
-	const protocol =
-		'encrypted' in req.socket && req.socket.encrypted ? 'https' : 'http';
+	const protocol = 'encrypted' in req.socket && req.socket.encrypted ? 'https' : 'http';
 	const url = new URL(req.url || '/', `${protocol}://${host}`);
 
 	const bodyBuffer = await buffer(req);

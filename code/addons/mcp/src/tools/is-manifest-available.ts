@@ -6,9 +6,7 @@ export type ManifestStatus = {
 	hasFeatureFlag: boolean;
 };
 
-export const getManifestStatus = async (
-	options: Options,
-): Promise<ManifestStatus> => {
+export const getManifestStatus = async (options: Options): Promise<ManifestStatus> => {
 	const [
 		features,
 		manifests,

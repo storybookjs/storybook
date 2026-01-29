@@ -42,26 +42,17 @@ describe('createStorybookMcpHandler', () => {
 	/**
 	 * Helper to setup client with a mock fetch that routes to our handler
 	 */
-	async function setupClient(
-		handler: Awaited<ReturnType<typeof createStorybookMcpHandler>>,
-	) {
+	async function setupClient(handler: Awaited<ReturnType<typeof createStorybookMcpHandler>>) {
 		// Mock global fetch to route to our handler
 		fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-			const url =
-				typeof input === 'string'
-					? input
-					: input instanceof URL
-						? input.href
-						: input.url;
+			const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
 			const request = new Request(url, init);
 			return await handler(request);
 		});
 		(global as any).fetch = fetchMock;
 
 		// Create client and transport
-		transport = new StreamableHTTPClientTransport(
-			new URL('http://localhost:3000/mcp'),
-		);
+		transport = new StreamableHTTPClientTransport(new URL('http://localhost:3000/mcp'));
 		client = new Client({
 			name: 'test-client',
 			version: '1.0.0',
@@ -272,10 +263,7 @@ describe('createStorybookMcpHandler', () => {
 				expect.any(Request),
 				'./manifests/components.json',
 			);
-			expect(manifestProvider).toHaveBeenCalledWith(
-				expect.any(Request),
-				'./manifests/docs.json',
-			);
+			expect(manifestProvider).toHaveBeenCalledWith(expect.any(Request), './manifests/docs.json');
 
 			expect(result.content).toHaveLength(1);
 			const text = (result.content as any)[0].text;

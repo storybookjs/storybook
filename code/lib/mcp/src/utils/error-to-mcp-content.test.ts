@@ -36,11 +36,7 @@ describe('errorToMCPContent', () => {
 
 	it('should handle ManifestGetError with cause', () => {
 		const cause = new Error('Network error');
-		const error = new ManifestGetError(
-			'Failed to get manifest',
-			'https://example.com',
-			cause,
-		);
+		const error = new ManifestGetError('Failed to get manifest', 'https://example.com', cause);
 
 		const result = errorToMCPContent(error);
 

@@ -40,21 +40,15 @@ const PreviewStoriesOutput = v.object({
 type PreviewStoriesInput = v.InferOutput<typeof PreviewStoriesInput>;
 export type PreviewStoriesOutput = v.InferOutput<typeof PreviewStoriesOutput>;
 
-export async function addPreviewStoriesTool(
-	server: McpServer<any, AddonContext>,
-) {
+export async function addPreviewStoriesTool(server: McpServer<any, AddonContext>) {
 	const previewStoryAppScript = await fs.readFile(
 		url.fileURLToPath(
-			import.meta
-				.resolve('@storybook/addon-mcp/internal/preview-stories-app-script'),
+			import.meta.resolve('@storybook/addon-mcp/internal/preview-stories-app-script'),
 		),
 		'utf-8',
 	);
 
-	const appHtml = appTemplate.replace(
-		'// APP_SCRIPT_PLACEHOLDER',
-		previewStoryAppScript,
-	);
+	const appHtml = appTemplate.replace('// APP_SCRIPT_PLACEHOLDER', previewStoryAppScript);
 	server.resource(
 		{
 			name: PREVIEW_STORIES_RESOURCE_URI,
@@ -114,8 +108,7 @@ export async function addPreviewStoriesTool(
 				const textResult: string[] = [];
 
 				for (const inputParams of input.stories) {
-					const { exportName, explicitStoryName, absoluteStoryPath } =
-						inputParams;
+					const { exportName, explicitStoryName, absoluteStoryPath } = inputParams;
 
 					const normalizedCwd = slash(process.cwd());
 					const normalizedAbsolutePath = slash(absoluteStoryPath);
@@ -132,9 +125,7 @@ export async function addPreviewStoriesTool(
 					const foundStory = entriesList.find(
 						(entry) =>
 							entry.importPath === relativePath &&
-							[explicitStoryName, storyNameFromExport(exportName)].includes(
-								entry.name,
-							),
+							[explicitStoryName, storyNameFromExport(exportName)].includes(entry.name),
 					);
 
 					if (foundStory) {

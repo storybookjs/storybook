@@ -92,13 +92,9 @@ type McpMethod = (typeof METHODS)[keyof typeof METHODS];
 
 let nextId = 1;
 
-function sendHostRequest(
-	method: McpMethod,
-	params: unknown,
-): Promise<McpUiInitializeResult> {
+function sendHostRequest(method: McpMethod, params: unknown): Promise<McpUiInitializeResult> {
 	const id = nextId++;
-	const { promise, resolve, reject } =
-		Promise.withResolvers<McpUiInitializeResult>();
+	const { promise, resolve, reject } = Promise.withResolvers<McpUiInitializeResult>();
 
 	window.parent.postMessage({ jsonrpc: '2.0', id, method, params }, '*');
 
@@ -120,10 +116,7 @@ function sendHostNotification(method: McpMethod, params: unknown): void {
 	window.parent.postMessage({ jsonrpc: '2.0', method, params }, '*');
 }
 
-function onHostNotification<T = unknown>(
-	method: McpMethod,
-	handler: (params: T) => void,
-): void {
+function onHostNotification<T = unknown>(method: McpMethod, handler: (params: T) => void): void {
 	window.addEventListener('message', function listener(event: MessageEvent) {
 		if (event.data?.method === method) {
 			handler(event.data.params as T);
@@ -192,9 +185,7 @@ function resizeApp(): void {
 	});
 }
 
-function loadStoryIframes(params: {
-	structuredContent?: PreviewStoriesOutput;
-}): void {
+function loadStoryIframes(params: { structuredContent?: PreviewStoriesOutput }): void {
 	const stories = params.structuredContent?.stories;
 
 	if (!stories || stories.length === 0) {
@@ -202,9 +193,7 @@ function loadStoryIframes(params: {
 		return;
 	}
 
-	const template = document.getElementById(
-		'preview-template',
-	) as HTMLTemplateElement;
+	const template = document.getElementById('preview-template') as HTMLTemplateElement;
 
 	for (const storyResult of stories) {
 		if ('error' in storyResult) {
@@ -222,10 +211,7 @@ function loadStoryIframes(params: {
 		iframe.style.width = '100%';
 		iframe.style.height = '0';
 
-		const iframeSrc = storyResult.previewUrl.replace(
-			'/?path=/story/',
-			'/iframe.html?id=',
-		);
+		const iframeSrc = storyResult.previewUrl.replace('/?path=/story/', '/iframe.html?id=');
 		// Add MCP App param to enable size reporting in Storybook's preview.ts
 		const url = new URL(iframeSrc);
 		url.searchParams.set(MCP_APP_PARAM, 'true');

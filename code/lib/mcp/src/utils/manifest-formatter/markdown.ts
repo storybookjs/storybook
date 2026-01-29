@@ -120,9 +120,7 @@ export const markdownFormatter: ManifestFormatter = {
 		parts.push('# Components');
 		parts.push('');
 
-		for (const component of Object.values(
-			manifests.componentManifest.components,
-		)) {
+		for (const component of Object.values(manifests.componentManifest.components)) {
 			const summary =
 				component.summary ??
 				(component.description

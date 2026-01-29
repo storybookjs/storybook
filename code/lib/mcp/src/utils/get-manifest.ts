@@ -1,8 +1,4 @@
-import {
-	ComponentManifestMap,
-	DocsManifestMap,
-	type AllManifests,
-} from '../types.ts';
+import { ComponentManifestMap, DocsManifestMap, type AllManifests } from '../types.ts';
 import * as v from 'valibot';
 
 /**
@@ -42,16 +38,13 @@ type MCPErrorResult = {
  */
 export const errorToMCPContent = (error: unknown): MCPErrorResult => {
 	const errorPrefix =
-		error instanceof ManifestGetError
-			? 'Error getting manifest'
-			: 'Unexpected error';
+		error instanceof ManifestGetError ? 'Error getting manifest' : 'Unexpected error';
 	const errorMessage = error instanceof Error ? error.message : String(error);
 
 	// Include cause information if available
 	let fullMessage = `${errorPrefix}: ${errorMessage}`;
 	if (error instanceof ManifestGetError && error.cause) {
-		const causeMessage =
-			error.cause instanceof Error ? error.cause.message : String(error.cause);
+		const causeMessage = error.cause instanceof Error ? error.cause.message : String(error.cause);
 		fullMessage += `\nCaused by: ${causeMessage}`;
 	}
 
@@ -69,9 +62,7 @@ export const errorToMCPContent = (error: unknown): MCPErrorResult => {
 /**
  * Parses a JSON string and validates it against a Valibot schema
  */
-function parseManifest<
-	T extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
->({
+function parseManifest<T extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>({
 	jsonString,
 	schema,
 	name,
@@ -103,10 +94,7 @@ ${error instanceof v.ValiError ? error.issues.map((i) => i.message).join('\n') :
  */
 export async function getManifests(
 	request?: Request,
-	manifestProvider?: (
-		request: Request | undefined,
-		path: string,
-	) => Promise<string>,
+	manifestProvider?: (request: Request | undefined, path: string) => Promise<string>,
 ): Promise<AllManifests> {
 	const provider = manifestProvider ?? defaultManifestProvider;
 
@@ -117,17 +105,13 @@ export async function getManifests(
 	]);
 
 	const getUrl = (path: string) =>
-		request
-			? getManifestUrlFromRequest(request, path)
-			: 'Unknown manifest source';
+		request ? getManifestUrlFromRequest(request, path) : 'Unknown manifest source';
 
 	if (componentResult.status === 'rejected') {
 		throw new ManifestGetError(
 			`Failed to get component manifest: ${componentResult.reason instanceof Error ? componentResult.reason.message : String(componentResult.reason)}`,
 			getUrl(COMPONENT_MANIFEST_PATH),
-			componentResult.reason instanceof Error
-				? componentResult.reason
-				: undefined,
+			componentResult.reason instanceof Error ? componentResult.reason : undefined,
 		);
 	}
 

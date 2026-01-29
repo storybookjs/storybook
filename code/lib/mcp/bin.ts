@@ -63,10 +63,7 @@ transport.listen({
 		const { manifestsDir } = args.values;
 		const fullPath = `${manifestsDir}/${basename(path)}`;
 
-		if (
-			manifestsDir.startsWith('http://') ||
-			manifestsDir.startsWith('https://')
-		) {
+		if (manifestsDir.startsWith('http://') || manifestsDir.startsWith('https://')) {
 			const res = await fetch(fullPath);
 			return await res.text();
 		}

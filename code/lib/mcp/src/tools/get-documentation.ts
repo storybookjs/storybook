@@ -2,10 +2,7 @@ import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { ComponentManifest, Doc, StorybookContext } from '../types.ts';
 import { getManifests, errorToMCPContent } from '../utils/get-manifest.ts';
-import {
-	formatComponentManifest,
-	formatDocsManifest,
-} from '../utils/format-manifest.ts';
+import { formatComponentManifest, formatDocsManifest } from '../utils/format-manifest.ts';
 import { LIST_TOOL_NAME } from './list-all-documentation.ts';
 
 export const GET_TOOL_NAME = 'get-documentation';
@@ -22,8 +19,7 @@ export async function addGetDocumentationTool(
 		{
 			name: GET_TOOL_NAME,
 			title: 'Get Documentation',
-			description:
-				'Get detailed documentation for a specific UI component or docs entry',
+			description: 'Get detailed documentation for a specific UI component or docs entry',
 			schema: GetDocumentationInput,
 			enabled,
 		},

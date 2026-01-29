@@ -38,6 +38,14 @@ const customViewports = {
     },
     type: 'other',
   },
+  calc: {
+    name: 'Calculated',
+    styles: {
+      height: 'calc(100% - 50px)',
+      width: 'calc(100% - 50px)',
+    },
+    type: 'other',
+  },
 } as ViewportMap;
 
 const meta = preview.meta({
@@ -113,6 +121,16 @@ export const Short = meta.story({
 export const Narrow = meta.story({
   globals: {
     viewport: { value: 'narrow' },
+  },
+  parameters: {
+    viewport: { options: customViewports },
+  },
+  render: () => <></>,
+});
+
+export const Calculated = meta.story({
+  globals: {
+    viewport: { value: 'calc' },
   },
   parameters: {
     viewport: { options: customViewports },

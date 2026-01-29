@@ -1,5 +1,5 @@
 import type { McpServer } from 'tmcp';
-import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls.ts';
+import { PREVIEW_STORIES_TOOL_NAME } from './preview-stories.ts';
 import { collectTelemetry } from '../telemetry.ts';
 import storyInstructionsTemplate from '../storybook-story-instructions.md';
 import { errorToMCPContent } from '../utils/errors.ts';
@@ -61,7 +61,7 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 				const uiInstructions = storyInstructionsTemplate
 					.replace('{{FRAMEWORK}}', framework)
 					.replace('{{RENDERER}}', renderer ?? framework)
-					.replace('{{GET_STORY_URLS_TOOL_NAME}}', GET_STORY_URLS_TOOL_NAME);
+					.replace('{{PREVIEW_STORIES_TOOL_NAME}}', PREVIEW_STORIES_TOOL_NAME);
 
 				return {
 					content: [{ type: 'text' as const, text: uiInstructions }],

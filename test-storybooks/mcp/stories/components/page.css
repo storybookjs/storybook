@@ -5,7 +5,11 @@ section {
 	padding: 48px 20px;
 	margin: 0 auto;
 	max-width: 600px;
-	color: #333;
+	color: var(--color-text, #333);
+	background-color: var(--color-bg, #ffffff);
+	transition:
+		background-color 0.2s ease,
+		color 0.2s ease;
 }
 
 section h2 {
@@ -15,20 +19,23 @@ section h2 {
 	margin: 0 0 4px;
 	display: inline-block;
 	vertical-align: top;
+	color: var(--color-text, #333);
 }
 
 section p {
 	margin: 1em 0;
+	color: var(--color-text-secondary, #666);
 }
 
 section a {
 	text-decoration: none;
-	color: #1ea7fd;
+	color: var(--color-link, #1ea7fd);
 }
 
 section ul {
 	padding-left: 30px;
 	margin: 1em 0;
+	color: var(--color-text-secondary, #666);
 }
 
 section li {
@@ -41,8 +48,8 @@ section .tip {
 	font-size: 11px;
 	line-height: 12px;
 	font-weight: 700;
-	background: #e7fdd8;
-	color: #66bf3c;
+	background: var(--color-tip-bg, #e7fdd8);
+	color: var(--color-tip-text, #66bf3c);
 	padding: 4px 12px;
 	margin-right: 10px;
 	vertical-align: top;
@@ -53,6 +60,7 @@ section .tip-wrapper {
 	line-height: 20px;
 	margin-top: 40px;
 	margin-bottom: 40px;
+	color: var(--color-text-secondary, #666);
 }
 
 section .tip-wrapper svg {
@@ -65,5 +73,5 @@ section .tip-wrapper svg {
 }
 
 section .tip-wrapper svg path {
-	fill: #1ea7fd;
+	fill: var(--color-link, #1ea7fd);
 }

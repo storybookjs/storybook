@@ -153,7 +153,7 @@ Provides agents with standardized instructions for UI component development with
 
 The instructions ensure agents follow your project's conventions when creating or modifying UI components and their corresponding stories.
 
-#### 2. Get Story URLs (`get_story_urls`)
+#### 2. Preview Stories (`preview-stories`)
 
 Allows agents to retrieve direct URLs to specific stories in your Storybook. The agent can request URLs for multiple stories by providing:
 

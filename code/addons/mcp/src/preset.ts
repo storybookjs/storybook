@@ -1,11 +1,18 @@
 import { mcpServerHandler } from './mcp-handler.ts';
-import type { PresetProperty } from 'storybook/internal/types';
+import type { PresetPropertyFn } from 'storybook/internal/types';
 import { AddonOptions } from './types.ts';
 import * as v from 'valibot';
 import { getManifestStatus } from './tools/is-manifest-available.ts';
 import htmlTemplate from './template.html';
+import path from 'node:path';
 
-export const experimental_devServer: PresetProperty<
+export const previewAnnotations: PresetPropertyFn<
+	'previewAnnotations'
+> = async (existingAnnotations = []) => {
+	return [...existingAnnotations, path.join(import.meta.dirname, 'preview.js')];
+};
+
+export const experimental_devServer: PresetPropertyFn<
 	'experimental_devServer'
 > = async (app, options) => {
 	// There is no error handling here. This can make the whole storybook app crash with:

@@ -1,6 +1,6 @@
 {
 	"name": "@storybook/addon-mcp",
-	"version": "0.2.0",
+	"version": "0.2.2",
 	"description": "Help agents automatically write and test stories for your UI components",
 	"keywords": [
 		"storybook-addon",
@@ -16,6 +16,7 @@
 	"type": "module",
 	"exports": {
 		"./preset": "./dist/preset.js",
+		"./internal/preview-stories-app-script": "./dist/preview-stories-app-script.js",
 		"./package.json": "./package.json"
 	},
 	"files": [
@@ -36,6 +37,7 @@
 		"@storybook/mcp": "workspace:*",
 		"@tmcp/adapter-valibot": "catalog:",
 		"@tmcp/transport-http": "catalog:",
+		"picoquery": "^2.5.0",
 		"tmcp": "catalog:",
 		"valibot": "catalog:"
 	},

@@ -1,5 +1,17 @@
 # @storybook/addon-mcp
 
+## 0.2.2
+
+### Patch Changes
+
+- [#137](https://github.com/storybookjs/mcp/pull/137) [`56be9e7`](https://github.com/storybookjs/mcp/commit/56be9e70919771b42e1be43c388f8a7cd62ce20f) Thanks [@valentinpalkovic](https://github.com/valentinpalkovic)! - Fix preview-stories tool on Windows
+
+## 0.2.1
+
+### Patch Changes
+
+- [#134](https://github.com/storybookjs/mcp/pull/134) [`457b349`](https://github.com/storybookjs/mcp/commit/457b3497c9b30dbe465dc6f07f708c5ac77edc45) Thanks [@JReinhold](https://github.com/JReinhold)! - Add support for MCP App, rendering stories directly in the agent chat in MCP clients that support it
+
 ## 0.2.0
 
 ### Minor Changes

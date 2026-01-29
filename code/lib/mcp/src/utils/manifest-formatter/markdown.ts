@@ -1,4 +1,4 @@
-import type { ComponentManifest } from '../../types.ts';
+import type { ComponentManifest, Story } from '../../types.ts';
 import {
 	MAX_SUMMARY_LENGTH,
 	MAX_STORIES_TO_SHOW,
@@ -7,6 +7,51 @@ import {
 import { parseReactDocgen } from '../parse-react-docgen.ts';
 import { dedent } from '../dedent.ts';
 import { extractDocsSummary } from './extract-docs-summary.ts';
+
+/**
+ * Extracts a summary from an object with optional summary and description fields.
+ * Prefers summary if available, otherwise truncates description to maxLength.
+ */
+function extractSummary(
+	item: { summary?: string; description?: string },
+	maxLength: number = MAX_SUMMARY_LENGTH,
+): string | undefined {
+	if (item.summary) {
+		return item.summary;
+	}
+	if (item.description) {
+		return item.description.length > maxLength
+			? `${item.description.slice(0, maxLength)}...`
+			: item.description;
+	}
+	return undefined;
+}
+
+/**
+ * Formats a story's content (description + code snippet) into markdown.
+ * Reusable helper for both formatComponentManifest and formatStoryDocumentation.
+ */
+function formatStoryContent(
+	story: Story,
+	importStatement: string | undefined,
+): string[] {
+	const parts: string[] = [];
+
+	if (story.description) {
+		parts.push(story.description);
+		parts.push('');
+	}
+
+	parts.push('```');
+	if (importStatement) {
+		parts.push(importStatement);
+		parts.push('');
+	}
+	parts.push(story.snippet ?? '');
+	parts.push('```');
+
+	return parts;
+}
 
 /**
  * Markdown formatter for component manifests.
@@ -37,28 +82,24 @@ export const markdownFormatter: ManifestFormatter = {
 			const storiesWithSnippets = componentManifest.stories.filter(
 				(s) => s.snippet,
 			);
-			const storiesToShow = storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW);
-			const remainingStories = storiesWithSnippets.slice(MAX_STORIES_TO_SHOW);
 
-			// Show first X stories in full detail
+			// Check if component has props - if not, show all stories fully
+			const hasProps =
+				componentManifest.reactDocgen &&
+				Object.keys(componentManifest.reactDocgen.props ?? {}).length > 0;
+
+			const storiesToShow = hasProps
+				? storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW)
+				: storiesWithSnippets;
+			const remainingStories = hasProps
+				? storiesWithSnippets.slice(MAX_STORIES_TO_SHOW)
+				: [];
+
+			// Show first X stories in full detail (or all if no props)
 			for (const story of storiesToShow) {
-				// Convert PascalCase to Human Readable Case
-				const storyName = story.name.replace(/([A-Z])/g, ' $1').trim();
-				parts.push(`### ${storyName}`);
-
-				if (story.description) {
-					parts.push('');
-					parts.push(story.description);
-				}
-
+				parts.push(`### ${story.name}`);
 				parts.push('');
-				parts.push('```');
-				if (componentManifest.import) {
-					parts.push(componentManifest.import);
-					parts.push('');
-				}
-				parts.push(story.snippet ?? '');
-				parts.push('```');
+				parts.push(...formatStoryContent(story, componentManifest.import));
 				parts.push('');
 			}
 
@@ -69,8 +110,9 @@ export const markdownFormatter: ManifestFormatter = {
 				}
 				parts.push('');
 				for (const story of remainingStories) {
-					const storyName = story.name.replace(/([A-Z])/g, ' $1').trim();
-					parts.push(`- ${storyName}`);
+					const summary = extractSummary(story);
+					const summaryPart = summary ? `: ${summary}` : '';
+					parts.push(`- ${story.name}${summaryPart}`);
 				}
 				parts.push('');
 			}
@@ -143,13 +185,7 @@ export const markdownFormatter: ManifestFormatter = {
 		for (const component of Object.values(
 			manifests.componentManifest.components,
 		)) {
-			const summary =
-				component.summary ??
-				(component.description
-					? component.description.length > MAX_SUMMARY_LENGTH
-						? `${component.description.slice(0, MAX_SUMMARY_LENGTH)}...`
-						: component.description
-					: undefined);
+			const summary = extractSummary(component);
 
 			if (summary) {
 				parts.push(`- ${component.name} (${component.id}): ${summary}`);
@@ -185,24 +221,9 @@ export const markdownFormatter: ManifestFormatter = {
 		const parts: string[] = [];
 
 		// Component name - Story name header
-		const displayStoryName = story.name.replace(/([A-Z])/g, ' $1').trim();
-		parts.push(`# ${componentManifest.name} - ${displayStoryName}`);
+		parts.push(`# ${componentManifest.name} - ${story.name}`);
 		parts.push('');
-
-		// Story description
-		if (story.description) {
-			parts.push(story.description);
-			parts.push('');
-		}
-
-		// Code snippet
-		parts.push('```');
-		if (componentManifest.import) {
-			parts.push(componentManifest.import);
-			parts.push('');
-		}
-		parts.push(story.snippet);
-		parts.push('```');
+		parts.push(...formatStoryContent(story, componentManifest.import));
 
 		return parts.join('\n').trim();
 	},

@@ -73,8 +73,11 @@ const BaseManifest = v.object({
 
 const Story = v.object({
 	...BaseManifest.entries,
+	id: v.optional(v.string()),
 	snippet: v.optional(v.string()),
+	summary: v.optional(v.string()),
 });
+export type Story = v.InferOutput<typeof Story>;
 
 /**
  * A docs entry represents MDX documentation that can be attached to a component

@@ -63,8 +63,8 @@ const WithSizes = () => (
 
 ### Other Stories
 
-- Loading
-- Danger
+- Loading: Button in loading state during async operations
+- Danger: Danger button for destructive actions
 
 ## Props
 
@@ -137,7 +137,7 @@ const Basic = () => (
 )
 \`\`\`
 
-### With Header And Footer
+### With Header and Footer
 
 A card with distinct header and footer sections.
 
@@ -179,8 +179,8 @@ const Clickable = () => (
 
 ### Other Stories
 
-- Variants
-- User Profile
+- Variants: Card visual variants (elevated, outlined, flat)
+- User Profile: Complete user profile card example
 
 ## Props
 
@@ -271,8 +271,8 @@ const WithHelperText = () => <Input label="Password" type="password" helperText=
 
 ### Other Stories
 
-- Types
-- Disabled
+- Types: Various input types (email, tel, url, number)
+- Disabled: Disabled input state
 
 ## Props
 

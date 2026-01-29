@@ -22,9 +22,9 @@ export async function addGetComponentStoryDocumentationTool(
 	server.tool(
 		{
 			name: GET_STORY_TOOL_NAME,
-			title: 'Get Documentation for Component Story',
+			title: 'Get Documentation for Story',
 			description:
-				'Get detailed documentation for a specific story variant of a UI component. Use this when you need to see the implementation of a specific story.',
+				'Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it.',
 			schema: GetComponentStoryDocumentationInput,
 			enabled,
 		},

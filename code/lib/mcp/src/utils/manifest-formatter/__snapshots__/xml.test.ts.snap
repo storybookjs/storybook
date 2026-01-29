@@ -44,7 +44,7 @@ const Secondary = () => <Button variant="secondary">Cancel</Button>
 </story_code>
 </story>
 <story>
-<story_name>With Sizes</story_name>
+<story_name>With  Sizes</story_name>
 <story_description>
 Buttons are available in three sizes: small, medium (default), and large.
 
@@ -167,7 +167,7 @@ const Basic = () => (
 </story_code>
 </story>
 <story>
-<story_name>With Header And Footer</story_name>
+<story_name>With  Header and  Footer</story_name>
 <story_description>
 A card with distinct header and footer sections.
 
@@ -210,7 +210,7 @@ const Clickable = () => (
 </story>
 <other_stories>
 <story_name>Variants</story_name>
-<story_name>User Profile</story_name>
+<story_name>User  Profile</story_name>
 </other_stories>
 <props>
 <prop>
@@ -303,7 +303,7 @@ const Basic = () => <Input label="Full Name" placeholder="Enter your name" />
 </story_code>
 </story>
 <story>
-<story_name>With Error</story_name>
+<story_name>With  Error</story_name>
 <story_description>
 An input displaying an error state with an error message.
 
@@ -316,7 +316,7 @@ const WithError = () => <Input label="Email" type="email" value="invalid-email" 
 </story_code>
 </story>
 <story>
-<story_name>With Helper Text</story_name>
+<story_name>With  Helper  Text</story_name>
 <story_description>
 An input with helper text providing additional context or instructions.
 

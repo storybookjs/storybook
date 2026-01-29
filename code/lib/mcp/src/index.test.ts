@@ -98,7 +98,7 @@ describe('createStorybookMcpHandler', () => {
 				}),
 				expect.objectContaining({
 					name: 'get-documentation-for-story',
-					title: 'Get Documentation for Component Story',
+					title: 'Get Documentation for Story',
 				}),
 			]),
 		);

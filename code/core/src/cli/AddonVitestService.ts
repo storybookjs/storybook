@@ -326,9 +326,7 @@ export class AddonVitestService {
     babel.traverse(parsedConfig, {
       ExportDefaultDeclaration: (path: any) => {
         if (this.isDefineConfigExpression(path.node.declaration)) {
-          isValidVitestConfig = this.isSafeToExtendWorkspace(
-            path.node.declaration as CallExpression
-          );
+          isValidVitestConfig = this.isSafeToExtendWorkspace(path.node.declaration);
         } else if (this.isMergeConfigExpression(path.node.declaration)) {
           // the config could be anywhere in the mergeConfig call, so we need to check each argument
           const mergeCall = path.node.declaration as CallExpression;
@@ -372,20 +370,34 @@ export class AddonVitestService {
     return babel.types.isCallExpression(path) && (path.callee as any)?.name === 'mergeConfig';
   }
 
-  private isSafeToExtendWorkspace(node: CallExpression): boolean {
-    return (
-      babel.types.isCallExpression(node) &&
-      node.arguments.length > 0 &&
-      babel.types.isObjectExpression(node.arguments?.[0]) &&
-      node.arguments[0]?.properties.every(
-        (p: any) =>
-          p.key?.name !== 'test' ||
-          (babel.types.isObjectExpression(p.value) &&
-            p.value.properties.every(
-              ({ key, value }: any) =>
-                key?.name !== 'workspace' || babel.types.isArrayExpression(value)
-            ))
-      )
+  private isSafeToExtendWorkspace(node: babel.types.Node): boolean {
+    // Extract the object expression to validate
+    let objectToValidate: babel.types.ObjectExpression | null = null;
+
+    if (babel.types.isCallExpression(node)) {
+      // Handle function calls like defineConfig({...})
+      if (node.arguments.length > 0 && babel.types.isObjectExpression(node.arguments[0])) {
+        objectToValidate = node.arguments[0];
+      }
+    } else if (babel.types.isObjectExpression(node)) {
+      // Handle plain object literals like {...}
+      objectToValidate = node;
+    }
+
+    // If we couldn't extract a valid object, it's not safe
+    if (!objectToValidate) {
+      return false;
+    }
+
+    // Check that the object doesn't have problematic test.workspace properties
+    return objectToValidate.properties.every(
+      (p: any) =>
+        p.key?.name !== 'test' ||
+        (babel.types.isObjectExpression(p.value) &&
+          p.value.properties.every(
+            ({ key, value }: any) =>
+              key?.name !== 'workspace' || babel.types.isArrayExpression(value)
+          ))
     );
   }
 }

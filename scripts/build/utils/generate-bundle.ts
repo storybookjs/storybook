@@ -128,7 +128,7 @@ export async function generateBundle({
       // The following modules are conditionally called inside of @vitest/mocker
       // The actual function which calls these modules is not imported
       // and therefore we can externalize them.
-      'msw/browser', 
+      'msw/browser',
       'msw/core/http',
     ], // Prefer `alias` over `external` because we're using aliases to bundle everything into the runtimes
     alias: {
@@ -140,6 +140,7 @@ export async function generateBundle({
       'storybook/test': './src/test',
       'storybook/internal': './src',
       'storybook/outline': './src/outline',
+      'storybook/qrcode': './src/qrcode',
       'storybook/backgrounds': './src/backgrounds',
       'storybook/highlight': './src/highlight',
       'storybook/measure': './src/measure',

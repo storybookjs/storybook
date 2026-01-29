@@ -29,6 +29,7 @@ export interface SubAPI {
     T extends
       | Addon_Types
       | Addon_TypesEnum.experimental_PAGE
+      | Addon_TypesEnum.experimental_SHARE_PROVIDER
       | Addon_TypesEnum.experimental_TEST_PROVIDER,
   >(
     type: T

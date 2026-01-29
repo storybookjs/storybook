@@ -15,13 +15,11 @@ describe('formatComponentManifest', () => {
 	it('should use markdown formatter by default', () => {
 		const result = formatComponentManifest(manifest);
 		expect(result).toContain('# TestComponent');
-		expect(result).toContain('ID: test-component');
 	});
 
 	it('should use markdown formatter when format is "markdown"', () => {
 		const result = formatComponentManifest(manifest, 'markdown');
 		expect(result).toContain('# TestComponent');
-		expect(result).toContain('ID: test-component');
 	});
 
 	it('should use xml formatter when format is "xml"', () => {

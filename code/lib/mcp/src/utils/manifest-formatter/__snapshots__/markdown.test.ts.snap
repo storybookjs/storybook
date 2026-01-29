@@ -61,29 +61,10 @@ const WithSizes = () => (
 )
 \`\`\`
 
-### Loading
+### Other Stories
 
-The loading state provides visual feedback when an async operation is in progress.
-
-When loading is true, the button displays a spinner and is automatically disabled to prevent multiple submissions. The button text remains visible to maintain layout stability.
-
-\`\`\`
-import { Button } from '@storybook/design-system';
-
-const Loading = () => <Button loading onClick={() => console.log('clicked')}>Submit</Button>
-\`\`\`
-
-### Danger
-
-The danger variant is used for destructive actions that cannot be easily undone, such as deleting data or canceling subscriptions.
-
-Use this variant to draw attention to the serious nature of the action. Consider adding a confirmation dialog for critical operations.
-
-\`\`\`
-import { Button } from '@storybook/design-system';
-
-const Danger = () => <Button variant="danger" onClick={() => confirm('Are you sure?')}>Delete Account</Button>
-\`\`\`
+- Loading: Button in loading state during async operations
+- Danger: Danger button for destructive actions
 
 ## Props
 
@@ -156,7 +137,7 @@ const Basic = () => (
 )
 \`\`\`
 
-### With Header And Footer
+### With Header and Footer
 
 A card with distinct header and footer sections.
 
@@ -196,69 +177,10 @@ const Clickable = () => (
 )
 \`\`\`
 
-### Variants
+### Other Stories
 
-Different visual variants of the card component.
-
-- **Elevated**: Default variant with shadow for depth
-- **Outlined**: Border-only variant without shadow
-- **Flat**: No border or shadow, minimal visual separation
-
-Choose variants based on your design system and the level of emphasis needed.
-
-\`\`\`
-import { Card } from '@storybook/design-system';
-
-const Variants = () => (
-  <>
-    <Card variant="elevated">
-      <p>Elevated card with shadow</p>
-    </Card>
-    <Card variant="outlined">
-      <p>Outlined card with border</p>
-    </Card>
-    <Card variant="flat">
-      <p>Flat card without border or shadow</p>
-    </Card>
-  </>
-)
-\`\`\`
-
-### User Profile
-
-A real-world example of a user profile card.
-
-This example demonstrates how to compose the Card component with other design system components to create a complete, functional UI element. It includes an avatar, user information, stats, and action buttons.
-
-\`\`\`
-import { Card } from '@storybook/design-system';
-
-const UserProfile = () => (
-  <Card
-    header={
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <Avatar src="/user.jpg" alt="Jane Doe" />
-        <div>
-          <h3>Jane Doe</h3>
-          <p>Senior Developer</p>
-        </div>
-      </div>
-    }
-    footer={
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <Button variant="primary" size="small">Follow</Button>
-        <Button variant="secondary" size="small">Message</Button>
-      </div>
-    }
-  >
-    <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-      <div><strong>1.2K</strong><br/>Followers</div>
-      <div><strong>342</strong><br/>Following</div>
-      <div><strong>89</strong><br/>Posts</div>
-    </div>
-  </Card>
-)
-\`\`\`
+- Variants: Card visual variants (elevated, outlined, flat)
+- User Profile: Complete user profile card example
 
 ## Props
 
@@ -347,36 +269,10 @@ import { Input } from '@storybook/design-system';
 const WithHelperText = () => <Input label="Password" type="password" helperText="Must be at least 8 characters with one uppercase letter and one number" />
 \`\`\`
 
-### Types
+### Other Stories
 
-Different input types for various data formats.
-
-Using the correct input type improves the user experience by showing appropriate mobile keyboards and enabling browser validation features.
-
-\`\`\`
-import { Input } from '@storybook/design-system';
-
-const Types = () => (
-  <>
-    <Input label="Email" type="email" placeholder="user@example.com" />
-    <Input label="Phone" type="tel" placeholder="(555) 123-4567" />
-    <Input label="Website" type="url" placeholder="https://example.com" />
-    <Input label="Age" type="number" placeholder="18" />
-  </>
-)
-\`\`\`
-
-### Disabled
-
-A disabled input that cannot be interacted with.
-
-Disabled inputs are useful for displaying non-editable data in forms or for inputs that become available only after certain conditions are met.
-
-\`\`\`
-import { Input } from '@storybook/design-system';
-
-const Disabled = () => <Input label="Username" value="john_doe" disabled />
-\`\`\`
+- Types: Various input types (email, tel, url, number)
+- Disabled: Disabled input state
 
 ## Props
 

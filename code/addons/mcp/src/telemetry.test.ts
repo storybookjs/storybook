@@ -91,10 +91,9 @@ describe('collectTelemetry', () => {
 	it('should handle missing session ID gracefully', async () => {
 		vi.mocked(telemetry).mockResolvedValue(undefined);
 
-		const serverWithoutSession = {
-			...mockServer,
+		const serverWithoutSession = Object.assign(Object.create(mockServer), {
 			ctx: {},
-		} as any;
+		}) as any;
 
 		await collectTelemetry({
 			event: 'test-event',

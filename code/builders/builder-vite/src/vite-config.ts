@@ -66,6 +66,7 @@ export async function commonConfig(
     root: projectRoot,
     // Allow storybook deployed as subfolder.  See https://github.com/storybookjs/builder-vite/issues/238
     base: './',
+    publicDir: false,
     plugins: await pluginConfig(options),
     resolve: {
       conditions: ['storybook', 'stories', 'test', ...defaultClientConditions],

@@ -45,18 +45,13 @@ export function resolveWithExtension(importPath: string, currentFilePath: string
   const currentDir = path.dirname(currentFilePath);
 
   // Handle .js/.mjs/.cjs/.jsx imports that might need to resolve to TypeScript files
+  // TypeScript Node16/NodeNext resolution order: .ts → .tsx → .d.ts → .js
+  // So we check TypeScript alternatives FIRST, then fall back to JS
   if (extImportPath && extImportPath in jsToTsExtensionMap) {
-    const absolutePath = path.resolve(currentDir, importPath);
-
-    // If the JS file exists, use it as-is
-    if (existsSync(absolutePath)) {
-      return importPath;
-    }
-
-    // Try TypeScript alternatives (.js → .ts/.tsx, .mjs → .mts, etc.)
     const basePath = importPath.slice(0, -extImportPath.length);
     const tsExtensions = jsToTsExtensionMap[extImportPath];
 
+    // Try TypeScript alternatives first (.js → .ts/.tsx, .mjs → .mts, etc.)
     for (const tsExt of tsExtensions) {
       const candidatePath = path.resolve(currentDir, `${basePath}${tsExt}`);
       if (existsSync(candidatePath)) {
@@ -64,7 +59,7 @@ export function resolveWithExtension(importPath: string, currentFilePath: string
       }
     }
 
-    // No TypeScript alternative found, return original path
+    // No TypeScript alternative found, fall back to original JS path
     return importPath;
   }
 

@@ -40,10 +40,7 @@ function create404Response() {
 /**
  * Helper to create a fetch mock that returns different responses based on URL
  */
-function createFetchMock(responses: {
-	components?: unknown | Error;
-	docs?: unknown | Error;
-}) {
+function createFetchMock(responses: { components?: unknown; docs?: unknown }) {
 	return vi.fn().mockImplementation((url: string) => {
 		if (url.includes('components.json')) {
 			if (responses.components instanceof Error) {

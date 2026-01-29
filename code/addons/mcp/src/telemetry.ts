@@ -16,11 +16,11 @@ export async function collectTelemetry({
 		return await telemetry('addon-mcp' as any, {
 			event,
 			mcpSessionId: server.ctx.sessionId,
-			clientInfo: server.currentClientInfo(),
-			clientCapabilities: server.currentClientCapabilities(),
+			clientInfo: server.ctx.sessionInfo?.clientInfo,
+			clientCapabilities: server.ctx.sessionInfo?.clientCapabilities,
 			...payload,
 		});
 	} catch (error) {
-		logger.debug(`Error collecting telemetry: ${error}`);
+		logger.debug(`Error collecting telemetry: ${String(error)}`);
 	}
 }

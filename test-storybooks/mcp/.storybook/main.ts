@@ -12,6 +12,7 @@ const config = defineMain({
 	],
 	addons: [
 		'@storybook/addon-docs',
+		'@storybook/addon-themes',
 		{
 			name: '@storybook/addon-mcp',
 			options: {
@@ -23,7 +24,7 @@ const config = defineMain({
 		},
 	],
 	framework: '@storybook/react-vite',
-	logLevel: 'debug',
+	// logLevel: 'debug',
 	core: {
 		disableTelemetry: true,
 	},

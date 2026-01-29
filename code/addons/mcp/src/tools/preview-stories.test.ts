@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import {
-	addGetStoryUrlsTool,
-	GET_STORY_URLS_TOOL_NAME,
-} from './get-story-urls.ts';
+	addPreviewStoriesTool,
+	PREVIEW_STORIES_TOOL_NAME,
+} from './preview-stories.ts';
 import type { AddonContext } from '../types.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
 import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
@@ -13,7 +13,7 @@ vi.mock('storybook/internal/csf', () => ({
 	storyNameFromExport: (exportName: string) => exportName,
 }));
 
-describe('getStoryUrlsTool', () => {
+describe('previewStoriesTool', () => {
 	let server: McpServer<any, AddonContext>;
 	let fetchStoryIndexSpy: any;
 	const testContext: AddonContext = {
@@ -28,7 +28,7 @@ describe('getStoryUrlsTool', () => {
 			{
 				name: 'test-server',
 				version: '1.0.0',
-				description: 'Test server for get-story-urls tool',
+				description: 'Test server for preview-stories tool',
 			},
 			{
 				adapter,
@@ -55,7 +55,7 @@ describe('getStoryUrlsTool', () => {
 			},
 		);
 
-		await addGetStoryUrlsTool(server);
+		await addPreviewStoriesTool(server);
 
 		// Mock fetchStoryIndex to return the fixture
 		fetchStoryIndexSpy = vi.spyOn(fetchStoryIndex, 'fetchStoryIndex');
@@ -68,7 +68,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -92,6 +92,15 @@ describe('getStoryUrlsTool', () => {
 					text: 'http://localhost:6006/?path=/story/button--primary',
 				},
 			],
+			structuredContent: {
+				stories: [
+					{
+						title: 'Button',
+						name: 'Primary',
+						previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+					},
+				],
+			},
 		});
 		expect(fetchStoryIndexSpy).toHaveBeenCalledWith('http://localhost:6006');
 	});
@@ -102,7 +111,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -142,6 +151,25 @@ describe('getStoryUrlsTool', () => {
 					text: 'http://localhost:6006/?path=/story/input--default',
 				},
 			],
+			structuredContent: {
+				stories: [
+					{
+						title: 'Button',
+						name: 'Primary',
+						previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+					},
+					{
+						title: 'Button',
+						name: 'Secondary',
+						previewUrl: 'http://localhost:6006/?path=/story/button--secondary',
+					},
+					{
+						title: 'Input',
+						name: 'Default',
+						previewUrl: 'http://localhost:6006/?path=/story/input--default',
+					},
+				],
+			},
 		});
 	});
 
@@ -151,7 +179,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -182,7 +210,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -207,6 +235,15 @@ describe('getStoryUrlsTool', () => {
 					text: 'http://localhost:6006/?path=/story/button--primary',
 				},
 			],
+			structuredContent: {
+				stories: [
+					{
+						title: 'Button',
+						name: 'Primary',
+						previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+					},
+				],
+			},
 		});
 	});
 
@@ -216,7 +253,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -254,7 +291,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -274,7 +311,7 @@ describe('getStoryUrlsTool', () => {
 		expect(telemetry).toHaveBeenCalledWith(
 			'addon-mcp',
 			expect.objectContaining({
-				event: 'tool:getStoryUrls',
+				event: 'tool:previewStories',
 				mcpSessionId: 'test-session',
 				toolset: 'dev',
 				inputStoryCount: 1,
@@ -289,7 +326,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -328,7 +365,7 @@ describe('getStoryUrlsTool', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: GET_STORY_URLS_TOOL_NAME,
+				name: PREVIEW_STORIES_TOOL_NAME,
 				arguments: {
 					stories: [
 						{
@@ -353,6 +390,255 @@ describe('getStoryUrlsTool', () => {
 				},
 			],
 			isError: true,
+		});
+	});
+
+	it('should include props as args query param in URL', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: PREVIEW_STORIES_TOOL_NAME,
+				arguments: {
+					stories: [
+						{
+							exportName: 'Primary',
+							absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx`,
+							props: {
+								label: 'Custom Label',
+								disabled: true,
+							},
+						},
+					],
+				},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		expect(response.result?.structuredContent?.stories[0]).toEqual({
+			title: 'Button',
+			name: 'Primary',
+			previewUrl:
+				'http://localhost:6006/?path=/story/button--primary&args=label:Custom+Label;disabled:!true',
+		});
+	});
+
+	it('should include globals query param in URL', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: PREVIEW_STORIES_TOOL_NAME,
+				arguments: {
+					stories: [
+						{
+							exportName: 'Primary',
+							absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx`,
+							globals: {
+								theme: 'dark',
+								locale: 'fr',
+							},
+						},
+					],
+				},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		expect(response.result?.structuredContent?.stories[0]).toEqual({
+			title: 'Button',
+			name: 'Primary',
+			previewUrl:
+				'http://localhost:6006/?path=/story/button--primary&globals=theme:dark;locale:fr',
+		});
+	});
+
+	it('should include both props and globals query params in URL', async () => {
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: PREVIEW_STORIES_TOOL_NAME,
+				arguments: {
+					stories: [
+						{
+							exportName: 'Primary',
+							absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx`,
+							props: {
+								label: 'Dark Mode Button',
+							},
+							globals: {
+								theme: 'dark',
+							},
+						},
+					],
+				},
+			},
+		};
+
+		const response = await server.receive(request, {
+			sessionId: 'test-session',
+			custom: testContext,
+		});
+
+		expect(response.result?.structuredContent?.stories[0]).toEqual({
+			title: 'Button',
+			name: 'Primary',
+			previewUrl:
+				'http://localhost:6006/?path=/story/button--primary&args=label:Dark+Mode+Button&globals=theme:dark',
+		});
+	});
+
+	describe('Windows paths', () => {
+		const originalCwd = process.cwd;
+		const windowsCwd = 'C:\\Users\\test\\project';
+
+		beforeEach(() => {
+			// Mock process.cwd to return a Windows path
+			Object.defineProperty(process, 'cwd', {
+				value: () => windowsCwd,
+				writable: true,
+				configurable: true,
+			});
+		});
+
+		afterEach(() => {
+			// Restore original process.cwd
+			Object.defineProperty(process, 'cwd', {
+				value: originalCwd,
+				writable: true,
+				configurable: true,
+			});
+		});
+
+		it('should return story URL for a valid story with Windows absolute path', async () => {
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: PREVIEW_STORIES_TOOL_NAME,
+					arguments: {
+						stories: [
+							{
+								exportName: 'Primary',
+								absoluteStoryPath:
+									'C:\\Users\\test\\project\\src\\Button.stories.tsx',
+							},
+						],
+					},
+				},
+			};
+
+			const response = await server.receive(request, {
+				sessionId: 'test-session',
+				custom: testContext,
+			});
+
+			expect(response.result).toEqual({
+				content: [
+					{
+						type: 'text',
+						text: 'http://localhost:6006/?path=/story/button--primary',
+					},
+				],
+				structuredContent: {
+					stories: [
+						{
+							title: 'Button',
+							name: 'Primary',
+							previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+						},
+					],
+				},
+			});
+			expect(fetchStoryIndexSpy).toHaveBeenCalledWith('http://localhost:6006');
+		});
+
+		it('should return error message for story not found with Windows path', async () => {
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: PREVIEW_STORIES_TOOL_NAME,
+					arguments: {
+						stories: [
+							{
+								exportName: 'NonExistent',
+								absoluteStoryPath:
+									'C:\\Users\\test\\project\\src\\NonExistent.stories.tsx',
+							},
+						],
+					},
+				},
+			};
+
+			const response = await server.receive(request, {
+				sessionId: 'test-session',
+				custom: testContext,
+			});
+
+			expect(response.result?.content[0].type).toBe('text');
+			expect(response.result?.content[0].text).toContain('No story found');
+			expect(response.result?.content[0].text).toContain('NonExistent');
+			expect(response.result?.content[0].text).toContain(
+				'did you forget to pass the explicit story name?',
+			);
+		});
+
+		it('should handle Windows path with mixed forward and backslashes', async () => {
+			const request = {
+				jsonrpc: '2.0' as const,
+				id: 1,
+				method: 'tools/call',
+				params: {
+					name: PREVIEW_STORIES_TOOL_NAME,
+					arguments: {
+						stories: [
+							{
+								exportName: 'Primary',
+								absoluteStoryPath:
+									'C:/Users/test/project/src/Button.stories.tsx',
+							},
+						],
+					},
+				},
+			};
+
+			const response = await server.receive(request, {
+				sessionId: 'test-session',
+				custom: testContext,
+			});
+
+			expect(response.result).toEqual({
+				content: [
+					{
+						type: 'text',
+						text: 'http://localhost:6006/?path=/story/button--primary',
+					},
+				],
+				structuredContent: {
+					stories: [
+						{
+							title: 'Button',
+							name: 'Primary',
+							previewUrl: 'http://localhost:6006/?path=/story/button--primary',
+						},
+					],
+				},
+			});
 		});
 	});
 });

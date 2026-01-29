@@ -215,7 +215,7 @@ test('manifests generates correct id, name, description and examples ', async ()
         "stories": [
           {
             "description": undefined,
-            "name": "LoggedIn",
+            "name": "Logged In",
             "snippet": "const LoggedIn = () => <Header
       onLogin={fn()}
       onLogout={fn()}
@@ -225,7 +225,7 @@ test('manifests generates correct id, name, description and examples ', async ()
           },
           {
             "description": undefined,
-            "name": "LoggedOut",
+            "name": "Logged Out",
             "snippet": "const LoggedOut = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()} />;",
             "summary": undefined,
           },

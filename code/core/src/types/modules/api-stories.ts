@@ -1,4 +1,4 @@
-import type { StatusByTypeId } from '../../../dist/types';
+import type { StatusByTypeId } from '../../shared/status-store';
 import type { DocsOptions } from './core-common';
 import type { ArgTypes, Args, ComponentTitle, Parameters, Path, StoryId, Tag } from './csf';
 import type { IndexEntry } from './indexer';
@@ -40,6 +40,7 @@ export interface API_DocsEntry extends API_BaseEntry {
   parameters?: {
     [parameterName: string]: any;
   };
+  headings?: string[];
 }
 
 export interface API_StoryEntry extends API_BaseEntry {

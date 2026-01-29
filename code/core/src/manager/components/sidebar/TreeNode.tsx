@@ -6,36 +6,40 @@ import { type FunctionInterpolation, styled } from 'storybook/theming';
 import { UseSymbol } from './IconSymbols';
 import { CollapseIcon } from './components/CollapseIcon';
 
-export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'group' | 'document' }>(
-  ({ theme, type }) => ({
-    width: 14,
-    height: 14,
-    flex: '0 0 auto',
-    color: (() => {
-      if (type === 'group') {
-        return theme.base === 'dark' ? theme.color.primary : theme.color.ultraviolet;
-      }
+export const TypeIcon = styled.svg<{
+  type: 'component' | 'story' | 'test' | 'group' | 'document' | 'heading';
+}>(({ theme, type }) => ({
+  width: 14,
+  height: 14,
+  flex: '0 0 auto',
+  color: (() => {
+    if (type === 'group') {
+      return theme.base === 'dark' ? theme.color.primary : theme.color.ultraviolet;
+    }
 
-      if (type === 'component') {
-        return theme.color.secondary;
-      }
+    if (type === 'component') {
+      return theme.color.secondary;
+    }
 
-      if (type === 'document') {
-        return theme.base === 'dark' ? theme.color.gold : '#ff8300';
-      }
+    if (type === 'document') {
+      return theme.base === 'dark' ? theme.color.gold : '#ff8300';
+    }
 
-      if (type === 'story') {
-        return theme.color.seafoam;
-      }
+    if (type === 'story') {
+      return theme.color.seafoam;
+    }
 
-      if (type === 'test') {
-        return theme.color.green;
-      }
+    if (type === 'heading') {
+      return theme.color.secondary;
+    }
 
-      return 'currentColor';
-    })(),
-  })
-);
+    if (type === 'test') {
+      return theme.color.green;
+    }
+
+    return 'currentColor';
+  })(),
+}));
 
 const commonNodeStyles: FunctionInterpolation<{ depth?: number; isExpandable?: boolean }> = ({
   theme,

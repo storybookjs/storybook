@@ -14,8 +14,8 @@
     "generate-sandboxes": "jiti ./sandbox/generate.ts",
     "get-report-message": "jiti ./get-report-message.ts",
     "get-sandbox-dir": "jiti ./get-sandbox-dir.ts",
-    "lint": "yarn lint:js",
-    "lint:js": "yarn lint:js:cmd .  --quiet",
+    "lint": "pnpm lint:js",
+    "lint:js": "pnpm lint:js:cmd .  --quiet",
     "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
     "lint:package": "sort-package-json",
     "local-registry": "jiti ./run-registry.ts",
@@ -44,15 +44,15 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn lint-staged"
+      "pre-commit": "pnpm lint-staged"
     }
   },
   "lint-staged": {
     "*.{html,js,json,jsx,mjs,ts,tsx}": [
-      "yarn lint:js:cmd --fix"
+      "pnpm lint:js:cmd --fix"
     ],
     "package.json": [
-      "yarn lint:package"
+      "pnpm lint:package"
     ]
   },
   "dependencies": {
@@ -116,7 +116,7 @@
     "eslint-plugin-json": "^4.0.1",
     "eslint-plugin-json-files": "^4.4.2",
     "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-local-rules": "portal:./eslint-plugin-local-rules",
+    "eslint-plugin-local-rules": "link:./eslint-plugin-local-rules",
     "eslint-plugin-playwright": "^1.8.3",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react": "^7.37.5",
@@ -186,7 +186,7 @@
     "verdaccio": "^5.33.0",
     "verdaccio-auth-memory": "^10.3.1"
   },
-  "packageManager": "yarn@4.10.3",
+  "packageManager": "pnpm@10.28.1",
   "nx": {
     "includedScripts": []
   }

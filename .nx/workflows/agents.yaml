@@ -6,9 +6,9 @@ linux-init-steps: &linux-init-steps
   - name: Restore Node Modules Cache
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
     inputs:
-      key: 'yarn.lock|.yarn/patches/**'
+      key: 'pnpm-lock.yaml|.yarn/patches/**'
       paths: |
-        ~/.yarn/berry
+        ~/.local/share/pnpm/store
         node_modules
         code/node_modules
         code/addons/*/node_modules
@@ -23,7 +23,8 @@ linux-init-steps: &linux-init-steps
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules
     script: |
-      yarn install --immutable
+      corepack enable
+      pnpm install --frozen-lockfile
 
 linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Checkout
@@ -31,9 +32,9 @@ linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Restore Node Modules Cache
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
     inputs:
-      key: 'yarn.lock|.yarn/patches/**'
+      key: 'pnpm-lock.yaml|.yarn/patches/**'
       paths: |
-        ~/.yarn/berry
+        ~/.local/share/pnpm/store
         node_modules
         code/node_modules
         code/addons/*/node_modules
@@ -47,7 +48,7 @@ linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Restore Browser Binary Cache
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
     inputs:
-      key: '"browsers"|yarn.lock|.yarn/patches/**'
+      key: '"browsers"|pnpm-lock.yaml|.yarn/patches/**'
       paths: |
         ~/.cache/Cypress
         ~/.cache/ms-playwright
@@ -56,18 +57,18 @@ linux-browsers-init-steps: &linux-browsers-init-steps
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules
     script: |
-      yarn install --immutable
+      corepack enable
+      pnpm install --frozen-lockfile
   - name: Install Browsers
     script: |
-      yarn dlx cypress install
-      yarn exec playwright install --with-deps
+      pnpm dlx cypress install
+      pnpm exec playwright install --with-deps
   - name: Verify
     script: |
       echo "node:         $(node --version)"
-      echo "yarn:         $(yarn --version)"
+      echo "pnpm:         $(pnpm --version)"
       echo "home:         $HOME"
       git diff --exit-code
-      yarn dedupe --check
 
 common-env-vars: &common-env-vars
   STORYBOOK_DISABLE_TELEMETRY: true

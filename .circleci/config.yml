@@ -30,21 +30,23 @@ parameters:
 
 jobs:
   generate-and-run-config:
-    executor: 
+    executor:
       name: node/default
       resource_class: small
     steps:
       - node/install:
-          install-yarn: true
+          install-yarn: false
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1'
       - run:
-          name: Install dependencies
-          command: yarn workspaces focus @storybook/scripts
+          name: Enable corepack and install dependencies
+          command: |
+            corepack enable
+            pnpm install --filter @storybook/scripts
       - run:
           name: Generate config
           command: |
-            yarn dlx jiti ./scripts/ci/main.ts --workflow=<< pipeline.parameters.workflow >>
+            pnpm dlx jiti ./scripts/ci/main.ts --workflow=<< pipeline.parameters.workflow >>
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
 workflows:

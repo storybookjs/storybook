@@ -31,19 +31,18 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
     npm.install('.'),
     cache.persist(CACHE_PATHS, CACHE_KEYS()[0]),
     git.check(),
-    npm.check(),
     {
       run: {
         name: 'Compile',
         working_directory: `code`,
-        command: 'yarn task --task compile --start-from=auto --no-link --debug',
+        command: 'pnpm task --task compile --start-from=auto --no-link --debug',
       },
     },
     {
       run: {
         name: 'Publish to Verdaccio',
         working_directory: `code`,
-        command: 'yarn local-registry --publish',
+        command: 'pnpm local-registry --publish',
       },
     },
     ...workflow.reportOnFailure(workflowName),
@@ -76,7 +75,7 @@ export const prettyDocs = defineJob('Prettify docs', () => ({
       run: {
         name: 'Prettier',
         working_directory: `scripts`,
-        command: 'yarn docs:prettier:check',
+        command: 'pnpm docs:prettier:check',
       },
     },
   ],
@@ -96,7 +95,7 @@ export const build_windows = defineJob('Build (windows)', () => ({
       run: {
         name: 'Compile',
         working_directory: `code`,
-        command: 'yarn task --task compile --start-from=auto --no-link --debug',
+        command: 'pnpm task --task compile --start-from=auto --no-link --debug',
       },
     },
     verdaccio.start(),
@@ -133,14 +132,14 @@ export const storybookChromatic = defineJob(
       {
         run: {
           name: 'Build internal storybook',
-          command: 'yarn storybook:ui:build',
+          command: 'pnpm storybook:ui:build',
           working_directory: 'code',
         },
       },
       {
         run: {
           name: 'Run Chromatic',
-          command: 'yarn storybook:ui:chromatic',
+          command: 'pnpm storybook:ui:chromatic',
           working_directory: 'code',
         },
       },
@@ -162,14 +161,14 @@ export const check = defineJob(
         run: {
           name: 'TypeCheck code',
           working_directory: `code`,
-          command: 'yarn task --task check --no-link',
+          command: 'pnpm task --task check --no-link',
         },
       },
       {
         run: {
           name: 'TypeCheck scripts',
           working_directory: `scripts`,
-          command: 'yarn check',
+          command: 'pnpm check',
         },
       },
       ...workflow.reportOnFailure(workflowName),
@@ -192,14 +191,14 @@ export const lint = defineJob(
         run: {
           name: 'Lint code',
           working_directory: `code`,
-          command: 'yarn lint',
+          command: 'pnpm lint',
         },
       },
       {
         run: {
           name: 'Lint scripts',
           working_directory: `scripts`,
-          command: 'yarn lint',
+          command: 'pnpm lint',
         },
       },
     ],
@@ -220,7 +219,7 @@ export const knip = defineJob(
         run: {
           name: 'Run Knip',
           working_directory: `code`,
-          command: 'yarn knip --no-exit-code',
+          command: 'pnpm knip --no-exit-code',
         },
       },
     ],
@@ -243,7 +242,7 @@ export const testsUnit_linux = defineJob(
           working_directory: `code`,
           command: [
             'TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")',
-            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
+            'echo "$TEST_FILES" | circleci tests run --command="xargs pnpm test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
           ].join('\n'),
         },
       },
@@ -272,7 +271,7 @@ export const testsStories_linux = defineJob(
           working_directory: `code`,
           command: [
             'TEST_FILES=$(circleci tests glob "**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\\//d" | sed "/^node_modules\\//d")',
-            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
+            'echo "$TEST_FILES" | circleci tests run --command="xargs pnpm test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
           ].join('\n'),
         },
       },
@@ -298,14 +297,14 @@ export const testUnit_windows = defineJob(
       ...workflow.restoreWindows(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
       {
         run: {
-          command: 'yarn install',
+          command: 'pnpm install',
           name: 'Install dependencies',
         },
       },
       {
         run: {
           command:
-            'yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml',
+            'pnpm test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml',
           name: 'Run unit tests',
           working_directory: `code`,
         },
@@ -331,7 +330,7 @@ export const benchmarkPackages = defineJob(
         run: {
           name: 'Benchmarking packages against base branch',
           command:
-            'yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload',
+            'pnpm bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload',
           working_directory: 'scripts',
         },
       },

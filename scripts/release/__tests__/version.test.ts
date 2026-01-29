@@ -281,7 +281,7 @@ describe('Version', () => {
           )
         )
       );
-      expect(execaCommand).toHaveBeenCalledWith('yarn install --mode=update-lockfile', {
+      expect(execaCommand).toHaveBeenCalledWith('pnpm install --lockfile-only', {
         cwd: join(CODE_DIR_PATH),
         cleanup: true,
         stdio: undefined,

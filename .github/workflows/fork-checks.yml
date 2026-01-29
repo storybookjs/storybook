@@ -23,7 +23,7 @@ jobs:
           install-code-deps: true
 
       - name: check
-        run: yarn task --task check
+        run: pnpm task --task check
 
   prettier:
     name: Core Formatting
@@ -40,7 +40,7 @@ jobs:
           install-code-deps: true
 
       - name: prettier
-        run: cd code && yarn lint:prettier --check .
+        run: cd code && pnpm lint:prettier --check .
 
   test:
     strategy:
@@ -60,10 +60,10 @@ jobs:
           install-code-deps: true
 
       - name: compile
-        run: yarn task --task compile --start-from=compile
+        run: pnpm task --task compile --start-from=compile
 
       - name: Install Playwright Dependencies
-        run: cd code && yarn exec playwright install chromium --with-deps
+        run: cd code && pnpm exec playwright install chromium --with-deps
 
       - name: test
-        run: yarn test
+        run: pnpm test

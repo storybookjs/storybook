@@ -60,7 +60,7 @@ jobs:
         id: check-frozen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:is-pr-frozen
+        run: pnpm release:is-pr-frozen
 
       - name: Cancel when frozen
         if: steps.check-frozen.outputs.frozen == 'true' && github.event_name != 'workflow_dispatch'
@@ -80,7 +80,7 @@ jobs:
         id: unreleased-changes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:unreleased-changes-exists
+        run: pnpm release:unreleased-changes-exists
 
       - name: Cancel when no release necessary
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'false' && github.event_name != 'workflow_dispatch'
@@ -94,13 +94,13 @@ jobs:
       - name: Bump version deferred
         id: bump-version
         run: |
-          yarn release:version --deferred --release-type ${{ inputs.release-type || 'prerelease' }} ${{ inputs.pre-id && format('{0} {1}', '--pre-id', inputs.pre-id) || '' }} --verbose
+          pnpm release:version --deferred --release-type ${{ inputs.release-type || 'prerelease' }} ${{ inputs.pre-id && format('{0} {1}', '--pre-id', inputs.pre-id) || '' }} --verbose
 
       - name: Write changelog
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn release:write-changelog ${{ steps.bump-version.outputs.next-version }} --verbose
+          pnpm release:write-changelog ${{ steps.bump-version.outputs.next-version }} --verbose
 
       - name: "Commit changes to branch: version-non-patch-from-${{ steps.bump-version.outputs.current-version }}"
         working-directory: .
@@ -109,14 +109,21 @@ jobs:
           git config --global user.email '32066757+storybook-bot@users.noreply.github.com'
           git checkout -b version-non-patch-from-${{ steps.bump-version.outputs.current-version }}
           git add .
-          git commit -m "Write changelog for ${{ steps.bump-version.outputs.next-version }} [skip ci]" || true
+          git commit -m "Write changelog for ${{ steps.bump-version.outputs.next-version }} [skip ci]" || {
+            if git diff --staged --quiet; then
+              echo "No changes to commit (this is expected if changelog was already written)"
+            else
+              echo "ERROR: git commit failed with staged changes"
+              exit 1
+            fi
+          }
           git push --force origin version-non-patch-from-${{ steps.bump-version.outputs.current-version }}
 
       - name: Generate PR description
         id: description
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:generate-pr-description --current-version ${{ steps.bump-version.outputs.current-version }} --next-version ${{ steps.bump-version.outputs.next-version }} --verbose
+        run: pnpm release:generate-pr-description --current-version ${{ steps.bump-version.outputs.current-version }} --next-version ${{ steps.bump-version.outputs.next-version }} --verbose
 
       - name: Create or update pull request
         env:

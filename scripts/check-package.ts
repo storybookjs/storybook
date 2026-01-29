@@ -66,7 +66,7 @@ async function run() {
 
   Object.keys(tasks).forEach((key) => {
     const opts = program.opts();
-    // checks if a flag is passed e.g. yarn check addon-docs --watch
+    // checks if a flag is passed e.g. pnpm check addon-docs --watch
     const containsFlag = program.args.includes(tasks[key].suffix);
     tasks[key].value = containsFlag || opts.all;
   });
@@ -87,7 +87,7 @@ async function run() {
         message: 'Select the packages to check',
         name: 'todo',
         min: 1,
-        hint: 'You can also run directly with package name like `yarn check storybook`, or `yarn check --all` for all packages!',
+        hint: 'You can also run directly with package name like `pnpm check storybook`, or `pnpm check --all` for all packages!',
         // @ts-expect-error @types incomplete
         optionsPerPage: windowSize.height - 3, // 3 lines for extra info
         choices: packages.map(({ name: key }) => ({
@@ -140,7 +140,7 @@ async function run() {
 
       for (const v of packageInfos) {
         const script = join(ROOT_DIRECTORY, 'scripts', 'check', 'check-package.ts');
-        const command = `yarn exec jiti ${script}`;
+        const command = `pnpm exec jiti ${script}`;
 
         try {
           const sub = await execaCommand(command, {
@@ -192,7 +192,7 @@ async function run() {
     // If watch mode is off, check each individual package sequentially.
     selection.forEach(async (v) => {
       const script = join(ROOT_DIRECTORY, 'scripts', 'check', 'check-package.ts');
-      const command = `yarn exec jiti ${script}`;
+      const command = `pnpm exec jiti ${script}`;
 
       const cwd = resolve(__dirname, '..', 'code', v.location);
       const sub = execaCommand(`${command}${watchMode ? ' --watch' : ''}`, {

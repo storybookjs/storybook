@@ -40,7 +40,7 @@ function defineSandboxJob_build({
         {
           run: {
             name: 'Build storybook',
-            command: `yarn task build --template ${template} --no-link -s build`,
+            command: `pnpm task build --template ${template} --no-link -s build`,
           },
         },
         workspace.persist([`${SANDBOX_DIR}/${directory}/storybook-static`]),
@@ -83,7 +83,7 @@ function defineSandboxJob_dev({
                   name: 'Run storybook',
                   working_directory: 'code',
                   background: true,
-                  command: `yarn task dev --template ${template} --no-link -s dev`,
+                  command: `pnpm task dev --template ${template} --no-link -s dev`,
                 },
               },
               server.wait(['6006']),
@@ -92,7 +92,7 @@ function defineSandboxJob_dev({
                   name: 'Running E2E Tests',
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")',
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs pnpm task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
                   ].join('\n'),
                 },
               },
@@ -105,7 +105,7 @@ function defineSandboxJob_dev({
                   name: 'Run storybook smoke test',
                   working_directory: 'code',
                   background: true,
-                  command: `yarn task smoke-test --template ${template} --no-link -s dev`,
+                  command: `pnpm task smoke-test --template ${template} --no-link -s dev`,
                 },
               },
             ]),
@@ -137,7 +137,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             name: 'Start Event Collector',
             working_directory: `scripts`,
             background: true,
-            command: 'yarn jiti ./event-log-collector.ts',
+            command: 'pnpm jiti ./event-log-collector.ts',
           },
         },
         server.wait([...verdaccio.ports, '6007']),
@@ -157,7 +157,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               {
                 run: {
                   name: 'Generate Sandbox',
-                  command: `yarn task generate --template ${key} --no-link -s generate --debug`,
+                  command: `pnpm task generate --template ${key} --no-link -s generate --debug`,
                   environment: {
                     STORYBOOK_SANDBOX_GENERATE: 1,
                     STORYBOOK_TELEMETRY_DEBUG: 1,
@@ -170,7 +170,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Create Sandbox',
-            command: `yarn task sandbox --template ${key} --no-link -s sandbox --debug`,
+            command: `pnpm task sandbox --template ${key} --no-link -s sandbox --debug`,
             environment: {
               STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1,
               STORYBOOK_TELEMETRY_DEBUG: 1,
@@ -232,7 +232,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Running Chromatic',
-            command: `yarn task chromatic --template ${key} --no-link -s chromatic`,
+            command: `pnpm task chromatic --template ${key} --no-link -s chromatic`,
             environment: {
               STORYBOOK_SANDBOX_ROOT: `./sandbox`,
             },
@@ -254,7 +254,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Running Vitest',
-            command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
+            command: `pnpm task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
           },
         },
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
@@ -275,7 +275,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           run: {
             name: 'Serve storybook',
             background: true,
-            command: `yarn task serve --template ${key} --no-link -s serve`,
+            command: `pnpm task serve --template ${key} --no-link -s serve`,
           },
         },
         server.wait(['8001']),
@@ -284,7 +284,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             name: 'Running E2E Tests',
             command: [
               `TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")`,
-              `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
+              `echo "$TEST_FILES" | circleci tests run --command="xargs pnpm task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
             ].join('\n'),
           },
         },
@@ -306,7 +306,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Running test-runner',
-            command: `yarn task test-runner --template ${key} --no-link -s test-runner --junit`,
+            command: `pnpm task test-runner --template ${key} --no-link -s test-runner --junit`,
           },
         },
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
@@ -355,7 +355,7 @@ export function defineSandboxTestRunner(sandbox: ReturnType<typeof defineSandbox
         {
           run: {
             name: 'Running test-runner',
-            command: `yarn task test-runner --template ${sandbox.name} --no-link -s test-runner --junit`,
+            command: `pnpm task test-runner --template ${sandbox.name} --no-link -s test-runner --junit`,
           },
         },
         testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
@@ -404,7 +404,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
           run: {
             name: 'Running E2E Tests',
             working_directory: 'code',
-            command: `yarn task e2e-tests-dev --template ${sandbox.name} --no-link -s e2e-tests-dev --junit`,
+            command: `pnpm task e2e-tests-dev --template ${sandbox.name} --no-link -s e2e-tests-dev --junit`,
           },
         },
         testResults.persist(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}\\test-results`),
@@ -443,14 +443,14 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
         {
           run: {
             name: 'Build storybook',
-            command: `yarn task build --template ${sandbox.name} --no-link -s build`,
+            command: `pnpm task build --template ${sandbox.name} --no-link -s build`,
           },
         },
         {
           run: {
             name: 'Serve storybook',
             background: true,
-            command: `yarn task serve --template ${sandbox.name} --no-link -s serve`,
+            command: `pnpm task serve --template ${sandbox.name} --no-link -s serve`,
           },
         },
         server.wait(['8001']),
@@ -458,7 +458,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
           run: {
             name: 'Running E2E Tests',
             working_directory: 'code',
-            command: `yarn task e2e-tests --template ${sandbox.name} --no-link -s e2e-tests`,
+            command: `pnpm task e2e-tests --template ${sandbox.name} --no-link -s e2e-tests`,
           },
         },
       ],

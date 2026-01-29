@@ -13,53 +13,53 @@
     "url": "https://opencollective.com/storybook"
   },
   "scripts": {
-    "affected:test": "nx show projects --affected -t test | xargs -I # echo --project # | xargs yarn test:watch",
+    "affected:test": "nx show projects --affected -t test | xargs -I # echo --project # | xargs pnpm test:watch",
     "await-serve-storybooks": "wait-on http://localhost:8001",
-    "build": "NODE_ENV=production yarn --cwd ../scripts build-package",
+    "build": "NODE_ENV=production pnpm --dir ../scripts build-package",
     "changelog": "pr-log --sloppy --cherry-pick",
     "changelog:next": "pr-log --sloppy --since-prerelease",
-    "check": "NODE_ENV=production yarn --cwd ../scripts check-package",
-    "ci-tests": "yarn task --task check --no-link --start-from=install && yarn lint && yarn test && cd ../scripts && yarn test",
+    "check": "NODE_ENV=production pnpm --dir ../scripts check-package",
+    "ci-tests": "pnpm task --task check --no-link --start-from=install && pnpm lint && pnpm test && cd ../scripts && pnpm test",
     "danger": "danger",
-    "generate-sandboxes": "yarn --cwd ../scripts generate-sandboxes",
+    "generate-sandboxes": "pnpm --dir ../scripts generate-sandboxes",
     "github-release": "github-release-from-changelog",
-    "i": "yarn --cwd .. i",
+    "i": "pnpm --dir .. i",
     "knip": "knip --config ../scripts/knip.config.ts",
-    "lint": "yarn lint:js && yarn lint:other",
+    "lint": "pnpm lint:js && pnpm lint:other",
     "lint:ejs": "ejslint **/*.ejs",
-    "lint:js": "yarn lint:js:cmd . --quiet",
+    "lint:js": "pnpm lint:js:cmd . --quiet",
     "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
-    "lint:other": "yarn lint:prettier '**/*.{css,html,json,md,yml}'",
-    "lint:package": "yarn --cwd ../scripts lint:package",
+    "lint:other": "pnpm lint:prettier '**/*.{css,html,json,md,yml}'",
+    "lint:package": "pnpm --dir ../scripts lint:package",
     "lint:prettier": "prettier --write",
-    "local-registry": "yarn --cwd ../scripts local-registry",
-    "publish-sandboxes": "yarn --cwd ../scripts publish",
+    "local-registry": "pnpm --dir ../scripts local-registry",
+    "publish-sandboxes": "pnpm --dir ../scripts publish",
     "storybook:ui": "NODE_OPTIONS=\"--max_old_space_size=4096 --trace-deprecation\" core/dist/bin/dispatcher.js dev --port 6006 --config-dir ./.storybook",
     "storybook:ui:build": "NODE_OPTIONS=\"--max_old_space_size=4096\" core/dist/bin/dispatcher.js build --config-dir ./.storybook --webpack-stats-json",
     "storybook:ui:chromatic": "chromatic --storybook-build-dir storybook-static --exit-zero-on-changes --exit-once-uploaded",
-    "storybook:vitest": "yarn test:watch --project storybook-ui",
-    "storybook:vitest:inspect": "INSPECT=true yarn test --project storybook-ui",
-    "task": "yarn --cwd ../scripts task",
+    "storybook:vitest": "pnpm test:watch --project storybook-ui",
+    "storybook:vitest:inspect": "INSPECT=true pnpm test --project storybook-ui",
+    "task": "pnpm --dir ../scripts task",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "if [ -z \"$SKIP_STORYBOOK_GIT_HOOKS\" ]; then yarn lint-staged; fi"
+      "pre-commit": "if [ -z \"$SKIP_STORYBOOK_GIT_HOOKS\" ]; then pnpm lint-staged; fi"
     }
   },
   "lint-staged": {
     "*.{html,js,json,jsx,mjs,ts,tsx}": [
-      "yarn lint:js:cmd --fix"
+      "pnpm lint:js:cmd --fix"
     ],
     "*.ejs": [
-      "yarn --cwd ../scripts ejslint"
+      "pnpm --dir ../scripts ejslint"
     ],
     "*.{css,html,json,md,yml}": [
-      "yarn lint:prettier"
+      "pnpm lint:prettier"
     ],
     "package.json": [
-      "yarn lint:package"
+      "pnpm lint:package"
     ]
   },
   "browserslist": [
@@ -112,7 +112,7 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
-    "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
+    "@testing-library/user-event": "^14.6.1",
     "@types/lodash-es": "^4.17.12",
     "@types/mock-require": "^2.0.3",
     "@types/node": "^22.19.1",
@@ -132,6 +132,7 @@
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0 || ^0.26.0 || ^0.27.0",
     "esbuild-loader": "^4.3.0",
     "eslint": "^8.57.1",
+    "eslint-plugin-local-rules": "link:../scripts/eslint-plugin-local-rules",
     "happy-dom": "^17.6.3",
     "http-server": "^14.1.1",
     "husky": "^4.3.7",

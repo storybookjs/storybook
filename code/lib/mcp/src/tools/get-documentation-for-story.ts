@@ -6,16 +6,16 @@ import { formatStoryDocumentation } from '../utils/format-manifest.ts';
 
 export const GET_STORY_TOOL_NAME = 'get-documentation-for-story';
 
-const GetComponentStoryDocumentationInput = v.object({
+const GetStoryDocumentationInput = v.object({
 	componentId: v.string(),
 	storyName: v.string(),
 });
 
-type GetComponentStoryDocumentationInput = v.InferOutput<
-	typeof GetComponentStoryDocumentationInput
+type GetStoryDocumentationInput = v.InferOutput<
+	typeof GetStoryDocumentationInput
 >;
 
-export async function addGetComponentStoryDocumentationTool(
+export async function addGetStoryDocumentationTool(
 	server: McpServer<any, StorybookContext>,
 	enabled?: Parameters<McpServer<any, StorybookContext>['tool']>[0]['enabled'],
 ) {
@@ -25,10 +25,10 @@ export async function addGetComponentStoryDocumentationTool(
 			title: 'Get Documentation for Story',
 			description:
 				'Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it.',
-			schema: GetComponentStoryDocumentationInput,
+			schema: GetStoryDocumentationInput,
 			enabled,
 		},
-		async (input: GetComponentStoryDocumentationInput) => {
+		async (input: GetStoryDocumentationInput) => {
 			try {
 				const manifest = await getManifests(
 					server.ctx.custom?.request,

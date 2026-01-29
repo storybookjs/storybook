@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import {
-	addGetComponentStoryDocumentationTool,
+	addGetStoryDocumentationTool,
 	GET_STORY_TOOL_NAME,
 } from './get-documentation-for-story.ts';
 import type { StorybookContext } from '../types.ts';
@@ -43,7 +43,7 @@ describe('getComponentStoryDocumentationTool', () => {
 			},
 			{ sessionId: 'test-session' },
 		);
-		await addGetComponentStoryDocumentationTool(server);
+		await addGetStoryDocumentationTool(server);
 
 		// Mock getManifest to return the fixture
 		getManifestSpy = vi.spyOn(getManifest, 'getManifests');

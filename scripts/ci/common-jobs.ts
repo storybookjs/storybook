@@ -154,7 +154,7 @@ export const check = defineJob(
   (workflowName) => ({
     executor: {
       name: 'sb_node_22_classic',
-      class: 'large',
+      class: 'medium+',
     },
     steps: [
       ...workflow.restoreLinux(),

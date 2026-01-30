@@ -98,6 +98,7 @@ export class AddonConfigurationCommand {
         task.message(`${addon} configured\n`);
         addonResults.set(addon, null);
       } catch (e) {
+        logger.debug(e);
         ErrorCollector.addError(e);
         addonResults.set(addon, e);
       }

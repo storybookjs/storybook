@@ -8,7 +8,7 @@ import preview from '../../../../../../.storybook/preview';
 import { Zoom } from './zoom';
 
 const openDialog = async (context: StoryContext<typeof Zoom>) => {
-  const zoom = await context.canvas.findByRole('button', { name: 'Change zoom level' });
+  const zoom = await context.canvas.findByRole('switch', { name: 'Change zoom level' });
   await context.userEvent.click(zoom);
   return screen.findByRole('dialog');
 };

@@ -2580,6 +2580,9 @@ describe('PreviewWeb', () => {
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_CHANGED, 'component-one--docs');
       });
 
+      // This test validates the fix for issue #33112: decorators that mutate
+      // document.documentElement should not bleed into Docs view.
+      // prepareForDocs() triggers restoreDocumentElement() to clean up mutations.
       it('calls view.prepareForDocs', async () => {
         document.location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();

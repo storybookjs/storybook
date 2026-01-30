@@ -133,6 +133,7 @@ export const shareTool: Addon_BaseType = {
       {({ api, storyId, refId }) =>
         storyId ? (
           <PopoverProvider
+            ariaLabel="Share this story"
             hasChrome
             placement="bottom"
             padding={0}

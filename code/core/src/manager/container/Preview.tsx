@@ -23,7 +23,7 @@ import type { PreviewProps } from '../components/preview/utils/types';
 
 const defaultTabs = [createCanvasTab()];
 const defaultTools = [menuTool, remountTool];
-const defaultToolsExtra = [zoomTool, addonsTool, fullScreenTool, shareTool, openInEditorTool];
+const defaultToolsExtra = [zoomTool, addonsTool, openInEditorTool, fullScreenTool, shareTool];
 
 const emptyTabsList: Addon_BaseType[] = [];
 

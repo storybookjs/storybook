@@ -10,6 +10,7 @@ import componentTestingManager from '../../component-testing/manager';
 import backgroundsManager from '../../backgrounds/manager';
 import measureManager from '../../measure/manager';
 import outlineManager from '../../outline/manager';
+import qrcodeManager from '../../qrcode/manager';
 import viewportManager from '../../viewport/manager';
 
 const TAG_FILTERS = 'tag-filters';
@@ -48,4 +49,5 @@ export default [
   controlsManager,
   viewportManager,
   outlineManager,
+  qrcodeManager,
 ];

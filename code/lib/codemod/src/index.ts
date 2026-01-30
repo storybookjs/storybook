@@ -3,11 +3,10 @@ import { readdirSync } from 'node:fs';
 import { rename as renameAsync } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 
-import { normalize } from 'pathe';
-
 import { resolvePackageDir } from 'storybook/internal/common';
 
 import { sync as spawnSync } from 'cross-spawn';
+import { normalize } from 'pathe';
 import { glob as tinyglobby } from 'tinyglobby';
 
 import { jscodeshiftToPrettierParser } from './lib/utils';

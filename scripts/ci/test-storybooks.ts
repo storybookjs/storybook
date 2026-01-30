@@ -23,7 +23,7 @@ export function definePortableStoryTest(directory: string) {
     () => ({
       executor: {
         name: 'sb_playwright',
-        class: 'medium',
+        class: 'medium+',
       },
       steps: [
         ...workflow.restoreLinux(),

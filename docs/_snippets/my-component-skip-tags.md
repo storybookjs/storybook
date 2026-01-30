@@ -1,7 +1,7 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { MyComponent } from './MyComponent.component';
+import { MyComponent } from './my-component.component';
 
 const meta: Meta<MyComponent> = {
   component: MyComponent,
@@ -16,6 +16,23 @@ export const SkipStory: Story = {
   //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
   tags: ['skip-test'],
 };
+```
+
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+});
+
+export const SkipStory = meta.story({
+  //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
@@ -86,6 +103,101 @@ const meta = preview.meta({
 
 export const SkipStory = meta.story({
   //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+});
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+});
+
+export const SkipStory = meta.story({
+  //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+});
+
+export const SkipStory = meta.story({
+  //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+export default {
+  component: 'my-component',
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+};
+
+export const SkipStory = {
+  //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+};
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
+const meta: Meta = {
+  component: 'my-component',
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+};
+
+export default meta;
+type Story = StoryObj;
+
+export const SkipStory: Story = {
+  //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+};
+```
+
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+});
+
+export const SkipStory = meta.story({
+  //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'my-component',
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+});
+
+export const SkipStory = meta.story({
+  //👇 Adds the `skip-test` tag to this story to exclude it from the tests when enabled in the test-runner configuration
   tags: ['skip-test'],
 });
 ```

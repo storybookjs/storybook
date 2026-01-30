@@ -1,8 +1,10 @@
 export interface Viewport {
   name: string;
   styles: ViewportStyles;
-  type?: 'desktop' | 'mobile' | 'tablet' | 'other';
+  type?: ViewportType;
 }
+
+export type ViewportType = 'desktop' | 'mobile' | 'tablet' | 'watch' | 'other';
 
 export interface ViewportStyles {
   height: string;
@@ -14,7 +16,8 @@ export type ViewportMap = Record<string, Viewport>;
 export type GlobalState = {
   /**
    * When set, the viewport is applied and cannot be changed using the toolbar. Must match the key
-   * of one of the available viewports.
+   * of one of the available viewports or follow the format '{width}-{height}', e.g. '320-480' which
+   * may include a unit (e.g. '100vw' or '100pct').
    */
   value: string | undefined;
 

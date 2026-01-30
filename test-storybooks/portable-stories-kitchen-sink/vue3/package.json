@@ -14,9 +14,6 @@
     "storybook": "STORYBOOK_TELEMETRY_URL=\"http://localhost:6007/event-log\" storybook dev -p 6006",
     "vitest": "echo 'Vitest tests are implemented in the renderer directory instead!'"
   },
-  "nx": {
-    "includedScripts": []
-  },
   "resolutions": {
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
@@ -27,8 +24,6 @@
     "@storybook/builder-vite": "file:../../../code/builders/builder-vite",
     "@storybook/builder-webpack5": "file:../../../code/builders/builder-webpack5",
     "@storybook/codemod": "file:../../../code/lib/codemod",
-    "eslint-plugin-storybook": "file:../../../code/lib/eslint-plugin",
-    "storybook": "file:../../../code/core",
     "@storybook/core-webpack": "file:../../../code/lib/core-webpack",
     "@storybook/csf-plugin": "file:../../../code/lib/csf-plugin",
     "@storybook/ember": "file:../../../code/frameworks/ember",
@@ -52,7 +47,9 @@
     "@storybook/vue3-vite": "file:../../../code/frameworks/vue3-vite",
     "@storybook/web-components": "file:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
-    "playwright": "1.52.0"
+    "eslint-plugin-storybook": "file:../../../code/lib/eslint-plugin",
+    "playwright": "1.52.0",
+    "storybook": "file:../../../code/core"
   },
   "dependencies": {
     "vue": "^3.4.19"
@@ -71,5 +68,8 @@
     "storybook": "^8.0.0",
     "typescript": "^5.2.2",
     "vite": "^5.1.1"
+  },
+  "nx": {
+    "includedScripts": []
   }
 }

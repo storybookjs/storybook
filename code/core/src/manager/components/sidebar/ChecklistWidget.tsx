@@ -121,6 +121,7 @@ const ItemLabel = styled.span<{ isCompleted: boolean; isSkipped: boolean }>(
   }),
   ({ theme, isSkipped }) =>
     isSkipped && {
+      alignSelf: 'flex-start',
       '&:after': {
         content: '""',
         position: 'absolute',
@@ -215,6 +216,10 @@ export const ChecklistWidget = () => {
     keyFn: (item) => item.id,
     timeout: animated ? 300 : 0,
   });
+
+  if (!api.getIsNavShown()) {
+    return null;
+  }
 
   return (
     <CollapsibleWithMargin collapsed={!hasItems || !loaded}>

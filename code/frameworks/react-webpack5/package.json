@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-webpack5",
-  "version": "10.2.0-alpha.9",
+  "version": "10.3.0-alpha.1",
   "description": "Storybook for React and Webpack: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -51,7 +51,7 @@
     "@storybook/react": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.19.1"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",

@@ -8,6 +8,7 @@ import { getStorySortParameter, readCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type { NormalizedStoriesSpecifier, StoryIndexEntry } from 'storybook/internal/types';
 
+import { Tag } from '../../shared/constants/tags';
 import { csfIndexer } from '../presets/common-preset';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
 import { StoryIndexGenerator } from './StoryIndexGenerator';
@@ -1021,7 +1022,7 @@ describe('StoryIndexGenerator', () => {
         );
 
         const generator = new StoryIndexGenerator([specifier], autodocsOptions);
-        generator.getProjectTags = () => ['dev', 'test', 'autodocs'];
+        generator.getProjectTags = () => [Tag.DEV, Tag.TEST, Tag.AUTODOCS];
         await generator.initialize();
 
         expect(Object.keys((await generator.getIndex()).entries)).toMatchInlineSnapshot(`
@@ -1065,12 +1066,12 @@ describe('StoryIndexGenerator', () => {
         );
 
         const generator = new StoryIndexGenerator([specifier], autodocsOptions);
-        generator.getProjectTags = () => ['dev', 'test', 'autodocs'];
+        generator.getProjectTags = () => [Tag.DEV, Tag.TEST, Tag.AUTODOCS];
         await generator.initialize();
 
         const index = await generator.getIndex();
         expect(index.entries['first-nested-deeply-f--docs'].tags).toEqual(
-          expect.arrayContaining(['autodocs'])
+          expect.arrayContaining([Tag.AUTODOCS])
         );
       });
 
@@ -1327,7 +1328,7 @@ describe('StoryIndexGenerator', () => {
         );
 
         const generator = new StoryIndexGenerator([csfSpecifier, docsSpecifier], autodocsOptions);
-        generator.getProjectTags = () => ['dev', 'test', 'autodocs'];
+        generator.getProjectTags = () => [Tag.DEV, Tag.TEST, Tag.AUTODOCS];
         await generator.initialize();
 
         const { storyIndex } = await generator.getIndexAndStats();

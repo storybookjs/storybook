@@ -45,6 +45,28 @@ describe('stories codemod', () => {
       `);
     });
 
+    it('should preserve leading comments when adding import', async () => {
+      await expect(
+        transform(dedent`
+            // @ts-check
+            /**
+             * @license MIT
+             * Copyright 2024
+             */
+            const meta = { title: 'Component' };
+            export default meta;
+            export const A = {};
+          `)
+      ).resolves.toMatchInlineSnapshot(`
+        // @ts-check
+        /** @license MIT Copyright 2024 */
+        import preview from '#.storybook/preview';
+
+        const meta = preview.meta({ title: 'Component' });
+        export const A = meta.story();
+      `);
+    });
+
     it('should transform and wrap inline default exported meta', async () => {
       await expect(
         transform(dedent`

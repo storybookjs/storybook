@@ -1,7 +1,7 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { Button } from './Button.component';
+import { Button } from './button.component';
 
 const meta: Meta<Button> = {
   component: Button,
@@ -35,6 +35,42 @@ export const Secondary: Story = {
     },
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+});
+
+// 👇 This story will display the Code panel
+export const Primary = meta.story({
+  args: {
+    children: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
@@ -149,7 +185,7 @@ export const Secondary = {
 />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -228,7 +264,7 @@ export const Secondary: Story = {
 />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
 import Button from './Button.svelte';
 
 export default {
@@ -262,7 +298,7 @@ export const Secondary = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -301,7 +337,7 @@ export const Secondary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
 import Button from './Button.vue';
 
 export default {
@@ -335,7 +371,81 @@ export const Secondary = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+});
+
+// 👇 This story will display the Code panel
+export const Primary = meta.story({
+  args: {
+    children: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+});
+
+// 👇 This story will display the Code panel
+export const Primary = meta.story({
+  args: {
+    children: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -372,9 +482,9 @@ export const Secondary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
 export default {
-  component: 'my-component',
+  component: 'demo-button',
   parameters: {
     docs: {
       // 👇 Enable Code panel for all stories in this file
@@ -402,6 +512,74 @@ export const Secondary = {
     },
   },
 };
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+});
+
+// 👇 This story will display the Code panel
+export const Primary = meta.story({
+  args: {
+    children: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'demo-button',
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+});
+
+// 👇 This story will display the Code panel
+export const Primary = meta.story({
+  args: {
+    children: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -444,6 +622,7 @@ export const Secondary = meta.story({
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
 const meta = preview.meta({

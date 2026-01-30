@@ -126,6 +126,9 @@ export const TableWrapper = styled.table<{
         // For filter to work properly, the table cells all need to be opaque.
         background: theme.background.content,
         borderTop: `1px solid ${theme.appBorderColor}`,
+        '@media (forced-colors: active)': {
+          borderTop: '1px solid CanvasText',
+        },
       },
 
       ...(inAddonPanel
@@ -134,15 +137,27 @@ export const TableWrapper = styled.table<{
             // This works and I don't know why. :)
             '> tr:first-of-type > *': {
               borderBlockStart: `1px solid ${theme.appBorderColor}`,
+              '@media (forced-colors: active)': {
+                borderBlockStart: '1px solid CanvasText',
+              },
             },
             '> tr:last-of-type > *': {
               borderBlockEnd: `1px solid ${theme.appBorderColor}`,
+              '@media (forced-colors: active)': {
+                borderBlockEnd: '1px solid CanvasText',
+              },
             },
             '> tr > *:first-of-type': {
               borderInlineStart: `1px solid ${theme.appBorderColor}`,
+              '@media (forced-colors: active)': {
+                borderInlineStart: '1px solid CanvasText',
+              },
             },
             '> tr > *:last-of-type': {
               borderInlineEnd: `1px solid ${theme.appBorderColor}`,
+              '@media (forced-colors: active)': {
+                borderInlineEnd: '1px solid CanvasText',
+              },
             },
 
             // Thank you, Safari, for making me write code like this.
